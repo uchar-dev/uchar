@@ -330,6 +330,8 @@ fi
 # shows the tail of a red build, which used to go to /dev/null.
 . scripts/lib/drools-jar.sh
 JAR=$(ensure_drools_jar) || { echo 'check-reftype-derivation: FAIL (no fresh Drools backend jar — the drools-jar line above says why)' >&2; exit 1; }
+# PARALLEL_JVM_FLAGS, the flags of a replay JVM
+. scripts/lib/parallel.sh
 
 TWISTER=$(mktemp) || exit 2
 VOCABULARY_TWISTER=$(mktemp) || exit 2
@@ -337,10 +339,9 @@ HSTRIPPER=$(mktemp) || exit 2
 NSTRIPPER=$(mktemp) || exit 2
 WORK=$(mktemp -d) || exit 2
 LIST=$(mktemp) || exit 2
-CASES=$(mktemp) || exit 2
 UNCOVERED=$(mktemp) || exit 2   # "<golden> <node>" per unit-bearing annotation outside table + exceptions
 HITS=$(mktemp) || exit 2     # "<golden>|<executor>" per survivor entry that ACTUALLY diverged
-trap 'rm -rf "$TWISTER" "$VOCABULARY_TWISTER" "$HSTRIPPER" "$NSTRIPPER" "$WORK" "$LIST" "$CASES" "$UNCOVERED" "$HITS"' EXIT
+trap 'rm -rf "$TWISTER" "$VOCABULARY_TWISTER" "$HSTRIPPER" "$NSTRIPPER" "$WORK" "$LIST" "$UNCOVERED" "$HITS"' EXIT
 
 cat > "$TWISTER" <<'PY'
 import json, os, sys
@@ -913,154 +914,301 @@ EXPECTED_MIN_NAME_STRIPPED=64        # 2026-10-21: measured 64 names stripped ov
 EXPECTED_MIN_ANNOTATIONS_STRIPPED=29 # 2026-10-21: measured 29 statuteAnnotations lists stripped
 
 status=0
-n_goldens=0
-n_twists=0
-n_checked=0
-n_survivors=0
-n_drl=0
-n_exec_played=0
-n_unit=0
-n_exempt=0
-n_without_sister=0
 find corpus/golden -name ir.json 2>/dev/null | sort > "$LIST"
-while IFS= read -r ir; do
-    dir=$(dirname "$ir")
-    ident=${dir#corpus/golden/}
-    tw="$WORK/$dir/ir.json"
-    out=$(python3 "$TWISTER" "$ir" "$tw" "$ident") || { echo "FAIL: the twister could not read $ir" >&2; exit 2; }
-    first_line=$(printf '%s\n' "$out" | head -1)
-    # the clamp's accounting runs over EVERY golden, replayable or not: an unprobed node kind is a
-    # gap wherever it sits.
-    rest_lines=$(printf '%s\n' "$out" | tail -n +2)
-    [ -z "$rest_lines" ] || printf '%s\n' "$rest_lines" >> "$UNCOVERED"
-    set -- $first_line
-    hits_list=$1
-    n_unit=$((n_unit + $2))
-    n_exempt=$((n_exempt + $3))
-    n_without_sister=$((n_without_sister + $4))
-    [ "$hits_list" -gt 0 ] || continue          # no twistable annotation: nothing to probe here
-    find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
-    [ -s "$CASES" ] || continue                # no case file: not replayable (gate 5 lists those)
-    n_goldens=$((n_goldens + 1))
-    n_twists=$((n_twists + hits_list))
 
-    # ref and clingo: exit 0 on the untouched ir.json is what gates 5 and 6 pin, so the twisted
-    # run must exit 0 too. Any other outcome is the executor reading the repetition.
-    while IFS= read -r case; do
-        n_checked=$((n_checked + 2))
-        if ! report_line=$("$RUNNER_REF" "$tw" "$case" 2>&1); then
-            if mention "$ident" ref; then
-                n_survivors=$((n_survivors + 1)); echo "$ident|ref" >> "$HITS"
+# --- the unit leg (the twist; see the script header) -------------------------------------------
+leg_twist() {
+    CASES=$WORK/twist.cases
+    n_goldens=0
+    n_twists=0
+    n_checked=0
+    n_survivors=0
+    n_drl=0
+    n_exec_played=0
+    n_unit=0
+    n_exempt=0
+    n_without_sister=0
+    while IFS= read -r ir; do
+        dir=$(dirname "$ir")
+        ident=${dir#corpus/golden/}
+        tw="$WORK/$dir/ir.json"
+        out=$(python3 "$TWISTER" "$ir" "$tw" "$ident") || { echo "FAIL: the twister could not read $ir" >&2; exit 2; }
+        first_line=$(printf '%s\n' "$out" | head -1)
+        # the clamp's accounting runs over EVERY golden, replayable or not: an unprobed node kind is a
+        # gap wherever it sits.
+        rest_lines=$(printf '%s\n' "$out" | tail -n +2)
+        [ -z "$rest_lines" ] || printf '%s\n' "$rest_lines" >> "$UNCOVERED"
+        set -- $first_line
+        hits_list=$1
+        n_unit=$((n_unit + $2))
+        n_exempt=$((n_exempt + $3))
+        n_without_sister=$((n_without_sister + $4))
+        [ "$hits_list" -gt 0 ] || continue          # no twistable annotation: nothing to probe here
+        find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
+        [ -s "$CASES" ] || continue                # no case file: not replayable (gate 5 lists those)
+        n_goldens=$((n_goldens + 1))
+        n_twists=$((n_twists + hits_list))
+
+        # ref and clingo: exit 0 on the untouched ir.json is what gates 5 and 6 pin, so the twisted
+        # run must exit 0 too. Any other outcome is the executor reading the repetition.
+        while IFS= read -r case; do
+            n_checked=$((n_checked + 2))
+            if ! report_line=$("$RUNNER_REF" "$tw" "$case" 2>&1); then
+                if mention "$ident" ref; then
+                    n_survivors=$((n_survivors + 1)); echo "$ident|ref" >> "$HITS"
+                else
+                    printf 'FAIL: %s — ref answers differently on the lying copy:\n%s\n' "$case" "$report_line" >&2
+                    status=1
+                fi
+            fi
+            if ! report_line=$("$RUNNER_CLINGO" "$tw" "$case" 2>&1); then
+                if mention "$ident" clingo; then
+                    n_survivors=$((n_survivors + 1)); echo "$ident|clingo" >> "$HITS"
+                else
+                    printf 'FAIL: %s — clingo answers differently on the lying copy:\n%s\n' "$case" "$report_line" >&2
+                    status=1
+                fi
+            fi
+        done < "$CASES"
+
+        # Drools: compare its own status line on the lying copy with the one it prints on the
+        # untouched file. Comparing against the BASELINE rather than against PLAYED is deliberate —
+        # a golden gate 12 auto-refuses per form, or carries in its value-divergence list, must stay
+        # exactly as refusing/diverging under the twist, and this harness must not re-litigate that.
+        set --
+        while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
+        n_checked=$((n_checked + 1))
+        base_expr=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
+        twisted=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$tw" "$@" 2>/dev/null | tail -1)
+        [ "${base_expr%% *}" = PLAYED ] && n_exec_played=$((n_exec_played + 1))
+        if [ "$base_expr" != "$twisted" ]; then
+            if mention "$ident" drools; then
+                n_survivors=$((n_survivors + 1)); echo "$ident|drools" >> "$HITS"
             else
-                printf 'FAIL: %s — ref answers differently on the lying copy:\n%s\n' "$case" "$report_line" >&2
+                printf 'FAIL: %s — Drools answers differently on the lying copy:\n  untouched: %s\n  lying:     %s\n' \
+                    "$ident" "$base_expr" "$twisted" >&2
                 status=1
             fi
         fi
-        if ! report_line=$("$RUNNER_CLINGO" "$tw" "$case" 2>&1); then
-            if mention "$ident" clingo; then
-                n_survivors=$((n_survivors + 1)); echo "$ident|clingo" >> "$HITS"
+
+        # The SECOND rendering of the same analysis, through the same twist: the DRL text behind the runner's
+        # --drl entry, compiled by the classic DRL build and replayed against the SAME pinned expectations. Its
+        # untouched line must be the exec-model branch's untouched line (the two render one analysis; gate 12
+        # holds this over the whole corpus), and its twisted line its own untouched one.
+        n_checked=$((n_checked + 1))
+        drl_baseline=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+        d_twisted=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$tw" "$@" 2>/dev/null | tail -1)
+        if [ "$drl_baseline" != "$base_expr" ]; then
+            printf 'FAIL: %s — the DRL-text branch, the second rendering of the analysis, gives another status line than the exec-model branch on the UNTOUCHED golden:\n  exec-model: %s\n  drl-text:   %s\n' \
+                "$ident" "$base_expr" "$drl_baseline" >&2
+            status=1
+        fi
+        [ "${drl_baseline%% *}" = PLAYED ] && n_drl=$((n_drl + 1))
+        if [ "$drl_baseline" != "$d_twisted" ]; then
+            if mention "$ident" drl; then
+                n_survivors=$((n_survivors + 1)); echo "$ident|drl" >> "$HITS"
             else
-                printf 'FAIL: %s — clingo answers differently on the lying copy:\n%s\n' "$case" "$report_line" >&2
+                printf 'FAIL: %s — the DRL-text branch answers differently on the lying copy:\n  untouched: %s\n  lying:     %s\n' \
+                    "$ident" "$drl_baseline" "$d_twisted" >&2
                 status=1
             fi
         fi
-    done < "$CASES"
-
-    # Drools: compare its own status line on the lying copy with the one it prints on the
-    # untouched file. Comparing against the BASELINE rather than against PLAYED is deliberate —
-    # a golden gate 12 auto-refuses per form, or carries in its value-divergence list, must stay
-    # exactly as refusing/diverging under the twist, and this harness must not re-litigate that.
-    set --
-    while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
-    n_checked=$((n_checked + 1))
-    base_expr=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
-    twisted=$(java -jar "$JAR" "$tw" "$@" 2>/dev/null | tail -1)
-    [ "${base_expr%% *}" = PLAYED ] && n_exec_played=$((n_exec_played + 1))
-    if [ "$base_expr" != "$twisted" ]; then
-        if mention "$ident" drools; then
-            n_survivors=$((n_survivors + 1)); echo "$ident|drools" >> "$HITS"
-        else
-            printf 'FAIL: %s — Drools answers differently on the lying copy:\n  untouched: %s\n  lying:     %s\n' \
-                "$ident" "$base_expr" "$twisted" >&2
-            status=1
-        fi
-    fi
-
-    # The SECOND rendering of the same analysis, through the same twist: the DRL text behind the runner's
-    # --drl entry, compiled by the classic DRL build and replayed against the SAME pinned expectations. Its
-    # untouched line must be the exec-model branch's untouched line (the two render one analysis; gate 12
-    # holds this over the whole corpus), and its twisted line its own untouched one.
-    n_checked=$((n_checked + 1))
-    drl_baseline=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
-    d_twisted=$(java -jar "$JAR" --drl "$tw" "$@" 2>/dev/null | tail -1)
-    if [ "$drl_baseline" != "$base_expr" ]; then
-        printf 'FAIL: %s — the DRL-text branch, the second rendering of the analysis, gives another status line than the exec-model branch on the UNTOUCHED golden:\n  exec-model: %s\n  drl-text:   %s\n' \
-            "$ident" "$base_expr" "$drl_baseline" >&2
-        status=1
-    fi
-    [ "${drl_baseline%% *}" = PLAYED ] && n_drl=$((n_drl + 1))
-    if [ "$drl_baseline" != "$d_twisted" ]; then
-        if mention "$ident" drl; then
-            n_survivors=$((n_survivors + 1)); echo "$ident|drl" >> "$HITS"
-        else
-            printf 'FAIL: %s — the DRL-text branch answers differently on the lying copy:\n  untouched: %s\n  lying:     %s\n' \
-                "$ident" "$drl_baseline" "$d_twisted" >&2
-            status=1
-        fi
-    fi
-done < "$LIST"
+    done < "$LIST"
+    printf 'leg_status=%s n_goldens=%s n_twists=%s n_checked=%s n_survivors=%s n_drl=%s n_exec_played=%s n_unit=%s n_exempt=%s n_without_sister=%s\n' \
+        "$status" "$n_goldens" "$n_twists" "$n_checked" "$n_survivors" "$n_drl" "$n_exec_played" "$n_unit" "$n_exempt" "$n_without_sister" > "$WORK/twist.counts"
+}
 
 # --- the vocabulary leg (see the script header) ---------------------------------------------------
-n_vgoldens=0
-n_v_stripped=0
-n_v_swapped=0
-n_v_rotated=0
-n_vreplays=0
-while IFS= read -r ir; do
-    dir=$(dirname "$ir")
-    ident=${dir#corpus/golden/}
-    vdir="$WORK/vocabulaire/$ident"
-    first_line=$(python3 "$VOCABULARY_TWISTER" "$ir" "$vdir") || { echo "FAIL: the vocabulary twister could not read $ir" >&2; exit 2; }
-    set -- $first_line
-    [ "$1" -eq 1 ] || continue                 # no vocabulary: nothing to probe here
-    find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
-    [ -s "$CASES" ] || continue                # no case file: not replayable
-    n_vgoldens=$((n_vgoldens + 1))
-    n_v_stripped=$((n_v_stripped + $2))
-    n_v_swapped=$((n_v_swapped + $3))
-    n_v_rotated=$((n_v_rotated + $4))
-    set --
-    while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
-    base_expr=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
-    drl_baseline=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
-    for variant in stripped swapped rotated; do
-        vir="$vdir/$variant.json"
-        while IFS= read -r case; do
+leg_vocabulary() {
+    CASES=$WORK/vocabulary.cases
+    n_vgoldens=0
+    n_v_stripped=0
+    n_v_swapped=0
+    n_v_rotated=0
+    n_vreplays=0
+    while IFS= read -r ir; do
+        dir=$(dirname "$ir")
+        ident=${dir#corpus/golden/}
+        vdir="$WORK/vocabulaire/$ident"
+        first_line=$(python3 "$VOCABULARY_TWISTER" "$ir" "$vdir") || { echo "FAIL: the vocabulary twister could not read $ir" >&2; exit 2; }
+        set -- $first_line
+        [ "$1" -eq 1 ] || continue                 # no vocabulary: nothing to probe here
+        find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
+        [ -s "$CASES" ] || continue                # no case file: not replayable
+        n_vgoldens=$((n_vgoldens + 1))
+        n_v_stripped=$((n_v_stripped + $2))
+        n_v_swapped=$((n_v_swapped + $3))
+        n_v_rotated=$((n_v_rotated + $4))
+        set --
+        while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
+        base_expr=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
+        drl_baseline=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+        for variant in stripped swapped rotated; do
+            vir="$vdir/$variant.json"
+            while IFS= read -r case; do
+                n_vreplays=$((n_vreplays + 2))
+                if ! report_line=$("$RUNNER_REF" "$vir" "$case" 2>&1); then
+                    printf 'FAIL: %s — ref answers differently on the %s copy (vocabulary leg):\n%s\n' "$case" "$variant" "$report_line" >&2
+                    status=1
+                fi
+                if ! report_line=$("$RUNNER_CLINGO" "$vir" "$case" 2>&1); then
+                    printf 'FAIL: %s — clingo answers differently on the %s copy (vocabulary leg):\n%s\n' "$case" "$variant" "$report_line" >&2
+                    status=1
+                fi
+            done < "$CASES"
             n_vreplays=$((n_vreplays + 2))
-            if ! report_line=$("$RUNNER_REF" "$vir" "$case" 2>&1); then
-                printf 'FAIL: %s — ref answers differently on the %s copy (vocabulary leg):\n%s\n' "$case" "$variant" "$report_line" >&2
+            v=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$vir" "$@" 2>/dev/null | tail -1)
+            if [ "$v" != "$base_expr" ]; then
+                printf 'FAIL: %s — Drools answers differently on the %s copy (vocabulary leg):\n  untouched: %s\n  %s: %s\n' \
+                    "$ident" "$variant" "$base_expr" "$variant" "$v" >&2
                 status=1
             fi
-            if ! report_line=$("$RUNNER_CLINGO" "$vir" "$case" 2>&1); then
-                printf 'FAIL: %s — clingo answers differently on the %s copy (vocabulary leg):\n%s\n' "$case" "$variant" "$report_line" >&2
+            dv=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$vir" "$@" 2>/dev/null | tail -1)
+            if [ "$dv" != "$drl_baseline" ]; then
+                printf 'FAIL: %s — the DRL-text branch answers differently on the %s copy (vocabulary leg):\n  untouched: %s\n  %s: %s\n' \
+                    "$ident" "$variant" "$drl_baseline" "$variant" "$dv" >&2
+                status=1
+            fi
+        done
+    done < "$LIST"
+    printf 'leg_status=%s n_vgoldens=%s n_v_stripped=%s n_v_swapped=%s n_v_rotated=%s n_vreplays=%s\n' \
+        "$status" "$n_vgoldens" "$n_v_stripped" "$n_v_swapped" "$n_v_rotated" "$n_vreplays" > "$WORK/vocabulary.counts"
+}
+
+# --- the origin leg (see the script header) --------------------------------------------------------
+leg_origin() {
+    CASES=$WORK/origin.cases
+    n_hgoldens=0
+    n_h_stripped=0
+    n_hreplays=0
+    while IFS= read -r ir; do
+        dir=$(dirname "$ir")
+        ident=${dir#corpus/golden/}
+        hir="$WORK/herkomst/$ident/gestript.json"
+        stripped=$(python3 "$HSTRIPPER" "$ir" "$hir") || { echo "FAIL: the origin stripper could not read $ir" >&2; exit 2; }
+        [ "$stripped" -gt 0 ] || continue          # no origin: nothing to probe here
+        find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
+        [ -s "$CASES" ] || continue                # no case file: not replayable
+        n_hgoldens=$((n_hgoldens + 1))
+        n_h_stripped=$((n_h_stripped + stripped))
+        while IFS= read -r case; do
+            n_hreplays=$((n_hreplays + 2))
+            if ! report_line=$("$RUNNER_REF" "$hir" "$case" 2>&1); then
+                printf 'FAIL: %s — ref answers differently on the stripped copy (origin leg):\n%s\n' "$case" "$report_line" >&2
+                status=1
+            fi
+            if ! report_line=$("$RUNNER_CLINGO" "$hir" "$case" 2>&1); then
+                printf 'FAIL: %s — clingo answers differently on the stripped copy (origin leg):\n%s\n' "$case" "$report_line" >&2
                 status=1
             fi
         done < "$CASES"
-        n_vreplays=$((n_vreplays + 2))
-        v=$(java -jar "$JAR" "$vir" "$@" 2>/dev/null | tail -1)
-        if [ "$v" != "$base_expr" ]; then
-            printf 'FAIL: %s — Drools answers differently on the %s copy (vocabulary leg):\n  untouched: %s\n  %s: %s\n' \
-                "$ident" "$variant" "$base_expr" "$variant" "$v" >&2
+        set --
+        while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
+        n_hreplays=$((n_hreplays + 2))
+        base_expr=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
+        h=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$hir" "$@" 2>/dev/null | tail -1)
+        if [ "$h" != "$base_expr" ]; then
+            printf 'FAIL: %s — Drools answers differently on the stripped copy (origin leg):\n  untouched: %s\n  stripped:  %s\n' \
+                "$ident" "$base_expr" "$h" >&2
             status=1
         fi
-        dv=$(java -jar "$JAR" --drl "$vir" "$@" 2>/dev/null | tail -1)
-        if [ "$dv" != "$drl_baseline" ]; then
-            printf 'FAIL: %s — the DRL-text branch answers differently on the %s copy (vocabulary leg):\n  untouched: %s\n  %s: %s\n' \
-                "$ident" "$variant" "$drl_baseline" "$variant" "$dv" >&2
+        drl_baseline=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+        dh=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$hir" "$@" 2>/dev/null | tail -1)
+        if [ "$dh" != "$drl_baseline" ]; then
+            printf 'FAIL: %s — the DRL-text branch answers differently on the stripped copy (origin leg):\n  untouched: %s\n  stripped:  %s\n' \
+                "$ident" "$drl_baseline" "$dh" >&2
             status=1
         fi
-    done
-done < "$LIST"
+    done < "$LIST"
+    printf 'leg_status=%s n_hgoldens=%s n_h_stripped=%s n_hreplays=%s\n' \
+        "$status" "$n_hgoldens" "$n_h_stripped" "$n_hreplays" > "$WORK/origin.counts"
+}
+
+# --- the name leg (see the script header) ----------------------------------------------------------
+leg_name() {
+    CASES=$WORK/name.cases
+    n_ngoldens=0
+    n_n_stripped=0
+    n_a_stripped=0
+    n_nreplays=0
+    while IFS= read -r ir; do
+        dir=$(dirname "$ir")
+        ident=${dir#corpus/golden/}
+        nir="$WORK/naam/$ident/gestript.json"
+        counts=$(python3 "$NSTRIPPER" "$ir" "$nir") || { echo "FAIL: the name stripper could not read $ir" >&2; exit 2; }
+        stripped=${counts% *}
+        annotations=${counts#* }
+        [ $((stripped + annotations)) -gt 0 ] || continue   # no named or annotated default: nothing to probe here
+        find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
+        [ -s "$CASES" ] || continue                # no case file: not replayable
+        n_ngoldens=$((n_ngoldens + 1))
+        n_n_stripped=$((n_n_stripped + stripped))
+        n_a_stripped=$((n_a_stripped + annotations))
+        while IFS= read -r case; do
+            n_nreplays=$((n_nreplays + 2))
+            if ! report_line=$("$RUNNER_REF" "$nir" "$case" 2>&1); then
+                printf 'FAIL: %s — ref answers differently on the stripped copy (name leg):\n%s\n' "$case" "$report_line" >&2
+                status=1
+            fi
+            if ! report_line=$("$RUNNER_CLINGO" "$nir" "$case" 2>&1); then
+                printf 'FAIL: %s — clingo answers differently on the stripped copy (name leg):\n%s\n' "$case" "$report_line" >&2
+                status=1
+            fi
+        done < "$CASES"
+        set --
+        while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
+        n_nreplays=$((n_nreplays + 2))
+        base_expr=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
+        nm=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$nir" "$@" 2>/dev/null | tail -1)
+        if [ "$nm" != "$base_expr" ]; then
+            printf 'FAIL: %s — Drools answers differently on the stripped copy (name leg):\n  untouched: %s\n  stripped:  %s\n' \
+                "$ident" "$base_expr" "$nm" >&2
+            status=1
+        fi
+        drl_baseline=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+        dn=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$nir" "$@" 2>/dev/null | tail -1)
+        if [ "$dn" != "$drl_baseline" ]; then
+            printf 'FAIL: %s — the DRL-text branch answers differently on the stripped copy (name leg):\n  untouched: %s\n  stripped:  %s\n' \
+                "$ident" "$drl_baseline" "$dn" >&2
+            status=1
+        fi
+    done < "$LIST"
+    printf 'leg_status=%s n_ngoldens=%s n_n_stripped=%s n_a_stripped=%s n_nreplays=%s\n' \
+        "$status" "$n_ngoldens" "$n_n_stripped" "$n_a_stripped" "$n_nreplays" > "$WORK/name.counts"
+}
+
+# --- the four legs, side by side --------------------------------------------------------------------
+# The unit, vocabulary, origin and name legs share nothing but the list of goldens and the jar, so they run
+# as four processes at once, each one golden after the other, with its report into $WORK/<leg>.log, its exit
+# status into $WORK/<leg>.rc and its counts into $WORK/<leg>.counts. The gate then reads them in the order
+# of the legs, each report and the checks after it in the place they have, so the report and the first
+# failure are those of the four legs one after the other. Four legs are four processes on any machine; a
+# replay JVM with PARALLEL_JVM_FLAGS uses 1.5 cores (scripts/lib/parallel.sh), so the four keep about 6
+# cores busy.
+echo "  legs: 4 processes (unit, vocabulary, origin, name)"
+for leg in twist vocabulary origin name; do
+    { ( "leg_$leg" ) > "$WORK/$leg.log" 2>&1; echo $? > "$WORK/$leg.rc"; } &
+done
+wait
+
+# The report of a leg, in its place. A leg that stopped early (a twister or a stripper could not read a
+# golden: its FAIL line, then status 2) stops the gate there, as it did; a leg whose process ended in any
+# other way without its counts fails the gate by the name of the leg.
+leg_report() {
+    cat "$WORK/$1.log" >&2
+    leg_rc=$(cat "$WORK/$1.rc" 2>/dev/null)
+    if [ "$leg_rc" = 2 ]; then
+        exit 2
+    fi
+    if [ "$leg_rc" != 0 ] || [ ! -f "$WORK/$1.counts" ]; then
+        echo "FAIL: the $1 leg ended with status ${leg_rc:-none} and without its counts — its process crashed or was killed" >&2
+        exit 1
+    fi
+    . "$WORK/$1.counts"
+    [ "$leg_status" -eq 0 ] || status=1
+}
+leg_report twist
+leg_report vocabulary
 if [ "$n_vgoldens" -eq 0 ]; then
     echo 'FAIL: no golden declares a vocabulary — the vocabulary leg probed nothing (an empty set is never green)' >&2
     exit 1
@@ -1078,49 +1226,7 @@ if [ "$n_v_rotated" -lt "$EXPECTED_MIN_VOCABULARY_ROTATED" ]; then
     exit 1
 fi
 
-# --- the origin leg (see the script header) --------------------------------------------------------
-n_hgoldens=0
-n_h_stripped=0
-n_hreplays=0
-while IFS= read -r ir; do
-    dir=$(dirname "$ir")
-    ident=${dir#corpus/golden/}
-    hir="$WORK/herkomst/$ident/gestript.json"
-    stripped=$(python3 "$HSTRIPPER" "$ir" "$hir") || { echo "FAIL: the origin stripper could not read $ir" >&2; exit 2; }
-    [ "$stripped" -gt 0 ] || continue          # no origin: nothing to probe here
-    find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
-    [ -s "$CASES" ] || continue                # no case file: not replayable
-    n_hgoldens=$((n_hgoldens + 1))
-    n_h_stripped=$((n_h_stripped + stripped))
-    while IFS= read -r case; do
-        n_hreplays=$((n_hreplays + 2))
-        if ! report_line=$("$RUNNER_REF" "$hir" "$case" 2>&1); then
-            printf 'FAIL: %s — ref answers differently on the stripped copy (origin leg):\n%s\n' "$case" "$report_line" >&2
-            status=1
-        fi
-        if ! report_line=$("$RUNNER_CLINGO" "$hir" "$case" 2>&1); then
-            printf 'FAIL: %s — clingo answers differently on the stripped copy (origin leg):\n%s\n' "$case" "$report_line" >&2
-            status=1
-        fi
-    done < "$CASES"
-    set --
-    while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
-    n_hreplays=$((n_hreplays + 2))
-    base_expr=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
-    h=$(java -jar "$JAR" "$hir" "$@" 2>/dev/null | tail -1)
-    if [ "$h" != "$base_expr" ]; then
-        printf 'FAIL: %s — Drools answers differently on the stripped copy (origin leg):\n  untouched: %s\n  stripped:  %s\n' \
-            "$ident" "$base_expr" "$h" >&2
-        status=1
-    fi
-    drl_baseline=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
-    dh=$(java -jar "$JAR" --drl "$hir" "$@" 2>/dev/null | tail -1)
-    if [ "$dh" != "$drl_baseline" ]; then
-        printf 'FAIL: %s — the DRL-text branch answers differently on the stripped copy (origin leg):\n  untouched: %s\n  stripped:  %s\n' \
-            "$ident" "$drl_baseline" "$dh" >&2
-        status=1
-    fi
-done < "$LIST"
+leg_report origin
 if [ "$n_hgoldens" -eq 0 ]; then
     echo 'FAIL: no golden carries an origin — the origin leg probed nothing (an empty set is never green)' >&2
     exit 1
@@ -1134,53 +1240,7 @@ if [ "$n_h_stripped" -lt "$EXPECTED_MIN_ORIGIN_STRIPPED" ]; then
     exit 1
 fi
 
-# --- the name leg (see the script header) ----------------------------------------------------------
-n_ngoldens=0
-n_n_stripped=0
-n_a_stripped=0
-n_nreplays=0
-while IFS= read -r ir; do
-    dir=$(dirname "$ir")
-    ident=${dir#corpus/golden/}
-    nir="$WORK/naam/$ident/gestript.json"
-    counts=$(python3 "$NSTRIPPER" "$ir" "$nir") || { echo "FAIL: the name stripper could not read $ir" >&2; exit 2; }
-    stripped=${counts% *}
-    annotations=${counts#* }
-    [ $((stripped + annotations)) -gt 0 ] || continue   # no named or annotated default: nothing to probe here
-    find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
-    [ -s "$CASES" ] || continue                # no case file: not replayable
-    n_ngoldens=$((n_ngoldens + 1))
-    n_n_stripped=$((n_n_stripped + stripped))
-    n_a_stripped=$((n_a_stripped + annotations))
-    while IFS= read -r case; do
-        n_nreplays=$((n_nreplays + 2))
-        if ! report_line=$("$RUNNER_REF" "$nir" "$case" 2>&1); then
-            printf 'FAIL: %s — ref answers differently on the stripped copy (name leg):\n%s\n' "$case" "$report_line" >&2
-            status=1
-        fi
-        if ! report_line=$("$RUNNER_CLINGO" "$nir" "$case" 2>&1); then
-            printf 'FAIL: %s — clingo answers differently on the stripped copy (name leg):\n%s\n' "$case" "$report_line" >&2
-            status=1
-        fi
-    done < "$CASES"
-    set --
-    while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
-    n_nreplays=$((n_nreplays + 2))
-    base_expr=$(java -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
-    nm=$(java -jar "$JAR" "$nir" "$@" 2>/dev/null | tail -1)
-    if [ "$nm" != "$base_expr" ]; then
-        printf 'FAIL: %s — Drools answers differently on the stripped copy (name leg):\n  untouched: %s\n  stripped:  %s\n' \
-            "$ident" "$base_expr" "$nm" >&2
-        status=1
-    fi
-    drl_baseline=$(java -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
-    dn=$(java -jar "$JAR" --drl "$nir" "$@" 2>/dev/null | tail -1)
-    if [ "$dn" != "$drl_baseline" ]; then
-        printf 'FAIL: %s — the DRL-text branch answers differently on the stripped copy (name leg):\n  untouched: %s\n  stripped:  %s\n' \
-            "$ident" "$drl_baseline" "$dn" >&2
-        status=1
-    fi
-done < "$LIST"
+leg_report name
 if [ "$n_ngoldens" -eq 0 ]; then
     echo 'FAIL: no golden carries a named default — the name leg probed nothing (an empty set is never green)' >&2
     exit 1
