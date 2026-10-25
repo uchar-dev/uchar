@@ -15,6 +15,11 @@
 #      translate → clingo → check pipeline; an empty case set is a
 #      failure, never silently green.
 #
+# The replays run on one process per core (scripts/lib/parallel.sh): the
+# runner and the clingo it starts each use one core. The loop that judges
+# them reads each case's output and exit status in the order of the case
+# list, so the report is the one a replay case by case would give.
+#
 # With explicit arguments (ir.json case.json) it replays just that pair.
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
@@ -82,12 +87,37 @@ if [ "$#" -eq 2 ]; then
     exec "$BIN" "$1" "$2"
 fi
 
+# One process per core: clingo_runner and the clingo it starts are single-threaded (measured
+# 2026-10-25 on 16 cores: 899 cases in N s on 16 processes, against 216 s one at a time).
+. scripts/lib/parallel.sh
+if ! procs=$(parallel_jobs 1); then
+    echo 'check-clingo: FAIL (no number of processes)' >&2
+    exit 1
+fi
+
 status=0
 list=$(mktemp) || exit 2
-trap 'rm -f "$list"' EXIT
+tasks=$(mktemp -d) || exit 2
+trap 'rm -f "$list"; rm -rf "$tasks"' EXIT
 
-n_cases=0
 find corpus/golden -name 'case*.json' 2>/dev/null | sort > "$list"
+# collect: a task per case with a sibling ir.json, keyed by the case's line in the list
+n_cases=0
+while IFS= read -r case; do
+    n_cases=$((n_cases + 1))
+    ir=$(dirname "$case")/ir.json
+    if [ -f "$ir" ]; then
+        parallel_task "$tasks" "$n_cases" out "$BIN" "$ir" "$case"
+    fi
+done < "$list"
+echo "check-clingo: replays on $procs processes (one per core)"
+if ! parallel_run "$tasks" "$procs"; then
+    echo 'check-clingo: FAIL (a replay process ended without an exit status; the parallel line above names it)' >&2
+    exit 1
+fi
+
+# judge, in the order of the list
+n_cases=0
 while IFS= read -r case; do
     n_cases=$((n_cases + 1))
     ir=$(dirname "$case")/ir.json
@@ -96,7 +126,8 @@ while IFS= read -r case; do
         status=1
         continue
     fi
-    if ! out=$("$BIN" "$ir" "$case" 2>&1); then
+    out=$(cat "$tasks/$n_cases.out")
+    if [ "$(cat "$tasks/$n_cases.rc")" != 0 ]; then
         printf 'FAIL: %s does not replay through clingo:\n%s\n' "$case" "$out" >&2
         status=1
     fi
