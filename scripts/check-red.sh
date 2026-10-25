@@ -563,12 +563,10 @@ if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
     # rebuilt when it is absent or older than any path it is built from, and exactly one shaded jar
     # is demanded. The lens-proven stale-jar flank — a build-only-when-absent jar can silently
     # predate the source under review — stays closed, because the test is "older than the source",
-    # not "absent". From 2026-08-30 until then the leg rebuilt the jar unconditionally with `mvn
-    # package`, the backend's JUnit suite included; that suite is gate 12's obligation (it runs it
-    # with `mvn -o test` on the same target/), so it deliberately no longer runs here. legfail is
-    # leg-LOCAL so the leg always leaves a verdict of its own, regardless of earlier red-case failures
-    # elsewhere in the gate (lens finding: keying on the global status let the leg evaporate without
-    # one).
+    # not "absent". The backend's JUnit suite does not run here: it is gate 12's obligation, which
+    # runs it with `mvn -o test` on the same target/. legfail is leg-LOCAL so the leg always leaves
+    # a verdict of its own, regardless of earlier red-case failures elsewhere in the gate (lens
+    # finding: keying on the global status let the leg evaporate without one).
     legfail=0
     . scripts/lib/drools-jar.sh
     if ! command -v mvn >/dev/null 2>&1; then

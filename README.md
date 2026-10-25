@@ -90,7 +90,7 @@ IR. So: reference interpreter, then Clingo, then the extra source languages.
 | `ref/` | The reference interpreter (OCaml): the executable definition of the semantics |
 | `backends/` | `clingo/` (translation to ASP-Core-2) and `drools/` (an IR loader plus two transpiler branches — DRL text for fast development and testing, the executable model for compiling services — over a shared runtime) |
 | `frontends/` | `regelspraak/` (Java parser/resolver, emits the IR), `catala/` (a Catala plugin), `flogic/` (OCaml, a second independent source language) |
-| `scripts/` | The gate set: seventeen checks, run locally before every landing (`CLAUDE.md`, Gate set) |
+| `scripts/` | The gate set: seventeen checks, run locally before every landing with `make gates` (the root `Makefile`: first the three builds, then the gates in parallel; `CLAUDE.md`, Gate set) |
 | `toka/` | Parity fixtures on the TOKA casus of the Belastingdienst (third-party material), used to prove the RegelSpraak frontend byte-identical to the original toolchain (gate 11). Not covered by the licenses below; provenance and status under License and in `toka/README.md` |
 
 ## Naming

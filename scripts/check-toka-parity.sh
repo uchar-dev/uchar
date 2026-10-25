@@ -281,11 +281,9 @@ CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 # (scripts/lib/drools-jar.sh, 2026-09-23): rebuilt when it is absent or older than any path it is
 # built from, and exactly one shaded jar is demanded. The lens-proven stale-jar flank — a
 # build-only-when-absent jar can silently predate the source under review — stays closed, because
-# the test is "older than the source", not "absent". From 2026-08-30 until then this step rebuilt
-# the jar unconditionally with `mvn package`, the backend's JUnit suite included; that suite is gate
-# 12's obligation (it runs it with `mvn -o test` on the same target/), so it deliberately no
-# longer runs here. mvn is a hard requirement, exactly as it is of gate 12: only mvn can rebuild a
-# stale jar.
+# the test is "older than the source", not "absent". The backend's JUnit suite does not run here:
+# it is gate 12's obligation, which runs it with `mvn -o test` on the same target/. mvn is a hard
+# requirement, exactly as it is of gate 12: only mvn can rebuild a stale jar.
 command -v mvn >/dev/null 2>&1 || fail "mvn not found — the Drools leg takes the shaded jar fresh or rebuilt, and only mvn can rebuild a stale one (stale-jar guard)"
 . scripts/lib/drools-jar.sh || fail "could not read scripts/lib/drools-jar.sh"
 DJAR=$(ensure_drools_jar) || fail "no fresh Drools shaded jar (the drools-jar line above says why)"
