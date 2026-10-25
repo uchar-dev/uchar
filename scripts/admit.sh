@@ -117,15 +117,11 @@ for f in source.rgs source.catala_en source.flogic scenario.rgs NOTE.md; do
     if [ -f "$CAND/$f" ]; then cp "$CAND/$f" "$DEST/" || { rm -rf "$DEST"; fail "copy failed"; }; fi
 done
 for case in $CASES; do cp "$case" "$DEST/" || { rm -rf "$DEST"; fail "copy failed"; }; done
-for gate in scripts/check-*.sh; do
-    # each gate runs under its own interpreter line: a POSIX `sh` (dash on
-    # Linux, bash 3.2 in POSIX mode on macOS) cannot parse the five bash gates
-    # (process substitution, arrays) and turns them red
-    if ! "$gate" >/dev/null 2>&1; then
-        rm -rf "$DEST"
-        fail "gate $gate turned red after the copy — admission rolled back"
-    fi
-done
+# the full set runs as everywhere else, through make gates: the build first, then the gates side by side
+if ! make gates >/dev/null 2>&1; then
+    rm -rf "$DEST"
+    fail "make gates turned red after the copy — admission rolled back (the newest out/gates/<run>/summary.txt names the gate)"
+fi
 
 n=$(echo "$CASES" | wc -l | tr -d ' ')
 echo "admit: ADMITTED $DEST ($n case(s); verifier-clean, ref = clingo, no-op refuted, gates green)"

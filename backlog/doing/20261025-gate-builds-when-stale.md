@@ -281,9 +281,8 @@ DRL-sweep 221 s). Logs: `werk/gates-design/builds-when-stale/logs/make-gates-{1,
 - De tijden hierboven zijn onder load van andere sessies gemeten; de vergelijking vóór/na op een rustige machine doet
   de hoofdsessie bij de landing. Het kritieke pad is gate 12 (suite plus twee sweeps); de kaarten
   `drools-suite-forks` en `parallel-gate-replays` korten dat in.
-- `scripts/admit.sh` draait in stap 6 de set als een lus over `scripts/check-*.sh` (ook de drie hulpscripts
-  `check-*-codes.sh`), niet met `make gates`: een tweede manier om de set te draaien, van vóór deze kaart en niet in de
-  review; de fixronde liet die staan.
+- `scripts/admit.sh` draaide in stap 6 de set als een lus over `scripts/check-*.sh`: een tweede manier om de set te
+  draaien. De hoofdsessie liet stap 6 `make gates` draaien (commit na `d60ebfb6`).
 - `make -n gates` draait de sub-makes (zij bevatten `$(MAKE)`) en de samenvattingslus schrijft dan naar een map die
   niet bestaat: cosmetisch, geen gevolg voor `make gates`.
 - Acceptatie (g) (de toolchain met de pin op de kaarttip) en het weghalen van `werk/gates.sh` en
