@@ -333,7 +333,16 @@ one analysis (card `drl-teksttak-op-truth-maintenance`, 2026-10-14): the same ru
 same names, the same facts, the same truth maintenance and the same driver, so every entry of
 a session treats it as the exec-model branch, and what this README says of that branch holds
 for it. Every RegelSpraak comparison or computation is a Java function of the text, with the
-source sentence above it; the structural constraints stay DRL. The predicates of the day kinds
+source sentence above it; the structural constraints stay DRL. A function stands only where it
+tests or computes something (card `drl-no-passthrough-functions`): a test that asks the verdict
+of a composite condition, that it holds or holds without a fault, and the matrix of a quantifier
+fold carry the composite's statements themselves; a test that asks whether the condition faults
+or deposits keeps the composite's function, which its `try` calls. A composite over one member
+whose verdict is that member's (ALLE, DE, TEN_MINSTE 1, PRECIES 1, as
+`ComputeHelpers.established` and `endVerdict` give it) is that member, a composite over no
+member is its verdict where it stands, and a default without a condition has no test and no
+`eval`. The sentence of a composite that goes into another function stays there as a comment
+line where it differs from that function's own. The predicates of the day kinds
 are globals of the text (`Build.dayKindGlobals()`). It refuses three kinds of its own,
 after the label `drl:` (`DrlRendering.Refusal`): a member whose name Drools reads as
 something else where a pattern spells it (a word of DRL or MVEL such as `in`, or a variable of

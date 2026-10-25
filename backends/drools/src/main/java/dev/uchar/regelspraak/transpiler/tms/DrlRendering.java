@@ -57,6 +57,17 @@ import java.util.TreeSet;
  *       statements of its own, a composite, a {@code Let} and its binder, a condition without its fault, the
  *       evaluation of a fold and of a quantifier fold, is a function of its own, which takes the parameters of the
  *       function it stands in.</li>
+ *   <li>A function stands only where it tests or computes something (card drl-no-passthrough-functions). A test that
+ *       asks the verdict of a composite, that it holds or holds without a fault, and the verdict of the matrix of a
+ *       quantifier fold carry the composite's statements themselves, within the {@code try} of a test without a fault;
+ *       a test that asks whether the condition faults or deposits, whatever its verdict, keeps the composite's
+ *       function, which its {@code try} calls, as the functions of the fault and of the deposit of a consequence do. A
+ *       composite over one member whose verdict is that member's, as {@code ComputeHelpers.established} and
+ *       {@code endVerdict} give it (ALLE, DE, TEN_MINSTE 1, PRECIES 1), is that member; a composite over no member is
+ *       its verdict, {@code ComputeHelpers.endVerdict} over no member, where it stands; and a test whose condition is
+ *       such a composite with the verdict true, a default without a condition, is no test: the rule has no
+ *       {@code eval} for it. The sentence of a composite that goes into another function stays there as a comment
+ *       line, above the member it is or above the body it gives, where it differs from that function's own.</li>
  *   <li>The constraints that decide which fact a pattern matches stay DRL constraints: the key of a fact, a null
  *       test, the rank of a control fact and an identity join, so that Drools indexes them. A test of a class goes
  *       through a route, since the text imports no bean class. A member of a bean stands as the name Drools reads
@@ -400,6 +411,14 @@ final class DrlRendering {
          *  ({@link TmsTranspiler.DrlPiece.DrlFunction}): noted where they are made, never read back off the text. */
         private final List<String> functionNames = new ArrayList<>();
         private final List<Integer> commentLengths = new ArrayList<>();
+        /** The sentences of the composites that went into another function without one of their own, in the order
+         *  they were met: a composite over one member that is that member, one over no member that is its verdict, and
+         *  one whose statements a test carries. Each goes as a comment line into the body of the function it went
+         *  into ({@link #sentences}), so that no sentence of the source is lost with its function. */
+        private final List<String> absorbed = new ArrayList<>();
+        /** Per place of {@link #functions} the length of {@link #absorbed} when it was reserved: the sentences after it
+         *  went into that function or into one written inside it. */
+        private final List<Integer> absorbedMarks = new ArrayList<>();
         /** The variables the patterns of this rule bind to their objects, as far as they are in scope. */
         private Set<String> patternVariables = new HashSet<>();
 
@@ -410,8 +429,12 @@ final class DrlRendering {
 
         void renderRule() {
             List<String> when = new ArrayList<>();
-            for (LhsItem item : plan.leftSide()) when.add(item(item));
+            for (LhsItem item : plan.leftSide())
+                if (!(item instanceof TestItem t && holdsWhatever(t))) when.add(item(item));
             String then = consequence(plan.consequence());
+            if (!absorbed.isEmpty())
+                throw new IllegalStateException("de zinnen " + absorbed + " van " + plan.name()
+                        + " staan in geen functie");
             int start = rules.length();
             List<TmsTranspiler.DrlPiece.DrlFunction> placed = new ArrayList<>();
             for (int place = 0; place < functions.size(); place++) {
@@ -441,6 +464,7 @@ final class DrlRendering {
             functions.add(null);
             functionNames.add(null);
             commentLengths.add(null);
+            absorbedMarks.add(absorbed.size());
             return functions.size() - 1;
         }
 
@@ -455,13 +479,34 @@ final class DrlRendering {
         }
 
         /** Writes the function at {@code place}: the RegelSpraak sentence {@code source} as a comment, where the node has
-         *  one, its head and its body. */
+         *  one, its head and its body; above the body the sentences of the composites that went into it and that no
+         *  statement of the body placed ({@link #sentences}). */
         private void fill(int place, String source, String head, String body) {
             StringBuilder f = new StringBuilder();
             if (source != null) f.append("// ").append(Namen.commentSafe(source)).append('\n');
             commentLengths.set(place, f.length());
-            f.append("function ").append(head).append(" {\n").append(body).append("}\n");
+            f.append("function ").append(head).append(" {\n")
+                    .append(sentences(absorbedMarks.get(place), "    ", source)).append(body).append("}\n");
             functions.set(place, f.toString());
+        }
+
+        /** The comment lines, indented by {@code indent}, of the sentences {@link #absorbed} since {@code mark}, which
+         *  leave it: each that differs from {@code host}, the sentence of the function or composite they went into, and
+         *  from the line before it. */
+        private String sentences(int mark, String indent, String host) {
+            List<String> mine = absorbed.subList(mark, absorbed.size());
+            StringBuilder out = new StringBuilder();
+            String previous = host;
+            for (String sentence : mine) {
+                if (sentence.equals(host) || sentence.equals(previous)) continue;
+                // a comment in a body reaches the Java compiler, which reads a backslash-u as a character escape even
+                // there, a line break among them; above a function the comment is DRL's and stays as it is
+                out.append(indent).append("// ").append(Namen.commentSafe(sentence).replace("\\u", "\\ u"))
+                        .append('\n');
+                previous = sentence;
+            }
+            mine.clear();
+            return out.toString();
         }
 
         /** The variable of slot {@code slot}: the one a binding of the left-hand side binds. */
@@ -674,24 +719,57 @@ final class DrlRendering {
             return name + "()";
         }
 
-        /** The test of the rule: a function that asks of the condition what its role says, called in an {@code eval}. */
+        /**
+         * The test of the rule: a function that asks of the condition what its role says, called in an
+         * {@code eval}. Where it asks the condition's verdict, that it holds or holds without a fault, it returns that
+         * verdict, and so carries the statements of a composite itself ({@link #returning}); where it asks whether the
+         * condition faults or deposits, whatever its verdict, its {@code try} evaluates the condition and calls the
+         * function of a composite, as the functions of the fault and of the deposit of a consequence do.
+         */
         private String test(TestItem t) {
             int place = reserveer();
             String name = name("toets", place);
             boolean deposit = t.role() == TestItem.Role.DEPOSIT;
             Context c = context(t.slots(), deposit ? t.depositFlag() : -1, route(Route.FRESH_DEPOSIT_FLAG) + "()", t.test());
-            String b = bool(t.test(), c);
             String caught = "        " + route(Route.CAUGHT) + "(e);\n";
             String body = switch (t.role()) {
-                case CONDITION, VORM -> "    return " + b + ";\n";
-                case WITHOUT_FAULT -> tryCatch("        return " + b + ";\n", caught + "        return false;\n");
-                case FAULT -> tryCatch("        boolean uitkomst = " + b + ";\n        return false;\n",
+                case CONDITION, VORM -> returning(t.test(), c, "    ");
+                case WITHOUT_FAULT -> tryCatch(returning(t.test(), c, "        "), caught + "        return false;\n");
+                case FAULT -> tryCatch("        boolean uitkomst = " + bool(t.test(), c) + ";\n        return false;\n",
                         caught + "        return true;\n");
-                case DEPOSIT -> tryCatch("        boolean uitkomst = " + b + ";\n", caught) + "    return "
-                        + route(Route.REPORTED) + "(" + DEPOSIT_FLAG + ");\n";
+                case DEPOSIT -> tryCatch("        boolean uitkomst = " + bool(t.test(), c) + ";\n", caught)
+                        + "    return " + route(Route.REPORTED) + "(" + DEPOSIT_FLAG + ");\n";
             };
             fill(place, t.test().source(), "boolean " + name + "(" + c.declaration() + ")", body);
             return "eval( " + name + "(" + c.arguments() + ") )";
+        }
+
+        /** Whether test {@code t} holds whatever the rule binds, so that the rule has no test for it: it asks the
+         *  verdict of a composite over no member, a default without a condition, and that verdict is true. */
+        private static boolean holdsWhatever(TestItem t) {
+            return (t.role() == TestItem.Role.CONDITION || t.role() == TestItem.Role.VORM
+                    || t.role() == TestItem.Role.WITHOUT_FAULT)
+                    && unwrapped(t.test()) instanceof Term.Compound s && s.members().isEmpty()
+                    && ComputeHelpers.endVerdict(s.quantifier(), s.threshold(), 0, 0);
+        }
+
+        /** Condition {@code t} with each composite of one member whose verdict is that member's replaced by that
+         *  member, outside in. */
+        private static Term unwrapped(Term t) {
+            while (t instanceof Term.Compound s && s.members().size() == 1 && givesMemberVerdict(s))
+                t = s.members().get(0);
+            return t;
+        }
+
+        /** Whether the verdict of composite {@code s} over one member is that member's: no stop trigger settles it
+         *  before the member is read, and the end verdict is false where the member does not hold and true where it
+         *  does. Asked of {@link ComputeHelpers#established} and {@link ComputeHelpers#endVerdict}, which the
+         *  evaluation of the composite calls, so that it holds under ALLE, DE, TEN_MINSTE 1 and PRECIES 1, and under no
+         *  other quantifier and threshold (GEEN over one member is its negation, TEN_HOOGSTE 1 holds unread). */
+        private static boolean givesMemberVerdict(Term.Compound s) {
+            return ComputeHelpers.established(s.quantifier(), s.threshold(), 0, 0, 1) == null
+                    && !ComputeHelpers.endVerdict(s.quantifier(), s.threshold(), 0, 1)
+                    && ComputeHelpers.endVerdict(s.quantifier(), s.threshold(), 1, 1);
         }
 
         /** A try with {@code tryBody} as its body and {@code catchBody} as the body of its catch of a
@@ -814,24 +892,65 @@ final class DrlRendering {
             return String.join(", ", a);
         }
 
-        /** A composite: its members read in order, the stop triggers of RUNTIME-SEMANTICS ch. 5.10 tested before
-         *  each, the quantifier's verdict where none stops it. */
+        /** The statements, indented by {@code indent}, that return the verdict of condition {@code t} in the function
+         *  that asks it: those of its composite, where it is one over a member or more once the composites of one
+         *  member that are their member are that member ({@link #member}); else the return of the condition. */
+        private String returning(Term t, Context c, String indent) {
+            Term m = member(t);
+            if (m instanceof Term.Compound s && !s.members().isEmpty()) {
+                if (s.source() != null) absorbed.add(s.source());
+                return compoundBody(s, c, indent);
+            }
+            return indent + "return " + bool(m, c) + ";\n";
+        }
+
+        /** A composite: the function of its statements ({@link #compoundBody}), called where it stands. A composite
+         *  over one member whose verdict is that member's is that member ({@link #member}), and one over no member is
+         *  its verdict, a constant: neither has a function, and its sentence goes into the function it stands in. */
         private String compound(Term.Compound s, Context c) {
+            Term m = member(s);
+            if (m != s) return bool(m, c);
+            if (s.members().isEmpty()) {
+                if (s.source() != null) absorbed.add(s.source());
+                return route(Route.END_VERDICT) + "(" + enumlabel(s.quantifier()) + ", " + s.threshold() + ", 0, 0)";
+            }
             int place = reserveer();
             String name = name("samengesteld", place);
+            fill(place, s.source(), "boolean " + name + "(" + c.declaration() + ")", compoundBody(s, c, "    "));
+            return name + "(" + c.pass() + ")";
+        }
+
+        /** The statements of composite {@code s} over a member or more, indented by {@code indent}: its members read in
+         *  order, the stop triggers of RUNTIME-SEMANTICS ch. 5.10 tested before each, the quantifier's verdict where
+         *  none stops it, each returned. The sentence of a composite that went into a member stands above the member's
+         *  test ({@link #sentences}). */
+        private String compoundBody(Term.Compound s, Context c, String indent) {
             String kw = enumlabel(s.quantifier());
             int n = s.members().size();
-            StringBuilder b = new StringBuilder("    int raak = 0;\n    Boolean vast;\n");
+            StringBuilder b = new StringBuilder(indent + "int raak = 0;\n" + indent + "Boolean vast;\n");
             for (int i = 0; i < n; i++) {
-                b.append("    vast = ").append(route(Route.ESTABLISHED)).append("(").append(kw).append(", ")
+                b.append(indent).append("vast = ").append(route(Route.ESTABLISHED)).append("(").append(kw).append(", ")
                         .append(s.threshold()).append(", raak, ").append(i).append(", ").append(n - i).append(");\n");
-                b.append("    if (vast != null) {\n        return vast;\n    }\n");
-                b.append("    if (").append(bool(s.members().get(i), c)).append(") {\n        raak++;\n    }\n");
+                b.append(indent).append("if (vast != null) {\n").append(indent).append("    return vast;\n")
+                        .append(indent).append("}\n");
+                int mark = absorbed.size();
+                String member = bool(s.members().get(i), c);
+                b.append(sentences(mark, indent, s.source()));
+                b.append(indent).append("if (").append(member).append(") {\n").append(indent).append("    raak++;\n")
+                        .append(indent).append("}\n");
             }
-            b.append("    return ").append(route(Route.END_VERDICT)).append("(").append(kw).append(", ")
+            b.append(indent).append("return ").append(route(Route.END_VERDICT)).append("(").append(kw).append(", ")
                     .append(s.threshold()).append(", raak, ").append(n).append(");\n");
-            fill(place, s.source(), "boolean " + name + "(" + c.declaration() + ")", b.toString());
-            return name + "(" + c.pass() + ")";
+            return b.toString();
+        }
+
+        /** Condition {@code t} with each composite of one member whose verdict is that member's replaced by that
+         *  member ({@link #unwrapped}); the sentences of those composites are {@link #absorbed}. */
+        private Term member(Term t) {
+            Term m = unwrapped(t);
+            for (Term u = t; u != m; u = ((Term.Compound) u).members().get(0))
+                if (u.source() != null) absorbed.add(u.source());
+            return m;
         }
 
         /** A condition where its evaluation answers, and not holding where it faults. */
@@ -904,11 +1023,12 @@ final class DrlRendering {
             Context inside = c.withCell(cell);
             inside.binders.put(l.slot(), binder + "(" + inside.pass() + ")");
             String value = value(l.value(), c).text();
-            String body = value(l.body(), inside).text();
+            // the binder before the body, so that the sentences the value's terms leave go into the binder
             fill(binderPlace, l.value().source(), "Object " + binder + "(" + inside.declaration() + ")",
                     "    if (!" + route(Route.BINDER_CELL_FILLED) + "(" + cell + ")) {\n        "
                             + route(Route.FILL_BINDER_CELL) + "(" + cell + ", " + value + ");\n    }\n    return "
                             + route(Route.BINDER_VALUE) + "(" + cell + ");\n");
+            String body = value(l.body(), inside).text();
             fill(place, l.source(), "Object " + name + "(" + c.declaration() + ")",
                     "    Object " + cell + " = " + route(Route.BINDER_CELL) + "();\n    try {\n        return " + body
                             + ";\n    } catch (" + typeName(EmptyBarrier.class) + " barriere) {\n        return "
@@ -1111,7 +1231,7 @@ final class DrlRendering {
                     String name = name("matrix", place);
                     Context c = context(x.slots(), -1, null, o.matrix());
                     fill(place, o.matrix().source(), "boolean " + name + "(" + c.declaration() + ")",
-                            "    return " + bool(o.matrix(), c) + ";\n");
+                            returning(o.matrix(), c, "    "));
                     insert(b, "    ", x.insertion(), fresh + route(Route.VERDICT) + "(" + name + "(" + c.arguments()
                             + ")))");
                 }

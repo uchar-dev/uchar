@@ -20,14 +20,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@code TmsTranspiler.drlPieces} on the shapes of card drl-rule-functions, acceptance (b), all three in the golden
- * {@code jutterswet-uitsluiting-rgs}: a rule without functions, a rule with a composite condition (a function that calls
- * another function of the same rule), and the fall-back of a default with an exception group, of the same shape as the
- * fall-back of the card's v2 example (a test whose function calls the function of its composite, and the function of
- * the value). Per rule the table of its piece: per function its name and its comment as the text has them at the places
- * of the record, and which functions the rule and each function call, read off the text of the piece by this witness
- * (a name followed by an opening parenthesis), an oracle the rendering does not consult. Beside it, on a document
- * written here, that a place counts UTF-16 code units, and that a piece whose places do not add up is a bookkeeping
- * fault of the rendering. {@link DrlPiecesCorpusWitnessTest} holds the same over the corpus.
+ * {@code jutterswet-uitsluiting-rgs}: a rule without functions, a rule with a composite condition, and the fall-back of
+ * a default with an exception group, of the same shape as the fall-back of the card's v2 example (a test over a
+ * composite, and the function of the value). Until card drl-no-passthrough-functions the test of a composite
+ * condition called the composite's function, the function of a rule that calls another function of the same rule
+ * which that acceptance asked for; since that card the test carries the composite's statements, and
+ * {@code DrlConditionFunctionsWitnessTest} shows such a call (a test that calls the function of a fold, and one of a
+ * fault that calls the function of its composite). Per rule the table of its piece: per function its name and its
+ * comment as the text has them at the places of the record, and which functions the rule and each function call, read
+ * off the text of the piece by this witness (a name followed by an opening parenthesis), an oracle the rendering does
+ * not consult. Beside it, on a document written here, that a place counts UTF-16 code units, and that a piece whose
+ * places do not add up is a bookkeeping fault of the rendering. {@link DrlPiecesCorpusWitnessTest} holds the same over
+ * the corpus.
  */
 class DrlPiecesWitnessTest {
 
@@ -38,14 +42,14 @@ class DrlPiecesWitnessTest {
         return DroolsBackend.build(GOLDEN.resolve(golden).resolve("ir.json"), DroolsBackend.Branch.DRL_TEXT);
     }
 
-    private static DrlPiece piece(DroolsBackend.Build b, String rule) {
+    static DrlPiece piece(DroolsBackend.Build b, String rule) {
         for (DrlPiece p : b.execModelTranspiler().drlPieces()) if (p.rule().equals(rule)) return p;
         throw new AssertionError("geen stuk van de regel '" + rule + "'");
     }
 
     /** The table of piece {@code p} of text {@code drl}: per function {@code <name> | <comment line or -> | calls
      *  [...]}, then {@code regel | calls [...]}. */
-    private static List<String> table(String drl, DrlPiece p) {
+    static List<String> table(String drl, DrlPiece p) {
         List<String> out = new ArrayList<>();
         for (DrlPiece.DrlFunction f : p.functions()) {
             String comment = drl.substring(f.start(), f.declaration());
@@ -80,16 +84,15 @@ class DrlPiecesWitnessTest {
                 """, b.drl().substring(p.start(), p.end()));
     }
 
-    @Test void a_composite_condition_is_a_function_its_test_calls() throws Exception {
+    @Test void a_composite_condition_is_the_body_of_its_test() throws Exception {
         DroolsBackend.Build b = build("jutterswet-uitsluiting-rgs");
         String rule = "defaults K:Jutter.uitgesloten: default 0.0.0";
         DrlPiece p = piece(b, rule);
         String sentence = "// hij vergunning geweigerd is en hij weigering herroepen is en hij herroeping vervallen is";
         assertEquals(List.of(
-                "r1_toets0 | " + sentence + " | roept [r1_samengesteld1]",
-                "r1_samengesteld1 | " + sentence + " | roept []",
-                "r1_afloop2 | - | roept []",
-                "regel | roept [r1_toets0, r1_afloop2]"), table(b.drl(), p));
+                "r1_toets0 | " + sentence + " | roept []",
+                "r1_afloop1 | - | roept []",
+                "regel | roept [r1_toets0, r1_afloop1]"), table(b.drl(), p));
         // the piece begins with the comment of its first function and holds its rule up to its end
         String text = b.drl().substring(p.start(), p.end());
         assertTrue(text.startsWith(sentence + "\nfunction boolean r1_toets0("), text);
@@ -104,12 +107,11 @@ class DrlPiecesWitnessTest {
         DrlPiece p = piece(b, rule);
         String sentence = "// hij vergunning geweigerd is en hij weigering herroepen is";
         assertEquals(List.of(
-                "r3_toets0 | " + sentence + " | roept [r3_samengesteld1]",
-                "r3_samengesteld1 | " + sentence + " | roept []",
-                "r3_afloop2 | - | roept []",
-                "regel | roept [r3_toets0, r3_afloop2]"), table(b.drl(), p));
-        assertEquals("function Object r3_afloop2() {\n    return Boolean.FALSE;\n}\n\n",
-                b.drl().substring(p.functions().get(2).start(), p.functions().get(2).end()));
+                "r3_toets0 | " + sentence + " | roept []",
+                "r3_afloop1 | - | roept []",
+                "regel | roept [r3_toets0, r3_afloop1]"), table(b.drl(), p));
+        assertEquals("function Object r3_afloop1() {\n    return Boolean.FALSE;\n}\n\n",
+                b.drl().substring(p.functions().get(1).start(), p.functions().get(1).end()));
         RuleOrigin o = b.execModelTranspiler().originOf(rule);
         assertEquals(RuleOrigin.Kind.DEFAULT, o.kind());
         assertEquals(RuleOrigin.Role.FALLBACK, o.role());
