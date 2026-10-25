@@ -57,11 +57,11 @@ class DrlConditionFunctionsWitnessTest {
         DrlPiece p = piece(b, "defaults K:Jutter.uitgesloten: default 0.0.0");
         String sentence = "// hij vergunning geweigerd is en hij weigering herroepen is en hij herroeping vervallen is";
         assertEquals(List.of(
-                "r1_toets0 | " + sentence + " | roept []",
-                "r1_afloop1 | - | roept []",
-                "regel | roept [r1_toets0, r1_afloop1]"), table(b.drl(), p));
+                "toets_defaultsKJutterUitgeslotenDefault000 | " + sentence + " | roept []",
+                "afloop_defaultsKJutterUitgeslotenDefault000 | - | roept []",
+                "regel | roept [toets_defaultsKJutterUitgeslotenDefault000, afloop_defaultsKJutterUitgeslotenDefault000]"), table(b.drl(), p));
         assertEquals(sentence + "\n"
-                + "function boolean r1_toets0(Object $vergunningGeweigerd, Object $weigeringHerroepen, Object $herroepingVervallen) {\n"
+                + "function boolean toets_defaultsKJutterUitgeslotenDefault000(Object $vergunningGeweigerd, Object $weigeringHerroepen, Object $herroepingVervallen) {\n"
                 + "    int raak = 0;\n"
                 + "    Boolean vast;\n"
                 + "    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);\n"
@@ -86,16 +86,16 @@ class DrlConditionFunctionsWitnessTest {
                 + "        raak++;\n"
                 + "    }\n"
                 + "    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);\n"
-                + "}\n\n", function(b, p, "r1_toets0"));
+                + "}\n\n", function(b, p, "toets_defaultsKJutterUitgeslotenDefault000"));
 
         // VORM: the participation of a key of a uniqueness, a composite of the form without a sentence
         b = build("anchor/jutterswet-kustregister");
         p = piece(b, "eenmalig kaveletiket: sleutel van Kavel 1");
         assertEquals(List.of(
-                "r1_toets0 | - | roept []",
-                "r1_componenten1 | - | roept []",
-                "regel | roept [r1_toets0, r1_componenten1]"), table(b.drl(), p));
-        assertTrue(function(b, p, "r1_toets0").contains("ComputeHelpers.established("), function(b, p, "r1_toets0"));
+                "toets_eenmaligKaveletiketSleutelVanKavel1 | - | roept []",
+                "componenten_eenmaligKaveletiketSleutelVanKavel1 | - | roept []",
+                "regel | roept [toets_eenmaligKaveletiketSleutelVanKavel1, componenten_eenmaligKaveletiketSleutelVanKavel1]"), table(b.drl(), p));
+        assertTrue(function(b, p, "toets_eenmaligKaveletiketSleutelVanKavel1").contains("ComputeHelpers.established("), function(b, p, "toets_eenmaligKaveletiketSleutelVanKavel1"));
 
         // WITHOUT_FAULT: the body of the composite within the try
         b = build("fold-filter-divides-by-zero");
@@ -106,12 +106,12 @@ class DrlConditionFunctionsWitnessTest {
         String fold = "// het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door"
                 + " zijn deelnemers is groter dan 2";
         assertEquals(List.of(
-                "r2_toets0 | " + drukte + " | roept [r2_vouwlezing1]",
-                "r2_vouwlezing1 | " + fold + " | roept []",
-                "regel | roept [r2_toets0]"), table(b.drl(), p));
+                "toets_drukte | " + drukte + " | roept [vouwlezing_drukte]",
+                "vouwlezing_drukte | " + fold + " | roept []",
+                "regel | roept [toets_drukte]"), table(b.drl(), p));
         String parameters = "$actief, $aantal_vouw_46, $eerste_filterfout_vouw_51, $filterdeponeringen_vouw_55";
         assertEquals(drukte + "\n"
-                + "function boolean r2_toets0(Object $actief, Object $aantal_vouw_46, Object $eerste_filterfout_vouw_51,"
+                + "function boolean toets_drukte(Object $actief, Object $aantal_vouw_46, Object $eerste_filterfout_vouw_51,"
                 + " Object $filterdeponeringen_vouw_55) {\n"
                 + "    try {\n"
                 + "        int raak = 0;\n"
@@ -127,7 +127,7 @@ class DrlConditionFunctionsWitnessTest {
                 + "        if (vast != null) {\n"
                 + "            return vast;\n"
                 + "        }\n"
-                + "        if (RegelSpraakRuntime.rsAggVergelijk(r2_vouwlezing1(" + parameters + "), new java.math.BigDecimal(\"0\"),"
+                + "        if (RegelSpraakRuntime.rsAggVergelijk(vouwlezing_drukte(" + parameters + "), new java.math.BigDecimal(\"0\"),"
                 + " \">\")) {\n"
                 + "            raak++;\n"
                 + "        }\n"
@@ -136,7 +136,7 @@ class DrlConditionFunctionsWitnessTest {
                 + "        ComputeHelpers.caught(e);\n"
                 + "        return false;\n"
                 + "    }\n"
-                + "}\n\n", function(b, p, "r2_toets0"));
+                + "}\n\n", function(b, p, "toets_drukte"));
     }
 
     @Test void a_test_that_asks_for_a_fault_or_a_deposit_keeps_the_function_of_its_composite() throws Exception {
@@ -149,21 +149,21 @@ class DrlConditionFunctionsWitnessTest {
         String fold = "// het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door"
                 + " zijn deelnemers is groter dan 2";
         assertEquals(List.of(
-                "r3_toets0 | " + drukte + " | roept [r3_samengesteld1]",
-                "r3_samengesteld1 | " + drukte + " | roept [r3_vouwlezing2]",
-                "r3_vouwlezing2 | " + fold + " | roept []",
-                "r3_fout3 | " + drukte + " | roept [r3_samengesteld4]",
-                "r3_samengesteld4 | " + drukte + " | roept [r3_vouwlezing5]",
-                "r3_vouwlezing5 | " + fold + " | roept []",
-                "regel | roept [r3_toets0, r3_fout3]"), table(b.drl(), piece(b, "drukte: fout in de voorwaarde")));
+                "toets_drukteFoutInDeVoorwaarde | " + drukte + " | roept [samengesteld1_drukteFoutInDeVoorwaarde]",
+                "samengesteld1_drukteFoutInDeVoorwaarde | " + drukte + " | roept [vouwlezing1_drukteFoutInDeVoorwaarde]",
+                "vouwlezing1_drukteFoutInDeVoorwaarde | " + fold + " | roept []",
+                "fout_drukteFoutInDeVoorwaarde | " + drukte + " | roept [samengesteld2_drukteFoutInDeVoorwaarde]",
+                "samengesteld2_drukteFoutInDeVoorwaarde | " + drukte + " | roept [vouwlezing2_drukteFoutInDeVoorwaarde]",
+                "vouwlezing2_drukteFoutInDeVoorwaarde | " + fold + " | roept []",
+                "regel | roept [toets_drukteFoutInDeVoorwaarde, fout_drukteFoutInDeVoorwaarde]"), table(b.drl(), piece(b, "drukte: fout in de voorwaarde")));
         assertEquals(List.of(
-                "r4_toets0 | " + drukte + " | roept [r4_samengesteld1]",
-                "r4_samengesteld1 | " + drukte + " | roept [r4_vouwlezing2]",
-                "r4_vouwlezing2 | " + fold + " | roept []",
-                "r4_deponering3 | " + drukte + " | roept [r4_samengesteld4]",
-                "r4_samengesteld4 | " + drukte + " | roept [r4_vouwlezing5]",
-                "r4_vouwlezing5 | " + fold + " | roept []",
-                "regel | roept [r4_toets0, r4_deponering3]"), table(b.drl(), piece(b, "drukte: deponering in de voorwaarde")));
+                "toets_drukteDeponeringInDeVoorwaarde | " + drukte + " | roept [samengesteld1_drukteDeponeringInDeVoorwaarde]",
+                "samengesteld1_drukteDeponeringInDeVoorwaarde | " + drukte + " | roept [vouwlezing1_drukteDeponeringInDeVoorwaarde]",
+                "vouwlezing1_drukteDeponeringInDeVoorwaarde | " + fold + " | roept []",
+                "deponering_drukteDeponeringInDeVoorwaarde | " + drukte + " | roept [samengesteld2_drukteDeponeringInDeVoorwaarde]",
+                "samengesteld2_drukteDeponeringInDeVoorwaarde | " + drukte + " | roept [vouwlezing2_drukteDeponeringInDeVoorwaarde]",
+                "vouwlezing2_drukteDeponeringInDeVoorwaarde | " + fold + " | roept []",
+                "regel | roept [toets_drukteDeponeringInDeVoorwaarde, deponering_drukteDeponeringInDeVoorwaarde]"), table(b.drl(), piece(b, "drukte: deponering in de voorwaarde")));
     }
 
     @Test void a_default_without_a_condition_has_no_test() throws Exception {
@@ -172,15 +172,15 @@ class DrlConditionFunctionsWitnessTest {
         DroolsBackend.Build b = build("jutterswet-bergingstoeslag");
         DrlPiece p = piece(b, "defaults A:Jutter.bergingstoeslag: default 1");
         assertEquals(List.of(
-                "r1_afloop0 | // 0.00 | roept []",
-                "regel | roept [r1_afloop0]"), table(b.drl(), p));
+                "afloop_defaultsAJutterBergingstoeslagDefault1 | // 0.00 | roept []",
+                "regel | roept [afloop_defaultsAJutterBergingstoeslagDefault1]"), table(b.drl(), p));
         assertFalse(rule(b, p).contains("eval("), rule(b, p));
         // the same in the default whose binder its rule does not reach: its functions are those of its value
         assertEquals(List.of(
-                "r2_afloop0 | // de bergingsgrond is zijn bergingsgrondslag | roept [r2_let1]",
-                "r2_let1 | // de bergingsgrond is zijn bergingsgrondslag | roept []",
-                "r2_binder2 | // zijn bergingsgrondslag | roept []",
-                "regel | roept [r2_afloop0]"), table(b.drl(), piece(b, "defaults A:Jutter.bergingsforfait: default 0")));
+                "afloop_defaultsAJutterBergingsforfaitDefault0 | // de bergingsgrond is zijn bergingsgrondslag | roept [let_defaultsAJutterBergingsforfaitDefault0]",
+                "let_defaultsAJutterBergingsforfaitDefault0 | // de bergingsgrond is zijn bergingsgrondslag | roept []",
+                "binder_defaultsAJutterBergingsforfaitDefault0 | // zijn bergingsgrondslag | roept []",
+                "regel | roept [afloop_defaultsAJutterBergingsforfaitDefault0]"), table(b.drl(), piece(b, "defaults A:Jutter.bergingsforfait: default 0")));
     }
 
     @Test void a_composite_of_one_member_is_that_member_in_the_goldens() throws Exception {
@@ -188,12 +188,12 @@ class DrlConditionFunctionsWitnessTest {
         DroolsBackend.Build b = build("anchor/jutterswet-kustregister");
         DrlPiece p = piece(b, "eenmalig vondstnummer: sleutel van Strandvondst 1");
         assertEquals(List.of(
-                "r7_toets0 | - | roept []",
-                "r7_componenten1 | - | roept []",
-                "regel | roept [r7_toets0, r7_componenten1]"), table(b.drl(), p));
-        assertEquals("function boolean r7_toets0(Object $vondstnummer) {\n"
+                "toets_eenmaligVondstnummerSleutelVanStrandvondst1 | - | roept []",
+                "componenten_eenmaligVondstnummerSleutelVanStrandvondst1 | - | roept []",
+                "regel | roept [toets_eenmaligVondstnummerSleutelVanStrandvondst1, componenten_eenmaligVondstnummerSleutelVanStrandvondst1]"), table(b.drl(), p));
+        assertEquals("function boolean toets_eenmaligVondstnummerSleutelVanStrandvondst1(Object $vondstnummer) {\n"
                 + "    return ComputeHelpers.emptyTest($vondstnummer, Boolean.FALSE);\n"
-                + "}\n\n", function(b, p, "r7_toets0"));
+                + "}\n\n", function(b, p, "toets_eenmaligVondstnummerSleutelVanStrandvondst1"));
 
         // DE, the filter of a fold: in the test without its fault, in the test of the fault and its function, and in the
         // test of the deposit and its function
@@ -203,25 +203,25 @@ class DrlConditionFunctionsWitnessTest {
                 + " new java.math.BigDecimal(\"2\"), \">\")";
         p = piece(b, "zware vondsten: bijdrage aan vouw 1");
         assertEquals(List.of(
-                "r6_toets0 | " + filter + " | roept []",
-                "regel | roept [r6_toets0]"), table(b.drl(), p));
-        assertEquals(filter + "\nfunction boolean r6_toets0(Object $gewicht, Object $deelnemers) {\n"
+                "toets_zwareVondstenBijdrageAanVouw1 | " + filter + " | roept []",
+                "regel | roept [toets_zwareVondstenBijdrageAanVouw1]"), table(b.drl(), p));
+        assertEquals(filter + "\nfunction boolean toets_zwareVondstenBijdrageAanVouw1(Object $gewicht, Object $deelnemers) {\n"
                 + "    try {\n"
                 + "        return " + member + ";\n"
                 + "    } catch (RuntimeException e) {\n"
                 + "        ComputeHelpers.caught(e);\n"
                 + "        return false;\n"
                 + "    }\n"
-                + "}\n\n", function(b, p, "r6_toets0"));
+                + "}\n\n", function(b, p, "toets_zwareVondstenBijdrageAanVouw1"));
         p = piece(b, "zware vondsten: filterfout in vouw 1");
         assertEquals(List.of(
-                "r7_beta0 | - | roept []",
-                "r7_toets1 | " + filter + " | roept []",
-                "r7_fout2 | " + filter + " | roept []",
-                "r7_plaats3 | - | roept []",
-                "regel | roept [r7_beta0, r7_toets1, r7_fout2, r7_plaats3]"), table(b.drl(), p));
-        assertTrue(function(b, p, "r7_toets1").contains("        boolean uitkomst = " + member + ";\n"),
-                function(b, p, "r7_toets1"));
+                "beta_zwareVondstenFilterfoutInVouw1 | - | roept []",
+                "toets_zwareVondstenFilterfoutInVouw1 | " + filter + " | roept []",
+                "fout_zwareVondstenFilterfoutInVouw1 | " + filter + " | roept []",
+                "plaats_zwareVondstenFilterfoutInVouw1 | - | roept []",
+                "regel | roept [beta_zwareVondstenFilterfoutInVouw1, toets_zwareVondstenFilterfoutInVouw1, fout_zwareVondstenFilterfoutInVouw1, plaats_zwareVondstenFilterfoutInVouw1]"), table(b.drl(), p));
+        assertTrue(function(b, p, "toets_zwareVondstenFilterfoutInVouw1").contains("        boolean uitkomst = " + member + ";\n"),
+                function(b, p, "toets_zwareVondstenFilterfoutInVouw1"));
         p = piece(b, "zware vondsten: filterdeponering in vouw 1");
         List<String> names = new ArrayList<>();
         for (DrlPiece.DrlFunction f : p.functions()) names.add(f.name());
@@ -231,11 +231,11 @@ class DrlConditionFunctionsWitnessTest {
         b = build("jutterswet-uniekwantor");
         p = piece(b, "ongemerkt aantal: bijdrage aan vouw 0, selectie 0");
         assertEquals(List.of(
-                "r3_toets0 | // aan geen van de volgende voorwaarden voldoen: gemerkt zijn | roept []",
-                "regel | roept [r3_toets0]"), table(b.drl(), p));
-        assertTrue(function(b, p, "r3_toets0").contains(
+                "toets_ongemerktAantalBijdrageAanVouw0Selectie0 | // aan geen van de volgende voorwaarden voldoen: gemerkt zijn | roept []",
+                "regel | roept [toets_ongemerktAantalBijdrageAanVouw0Selectie0]"), table(b.drl(), p));
+        assertTrue(function(b, p, "toets_ongemerktAantalBijdrageAanVouw0Selectie0").contains(
                 "return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1);"),
-                function(b, p, "r3_toets0"));
+                function(b, p, "toets_ongemerktAantalBijdrageAanVouw0Selectie0"));
     }
 
     /** The quantifiers over one member, each with the threshold the case needs, and whether the composite's verdict is
@@ -273,11 +273,12 @@ class DrlConditionFunctionsWitnessTest {
             Object[] q = ONE_MEMBER.get(i);
             DrlPiece p = piece(b, "één lid " + i);
             String sentence = "// " + q[0] + " " + q[1];
-            assertEquals(List.of("r" + i + "_toets0 | " + sentence + " | roept []", "regel | roept [r" + i + "_toets0]"),
+            String name = "toets_éénLid" + i;
+            assertEquals(List.of(name + " | " + sentence + " | roept []", "regel | roept [" + name + "]"),
                     table(b.drl(), p), q[0] + " " + q[1]);
-            String test = function(b, p, "r" + i + "_toets0");
+            String test = function(b, p, name);
             if ((Boolean) q[2])
-                assertEquals(sentence + "\nfunction boolean r" + i + "_toets0(Object $lid) {\n"
+                assertEquals(sentence + "\nfunction boolean " + name + "(Object $lid) {\n"
                         + "    return ComputeHelpers.characteristic($lid, Boolean.TRUE);\n}\n\n", test, q[0] + " " + q[1]);
             else
                 assertTrue(test.contains("ComputeHelpers.established("), q[0] + " " + q[1] + ":\n" + test);
@@ -307,12 +308,12 @@ class DrlConditionFunctionsWitnessTest {
         assertEquals(List.of("regel | roept []"), table(b.drl(), none));
         assertFalse(rule(b, none).contains("eval("), rule(b, none));
         DrlPiece atLeast = piece(b, "geen lid onder ten minste een");
-        assertEquals(List.of("r1_toets0 | // aan ten minste een van de voorwaarden voldoet | roept []",
-                "regel | roept [r1_toets0]"), table(b.drl(), atLeast));
+        assertEquals(List.of("toets_geenLidOnderTenMinsteEen | // aan ten minste een van de voorwaarden voldoet | roept []",
+                "regel | roept [toets_geenLidOnderTenMinsteEen]"), table(b.drl(), atLeast));
         assertEquals("// aan ten minste een van de voorwaarden voldoet\n"
-                + "function boolean r1_toets0() {\n"
+                + "function boolean toets_geenLidOnderTenMinsteEen() {\n"
                 + "    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 0, 0);\n"
-                + "}\n\n", function(b, atLeast, "r1_toets0"));
+                + "}\n\n", function(b, atLeast, "toets_geenLidOnderTenMinsteEen"));
         play(document, List.of(TmsDocuments.jutter("j", List.of())), List.of(
                 TmsDocuments.expected("j", "geenDoel", true), TmsDocuments.expected("j", "tenMinsteDoel", false)));
     }
@@ -347,7 +348,7 @@ class DrlConditionFunctionsWitnessTest {
         String established = "ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, ";
         String end = "ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2)";
         assertEquals("// aan alle voorwaarden voldoet\n"
-                + "function boolean r0_toets0(Object $a, Object $b) {\n"
+                + "function boolean toets_genest(Object $a, Object $b) {\n"
                 + "    int raak = 0;\n"
                 + "    Boolean vast;\n"
                 + "    vast = " + established + "0, 2);\n"
@@ -358,9 +359,9 @@ class DrlConditionFunctionsWitnessTest {
                 + "    // aan de voorwaarde b voldoet\n"
                 + "    if (ComputeHelpers.characteristic($b, Boolean.TRUE)) {\n        raak++;\n    }\n"
                 + "    return " + end + ";\n"
-                + "}\n\n", function(b, piece(b, "genest"), "r0_toets0"));
+                + "}\n\n", function(b, piece(b, "genest"), "toets_genest"));
         assertEquals("// aan de volgende voorwaarde voldoet\n"
-                + "function boolean r1_toets0(Object $a, Object $b) {\n"
+                + "function boolean toets_omhuld(Object $a, Object $b) {\n"
                 + "    // aan a en b voldoet\n"
                 + "    int raak = 0;\n"
                 + "    Boolean vast;\n"
@@ -371,9 +372,9 @@ class DrlConditionFunctionsWitnessTest {
                 + "    if (vast != null) {\n        return vast;\n    }\n"
                 + "    if (ComputeHelpers.characteristic($b, Boolean.TRUE)) {\n        raak++;\n    }\n"
                 + "    return " + end + ";\n"
-                + "}\n\n", function(b, piece(b, "omhuld"), "r1_toets0"));
+                + "}\n\n", function(b, piece(b, "omhuld"), "toets_omhuld"));
         assertEquals("// aan a en altijd voldoet\n"
-                + "function boolean r2_toets0(Object $a) {\n"
+                + "function boolean toets_leeg(Object $a) {\n"
                 + "    int raak = 0;\n"
                 + "    Boolean vast;\n"
                 + "    vast = " + established + "0, 2);\n"
@@ -385,8 +386,8 @@ class DrlConditionFunctionsWitnessTest {
                 + "    if (ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 0, 0)) {\n"
                 + "        raak++;\n    }\n"
                 + "    return " + end + ";\n"
-                + "}\n\n", function(b, piece(b, "leeg"), "r2_toets0"));
-        String gelijk = function(b, piece(b, "gelijk"), "r3_toets0");
+                + "}\n\n", function(b, piece(b, "leeg"), "toets_leeg"));
+        String gelijk = function(b, piece(b, "gelijk"), "toets_gelijk");
         assertEquals(1, gelijk.split("aan beide voldoet", -1).length - 1, gelijk);
         for (String rule : List.of("genest", "omhuld", "leeg", "gelijk"))
             assertEquals(1, piece(b, rule).functions().size(), () -> rule + ": " + table(b.drl(), piece(b, rule)));

@@ -34,7 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code -Duchar.drlvorm=<map>} the witness writes the text of every golden to {@code <map>/<golden>.drl}, a slash in
  * the golden's name as an underscore, and the text of the plan of every form, {@link FormsPlan}, to
  * {@code <map>/_vormenplan.drl}: the measurement {@code drlvorm}, which shows a change of the rendering as a change of
- * text.
+ * text. One plan gives one text (card drl-function-names-from-rule, acceptance (c)): a second rendering of the plan of
+ * every golden, and of every plan of {@link FormsPlan}, is the same text, with the same pieces for a golden.
  *
  * <p><b>Red</b> before the step, on {@code a39778f1}: {@code DrlRendering} did not exist, and this class did not
  * compile.
@@ -59,7 +60,7 @@ class DrlRenderingWitnessTest {
     @Test void the_text_of_every_golden_compiles_or_the_rendering_refuses_a_kind() throws Exception {
         String dump = System.getProperty("uchar.drlvorm");
         Map<String, List<String>> refused = new TreeMap<>();
-        List<String> faults = new ArrayList<>(), forbidden = new ArrayList<>();
+        List<String> faults = new ArrayList<>(), forbidden = new ArrayList<>(), twoTexts = new ArrayList<>();
         int goldens = 0, compiled = 0;
         long nanos = 0;
         for (Path g : goldens()) {
@@ -71,13 +72,16 @@ class DrlRenderingWitnessTest {
             }
             goldens++;
             String name = GOLDEN.relativize(g).toString();
-            String text;
+            DrlRendering.Rendered rendered;
             try {
-                text = DrlRendering.text(b.execModelTranspiler().modelplan());
+                rendered = DrlRendering.render(b.execModelTranspiler().modelplan());
             } catch (DrlRendering.Refusal w) {
                 refused.computeIfAbsent(w.category(), k -> new ArrayList<>()).add(name);
                 continue;
             }
+            String text = rendered.text();
+            DrlRendering.Rendered again = DrlRendering.render(b.execModelTranspiler().modelplan());
+            if (!again.text().equals(text) || !again.pieces().equals(rendered.pieces())) twoTexts.add(name);
             if (dump != null) Files.writeString(Path.of(dump).resolve(name.replace('/', '_') + ".drl"), text);
             for (String v : FORBIDDEN) if (text.contains(v)) forbidden.add(name + ": " + v);
             long start = System.nanoTime();
@@ -92,6 +96,7 @@ class DrlRenderingWitnessTest {
             overview.append("\n  ").append(e.getKey()).append(" ").append(e.getValue().size()).append(": ")
                     .append(e.getValue());
         System.out.println(overview);
+        assertEquals(List.of(), twoTexts, "plannen waarvan een tweede weergave een andere tekst of andere stukken geeft");
         assertEquals(List.of(), faults, "teksten die niet compileren");
         assertEquals(List.of(), forbidden, "teksten met een verboden vorm");
         int n = goldens, c = compiled;
@@ -110,8 +115,9 @@ class DrlRenderingWitnessTest {
 
     /** The rules whose consequence the rendering carries compile in every golden, also in one whose text it refuses for
      *  the consequence of another rule: their left-hand sides and terms are those of the whole corpus but for the rules
-     *  of the refused kinds. A rule's text depends on the rule alone, so the rules a golden carries make a text of
-     *  their own, with the globals of the plan. */
+     *  of the refused kinds. A rule's text depends on the rule alone, but for the number after the rule part of the
+     *  names of its functions where another rule with functions has the same rule part, so the rules a golden carries
+     *  make a text of their own, with the globals of the plan. */
     @Test void the_carried_rules_of_every_golden_compile() throws Exception {
         List<String> faults = new ArrayList<>();
         int rules = 0, withRules = 0, refused = 0;

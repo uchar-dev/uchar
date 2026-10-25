@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.DrlPiece;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -200,9 +202,16 @@ class KeyConventionWitnessTest {
 
     // ---------------- models ----------------
 
-    /** The text of the DRL-text branch of one model: the analysis rendered as DRL text. */
+    /** The text of the DRL-text branch of one model, the analysis rendered as DRL text, without the names of its
+     *  functions: since card drl-function-names-from-rule a function is named after its rule, whose name the text
+     *  spells camel-cased there (a rule "eenmalig vondstnummer: …" names {@code toets_eenmaligVondstnummer…}), which
+     *  is no key site and no written spelling of a key. */
     private static String drl(Path ir) throws Exception {
-        return DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT).drl();
+        DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT);
+        String text = b.drl();
+        for (DrlPiece p : b.execModelTranspiler().drlPieces())
+            for (DrlPiece.DrlFunction f : p.functions()) text = text.replace(f.name(), "");
+        return text;
     }
 
     /** {@code vondstnummer} temporal on Strandvondst, SCALAR on Wrakvondst: the cross-source mixed key. The

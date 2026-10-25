@@ -53,8 +53,9 @@ final class FormsPlan {
             "min(", "max(", "collectList(", "eval( ", "agenda-group \"proefgroep\"", "ComputeHelpers.classIs(this",
             "ComputeHelpers.isA(this", "ComputeHelpers.classNotIn(this", "ComputeHelpers.inside(date",
             "ComputeHelpers.readProperty(this, \"hoogte\")", "ComputeHelpers.holds(", "ComputeHelpers.periods(", "ComputeHelpers.isSet(",
-            "_pad", "_beta", "_samengesteld", "_zonderfout", "_vouwlezing", "_kwantorlezing", "_let", "_binder", "_lijst",
-            "_deponering",
+            "pad1_alleTermen(", "beta_alleTermen(", "samengesteld_alleTermen(", "zonderfout1_alleTermen(",
+            "vouwlezing1_alleTermen(", "kwantorlezing_alleTermen(", "let1_alleTermen(", "binder1_alleTermen(",
+            "lijst_schrijvers(", "deponering_deponeringVanEenToets(",
             "rsDagsoort_Werkdag", "second != null, second == $onderwerp.post", "first == $onderwerp", " >= 1", " < 3",
             "Outcome.Kind.DECIDED", "insert(", "insertLogical(", "ComputeHelpers.depositFlag()", "ComputeHelpers.fail(",
             "ComputeHelpers.required(", "ComputeHelpers.textComposition(", "ComputeHelpers.restateExact(", "ComputeHelpers.restate(",
@@ -63,7 +64,7 @@ final class FormsPlan {
             "dev.uchar.regelspraak.ir.Condition.Operator.LATER", "ComputeHelpers.contractBreach(", "ComputeHelpers.computeFault(",
             "ComputeHelpers.inconsistency(", "ComputeHelpers.writersConflict(", "new ParameterState(", "new EvaluationDate(",
             "new CharacteristicState(", "ComputeHelpers.bucketScalarOf(", "new PathState(", "new Reading($onderwerp, ",
-            "_lezing");
+            "lezing_lezing(");
 
     private static final String O = "$onderwerp";
 
@@ -190,8 +191,8 @@ final class FormsPlan {
     /** Fragments of the text that show the forms of the plan of the creations and the links ({@link #creations}), one
      *  per form. */
     static final List<String> CREATION_FORMS = List.of(
-            "// uitkijkbonus\nfunction Object r0_creatie0(Object $uitkijkbonus, Object $fase, Object $herkomsten,"
-                    + " Object $onderwerp) {",
+            "// uitkijkbonus\nfunction Object creatie_creatieMetInitialisaties(Object $uitkijkbonus, Object $fase,"
+                    + " Object $herkomsten, Object $onderwerp) {",
             "    int diepte = ComputeHelpers.creationDepth(\"proefcreatie\", 0, \"Wachter\", (java.util.List) $herkomsten,"
                     + " 3);",
             "    Object i0 = null;\n    Object i1 = null;\n    try {\n        i0 = ComputeHelpers.collapse($uitkijkbonus);",
@@ -209,7 +210,8 @@ final class FormsPlan {
                     + "        java.util.List feiten = (java.util.List) v;\n        insert(feiten.get(0));\n"
                     + "        insert(feiten.get(1));\n        insert(feiten.get(2));\n"
                     + "        if (feiten.get(3) != null) {\n            insert(feiten.get(3));\n        }\n    }",
-            "function Object r1_creatie0(Object $fase, Object $herkomsten, Object $onderwerp) {\n    int diepte =",
+            "function Object creatie_creatieZonderInitialisaties(Object $fase, Object $herkomsten, Object $onderwerp) {\n"
+                    + "    int diepte =",
             "    Object nieuw = ComputeHelpers.newObject($onderwerp, \"dev.uchar.regelspraak.facts.Wachter\");\n"
                     + "    int fase",
             "    feiten.add(new RelationLink(\"opvolging\", nieuw, $onderwerp, fase));",
@@ -279,7 +281,8 @@ final class FormsPlan {
 
     /** Fragments of the text that show the forms of the plan of a uniqueness and the channel ({@link #channel}), one per
      *  form. */
-    static final List<String> CHANNEL_FORMS = List.of("_componenten", "java.util.List waarden = new java.util.ArrayList();",
+    static final List<String> CHANNEL_FORMS = List.of("componenten_sleutel(",
+            "java.util.List waarden = new java.util.ArrayList();",
             "waarden.add(null);", "waarden.add(ComputeHelpers.fallback(", "// zijn uitkijkbonus; zijn uitkijkbonus of 0",
             "for (Object k : ComputeHelpers.uniquenessKeys(\"proefuniciteit\", 0, $onderwerp, null, ",
             "for (Object k : ComputeHelpers.uniquenessKeys(\"proefuniciteit\", 1, $onderwerp, $kustvak, ",
@@ -331,7 +334,7 @@ final class FormsPlan {
     }
 
     /** Fragments of the text that show the forms of the plan of the defaults ({@link #defaults}), one per form. */
-    static final List<String> DEFAULTS_FORMS = List.of("Object r0_afloop0(Object $uitkijkbonus)",
+    static final List<String> DEFAULTS_FORMS = List.of("Object afloop_default0(Object $uitkijkbonus)",
             "        return ComputeHelpers.collapse($uitkijkbonus);\n    } catch (RuntimeException e) {\n"
                     + "        return ComputeHelpers.caught(e);",
             "    if (ComputeHelpers.isEvaluationFault(v)) {\n        insertLogical(new Fault($onderwerp, \"proefstapel\","
@@ -339,13 +342,13 @@ final class FormsPlan {
             "insertLogical(new Value($onderwerp, ElementKey.of(\"wachter\", \"uitkijkbonus\", false), v,"
                     + " \"proefstapel\"));",
             "insertLogical(new Decides($onderwerp, \"proefstapel\", 0));",
-            "Object r1_afloop0() {\n    return Boolean.TRUE;\n}",
+            "Object afloop_default1() {\n    return Boolean.TRUE;\n}",
             "insertLogical(new HasCharacteristic($onderwerp, ElementKey.of(\"wachter\", \"waakzaam\", true)));",
-            "Object r2_afloop0() {\n    return Boolean.FALSE;\n}",
+            "Object afloop_default2() {\n    return Boolean.FALSE;\n}",
             "    if (v != null) {\n        insertLogical(new Decides($onderwerp, \"proefstapel\", 2));\n    }",
             "insertLogical(new Outcome($onderwerp, \"proefstapel\", 1, 2,"
                     + " dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));",
-            "Object r4_conflict0() {\n    return \"proefstapel/0\";\n}",
+            "Object conflict_verschil0() {\n    return \"proefstapel/0\";\n}",
             "insertLogical(new Outcome($onderwerp, \"proefstapel\", 0, 1,"
                     + " dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, null, (String) v));",
             "insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1(\"EF-027\")));");
@@ -398,9 +401,9 @@ final class FormsPlan {
 
     /** Fragments of the text that show the forms of the fold plan ({@link #folds}), one per form. */
     static final List<String> FOLD_FORMS = List.of("new Contribution(\"proefvouw: telling\", $vouwonderwerp, $onderwerp, null)",
-            "ComputeHelpers.contribution(\"proefvouw: som\"", "\"MAAND\", true)", "ComputeHelpers.verdict(", "_matrix",
-            "_lidtoets", "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(sonde), ComputeHelpers.depositCodes(sonde))",
-            "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null))", "_plaats",
+            "ComputeHelpers.contribution(\"proefvouw: som\"", "\"MAAND\", true)", "ComputeHelpers.verdict(", "matrix_oordeel(",
+            "lidtoets_lidtoets(", "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(sonde), ComputeHelpers.depositCodes(sonde))",
+            "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null))", "plaats_lidtoets(",
             "ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER",
             "java.util.Arrays.asList(\"kustvak\", \"wachter\")", "java.util.Arrays.asList()",
             "new FilterDeposit(", "RuntimeException f = ", "new FilterFault(", "new MemberFault(",

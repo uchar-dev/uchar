@@ -36,7 +36,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DrlPiecesWitnessTest {
 
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
-    private static final Pattern CALL = Pattern.compile("(?<![A-Za-z0-9_$.])(r[0-9]+_[a-z]+[0-9]+)\\(");
+    /** A call of a function: its kind with its number, {@code _} and its rule part, with the rule's number. */
+    private static final Pattern CALL = Pattern.compile(
+            "(?<![\\p{L}\\p{N}_$.])([a-z]+[0-9]*_[\\p{L}\\p{N}]+(?:_[0-9]+)?)\\(");
 
     private static DroolsBackend.Build build(String golden) throws Exception {
         return DroolsBackend.build(GOLDEN.resolve(golden).resolve("ir.json"), DroolsBackend.Branch.DRL_TEXT);
@@ -89,13 +91,15 @@ class DrlPiecesWitnessTest {
         String rule = "defaults K:Jutter.uitgesloten: default 0.0.0";
         DrlPiece p = piece(b, rule);
         String sentence = "// hij vergunning geweigerd is en hij weigering herroepen is en hij herroeping vervallen is";
+        String test = "toets_defaultsKJutterUitgeslotenDefault000";
+        String value = "afloop_defaultsKJutterUitgeslotenDefault000";
         assertEquals(List.of(
-                "r1_toets0 | " + sentence + " | roept []",
-                "r1_afloop1 | - | roept []",
-                "regel | roept [r1_toets0, r1_afloop1]"), table(b.drl(), p));
+                test + " | " + sentence + " | roept []",
+                value + " | - | roept []",
+                "regel | roept [" + test + ", " + value + "]"), table(b.drl(), p));
         // the piece begins with the comment of its first function and holds its rule up to its end
         String text = b.drl().substring(p.start(), p.end());
-        assertTrue(text.startsWith(sentence + "\nfunction boolean r1_toets0("), text);
+        assertTrue(text.startsWith(sentence + "\nfunction boolean " + test + "("), text);
         assertTrue(b.drl().startsWith("rule \"" + rule + "\"\n", p.ruleStart()));
         assertTrue(text.endsWith("\nend\n\n"), text);
         assertEquals(RuleOrigin.Role.OWN, b.execModelTranspiler().originOf(rule).role());
@@ -106,11 +110,12 @@ class DrlPiecesWitnessTest {
         String rule = "defaults K:Jutter.uitgesloten: terugval 0";
         DrlPiece p = piece(b, rule);
         String sentence = "// hij vergunning geweigerd is en hij weigering herroepen is";
+        String test = "toets_defaultsKJutterUitgeslotenTerugval0", value = "afloop_defaultsKJutterUitgeslotenTerugval0";
         assertEquals(List.of(
-                "r3_toets0 | " + sentence + " | roept []",
-                "r3_afloop1 | - | roept []",
-                "regel | roept [r3_toets0, r3_afloop1]"), table(b.drl(), p));
-        assertEquals("function Object r3_afloop1() {\n    return Boolean.FALSE;\n}\n\n",
+                test + " | " + sentence + " | roept []",
+                value + " | - | roept []",
+                "regel | roept [" + test + ", " + value + "]"), table(b.drl(), p));
+        assertEquals("function Object " + value + "() {\n    return Boolean.FALSE;\n}\n\n",
                 b.drl().substring(p.functions().get(1).start(), p.functions().get(1).end()));
         RuleOrigin o = b.execModelTranspiler().originOf(rule);
         assertEquals(RuleOrigin.Kind.DEFAULT, o.kind());

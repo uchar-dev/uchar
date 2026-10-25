@@ -9,16 +9,25 @@ import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler.DrlPiece;
 
+import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.Token;
+import org.drools.drl.parser.lang.DRL6Lexer;
+import org.drools.drl.parser.lang.DroolsSoftKeywords;
 import org.junit.jupiter.api.Test;
 import org.kie.api.definition.KiePackage;
 import org.kie.api.definition.rule.Rule;
+import org.mvel2.compiler.AbstractParser;
 
+import javax.lang.model.SourceVersion;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +74,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       {@code ce2566f3}, before that card, per build: 180 functions that only returned such a call (176 tests and 4
  *       matrices, each over its composite), 58 functions of a composite over no member, each with a {@code vast} it
  *       did not read, and 69 of a composite over one member that gives its verdict.</li>
+ *   <li>every function is named after its kind and its rule (card drl-function-names-from-rule, acceptance (a),
+ *       {@link #names}): {@code <kind>_<rule>}, the kind one of {@link #KINDS}, numbered from 1 in the order of the
+ *       text right after the kind where the piece has more than one function of that kind, and the rule part
+ *       {@code Namen.ident} of the rule's name without the code points Drools does not read in a name, as its DRL
+ *       lexer and Java say ({@link #namePart}), {@code x} where none remains, followed by {@code _} and the rule's
+ *       number among them where more than one piece with functions has that rule part; the name is not that of a
+ *       global of the header, a day kind's among them, nor a word of DRL, of MVEL or of Java, as Drools, MVEL and
+ *       Java list them; and outside comments and string literals every occurrence of it in the text is its
+ *       declaration or a call, so that no member of a bean a pattern reads, no local, no parameter and no global
+ *       has its name. Measured on {@code f867513d}, before that card: every function named
+ *       {@code r<n>_<kind><place>}, outside the form.</li>
  * </ul>
  *
  * <p>The places are UTF-16 code units, as {@code String.substring} takes them: {@value #EXPECTED_MIN_NON_ASCII_TEXTS}
@@ -76,7 +96,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * same piece, without readings and with them ({@link #EXPECTED_MIN}); a smaller count is a corpus that lost goldens or a
  * selection that silently stopped checking. Card drl-no-passthrough-functions lowered the floors of the functions, of
  * those with a comment and of those that call a function of their piece, measured 2026-10-25, since it writes fewer
- * functions: per build 240 functions of a composite and 58 tests went.
+ * functions: per build 240 functions of a composite and 58 tests went. Card drl-function-names-from-rule added the
+ * floors of the names with a number of their kind, measured 2026-10-25.
  */
 class DrlPiecesCorpusWitnessTest {
 
@@ -90,7 +111,8 @@ class DrlPiecesCorpusWitnessTest {
     /**
      * The functions that their rule does not reach, directly or through other functions of its piece, measured
      * 2026-10-24 per build, without readings and with them, the same one in both (named {@code r2_binder4} until
-     * card drl-no-passthrough-functions took the test and the composite of that default away): the binder of the
+     * card drl-no-passthrough-functions took the test and the composite of that default away, and {@code r2_binder2}
+     * until card drl-function-names-from-rule named it after its kind and its rule): the binder of the
      * {@code Let} "de bergingsgrond is zijn bergingsgrondslag" in {@code defaults A:Jutter.bergingsforfait: default
      * 0} of {@code jutterswet-bergingstoeslag}, whose body is a constant
      * ({@code return new java.math.BigDecimal("42")}) and does not read the variable, so nothing calls the binder
@@ -99,7 +121,8 @@ class DrlPiecesCorpusWitnessTest {
      * by golden, rule and function name, where a pattern on the name would let any binder through.
      */
     static final List<Unreached> EXPECTED_UNREACHED = List.of(
-            new Unreached("jutterswet-bergingstoeslag", "defaults A:Jutter.bergingsforfait: default 0", "r2_binder2"));
+            new Unreached("jutterswet-bergingstoeslag", "defaults A:Jutter.bergingsforfait: default 0",
+                    "binder_defaultsAJutterBergingsforfaitDefault0"));
 
     /** A function that its rule does not reach: the golden (the path under the golden zone), the name of the rule and
      *  the name of the function. */
@@ -107,23 +130,39 @@ class DrlPiecesCorpusWitnessTest {
 
     /** Per count, without readings and with them ({@code met lezingen}), measured 2026-10-24; the functions, those
      *  with a comment and those that call a function of their piece measured 2026-10-25 (card
-     *  drl-no-passthrough-functions; before it 2499, 1944, 481 and with readings 3456). */
+     *  drl-no-passthrough-functions; before it 2499, 1944, 481 and with readings 3456); the names with a number of
+     *  their kind measured 2026-10-25 (card drl-function-names-from-rule). */
     static final Map<String, Integer> EXPECTED_MIN = Map.ofEntries(
             Map.entry("stukken", 2124), Map.entry("stukken zonder functies", 763), Map.entry("functies", 2201),
             Map.entry("functies met commentaar", 1680),
             Map.entry("functies die een functie van hun stuk aanroepen", 241),
-            Map.entry("stukken met lezingen", 3046), Map.entry("functies met lezingen", 3158));
+            Map.entry("stukken met lezingen", 3046), Map.entry("functies met lezingen", 3158),
+            Map.entry("functienamen met een nummer van hun soort", 261),
+            Map.entry("functienamen met een nummer van hun soort met lezingen", 265));
+
+    /** The kinds of the functions of the text, the word of what a function computes, the first part of its name. */
+    static final Set<String> KINDS = Set.of("afloop", "beta", "binder", "componenten", "conflict", "creatie",
+            "deponering", "fout", "kwantorlezing", "let", "lezing", "lidtoets", "lijst", "matrix", "pad", "plaats",
+            "samengesteld", "toets", "vouwlezing", "waarde", "zonderfout");
 
     /** The line that opens a rule: {@code rule} and its name as a DRL string literal. */
     private static final Pattern RULE_HEADER = Pattern.compile("^rule \"((?:[^\"\\\\]|\\\\.)*)\"$", Pattern.MULTILINE);
     /** The line that declares a function: {@code function}, its type and its name before its parameters. */
-    private static final Pattern DECLARATION = Pattern.compile("^function \\S+ ([A-Za-z_][A-Za-z0-9_]*)\\(",
+    private static final Pattern DECLARATION = Pattern.compile("^function \\S+ ([\\p{L}_][\\p{L}\\p{N}_]*)\\(",
             Pattern.MULTILINE);
     /** A name followed by an opening parenthesis, not a member of something and not part of a longer name. */
-    private static final Pattern CALL = Pattern.compile("(?<![A-Za-z0-9_$.])([A-Za-z_][A-Za-z0-9_]*)\\(");
+    private static final Pattern CALL = Pattern.compile("(?<![\\p{L}\\p{N}_$.])([\\p{L}_][\\p{L}\\p{N}_]*)\\(");
     private static final Pattern HEADER_LINE = Pattern.compile("(package|import|global) [^\\n]*;|");
+    /** The line that declares a global: its type and its name. */
+    private static final Pattern GLOBAL = Pattern.compile("^global \\S+ (\\S+);$", Pattern.MULTILINE);
+    /** The name of a function: its kind, its number among the functions of that kind in its rule, and the rest. */
+    private static final Pattern NAME = Pattern.compile("([a-z]+)([0-9]*)_(.+)");
+    /** A name in a line of code, not part of a longer name and not a variable of a pattern. */
+    private static final Pattern WORD = Pattern.compile("(?<![\\p{L}\\p{N}_$])([\\p{L}_][\\p{L}\\p{N}_]*)");
+    /** The words of DRL, Drools's soft keywords, and of MVEL, its operators and literals, as the two list them. */
+    private static final Set<String> WORDS = words();
     /** A line that returns a call: the name called and the text after its opening parenthesis up to the {@code ;}. */
-    private static final Pattern RETURNED_CALL = Pattern.compile("\\s*return ([A-Za-z_][A-Za-z0-9_]*)\\((.*);");
+    private static final Pattern RETURNED_CALL = Pattern.compile("\\s*return ([\\p{L}_][\\p{L}\\p{N}_]*)\\((.*);");
     /** The verdict of a composite once its members are read: quantifier, threshold, hits and number of members. */
     private static final Pattern END_VERDICT = Pattern.compile("ComputeHelpers\\.endVerdict\\("
             + "dev\\.uchar\\.regelspraak\\.ir\\.Condition\\.Quantifier\\.([A-Z_]+), (-?[0-9]+), ([a-z0-9]+),"
@@ -142,6 +181,7 @@ class DrlPiecesCorpusWitnessTest {
             goldens = s.filter(p -> p.getFileName().toString().equals("ir.json")).map(Path::getParent).sorted().toList();
         }
         List<String> differences = new ArrayList<>(), notOwnWork = new ArrayList<>();
+        List<String> outsideTheForm = new ArrayList<>();
         List<Unreached> unreached = new ArrayList<>(), unreachedWithReadings = new ArrayList<>();
         Map<String, Integer> counts = new TreeMap<>();
         int carried = 0, nonAscii = 0;
@@ -156,16 +196,19 @@ class DrlPiecesCorpusWitnessTest {
             carried++;
             String name = GOLDEN.relativize(g).toString();
             if (build.drl().chars().anyMatch(c -> c > 127)) nonAscii++;
-            check(name, build, "", differences, notOwnWork, unreached, counts);
+            check(name, build, "", differences, notOwnWork, outsideTheForm, unreached, counts);
             check(name, DroolsBackend.build(ir, DroolsBackend.Branch.DRL_TEXT, true), " met lezingen", differences,
-                    notOwnWork, unreachedWithReadings, counts);
+                    notOwnWork, outsideTheForm, unreachedWithReadings, counts);
         }
         assertEquals(List.of(), differences, "stukken die de DRL-tekst niet precies dekken");
         int n = carried, a = nonAscii;
         System.out.println("DrlPiecesCorpusWitnessTest: " + n + " goldens, " + a + " teksten met een teken buiten ASCII, "
-                + counts + ", niet bereikt: " + unreached + ", met lezingen " + unreachedWithReadings);
+                + counts + ", niet bereikt: " + unreached + ", met lezingen " + unreachedWithReadings + "; "
+                + WORDS.size() + " woorden van DRL en MVEL");
         assertTrue(notOwnWork.isEmpty(), () -> "functies zonder eigen werk: " + notOwnWork.size() + ", de eerste "
                 + notOwnWork.subList(0, Math.min(10, notOwnWork.size())) + "; " + counts);
+        assertTrue(outsideTheForm.isEmpty(), () -> "functienamen buiten de vorm: " + outsideTheForm.size()
+                + ", de eerste " + outsideTheForm.subList(0, Math.min(10, outsideTheForm.size())) + "; " + counts);
         assertSameUnreached(unreached, "zonder lezingen");
         assertSameUnreached(unreachedWithReadings, "met lezingen");
         assertTrue(n >= EXPECTED_MIN_GOLDENS, () -> "gedragen goldens " + n + ", onder de vloer " + EXPECTED_MIN_GOLDENS);
@@ -193,9 +236,11 @@ class DrlPiecesCorpusWitnessTest {
     }
 
     /** The checks of the text of {@code build} and its pieces; {@code suffix} names the build in the counts and the
-     *  differences, and a function without work of its own goes to {@code notOwnWork}. */
+     *  differences, a function without work of its own goes to {@code notOwnWork}, and a name outside its form to
+     *  {@code outsideTheForm}. */
     private static void check(String golden, DroolsBackend.Build build, String suffix, List<String> differences,
-                              List<String> notOwnWork, List<Unreached> unreached, Map<String, Integer> counts) {
+                              List<String> notOwnWork, List<String> outsideTheForm, List<Unreached> unreached,
+                              Map<String, Integer> counts) {
         String which = golden + suffix;
         String text = build.drl();
         List<DrlPiece> pieces = build.execModelTranspiler().drlPieces();
@@ -291,6 +336,105 @@ class DrlPiecesCorpusWitnessTest {
         if (!inPieces.equals(declared))
             differences.add(which + ": de tekst declareert " + declared.size() + " functies, de stukken noemen er "
                     + inPieces.size());
+        names(which, text, pieces, suffix, outsideTheForm, counts);
+    }
+
+    /**
+     * The checks of card drl-function-names-from-rule on the names of the functions of {@code text}, whose pieces are
+     * {@code pieces}: each is {@code <kind>_<rule part>}, the kind one of {@link #KINDS} with its number among the
+     * functions of its kind in its piece, from 1 in the order of the text, where the piece has more than one, and the
+     * rule part that of {@link #rulePart} with the piece's number among the pieces with functions of that rule part,
+     * after a {@code _}, where there are more than one; it is not a global of the header, nor a word of DRL, MVEL or
+     * Java; and outside comments and string literals the text spells it only where it declares or calls it.
+     */
+    private static void names(String which, String text, List<DrlPiece> pieces, String suffix,
+                              List<String> outsideTheForm, Map<String, Integer> counts) {
+        Map<String, Integer> sharing = new HashMap<>(), partsSeen = new HashMap<>();
+        for (DrlPiece p : pieces) if (!p.functions().isEmpty()) sharing.merge(rulePart(p.rule()), 1, Integer::sum);
+        Set<String> globals = new HashSet<>(), names = new HashSet<>();
+        for (Matcher m = GLOBAL.matcher(text); m.find(); ) globals.add(m.group(1));
+        for (DrlPiece p : pieces) {
+            if (p.functions().isEmpty()) continue;
+            String part = rulePart(p.rule());
+            if (sharing.get(part) > 1) part = part + "_" + partsSeen.merge(part, 1, Integer::sum);
+            Map<String, Integer> perKind = new HashMap<>(), kindsSeen = new HashMap<>();
+            for (DrlPiece.DrlFunction f : p.functions()) {
+                Matcher m = NAME.matcher(f.name());
+                if (m.matches()) perKind.merge(m.group(1), 1, Integer::sum);
+            }
+            for (DrlPiece.DrlFunction f : p.functions()) {
+                String name = f.name(), where = which + " | " + p.rule() + " | " + name;
+                names.add(name);
+                Matcher m = NAME.matcher(name);
+                if (!m.matches() || !KINDS.contains(m.group(1))) {
+                    outsideTheForm.add(where + ": begint niet met een soort en een _");
+                    continue;
+                }
+                String kind = m.group(1);
+                boolean numbered = perKind.get(kind) > 1;
+                if (numbered) counts.merge("functienamen met een nummer van hun soort" + suffix, 1, Integer::sum);
+                String expected = kind + (numbered ? String.valueOf(kindsSeen.merge(kind, 1, Integer::sum)) : "") + "_"
+                        + part;
+                if (!name.equals(expected)) outsideTheForm.add(where + ": verwacht " + expected);
+                if (globals.contains(name)) outsideTheForm.add(where + ": heet als een global");
+                if (WORDS.contains(name) || SourceVersion.isKeyword(name))
+                    outsideTheForm.add(where + ": is een woord van DRL, MVEL of Java");
+            }
+        }
+        for (String line : text.split("\n")) {
+            if (line.strip().startsWith("//")) continue;
+            String code = withoutStrings(line);
+            for (Matcher m = WORD.matcher(code); m.find(); )
+                if (names.contains(m.group(1)) && (m.end() == code.length() || code.charAt(m.end()) != '('))
+                    outsideTheForm.add(which + " | " + m.group(1) + ": staat in de tekst anders dan als declaratie of"
+                            + " aanroep: " + head(line.strip()));
+        }
+    }
+
+    /** The rule part of the names of the functions of rule {@code rule}: {@code Namen.ident} of its name without the
+     *  code points Drools does not read in a name ({@link #namePart}), {@code x} where none remains. */
+    static String rulePart(String rule) {
+        StringBuilder b = new StringBuilder();
+        Namen.ident(rule, false).codePoints().filter(DrlPiecesCorpusWitnessTest::namePart).forEach(b::appendCodePoint);
+        return b.isEmpty() ? "x" : b.toString();
+    }
+
+    /** Whether Drools reads code point {@code cp} in a name: its DRL lexer reads {@code f} followed by it as one name,
+     *  and Java takes it in an identifier. */
+    static boolean namePart(int cp) {
+        if (!Character.isJavaIdentifierPart(cp)) return false;
+        String name = "f" + Character.toString(cp);
+        DRL6Lexer lexer = new DRL6Lexer(new ANTLRStringStream(name));
+        Token first = lexer.nextToken();
+        return first.getType() == DRL6Lexer.ID && first.getText().equals(name)
+                && lexer.nextToken().getType() == Token.EOF && lexer.getErrors().isEmpty();
+    }
+
+    /** {@code line} with the characters of its string literals blanked, so that a name in one is not read as code. */
+    private static String withoutStrings(String line) {
+        StringBuilder out = new StringBuilder(line);
+        boolean in = false;
+        for (int i = 0; i < out.length(); i++) {
+            char c = out.charAt(i);
+            if (c == '"') { in = !in; continue; }
+            if (!in) continue;
+            if (c == '\\' && i + 1 < out.length()) out.setCharAt(i++, ' ');
+            out.setCharAt(i, ' ');
+        }
+        return out.toString();
+    }
+
+    private static Set<String> words() {
+        Set<String> out = new HashSet<>();
+        try {
+            for (Field f : DroolsSoftKeywords.class.getFields())
+                if (Modifier.isStatic(f.getModifiers()) && f.getType() == String.class) out.add((String) f.get(null));
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
+        out.addAll(AbstractParser.OPERATORS.keySet());
+        out.addAll(AbstractParser.LITERALS.keySet());
+        return out;
     }
 
     /**

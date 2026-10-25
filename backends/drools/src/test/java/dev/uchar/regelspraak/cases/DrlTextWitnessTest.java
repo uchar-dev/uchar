@@ -51,9 +51,11 @@ class DrlTextWitnessTest {
     private static final Path PROPERTY = Path.of("src", "test", "resources", "property");
 
     /** A binding of a value along a path: the function of the path as the bound expression. */
-    private static final Pattern PATH_IN_BINDING = Pattern.compile("\\$\\w+ : \\(r\\d+_pad\\d+\\(this\\)\\)");
+    private static final Pattern PATH_IN_BINDING = Pattern.compile(
+            "\\$\\w+ : \\(pad[0-9]*_[\\p{L}\\p{N}_]+\\(this\\)\\)");
     /** A field test along a path: the function of the path tested for null. */
-    private static final Pattern PATH_IN_FIELD_TEST = Pattern.compile("r\\d+_pad\\d+\\(this\\) [=!]= null");
+    private static final Pattern PATH_IN_FIELD_TEST = Pattern.compile(
+            "(?<![\\p{L}\\p{N}_])pad[0-9]*_[\\p{L}\\p{N}_]+\\(this\\) [=!]= null");
 
     /** One case: a golden, its case file, the form of the text the case reaches, and the instance whose link the case
      *  leaves out with the role it lacks. */

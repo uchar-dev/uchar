@@ -26,6 +26,10 @@ import dev.uchar.regelspraak.transpiler.tms.plan.Route;
 import dev.uchar.regelspraak.transpiler.tms.plan.Term;
 import dev.uchar.regelspraak.transpiler.tms.plan.TestItem;
 
+import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.Token;
+import org.drools.drl.parser.lang.DRL6Lexer;
+
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -41,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The rendering of the outcome of the analysis into DRL text ({@link #text}), the second rendering beside the
@@ -82,10 +87,20 @@ import java.util.TreeSet;
  *       field of a fact shadows that field without a complaint (FABLE-2 §2.1). The text imports the classes of the
  *       branch and of the runtime it names, never a bean class, which the Java dialect cannot see: a bean stands with
  *       its full name in a pattern. A class of the JDK and an enumeration label stand with their full names.</li>
- *   <li>The local names of a consequence are fixed ({@code v}, {@code f}, {@code k}, {@code depositFlag}), and a function is
- *       named after its rule's place in the plan and its own place in that rule's functions, which stand before the
- *       rule in that order: one plan gives one text. Which piece of the text is a rule's, with its functions, the
- *       rendering gives beside the text ({@link TmsTranspiler.DrlPiece}), so that a reader reads no names.</li>
+ *   <li>The local names of a consequence are fixed ({@code v}, {@code f}, {@code k}, {@code sonde}), and a function is
+ *       named after its kind and its rule (card drl-function-names-from-rule): {@code <kind>_<rule>}, the kind being
+ *       the word of what the function computes ({@code toets}, {@code samengesteld}, {@code afloop}, {@code waarde},
+ *       {@code pad}, {@code fout}, …) and the rule part {@link Namen#ident} of the rule's name, without the code
+ *       points Drools does not read in a name ({@link #namePart}), {@code x} where none remains. A kind of which the
+ *       rule has more than one function is numbered from 1 in the order of the plan, right after the kind
+ *       ({@code pad1_<rule>}, {@code pad2_<rule>}); a function that is the only one of its kind in its rule has no
+ *       number ({@code toets_<rule>}). Rules with functions whose rule parts are the same are numbered from 1 in the
+ *       order of the plan, after the rule part ({@code toets_<rule>_1}, {@code toets_<rule>_2}). A rule part has no
+ *       {@code _}, so a name is never that of a global (an ident, or {@code rsDagsoort_} and one), of a member of a
+ *       bean, of a local or of a word of DRL or MVEL, and it begins with its kind, a letter, also where the rule's
+ *       name begins with a digit. The functions stand before their rule in the order of their places: one plan gives
+ *       one text. Which piece of the text is a rule's, with its functions, the rendering gives beside the text
+ *       ({@link TmsTranspiler.DrlPiece}), so that a reader reads no names.</li>
  * </ul>
  *
  * <p>The consequences it carries are those of the ordinary rules, the faults, the inconsistency, the writers that
@@ -161,12 +176,23 @@ final class DrlRendering {
     static Rendered render(Modelplan plan) {
         DrlRendering w = new DrlRendering();
         Set<String> ruleNames = new HashSet<>();
-        for (int n = 0; n < plan.rules().size(); n++) {
+        // a first rendering of each rule gives the kinds of its functions in the order of their places: only the whole
+        // rule tells whether a kind is numbered, and only every rule whether a rule part is, so the names follow from
+        // those kinds and a second rendering writes them; the imports and day kinds the first notes, it notes again
+        List<List<String>> kinds = new ArrayList<>();
+        for (RulePlan r : plan.rules()) {
             // the header escapes a name one to one, so two rules of one name in the text are two plans of one name
-            if (!ruleNames.add(plan.rules().get(n).name()))
-                throw new IllegalStateException("twee regels van het plan heten " + str(plan.rules().get(n).name())
+            if (!ruleNames.add(r.name()))
+                throw new IllegalStateException("twee regels van het plan heten " + str(r.name())
                         + ", en een KieBase houdt één regel per naam");
-            w.new Rule(n, plan.rules().get(n)).renderRule();
+            kinds.add(w.new Rule(r, null).kinds());
+        }
+        List<FunctionNames> names = functionNames(plan.rules(), kinds);
+        Set<String> functionNames = new HashSet<>();
+        for (int n = 0; n < plan.rules().size(); n++) {
+            for (String f : names.get(n).names())
+                if (!functionNames.add(f)) throw new IllegalStateException("twee functies van de tekst heten " + f);
+            w.new Rule(plan.rules().get(n), names.get(n)).renderRule();
         }
         Set<String> declared = new HashSet<>();
         StringBuilder globals = new StringBuilder();
@@ -179,6 +205,8 @@ final class DrlRendering {
             if (!declared.add(d)) throw new IllegalStateException("de global " + d + " wordt twee keer gedeclareerd");
             globals.append("global java.util.function.Predicate ").append(d).append(";\n");
         }
+        for (String d : declared)
+            if (functionNames.contains(d)) throw new IllegalStateException("de functie " + d + " heet als een global");
         StringBuilder out = new StringBuilder("package ").append(TmsTranspiler.PKG).append(";\n\n");
         for (String i : w.imports) out.append("import ").append(i).append(";\n");
         if (!w.imports.isEmpty()) out.append('\n');
@@ -342,6 +370,70 @@ final class DrlRendering {
         return global;
     }
 
+    /** The names of the functions of one rule by their places, and the kinds of the first rendering they follow from. */
+    private record FunctionNames(List<String> kinds, List<String> names) {}
+
+    /**
+     * The names of the functions of every rule of {@code rules}, whose first rendering gave {@code kinds}: per function
+     * its kind, its number among the functions of that kind in its rule where the rule has more than one, {@code _}
+     * and the rule part ({@link #rulePart}); where more than one rule with functions has that rule part, {@code _} and
+     * the rule's number among them follow, each counted from 1 in the order of the plan.
+     */
+    private static List<FunctionNames> functionNames(List<RulePlan> rules, List<List<String>> kinds) {
+        List<String> parts = new ArrayList<>();
+        Map<String, Integer> sharing = new HashMap<>();
+        for (int n = 0; n < rules.size(); n++) {
+            parts.add(rulePart(rules.get(n).name()));
+            if (!kinds.get(n).isEmpty()) sharing.merge(parts.get(n), 1, Integer::sum);
+        }
+        Map<String, Integer> partsSeen = new HashMap<>();
+        List<FunctionNames> out = new ArrayList<>();
+        for (int n = 0; n < rules.size(); n++) {
+            List<String> own = kinds.get(n);
+            String part = parts.get(n);
+            if (!own.isEmpty() && sharing.get(part) > 1) part = part + "_" + partsSeen.merge(part, 1, Integer::sum);
+            Map<String, Integer> perKind = new HashMap<>(), kindsSeen = new HashMap<>();
+            for (String kind : own) perKind.merge(kind, 1, Integer::sum);
+            List<String> names = new ArrayList<>();
+            for (String kind : own)
+                names.add(kind + (perKind.get(kind) > 1 ? String.valueOf(kindsSeen.merge(kind, 1, Integer::sum)) : "")
+                        + "_" + part);
+            out.add(new FunctionNames(own, List.copyOf(names)));
+        }
+        return out;
+    }
+
+    /** The part of the names of its functions that the name of a rule gives: {@link Namen#ident} of it, without the code
+     *  points Drools does not read in a name ({@link #namePart}), {@code x} where none remains. */
+    private static String rulePart(String rule) {
+        StringBuilder b = new StringBuilder();
+        Namen.ident(rule, false).codePoints().filter(DrlRendering::namePart).forEach(b::appendCodePoint);
+        return b.isEmpty() ? "x" : b.toString();
+    }
+
+    /** Per code point asked so far, whether Drools reads it as part of a name ({@link #namePart}). */
+    private static final Map<Integer, Boolean> NAME_PARTS = new ConcurrentHashMap<>();
+
+    /**
+     * Whether Drools 8.44 reads code point {@code cp} as part of the name of a function wherever the text spells one:
+     * its DRL lexer reads {@code f} followed by it as one name, and Java takes it in an identifier, as the compiler of
+     * the functions and MVEL do. The lexer's table of the characters of a name is that of Java 5, Unicode 4.0 without
+     * the characters outside the Basic Multilingual Plane, so it reads {@code ë}, {@code ş} and {@code 日} but not
+     * {@code ȷ} (U+0237, Unicode 4.1), {@code ²} or {@code 𝔘}, where the text does not parse. Measured 2026-10-25 over
+     * every letter and digit of Unicode: each of the 46100 that both take, in names of 150, compiles and fires in a
+     * declaration, an {@code eval}, a binding and an MVEL consequence.
+     */
+    private static boolean namePart(int cp) {
+        return NAME_PARTS.computeIfAbsent(cp, c -> {
+            if (!Character.isJavaIdentifierPart(c)) return false;
+            String name = "f" + Character.toString(c);
+            DRL6Lexer lexer = new DRL6Lexer(new ANTLRStringStream(name));
+            Token first = lexer.nextToken();
+            return first.getType() == DRL6Lexer.ID && first.getText().equals(name)
+                    && lexer.nextToken().getType() == Token.EOF && lexer.getErrors().isEmpty();
+        });
+    }
+
     // ---------------- the context of a function of a term ----------------
 
     /** What a function of a term sees: its parameters, in order, each with the expression the rule passes it; the
@@ -400,11 +492,15 @@ final class DrlRendering {
 
     // ---------------- one rule ----------------
 
-    /** The rendering of the plan of one rule, the {@code n}th of the plan: its functions and its rule. */
+    /** The rendering of the plan of one rule: its functions and its rule. */
     private final class Rule {
-        private final int n;
         private final RulePlan plan;
-        /** The functions of this rule, in the order of their names. */
+        /** The names of the functions of this rule by their places ({@link DrlRendering#functionNames}), null in the
+         *  first rendering, which gives only their kinds ({@link #kinds()}). */
+        private final FunctionNames given;
+        /** The kind of the function at each place, as {@link #name} met it. */
+        private final List<String> kinds = new ArrayList<>();
+        /** The functions of this rule, in the order of their places. */
         private final List<String> functions = new ArrayList<>();
         /** Per place of {@link #functions} the name of its function and the length of the comment above its
          *  declaration, 0 for none, from which {@link #renderRule} gives each function its places
@@ -422,19 +518,36 @@ final class DrlRendering {
         /** The variables the patterns of this rule bind to their objects, as far as they are in scope. */
         private Set<String> patternVariables = new HashSet<>();
 
-        Rule(int n, RulePlan plan) {
-            this.n = n;
+        Rule(RulePlan plan, FunctionNames given) {
             this.plan = plan;
+            this.given = given;
         }
 
-        void renderRule() {
+        /** The kinds of the functions of this rule in the order of their places: the first rendering, whose text goes
+         *  nowhere. */
+        List<String> kinds() {
+            leftSide();
+            consequence(plan.consequence());
+            return List.copyOf(kinds);
+        }
+
+        /** The items of the left-hand side, but a test that holds whatever the rule binds. */
+        private List<String> leftSide() {
             List<String> when = new ArrayList<>();
             for (LhsItem item : plan.leftSide())
                 if (!(item instanceof TestItem t && holdsWhatever(t))) when.add(item(item));
+            return when;
+        }
+
+        void renderRule() {
+            List<String> when = leftSide();
             String then = consequence(plan.consequence());
             if (!absorbed.isEmpty())
                 throw new IllegalStateException("de zinnen " + absorbed + " van " + plan.name()
                         + " staan in geen functie");
+            if (!kinds.equals(given.kinds()))
+                throw new IllegalStateException("de functies van " + plan.name() + " zijn " + kinds
+                        + ", in de eerste weergave " + given.kinds());
             int start = rules.length();
             List<TmsTranspiler.DrlPiece.DrlFunction> placed = new ArrayList<>();
             for (int place = 0; place < functions.size(); place++) {
@@ -464,17 +577,24 @@ final class DrlRendering {
             functions.add(null);
             functionNames.add(null);
             commentLengths.add(null);
+            kinds.add(null);
             absorbedMarks.add(absorbed.size());
             return functions.size() - 1;
         }
 
-        /** The name of the function at {@code place}, noted for its piece: every function is named once, right after its
-         *  place is reserved. */
-        private String name(String category, int place) {
-            String name = "r" + n + "_" + category + place;
-            if (functionNames.set(place, name) != null)
+        /** The name of the function of kind {@code kind} at {@code place}, noted for its piece: every function is named
+         *  once, right after its place is reserved. The second rendering gives the name
+         *  {@link DrlRendering#functionNames} made of the kinds of the first; the first gives the kind, a name its text
+         *  does not keep. */
+        private String name(String kind, int place) {
+            if (kinds.set(place, kind) != null)
                 throw new IllegalStateException("de functie op plaats " + place + " van " + plan.name()
-                        + " krijgt een tweede naam: " + name);
+                        + " krijgt een tweede naam: " + kind);
+            if (given != null && place >= given.names().size())
+                throw new IllegalStateException("de functie op plaats " + place + " van " + plan.name()
+                        + " is er in de eerste weergave niet: " + kind);
+            String name = given == null ? kind : given.names().get(place);
+            functionNames.set(place, name);
             return name;
         }
 

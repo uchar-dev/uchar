@@ -64,7 +64,7 @@ class WholePeriodCountFilterWitnessTest {
 
     /** A function of the text that holds the route of the whole period, and its name. */
     private static final Pattern WHOLE_PERIOD = Pattern.compile(
-            "function boolean (r\\d+_toets\\d+)\\([^)]*\\) \\{\\n    return ComputeHelpers\\.wholePeriod\\(");
+            "function boolean (toets[0-9]*_[\\p{L}\\p{N}_]+)\\([^)]*\\) \\{\\n    return ComputeHelpers\\.wholePeriod\\(");
 
     @Test void the_computing_rule_plays_through_the_drl_text_branch_like_through_the_exec_model_branch() throws Exception {
         Path ir = COMPUTING_RULE.resolve("ir.json");

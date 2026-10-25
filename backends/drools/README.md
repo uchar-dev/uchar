@@ -342,7 +342,15 @@ whose verdict is that member's (ALLE, DE, TEN_MINSTE 1, PRECIES 1, as
 `ComputeHelpers.established` and `endVerdict` give it) is that member, a composite over no
 member is its verdict where it stands, and a default without a condition has no test and no
 `eval`. The sentence of a composite that goes into another function stays there as a comment
-line where it differs from that function's own. The predicates of the day kinds
+line where it differs from that function's own. A function is named after its kind and its rule
+(card `drl-function-names-from-rule`): `<kind>_<rule>`, the kind the word of what it computes
+(`toets`, `samengesteld`, `afloop`, `waarde`, `pad`, `fout`, …) and the rule part `Namen.ident`
+of the rule's name, without the code points Drools 8.44 does not read in a name (its DRL lexer
+reads the letters and digits of Java 5, nothing outside the Basic Multilingual Plane), `x` where
+none remains. A kind of which the rule has more than one function is numbered from 1 right after
+the kind (`pad1_kadegeld`, `pad2_kadegeld`, beside `pad_havengeld`); rules with functions whose
+rule parts are the same are numbered `_1`, `_2`, … after the rule part, in the order of the plan.
+The predicates of the day kinds
 are globals of the text (`Build.dayKindGlobals()`). It refuses three kinds of its own,
 after the label `drl:` (`DrlRendering.Refusal`): a member whose name Drools reads as
 something else where a pattern spells it (a word of DRL or MVEL such as `in`, or a variable of
