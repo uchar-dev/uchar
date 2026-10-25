@@ -42,25 +42,23 @@ compiles them in-tree from `frontends/regelspraak/src/main/java` (the ANTLR-coup
 
 `cases/DroolsBackend.java` is the backend's public entry, and the one a consumer builds with — the toolchain
 distribution (CLI, decision service, scenario runner) that builds this repository as a git submodule.
-`DroolsBackend.build(document, branch)` takes a loaded `uchar-ir-v1` document (a `JsonNode`, or a path) and
-returns a `Build` record: the model, the bean class loader, the analysis (`execModelTranspiler()`), on the DRL-text
-branch its DRL text (`drl()`; null on the exec-model branch), the coverage manifest of the analysis and the `KieBase`
-(`Branch` has two values, `EXEC_MODEL` and `DRL_TEXT`, the two renderings of the analysis). It is the whole prelude of the case
-runner, which builds every golden through it, so gate 12 fires the KieBase a consumer gets, and it refuses in the
-replay's sentences (`IrLoader.Refusal`, `IrLoader.DocumentError`, `CaseRunner.Excluded`). On the DRL-text branch it
-also refuses a kind the rendering does not carry, an `Excluded` after the label `drl:` (section "The DRL-text
-branch"). A DRL text that the Drools compiler rejects is no such refusal but a fault of the rendering: the build throws
-an `IllegalStateException`, "drl: de DRL-tekst van de weergave compileert niet, een fout van de weergave: …". Until
-card `drl-teksttak-op-truth-maintenance` the build gave such a text as an `Excluded`, "drl compile: …", so a consumer
-that catches only the refusals now meets it as an exception. The analysis has one build,
-and it takes every side table the loader returns beside the model: a build that left one out still produced a KieBase —
-a defaults family firing nowhere, a navigated read answered as the subject's own — and no marker said so, which is why
-there is no shorter way in. A document whose lowering holds two rules of one name in one package — two forms of one
-name, which WF-020 forbids and a hand-written document can still carry — is refused on both branches before the KieBase
-is built: the KieBase keeps one rule per name, and the destructive exec-model lowering played such a document with the
-second rule in the place of the first (measured 2026-10-02: "kenmerk actief: verwacht aanwezig, werkelijk afwezig"). The
-analysis refuses it in the words of Drools' DRL compiler, on both branches in one sentence: "exec-model: Duplicate rule
-name: actief — …" (witness `DuplicateRuleNameWitnessTest`).
+`DroolsBackend.build(document, branch)` takes a loaded `uchar-ir-v1` document (a `JsonNode`, or a path) and returns a
+`Build` record: the model, the bean class loader, the analysis (`execModelTranspiler()`), on the DRL-text branch its DRL
+text (`drl()`; null on the exec-model branch), the coverage manifest of the analysis and the `KieBase` (`Branch` has two
+values, `EXEC_MODEL` and `DRL_TEXT`, the two renderings of the analysis). It is the whole prelude of the case runner,
+which builds every golden through it, so gate 12 fires the KieBase a consumer gets, and it refuses in the replay's
+sentences (`IrLoader.Refusal`, `IrLoader.DocumentError`, `CaseRunner.Excluded`). On the DRL-text branch it also refuses
+a kind the rendering does not carry, an `Excluded` after the label `drl:` (section "The DRL-text branch"). A DRL text
+that the Drools compiler rejects is no such refusal but a fault of the rendering: the build throws an
+`IllegalStateException`, "drl: de DRL-tekst van de weergave compileert niet, een fout van de weergave: …". The analysis
+has one build, and it takes every side table the loader returns beside the model: a build that left one out still
+produced a KieBase — a defaults family firing nowhere, a navigated read answered as the subject's own — and no marker
+said so, which is why there is no shorter way in. A document whose lowering holds two rules of one name in one package —
+two forms of one name, which WF-020 forbids and a hand-written document can still carry — is refused on both branches
+before the KieBase is built: the KieBase keeps one rule per name, and the destructive exec-model lowering played such a
+document with the second rule in the place of the first (measured 2026-10-02: "kenmerk actief: verwacht aanwezig,
+werkelijk afwezig"). The analysis refuses it in the words of Drools' DRL compiler, on both branches in one sentence:
+"exec-model: Duplicate rule name: actief — …" (witness `DuplicateRuleNameWitnessTest`).
 
 **A session in four calls.** The replay makes them for every case (`CaseRunner`), so the gate fires a session as a
 consumer does.
@@ -350,21 +348,14 @@ reads the letters and digits of Java 5, nothing outside the Basic Multilingual P
 none remains. A kind of which the rule has more than one function is numbered from 1 right after
 the kind (`pad1_kadegeld`, `pad2_kadegeld`, beside `pad_havengeld`); rules with functions whose
 rule parts are the same are numbered `_1`, `_2`, … after the rule part, in the order of the plan.
-The predicates of the day kinds
-are globals of the text (`Build.dayKindGlobals()`). It refuses three kinds of its own,
-after the label `drl:` (`DrlRendering.Refusal`): a member whose name Drools reads as
+The predicates of the day kinds are globals of the text (`Build.dayKindGlobals()`). It refuses
+three kinds of its own, after the label `drl:` (`DrlRendering.Refusal`): a member whose name Drools reads as
 something else where a pattern spells it (a word of DRL or MVEL such as `in`, or a variable of
 a consequence such as `drools`), a day kind whose global is no Java identifier, and a bean class
 as the constant of a term; a text the compiler rejects is a fault of the rendering, an
 `IllegalStateException`. Gate 12 holds it to the status
 line of the exec-model branch on every golden; the price is the time of the fire, 1.8 to 2.3
 times that of the executable model on the scale model.
-
-Until that card the DRL-text branch was a lowering of its own (`DrlTranspiler`, with
-`Stratificatie`): its rules wrote the beans as they fired, ordered by salience bands, the
-design the exec-model branch had until card `tms-omschakeling`, without a defaults lowering.
-Its limits measured on hand-written documents stood in the sections "Recorded: …" that
-described both destructive lowerings; the history of this file keeps them.
 
 ## The exec-model branch
 

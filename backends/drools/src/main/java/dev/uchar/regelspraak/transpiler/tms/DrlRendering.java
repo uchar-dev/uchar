@@ -56,12 +56,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>The spelling follows the measurements of the second advice of card drl-teksttak-op-truth-maintenance (FABLE-2
  * §2) and the decisions taken on them:
  * <ul>
- *   <li>The rules are MVEL; every test and every value of the plan, a {@link Term}, is a function in the Java dialect
- *       with the RegelSpraak sentence of its node above it as a comment, which the rule calls. MVEL has no
- *       {@code try} and no {@code throw}, and one form for every term keeps one semantics. A node that needs
- *       statements of its own, a composite, a {@code Let} and its binder, a condition without its fault, the
- *       evaluation of a fold and of a quantifier fold, is a function of its own, which takes the parameters of the
- *       function it stands in.</li>
+ *   <li>The rules are MVEL; a test or a value of the plan, a {@link Term}, that tests or computes something is a
+ *       function in the Java dialect with the RegelSpraak sentence of its node above it as a comment, which the rule
+ *       calls. MVEL has no {@code try} and no {@code throw}, and one form for every term keeps one semantics. A node
+ *       that needs statements of its own, a {@code Let} and its binder, a condition without its fault, the
+ *       evaluation of a fold and of a quantifier fold, and a composite that no test carries (the next item), is a
+ *       function of its own, which takes the parameters of the function it stands in.</li>
  *   <li>A function stands only where it tests or computes something (card drl-no-passthrough-functions). A test that
  *       asks the verdict of a composite, that it holds or holds without a fault, and the verdict of the matrix of a
  *       quantifier fold carry the composite's statements themselves, within the {@code try} of a test without a fault;
