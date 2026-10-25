@@ -12,13 +12,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static dev.uchar.regelspraak.cases.DrlPiecesWitnessTest.piece;
 import static dev.uchar.regelspraak.cases.DrlPiecesWitnessTest.table;
-import static dev.uchar.regelspraak.cases.TmsDocuments.computingRule;
-import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -32,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * also one call, keeps its function. On goldens where the corpus shows the form, the forms the analysis makes: a
  * decision over a constant without a fault in the plan and over a collapsed one with it, over a bound variable
  * without a fault and over a collapsed one with it, a value consequence, always collapsed and with its fault, over a
- * constant, a bound variable and a text with a quote; on documents written here a value consequence with a probe and a
+ * constant, a bound variable and a text with a quote, and one with a probe in the plan; on documents written here a
  * text that Drools's preparation of a consequence and MVEL would read otherwise. Per rule the table of its piece
  * ({@link DrlPiecesWitnessTest#table}) and its consequence; the cases of each play on both branches.
  * {@code transpiler.tms.DrlCarriedValueWitnessTest} holds every class of constant and the forms the analysis does not
@@ -170,44 +167,24 @@ class DrlValueFunctionsWitnessTest {
     @Test void a_value_with_a_probe_that_computes_nothing_keeps_its_probe() throws Exception {
         // the condition divides, so the rule has a probe, and the plan gives it to the value consequence as well; a
         // constant reports nothing to it, and the consequence keeps it as the plan says
-        String division = "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":" + ownRead("gewicht", "Vondst")
-                + ",\"right\":" + ownRead("deler", "Vondst") + ",\"type\":{\"node\":\"Number\",\"whole\":false,"
-                + "\"decimals\":0,\"sign\":\"unspecified\"},\"source\":{\"snippet\":\"zijn gewicht gedeeld door zijn"
-                + " deler\"}}";
-        String condition = TmsDocuments.comparison("greater", division, TmsDocuments.number("1"));
-        Path document = TmsDocuments.document(TmsDocuments.model(List.of(TmsDocuments.objectType("Vondst", List.of(
-                        TmsDocuments.attribute("gewicht", TmsDocuments.WHOLE), TmsDocuments.attribute("deler", TmsDocuments.WHOLE),
-                        TmsDocuments.attribute("uitkomst", TmsDocuments.WHOLE)), List.of())), List.of()),
-                List.of(computingRule("uitkomst van een zware vondst", "GELIJKSTELLING", "Vondst", "uitkomst",
-                        TmsDocuments.number("5"), condition)));
-        DroolsBackend.Build b = DroolsBackend.build(document, DroolsBackend.Branch.DRL_TEXT);
-        DrlPiece p = piece(b, "uitkomst van een zware vondst");
-        List<String> names = new ArrayList<>();
-        for (DrlPiece.DrlFunction f : p.functions()) names.add(f.name());
-        assertTrue(names.stream().noneMatch(n -> n.startsWith("waarde")), names::toString);
+        DroolsBackend.Build b = build("jutterswet-ploegaandeel");
+        DrlPiece p = piece(b, "bergingsaandeel van een jutter");
+        assertEquals(List.of("toets_bergingsaandeelVanEenJutter | // hij aan alle volgende voorwaarden voldoet: - zijn"
+                        + " ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0 | roept []",
+                "regel | roept [toets_bergingsaandeelVanEenJutter]"), table(b.drl(), p));
         assertEquals("    Object sonde = ComputeHelpers.depositFlag();\n"
-                + "    // 5\n"
-                + "    Object v = ComputeHelpers.collapse(new java.math.BigDecimal(\"5\"));\n"
+                + "    // 1\n"
+                + "    Object v = ComputeHelpers.collapse(new java.math.BigDecimal(\"1\"));\n"
                 + "    if (ComputeHelpers.reported(sonde)) {\n"
-                + "        insertLogical(ComputeHelpers.inconsistency(\"uitkomst van een zware vondst\", $onderwerp,"
+                + "        insertLogical(ComputeHelpers.inconsistency(\"bergingsaandeel van een jutter\", $onderwerp,"
                 + " ComputeHelpers.depositCodes(sonde)));\n"
                 + "    }\n"
                 + "    if (!ComputeHelpers.isEmpty(v)) {\n"
-                + "        insertLogical(new Value($onderwerp, ElementKey.of(\"vondst\", \"uitkomst\", false), v,"
-                + " \"uitkomst van een zware vondst\"));\n"
+                + "        insertLogical(new Value($onderwerp, ElementKey.of(\"jutter\", \"bergingsaandeel\", false), v,"
+                + " \"bergingsaandeel van een jutter\"));\n"
                 + "    }\n"
                 + "end\n\n", consequence(b, p));
-        // 10 / 2 is greater than 1, 1 / 2 is not: by hand, RUNTIME-SEMANTICS ch. 5.1
-        play(document, List.of(vondst("zwaar", "10", "2"), vondst("licht", "1", "2")),
-                List.of(TmsDocuments.value("zwaar", "uitkomst", "5"), TmsDocuments.value("licht", "uitkomst", null)));
-        // a division by zero deposits in the condition: the two branches give the same session
-        JsonNode zero = TmsDocuments.caseDocument(List.of(vondst("nul", "1", "0")), List.of());
-        assertEquals(BranchDumps.dump(document, zero, DroolsBackend.Branch.EXEC_MODEL),
-                BranchDumps.dump(document, zero, DroolsBackend.Branch.DRL_TEXT));
-    }
-
-    private static String vondst(String label, String gewicht, String deler) {
-        return TmsDocuments.instance(label, "Vondst", Map.of("gewicht", gewicht, "deler", deler), List.of(), Map.of());
+        plays("jutterswet-ploegaandeel");
     }
 
     @Test void a_value_that_computes_something_keeps_its_function() throws Exception {
