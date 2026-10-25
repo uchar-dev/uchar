@@ -564,8 +564,8 @@ if command -v java >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
     # is demanded. The lens-proven stale-jar flank — a build-only-when-absent jar can silently
     # predate the source under review — stays closed, because the test is "older than the source",
     # not "absent". From 2026-08-30 until then the leg rebuilt the jar unconditionally with `mvn
-    # package`, the backend's JUnit suite included; that suite is gate 12's obligation (its one `mvn
-    # package` runs it and refreshes the jar), so it deliberately no longer runs here. legfail is
+    # package`, the backend's JUnit suite included; that suite is gate 12's obligation (it runs it
+    # with `mvn -o test` on the same target/), so it deliberately no longer runs here. legfail is
     # leg-LOCAL so the leg always leaves a verdict of its own, regardless of earlier red-case failures
     # elsewhere in the gate (lens finding: keying on the global status let the leg evaporate without
     # one).

@@ -58,14 +58,14 @@
 # both its rows by name: the suite's comparison of the two branches per case, which no count covers.
 #
 # The REPLAY runs JAR-ONLY (decision V2-B, the gate-10 pattern): the gate invokes `java -jar` per
-# golden against target/uchar-drools-backend-*-shaded.jar. Since 2026-08-30 the gate itself rebuilds
-# that jar unconditionally (the one `mvn package` below, which also runs the suite), so the replay
-# can never run a jar that predates the source under review.
+# golden against target/uchar-drools-backend-*-shaded.jar, which it takes FRESH OR REBUILT
+# (scripts/lib/drools-jar.sh) like the five other gates that read the jar: rebuilt when a path it is
+# built from is newer, so the replay never runs a jar that predates the source under review.
 #
 # --fast (card drl-teksttak-op-truth-maintenance, 2026-10-14, at the maintainer's request) serves a
-# builder who changes a pin or a list of this gate. The jar is rebuilt as always, so the replay never
-# runs a stale jar, but WITHOUT the JUnit suite; the exec-model replay runs with every pin and list;
-# the DRL-text sweep is left out. So under --fast nothing compares the two branches: neither the sweep
+# builder who changes a pin or a list of this gate. The jar is taken fresh or rebuilt as always, so the
+# replay never runs a stale jar, but the JUnit suite does not run; the exec-model replay runs with every
+# pin and list; the DRL-text sweep is left out. So under --fast nothing compares the two branches: neither the sweep
 # nor the suite's per-case comparison runs. Its report says what did not run, and its last line that
 # it is no landing run: a landing always runs the full gate, without a flag.
 set -u
@@ -92,24 +92,36 @@ command -v java >/dev/null 2>&1 || fail "java not found (the Drools runtime need
 # parameters only; the backend's own suite runs under the Dutch catalogue (`uchar.messages.locale=nl`, pom.xml).
 bash scripts/check-drools-codes.sh || fail "the register of refusal codes does not hold (scripts/check-drools-codes.sh)"
 
-# --- build + the backend's own JUnit suite, with a NON-ZERO test count (maintainer decision 2026-08-30) ----
+# --- the jar + the backend's own JUnit suite, with a NON-ZERO test count (maintainer decision 2026-08-30) ----
 # The gate-10 obligation, mirrored: the witness tests carry what the corpus replay cannot see — the
 # shape a case input became, a write-guard branch no golden exercises — so a suite that ran NOTHING
 # would be a silent greenlight for exactly the checks the corpus does not duplicate.
-# DESIGN: ONE `mvn package` runs the suite AND refreshes the shaded jar, unconditionally. Building
-# only-when-absent let the replay run a stale jar that predates the source under review (lens finding
-# 2026-08-30), and a suite-only `mvn test` compiled fresh source while the replay stayed stale — one
-# command closes both flanks, incrementally a few seconds against a multi-minute replay. Trusting a
-# surefire report on disk instead would buy nothing but a way to be wrong (a report can be "fresh"
-# yet predate an edit). It runs FIRST so a red or empty suite fails in seconds. The summary line is
-# matched WITHOUT its log-level prefix (surefire demotes it to [WARNING] when anything is skipped)
-# and skipped tests fail the gate: a skipped witness is a green subset, and a green subset is not
-# green. CI already builds through mvn; locally mvn is a hard requirement of the gate, deliberately.
-command -v mvn >/dev/null 2>&1 || fail "mvn not found — gate 12 builds the jar and runs the backend's JUnit suite (a skipped suite is a silent greenlight)"
-# the moment the build begins, as a file the build leaves alone: the surefire report of the witness below
-# must be newer, so a report an earlier build left cannot stand in for this one
+# DESIGN (maintainer decision 2026-10-25, card gate-builds-when-stale): the gate takes the jar FRESH OR
+# REBUILT from scripts/lib/drools-jar.sh, as the five other jar gates do, and runs the suite with
+# `mvn -o test` on the same target/. The lesson of 2026-08-30 has three flanks, and each stays closed:
+#   1. a replay on a jar older than the source under review: drools-jar.sh rebuilds the jar when a
+#      source or a source directory is newer, and then asserts jar mtime >= youngest source mtime;
+#   2. a suite that tests other source than the replay runs: `mvn test` compiles incrementally into the
+#      target/classes the jar is shaded from, and the source set of drools-jar.sh includes src/test, so
+#      an edited test rebuilds the jar as well; an edit saved while the gate runs is the recorded limit
+#      of drools-jar.sh;
+#   3. a suite that did not run or did not count: the suite is a check, not a build step, and runs on
+#      every full run with the counts below — more than zero, none skipped, the floor, the witnesses by
+#      name, each report newer than suite_begin. It is never taken from a surefire report on disk: a
+#      report can predate an edit.
+# `mvn test` writes no jar, so the gates that read the jar can run beside this one in one checkout
+# (`make gates` builds the jar before it starts them). The suite runs FIRST, so a red or empty suite
+# fails before the replay. The summary line is matched WITHOUT its log-level prefix (surefire demotes
+# it to [WARNING] when anything is skipped) and skipped tests fail the gate: a skipped witness is a
+# green subset, and a green subset is not green. mvn is a hard requirement of the gate, deliberately:
+# only mvn can rebuild a stale jar and run the suite.
+command -v mvn >/dev/null 2>&1 || fail "mvn not found — gate 12 takes the jar fresh or rebuilt and runs the backend's JUnit suite (a skipped suite is a silent greenlight)"
+. scripts/lib/drools-jar.sh || fail "could not read scripts/lib/drools-jar.sh"
+JAR=$(ensure_drools_jar) || fail "no fresh Drools shaded jar (the drools-jar line above says why)"
+# the moment the suite begins, as a file the suite leaves alone: the surefire report of the witness below
+# must be newer, so a report an earlier run left cannot stand in for this one
 suite_begin=backends/drools/target/check-drools-begin
-{ mkdir -p backends/drools/target && touch "$suite_begin"; } || fail "cannot mark the start of the build in backends/drools/target"
+{ mkdir -p backends/drools/target && touch "$suite_begin"; } || fail "cannot mark the start of the suite in backends/drools/target"
 
 # --- monotone floor (maintainer decision 2026-09-09) ---------------------------------------------
 # A lower bound, never an equality: it catches SHRINK — the suite that quietly runs half — while
@@ -128,19 +140,14 @@ suite_begin=backends/drools/target/check-drools-begin
 # drl-teksttak-op-truth-maintenance: the card moved the comparison of the two branches per case into the
 # suite, so a suite that quietly ran less would now also compare less.
 EXPECTED_MIN_TESTS=1573   # 2026-10-14: measured 1573 (backends/drools, the surefire run, step 6c of that card)
-if [ "$FAST" -eq 1 ]; then
-  # --fast: the jar is rebuilt as always (never a stale one), but the suite does not run
-  suite_out=$(mvn -o -f backends/drools/pom.xml -DskipTests package 2>&1)
-else
-  suite_out=$(mvn -o -f backends/drools/pom.xml package 2>&1)
-fi
-suite_status=$?
-if [ $suite_status -ne 0 ]; then
-  echo "$suite_out" | tail -25 >&2
-  [ "$FAST" -eq 1 ] && fail "the backend's build is red (--fast: the JUnit suite did not run)"
-  fail "the backend's build+JUnit suite is red"
-fi
+# --fast: the jar above is fresh or rebuilt as always (never a stale one), but the suite does not run
 if [ "$FAST" -eq 0 ]; then
+  suite_out=$(mvn -o -f backends/drools/pom.xml test 2>&1)
+  suite_status=$?
+  if [ $suite_status -ne 0 ]; then
+    echo "$suite_out" | tail -25 >&2
+    fail "the backend's build+JUnit suite is red"
+  fi
   summary=$(printf '%s\n' "$suite_out" | sed -n 's/^\[[A-Z]*\] Tests run: \([0-9][0-9]*\), Failures: [0-9]*, Errors: [0-9]*, Skipped: \([0-9][0-9]*\).*/\1 \2/p' | tail -1)
   [ -n "$summary" ] || fail "the suite produced no 'Tests run: N' summary — it did not run"
   tests=${summary%% *}; skipped=${summary##* }
@@ -168,9 +175,6 @@ if [ "$FAST" -eq 0 ]; then
       || fail "$witness did not run in this build (no surefire report newer than its start: $report) — the witnesses of the build with readings are required"
   done
 fi
-
-JAR=$(ls backends/drools/target/uchar-drools-backend-*-shaded.jar 2>/dev/null | head -1)
-[ -n "$JAR" ] || fail "the build produced no shaded jar"
 
 # --- the value-divergence exclusion list (reason-carrying; fails when stale) -------------------
 # Each entry: "<golden-relative-path>|<reason>". A golden here MUST diverge (FAIL/ERROR); if it

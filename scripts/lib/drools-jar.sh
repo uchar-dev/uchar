@@ -1,6 +1,7 @@
 # shellcheck shell=sh
-# The Drools shaded jar, FRESH OR REBUILT, for the gates that only replay it: 8 (check-red),
-# 11 (check-toka-parity) and 13 (check-reftype-derivation). Sourced from the repository root:
+# The Drools shaded jar, FRESH OR REBUILT, for the six gates that read it — 8 (check-red), 11
+# (check-toka-parity), 12 (check-drools), 13 (check-reftype-derivation), 15 (check-graph) and 17
+# (check-readings) — and for the `jar` target of the root Makefile. Sourced from the repository root:
 #
 #     . scripts/lib/drools-jar.sh
 #     JAR=$(ensure_drools_jar) || <fail the gate>
@@ -11,12 +12,11 @@
 # or it fails loudly: a non-zero status and a `drools-jar: FAIL — …` line, after the tail of the mvn
 # output when the build is red.
 #
-# WHY (card gates-drools-jar-eenmaal-per-run, 2026-09-23). A full gate run built this jar four
-# times: gates 8 and 11 with `mvn package`, the backend's JUnit suite included; gate 12 the same, by
-# design; gate 13 with -DskipTests. Three of those four builds bought no certainty the fourth does
-# not. Gate 12 still builds unconditionally — its one `mvn package` runs the suite AND refreshes the
-# jar (check-drools.sh, DESIGN) — and does not use this file. The three replay-only gates take the
-# jar as it stands when it is newer than every path it is built from, and rebuild it otherwise. The
+# WHY (card gates-drools-jar-eenmaal-per-run, 2026-09-23; card gate-builds-when-stale, maintainer
+# decision 2026-10-25). Every gate that reads the jar takes it as it stands when it is newer than every
+# path it is built from, and rebuilds it otherwise, so a run of the gate set builds it at most once
+# and the gates read it side by side. The build here skips the backend's JUnit suite: the suite is
+# gate 12's, which runs it with `mvn -o test` on the same target/ (check-drools.sh, DESIGN). The
 # lens-proven stale-jar flank, "a build-only-when-absent jar can silently predate the source under
 # review" (2026-08-30), stays closed: the test is "older than a source", not "absent".
 #
@@ -132,7 +132,7 @@ case ${0##*/} in
 drools-jar.sh)
     set -u
     if [ $# -ne 1 ] || [ "$1" != --selftest ]; then
-        echo 'usage: sh scripts/lib/drools-jar.sh --selftest   (from the repository root; gates 8, 11 and 13 source this file)' >&2
+        echo 'usage: sh scripts/lib/drools-jar.sh --selftest   (from the repository root; the six jar gates and the root Makefile source this file)' >&2
         exit 2
     fi
     fsrc=$(find frontends/regelspraak/src/main -type f | sort | head -n 1)

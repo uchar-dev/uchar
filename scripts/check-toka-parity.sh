@@ -283,7 +283,7 @@ CLINGO=_build/default/backends/clingo/bin/clingo_runner.exe
 # build-only-when-absent jar can silently predate the source under review — stays closed, because
 # the test is "older than the source", not "absent". From 2026-08-30 until then this step rebuilt
 # the jar unconditionally with `mvn package`, the backend's JUnit suite included; that suite is gate
-# 12's obligation (its one `mvn package` runs it and refreshes the jar), so it deliberately no
+# 12's obligation (it runs it with `mvn -o test` on the same target/), so it deliberately no
 # longer runs here. mvn is a hard requirement, exactly as it is of gate 12: only mvn can rebuild a
 # stale jar.
 command -v mvn >/dev/null 2>&1 || fail "mvn not found — the Drools leg takes the shaded jar fresh or rebuilt, and only mvn can rebuild a stale one (stale-jar guard)"
