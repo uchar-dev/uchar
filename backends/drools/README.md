@@ -271,8 +271,8 @@ String text = refusal.message(Locale.forLanguageTag("nl"));              // per 
 
 The distribution asks for Dutch with the first line. The backend's own suite runs under `nl` (`maven-surefire-plugin`
 in `pom.xml`, the property and `JAVA_TOOL_OPTIONS` for the JVMs that tests start), since its assertions are the Dutch
-sentences. A sentence that was English before the card and that a test pins keeps its English text in the Dutch
-catalogue (the card's Result lists them); the others are translated. The fixed sentences of an evaluation fault
+sentences. A sentence that a test pins in English keeps its English text in the Dutch catalogue (card
+`message-catalogues`, whose Result lists them); the others are translated. The fixed sentences of an evaluation fault
 (`ComputeFault`) are rendered when the class is initialised, in the language the property then names, because a KieBase
 embeds them; the faults with parameters, the refusals and the diagnostics render per call. `scripts/check-drools-codes.sh`
 holds the catalogues to the register (gate 12).
@@ -308,13 +308,10 @@ java -jar backends/drools/target/uchar-drools-backend-*-shaded.jar \
 `scripts/check-drools.sh` replays every corpus golden through both branches. The exec-model
 branch is the square: a golden whose forms the loader+transpiler carry **must** match the
 pinned expectations gates 5 (ref) and 6 (clingo) verify — a played pass is the square — and
-`EXPECTED_PLAYED` pins the played count as an equality, 255 since card
-`drl-teksttak-op-truth-maintenance` (2026-10-14), which brought five goldens of its own (250
-since card `objectcreatie-zonder-connectingrole-binding`, 2026-10-11), every golden the
-destructive exec-model lowering played among them. The DRL-text branch is swept after it and must give
-every golden the status line of the exec-model branch, `PLAYED n` or the same refusal; it has
-no list and no pin of its own (proposed with card `drl-teksttak-op-truth-maintenance`; until
-then it had `EXPECTED_DRL_PLAYED`, 197, and a list of non-players, `DRL_CHANNEL`). Not-carried
+`EXPECTED_PLAYED` pins the played count as an equality (279 of the 326 goldens with cases on
+2026-10-25). The DRL-text branch is swept after it and must give every golden the status line
+of the exec-model branch, `PLAYED n` or the same refusal; it has no list and no pin of its own
+(card `drl-teksttak-op-truth-maintenance`). Not-carried
 forms never vanish silently: per-form auto-refusals print their reason, and a
 reason-carrying value-divergence list in the script (the check-noop survivor pattern)
 names each golden whose fired outcome differs from ref/clingo and fails when stale.
@@ -363,16 +360,9 @@ times that of the executable model on the scale model.
 gate 12's square replays and the distribution builds with. It derives with Drools' truth maintenance instead of writing
 the beans, so it needs none of the measures a lowering that writes the beans takes against the engine's own reactivity
 — `NO_LOOP` on a rule that writes its own subject, salience from the stratification, opaque class reactivity, `update`
-only on a changed value, the `initEigen` guard of an initialisation. It began as the trial of the card
-`drools-logische-afleiding` beside such a destructive exec-model lowering, and on its measurements the owner decided to
-build it out into that lowering's replacement (PLAN §9, 2026-10-08), in four cards: `tms-aggregaties-creatie-en-fouten`
-added aggregations, object and fact creation and evaluation faults as logical facts; `tms-expressievormen-en-rekendatum`
-the value forms, the evaluation date, the faults of date arithmetic as facts, the condition forms and the writers of
-one target; `tms-verdeling-en-tijdlijnen` allocations, timelines, the whole-period qualifier and day kinds; and
-`tms-omschakeling` made it the exec-model branch on 2026-10-10 and removed the destructive lowering, the branch value
-`TRUTH_MAINTENANCE` and the flag `--tms`. Each card's `Result:` gives its measurements. It plays 250 of the 295 goldens
-with cases (since card `objectcreatie-zonder-connectingrole-binding`, 2026-10-11), every golden the destructive lowering
-played among them. `TmsMeasurement` and `ScaleTrial` in the test tree
+only on a changed value, the `initEigen` guard of an initialisation (owner's decision, PLAN §9, 2026-10-08; card
+`tms-omschakeling`, 2026-10-10). It plays the goldens gate 12 counts as played (above, "Gate 12").
+`TmsMeasurement` and `ScaleTrial` in the test tree
 measure it, their javadoc says how to run them, and the suite runs its witnesses (`Tms*WitnessTest`), among them
 `TmsCorpusWitnessTest` (above, "Gate 12").
 
@@ -438,8 +428,8 @@ the rule of every fault ("aan het fixpunt staan 2 evaluatiefouten, in de regels 
 ERROR line bounds only the sentences after it, so no fault drops off the line. A consumer meets the fault at
 `setDerivedValues`, or as data in `DroolsBackend.fixpointOf`, not out of the fire. Witnesses `TmsFaultWitnessTest`,
 `TmsConditionFaultWitnessTest` and, for the date faults, `TmsDateFaultWitnessTest`, among them a duration count that
-lies outside the range only on an intermediate state, where the branch threw out of the fire until 2026-10-09. Other
-exceptions are no evaluation fault and still leave the fire: a broken contract and a bug.
+lies outside the range only on an intermediate state. Other exceptions are no evaluation fault and leave the fire: a
+broken contract and a bug.
 
 **Value forms and the evaluation date.** A `Let` binds its binder as a need (RUNTIME-SEMANTICS ch. 10.6): the value is
 evaluated at the first read and kept for every further one, a read of a leeg value ends that `Let` alone with leeg,
@@ -585,15 +575,14 @@ quotient at 16 significant digits, capped, then floored, the v0 residual ch. 4.2
 edge rows of ch. 4.4 write nothing for no recipients, for an empty pot and for eligible proportional weights that sum to
 0, the last still with the deposit of an empty weight beside them. An empty pot is no distribution in every method, as
 ch. 4.4 decides for v1: no share, no rest, no deposit, not even for an empty weight, and no fault, so an input on a
-share stays and a pot derived later leaves nothing from its empty state. Four readings differ from the destructive
-lowering this branch replaced, each as the spec has it: that empty pot in the equal-shares and the proportional method,
+share stays and a pot derived later leaves nothing from its empty state. Four readings follow the spec where another
+executor or the runtime's helper reads otherwise: that empty pot in the equal-shares and the proportional method,
 where the reference interpreter and the ASP backend keep the v0 hole and fault ("empty source amount in equal-shares
-allocation (v0 mirror hole, ch. 4.4)", `viol("allocation: empty pot")`) and the destructive lowering threw a
-NullPointerException; a negative weight of the proportional method counts as 0 with a deposit (ch. 4.4, decided for v1),
-where the reference interpreter keeps the unclamped v0 hole, as the destructive lowering did, and the ASP backend
-faults; an empty tie-break weight counts as 0 also where every weight of its group is empty, as the reference
-interpreter and the ASP backend read it, where `rsVerdeelOpVolgorde` splits such a group in equal parts; and two
-ordering keys of one value in two scales, 2019 and 2019.0, are one group, as those two executors compare them, where
+allocation (v0 mirror hole, ch. 4.4)", `viol("allocation: empty pot")`); a negative weight of the proportional method
+counts as 0 with a deposit (ch. 4.4, decided for v1), where the reference interpreter keeps the unclamped v0 hole and
+the ASP backend faults; an empty tie-break weight counts as 0 also where every weight of its group is empty, as the
+reference interpreter and the ASP backend read it, where `rsVerdeelOpVolgorde` splits such a group in equal parts; and
+two ordering keys of one value in two scales, 2019 and 2019.0, are one group, as those two executors compare them, where
 that helper groups by `equals`. A version with a bounded validity gates on the evaluation date and faults a session
 without one; a condition faults and deposits through rules of its own, on the source. A share or a rest replaces the
 input on its target, and a recipient that receives nothing keeps its input. Witness `TmsAllocationWitnessTest`.
@@ -696,11 +685,9 @@ number and its stratum, puts both groups on the focus stack, the fact creations 
 creations that hold at the fixpoint, then the object creations, and once both groups are empty takes the rule layer to
 rest again in the same fire. The rule layer does not fire between the two groups, so every creation of a generation
 reads the same settled world, as in the reference interpreter (RUNTIME-SEMANTICS ch. 5.5, Generations): an object
-creation does not read what a fact creation of its own generation links. Until 2026-10-09 a generation was a phase of
-fact creations and a phase of object creations with the rule layer at rest between them, and an initialisation that
-counts the maatgevers of a Wachter, over a relation a fact creation in the same recursive group lays, gave 1 where the
-reference interpreter gives 0. A stratum ends at its first generation that makes nothing, and the creation budget
-(below) ends a chain of mints that does not stop, at its mint at depth 101 ("creation budget exhausted"), the bound
+creation does not read what a fact creation of its own generation links. A stratum ends at its first generation that
+makes nothing, and the creation budget (below) ends a chain of mints that does not stop, at its mint at depth 101
+("creation budget exhausted"), the bound
 that `corpus/red` `finite-chain-over-budget` and `corpus/golden/synth2-budgetgrens-onder` pin from both sides for
 every executor. An agenda filter cannot
 keep the creations back while the rule layer fires: Drools 8.44 drops a match the filter rejects from the agenda for
@@ -711,10 +698,11 @@ eager and give it a match there.
 **Creations fire per stratum.** A creation writes irrevocably, so every value it reads that is not a characteristic is
 a strict read, and the reference interpreter puts the creation in an evaluation stratum above the producers of what it
 reads; it evaluates stratum k to its fixpoint, within its budget, before a form of stratum k+1 fires (RUNTIME-SEMANTICS
-ch. 6.1 and 6.3, `ref/lib/eval.ml`). With the creations of every stratum in one phase (until 2026-10-08), a creation
-that reads what another creation of the same generation makes read the state before it: "maak een afrekening" with a
-penningtelling counting the penningen of the Jutter fixed the count at 0 beside "geef een penning", where the reference
-interpreter gives 1, and a condition over a sum that the other creation raises held on the lower sum. So every creation
+ch. 6.1 and 6.3, `ref/lib/eval.ml`). With the creations of every stratum in one phase, a creation that reads what
+another creation of the same generation makes would read the state before it: "maak een afrekening" with a
+penningtelling counting the penningen of the Jutter would fix the count at 0 beside "geef een penning", where the
+reference interpreter gives 1, and a condition over a sum that the other creation raises would hold on the lower sum.
+So every creation
 rule gets the stratum the reference interpreter gives its form: `Cycles.strata` computes it as `eval.ml` does, over the
 verifier's graph with its positive, strict and negative edges (an edge counts as positive along a cycle, which WF-045
 admits only through a recursive creation), and without the one edge this branch draws beyond the verifier, a rule
@@ -727,7 +715,7 @@ depth of a mint in every stratum apart. Only the creations are ordered by stratu
 stated; the rule layer stays under truth maintenance without strata and reaches its fixpoint after every phase. Over
 the corpus the strata equal those the reference interpreter's algorithm gives on the verifier's `--dependency-edges`
 for every creation of a document the loader loads (83 creations in 68 documents, 7 of them in stratum 1, among them
-`anchor/jutterswet-erflijn`, whose recursive "erf de lijn door" now walks the direct links in a later stratum, and the
+`anchor/jutterswet-erflijn`, whose recursive "erf de lijn door" walks the direct links in a later stratum, and the
 three wrakboekingen). Witness `TmsCreationStratumWitnessTest`.
 
 **The budget counts the depth of a chain of mints.** Every object a creation makes has a creation depth in the stratum
@@ -741,13 +729,10 @@ exhausted". A mint that waits generations for a link or a value keeps its subjec
 makes no object, has no budget; the generations need no bound of their own, since under the budget a stratum makes
 finitely many objects and links. A subject that a higher stratum made cannot occur, since a creation reads its
 subject's population strictly; `TmsTranspiler.depth` throws on one as a fault of the transpiler. The rule layer has no
-budget either; truth maintenance takes it to rest within the fire, and the fire cap bounds that. Until 2026-10-09 the
-driver counted generations: at first as passes of the reference interpreter of then, a pass in which only the rule layer
-changed included (`TmsTranspiler.lidstratum`, since removed), then at most 100 generations per stratum that make
-something, which ended a chain whose every mint waits a generation for a link, and a fact creation that lays a closure
-of 102 hops, at their 101st generation. Witnesses in `TmsCreationStratumWitnessTest`: one chain at 99, 100 and 101
-mints, 50 + 1 + 50 over three strata, document L with the kopie, the erflijn over 103 Wachters, a chain that waits for
-links to depth 100 and 101, and a forged subject of a higher stratum.
+budget either; truth maintenance takes it to rest within the fire, and the fire cap bounds that. Witnesses in
+`TmsCreationStratumWitnessTest`: one chain at 99, 100 and 101 mints, 50 + 1 + 50 over three strata, document L with the
+kopie, the erflijn over 103 Wachters, a chain that waits for links to depth 100 and 101, and a forged subject of a
+higher stratum.
 
 An object creation's rule binds the subject, the reads of its condition and of its initialisations, the `CreationPhase`,
 the absence of its own `CreationStamp` mark for the subject (one object per creation per subject) and the absence of a
@@ -786,7 +771,7 @@ never as a silent fall:
   total;
 - of timelines, each with no golden with cases unless one is named: a second writer of a timeline target, which ch.
   7.8 keeps fenced, and an initialisation of one; a time window in the condition of a rule with a timeline target,
-  which clips the timeline (ch. 3.10), as the destructive DRL-text lowering refused it (golden `jutterswet-pachtvenster`); a
+  which clips the timeline (ch. 3.10; golden `jutterswet-pachtvenster`); a
   characteristic on a timeline as a target; any value of a timeline target other than a pro-rata part or a day count,
   among them a sum of timelines over a set (ch. 3.5); the comparisons "gelijk aan" and "ongelijk aan" in a clip, where
   `rsTijdConditie` reads an empty side as no period and ch. 3.6 applies the comparison of ch. 1.2 per period; a rate
@@ -803,7 +788,7 @@ never as a silent fall:
   components on a timeline, and a pro-rata part over a base with a unit or finer than the bucket, or onto or from a
   fixed start point. Witness `TmsTimelineRefusalWitnessTest`;
 - of the whole-period qualifier, with no golden with cases: the negation inside the qualifier of a characteristic
-  check ("gedurende het gehele jaar niet …"), which the destructive DRL-text lowering refused as well (ch. 3.12); and what the
+  check ("gedurende het gehele jaar niet …", ch. 3.12); and what the
   reference interpreter does not fold either: a comparison over a timeline read over a path, between two timelines or
   with none, and a date ordering (ch. 3.9, 3.12);
 - of day kinds: the dayKind predicate as a condition, which the reference interpreter and the ASP backend refuse
@@ -811,12 +796,11 @@ never as a silent fall:
   well (ch. 3.8, 3.12); and a form that steps or counts in a day kind whose definition does not compile: one that tests
   a day kind on another day than the bound day, which no executor carries (red case `day-kind-reference-other-day`),
   one that reads a parameter, which WF-031 admits and the other two executors read and this branch does not (golden
-  `jutterswet-havenrooster`, which the destructive DRL-text lowering refused as well), and any other shape outside the compiler.
+  `jutterswet-havenrooster`), and any other shape outside the compiler.
   Witness `TmsDayKindWitnessTest`;
 - what is no construct of the core or is ill-formed: "regelversie X is gevuurd", a predicate of the RegelSpraak dialect
   over the fixpoint (`spec/CONSTRUCTS.md` row 30), which the reference interpreter and the ASP backend do not evaluate
-  either, and an instance-set union where a value is read (WF-110 (a)), in the sentence of the destructive DRL-text
-  lowering;
+  either, and an instance-set union where a value is read (WF-110 (a));
 - the creations it does not build yet: an object creation whose back-link is ambiguous, which ch. 5.5 makes a fault of
   the program and this branch refuses when it builds (red case `ambiguous-backlink`), an object creation without a
   `connectingRole` whose type pair reaches the connecting relation only through a supertype of the subject or of the
@@ -831,15 +815,14 @@ never as a silent fall:
   subject, in every contribution rule, with a leeg value ending the `Let` across the rule boundary (ch. 10.6). A
   binder that no `Let` encloses keeps its WF-064 refusal, and a `Let` inside the filter plays. Witness
   `TmsFoldBinderWitnessTest`;
-- the shapes of a fold's range the bean model gives no field, refused as the destructive DRL-text lowering refused them (§13.3.9):
+- the shapes of a fold's range the bean model gives no field (§13.3.9):
   a hop over a relation whose two roles are both to-many, and, until a card of its own measures it, a to-one member
   role whose sibling is to-many, over a relation no form creates (a created relation is read over its `RelationLink`
   facts);
 - the value forms whose meaning the spec does not decide: a text part of a number, a truth value or a date in a text
   composition or a concatenation, where the reference interpreter ("5.5", "waar") and the runtime's `rsTekst`
   ("5.50", "true") differ; a power whose exponent is not a whole literal of at least 0, which reaches the real power
-  that ch. 2.1 leaves OPEN; and a time window under `GEEN` or a counting quantifier, which has no reading (WF-112), in
-  the sentence of the destructive DRL-text lowering;
+  that ch. 2.1 leaves OPEN; and a time window under `GEEN` or a counting quantifier, which has no reading (WF-112);
 - a parameter whose Java name is `evaluationDate` beside a form that reads the evaluation date, since the case runner sets
   the date under that name;
 - what the design cannot carry: two initialisations on one target that apply to one instance, on one type or on a
@@ -889,7 +872,7 @@ read of it on a strict subtype of the created type, where ch. 5.1 closes the wri
 The tests that need the frontend's resolver live under `src/source-route/`, outside this build, which carries no
 parser; the gate compiles them against the frontend's classes and this jar.
 
-What a defaults group reads is public per default too, since 2026-10-01: `ProducerConsumer.readings(model, group,
+What a defaults group reads is public per default too: `ProducerConsumer.readings(model, group,
 navigation)` gives, per default of the group in the order of the group and each default before those of its exception
 groups, its path in the tree (`[i]`, `[i, g, j]`, …), the default itself, and what its justification and its consequence
 read. A consumer that names the default where a read falls outside a scope reads it there, with the source text the
@@ -911,39 +894,35 @@ order of the document and the object by its case label. A difference on an inter
 three writers the sentence names every writer that stands at the fixpoint, where the reference interpreter names the
 two that its last passes saw change the attribute.
 
-The DRL-text branch renders the same analysis and gives the same fault. Until card
-`drl-teksttak-op-truth-maintenance` its rules wrote the beans as they fired, two such writers fired each other again
-until the fire cap, and the replay named the writers that kept changing the attribute from their last writes. Both
-branches fault on a computing rule that evaluates
-leeg beside a conditional initialisatie outside the ch. 7.7 domain, where `ref` faults and the ASP backend derives its
-`viol/2` witness. Writers whose conditions exclude each other, or that write the same value, play in both branches
-(golden `jutterswet-melding-naar-aard`, red case `jutterswet-dubbele-melding`, witnesses
+The DRL-text branch renders the same analysis and gives the same fault. Both branches fault on a computing rule that
+evaluates leeg beside a conditional initialisatie outside the ch. 7.7 domain, where `ref` faults and the ASP backend
+derives its `viol/2` witness. Writers whose conditions exclude each other, or that write the same value, play in both
+branches (golden `jutterswet-melding-naar-aard`, red case `jutterswet-dubbele-melding`, witnesses
 `OverlappingWritersWitnessTest` and `TmsWritersWitnessTest`).
 
 ## Recorded: a division by a numeric zero
 
 A filled dividend divided by a numeric zero is leeg with a §9.5 deposit of kind EF-005 (RUNTIME-SEMANTICS ch. 1.4, point
-4; the golden `division-by-numeric-zero`), as in `ref` and the ASP backend, since the card zero-division-channel
-(2026-10-19); until then all three faulted. `ComputeHelpers.divided` and `dividedAbs` answer the zero before they call
-the runtime, whose `Breuk.delen` still throws `Breuk.DelingDoorNul` there, the mirror of v0, and the probe of the deposit
-hears the code. A deposit hears its codes where it is made: a value in its consequence, as before; a condition and a
+4; the golden `division-by-numeric-zero`), as in `ref` and the ASP backend (card `zero-division-channel`).
+`ComputeHelpers.divided` and `dividedAbs` answer the zero before they call the runtime, whose `Breuk.delen` throws
+`Breuk.DelingDoorNul` there, the mirror of v0, and the probe of the deposit hears the code. A deposit hears its codes
+where it is made: a value in its consequence; a condition and a
 fold's filter, which their rule tests in the left-hand side, in the consequence of their deposit rule, which evaluates
 the condition again over the same bound values (`Consequence.ConditionDeposit`, `Consequence.FilterDeposit`), so one
 division gives EF-031 over a leeg divisor and EF-005 over a numeric zero. The `FilterDeposit` fact carries its codes, and
-the rule that reads the fold lists those facts and reports their codes. A division still counts as a function that can
-fail (`StaticFunction.DIVIDED`), so the plans keep the fault rules of a condition and a filter that divides, which no
-longer fire for it. Witnesses `ZeroDivisorWitnessTest`, `ZeroDivisorConditionWitnessTest`,
+the rule that reads the fold lists those facts and reports their codes. A division counts as a function that can fail
+(`StaticFunction.DIVIDED`), so the plans carry the fault rules of a condition and a filter that divides, and a division
+fires none of them. Witnesses `ZeroDivisorWitnessTest`, `ZeroDivisorConditionWitnessTest`,
 `ZeroDivisorConsumerWitnessTest` and `FilterFaultWitnessTest`; the fault rules are witnessed with the square root
 without a rounding of a number that is no square (`TmsFaultWitnessTest`, `TmsConditionFaultWitnessTest`,
 `TmsFilterFaultWitnessTest`).
 
-Until card `drl-teksttak-op-truth-maintenance` the fault left the fire of the DRL-text branch, in the cause chain of
-Drools' `ConsequenceException`, and `DroolsBackend.designate`, which `CaseRunner` calls where it fires a session, turned
-that into a second `DelingDoorNul` named as above. `designate` stays public for a consumer that fires a KieBase itself; on
-the KieBases of both branches today no evaluation fault leaves the fire, so what comes to it is a broken contract or a
-bug, and it hands that on unchanged.
+`DroolsBackend.designate`, which `CaseRunner` calls where it fires a session, names a `DelingDoorNul` in the cause
+chain of Drools' `ConsequenceException` after the rule, and is public for a consumer that fires a KieBase itself; on the
+KieBases of both branches no evaluation fault leaves the fire, so what comes to it is a broken contract or a bug, and it
+hands that on unchanged.
 
-The naming sat after the fire and not in a consequence handler on the KieBase. Drools takes such a handler by class
+`designate` runs after the fire and not as a consequence handler on the KieBase. Drools takes such a handler by class
 name (`ConsequenceExceptionHandlerOption`) and instantiates it in every new session; where the kie API and this
 backend are loaded by different class loaders, the instance does not cast to the kie interface and no session opens.
 Measured 2026-10-02, when this backend set such a handler, in the distribution's Quarkus test of its decision service
