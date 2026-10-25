@@ -118,8 +118,8 @@ gates:
 	  $(MAKE) --no-print-directory -k -j3 RUN=$(RUN)/after $(BUILDS) >/dev/null; \
 	  why=; \
 	  for b in $(BUILDS); do \
-	    if [ -f $(LOGS)/after/$$b.line ]; then l=$$(cat $(LOGS)/after/$$b.line); else l="$$b did not run"; fi; \
-	    case "$$l" in *' rc=0 '*': fresh ('*) ;; *) why="$$why; $$l" ;; esac; \
+	    if [ ! -f $(LOGS)/after/$$b.line ]; then why="$$why; $$b did not run"; \
+	    else case "$$(cat $(LOGS)/after/$$b.line)" in "$$b rc=0 "*': fresh ('*) ;; *) why="$$why; $$(tail -n 1 $(LOGS)/after/$$b.log)" ;; esac; fi; \
 	  done; \
 	  new=$$(find $(PRODUCTS) -newer $(LOGS)/.built 2>&1); \
 	  if [ -n "$$new" ]; then why="$$why; newer than the end of the build step: $$(echo $$new)"; fi; \
@@ -133,7 +133,7 @@ gates:
 	red=0; \
 	for t in $(BUILDS) $(GATES) after-run; do \
 	  if [ -f $(LOGS)/$$t.line ]; then line=$$(cat $(LOGS)/$$t.line); else line="$$t did not run"; fi; \
-	  case "$$line" in *' rc=0 '*) ;; *) red=$$((red + 1)) ;; esac; \
+	  case "$$line" in "$$t rc=0 "*) ;; *) red=$$((red + 1)) ;; esac; \
 	  echo "$$line" >> $(LOGS)/summary.txt; \
 	done; \
 	echo "end $$(date '+%F %T') $$(( $$(date +%s) - t0 ))s red=$$red" >> $(LOGS)/summary.txt; \
