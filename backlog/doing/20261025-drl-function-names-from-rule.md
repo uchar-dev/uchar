@@ -325,12 +325,14 @@ van `default 1` staat hierboven.
 5. De twee controles in `render` (twee functies van één naam, een functie die heet als een global) zijn fail-fast
    voor een fout in de weergave; de vorm sluit beide uit.
 
-### Open punt
+### Open punt (door de hoofdsessie afgehandeld)
 
-De javadoc van `TmsTranspiler.drlPieces` (r. 905, `TmsTranspiler.java`) zegt nog "the rendering names a function after
-its rule's place in the plan". Na deze kaart is dat "after its rule". `TmsTranspiler.java` staat niet in May touch en
-(d) eist dat de diff van `src/main` alleen `DrlRendering.java` raakt, dus het staat er nog; een zin voor de hoofdsessie
-of een volgende kaart.
+De javadoc van `TmsTranspiler.drlPieces` (r. 905, `TmsTranspiler.java`) zei nog "the rendering names a function after
+its rule's place in the plan", en sinds `drl-no-passthrough-functions` ook niet meer precies dat elke toets een functie
+is. De hoofdsessie heeft die javadoc in een eigen commit op de kaarttak bijgewerkt ("after its kind and its rule", en
+"every test and every value … that tests or computes something"): alleen commentaar, geen code. Daarmee raakt de diff
+van `src/main` naast `DrlRendering.java` ook `TmsTranspiler.java`, en verbreedt de may-touch zich met die javadoc;
+acceptatie (d) geldt voor de code.
 
 ### Voor de toolchain-kaart `drl-readable-functions-pin`
 

@@ -897,12 +897,13 @@ public final class TmsTranspiler {
 
     /**
      * The piece of the DRL text ({@link #drl}) of one rule: its functions, then the rule. Every test and every value of
-     * the rule's plan is a function in the Java dialect, with the RegelSpraak sentence of its node above it as a
-     * comment, and the rule calls it, or, for a node that needs statements of its own (a composite, a {@code Let}, the
-     * evaluation of a fold), the function of the node it stands in does, a function of the same rule; but for the
-     * binder of a {@code Let} whose body does not read its variable, which nothing calls and which stands in the piece
-     * of its rule all the same. A rule calls only functions of its own piece: the rendering names a function after its
-     * rule's place in the plan, and only the rendering of that rule writes a call of it.
+     * the rule's plan that tests or computes something is a function in the Java dialect, with the RegelSpraak sentence
+     * of its node above it as a comment, and the rule calls it, or, for a node that needs statements of its own (a
+     * composite, a {@code Let}, the evaluation of a fold), the function of the node it stands in does, a function of
+     * the same rule; but for the binder of a {@code Let} whose body does not read its variable, which nothing calls and
+     * which stands in the piece of its rule all the same. A rule calls only functions of its own piece: the rendering
+     * names a function after its kind and its rule ({@code toets_<rule>}, a rule part no other rule's functions share),
+     * and only the rendering of that rule writes a call of it.
      *
      * <p>A piece whose places do not add up is refused by the constructors with an {@code IllegalStateException} that
      * names the rule and the places: a bookkeeping fault of the rendering, like the others of {@code DrlRendering}, not
