@@ -103,10 +103,10 @@ spec bug.
     q > 0 dan k anders 0) in ((1,00 plus bel) plus p)` with q = -5,
     restpost leeg and p unbound answers leeg where ref faults at p.
     Where bel is the first thing the body evaluates, the branch moves
-    out of bel's value and the guard is exact. ([S2], retired
-    2026-09-23: the branch hoist put the operand beside the branch
-    behind the branch's condition; that operand's read now has a second
-    guard without the arm's atoms.) [S3] The intermediate pass within
+    out of bel's value and the guard is exact. ([S2] is retired: the
+    branch hoist puts the operand beside the branch behind the branch's
+    condition, and that operand's read has a second guard without the
+    arm's atoms.) [S3] The intermediate pass within
     one stratum (the ch. 6.1 residual of order-dependent transients, in
     fail-fast form). ref runs the forms of a stratum pass by pass until
     nothing changes, so a form that reads what a later form of the same
@@ -189,12 +189,11 @@ spec bug.
   condition waits for a link a fact creation lays, or for a value a
   later generation makes true, keeps its subject's depth, here and in
   the reference interpreter, and a fact creation mints nothing and
-  carries no budget. Until 2026-10-09 the depth ran on over the strata
-  and the witness fell at the 100th mint: a chain of 100 mints, and
-  chains of 50 + 1 + 50 in three strata, were UNSAT here where the
-  reference interpreter plays them. The suite's `ch5.5 creation budget`
-  frames pin both sides, each beside the reference interpreter, among
-  them the two forms on which a count of generations and the depth part:
+  carries no budget. The suite's `ch5.5 creation budget` frames pin both
+  sides, each beside the reference interpreter: a chain of 100 mints and
+  a chain of 50 + 1 + 50 in three strata play, a chain of 101 mints
+  faults, and among them are the two forms on which a count of
+  generations and the depth part:
   a closure of 102 hops that a recursive fact creation lays, and a chain
   whose every mint waits a generation for a link.
 - Every creation of such a document also carries a clamp,
@@ -212,8 +211,8 @@ spec bug.
   a chain grounds as deep as its guard admits. A chain of a higher
   stratum grounds from every instance the lower chain could make: the
   50 + 1 + 50 frame grounds about 1.7 GB of rules and takes about 23 s
-  (measured 2026-10-09; about 7 s while the depth ran on over the
-  strata), where a single chain of 100 takes well under a second.
+  (measured 2026-10-09), where a single chain of 100 takes well under a
+  second.
 - A member initialisation takes the value at the moment of making
   (ch. 5.5, Generations): ref reads it on the settled world of the
   generation before, and a later generation may change the value read
@@ -237,9 +236,10 @@ spec bug.
   that marks a Wachter with a maatgever ervaren, a creation that gives a
   Haven a Rapport with the number of its ervaren wachters makes the
   Rapport in generation 1. Over W1 → W2 → W3, all wachters of the Haven
-  and W1 ervaren in the input, ref answers 1, and this backend answered
-  3, without a refusal until 2026-10-09. A creation in a higher stratum
-  than the cycle reads the end value, as ref does, and stays carried. An
+  and W1 ervaren in the input, ref answers 1 and the encoding, which
+  reads the end value, would answer 3, so this backend refuses it. A
+  creation in a higher stratum than the cycle reads the end value, as
+  ref does, and stays carried. An
   attribute or characteristic that only creations write is set once per
   object, at its making, so a read of it stays carried: the anchor
   `jutterswet-wachtersketen` reads its rang so.
@@ -257,12 +257,11 @@ spec bug.
   here and in ref, so no later generation brings a change from it. With
   "geef door" valid from 2027-01-01 and a case on 2026-01-01 the Rapport
   is carried, and ref and this backend both answer rapportaantal(H1) = 1
-  with W3 not ervaren; until the second fix round of 2026-10-09 this
-  backend refused it. On the worked example of ch. 5.5 (beginstand =
+  with W3 not ervaren. On the worked example of ch. 5.5 (beginstand =
   zijn stand, the stand counting the opvolgers) ref answers
-  opvolgerbegin(W1) = 0, and this backend answered 1 before the
-  refusal; the suite's `ch5.5 generations` frames pin the refusals, each
-  beside ref's absolute answer, and the carried forms, and the `ch5.5
+  opvolgerbegin(W1) = 0 and the encoding would answer 1; the suite's
+  `ch5.5 generations` frames pin the refusals, each beside ref's
+  absolute answer, and the carried forms, and the `ch5.5
   generations off the cycle` frames do the same for a creation off the
   cycle: refused in the cycle's stratum, also with "geef door" valid on
   the case's date, carried a stratum higher, beside the cycle out of its
@@ -326,8 +325,8 @@ spec bug.
   timeline enters as `inputtl/5`, standing WHOLE unless the fold
   derives a bucket (`prN_eff`, the full bucket body incl. the
   exactness guard) — the whole-timeline reading of RS ch. 7.8. The
-  ch. 6d computed-target fence no longer applies to standing targets
-  (scalar or temporal); it remains on multi-writer and versioned
+  ch. 6d computed-target fence does not apply to standing targets
+  (scalar or temporal); it applies to multi-writer and versioned
   computing targets, and an allocation `doelAttribuut` supplied by the
   case is fenced the same way.
 - Two or more computing rules on one target whose populations share a
@@ -377,12 +376,9 @@ spec bug.
 
 The backend reuses the loader (`uchar-ir-v0`) and the case loading and
 value lexing of `uchar-ref` (IO). The connecting role of an allocation
-or fold is the node's explicit `RoleBinding`: since L2 the wire writes
-every range and every recipient role, and the loader refuses a node that
-omits one (`spec/proposals/V1-WIREMIGRATIE.md` B12). Until L2 the backend
-shared the type-pair derivation for bindingless v0 dumps with `uchar-ref`
-(`Eval.connecting_role`, the recorded ch. 4.1 wart, unique there by
-WF-048); that derivation left with WF-048. The one relation still derived
+or fold is the node's explicit `RoleBinding`: the wire writes every
+range and every recipient role, and the loader refuses a node that omits
+one (`spec/proposals/V1-WIREMIGRATIE.md` B12). The one relation derived
 when absent is an object creation's back-link, through `uchar-ref`'s
 `Eval.connecting_pair` (ch. 5.5). Every route ends in the same
 `role_canonical` convention the case facts use. All evaluation
@@ -406,8 +402,7 @@ Recorded limitations:
   object creations over 188 object types, without a recursive group
   (functors `oc0` to `oc186`), ends in a creation that sets a
   characteristic aborts clingo, and the same document with 120 to 186 or
-  188 to 260 creations plays. This backend kept no bound there before the
-  card `creatiebudget-ref-en-clingo` either, and behaved the same.
+  188 to 260 creations plays.
 - In a document with an object creation in a recursive group every
   creation also carries `nest(S,Nest), Nest < oc_nest` and derives
   `nest(ocN(S),Nest+1)`, with `oc_nest` = 190, and an instance at that
@@ -419,11 +414,10 @@ Recorded limitations:
   above shows that the abort follows the length of the printed atom. With
   the functor `oc0` and a short label and short names the bound keeps
   every shown atom below the first length that aborts; with longer
-  functors, labels or names it does not. Until 2026-10-09 the creation
-  depth ran on over the strata and kept every term under 101 levels; per
-  stratum it no longer does (a chain of 100 + 1 + 100 nests 201 levels).
-  The suite pins the refusal on the 50 + 1 + 50 frame with the bound
-  lowered to 60 in the program text.
+  functors, labels or names it does not. The creation depth counts per
+  stratum and so does not bound the nesting: a chain of 100 + 1 + 100
+  nests 201 levels. The suite pins the refusal on the 50 + 1 + 50 frame
+  with the bound lowered to 60 in the program text.
 - Clingo integers are 32-bit and wrap silently; the scaled encoding is
   exact only while every value and intermediate product stays within
   ±2³¹ (the allocation forms A×W before dividing). A mismatch fails
