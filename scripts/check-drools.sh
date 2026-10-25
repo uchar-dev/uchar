@@ -68,8 +68,9 @@
 # loop of the pass reads those files in the order of the corpus and judges them, with the lists, pins,
 # counts and report of a replay one golden after the other. The DRL-text pass begins only after the
 # exec-model pass is judged green, so a break on the exec-model branch fails before the cost of the
-# second pass. A JVM that crashes or does not start leaves an empty or partial output, which the loop
-# meets at its golden and fails by name.
+# second pass. The goldens and their case files are listed once, before the first pass, and every loop of
+# both passes reads that list. A JVM that crashes or does not start leaves an empty or partial output,
+# which the loop meets at its golden and fails by name.
 set -u
 cd "$(dirname "$0")/.."
 
@@ -1508,21 +1509,31 @@ declare -a FAILED=()
 procs=$(parallel_jobs 2) || fail "no number of processes for the replay (the parallel line above says why)"
 work=$(mktemp -d) || fail "cannot make a work directory for the replay"
 trap 'rm -rf "$work"' EXIT
-mkdir "$work/exec" "$work/drl" || fail "cannot make the task directories of the replay in $work"
+mkdir "$work/exec" "$work/drl" "$work/cases" || fail "cannot make the task directories of the replay in $work"
+# The corpus is listed once: the goldens in their order into $work/goldens, and the case files of the i-th
+# golden into $work/cases/<i> (empty for a golden without one). Every loop of both passes reads these files,
+# so the i-th golden of each loop is the same golden, and task i holds its output.
+find corpus/golden -name ir.json | sort > "$work/goldens" || fail "cannot list the goldens into $work"
+i=0
+while IFS= read -r ir; do
+  i=$((i + 1))
+  find "$(dirname "$ir")" -maxdepth 1 -name 'case*.json' | sort > "$work/cases/$i" \
+    || fail "cannot list the case files of $ir into $work"
+done < "$work/goldens"
 echo "  replay: $procs processes per pass (one per two cores)"
 i=0
 while IFS= read -r ir; do
   i=$((i + 1))
-  cases=$(find "$(dirname "$ir")" -maxdepth 1 -name 'case*.json' | sort)
+  cases=$(cat "$work/cases/$i")
   [ -z "$cases" ] || parallel_task "$work/exec" "$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" $cases
-done < <(find corpus/golden -name ir.json | sort)
+done < "$work/goldens"
 parallel_run "$work/exec" "$procs" || fail "the exec-model replay did not end for every golden (the parallel line above names it)"
 
 i=0
 while IFS= read -r ir; do
   i=$((i + 1))
   dir=$(dirname "$ir"); name=${dir#corpus/golden/}
-  cases=$(find "$dir" -maxdepth 1 -name 'case*.json' | sort)
+  cases=$(cat "$work/cases/$i")
   if [ -z "$cases" ]; then
     nocase=$((nocase + 1)); SEEN+=("$name|NOCASE"); SEEN_LINE+=("$name|(no case file)")
     echo "  no-case  $name (a golden without a case file — not playable)"; continue
@@ -1565,7 +1576,7 @@ while IFS= read -r ir; do
       case "$out" in "ERROR DocumentError:"*) FAILED+=("$name :: $out  (a malformed document: repair the document — never an exclusion)") ;; *) FAILED+=("$name :: $out  (a fault at fire is not a value-divergence — make it a per-form auto-exclusion)") ;; esac ;;
     *) FAILED+=("$name :: unexpected output: $out") ;;
   esac
-done < <(find corpus/golden -name ir.json | sort)
+done < "$work/goldens"
 
 # unclassified divergences fail the gate — a golden must play+pass or carry a reason
 if [ ${#FAILED[@]} -gt 0 ]; then
@@ -1634,16 +1645,16 @@ i=0
 while IFS= read -r ir; do
   i=$((i + 1))
   drl_cases=()
-  while IFS= read -r c; do drl_cases+=("$c"); done < <(find "$(dirname "$ir")" -maxdepth 1 -name 'case*.json' | sort)
+  while IFS= read -r c; do drl_cases+=("$c"); done < "$work/cases/$i"
   [ ${#drl_cases[@]} -eq 0 ] || parallel_task "$work/drl" "$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "${drl_cases[@]}"
-done < <(find corpus/golden -name ir.json | sort)
+done < "$work/goldens"
 parallel_run "$work/drl" "$procs" || fail "the DRL-text replay did not end for every golden (the parallel line above names it)"
 i=0
 while IFS= read -r ir; do
   i=$((i + 1))
   dir=$(dirname "$ir"); name=${dir#corpus/golden/}
   drl_cases=()
-  while IFS= read -r c; do drl_cases+=("$c"); done < <(find "$dir" -maxdepth 1 -name 'case*.json' | sort)
+  while IFS= read -r c; do drl_cases+=("$c"); done < "$work/cases/$i"
   if [ ${#drl_cases[@]} -eq 0 ]; then
     out="(no case file)"
   else
@@ -1658,7 +1669,7 @@ while IFS= read -r ir; do
   drl_seen=$((drl_seen + 1))
   because=$(exec_line "$name") || fail "the DRL-text sweep met '$name', which the exec-model sweep did not record — the two sweeps walk different corpora"
   [ "$out" = "$because" ] || DRL_DRIFT+=("$name :: exec-model '$because' | drl-text '$out'")
-done < <(find corpus/golden -name ir.json | sort)
+done < "$work/goldens"
 # computed BEFORE the checks, and printed here: a FAILING sweep costs exactly as much as a passing
 # one, so hiding the figure behind a pass would hide it from the run that most wants to know it.
 drl_cost=$(( $(date +%s) - drl_begin ))

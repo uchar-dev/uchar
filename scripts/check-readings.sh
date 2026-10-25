@@ -45,7 +45,8 @@
 # `runner --trace` runs, one process per core, then every `--readings` of both branches, one process per two
 # cores (replay JVMs with PARALLEL_JVM_FLAGS, measured there), then the plain replay of each golden whose
 # readings end in EXCLUDE or ERROR, each call into files of its own; then the loop of checks 1 and 2 reads
-# those files in the order of the corpus and judges them as the calls one after the other would. A process
+# those files in the order of the corpus and judges them as the calls one after the other would. The goldens
+# and their case files are listed once, before the first call, and every loop reads that list. A process
 # that crashes or does not start leaves an exit status other than 0 or an output without its last line,
 # which the loop meets at its golden or case and fails by name.
 #
@@ -106,9 +107,19 @@ JAR=$(ensure_drools_jar) || fail "no fresh Drools backend jar (the drools-jar li
 . scripts/lib/parallel.sh
 work=$(mktemp -d) || exit 2
 trap 'rm -rf "$work"' EXIT
-mkdir "$work/ref" "$work/exec" "$work/drl" "$work/traces" "$work/readings" "$work/replays" || exit 2
+mkdir "$work/ref" "$work/exec" "$work/drl" "$work/traces" "$work/readings" "$work/replays" "$work/cases" || exit 2
 manifest="$work/manifest"
 : > "$manifest"
+# The corpus is listed once: the goldens in their order into $work/goldens, and the case files of the i-th
+# golden into $work/cases/<i> (empty for a golden without one). Every loop below reads these files, so the
+# i-th golden of each loop is the same golden, and the tasks keyed i hold its output.
+find corpus/golden -name ir.json | sort > "$work/goldens" || fail "cannot list the goldens into $work"
+i=0
+while IFS= read -r ir; do
+  i=$((i + 1))
+  find "$(dirname "$ir")" -maxdepth 1 -name 'case*.json' | sort > "$work/cases/$i" \
+    || fail "cannot list the case files of $ir into $work"
+done < "$work/goldens"
 
 # --- 1 and 2: the trace and the readings, per golden ----------------------------------------------------
 n_traced=0; nocase=''
@@ -122,7 +133,7 @@ echo "  traces on $traces processes (one per core), readings and replays on $jvm
 i=0
 while IFS= read -r ir; do
   i=$((i + 1))
-  cases=$(find "$(dirname "$ir")" -maxdepth 1 -name 'case*.json' | sort)
+  cases=$(cat "$work/cases/$i")
   [ -n "$cases" ] || continue
   j=0
   for c in $cases; do
@@ -131,7 +142,7 @@ while IFS= read -r ir; do
   done
   parallel_task "$work/readings" "exec.$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --readings "$ir" $cases
   parallel_task "$work/readings" "drl.$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --readings --drl "$ir" $cases
-done < <(find corpus/golden -name ir.json | sort)
+done < "$work/goldens"
 parallel_run "$work/traces" "$traces" || fail "a trace did not end (the parallel line above names it)"
 parallel_run "$work/readings" "$jvms" || fail "a reading did not end (the parallel line above names it)"
 # the plain replay that check 2 asks of a golden whose readings end in EXCLUDE or ERROR
@@ -141,17 +152,17 @@ while IFS= read -r ir; do
   [ -f "$work/readings/exec.$i.out" ] || continue
   case "$(tail -1 "$work/readings/exec.$i.out")" in
     EXCLUDE*|ERROR*)
-      cases=$(find "$(dirname "$ir")" -maxdepth 1 -name 'case*.json' | sort)
+      cases=$(cat "$work/cases/$i")
       parallel_task "$work/replays" "$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" $cases ;;
   esac
-done < <(find corpus/golden -name ir.json | sort)
+done < "$work/goldens"
 parallel_run "$work/replays" "$jvms" || fail "a replay did not end (the parallel line above names it)"
 
 i=0
 while IFS= read -r ir; do
   i=$((i + 1))
   dir=$(dirname "$ir"); name=${dir#corpus/golden/}
-  cases=$(find "$dir" -maxdepth 1 -name 'case*.json' | sort)
+  cases=$(cat "$work/cases/$i")
   if [ -z "$cases" ]; then nocase="$nocase $name"; continue; fi
   file=$(printf '%s' "$name" | tr / _).txt
   : > "$work/ref/$file"
@@ -187,7 +198,7 @@ while IFS= read -r ir; do
     *) fail "$name: the readings end in '$exec_last' — neither READINGS nor EXCLUDE" ;;
   esac
   printf '%s\t%s\t%s\n' "$name" "$file" "$status" >> "$manifest"
-done < <(find corpus/golden -name ir.json | sort)
+done < "$work/goldens"
 elapsed=$(( $(date +%s) - start ))
 
 [ "$n_traced" -gt 0 ] || fail "no golden case file was traced — an empty comparison is a failure, never silently green"
