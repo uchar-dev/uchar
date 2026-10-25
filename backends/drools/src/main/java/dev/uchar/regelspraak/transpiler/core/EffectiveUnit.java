@@ -21,11 +21,11 @@ import java.util.Objects;
  * annotation. The named positions where that annotation IS the source, and is returned unchanged, are
  * listed below; they are exactly ch. 2.10's, and they are a scope boundary rather than an escape hatch.
  *
- * <p><b>Why.</b> A v0 IR node repeated its type on the wire at positions where that type is a COPY of a
- * declaration (an {@code AttributeReference}, a {@code ParameterRef}, a {@code DimensionCellRead} read, a binder read), and
- * still does at positions where it is a DERIVATION over its operands (an arithmetic node, a Let, a value
- * aggregation). Since L2 of the v1 wire migration the reference positions carry no type at all — theirs is the
- * declaration's ({@link #typeOf}) — and nothing crosses the derived ones mechanically. A consumer that
+ * <p><b>Why.</b> An IR node repeats its type on the wire at positions where it is a DERIVATION over its operands
+ * (an arithmetic node, a Let, a value aggregation). The reference positions, where the v0 wire repeated a COPY of a
+ * declaration (an {@code AttributeReference}, a {@code ParameterRef}, a {@code DimensionCellRead} read, a binder
+ * read), carry no type at all (L2 of the v1 wire migration) — theirs is the declaration's ({@link #typeOf}) — and
+ * nothing crosses the derived ones mechanically. A consumer that
  * reads the repetition instead of the source therefore answers a different number than {@code ref} and the
  * ASP translator do on the same document — measured before this class existed: a unit lie on a value
  * aggregation's own result type turned 3,75 into 3.750,00 in this backend while ref and clingo stayed put.
@@ -46,15 +46,14 @@ import java.util.Objects;
  *       source. A position, not a node kind: {@code GEDEELD_DOOR} and {@code PLUS} are both {@code Binary}
  *       and only one of them derives, which is why the {@code switch}es below dispatch on the OP and the
  *       KIND, and why the harness's clamp keys on (node, op) / (node, kind) too. The ASP translator answers
- *       {@code None} there and fences; this backend has no such fence and computes with the annotation,
- *       exactly as it did before this class. Measured 2026-09-04: no corpus annotation at such a position
+ *       {@code None} there and fences; this backend has no such fence and computes with the annotation. Measured 2026-09-04: no corpus annotation at such a position
  *       carries a unit, and {@code check-reftype-derivation.sh} fails on the first one that does.</li>
  * </ul>
  *
  * <p><b>Scope.</b> This derives the UNIT only. The soort and the precision of an annotation are equally
  * repetitions, but this backend reads neither for its §4 restatements: it reads {@code isNumber}/
- * {@code isDate} as ROUTING predicates (a soort lie is a different document, crossed by WF-091; on a binder
- * read by WF-078 until L2, when the reference annotations left the wire)
+ * {@code isDate} as ROUTING predicates (a soort lie is a different document, crossed by WF-091; a binder read
+ * carries no annotation)
  * and it never reads {@code Datatype.decimals} at all — only {@code Rounding.decimals}, a node field.
  * Grafting the derived unit onto the node's own annotation therefore changes exactly what is read and
  * nothing else.
@@ -109,8 +108,7 @@ public final class EffectiveUnit {
 
     /**
      * IR-SPEC ch. 2.10 / RUNTIME-SEMANTICS ch. 2.10: the DATATYPE of an expression, the one reading of it both
-     * transpiler branches use. Since L2 of the v1 wire migration a reference carries no annotation, so its type
-     * is its declaration's: an attribute read and a dimension cell have the attribute's declared datatype, a
+     * transpiler branches use. A reference carries no annotation, so its type is its declaration's: an attribute read and a dimension cell have the attribute's declared datatype, a
      * parameter read the parameter's, a binder read the datatype of the value it is bound to (WF-064: the
      * nearest enclosing Let). A rounding and a clamp compute theirs from their base, as their records do. Every
      * other node carries its own annotation — a literal, a composite, a fold, a Let, a constant, a marker.
@@ -281,11 +279,11 @@ public final class EffectiveUnit {
      * timeline fold"). A MINIMUM or an EERSTE over a timeline has no defined moment to rank, so neither consumer
      * folds it, no denominator is consumed, and none may be dropped.
      *
-     * <p>Restricting this to TOTAAL alone — which it was until 2026-09-09 — left SOM answering the rate for a
-     * value that had already been folded. Measured on a copy of {@code jutterswet-tempovouw} with the fold's kind
-     * set to SOM: into a plain € doel this backend faulted where ref computes, and into a €/jr doel it silently
+     * <p>Restricted to TOTAAL alone, this would leave SOM answering the rate for a value that is already folded.
+     * Measured 2026-09-09 with that restriction, on a copy of {@code jutterswet-tempovouw} with the fold's kind set
+     * to SOM: into a plain € doel this backend faulted where ref computes, and into a €/jr doel it silently
      * produced 576 for 48, the mnd→jr factor applied to an already-folded value, where ref faults with
-     * "incompatible units: EUR/jr vs EUR". Both are now right. The corpus itself carries no SOM over a
+     * "incompatible units: EUR/jr vs EUR". The corpus itself carries no SOM over a
      * timeline-declared attribute (all 19 such folds are TOTAAL, 4 of them over a rate), which is precisely why
      * the corpus could not have been the source of this rule.
      *
@@ -321,15 +319,11 @@ public final class EffectiveUnit {
      * the fail-fast card of the same day, and the reason the no-op below is each site's OWN identity, taken
      * before it ever asks, and never an invented factor — and {@code exactRestateFactors} is null):
      * <ul>
-     *   <li>a site that REFUSES on {@code convertibleTo} — the §4.1/§5.1.4 TEMPORAL restatements
-     *       (until card drl-teksttak-op-truth-maintenance those of the destructive DRL-text lowering, and until
-     *       card tms-omschakeling the fold- and timeline-restatement guards of the destructive exec-model
-     *       lowering) — gets a false and turns the whole construct into an honest marker/skip;</li>
+     *   <li>a site that REFUSES on {@code convertibleTo} gets a false and turns the whole construct into an
+     *       honest marker/skip;</li>
      *   <li>a site that merely COMPUTES a factor — the scalar §4 write boundary, the additive operand
      *       boundary, the §5.1 Tabel 32 comparison restatement — gets the IDENTITY and the restatement becomes
-     *       a NO-OP. {@code TmsTranspiler.rescaled} returns the value unchanged, as the destructive exec-model
-     *       lowering did until card tms-omschakeling and the destructive DRL-text lowering until card
-     *       drl-teksttak-op-truth-maintenance. No marker.</li>
+     *       a NO-OP. {@code TmsTranspiler.rescaled} returns the value unchanged. No marker.</li>
      * </ul>
      *
      * <p>So on a scalar restatement the value simply stands UNRESTATED, in whatever unit it was computed in.
@@ -338,10 +332,8 @@ public final class EffectiveUnit {
      * Its blast radius is bounded by who else accepts the form: the frontend's
      * {@code Typing.compoundUnit} flags the unit mismatch, {@code ref} faults, and the ASP
      * translator refuses ahead of translation, so no corpus golden carries it and the divergence is
-     * unobservable in every gate. {@code CaseRunner} builds BOTH transpiler branches since the DRL-measurement
-     * card (2026-09-04), so the form has two legs to reach rather than one — the split above is stated for each
-     * — while the gate-12 replay path passes no flag and stays exec-model-only; the {@code --drl} flag is what
-     * selects the DRL-text leg (the harness/measurement entry).
+     * unobservable in every gate. {@code CaseRunner} builds both branches, which render one analysis, so the form
+     * takes the same course on both.
      *
      * <p>The unspellable case (a rate factor, "€·m/jr") reaches a consumer only on a document the frontend
      * never wrote — {@code Typing} makes it a loud error rather than a type. This join answers it with a
@@ -383,10 +375,10 @@ public final class EffectiveUnit {
      *
      * <p>Correctness is unaffected by the growth: a stale entry can never mark a NEW unit, because
      * {@link Unit#product} never returns an existing instance, so no aliasing is possible however long the
-     * table lives. Clearing it per transpilation was considered and rejected this round: it would need a
-     * guarantee that no other derivation instance is live, and nothing in the build route provides one — the
-     * two transpiler branches each construct their own {@code EffectiveUnit}, and a clear on construction
-     * would silently unmark a product the other branch is still holding. That turns a bounded leak into a wrong
+     * table lives. Clearing it per transpilation is rejected: it would need a guarantee that no other derivation
+     * instance is live, and nothing in the build route provides one — the analysis and the IR loader each
+     * construct their own {@code EffectiveUnit}, and a clear on construction would silently unmark a product the
+     * other is still holding. That turns a bounded leak into a wrong
      * answer, which is the wrong trade. Bounding it properly wants a weak IDENTITY set, which the JDK has no
      * form of; it is carded rather than improvised here.
      */
@@ -474,10 +466,8 @@ public final class EffectiveUnit {
      * arms — {@link #noteUnit} matches all three cluster nodes itself, because each needs a SCOPE this cannot
      * carry).
      *
-     * <p><b>This accessor became LOAD-BEARING with the root repair at {@link #conditionOperands}.</b> While that
-     * method handed back a flat pre-order list, a node kind missing here was papered over: its descendants were
-     * in the list anyway and got walked directly (with the wrong scope, which is the defect that was repaired).
-     * Now that only ROOTS are handed back, a kind this method does not know contributes NO children at all and
+     * <p><b>This accessor is LOAD-BEARING.</b> {@link #conditionOperands} hands back only ROOTS, so a kind this
+     * method does not know contributes NO children at all and
      * every binder read beneath it silently loses its recorded unit — falling back to the annotation this class
      * exists to not read. So the {@code switch} below is EXHAUSTIVE over the sealed union, with no
      * {@code default}: the next node the union grows is a COMPILE ERROR here rather than a silent gap, exactly

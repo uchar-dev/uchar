@@ -31,9 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li><b>The leegwaarde + arithmetic helpers</b> — since single-runtime principle the ONE rs* implementation: the
  *       closures of the exec-model branch call these directly, and the DRL text calls the same methods
  *       class-qualified, never through an {@code import function} ({@code plan.Functie}), so the two branches compute
- *       the SAME value by construction (the differential gate compares wiring, not re-implementations). Until card
- *       drl-teksttak-op-truth-maintenance the destructive DRL-text lowering imported these methods as DRL
- *       functions.</li>
+ *       the SAME value by construction (the differential gate compares wiring, not re-implementations).</li>
  * </ol>
  */
 public final class RegelSpraakRuntime {
@@ -209,7 +207,7 @@ public final class RegelSpraakRuntime {
 
     // ---- Breuk-aware +,-,×,÷ and percentage (Precisie §389/§486): exactness PROPAGATES through +,-,×,÷ when any
     // operand is a Breuk, and division/percentage RETURN a Breuk when their exact result does not terminate. Both
-    // back-ends route their formerly-inline arithmetic (DRL mvel infix, exec rsNul(..).add) through these, so the
+    // branches route their arithmetic through these, never through a DRL mvel infix or an exec rsNul(..).add, so the
     // single-runtime principle holds and no host-language infix ever sees a Breuk. Each returns Object (a BigDecimal
     // on the fast/terminating path, else a Breuk); leegwaarde per §6.2-6.4 Tabel: an empty operand counts as 0. ----
 
@@ -1137,15 +1135,14 @@ public final class RegelSpraakRuntime {
      *  {@link dev.uchar.regelspraak.transpiler.core.Namen#ident(String, boolean)}, from which the fact-model generator
      *  derives a class name and a member's bean property. It splits a name on EVERY non-letter/digit run, as the beans
      *  were generated, so a koppelteken attribute ("de datum-tijd voor het berekenen…" ->
-     *  {@code DatumTijdVoorHetBerekenen…}) keeps its words; the old {@code \s+}-only split left the "-" in and
-     *  targeted a non-existent {@code getDatum-tijd…}. No lidwoord stripping (Namen.ident carries the full name); the
+     *  {@code DatumTijdVoorHetBerekenen…}) keeps its words; a {@code \s+}-only split would leave the "-" in and
+     *  target a non-existent {@code getDatum-tijd…}. No lidwoord stripping (Namen.ident carries the full name); the
      *  resolver already delivers declared names bare.
      *
      *  <p>It is not the authority for the getter and the setter of a member: the generator writes those with
      *  {@link dev.uchar.regelspraak.transpiler.core.Namen#lidnamen} of the member's property, and every reader and
-     *  writer of both branches takes them from there. The reflective bridge here ({@link #get}, {@link #set}) still
-     *  puts this form after {@code get}, {@code is} and {@code set} (as the destructive DRL-text lowering did until
-     *  card drl-teksttak-op-truth-maintenance), which misses the generator's name where the first letter of a declared
+     *  writer of both branches takes them from there. The reflective bridge here ({@link #get}, {@link #set}) puts
+     *  this form after {@code get}, {@code is} and {@code set}, which misses the generator's name where the first letter of a declared
      *  name, put in lower case and back in upper case, is another letter ("İş": {@code getİş}, where the generator
      *  writes {@code getIş}). */
     public static String pascal(String naam) {

@@ -142,11 +142,10 @@ public final class CaseRunner {
     }
 
     /** The same replay through the OTHER branch: the analysis rendered as DRL text, which {@link DroolsBackend}
-     *  compiles to a {@link KieBase} with the classic DRL build. A GATE-12 PATH since 2026-09-19 (card
-     *  gate12-drl-takteller): check-drools.sh sweeps every golden through it (a {@code --drl} run of
-     *  {@link DroolsBackendMain}); since card drl-teksttak-op-truth-maintenance, which made the text the second
-     *  rendering of the analysis, the gate demands per golden the status line of the exec-model branch. Gate 13 has
-     *  driven it since 2026-09-04. */
+     *  compiles to a {@link KieBase} with the classic DRL build. A GATE-12 PATH (card gate12-drl-takteller):
+     *  check-drools.sh sweeps every golden through it (a {@code --drl} run of {@link DroolsBackendMain}) and demands
+     *  per golden the status line of the exec-model branch, since the text is the second rendering of the analysis
+     *  (card drl-teksttak-op-truth-maintenance). Gate 13 drives it too. */
     public static Result viaDrlText(Path irPath, List<Path> casePaths) {
         return replay(irPath, casePaths, DroolsBackend.Branch.DRL_TEXT);
     }
@@ -569,8 +568,8 @@ public final class CaseRunner {
      *  each. In a cause chain the outermost exception that names a kind decides: a fault named after its rule wraps the
      *  same fault unnamed. The production runtime's {@link Breuk.DelingDoorNul} names no kind: a division by a numeric
      *  zero is the §9.5 deposit EF-005 since v1 (RUNTIME-SEMANTICS ch. 1.4 point 4), which this branch makes before the
-     *  runtime is called ({@code ComputeHelpers.divided}), so the runtime's fault no longer reaches a fault rule from
-     *  a division of the IR. */
+     *  runtime is called ({@code ComputeHelpers.divided}), so the runtime's fault reaches no fault rule from a
+     *  division of the IR. */
     static List<FaultKind> faultKinds(Throwable t) {
         List<FaultKind> kinds = new ArrayList<>();
         addKind(kinds, t);
@@ -1009,11 +1008,10 @@ public final class CaseRunner {
      *  (unchanged presence semantics). An {@code inconsistent} expectation is verified against the pinned §9.5
      *  KEY (the {@code rule}) — a matching Inconsistency fact must exist — and, when the expectation pins a
      *  {@code label}, on that SUBJECT, for every key kind, as ref matches it ({@code ref/lib/case.ml}, the
-     *  {@code Inconsistent} arm: rule and exact subject label on the same fact). Until card drools-consistentie-label
-     *  (2026-09-23) the subject was checked only for a default-group conflict key and a rule-name key passed on any
-     *  fact from its rule, wherever it landed. That masked one real divergence: both transpilers laid the §9.5
-     *  allocation error on the source instead of each recipient ({@code jutterswet-rangmaximering}), fixed in the same
-     *  card. An expectation carrying no rule and no code falls back to bare presence. A pinned {@code code} (card
+     *  {@code Inconsistent} arm: rule and exact subject label on the same fact; card drools-consistentie-label). A
+     *  rule-name key that passed on any fact from its rule would let a §9.5 deposit on the wrong subject pass, such as
+     *  an allocation error laid on the source instead of each recipient ({@code jutterswet-rangmaximering}). An
+     *  expectation carrying no rule and no code falls back to bare presence. A pinned {@code code} (card
      *  channel-fact-codes, RUNTIME-SEMANTICS ch. 5.6, 5.7b) must be among the codes of a fact that matches rule and
      *  label: ref keeps one fact per rule × subject with the codes deposited for it, this backend one fact per deposit
      *  with its own codes, so a code on any of the matching facts is a code of ref's one fact. */
@@ -1169,9 +1167,8 @@ public final class CaseRunner {
      *  case's own spelling — ref keeps that too — so an input written in a capitalisation other than the
      *  declaration's reads back byte-different and value-equal, and a byte comparator here would report a
      *  divergence that neither other executor has. {@code corpus/golden/jutterswet-keurstaat} spells one
-     *  deliberately ("Beschadigd" against a declared "beschadigd") and that is what this arm exists for; it was
-     *  unreachable until the enumeration literal reader stopped refusing the whole document (card
-     *  `drools-enumlabel-lezer`, 2026-09-20). The expectation NODE decides, not the Java type: a Tekst value
+     *  deliberately ("Beschadigd" against a declared "beschadigd") and that is what this arm exists for (card
+     *  `drools-enumlabel-lezer`). The expectation NODE decides, not the Java type: a Tekst value
      *  arrives as the same String and keeps the exact equality §13.3.3.4 gives it. */
     private static boolean equalValue(JsonNode expectedNode, Object expectation, Object actual) {
         if (expectedNode != null && expectedNode.has("enumeration"))
@@ -1264,11 +1261,10 @@ public final class CaseRunner {
     /** The instant a case {@code dateTime} names — or a loud refusal naming the FORM, never a guess.
      *  <p>{@link LocalDateTime#parse} is laxer than the wire it reads: it accepts {@code …T12:00} without a
      *  seconds field, and a fraction of ANY width, which it reads POSITIONALLY — {@code .1} as a hundred
-     *  milliseconds and {@code .1234} as 123.4. The shared interpreter/ASP case reader read those same three
-     *  digits differently ({@code .1} as ONE millisecond, {@code .100000} as a hundred THOUSAND), and the
-     *  literal reader refused them outright: one wire, three answers. Inside the schema's fence all three
-     *  agree, and that fence was the only reason the divergence never showed. Each reader now holds it
-     *  itself, so a case reaching a reader by another route (a generator, a hand run, a second producer) is
+     *  milliseconds and {@code .1234} as 123.4. Without a fence the shared interpreter/ASP case reader reads
+     *  those same digits differently ({@code .1} as ONE millisecond, {@code .100000} as a hundred THOUSAND), and
+     *  the literal reader refuses them outright: one wire, three answers. Inside the schema's fence all three
+     *  agree, so each reader holds that fence itself, and a case reaching a reader by another route (a generator, a hand run, a second producer) is
      *  refused rather than answered three ways. A malformed lexeme is a document defect, not a form this
      *  backend does not carry, so it is a hard error and never an {@link Excluded}. */
     private static LocalDateTime caseWireDateTime(String lexeme, String field) {

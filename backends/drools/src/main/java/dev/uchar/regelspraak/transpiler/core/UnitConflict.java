@@ -7,16 +7,15 @@ import dev.uchar.regelspraak.model.Unit;
  * shared canonical, hence no conversion factor, hence no honest way to put one value in the other's unit.
  *
  * <p><b>Why this exists.</b> {@link EffectiveUnit} derives the unit of a reference position from the
- * DECLARATION it reads (RUNTIME-SEMANTICS ch. 2.10), and that derivation was already in place. What was
- * missing is what the derivation is FOR. Every restatement helper in both transpiler branches guarded with
- * one composite test:
+ * DECLARATION it reads (RUNTIME-SEMANTICS ch. 2.10); this class is what the derivation is FOR. A restatement
+ * helper guarded with one composite test
  *
  * <pre>if (ev == null || en == null || !ev.convertibleTo(en) || !ev.requiredConversion(en)) return identity;</pre>
  *
- * That collapses two different facts into one answer. "No conversion is due" (same unit, or a unitless side)
- * and "no conversion EXISTS" (two units with disjoint canonicals) both returned the identity, so a document
- * whose declarations make a join impossible produced exactly the numbers a consistent document produces.
- * Measured on a copy of {@code corpus/golden/jutterswet-schouwrooster} whose declaration of one addend was
+ * collapses two different facts into one answer. "No conversion is due" (same unit, or a unitless side)
+ * and "no conversion EXISTS" (two units with disjoint canonicals) both return the identity, so a document
+ * whose declarations make a join impossible produces exactly the numbers a consistent document produces.
+ * Measured with that guard alone on a copy of {@code corpus/golden/jutterswet-schouwrooster} whose declaration of one addend was
  * moved to {@code uur} (factor 3600 to {@code seconde}) while the annotations stayed {@code schouwdagen}:
  * the verifier failed WF-091, {@code ref} faulted ("incompatible units: schouwdagen vs uur"), clingo faulted
  * ahead of translation, and this backend replayed both cases against the untouched golden's pinned values.
@@ -25,7 +24,7 @@ import dev.uchar.regelspraak.model.Unit;
  *
  * <p><b>The register is ref's.</b> ref funnels every reconciliation through one {@code restate_into}, called
  * from SEVEN sites: the three additive joins (add, sub, sub_min), a bound, the comparison, the write boundary,
- * and the timeline restatement. It faults when the pair does not convert. This backend now faults across the
+ * and the timeline restatement. It faults when the pair does not convert. This backend faults across the
  * same span, so the third leg of the differential square answers a broken document the way the other two do
  * instead of answering it with a number.
  *
@@ -58,13 +57,12 @@ import dev.uchar.regelspraak.model.Unit;
  *       one restatement site, which no frontend emits and the corpus does not hold.</li>
  * </ul>
  *
- * <p><b>What is NOT exempt, and used to be.</b> A rate against a plain unit with convertible numerators
- * ("€/mnd" against "€") was exempted here until 2026-09-09, to keep two §7.1 goldens green. That exemption was
- * place-blind: it applied at all eight fence positions, so an additive join, a write boundary and a comparison
- * between a rate and its own numerator all stayed silent while {@code ref} and clingo faulted. The repair is a
- * derivation, not an exemption — {@link EffectiveUnit#afterTimeFolding} makes a TOTAAL over a
- * timeline-declared operand yield the numerator, which is what the fold actually produces — so the pair never
- * reaches this fence on those goldens, and everywhere else it faults.
+ * <p><b>What is NOT exempt.</b> A rate against a plain unit with convertible numerators ("€/mnd" against "€"). An
+ * exemption would be place-blind: it would apply at all eight fence positions, so an additive join, a write boundary
+ * and a comparison between a rate and its own numerator would all stay silent while {@code ref} and clingo fault.
+ * The two §7.1 goldens that meet the pair rest on a derivation, not an exemption —
+ * {@link EffectiveUnit#afterTimeFolding} makes a TOTAAL over a timeline-declared operand yield the numerator, which
+ * is what the fold actually produces — so the pair never reaches this fence there, and everywhere else it faults.
  * A unit that declares a canonical but no factor is NOT exempt: {@link Unit#conversionFactorTo} already
  * faults there (the WF-092 wire form), and it must keep doing so.
  */

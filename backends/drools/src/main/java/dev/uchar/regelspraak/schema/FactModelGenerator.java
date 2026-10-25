@@ -149,26 +149,26 @@ public final class FactModelGenerator {
         // meerdere elementen" -> Element.holder : Houder), UNLESS that navigation crosses a to-many role
         // (then the scalar reference lives on the other side).
         //
-        // ONE FIELD PER ROLE, not per PAIR (card drools-rolvelden-herhaalde-typenparen). This loop used to
-        // ask connectingRole(ot, doelwit) — the by-PAIR search — which answers null the moment a SECOND
-        // feittype relates the same two object types, so a bean carried no reference at all and the fold's
-        // join, the §13.4.7 creation's three positions, the navigated read and the case-input write each
-        // refused a document whose author had written a perfectly unique role name. The ambiguity was never
-        // in the source; it was in asking the question by pair. connectingRoles asks it by NAME, per role,
+        // ONE FIELD PER ROLE, not per PAIR (card drools-rolvelden-herhaalde-typenparen). The by-PAIR search,
+        // connectingRole(ot, doelwit), answers null the moment a SECOND feittype relates the same two object
+        // types, so asked by pair a bean would carry no reference at all and the fold's join, the §13.4.7
+        // creation's three positions, the navigated read and the case-input write would each refuse a document
+        // whose author wrote a perfectly unique role name. The ambiguity is not in the source; it is in asking
+        // the question by pair. connectingRoles asks it by NAME, per role,
         // and keeps every refusal that is genuinely a refusal: a name two roles share resolves to nothing,
         // a to-many role's storage stays the far end's field, and a declared member of the same name still
-        // displaces the reference through the dedup above. Under-implied, never over-implied — as before,
-        // now measured per role instead of per pair.
+        // displaces the reference through the dedup above. Under-implied, never over-implied, measured per
+        // role and not per pair.
         //
-        // The by-pair authority itself is UNCHANGED and stays ambiguous: a consumer that has no written or
+        // The by-pair authority itself stays ambiguous: a consumer that has no written or
         // symbolic role still finds a repeated pair unresolvable (RUNTIME-SEMANTICS ch. 5.5), and this
         // derivation is what makes the field EXIST for the consumers that do have one.
         //
         // The field's TYPE is the role's declared filler, not the doelwit this loop reaches it from. The loop
         // reaches one role once per subtype of its filler (IR-SPEC ch. 2.6: the filler is an upper bound), and
-        // the dedup keeps the first; typed after the doelwit, the first-DECLARED of those types decided the
-        // field's class, so a subtype declared before its supertype narrowed the field and an instance of the
-        // supertype no longer fitted it. The filler's class takes every instance the role takes, since each
+        // the dedup keeps the first; typed after the doelwit, the first-DECLARED of those types would decide the
+        // field's class, so a subtype declared before its supertype would narrow the field and an instance of the
+        // supertype would not fit it. The filler's class takes every instance the role takes, since each
         // subtype's bean extends it.
         for (ObjectType target : model.objectTypes.values()) {
             if (target == ot) continue;
@@ -437,14 +437,13 @@ public final class FactModelGenerator {
      * "rollidmaatschapscheck", "objectcreatie", the fold join) and, where it is not already in their sentence,
      * the §13.3.9 pointer; the body is this one string.
      *
-     * <p>The second cause states no CARDINALITY (2026-09-11, card drools-ongepoorte-rollezers). It used to read
-     * "de enkelvoudige rol", which held only because every caller then checked {@code toManyRole} before asking.
-     * The readers gated since — the verdeling's recipient join, the far-side rolcheck, the temporal set fold, the
-     * feitcreatie's three positions — do NOT, and a to-many role is exactly the shape they meet: measured on a
+     * <p>The second cause states no CARDINALITY (2026-09-11, card drools-ongepoorte-rollezers): not every reader
+     * checks {@code toManyRole} before asking — the verdeling's recipient join, the far-side rolcheck, the temporal
+     * set fold and the feitcreatie's three positions do NOT — and a to-many role is exactly the shape they meet: measured on a
      * verifier-clean, ref-clean model the verdeling's join over a to-many recipient role died at first fire.
      * Naming it "enkelvoudig" there would assert of the document the very thing that is false about it.
      *
-     * <p>A third cause is named apart since 2026-09-28: the property EXISTS and another declaration holds it — a
+     * <p>A third cause is named apart (2026-09-28): the property EXISTS and another declaration holds it — a
      * member under another spelling ({@link Namen#ident} is not injective) or the field of another role, the shape
      * two same-named roles in two fact types give when one filler is a subtype of the other. "The bean model
      * derives no reference field" is true there and names no cause, so the sentence names the holder.
@@ -468,10 +467,7 @@ public final class FactModelGenerator {
      * to-many, so neither bean can hold the relation).
      *
      * <p>It lives HERE, beside {@link #noReferenceFieldReason}, for that function's own reason: both transpiler
-     * branches refuse the same shapes and must say so in the same words. Until 2026-09-18 this cardinality half
-     * was an inline string in the exec branch alone, so the two branches diagnosed one fold-join failure with two
-     * different sentences — measured on a both-sides-to-many model, exec named the cardinality and the DRL-text
-     * branch fell back to the generic reading. Callers still prefix their own reader name.
+     * branches refuse the same shapes and must say so in the same words. Callers prefix their own reader name.
      */
     public static Reason noJoinFieldReason(RegelSpraakModel model, ObjectType carrier, String role, ObjectType targetName) {
         if (!model.toManyRole(carrier, targetName, role)) return noReferenceFieldReason(model, carrier, role, targetName);
@@ -509,11 +505,10 @@ public final class FactModelGenerator {
      * role's name — that search is by NAME over the whole model and answers null on such a document, which would
      * refuse where the wire is unambiguous.
      *
-     * <p>It lives HERE for {@link #noJoinFieldReason}'s reason, one step on: until 2026-09-19 BOTH transpiler
-     * branches carried this method privately, line for line identical, and only the dual-branch witnesses held
-     * them together. A second implementation is a second chance to drift, and the drift is invisible — two
-     * branches that resolve the same wire differently produce two different SETS, not an error. One derivation,
-     * two consumers, as {@code StandingTargets} already is for the ch. 7.8 standing norm.
+     * <p>It lives HERE for {@link #noJoinFieldReason}'s reason, one step on: a second implementation is a second
+     * chance to drift, and the drift is invisible — two readers that resolve the same wire differently produce two
+     * different SETS, not an error. One derivation for every reader, as {@code StandingTargets} is for the ch. 7.8
+     * standing norm.
      *
      * <p><b>What this does NOT check, and why.</b> The FILLERS. A binding may resolve perfectly and still be
      * wrong for its use site — the bound role filled by the anchor's type instead of the created object's — and
@@ -523,7 +518,7 @@ public final class FactModelGenerator {
      * no corpus artefact reaches this method mis-filled. Measured on an {@code anchor/jutterswet-rekenkamer}
      * variant whose creation binding names the SIBLING role: the verifier FAILS it twice on WF-047, while ref
      * does not fault at all — it takes the wrong binding silently and reads a MISMATCH. A duplicate filler check
-     * HERE was weighed and rejected: it would need the expected filler pair at each call site (creation, fold
+     * HERE is rejected: it would need the expected filler pair at each call site (creation, fold
      * source, the quantifier fold's contributors), i.e. a second fence that can drift from gate 3's. What the
      * callers DO carry is the typed reference-field gate ({@link #hasReferenceField}), which catches the usual
      * downstream consequence — but that is a bean-model question, not a filler check, and does not claim to be.
@@ -563,12 +558,8 @@ public final class FactModelGenerator {
     }
 
     /**
-     * THE back-link decision of an object creation (RUNTIME-SEMANTICS ch. 5.5, IR-SPEC ch. 3.3), one derivation for
-     * every transpiler branch, which each carry out in their own way: a refusal or a fault fact on the exec-model
-     * branch, which derives with truth maintenance, and a marker on the DRL-text branch. Until the card
-     * tms-omschakeling (2026-10-10) the destructive exec-model branch carried it as a skip or a rule that faults at
-     * fire. Until 2026-10-08 the exec-model and the DRL-text branch each carried this block privately
-     * ({@code backlog/new/20260923-drools-rolpaar-ontdubbeling.md}).
+     * THE back-link decision of an object creation (RUNTIME-SEMANTICS ch. 5.5, IR-SPEC ch. 3.3), one derivation,
+     * which the analysis ({@code TmsTranspiler}) carries out as a refusal or a fault fact, on both branches alike.
      *
      * <p>The two link roles come from ONE of two routes. The creation's own {@code connectingRole} binding names the
      * role the created object plays, its sibling the one the subject plays; it is authoritative, as the reference
@@ -645,7 +636,7 @@ public final class FactModelGenerator {
 
     /** What {@link #rangeJoin} decided: the scalar join ROLE the wire binding yields, or the REASON it yields
      *  none. Exactly one of the two is non-null; both null means the wire named no range at all, and the caller's
-     *  own generic refusal — the one it gave before there were bindings — stands unchanged. */
+     *  own generic refusal stands. */
     public record RangeJoin(String role, Msg refusal) {}
 
     /**
@@ -654,16 +645,13 @@ public final class FactModelGenerator {
      *
      * <p>The role handed back is the SIBLING's name: the binding names the role the ELEMENT plays, and the
      * sibling — the role the anchor plays — is the reference field ON the element, which is the side the join
-     * reads. Since L2 the binding is the only range the wire carries, so it is the route for every pair: a unique
+     * reads. The binding is the only range the wire carries, so it is the route for every pair: a unique
      * one, a REPEATED one (where a search by the type pair is ambiguous by construction) and a SELF-TYPED one.
      *
-     * <p>A TO-MANY sibling is the one arm that needed a shared sentence. Its storage is the far end's field
-     * (§13.3.9), so the element carries no scalar reference to join on — a resolution success with a cardinality
-     * refusal behind it. Until 2026-09-19 each branch answered that with its own GENERIC note (the exec branch's
-     * "aggregatie buiten Phase-C scope", the DRL-text branch's bare {@code TODO aggregatie}), so one fold-join
-     * failure had two names and neither named the cause. The branches now say the same thing, for
-     * {@link #noJoinFieldReason}'s reason: a producer reading the gate report must not have to know which branch
-     * answered.
+     * <p>A TO-MANY sibling is the one arm with a shared sentence. Its storage is the far end's field (§13.3.9), so
+     * the element carries no scalar reference to join on — a resolution success with a cardinality refusal behind
+     * it, which every reader names in one sentence, for {@link #noJoinFieldReason}'s reason: a producer reading the
+     * gate report must not have to know which branch answered.
      */
     public static RangeJoin rangeJoin(RegelSpraakModel model, RegelSpraakModel.RoleBindingRef rb) {
         Role[] pair = boundRolePair(model, rb);
@@ -681,7 +669,7 @@ public final class FactModelGenerator {
     /**
      * THE navigation walk of an {@code AttributeReference.navigationBindings} / {@code Characteristic.navigationBinding}
      * (IR-SPEC ch. 4.1a), resolved from {@code subject} — the one derivation both transpiler branches decide a
-     * bound navigation by (V1-WIREMIGRATIE P1); since L2 the bindings are the only navigation the wire carries.
+     * bound navigation by (V1-WIREMIGRATIE P1); the bindings are the only navigation the wire carries.
      *
      * <p>Null when the walk does not resolve from {@code subject}: a binding naming no declared role, a hop whose
      * opposite role the type the walk stands on does not fill (ch. 2.6, extensionally), or — with a non-null
@@ -690,7 +678,7 @@ public final class FactModelGenerator {
      * with its own unresolved-navigation reason. It never falls back to the written name: a document whose
      * binding does not fit is refused, not read along a route the wire did not name. The same subject-fit the
      * written-chain derivation ({@link RegelSpraakModel#followChain}) applies, so a read the transpiler meets
-     * under another subject than the one it was bound to is refused exactly as before.
+     * under another subject than the one it was bound to is refused, as on the written chain.
      *
      * <p>No cross-check against the written step: WF-053 already demands that every written step denote its
      * hop's bound role (gate 3), the written fields disappear at B11, and a cross-check here would turn a
@@ -730,7 +718,7 @@ public final class FactModelGenerator {
     /**
      * THE bean fields of a fact creation, derived from its role bindings (IR-SPEC ch. 3.4: "derivable from the role
      * bindings by the backend's own role→field mapping") — the one derivation both transpiler branches decide a
-     * creation by. Since L2 of the v1 wire migration the bindings are all the wire carries of a creation.
+     * creation by. The bindings are all the wire carries of a creation.
      *
      * <p>The mapping is {@link #members}'s own: a bean carries a reference field named after the role the OTHER end
      * plays. The write lands on the doel, pointing at the anker, so it is {@code anchorRole}. The join and each hop

@@ -93,12 +93,10 @@ public final class Breuk extends Number implements Comparable<Breuk> {
     /**
      * A division whose divisor is a numeric zero: the fault of v0, which this runtime mirrors. In v1 a filled dividend
      * divided by a numeric zero is leeg with a §9.5 inconsistency of kind EF-005, as a leeg divisor gives leeg with one of
-     * kind EF-031 (RUNTIME-SEMANTICS ch. 1.4, point 4, since 2026-10-19), and the truth-maintenance branch answers that
+     * kind EF-031 (RUNTIME-SEMANTICS ch. 1.4, point 4), and the truth-maintenance branch answers that
      * before it calls this runtime ({@code ComputeHelpers.divided}). {@link #delen} throws it with the
      * dividend and the message it always had, so whatever caught or matched the {@link ArithmeticException} still does. Both branches keep it as a fault of the fixpoint, which the write-back throws named
-     * after the rule it ran in ({@link #inDeRegel}), with the first in its cause chain. Until card
-     * drl-teksttak-op-truth-maintenance the DRL-text branch let it leave the fire in the cause chain of Drools'
-     * {@code ConsequenceException}, which {@code DroolsBackend.designate} named in the same way.
+     * after the rule it ran in ({@link #inDeRegel}), with the first in its cause chain.
      */
     public static final class DelingDoorNul extends ArithmeticException {
         private static final long serialVersionUID = 1L;

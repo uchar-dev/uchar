@@ -4,8 +4,7 @@ package dev.uchar.regelspraak.transpiler.tms;
  * A control fact of the lowering of a defaults group (RUNTIME-SEMANTICS ch. 7): a logical fact that records how far
  * one effective stack got on one subject, which default decided or how a reconciliation came out, and that no form of
  * the model reads or writes. The derivations of the group are {@link Value} and {@link HasCharacteristic}, its conflict a
- * §9.5 inconsistency; these facts are what decides between them under truth maintenance, where the destructive
- * lowering computed the same in one consequence until card tms-omschakeling.
+ * §9.5 inconsistency; these facts are what decides between them under truth maintenance.
  *
  * <p>The interface marks them so that a session can be measured at its end: the facts that implement it are exactly
  * the control facts the defaults left standing, apart from the derivations and the standings, and {@link #stack}

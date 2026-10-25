@@ -67,8 +67,8 @@ import java.util.Map;
  * WF-001/WF-002 name identity — and a defect there is a {@link DocumentError} naming its JSON position, a hard
  * error. So is a node name that the schema's union at its position does not have, refused at the discriminator in
  * the shared loader's sentence ({@code unknown expr node "<v>"}, {@code unknown condition node "<v>"},
- * {@code unknown datatype node "<v>"}, {@code unknown TextCompositionPart node "<v>"}); until the L5 landing's fix
- * round such a name was a Refusal, so a document no reader can read was filed as a form this backend does not carry.
+ * {@code unknown datatype node "<v>"}, {@code unknown TextCompositionPart node "<v>"}); a Refusal would file a
+ * document no reader can read as a form this backend does not carry.
  * One step stricter: a Diagnostic's message must be a string, as the schema types it, where the OCaml loader admits a
  * null so that WF-113 can name it. Every datatype, at any position, carries its discriminator.
  *
@@ -79,8 +79,8 @@ import java.util.Map;
  * recipient join of an allocation and the back-link of an object creation ({@code connectingRole}), a union
  * selection's {@code sourceRole}, a role check's {@code factType}/{@code role}, a creation's symbolic block and a
  * uniqueness version's {@code scope}. A
- * reference node's type is the declaration's (IR-SPEC ch. 2.10), never an annotation. Since L2's fix round every
- * node this loader reads — not only the nodes L2 changed — is read with the schema's exact keys and a JSON pointer:
+ * reference node's type is the declaration's (IR-SPEC ch. 2.10), never an annotation. Every node this loader reads
+ * is read with the schema's exact keys and a JSON pointer:
  * a field the shape does not have is an unknown field, a binding the shape requires is a missing field, and an
  * {@code Onbekend} datatype or a role check of the L1 shape is an unknown node — each a {@link DocumentError}. So is
  * a reference-layer shape every executor refuses by name: a fold's set source its kind cannot consume, a count's
@@ -122,7 +122,7 @@ import java.util.Map;
  * {@code snippet}, and on a consistency version and a rule group the {@code line}, which those two records keep; an
  * absent record is a node without source text, read as the records always held one. The record is read strictly —
  * an empty snippet, a line below 1, a file, a column or any other field is refused at its pointer — and the field it
- * replaced, {@code bron}, is unknown on every node, as is a {@code line} beside the record. A marker without a record
+ * replaced, the v0 {@code bron}, is unknown on every node, as is a {@code line} beside the record. A marker without a record
  * is refused in WF-113 (b)'s sentence, as the shared loader refuses it for an executor.
  *
  * <p><b>The renaming (L5 of the v1 wire migration).</b> Every node, every key and every list under {@code rules}
@@ -140,9 +140,9 @@ import java.util.Map;
  * sentences.
  *
  * The frontend records this loader fills keep their v0 components (they are the vendored slice the toolchain
- * compiles); what the wire no longer carries is filled with {@code null}, {@code false} or an empty list, and
- * what the records have no component for rides BESIDE the model in {@link Loaded} — the same side-channel
- * shape {@code prioritizedDefaults} already uses. The additive {@code statuteAnnotations} provenance field is
+ * compiles); what the wire does not carry is filled with {@code null}, {@code false} or an empty list, and
+ * what the records have no component for rides BESIDE the model in {@link Loaded} — the side-channel shape
+ * {@code prioritizedDefaults} uses. The additive {@code statuteAnnotations} provenance field is
  * carried through.
  */
 public final class IrLoader {
@@ -251,8 +251,8 @@ public final class IrLoader {
      *               Wachters, which no by-pair search can disambiguate.</li>
      *           <li>a {@link ResolvedAllocation} — IR-SPEC ch. 3.2 {@code connectingRole}, naming the role the
      *               RECIPIENT plays. It decides the recipient join in both transpiler branches
-     *               (V1-WIREMIGRATIE P3), as {@code run_allocation} lets it decide in ref; since L2 the wire
-     *               requires it.</li>
+     *               (V1-WIREMIGRATIE P3), as {@code run_allocation} lets it decide in ref; the wire requires
+     *               it.</li>
      *           <li>a {@link Condition.RoleMembership} — the IR-SPEC ch. 4.5 {@code RoleMembership}, whose binding is its
      *               {@code factType} and the {@code role} the SUBJECT plays. The record is the carrier: its
      *               {@code role} is that role and its other-end slot holds the {@code counterpartType} narrowing or
@@ -301,8 +301,8 @@ public final class IrLoader {
     public record Positioned(Loaded loaded, NodePositions positions) {}
 
     /** Parse a {@code uchar-ir-v1} tree into a resolved model, or throw {@link Refusal} for a form
-     *  the v0 backend does not carry. What rides beside the model — the prioritized-defaults extension and, since
-     *  L2 of the v1 wire migration, every binding a read, a fold, a role check or a verdeling walks — is parsed but
+     *  the v0 backend does not carry. What rides beside the model — the prioritized-defaults extension and every
+     *  binding a read, a fold, a role check or a verdeling walks (L2 of the v1 wire migration) — is parsed but
      *  not returned: a transpiler handed this model alone reads every navigation as the subject's own. Use
      *  {@link #loadWithPositions} for anything that transpiles. */
     public static RegelSpraakModel load(JsonNode root) {
@@ -358,8 +358,7 @@ public final class IrLoader {
         fields(rules, "/rules", null, RULES, List.of("prioritizedDefaults"));
 
         // declarations first: the resolved lists reference them by name. Read in the v0 table order, so the
-        // model fills exactly as it did from the v0 maps. The v0 `regels` stubs left the wire at M1 (delta B3);
-        // no consumer here read them.
+        // model fills exactly as it did from the v0 maps. The wire carries no v0 `regels` stubs (delta B3).
         list(model, "/model", "objectTypes", (p, n) -> {
             ObjectType ot = objectType(p, n);
             once(m.objectTypes, p + "/name", ot.name, ot);
@@ -443,9 +442,10 @@ public final class IrLoader {
      *  with: the rule target's type, the element type inside a fold's filter and a quantifier fold, a selection's
      *  type inside a union branch, the creation and consistency subject, the allocation's source type, the fact
      *  creation's anchor, the defaults' subject, and none in a day-kind definition. A rule target is a write,
-     *  never read here; the rest of a fold's set source is {@link #checkFoldSource}'s. Until L2's fix round the role
-     *  check was refused with a storage reason, the characteristic read played, the value fold over a role name
-     *  failed at first fire, and the own total over a foreign element type played (measured on the L2 union). */
+     *  never read here; the rest of a fold's set source is {@link #checkFoldSource}'s. Without these checks the role
+     *  check would be refused with a storage reason, the characteristic read would play, the value fold over a role
+     *  name would fail at first fire, and the own total over a foreign element type would play (measured on the L2
+     *  union). */
     private void checkSubjects() {
         for (ResolvedRule r : m.resolvedRules) {
             ObjectType s = r.target() instanceof Expr.AttributeReference a ? a.objectType() : null;
@@ -607,7 +607,7 @@ public final class IrLoader {
     /** The key set of a container object or an M1 node, checked as the OCaml loader's {@code check_keys} checks it:
      *  the node discriminator when {@code expectedKind} names one, no key outside the node's own, every required key
      *  present, and an optional key written whole or not at all — present and null is neither (IR-SPEC § Method).
-     *  Read leniently, each of these was a document part ignored or a null taken for an absent field. */
+     *  Read leniently, each of these would be a document part ignored or a null taken for an absent field. */
     private static void fields(JsonNode n, String path, String expectedKind, List<String> required, List<String> optional) {
         if (n == null || !n.isObject())
             throw new DocumentError(path, "expected a JSON object"
@@ -674,8 +674,8 @@ public final class IrLoader {
         for (int i = 0; i < a.size(); i++) f.accept(p + "/" + i, a.get(i));
     }
 
-    /** The list form writes each name once, on its node, so a nameless entry has no name at all (the v0 map key
-     *  that once stood in for it is gone), and a repeated name would silently replace the declaration before it. */
+    /** The list form writes each name once, on its node, so a nameless entry has no name at all (no map key stands
+     *  in for it), and a repeated name would silently replace the declaration before it. */
     private static String name(JsonNode n, String path, String fieldName) {
         JsonNode v = n.get(fieldName);
         if (v == null) throw new DocumentError(path, "a declaration without a name: missing field '" + fieldName + "'");
@@ -906,14 +906,10 @@ public final class IrLoader {
      *  WF-103/104 already reject an unknown or cyclic parent at the document, so both guards here
      *  are a last line: a loader that walked a cycle would hang instead of reporting.
      *
-     *  <p>Until 2026-09-12 a third guard refused every chain carrying a temporal OR dimensioned member,
-     *  because the facet SIDE MAPS were read per declared type at 122 reads (121 lines) in both transpiler branches
-     *  and an inherited timeline would answer "not temporal" for the subtype. Those reads go through the
-     *  chain-closed accessors of {@link ObjectType} now, so the broad refusal is gone and the whole
-     *  combination plays. Measured at the same card: the DIMENSIONED half was over-broad even then —
-     *  every dimension read already went through {@code dimensionsOf}, which has walked the chain since
-     *  the kernel. What is left of it is the §9.9 startpunt-ANCHOR family, refused in
-     *  {@link #refuseInheritedAnchor} — not here, because it needs the tijdlijn list, which is read later. */
+     *  <p>A chain carrying a temporal or dimensioned member plays: the facet reads go through the chain-closed
+     *  accessors of {@link ObjectType} ({@code dimensionsOf} among them), so an inherited timeline answers
+     *  "temporal" for the subtype. The §9.9 startpunt-ANCHOR family is refused in {@link #refuseInheritedAnchor}
+     *  — not here, because it needs the tijdlijn list, which is read later. */
     private void bindSupertypes() {
         supertypeName.forEach((ot, name) -> {
             if (name == null) return;
@@ -1350,8 +1346,8 @@ public final class IrLoader {
             case "SumType" -> throw new Refusal(DroolsCode.DATATYPE_SUM.reason("node", node), "Datatype:" + node);
             // any other name is no node of this format, refused at the discriminator in the shared loader's words:
             // Onbekend among them, because the union has no member for an unknown type (a marker leaves its type out
-            // and a derived position the producer could not type is null), the four datatype nodes of the L2 shape,
-            // which no document carries since L3, and the three of the v0 shape that L5 renamed
+            // and a derived position the producer could not type is null), the four datatype nodes of the L2 shape
+            // and the three of the v0 shape, which this format spells otherwise
             default -> throw new DocumentError(path + "/node", "unknown datatype node \"" + node + "\"");
         };
     }
@@ -1501,9 +1497,9 @@ public final class IrLoader {
             keyNames("EmbeddedExpression", List.of("node", "expr")));
 
     /** The discriminator of an expression or condition node, and — for the kinds this loader reads — its key set,
-     *  checked as {@link #fields} checks every node since L2's fix round: no key outside the node's own, every
-     *  required key present, an optional one written whole or not at all. Until then a field no node has was read
-     *  past on most rule-side nodes, a condition marker carrying a type among them. A scalar where the node should
+     *  checked as {@link #fields} checks every node: no key outside the node's own, every required key present, an
+     *  optional one written whole or not at all, so no field a node does not have is read past. A scalar where the
+     *  node should
      *  stand is refused by the caller's {@link #nodeField} or {@link #elements}, at the field's pointer. */
     private String nodeKind(JsonNode n, Map<String, Keys> table, String description) {
         // every caller reads the node through nodeField or elementen, which refuse a non-object at its pointer
@@ -1711,8 +1707,8 @@ public final class IrLoader {
         // IR-SPEC ch. 4.3 / WF-102: a MULTI-STEP fold-source range. Read VERBATIM — the full ordered list of
         // RoleBinding steps, nothing derived from the presentation strings and nothing re-derived from the endpoint
         // type PAIR. That is the whole point of the field: a by-pair search binds a coincidental DIRECT relation
-        // between subject and element type and folds the WRONG set, which is exactly what this executor did when
-        // the field was dropped (measured on jutterswet-vondstketen: 5,00 where the sentence says 3,00, with ref
+        // between subject and element type and folds the WRONG set, which is exactly what this executor does with
+        // the field dropped (measured on jutterswet-vondstketen: 5,00 where the sentence says 3,00, with ref
         // and clingo answering 3,00). The two SHAPE arms below are refused BY NAME here rather than downstream, for
         // ref's reason. The MODEL-relative arms (a step that does not join, a landing beside the element type, a
         // hop the beans carry no field for) belong to the walk and are per-form refusals in the transpilers, which
@@ -1771,11 +1767,8 @@ public final class IrLoader {
      *  fold excepted, which WF-091 refuses on its type and this loader as a node it does not carry, and a union under a
      *  count, which is WF-110 (c)'s. The kind and the node are named as the wire spells them, the node with its
      *  article on the verifier's rule (an before a vowel). Null when the fold carries no {@code elementType} or has its
-     *  source. Without it both branches played a count whose one argument was a literal, a parameter or a marker,
-     *  counting the instances its range reaches, the DRL-text branch played the filled count the same way and a count
-     *  without an argument beside its range, and crashed on a sum, a total, a minimum or a maximum over a literal
-     *  (measured before the card aantal-bronarm-en-drools-lader); the exec-model branch refused the rest with a scope
-     *  note. */
+     *  source. Without it a count whose one argument is a literal, a parameter or a marker would count the instances
+     *  its range reaches (measured before the card aantal-bronarm-en-drools-lader). */
     static String sourceRefusal(String aggregationKind, String elementType, JsonNode arguments) {
         if (elementType == null || arguments == null || !arguments.isArray()) return null;
         String head = "a " + aggregationKind + " aggregation carries elementType \"" + elementType + "\"";
@@ -1795,8 +1788,8 @@ public final class IrLoader {
     /** WF-110 (c) (IR-SPEC ch. 4.3), the verifier's sentence: a count over an {@code InstanceSetUnion} names no
      *  source of its own, so an {@code elementType}, a range or a {@code filter} on that node is a second claim beside
      *  the union's selections; the fields are named in the verifier's order. Null for any other node. A path there is
-     *  refused before this, as a count's path (WF-102 (c)). Without it both branches played such a count, counting the
-     *  union and never reading the node's own source (measured before the card aantal-bronarm-en-drools-lader). */
+     *  refused before this, as a count's path (WF-102 (c)). Without it such a count would count the union and never
+     *  read the node's own source (measured before the card aantal-bronarm-en-drools-lader). */
     static String unionSourceRefusal(Expr.FunctionKind fk, String elementType, JsonNode n) {
         JsonNode arguments = n.get("arguments");
         if (fk != Expr.FunctionKind.AANTAL || arguments == null || !arguments.isArray() || arguments.size() != 1
@@ -1827,11 +1820,9 @@ public final class IrLoader {
      * without a type has nothing to cross it against (WF-034's typeless value node). And a number, a date or a
      * date-time outside its grammar is refused in the verifier's sentence (WF-081, WF-084, WF-095), keyed on the
      * variant as the verifier keys it. For the number that grammar is the one ref and the ASP backend read with: the
-     * frontend's shared number reader, which also reads source text, searches the lexeme for its first number, so it
-     * took a comma for a point and read {@code .5} and {@code 5 €} as 5, {@code -.5} as 5 and {@code 3/04} as 0.75
-     * where those two fault (measured on both branches before this check). A date or date-time outside ISO loaded
-     * until the fix round of the L4 landing and was refused only while lowering, under a scope note ("waarde buiten
-     * scope", "TODO datumliteral"), where the verifier named the lexeme (measured on the WF-084 and WF-095 witnesses).
+     * frontend's shared number reader, which also reads source text, searches the lexeme for its first number, so
+     * without this check it would take a comma for a point and read {@code .5} and {@code 5 €} as 5, {@code -.5} as 5
+     * and {@code 3/04} as 0.75 where those two fault (measured on both branches before this check).
      */
     private Expr literal(JsonNode n) {
         String p = pathOf(n);
@@ -1995,9 +1986,9 @@ public final class IrLoader {
      *  fold's own arm asks before this, whatever the source reads. Under a value fold the name is read per
      *  contributor, so it must be an attribute of the element type: a
      *  characteristic carries no value there (WF-080). A name that is neither is refused once the subject is known
-     *  ({@link #checkValueFoldSource}). Without these the exec branch played a count over an attribute as a count of
-     *  members and failed with a runtime error at first fire on a value fold over a role name, and the DRL-text
-     *  branch compiled neither (measured on the L2 union). A navigated source is WF-053's and is left to the
+     *  ({@link #checkValueFoldSource}). Without these a count over an attribute would play as a count of members and
+     *  a value fold over a role name would fail with a runtime error at first fire (measured on the L2 union). A
+     *  navigated source is WF-053's and is left to the
      *  transpilers' refusal. */
     private void checkFoldSource(JsonNode n, String p, Expr.FunctionKind fk, Expr.FunctionCall f) {
         if (fk == null || f.elementObjectType() == null
@@ -2041,7 +2032,7 @@ public final class IrLoader {
 
     /** WF-083 (c), the element type of the subject's own read: a {@code total} over one source without a range is
      *  the subject's own read, so the type it folds over is the subject type — equal in the WF-001 form. Neither
-     *  branch reads the field there, so a foreign type in it changed no answer: {@code jutterswet-tempototaal} with
+     *  branch reads the field there, so a foreign type in it changes no answer: {@code jutterswet-tempototaal} with
      *  its own total naming Vondst played in both branches (measured before this check). It is refused here in the
      *  verifier's words. */
     private void checkOwnTotal(Expr.FunctionCall f, ObjectType s) {
@@ -2108,8 +2099,7 @@ public final class IrLoader {
 
     /** A derived position whose record computes its own type — a rounding and a clamp from their base, a text
      *  composition as text: the wire's {@code type} there is still a datatype or null (IR-SPEC ch. 2.10), so it is read
-     *  for its defects and not kept. An {@code Onbekend} or a scalar in it is no document, as the verifier holds;
-     *  until L2's advisory round the field was not read at all. */
+     *  for its defects and not kept. An {@code Onbekend} or a scalar in it is no document, as the verifier holds. */
     private void derivedType(JsonNode n) {
         typeField(n);
     }
@@ -2174,9 +2164,9 @@ public final class IrLoader {
             case "RoleMembership" -> {
                 String p = pathOf(n);
                 // WF-034, the role check's pair crossed against the declarations, in the words ref and the ASP
-                // backend fault with: a check naming no declared link holds for no instance, and until L2's fix
-                // round this backend refused it with a storage reason instead (the fact type, the role, the
-                // narrowing here; whether the subject fills the role in checkSubjects, which has the subject)
+                // backend fault with: a check naming no declared link holds for no instance (the fact type, the
+                // role, the narrowing here; whether the subject fills the role in checkSubjects, which has the
+                // subject)
                 String factType = textAt(n, p, "factType"), role = textAt(n, p, "role");
                 FactType ft = factTypeByName(factType);
                 if (ft == null)
@@ -2225,8 +2215,7 @@ public final class IrLoader {
             case "QuantifierFold" -> {
                 // IR-SPEC ch. 4.5: the range is required, one field with two spellings. A multi-step range (WF-108
                 // (c), RUNTIME-SEMANTICS ch. 3.4b) goes to the transpiler as it is written, which plans it as it plans
-                // an Aggregation's sourcePath (transpiler/core/SourcePath); until the card frontend-kwantor-over-een-pad
-                // (2026-10-20) this loader refused it (DROOLS-026, retired).
+                // an Aggregation's sourcePath (transpiler/core/SourcePath; card frontend-kwantor-over-een-pad).
                 String p = pathOf(n);
                 rangeFields(n, p);
                 List<RoleBindingRef> sourcePath = n.has("sourcePath") ? roleBindingList(n, p, "sourcePath") : List.of();
@@ -2285,9 +2274,7 @@ public final class IrLoader {
      *
      *  <p>The swap holds under the ch. 3.9 whole-period qualifier as well (decided 2026-09-26): the leeg and the
      *  gevuld test both take the threshold days(B), a gap day being a leeg day, so a negated test asks for the
-     *  complementary days of the same touched buckets, which is exactly its sister test. Until that date both
-     *  forms were refused here, the negated one because the leeg test still had a threshold of its own and the
-     *  unnegated one because ref did not execute the fold. */
+     *  complementary days of the same touched buckets, which is exactly its sister test. */
     private Condition.Predicate predicate(JsonNode n) {
         String p = pathOf(n);
         Condition.PredicateKind predicateKind = enumValue(Spelling.PREDICATE_KIND, "Predicate.kind", textAt(n, p, "kind"),
@@ -2734,10 +2721,10 @@ public final class IrLoader {
             java.util.regex.Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
 
     /** The calendar day a validity bound names — or a loud refusal naming the FORM, never a guess.
-     *  <p>Until 2026-09-23 the three other readers of this wire held a bound as an OPAQUE STRING and
-     *  ordered it lexicographically; since card ref-geldigheid-datumlezing only the verifier still does
-     *  (sound under WF-101), and ref and the ASP backend read the bounds through their strict date reader. That ordering is only sound INSIDE this lexeme, and nothing
-     *  enforced it: measured 2026-09-11 on a hand-edited copy of a two-version golden, the verifier reported
+     *  <p>The verifier holds a bound as an OPAQUE STRING and orders it lexicographically (sound under
+     *  WF-101); ref and the ASP backend read the bounds through their strict date reader (card
+     *  ref-geldigheid-datumlezing). That ordering is only sound INSIDE this lexeme, and without a fence
+     *  nothing enforces it: measured 2026-09-11 on a hand-edited copy of a two-version golden, the verifier reported
      *  PASS on {@code +012026-01-01}, {@code -0500-01-01}, {@code 2026-02-30} and {@code niet-een-datum}
      *  alike. On {@code +012026-01-01} the interpreter and the ASP backend then applied the version (the
      *  signed lexeme sorts before every four-digit one) while this reader did not (year 12026) — one
@@ -2867,9 +2854,8 @@ public final class IrLoader {
     /** The operand typing the verifier refuses under WF-035 (date ± duration: the form, and the duration's unit) and
      *  WF-038 (the operand of a square root or an absolute value, and the duration clause), refused here at load in
      *  the sentence the verifier, {@code ref} and the ASP backend share ({@code spec/verifier/lib/checks.ml}), at the
-     *  pointer the verifier names. Without it both branches lowered what they could and answered for the rest in
-     *  words of their own: a duration plus a date PLAYED with the operands silently commuted, a text operand under a
-     *  square root faulted at fire, and the other forms were refused as rules out of scope (measured 2026-09-25).
+     *  pointer the verifier names. Without it a duration plus a date would PLAY with the operands silently commuted
+     *  and a text operand under a square root would fault at fire (measured 2026-09-25).
      *  Asked once the whole document is read, as the verifier asks it: a reference's type is its declaration's, a
      *  binder read's its binding's ({@link EffectiveUnit#typeOf}), and a type the document does not give
      *  defers, as the verifier defers on it. */

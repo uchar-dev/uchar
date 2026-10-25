@@ -22,7 +22,7 @@ import java.util.function.Function;
  * adapted to the interface with {@link MethodHandleProxies#asInterfaceInstance} (a hidden-class proxy on JDK 21+);
  * {@link java.lang.invoke.LambdaMetafactory} is deliberately NOT used because it demands a full-privilege
  * ({@code ORIGINAL}) lookup, a bar a cross-module {@code privateLookupIn} into a CHILD-classloader bean cannot clear —
- * the reason the typed path used to {@code NoClassDefFound} against generated beans (see {@code ownerLookup}). Two wins
+ * with it the typed path would throw {@code NoClassDefFound} against generated beans (see {@code ownerLookup}). Two wins
  * over the reflective bridge ({@link RegelSpraakRuntime#get}/{@link RegelSpraakRuntime#set}):
  *
  * <ul>
@@ -37,7 +37,7 @@ import java.util.function.Function;
  * single-arg {@code set<Prop>} for writes) mirror the bridge exactly, so the two paths return byte-identical
  * VALUES for every well-typed read/write the model produces (verified corpus-wide by {@code AccessorsTest}).
  *
- * <p>The only differences from the old reflective bridge are on inputs the model never produces, and are
+ * <p>The only differences from the reflective bridge are on inputs the model never produces, and are
  * exception SHAPE, never a wrong value: a type-mismatched write or a null into a primitive setter throws
  * {@code ClassCastException}/{@code NullPointerException} here vs {@code IllegalArgumentException} via reflection
  * (both abort the fire identically); and a getter whose BODY throws propagates the real exception rather than
@@ -50,8 +50,7 @@ import java.util.function.Function;
  * again: {@code pascal} of a property is not always its getter ("日 X" has the property {@code 日X}, which
  * {@code pascal} reads as a shouted word, {@code 日x}), and the Pascal form of a declared name is not always the
  * generator's getter either ({@code İş} where the generator writes {@code Iş}). Every reader and writer of a bean member
- * goes through this entry. Until card drl-teksttak-op-truth-maintenance a second entry took a DECLARED name and derived
- * the method through {@link RegelSpraakRuntime#pascal}, for the DRL-text branch of that day and its replay.
+ * goes through this entry.
  */
 public final class Accessors {
     private Accessors() {}

@@ -10,8 +10,8 @@ import java.util.Objects;
  * decides after a lower one already wrote, the lower one's match goes and its write with it, and when the higher
  * decision goes, the lower one matches again. A default whose consequence is leeg inserts nothing, so the lower ones
  * decide (RUNTIME-SEMANTICS ch. 7.1). This is the form A10 of the trial of card drools-logische-afleiding measured as
- * variant M. Since card defaults-decider the lowest deciding default inserts it too, which displaces nothing, so that
- * the session names every decision ({@code TmsTranspiler.decisionsOf}).
+ * variant M. The lowest deciding default inserts it too (card defaults-decider), which displaces nothing, so that the
+ * session names every decision ({@code TmsTranspiler.decisionsOf}).
  *
  * <p>Keyed and compared as {@link HasCharacteristic}: the subject by identity, the stack and the index by value.
  */

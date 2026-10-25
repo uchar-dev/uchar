@@ -70,8 +70,7 @@ public enum StaticFunction {
     PERIOD_LIST(Period.class, "list", false),
     /** A division (ch. 1.4, 1.2): a leeg dividend 0, a leeg divisor leeg with the §6.5 deposit to the probe, a numeric
      *  zero leeg with the deposit of ch. 1.4 point 4 to the probe; the exact quotient. The function of a
-     *  {@link Term.Division}. It no longer faults since the card zero-division-channel (2026-10-19), and still counts as
-     *  one that can: the plans of every form with a division are built on that, and changing it is a card of its own. */
+     *  {@link Term.Division}. It does not fault (card zero-division-channel), and counts as one that can: the plans of every form with a division are built on that, and changing it is a card of its own. */
     DIVIDED(ComputeHelpers.class, "divided", true),
     /** As {@link #DIVIDED}, the quotient truncated toward zero at 5 decimals. */
     DIVIDED_ABS(ComputeHelpers.class, "dividedAbs", true),

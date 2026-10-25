@@ -159,9 +159,8 @@ public final class Namen {
     }
 
     /** ref's {@code Checks.attr_temporal} as a name contract: whether {@code name} occurs among the keys of a
-     *  declared-name-keyed map, compared with {@link #norm}. THE one temporality test of both back-ends' key
-     *  sites — deriving it locally is how the DRL text and the executable model came to disagree with ref
-     *  about a mis-capitalised uniqueness key (backlog: drools-sleutelconventies). */
+     *  declared-name-keyed map, compared with {@link #norm}. THE one temporality test of the key sites: a local
+     *  derivation can disagree with ref about a mis-capitalised uniqueness key (card drools-sleutelconventies). */
     public static boolean containsName(java.util.Map<String, ?> perName, String name) {
         if (perName == null || name == null) return false;
         return perName.containsKey(declaredName(perName.keySet(), name));

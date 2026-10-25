@@ -22,12 +22,11 @@ import java.util.TreeSet;
  * rows of ch. 4.4 are the reference interpreter's ({@code ref/lib/alloc.ml}), save the two that ch. 4.4 decides
  * otherwise for v1 (below).
  *
- * <p>Where the spec and the destructive lowering of before card tms-omschakeling differed, the spec decides. An empty
- * pot distributes nothing in every method, as ch. 4.4 decides for v1, so nothing is written and nothing deposited; in
- * the equal-shares and the proportional method the reference interpreter keeps the v0 hole there and faults, and the
- * destructive lowering threw. A negative weight in the proportional method counts as 0 and surfaces the §9.5 deposit,
- * as ch. 4.4 decides for v1; the reference interpreter keeps the v0 hole there, an unclamped weight, as the destructive
- * lowering did. In the ordered method an empty tie-break weight counts as 0, as ch. 4.2 and the reference interpreter
+ * <p>Where the spec and the v0 mirror differ, the spec decides. An empty pot distributes nothing in every method, as
+ * ch. 4.4 decides for v1, so nothing is written and nothing deposited; in the equal-shares and the proportional method
+ * the reference interpreter keeps the v0 hole there and faults. A negative weight in the proportional method counts as
+ * 0 and surfaces the §9.5 deposit, as ch. 4.4 decides for v1; the reference interpreter keeps the v0 hole there, an
+ * unclamped weight. In the ordered method an empty tie-break weight counts as 0, as ch. 4.2 and the reference interpreter
  * read it, where {@code rsVerdeelOpVolgorde} splits a group whose weights are all empty in equal parts; and two
  * ordering keys of one value are one group whatever their scale, as the reference interpreter compares them, where that
  * helper groups by {@code equals}. The weights and keys are handed to the helper read so.

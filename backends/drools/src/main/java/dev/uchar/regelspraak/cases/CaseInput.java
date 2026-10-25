@@ -268,15 +268,14 @@ public final class CaseInput {
         }
         JsonNode characteristics = i.get("characteristics");
         if (characteristics != null) for (JsonNode k : characteristics) {
-            // A CASE defect, not an uncarried form (maintainer decision 2026-09-09) — the sister arm below has
-            // said so about the mirror-image mistake since it was written, and this arm is the same seam from
-            // the other side. A TEMPORAL kenmerk's bean member is a List<Segment>, so a scalar-true assertion
-            // reaches no reader here; in the interpreter and the ASP backend it reached none either, and BOTH
-            // answered 0 where the golden pins 30 rather than saying anything (measured 2026-09-09 on
-            // jutterswet-tegenwacht and anchor/jutterswet-dubbelwacht). All three readers refuse it at load
-            // since that decision. It stayed an Excluded until then, which filed a broken case under "a form
-            // the v0 backend does not carry" — a counted, reasoned refusal in the gate report for a case that
-            // is simply wrong, and the one classification that could keep it out of sight.
+            // A CASE defect, not an uncarried form (maintainer decision 2026-09-09), as the sister arm below says
+            // of the mirror-image mistake; this arm is the same seam from the other side. A TEMPORAL kenmerk's bean
+            // member is a List<Segment>, so a scalar-true assertion reaches no reader here; in the interpreter and
+            // the ASP backend it reaches none either, and BOTH answered 0 where the golden pins 30 rather than
+            // saying anything (measured 2026-09-09 on jutterswet-tegenwacht and anchor/jutterswet-dubbelwacht).
+            // All three readers refuse it at load. An Excluded would file a broken case under "a form the v0
+            // backend does not carry" — a counted, reasoned refusal in the gate report for a case that is simply
+            // wrong, and the one classification that could keep it out of sight.
             if (Namen.containsName(ot.characteristicGranularityMembers(), k.asText()))
                 throw new IllegalArgumentException("scalar characteristic input '" + k.asText() + "' on the "
                         + "time-dependent kenmerk of " + ot.name + ": deliver it as a characteristicTimelines "
@@ -371,8 +370,8 @@ public final class CaseInput {
                     if (roleLI == null || model.toManyRole(tL, tI, roleLI))
                         // NOT UNIQUE and UNIQUE BUT TO-MANY are different failures and are reported apart (lens 2,
                         // 2026-08-30): the erflijn shape resolves `erfvolger` by name PERFECTLY, and what stops it
-                        // is its CARDINALITY — a to-many role's storage is the far end's field — where the old
-                        // single sentence blamed a non-unique derivation that had in fact succeeded.
+                        // is its CARDINALITY — a to-many role's storage is the far end's field — where one sentence
+                        // for both would blame a non-unique derivation that in fact succeeded.
                         throw new RoleRefusal(DroolsCode.CASE_ROLE_NO_FIELD.reason("role", e.getKey(), "fromType", tI.name, "toType", tL.name, "viaReason", viaName == null ? DroolsCode.CASE_ROLE_NO_FIELD.part("via-none")
                                 : DroolsCode.CASE_ROLE_NO_FIELD.part(model.toManyRole(tI, tL, viaName) ? "via-to-many" : "via-to-one", "role", viaName),
                                 "directionReason", DroolsCode.CASE_ROLE_NO_FIELD.part(roleIL != null ? "direction-near" : roleLI != null ? "direction-far" : "direction-none",
@@ -432,11 +431,10 @@ public final class CaseInput {
      *  wederkerig twin of this limit is refused in {@link DroolsBackend} for the whole model. */
     private void nameSharingGate(ObjectType carrier, String role, ObjectType target, RoleLink link) {
         if (FactModelGenerator.hasReferenceField(model, carrier, role, target)) return;
-        // The cause is read off what holds the property, never assumed. Until 2026-09-28 every cause other than a
-        // declared member was reported as a second role, and the commonest one was no second role at all: a target
-        // of a SUBTYPE of the role's filler, which the field of the filler's class takes (IR-SPEC ch. 2.6) and which
-        // the type gate then refused by equality. Two same-named roles toward different types
-        // (corpus/red/ambiguous-case-role-key) are the cause that sentence was written for, and it now names them.
+        // The cause is read off what holds the property, never assumed: a declared member, no derived field, a
+        // property of another declaration, a field another role holds — two same-named roles toward different
+        // types, corpus/red/ambiguous-case-role-key — or a field that cannot hold the target. A target of a SUBTYPE
+        // of the role's filler is no cause: the field of the filler's class takes it (IR-SPEC ch. 2.6).
         FactModelGenerator.Origin holder = FactModelGenerator.fieldOrigin(model, carrier, role);
         String field = Namen.ident(carrier.name, true) + "." + Namen.ident(role, false);
         String cause;
@@ -494,10 +492,10 @@ public final class CaseInput {
      *  (a case supplying both legs means one relation), and a CONFLICTING leg on the to-one role is hard — ref
      *  refuses that case at load (WF-013), so overwriting it here would file a broken case under a green replay.
      *
-     *  <p>Scoped to the WEDERKERIG shape, and since 2026-09-10 that scope is a DIVISION OF LABOUR rather than
-     *  the law it used to state. RUNTIME-SEMANTICS ch. 5.7a (maintainer decision) makes EVERY supplied link
-     *  establish its relation in both directions, and ref's {@code Case.materialise_relations} mirrors on the
-     *  SISTER role accordingly. Three shapes, three answers, all landed:
+     *  <p>Scoped to the WEDERKERIG shape, and that scope is a DIVISION OF LABOUR: RUNTIME-SEMANTICS ch. 5.7a
+     *  (maintainer decision 2026-09-10) makes EVERY supplied link establish its relation in both directions, and
+     *  ref's {@code Case.materialise_relations} mirrors on the SISTER role accordingly. Three shapes, three
+     *  answers:
      *  <ul>
      *    <li><b>1:N</b> — the relation has exactly ONE reference field and it necessarily serves both
      *        directions, so there is no second write to make. {@link #setRoles} lands the case's write on that
@@ -505,11 +503,10 @@ public final class CaseInput {
      *        ({@code SisterRoleInputWitnessTest}, over the {@code jutterswet-ketenband} golden).</li>
      *    <li><b>1:1</b> — each direction owns its own field, so ch. 5.7a needs a SECOND write on the target
      *        bean. {@link #setRoles} makes it, right after the forward write, on the sister role and under the
-     *        same name-sharing gate. That closed the last ref ≢ Drools flank of the decision: a case writing
-     *        {@code W1{opvolger:[W2]}} over a to-one/to-one self-pair now reads W1 as W2's voorganger here, as
-     *        it does in ref ({@code OpslagDirectionWitnessTest}, converted at that decision).</li>
+     *        same name-sharing gate: a case writing {@code W1{opvolger:[W2]}} over a to-one/to-one self-pair
+     *        reads W1 as W2's voorganger here, as it does in ref ({@code OpslagDirectionWitnessTest}).</li>
      *    <li><b>wederkerig</b> (§13.3.9.2, one role that is its own opposite) — THIS pass, and deliberately
-     *        still a separate one: its order-independence argument above is the reason, and the 1:1 arm skips
+     *        a separate one: its order-independence argument above is the reason, and the 1:1 arm skips
      *        the shape (it fires only when the sister role is a DIFFERENT role) so the two never collide.</li>
      *  </ul>
      *  A collision names the link whose leg the pass mirrored, the one that wrote the bean's own field: a leg the pass
@@ -609,7 +606,8 @@ public final class CaseInput {
     private void mirrorReciprocalRoles() {
         for (Object bean : labelToBean.values()) {
             // the reciprocal role of an instance of a SUBTYPE of its filler is its ancestor's (IR-SPEC ch. 2.6):
-            // asked of the bean's own type alone, such a leg went unmirrored and the partner read an empty relation
+            // asked of the bean's own type alone, such a leg would go unmirrored and the partner read an empty
+            // relation
             String role = null;
             for (ObjectType t : beanObjectType(bean).chain())
                 if ((role = FactModelGenerator.selfPairRole(model, t)) != null) break;

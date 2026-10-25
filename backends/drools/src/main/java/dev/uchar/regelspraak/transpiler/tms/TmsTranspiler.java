@@ -98,10 +98,8 @@ import java.util.function.Supplier;
  * holding. The outcome of an acyclic
  * rule set then does not depend on which rule the agenda fires first, which a lowering that writes the beans secures
  * only with measures of its own (a rule attribute against re-firing, a priority per stratum, class reactivity, a
- * conditional bean update, a record of an initialisation's own write), as the exec-model branch did until card
- * tms-omschakeling (2026-10-10) and the DRL-text branch until card drl-teksttak-op-truth-maintenance, which made it a
- * rendering of this analysis. Neither branch carries any of them now; the fire cap of {@code DroolsBackend.fire}
- * stays.
+ * conditional bean update, a record of an initialisation's own write). Neither branch carries any of them; the fire
+ * cap of {@code DroolsBackend.fire} stands.
  *
  * <p>Truth maintenance follows only what the left-hand side of a rule binds: a value a consequence reads with a
  * getter, or looks up in working memory itself, records no dependency, so a derived fact computed from it stays when
@@ -322,7 +320,7 @@ public final class TmsTranspiler {
     /** Every effective stack with its type and its composition, by the stack's name ({@link #stacks}). */
     private final Map<String, Stack> effectiveStacks = new LinkedHashMap<>();
     /** The members the lowered rules derive, by key. The key is normalised, and the setter a derivation is written back
-     *  through is the bean property of the declared spelling, which the key no longer carries. */
+     *  through is the bean property of the declared spelling, which the key does not carry. */
     private final Map<ElementKey, Member> derived = new LinkedHashMap<>();
     /** The members a lowered rule reads through their standing, on its subject or at the end of a path: the derived
      *  ones, and every attribute on a timeline ({@link Reads#timeline}). Each gets its standing rules. */
@@ -366,12 +364,12 @@ public final class TmsTranspiler {
     private final DayKinds dayKinds;
     /** Where the nodes of the document stand on the wire, in a build with readings (card fixpoint-readings), which
      *  plans a reading rule beside the rule of every form with a condition, and of every form without one that computes
-     *  a value (card readings-of-unconditional-forms) ({@link #readingsOf}); null in a build without, whose plan is that
-     *  of a build before the card. */
+     *  a value (card readings-of-unconditional-forms) ({@link #readingsOf}); null in a build without, whose plan holds no
+     *  reading rule. */
     private final dev.uchar.regelspraak.loader.NodePositions positions;
     /** Where the nodes of the document stand on the wire, for {@link #originOf} alone, which names the fold of a rule of
      *  a fold by it: the positions the loader gave with the document, which every build takes. The lowering reads none
-     *  of it, so a build without readings plans what it planned before it had them. */
+     *  of it, so these positions change no plan. */
     private final dev.uchar.regelspraak.loader.NodePositions origins;
     /** While the condition and the value of a form's own rule compile in a build with readings: the term the analysis
      *  plans for each node of the IR it compiles there, by identity ({@link #note}); null at every other moment. */
@@ -1823,8 +1821,7 @@ public final class TmsTranspiler {
      * the reference interpreter answers it in pass order; and any other value, among them a sum of timelines over a
      * set (ch. 3.5) and the arithmetic of two timelines (ch. 3.4), which no golden of this branch's gap asks. Refused
      * by name as well: a time window in the condition, which on a temporal target clips the timeline instead of
-     * gating the rule on the evaluation date (ch. 3.10), as the destructive DRL-text lowering refused it as well until
-     * card drl-teksttak-op-truth-maintenance; golden {@code jutterswet-pachtvenster} has it.
+     * gating the rule on the evaluation date (ch. 3.10); golden {@code jutterswet-pachtvenster} has it.
      */
     private List<RulePlan> timelineRule(ResolvedRule r, Expr.AttributeReference target) {
         Member member = timeMember(target.objectType(), target.attribute(), false, Msg.drools("PART.desc.time-dependent-target"));
@@ -2264,9 +2261,7 @@ public final class TmsTranspiler {
      * table by table per shape (an equality of numbers violated where exactly one is leeg, an ordering violated where
      * an operand is leeg), which the condition lowering of this branch carries. Every read is bound to a total
      * standing, so a subject has one activation and the channel one error fact per form and subject, without a guard
-     * against a second firing. A violation found against a transient value goes when that value changes; the
-     * destructive lowering, until card tms-omschakeling, ordered the consistency after the writers of what it reads
-     * instead and never withdrew one, which reaches the same fixpoint. An assertion that faults is no violation: beside
+     * against a second firing. A violation found against a transient value goes when that value changes. An assertion that faults is no violation: beside
      * the rule, where the assertion can fault, the rule that inserts its fault ({@link #conditionFaultRule}).
      */
     private List<RulePlan> consistencyRules(ResolvedConsistency c) {
@@ -2567,10 +2562,10 @@ public final class TmsTranspiler {
 
     /**
      * Refuses {@code conditions}, the condition of a form or the filters of a fold, where their deposits mix a division and
-     * a square root. Until the card zero-division-channel (2026-10-19) the plan gave a deposit of a condition or a filter
-     * its codes, and could not tell those two kinds apart; since then the consequence hears them again with a probe
-     * ({@link Consequence.ConditionDeposit}, {@link Consequence.FilterDeposit}), which could, so the refusal stands until
-     * its code is retired; no golden has such a condition.
+     * a square root. The consequence hears the codes of a deposit of a condition or a filter with a probe
+     * ({@link Consequence.ConditionDeposit}, {@link Consequence.FilterDeposit}; card zero-division-channel), which tells
+     * those two kinds apart, so the refusal is not needed; it stands until its code is retired. No golden has such a
+     * condition.
      */
     private void refuseMixedDeposits(String what, List<Condition> conditions) {
         boolean division = false, squareRoot = false;
@@ -3227,8 +3222,7 @@ public final class TmsTranspiler {
 
     // ---------------- prioritized defaults ----------------
 
-    /** The name of an effective stack, as the destructive lowering named the rule of the group: the kind-discriminated
-     *  target on the stack's owner, so two types that share one inherited target name two stacks. */
+    /** The name of an effective stack: the kind-discriminated target on the stack's owner, so two types that share one inherited target name two stacks. */
     private static String stackName(Stacks.Stack st) {
         PrioritizedDefaults l0 = st.members().get(0);
         return "defaults " + (l0.isCharacteristic() ? "K:" : "A:") + st.owner().name + "." + l0.target();
@@ -3289,14 +3283,14 @@ public final class TmsTranspiler {
 
     /**
      * The rules of one effective stack (RUNTIME-SEMANTICS ch. 7.1-7.3, 7.8-7.10), each default lowered on its own
-     * level and on instances of exactly the stack's owner, deciding by logical control facts ({@link ControlFact}) where
-     * the destructive lowering walked the stack in one consequence. One chain without exception groups
+     * level and on instances of exactly the stack's owner, deciding by logical control facts ({@link ControlFact}). One
+     * chain without exception groups
      * takes the simple form ({@link #simpleForm}); exception groups, or more than one group at the root, the
      * general form ({@link #generalForm}). A deciding default writes the target: a {@link Value} with the stack as the
      * writer, which replaces the input on an attribute, or a {@link HasCharacteristic} for an attribution, beside which the
      * input on a characteristic stands; a conflict writes nothing and deposits the §9.5 inconsistency under its key.
      *
-     * <p>Refused by name, as the destructive lowering refused them: a characteristic target that shares its name with
+     * <p>Refused by name: a characteristic target that shares its name with
      * an attribute, a group with a dated validity, an initialisation default on a characteristic, a deciding default
      * without a justification; a target on a timeline or with dimensions through {@link #member}. Refused besides: a
      * division anywhere in a default ({@link #division(Conditie, Expr)}).
@@ -3421,9 +3415,8 @@ public final class TmsTranspiler {
 
     /** The snippet of the first division in {@code conditionTerm} or {@code value}, or null: in the justification or the
      *  consequence of a default, and in the condition or the value of an initialisation beside another writer, which
-     *  ch. 7.7 reads as the lowest default ({@link #initialisationRule}). The destructive lowering refused a division
-     *  below the top of a consequence, whose deposit would persist; here the evaluation itself is speculative, as a
-     *  default is evaluated whenever its reads stand. A division by zero in a default another one displaces is a fault
+     *  ch. 7.7 reads as the lowest default ({@link #initialisationRule}). The evaluation of a default is speculative,
+     *  as a default is evaluated whenever its reads stand. A division by zero in a default another one displaces is a fault
      *  on an intermediate state, which this branch would withdraw ({@link Fault}); whether such a fault counts waits on
      *  a decision of the norm, so every division is refused until then. Since none passes, the rules of a default raise
      *  no division fault ({@link #ownRule}). The walk enters every expression and condition the forms carry, a
@@ -3480,8 +3473,7 @@ public final class TmsTranspiler {
      * write and {@link Decides}. A leeg consequence inserts nothing, so the lower defaults decide (ch. 7.1); the
      * initialisation default matches only where the target is empty on the bean, which holds the input (ch. 7.3). Every
      * decision stands as its {@code Decides}, the lowest one's and a do-not-attribute decision's at the bottom included,
-     * which displace nothing: the session says which default decided ({@link #decisionsOf}), where until card
-     * defaults-decider those two left nothing, and the do-not-attribute decision at the bottom had no rule at all.
+     * which displace nothing: the session says which default decided ({@link #decisionsOf}; card defaults-decider).
      */
     private List<RulePlan> simpleForm(StackBuild b, List<Node> chain) {
         List<Node> deciding = chain.stream().filter(k -> decidesSelf(b, k.d())).toList();
@@ -4151,8 +4143,7 @@ public final class TmsTranspiler {
             case Expr.FunctionCall f -> function(f, reads);
             // IR-SPEC ch. 4.3: a union denotes instances and stands only as the argument of a count, which reads it in
             // vouw; here it stands where a value is read, which the verifier refuses (WF-110 (a)) and the reference
-            // interpreter faults on; both branches refuse it in this sentence, which the destructive DRL-text lowering
-            // gave until card drl-teksttak-op-truth-maintenance
+            // interpreter faults on; both branches refuse it in this sentence
             case Expr.InstanceSetUnion u -> throw new Refusal(DroolsCode.INSTANCE_UNION_IN_VALUE.reason("snippet", snippet(u.source())));
             case Expr.Rounding a -> rounding(a, reads);
             case Expr.Clamp b -> clamp(b, reads);
@@ -4300,8 +4291,7 @@ public final class TmsTranspiler {
     /** A power with a whole exponent of at least 0 written as a literal, exact (RUNTIME-SEMANTICS ch. 2.2), a leeg base
      *  leeg (ch. 1.2), through the runtime's {@code rsMacht}. Any other exponent is refused: a
      *  negative or fractional literal, or a value read while the session fires, reaches the real power, which ch. 2.1
-     *  leaves OPEN, where the reference interpreter answers an exact root or faults and the destructive lowering
-     *  computed a binary double. */
+     *  leaves OPEN, where the reference interpreter answers an exact root or faults. */
     private Term power(Expr.Binary b, Reads reads) {
         Integer n = b.right() instanceof Expr.Literal lit && lit.type().isNumberLike() ? wholeExponent(lit.valueText()) : null;
         if (n == null)
@@ -4651,7 +4641,7 @@ public final class TmsTranspiler {
             // the value of a nested Let is evaluated at the first read of its own binder, which gives FALSE above
             case Term.Let l -> readsFirst(l.body(), slot);
             // the condition comes first and a branch is conditional; what the condition reads is not looked into, so the
-            // choice counts as something else first, as before the conditions were planned
+            // choice counts as something else first
             case Term.Choice k -> Boolean.FALSE;
             // a composite is a condition, which stands in a value only as the condition of a choice, answered above; its
             // members after the first are read only where no stop came before them
@@ -4827,7 +4817,7 @@ public final class TmsTranspiler {
      *  a radicand that is the square of a rational, and otherwise the fault that executor gives, since an irrational
      *  root exists only under the rounding §13.4.17.13 mandates (RUNTIME-SEMANTICS ch. 2.2). A leeg radicand is leeg,
      *  a negative one leeg with the §6.6 deposit where the radicand qualifies and the evaluation reaches it (ch. 1.2,
-     *  {@link DepositFlag}). The destructive lowering computed a binary approximation here. */
+     *  {@link DepositFlag}). */
     private Term exactSquareRoot(Expr.FunctionCall f, Reads reads) {
         if (f.arguments().size() != 1)
             throw new Refusal(DroolsCode.SQUARE_ROOT_ARGUMENT_COUNT.reason("argumentCount", f.arguments().size(), "snippet", snippet(f.source())));
@@ -5062,9 +5052,7 @@ public final class TmsTranspiler {
      * one: an additive fold over members that are no number (WF-091), and an ordering fold over members that are neither
      * a number nor a date (WF-038). The reference interpreter faults on the addition or the comparison itself and the
      * ASP runner declines the form, while this branch would hand the members to a BigDecimal sum, which fails at fire,
-     * or to the Java order of their values, which answers. Both branches refuse in this sentence. It opens as the
-     * refusal of the destructive DRL-text lowering opened, so that a gate report named the same form on both branches
-     * while that lowering existed, until card drl-teksttak-op-truth-maintenance.
+     * or to the Java order of their values, which answers. Both branches refuse in this sentence.
      */
     private Reason setSourceRefusal(Expr.FunctionKind kind, ObjectType elem, Expr.AttributeReference arg) {
         boolean summing = kind == Expr.FunctionKind.SOM || kind == Expr.FunctionKind.TOTAAL;
@@ -5871,8 +5859,8 @@ public final class TmsTranspiler {
             case Condition.TimeWindow p -> timeWindow(p, reads);
             case Condition.QuantifierFold q -> quantifierFold(q, reads);
             case Condition.RoleMembership role -> roleCheck(role, reads);
-            // the v0 far-side record, which the loader no longer makes: since L2 a role check is one node (IR-SPEC
-            // ch. 4.5), so only a hand-built model reaches this
+            // the v0 far-side record, which the loader does not make: a role check is one node (IR-SPEC ch. 4.5), so
+            // only a hand-built model reaches this
             case Condition.FarRoleMembership role -> throw new Refusal(DroolsCode.FAR_ROLE_CHECK_UNMADE.reason("snippet", snippet(c)));
             case Condition.RuleStatusCheck rv -> channelRead(rv, reads);
             // RUNTIME-SEMANTICS ch. 5.7 and WF-044: the marker fails the evaluation of the form where the evaluation
@@ -7128,7 +7116,7 @@ public final class TmsTranspiler {
         }
 
         /** A parameter, bound off its {@link ParameterState}: no test or consequence names a global itself, since two
-         *  globals in one constraint of the executable model read as the last one, and a source over a global was not
+         *  globals in one constraint of the executable model read as the last one, and a source over a global is not
          *  kept apart from another parameter's in another rule ({@link ParameterState}). A parameter the case leaves
          *  unset has a standing with a null value and reads leeg. */
         int parameter(Parameter p) {

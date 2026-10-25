@@ -22,9 +22,7 @@ import java.util.Set;
  * {@code desugared_targets}), clause for clause, so a target is standing for the Drools backend exactly when it is
  * standing for ref.
  *
- * <p>WHY it is one class and not two mirrored methods: the two branches carried the arm independently for a
- * month — the exec branch had it, the text branch had nothing — and the corpus said so (four goldens whose
- * DRL replay erased what the norm preserves). A second implementation is a second chance to drift; the
+ * <p>WHY it is one class and not two mirrored methods: a second implementation is a second chance to drift; the
  * DOMAIN is the whole content of the norm, since the norm's one visible act is deciding WHERE a leeg write
  * is suppressed. An implementation that suppressed EVERY leeg write would pass every standing witness and
  * break the v0 multi-writer flank, so the boundary is what has to be shared, not the guard.

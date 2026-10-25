@@ -142,7 +142,7 @@ public final class SourcePath {
             // §13.3.9 the storage direction. A to-many bound role keeps its link at the FAR end, named after the
             // opposite role; a to-one bound role keeps it here, named after itself. The question is asked of the
             // ONE shared member derivation (FactModelGenerator), so a path hop can never assume a field the beans
-            // do not carry — the failure that used to build a KieBase and die at first fire.
+            // do not carry, which would build a KieBase and die at first fire.
             boolean toMany = bound.many();
             ObjectType carrier = toMany ? destination : van, target = toMany ? van : destination;
             String roleField = toMany ? opposite.name() : bound.name();

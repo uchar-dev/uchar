@@ -77,8 +77,7 @@ import java.util.function.Predicate;
  * analysis through Drools' executable model, the DRL-text branch as DRL text ({@link TmsTranspiler#drl}), which the
  * classic DRL build compiles. Both derive over the same facts, and every entry of a session treats them alike. Gate 12
  * replays every golden through both and demands the same status line of each; the distribution builds with the
- * exec-model branch and shows the text. Until card drl-teksttak-op-truth-maintenance the DRL-text branch was a
- * lowering of its own, whose rules wrote the beans as they fired.
+ * exec-model branch and shows the text.
  *
  * <p>The consumer it exists for is the toolchain distribution — CLI, decision service, scenario runner — that
  * builds this repository as a git submodule and fires rule sets through it: a source goes through the frontend
@@ -204,9 +203,9 @@ public final class DroolsBackend {
         // silent value-divergence in the gate. Carrying it to fire only to fault or misvalue there is
         // honestly NOT-CARRIED, not a semantic exec-model difference, so it belongs in the auto-excluded
         // channel with a reason, not the value-divergence list whose banner claims a genuine ref/clingo delta.
-        // (§13.4.6 objectcreatie was refused here until 2026-08-30; the creation consequence now executes —
-        // both back-link ends written, the kenmerkinitialisatie honoured — so the shapes it still cannot carry
-        // are refused per creation by the transpiler, which knows WHICH one, not blanket for every model.)
+        // (A §13.4.6 objectcreatie executes — both back-link ends written, the kenmerkinitialisatie honoured — so
+        // the shapes it cannot carry are refused per creation by the transpiler, which knows WHICH one, not blanket
+        // for every model.)
         //   §13.3.9.2 name-sharing bean limit — members() ports every member through a name-dedup (attribute >
         //     kenmerk > reference), so a declared member sharing the reciprocal role's name displaces the
         //     self-pair reference field; the mirror pass would then read a Boolean or set an impossible type,
@@ -1122,11 +1121,10 @@ public final class DroolsBackend {
      * generation reads the same settled world, as in the reference interpreter (RUNTIME-SEMANTICS ch. 5.5,
      * Generations): an object creation does not read what a fact creation of its own generation links. What a phase
      * made carries its number, and a creation rule does not take an object or a link of the phase it fires in, so a
-     * recursive chain advances one generation per phase. Until 2026-10-09 a generation was a phase of fact creations
-     * and a phase of object creations with the rule layer at rest between them, so an object creation read the links
-     * the fact creations of its own generation had laid: an initialisation that counts the maatgevers of a Wachter,
-     * over the relation a fact creation in the same recursive group lays, gave 1 where the reference interpreter
-     * gives 0.
+     * recursive chain advances one generation per phase. With a phase of fact creations and a phase of object
+     * creations and the rule layer at rest between them, an object creation would read the links the fact creations
+     * of its own generation laid: an initialisation that counts the maatgevers of a Wachter, over the relation a fact
+     * creation in the same recursive group lays, would give 1 where the reference interpreter gives 0.
      *
      * <p>The generations run per evaluation stratum of the reference interpreter, in ascending order
      * ({@link TmsTranspiler#creationStrata}): the phases of stratum k carry k, and a creation rule fires only in a phase
@@ -1143,9 +1141,8 @@ public final class DroolsBackend {
      * and this ends the run there, with its sentence, as a run without a fixpoint. The generations need no bound of
      * their own: every generation but the last makes an object or lays a link, and under the budget a stratum makes
      * finitely many of both. The rule layer has no budget here either: truth maintenance takes it to rest within the
-     * fire, and the cap bounds that. Until 2026-10-09 this counted the generations of a stratum that make
-     * something, at most 100, as the reference interpreter did that day: a chain whose every mint waits a generation for
-     * a link, and a fact creation that lays a closure of 102 hops, ended without a fixpoint at their 101st generation.
+     * fire, and the cap bounds that. A bound on the generations would end a chain whose every mint waits a generation
+     * for a link, and a fact creation that lays a closure of 102 hops, without a fixpoint.
      */
     static Firing fire(Build build, KieSession session, int cap) {
         return drive(build, session, new Cap(cap));
@@ -1356,8 +1353,7 @@ public final class DroolsBackend {
      *  throws: a {@link Breuk.DelingDoorNul} in its cause chain becomes one naming the rule, with what the consequence
      *  threw as its cause; any other {@code e} is returned unchanged. Neither branch throws an evaluation fault out of
      *  its fire, which stands as a fact at the fixpoint, so what comes here is a broken contract or a bug, and this
-     *  hands it on as it is. Until card drl-teksttak-op-truth-maintenance the DRL-text branch threw a division by a
-     *  numeric zero out of the fire, and this named it. {@link CaseRunner} calls it where it fires, so the replay, the
+     *  hands it on as it is. {@link CaseRunner} calls it where it fires, so the replay, the
      *  red path and the scenario report read the sentence; a consumer that fires a KieBase itself can call it the same
      *  way.
      *

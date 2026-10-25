@@ -10,15 +10,14 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
  *
  * <p>The answer is EXTENSIONAL, and that is the whole point of this class. The spec reads "an object of
  * type T satisfies host O iff T ⊑ O", so a host naming a SUPERTYPE of the pattern's type is satisfied —
- * an inherited characteristic is read on the object that hosts it (ch. 2.2). Both transpiler branches
- * asked the question by NAME IDENTITY until 2026-09-19 ({@code k.owner() != subject}), which made a
- * legal supertype host — measured: a {@code Sein} doel under a {@code Baken} host — lower to NEITHER
- * pattern and the whole creation refuse itself by name, while the verifier, {@code ref} and the ASP
- * backend all carried the document. One verifier-clean form, two executors answering and two refusing:
- * exactly the split WF-109 exists to close.
+ * an inherited characteristic is read on the object that hosts it (ch. 2.2). Asked by NAME IDENTITY
+ * ({@code k.owner() != subject}), a legal supertype host — measured 2026-09-19: a {@code Sein} doel under a
+ * {@code Baken} host — would lower to NEITHER pattern and the whole creation would refuse itself by name, while
+ * the verifier, {@code ref} and the ASP backend carry the document: one verifier-clean form, executors
+ * answering and refusing, exactly the split WF-109 exists to close.
  *
- * <p>ONE place for the two branches, on the WF-097 shared-fence discipline: an identity test is one
- * character away from returning and neither branch would notice the other drifting back to it.
+ * <p>ONE place, on the WF-097 shared-fence discipline: an identity test is one character away, and a second
+ * copy could drift to it unnoticed.
  */
 public final class Host {
     private Host() {}

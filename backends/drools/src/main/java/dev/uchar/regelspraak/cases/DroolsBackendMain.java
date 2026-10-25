@@ -38,9 +38,9 @@ public final class DroolsBackendMain {
      *  CLI through here inside the test JVM, which {@code System.exit} would end. */
     static int run(String[] args, PrintStream out) {
         // --drl replays through the OTHER branch, the analysis rendered as DRL text and compiled here, instead of the
-        // executable model. Since 2026-09-19 (card gate12-drl-takteller) this flag is ALSO a gate-12 path: the gate
-        // sweeps every golden through it and, since card drl-teksttak-op-truth-maintenance, demands per golden the
-        // status line of the flagless run, which reaches the exec-model branch and alone is the differential square.
+        // executable model. This flag is ALSO a gate-12 path (card gate12-drl-takteller): the gate sweeps every
+        // golden through it and demands per golden the status line of the flagless run, which reaches the exec-model
+        // branch and alone is the differential square.
         boolean readings = args.length > 0 && args[0].equals("--readings");
         if (readings) args = java.util.Arrays.copyOfRange(args, 1, args.length);
         boolean viaDrl = args.length > 0 && args[0].equals("--drl");

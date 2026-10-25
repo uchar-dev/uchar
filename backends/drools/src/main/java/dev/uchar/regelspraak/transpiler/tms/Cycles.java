@@ -57,8 +57,8 @@ import java.util.TreeSet;
  * channel per rule name, population per type, relation per fact type. A read is literal; a write closes over the
  * subtype chain as ch. 5.1 decides per writer: a form that iterates a type writes the member on every type comparable
  * with it that carries the member, an object creation writes its members and its population on the created type and
- * its ancestors only. Keyed on the declaring type instead, a creation of a supertype was the producer of a read on a
- * subtype it never mints, and the three wrakboeking goldens showed a cycle the verifier does not know. Of the edge
+ * its ancestors only. Keyed on the declaring type instead, a creation of a supertype would be the producer of a read on
+ * a subtype it never mints, and the three wrakboeking goldens would show a cycle the verifier does not know. Of the edge
  * kinds of ch. 5.2, WF-046 asks which edges are negative, and the evaluation strata ({@link #strata}), by which the
  * driver orders the creations, ask which are strict or negative.
  *
