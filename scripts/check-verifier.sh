@@ -1,8 +1,12 @@
 #!/bin/sh
 # Gate 3: the IR verifier (spec/verifier/, OCaml).
 #
-# Three checks:
-#   1. the verifier builds (the OCaml workspace, scripts/lib/ocaml-build.sh);
+# Checks:
+#   1. the verifier builds (the OCaml workspace, scripts/lib/ocaml-build.sh),
+#      and (1b) it builds on its own as well: no dune file under spec/verifier
+#      names a library another directory of the workspace defines, so
+#      `dune build --root spec/verifier` keeps working (read from the dune
+#      files, without a dune call);
 #   2. every corpus/golden/**/ir.json is verifier-clean (exit 0);
 #   3. every corpus/negative/<case>/ir.json is rejected (non-zero exit) AND
 #      the verifier reports the WF rule the case declares in its directory
@@ -73,6 +77,84 @@ if [ "$#" -gt 0 ]; then
 fi
 
 status=0
+
+# check 1b: the verifier builds on its own. The stand-alone build, `dune build --root spec/verifier`
+# (spec/verifier/README.md), sees the libraries spec/verifier defines and those of the opam switch; the
+# workspace build of check 1 sees the libraries of every project as well, so it would build a verifier
+# that links ref or a frontend. Read from the dune files, without a dune call: every library a dune
+# file under spec/verifier names must be one spec/verifier defines (ir_v0, public name uchar-ir-v0) or
+# one no other directory of the workspace defines (yojson, unix: the opam switch and the compiler).
+# The other dune files are those dune reads: every directory below the root but one whose name starts
+# with `_` or `.`.
+if ! standalone=$(python3 - "$VERIFIER_DIR" <<'PYEOF'
+import os, re, sys
+vdir = sys.argv[1]
+
+def forms(path):
+    # a dune file is a list of s-expressions; `;` starts a comment that runs to the end of the line
+    text = re.sub(r';[^\n]*', '', open(path, encoding='utf-8').read())
+    stack = [[]]
+    for tok in re.findall(r'[()]|[^\s()]+', text):
+        if tok == '(':
+            stack.append([])
+        elif tok == ')':
+            if len(stack) == 1:
+                sys.exit(f'{path}: an unmatched ")"')
+            done = stack.pop()
+            stack[-1].append(done)
+        else:
+            stack[-1].append(tok)
+    if len(stack) != 1:
+        sys.exit(f'{path}: an unclosed "("')
+    return [f for f in stack[0] if isinstance(f, list) and f]
+
+def field(stanza, key):
+    return next((x[1:] for x in stanza[1:] if isinstance(x, list) and x and x[0] == key), [])
+
+def atoms(xs):
+    for x in xs:
+        if isinstance(x, list):
+            yield from atoms(x)
+        else:
+            yield x
+
+def library_names(stanza):
+    return [a for a in field(stanza, 'name') + field(stanza, 'public_name') if isinstance(a, str)]
+
+own, elsewhere, named = set(), {}, []
+for d, subdirs, files in os.walk('.'):
+    subdirs[:] = sorted(s for s in subdirs if not s.startswith(('_', '.')))
+    if 'dune' not in files:
+        continue
+    path = os.path.normpath(os.path.join(d, 'dune'))
+    inside = path.startswith(vdir + os.sep)
+    for stanza in forms(path):
+        if stanza[0] == 'library':
+            for n in library_names(stanza):
+                if inside:
+                    own.add(n)
+                else:
+                    elsewhere.setdefault(n, path)
+        if inside:
+            # the libraries field, the words of a (select ...) or (re_export ...) form left out
+            for a in atoms(field(stanza, 'libraries')):
+                if a not in ('select', 'from', '->', 're_export') and not a.endswith(('.ml', '.mli')):
+                    named.append((path, a))
+if not named:
+    sys.exit(f'no dune file under {vdir} names a library: the check would read nothing')
+if not elsewhere:
+    sys.exit(f'no library defined outside {vdir}: the scan of the workspace found nothing to hold the verifier against')
+bad = [(p, a) for p, a in named if a in elsewhere and a not in own]
+for p, a in bad:
+    print(f'check-verifier: FAIL — {p} names {a}, a library of {elsewhere[a]}: the verifier must build on its own (dune build --root {vdir}), with its own libraries and those of the opam switch only', file=sys.stderr)
+if bad:
+    sys.exit(1)
+print(f'{len(named)} names ({" ".join(sorted({a for _, a in named}))})')
+PYEOF
+); then
+    echo 'check-verifier: FAIL — the verifier does not build on its own (check 1b; the reason is above)' >&2
+    status=1
+fi
 
 # --- monotone floor (maintainer decision 2026-09-09) ---------------------------------------------
 # A lower bound, never an equality: it catches SHRINK — the negative corpus that quietly halves —
@@ -350,6 +432,6 @@ if [ "$n_expect" -lt "$EXPECTED_MIN_EXPECT" ]; then
 fi
 
 if [ "$status" -eq 0 ]; then
-    echo "check-verifier: PASS ($n_golden golden clean; $n_neg negative rejected for their declared rule, floor $EXPECTED_MIN_NEGATIVE; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT, $n_arms arm keys, floor $EXPECTED_MIN_ARMS, $n_params name=value lines, floor $EXPECTED_MIN_PARAM_LINES; $n_keys keys of one template each in the reports, floor $EXPECTED_MIN_REPORT_KEYS, $n_sites key literals in checks.ml, floor $EXPECTED_MIN_ARM_SITES; $n_ptr cited pointers resolve in their documents, floor $EXPECTED_MIN_POINTERS)"
+    echo "check-verifier: PASS (the verifier's dune files name no library of another project of the workspace: $standalone; $n_golden golden clean; $n_neg negative rejected for their declared rule, floor $EXPECTED_MIN_NEGATIVE; $n_expect on their declared arm (expect.txt), floor $EXPECTED_MIN_EXPECT, $n_arms arm keys, floor $EXPECTED_MIN_ARMS, $n_params name=value lines, floor $EXPECTED_MIN_PARAM_LINES; $n_keys keys of one template each in the reports, floor $EXPECTED_MIN_REPORT_KEYS, $n_sites key literals in checks.ml, floor $EXPECTED_MIN_ARM_SITES; $n_ptr cited pointers resolve in their documents, floor $EXPECTED_MIN_POINTERS)"
 fi
 exit "$status"

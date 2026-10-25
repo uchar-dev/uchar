@@ -189,7 +189,10 @@ same file. Current gates:
    reported explicitly, never silently green.
 3. `scripts/check-verifier.sh` — the OCaml verifier (`spec/verifier/`)
    builds, in the workspace `_build` (`scripts/lib/ocaml-build.sh`), the
-   verifier gates 11 and 15 run as well; every `corpus/golden/**/ir.json`
+   verifier gates 11 and 15 run as well, and builds on its own: no dune
+   file under `spec/verifier` names a library another directory of the
+   workspace defines (read from the dune files, without a dune call), so
+   `dune build --root spec/verifier` keeps working; every `corpus/golden/**/ir.json`
    and `corpus/red/**/ir.json` is verifier-clean; every
    `corpus/negative/<wf###-slug>/ir.json` is rejected, citing the WF
    rule its directory name declares — and, since L2 of the v1 wire
