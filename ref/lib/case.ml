@@ -75,9 +75,8 @@ let params_json params =
    as "parameter <name>", an array element as "[i]", and the plain JSON path
    where no such name exists yet ("input.instances[0]", "expected[2]",
    "expectedFault"); the case root is "<root>", as the runners call the root
-   of an IR document. Until 2026-09-23 these helpers said "expected an
-   object", "expected a string" and "missing field" with no position, which
-   left the author of a hand-built case to search the whole file. *)
+   of an IR document, so the author of a hand-built case finds the defect
+   without searching the whole file. *)
 let root = ""
 let where at = if at = root then "<root>" else at
 let child at k = if at = root then k else at ^ "." ^ k
@@ -114,13 +113,13 @@ let list_field ~at kvs k = list_ ~at:(child at k) (field ~at kvs k)
    case that reaches the loader another way (a generator, a hand run, a
    second producer) is refused rather than guessed at.
 
-   It is not a theoretical fence. The reader here used to scan with
-   "%4d-%2d-%2dT%2d:%2d:%2d%s" and then [int_of_string] the fraction at ANY
-   width: ".1" read as ONE millisecond where the Drools case reader reads a
+   It is not a theoretical fence. A reader that scans with
+   "%4d-%2d-%2dT%2d:%2d:%2d%s" and then [int_of_string]s the fraction at ANY
+   width reads ".1" as ONE millisecond where the Drools case reader reads a
    hundred, ".100000" as a hundred THOUSAND (a minute and forty seconds
    later), ".1234" as 1 234 (1.234 seconds later), and "2026-3-15T09:00:00"
-   as a valid instant the Drools reader refuses. Three readers, three
-   answers, and the schema was the only reason it never showed. *)
+   as a valid instant the Drools reader refuses: three readers, three
+   answers, which only the schema keeps out of a case file. *)
 let ms_of_datetime s =
   match Value.read_iso_datetime s with
   | Ok ms -> ms
@@ -135,17 +134,15 @@ let ms_of_datetime s =
    uchar-case-v0 <kind> lexeme <form>`, with the reader's own refusal in
    brackets where the reader gives one.
 
-   Until 2026-09-23 the date reader's Value.Fault, the EVALUATION exception,
-   went straight through the loader. A day-first input date reached the ref
-   runner as "EVALUATION FAULT: malformed date lexeme" and the ASP runner as
+   The date reader's Value.Fault is the EVALUATION exception. Let through
+   the loader, a day-first input date would reach the ref runner as
+   "EVALUATION FAULT: malformed date lexeme" and the ASP runner as
    "TRANSLATION FAULT", exit 1, with neither the field nor the load phase in
-   it (measured on jutterswet-bergingsklok). The "malformed from/to date"
-   arms the timeline readers held behind that reader matched a RESULT the
-   reader never returns, so they never fired. And a red case could not pin
+   it (measured on jutterswet-bergingsklok), and a red case could not pin
    such a refusal at all, because both runners' load arm matches case errors
-   only. asOfDate got this sentence earlier the same day (card
-   ref-geldigheid-datumlezing); every date position now speaks it through
-   the same template, so the two cannot drift apart. *)
+   only. Every date position, asOfDate included (card
+   ref-geldigheid-datumlezing), speaks through the same template, so the
+   positions cannot drift apart. *)
 let date_at ~at s =
   try Value.date_of_iso s
   with Value.Fault { text = why; _ } ->
@@ -163,15 +160,10 @@ let datetime_at ~at s =
 (* The `number` lexeme of uchar-case-v0 is the case schema's pattern,
    -?[0-9]+(\.[0-9]+)? or -?[0-9]+/[1-9][0-9]*, and this fence matches it
    whole: no character before or after it gets through, a final newline
-   included, which a validator reading `$` the Python way admits. Until the
-   L4 landing that was narrower than the IR literal grammar [Value.q_of_lexeme]
-   read (WF-081 admitted the Dutch decimal comma and a bare leading '.'), and
-   read through q_of_lexeme alone a case carrying "1,000" loaded as 1 where
-   the Drools case reader refuses it, and ".5" loaded as 0.5, both without a
-   word; gate 4's schema was the only reason neither showed. Since L4 the
+   included, which a validator reading `$` the Python way admits. The
    literal's number variant carries this same pattern and q_of_lexeme reads
-   exactly it, so the two wires have one grammar. The fence stays here, as
-   the date and dateTime fences are held by their readers, because it names
+   exactly it, so the two wires have one grammar. The fence stands here too,
+   as the date and dateTime fences are held by their readers, because it names
    the case position and the case format in its refusal. Every lexeme it
    admits, q_of_lexeme reads without a fault: the zero denominator is outside
    the fence. *)
@@ -311,8 +303,7 @@ let timeline_of_json ?(allow_empty = false) ~at ~(grid : Timeline.grid) (decl : 
      day, week or quarter is OPEN in ch. 3.12). A timeline on another declared
      grid is therefore refused at load as a v0 limit, not as a defect of the
      case, and the sentence says so: a day grid holds every boundary and is
-     refused all the same. Until 2026-09-23 the bucketing's own fault left the
-     loader here unconverted, as an evaluation fault without a position. *)
+     refused all the same. *)
   let no_grid grid =
     fail
       "%s: the declared grid is %s, and v0 defines calendar buckets for month and year only \
@@ -443,7 +434,7 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
   let kvs = obj ~at j in
   let label = str_field ~at kvs "label" in
   (* the schema asks minLength 1, and every later position of this instance
-     is written after its label: an empty one used to load and send those
+     is written after its label: an empty one would load and send those
      positions to the root ("objectType: …", ".vondstdag.date: …") *)
   if label = "" then fail "%s: expected a non-empty string, got \"\"" (child at "label");
   (* "::" is the minted-instance namespace (Eval.run_object_creation's
@@ -466,9 +457,9 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
                   let grid = Timeline.attr_grid doc ot name in
                   (attrs, SMap.add (norm name) (timeline_of_json ~at ~grid decl t) tls)
               | Some None ->
-                  (* An internal invariant, not a load error: since M1 the
-                     loader reads a timeline facet's granularity as a required
-                     value, so no document it loads reaches this arm. *)
+                  (* An internal invariant, not a load error: the loader
+                     reads a timeline facet's granularity as a required value,
+                     so no document it loads reaches this arm. *)
                   invalid_arg
                     (Printf.sprintf
                        "Case: %s: a time-dependent attribute without a granularity, which the \
@@ -486,23 +477,22 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
         let c = str ~at:(Printf.sprintf "%s.characteristics[%d]" label i) cj in
         if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.characteristics) c) then
           fail "characteristic %S is not declared on %S" c otype_name;
-        (* The two deliveries are NOT interchangeable, and until 2026-09-09
-           this arm asked only whether the name was declared. A characteristic
+        (* The two deliveries are NOT interchangeable. A characteristic
            the document declares TIME-DEPENDENT has a timeline, and every
            temporal reader looks for one: the gedurende clip, the pro-rata fold
            and the day count all read the case's characteristic timelines and
            nothing else. Asserting such a characteristic in the flat
-           `characteristics` list therefore delivered a fact no temporal reader
-           ever consults, and the clip intersected against an EMPTY period set
+           `characteristics` list therefore delivers a fact no temporal reader
+           ever consults, and the clip intersects against an EMPTY period set
            without a word — measured on the golden that pins 30: ref answered
            0, clingo answered 0, both silently.
 
            So it is refused here, at load, where the case is still nameable.
-           The sister arm below already refuses the mirror-image mistake — a
-           timeline on a non-temporal characteristic — and the two now cover
+           The sister arm below refuses the mirror-image mistake — a
+           timeline on a non-temporal characteristic — and the two cover
            the seam from both sides. The predicate is KEY EXISTENCE in
            [characteristic_granularity], the same one the three clip readers use;
-           since M1 the key is a timeline facet on the characteristic, whose
+           the key is a timeline facet on the characteristic (M1), whose
            granularity the loader requires, so key and value coincide for
            every loaded document. *)
         if List.exists (fun (k, _) -> norm k = norm c) ot.characteristic_granularity then

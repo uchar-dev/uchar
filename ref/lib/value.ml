@@ -139,13 +139,10 @@ let iso_of_date z =
    milliseconds.
 
    The RegelSpraak source snippet [dd. ]d-m-yyyy hh:mm:ss[.SSS] is refused
-   like any other form. It was a second admitted spelling while the v0
-   emitter wrote it into `waarde`; since 2026-09-22 the emitter writes the ISO
-   lexeme there and keeps the snippet as the node's source text (since the L5
-   landing the source record, `source.snippet`), and WF-095 admits the ISO
-   form alone. A reader that still read the snippet would answer documents no
-   producer writes and the verifier rejects, so it was narrowed with them
-   (2026-09-23).
+   like any other form. The emitter writes the ISO lexeme as the value and
+   keeps the snippet as the node's source text (`source.snippet`), and WF-095
+   admits the ISO form alone, so a reader of the snippet would answer
+   documents no producer writes and the verifier rejects.
 
    Anything else is refused WITH THE POSITION at which the grammar diverges.
    That is the whole point: a reader that guesses — dropping a zone suffix,

@@ -157,12 +157,12 @@ let as_periods (ps : (int * int) list) : Timeline.t =
    evaluation date simply does not apply --------------------------------- *)
 
 (* All three positions go through the strict date reader and compare as day
-   numbers. They used to compare as raw strings: on canonical lexemes that
-   is calendar order, but a non-canonical one took part silently — asOfDate
-   "01-06-2026" sorts before every 20xx bound, so the 2026 version did not
-   apply and the transition version answered (measured on
-   jutterswet-vensterheffing, 2026-09-23), and a bound written day-first
-   moved its window the same way. WF-101 and the case schema keep such
+   numbers. Compared as raw strings, canonical lexemes keep calendar order,
+   but a non-canonical one takes part silently — asOfDate "01-06-2026" sorts
+   before every 20xx bound, so the 2026 version did not apply and the
+   transition version answered (measured on jutterswet-vensterheffing,
+   2026-09-23), and a bound written day-first moves its window the same
+   way. WF-101 and the case schema keep such
    lexemes out of the corpus; this keeps them out of the answer. Shared with
    the clingo translator's mirror of this gate, so both speak one refusal. *)
 let validity_day ~what s =
@@ -201,8 +201,8 @@ let object_type env name =
   | Some ot -> ot
   | None -> Value.fault "unknown object type %S" name
 
-(* S ⊑ T. Reflexive, so this is the drop-in for every place that used to
-   compare two declared type names for equality. *)
+(* S ⊑ T. Reflexive, so it stands wherever two declared type names would
+   otherwise be compared for equality. *)
 let isa env sub super = Ir_v0.Checks.subtype_of env.doc ~sub ~super
 
 (* the subject's own read (WF-053, IR-SPEC ch. 4.1a): a reference without
@@ -293,12 +293,11 @@ let characteristic_temporal (ot : object_type) name =
    second walk is a second place where the boundary of ch. 3.10's two cases
    could be drawn, and one construct wrongly excluded there is a window
    silently gated on the wrong axis.
-   What the sharing HID is recorded with it (reader finding 2026-09-20): the
-   agreement made the surrounding target test look shared too, and it was
-   not — each executor asked its own table, ref the characteristic one and
-   the ASP backend the attribute one only, so a temporal CHARACTERISTIC target
-   passed the test there and got the scalar gate. The fix left both target
-   tests unshared, on purpose, and gave the position a red witness
+   What the sharing does not cover: the surrounding target test, which each
+   executor asks of its own tables (reader finding 2026-09-20: asked of the
+   attribute table alone, a temporal CHARACTERISTIC target passed the test
+   and got the scalar gate). Both target tests stay unshared, on purpose, and
+   the position has a red witness
    (`corpus/red/time-window-timeline-characteristic`). Share the syntax walk,
    never the judgement it feeds. *)
 let rec contains_time_window (c : condition_expr) =
@@ -315,17 +314,11 @@ let rec contains_time_window (c : condition_expr) =
 
 (* ch. 3.10's v0 mirror note carries TWO bounds on the window and this is the
    second: v0's backends "refuse the condition under counting quantifiers".
-   Measured 2026-09-20, before card drools-venster-vouwtoets (2026-09-23), on
-   verifier-clean documents, one per quantifier, with the window as the
-   second member of a composite: the DRL-text branch then named this very
-   limit ("periodevergelijking onder een tellende kwantor") under `none`,
-   `atLeast`, `atMost` and `exactly`, and the exec branch dropped the rule;
-   both PLAYED under `all` and `the`. So the boundary is not invented here, it is
-   read off the three other executors — and the two carried quantifiers are
-   exactly the two this interpreter has a corpus witness for. Since that card
-   both Drools branches play the window under `all` and refuse it by name
-   under `none` and the counting quantifiers, citing WF-112, in a composite and
-   in a fold alike.
+   The boundary is not invented here: the Drools backend plays the window
+   under `all` and refuses it by name under `none` and the counting
+   quantifiers, citing WF-112, in a composite and in a fold alike, and the two
+   carried quantifiers are exactly the two this interpreter has a corpus
+   witness for.
 
    What the refused position would otherwise do is a reading nothing norms:
    under `none` the window's verdict is COMPLEMENTED, so a time-free session —
@@ -336,14 +329,12 @@ let rec contains_time_window (c : condition_expr) =
    The fold node is refused by the same rule and for the same reason: its
    quantifiers are the composite's, applied to instances instead of parts.
 
-   Since 2026-09-23 the position is WF-112 (maintainer decision): the
-   verifier refuses the document, so this fault is fail-fast on a
-   non-conforming input rather than the answer to a conforming one, and it
-   may not be softened to a fallback. The fold measurement of that day, taken
-   before card drools-venster-vouwtoets, is why the rule covers the fold as
-   well: the Drools DRL-text branch then PLAYED a window under all five fold
-   quantifiers, and under `none` in a time-free session it answered the
-   complement — true — which is exactly the reading nothing norms. *)
+   The position is WF-112 (maintainer decision 2026-09-23): the verifier
+   refuses the document, so this fault is fail-fast on a non-conforming input
+   rather than the answer to a conforming one, and it may not be softened to
+   a fallback. The rule covers the fold as well: a window played under a fold
+   quantifier answers, under `none` in a time-free session, the complement —
+   true — which is exactly the reading nothing norms (measured 2026-09-23). *)
 let period_under_count_quantifier (quantifier_kind : quantifier_kind) (parts : condition_expr list) =
   match quantifier_kind with
   | All | The -> ()
@@ -456,15 +447,14 @@ let owner_hosts (doc : document) ~(otype : string) ~(characteristic : string opt
      targets.
    - ANCHOR (false) — the satisfying binding is the anchor, the host is absent,
      the check navigates or carries a whole-period qualifier, or the condition
-     is anything else. Byte-identical to what this reader did before the rule.
+     is anything else.
      The whole-period fence is WF-109's third (ch. 4.6 (q2)) and is held here
      as well as in the verifier: under a qualifier both bean-model branches run
      the ch. 3.9 fold arm before they look at the host, so the form is off the
      wire and this reader must not answer it from a route the others lack.
    - FAULT — the host designates more than one of the two. ch. 5.8b requires a
-     fault there and, until 2026-09-19, this helper returned false instead and
-     let the anchor answer: the one reading the decision rejects, delivered
-     silently. WF-109 makes that document unreachable through the verifier, so
+     fault there: false would let the anchor answer, the one reading the
+     decision rejects, delivered silently. WF-109 makes that document unreachable through the verifier, so
      this arm is fail-fast on a non-conforming input; it is a NAMED arm about
      this construct and not a fall-through, because the sentence has to say
      which two objects one name reached.
@@ -499,11 +489,11 @@ let guard_on_target (doc : document) (fc : resolved_fact_creation) =
    "refused EXCEPT through the specified collapses"). A condition carrying a
    WholePeriod qualifier is therefore not a scalar context at all — it IS
    the second collapse — and the refusal below this helper, which fires where
-   the qualifier is ABSENT, may not touch it. Until 2026-09-11 both
-   characteristic-check arms matched `time_period` away with `_`, so the
-   qualified form fell into the scalar refusal (loudly, for the wrong reason)
-   or, with no link to follow, into the scalar arm's absent-link `false`
-   (silently, contradicting the clause).
+   the qualifier is ABSENT, may not touch it. A characteristic-check arm that
+   matched `time_period` away with `_` would send the qualified form into the
+   scalar refusal (loudly, for the wrong reason) or, with no link to follow,
+   into the scalar arm's absent-link `false` (silently, contradicting the
+   clause).
 
    [inst] is None for a FAILED to-one navigation: ch. 3.9 gives it a null
    timeline, which touches no bucket and passes vacuously — the ch. 1.2
@@ -538,14 +528,13 @@ let whole_period_characteristic env ~(ot : string) ~(inst : World.instance optio
   if gp.gp_negated then not verdict else verdict
 
 (* WF-097: the two qualifications a gedurende clip member has no reading for.
-   Both were matched away with `_` in every clip arm until 2026-09-09, so a
-   document carrying either got the UNQUALIFIED answer with nothing said.
+   Matched away with `_` in a clip arm, either would give the UNQUALIFIED
+   answer with nothing said.
 
    ONE helper for the THREE clips — the temporal total (ch. 3.6), the pro-rata
    fold (ch. 3.7) and the day count (ch. 3.8) — because it is the same node in
-   the same field, and three copies could drift apart one edit at a time. That
-   is not hypothetical: the rule first landed on the total alone and the other
-   two kept answering silently for a day. The verifier and the ASP backend each
+   the same field, and three copies could drift apart one edit at a time. The
+   verifier and the ASP backend each
    hold the same fence in one shared place, for the same reason. *)
 let rec clip_member_qualifications (c : condition_expr) =
   match c with
@@ -1300,10 +1289,9 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
                    launder a domain — and the write half of the same identity
                    makes every value ENTERING that declaration name its domain
                    — WF-023 at a rule target, an object-creation member and a
-                   defaults consequence, WF-067 for a function body. The read
-                   half alone was measured insufficient (fix round 1), and the
-                   reference half alone was too (fix round 2: the aggregation
-                   and its source). Every composite scrutinee route is crossed
+                   defaults consequence, WF-067 for a function body. Neither
+                   the read half alone nor the reference half alone suffices
+                   (measured; the second at the aggregation and its source). Every composite scrutinee route is crossed
                    with full datatype equality (Let WF-076, IfThenElse WF-069,
                    Match WF-064, Invoke WF-068, struct WF-073/074, fold family
                    WF-070). Kept as an honest fault, never an assert: an
@@ -1404,8 +1392,8 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
           | Some (_, v) -> v
           | None ->
               (* Two rules have to hold together for this to be unreachable on
-                 a verifier-clean document, and both landed 2026-09-03 —
-                 measured, because the first alone was not enough.
+                 a verifier-clean document (2026-09-03) — measured, because the
+                 first alone is not enough.
 
                  WF-090 (struct-domain identity, IR-SPEC ch. 2.4) settles WHICH
                  DOMAIN the record belongs to: WF-074 crosses the field against
@@ -1425,11 +1413,11 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
                  FIELDS that domain has ON THE WIRE. It has to, because the
                  loader below does not consult the declaration: value_of_json
                  builds a record against the INLINE `field_list` of the use site
-                 (case.ml), so before the walk widened, an attribute typed
-                 ListType<StructType dossier> with a renamed inline copy let a
-                 case input through whose fields the declaration does not carry
-                 — verifier-clean, ref faulting HERE, clingo passing green
-                 (measured, fix round 1). The walk now pins every StructType in
+                 (case.ml), so without the widened walk an attribute typed
+                 ListType<StructType dossier> with a renamed inline copy would
+                 let a case input through whose fields the declaration does not
+                 carry — verifier-clean, ref faulting HERE, clingo passing green
+                 (measured). The walk pins every StructType in
                  the model and expression layers — through a list element,
                  inside `domain_specs`, at a FunctionDef, at every expression
                  `type` — to its declaration, so the loader's cross IS the
@@ -2064,19 +2052,17 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
       match contributors () with
       | `Instances is -> Arith.agg_count is
       | `Values vs ->
-          (* The second line of defence, and a refusal since 2026-09-23. Every
-             shape that hands a count VALUES is fenced on the wire: the listed
-             operand list of two or more by WF-037 (2026-09-20), and the count
-             of one operand or none without an element type by WF-037
-             (2026-09-23); since L2 a count's single ranged source counts
+          (* The second line of defence. Every shape that hands a count
+             VALUES is fenced on the wire: the listed operand list of two or
+             more by WF-037, and the count of one operand or none without an
+             element type by WF-037; a count's single ranged source counts
              instances (D8 (ii)) and never reaches this arm. No well-formed
-             document reaches this line any more. Until that last date it
-             answered — the number of FILLED values, the filled count's
-             meaning under the wrong kind, and 1 on a single list literal
-             whether the list held two elements or none — while clingo and
-             both Drools branches refused. Keeping that answer behind the wire
-             would leave the one executor that answers a form nobody may write
-             answering it silently, so it refuses by name. *)
+             document reaches this line. An answer here — the number of FILLED
+             values, the filled count's meaning under the wrong kind, and 1 on
+             a single list literal whether the list held two elements or none
+             — would leave the one executor that answers a form nobody may
+             write answering it silently, while clingo and the Drools backend
+             refuse, so it refuses by name. *)
           Value.fault
             "a count folds INSTANCES and this node hands it %d value(s) instead — an operand \
              list or a count without an element type, both refused on the wire: counting them \
@@ -2151,8 +2137,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
    comes back as [None] (absent: open), [Some None] (leeg: no day matches)
    or [Some (Some day)].
 
-   What a bound may BE is WF-111 since 2026-09-23 (maintainer decision;
-   until then ch. 3.10's mirror note, backend maturity): a literal or the
+   What a bound may BE is WF-111 (maintainer decision 2026-09-23): a literal or the
    subject's own scalar date attribute. The verifier refuses the rest, so
    the refusal below is fail-fast on a non-conforming input — kept, word for
    word the ASP backend's up to the phase, so the two executors carry one
@@ -2227,8 +2212,7 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
         r
   (* ch. 3.9, the whole-period VALUE test — the second of the chapter's two
      specified collapses, and the door ch. 3.3's scalar refusal must not
-     shut. Built 2026-09-16; until then this arm faulted by name while the
-     chapter specified it, which is the gap ch. 3.12 recorded.
+     shut.
 
      Exactly one side reads a time-dependent attribute of the subject and
      the other is the scalar bound. When the temporal side stands on the
@@ -2275,9 +2259,8 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
       if gp.gp_negated then not verdict else verdict
   (* ch. 3.9, the leeg and gevuld tests under the whole-period qualifier. The
      two arms below match `time_period` away with `_`, which is why this one
-     stands before them: until 2026-09-11 the qualifier was dropped there and
-     the operand answered its scalar reading, and until 2026-09-26 this arm
-     refused the form by name. The inner negation is per day (ch. 1.2), so it
+     stands before them: there the qualifier would be dropped and the operand
+     answer its scalar reading. The inner negation is per day (ch. 1.2), so it
      picks the sister test before the fold; the qualifier's own negation
      complements the fold's verdict. *)
   | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; time_period = Some gp; _ } ->
@@ -2300,11 +2283,11 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
          the WF-085 reference graph): the §9.8 composition, "a day is a
          holiday when it is a Christmas day or …". It is carried on the
          BOUND DAY ONLY — a test on some other date is a recognised,
-         unexecuted form, refused in the same words by the ASP backend (the
-         narrow route, 2026-09-19: ref and the Drools day-kind compiler both
-         answered it while the ASP backend refused it, and a form one
-         executor computes and another refuses is the asymmetry this card
-         exists to end). Outside a day-kind condition the predicate stays
+         unexecuted form, refused in the same words by the ASP backend and
+         refused by the Drools backend too (red case
+         `day-kind-reference-other-day`; the narrow route, 2026-09-19: a form
+         one executor computes and another refuses is the asymmetry it
+         ends). Outside a day-kind condition the predicate stays
          refused altogether (the arm below): ch. 5.4's framing is that a day
          kind is consulted as a stratum-0 classifier, never as a derived read
          in the rule fixpoint. The leeg rule is the source's own exception: a
@@ -2641,9 +2624,9 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
        | None, _, _ -> false (* an unset evaluation date never matches *)
        | _, Some None, _ | _, _, Some None -> false
        | Some d, v, t -> (
-           (* the reader returns a Date or raises its own fault, so a
-              "malformed asOfDate" arm here never fired (removed
-              2026-09-23); a case's non-date asOfDate is refused at load *)
+           (* the reader returns a Date or raises its own fault, so no
+              "malformed asOfDate" arm is needed here; a case's non-date
+              asOfDate is refused at load *)
            match Value.date_of_iso d with
            | Value.Date today ->
                (match v with Some (Some z) -> z <= today | _ -> true)
@@ -2894,19 +2877,18 @@ let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
    initialisation (IR-SPEC ch. 3.1): it writes the boolean constant true and
    nothing else. On this wire a negative decision on a characteristic exists
    only inside a defaults group, where it keeps the group from attributing; a
-   flat rule with another value has no reading. Until 2026-09-23 the
-   attribution arm below evaluated the value and let false write nothing:
-   corpus/negative/wf022-characteristic-false, forced past the verifier, answered
-   with the characteristic absent without a word, and a computed boolean was
-   written like the constant, while the ASP backend refused both at
-   translation.
+   flat rule with another value has no reading. An attribution arm that
+   evaluated the value and let false write nothing would answer
+   corpus/negative/wf022-characteristic-false, forced past the verifier, with
+   the characteristic absent without a word, and write a computed boolean like
+   the constant, while the ASP backend refuses both at translation.
 
    This check is keyed on the version's kind, never on the target's
    declaration. Measured 2026-09-23 on jutterswet-penningdrempel with the
-   attribute "aantal aangemelde vondsten" as target and false as value: the
-   verifier of the day passed it, this check refused it, and so did the ASP
-   backend. Since the L4 landing the verifier refuses that document as well,
-   because WF-022 crosses a version's kind against its target's member. Where
+   attribute "aantal aangemelde vondsten" as target and false as value: this
+   check refused it, and so did the ASP backend. The verifier refuses that
+   document as well, because WF-022 crosses a version's kind against its
+   target's member. Where
    the verifier refuses the document this fault is fail-fast on a
    non-conforming input; in no case may it be softened to a fallback. The
    test of the constant is the verifier's own (the boolean variant true
@@ -2969,10 +2951,10 @@ let run_rule ?only env world (r : resolved_rule) =
         in
         (* ch. 3.10's case distinction asks whether the TARGET carries a
            timeline, and a CHARACTERISTIC target carries one through
-           `kenmerkGranulariteit` — a different table from the one
+           `characteristic_granularity` — a different table from the one
            [temporal_target] reads. That flag is keyed on the attribute side
            alone because the pro-rata dispatch below needs it so; reusing it
-           here let the characteristic target through. Measured 2026-09-20 on
+           here would let the characteristic target through. Measured 2026-09-20 on
            a verifier-clean characteristic assignment whose target declares a `year`
            granularity and whose whole condition is the window: the ASP
            backend PLAYED the scalar gate on a timeline target (present
@@ -2983,7 +2965,7 @@ let run_rule ?only env world (r : resolved_rule) =
           | Some Characteristic_attribution -> characteristic_temporal (object_type env ot) attr
           | _ -> temporal_target
         in
-        (* ch. 3.10's CLIP (built 2026-09-23): on a timeline target the window
+        (* ch. 3.10's CLIP: on a timeline target the window
            is taken off the condition position — it gates nothing — and cuts
            the producer's result per subject instead. Two positions stay
            refused by name, both before any subject is taken: a
@@ -3115,13 +3097,11 @@ let run_allocation env world (v : resolved_allocation) =
         else
           (* ch. 4.1: the recipient set is every DOELTYPE instance the
              connecting relation reaches — the role only supplies the
-             relation. The two used to coincide, because WF-047 demanded
-             the bound role's filler and doelType be the same name; since
-             ch. 2.6 widened that to ⊑-compatibility the filler may be a
-             STRICT SUPERTYPE, and the role then reaches instances this
-             allocation does not target. Filtering is identity wherever the
-             filler is doelType or below, which is every document written
-             before the chain existed. *)
+             relation. WF-047 asks ⊑-compatibility of the bound role's
+             filler and doelType (ch. 2.6), so the filler may be a STRICT
+             SUPERTYPE, and the role then reaches instances this allocation
+             does not target. Filtering is identity wherever the filler is
+             doelType or below. *)
           let recipients =
             List.filter
               (fun (i : World.instance) -> isa env i.otype objective_type_name)
@@ -3258,11 +3238,11 @@ let run_fact_creation env ~read world (fc : resolved_fact_creation) =
    [read], the settled world of the generation before (ch. 5.5,
    generations): the value at the moment of making, which neither the
    other creations of the same generation nor the minted instance itself
-   can move. Until 2026-10-09 they were read on the running world of a
-   pass, so the moment of making was a position in the pass: measured on
-   a recursive creation whose initialisation reads a copy of a count the
-   rules derive from its own links, the copy rule written before the
-   count left the initialisation leeg and written after it gave 0. The
+   can move. Read on the running world of a pass, the moment of making
+   would be a position in the pass: measured on a recursive creation whose
+   initialisation reads a copy of a count the rules derive from its own
+   links, the copy rule written before the count left the initialisation
+   leeg and written after it gave 0. The
    instance, its initialisations and the back-link land on [world].
 
    The creation budget (ch. 5.5): the minted instance gets a creation depth
@@ -3273,11 +3253,9 @@ let run_fact_creation env ~read world (fc : resolved_fact_creation) =
    depth [creation_budget] + 1 is the fault, at the making. The depth
    follows the chain of makings and not the generation in which a mint
    happens, so a creation whose condition waits for a link or a value
-   keeps its subject's depth. Until 2026-10-09 the budget was 100
-   generations per stratum that mint or link: a chain whose every mint
-   waited one generation for a link a fact creation lays faulted from its
-   51st mint on, and a recursive fact creation faulted on a closure of 102
-   hops. *)
+   keeps its subject's depth. A budget of generations would instead fault
+   a chain whose every mint waits one generation for a link a fact
+   creation lays, and a recursive fact creation on a closure of 102 hops. *)
 let creation_budget = 100
 
 (* the connecting relation of an object creation, as (fact type, the role
@@ -4027,23 +4005,21 @@ let evaluate env world =
 
      Invariant note (2026-09-23). "Cycle edges count positive" holds only
      for reads that the generation progression settles. A leeg/gevuld
-     test is not one of them, and until the verifier counted it as a
-     negative edge it reached this loop on an admissible cycle and was
-     answered in pass order. On the R3 shape (a recursive creation under
-     "het merk is niet gevuld", a rule writing merk = 1 when the
-     successor's rang is not gevuld) this interpreter answered
-     merk(W1) = 1, because its pass ran rules before creations; the
-     opposite order mints W2 and leaves merk(W1) leeg, and the ASP reading
-     has five stable models. On the R1 shape it minted a chain whose every
-     creation is justified by a leeg merk that the final world fills.
-     Since the WF-046 arm such documents are refused by the re-run above
-     and never get here (ref/test WV-6.4-g). The same arm moved an
-     off-cycle leeg reader strictly above its writer, so the reader's
-     position in the document no longer decides whether it acts on a
-     transient leeg (WV-6.4-f). A quantifier fold whose range can grow
-     (`all`, `none`, `atMost`, `exactly`) or whose matrix is negated (`none`,
-     `atMost`, `exactly`) is a negative edge on the same terms since
-     that date. Other conditions that hold on absence (a comparison
+     test is not one of them, so the verifier counts it as a negative edge
+     (WF-046): answered in pass order on an admissible cycle, the R3 shape
+     (a recursive creation under "het merk is niet gevuld", a rule writing
+     merk = 1 when the successor's rang is not gevuld) gives merk(W1) = 1,
+     because a pass runs rules before creations; the opposite order mints
+     W2 and leaves merk(W1) leeg, and the ASP reading has five stable
+     models. On the R1 shape a chain is minted whose every creation is
+     justified by a leeg merk that the final world fills. Such documents
+     are refused by the re-run above and never get here (ref/test
+     WV-6.4-g). The same arm puts an off-cycle leeg reader strictly above
+     its writer, so the reader's position in the document does not decide
+     whether it acts on a transient leeg (WV-6.4-f). A quantifier fold
+     whose range can grow (`all`, `none`, `atMost`, `exactly`) or whose
+     matrix is negated (`none`, `atMost`, `exactly`) is a negative edge on
+     the same terms. Other conditions that hold on absence (a comparison
      against leeg, a count against zero, a propositional `none` over a
      comparison, arithmetic that coalesces leeg to 0) are not negative
      edges. They still reach this loop on an admissible cycle, and off a
@@ -4398,12 +4374,12 @@ let evaluate env world =
      stratum j + 1 runs (ch. 6.3). A creation of stratum k makes instances on
      which the forms of every lower stratum still have to compute, and a form
      of a higher stratum may read what they write there only once it is at
-     rest. Until 2026-10-09 the forms of every stratum up to k ran together
-     in one pass in document order after a creation: on a Post a creation
-     had made, "gemarkeerde post" (stratum 1, a Post is gemarkeerd when its a
-     is ongelijk aan 5) written before "a van een post" (stratum 0, a = 5)
-     read a as leeg, took that for unequal to 5 and marked the Post for good;
-     written after it, the Post stayed unmarked. A lower form runs again in
+     rest. Run together in one pass in document order after a creation, the
+     forms of every stratum up to k would depend on that order: on a Post a
+     creation made, "gemarkeerde post" (stratum 1, a Post is gemarkeerd when
+     its a is ongelijk aan 5) written before "a van een post" (stratum 0,
+     a = 5) would read a as leeg, take that for unequal to 5 and mark the
+     Post for good; written after it, the Post would stay unmarked. A lower form runs again in
      every higher stratum's fixpoint, so two writers of one target in
      different strata still overwrite each other there and are named
      (ch. 5.7).
@@ -4435,10 +4411,10 @@ let evaluate env world =
      the maatgever of its opvolger and a Wachter with a maatgever is ervaren,
      "elke wachter ervaren" fired in generation 0 would leave a fact on W2
      and one on W3. A uniqueness reads its keys strictly and sits above every
-     writer of a key. Until 2026-10-09 these forms fired once, at the
-     fixpoint of their own stratum: a consistency of stratum 1 on Posts
-     ("the a of a Post is kleiner dan 5") never saw the Post a creation of
-     stratum 2 made with a = 5, and the channel stayed empty. *)
+     writer of a key. Fired once, at the fixpoint of their own stratum, a
+     consistency of stratum 1 on Posts ("the a of a Post is kleiner dan 5")
+     would never see the Post a creation of stratum 2 makes with a = 5, and
+     the channel would stay empty. *)
   let settling_upto = Array.init (kmax + 1) (fun j -> settling ~k:j) in
   let checks j world =
     let world =
@@ -4498,15 +4474,9 @@ let evaluate env world =
      but the last mints an instance or lays a link; a (creation, subject)
      mints at most once, and the creation budget ([run_object_creation])
      bounds the depth of a stratum's mints, so a stratum mints finitely many
-     instances and the links between them are finite too. Until 2026-10-09
-     a stratum admitted 100 generations that mint or link, and that count
-     stood in for the depth: it also counted the generations a mint waits
-     for a link or a value, and the hops of a closure that a fact creation
-     lays. Before the generations the budget was 100 passes of every form of
-     the stratum together, and where a chain stopped depended on the order
-     of the rules: on a chain of 99 mints with "kopie = nummer" and "kopie2 =
-     kopie" in one stratum, the reader of kopie written first faulted and
-     written last played. *)
+     instances and the links between them are finite too. A bound on the
+     generations would also count the generations a mint waits for a link
+     or a value, and the hops of a closure that a fact creation lays. *)
   let world = ref world in
   for k = 0 to kmax do
     let creations = creations ~k in
