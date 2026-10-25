@@ -34,12 +34,12 @@ GEN_DIR  := gen/$(PKG_PATH)
 OUT_DIR  := out
 TEST_OUT_DIR := out-test
 
-# The stamps of the two products: `parser` and `compile` do nothing when neither grammar, source, resource
-# nor tool jar is newer than its stamp (card gate-builds-when-stale, 2026-10-25), so gates that run side by
-# side in one checkout find the frontend built and leave out/ alone. Each stamp takes its time from the
-# moment its recipe starts (a marker made then and moved into place at the end), so a source saved during
-# the build is newer than the stamp and the next call builds again. GNU make 3.81 compares whole seconds:
-# an edit in the same second as the start of the build passes as fresh.
+# The stamps of the two products: `parser` and `compile` do nothing when neither grammar, source, resource,
+# tool jar nor this Makefile (its commands and flags) is newer than its stamp (card gate-builds-when-stale,
+# 2026-10-25), so gates that run side by side in one checkout find the frontend built and leave out/ alone.
+# Each stamp takes its time from the moment its recipe starts (a marker made then and moved into place at
+# the end), so a source saved during the build is newer than the stamp and the next call builds again. GNU
+# make 3.81 compares whole seconds: an edit in the same second as the start of the build passes as fresh.
 GEN_STAMP := gen/.generated
 OUT_STAMP := $(OUT_DIR)/.compiled
 
@@ -81,7 +81,7 @@ $(JUNIT_JAR):
 # component, ANTLR would mirror that directory *under* -o.
 parser: $(GEN_STAMP)
 
-$(GEN_STAMP): $(GRAMMARS) $(ANTLR4_JAR)
+$(GEN_STAMP): $(GRAMMARS) $(ANTLR4_JAR) Makefile
 	@test -f $(LEXER_G4)  || { echo "missing $(LEXER_G4)";  exit 1; }
 	@test -f $(PARSER_G4) || { echo "missing $(PARSER_G4)"; exit 1; }
 	mkdir -p $(GEN_DIR)
@@ -99,9 +99,9 @@ compile: $(OUT_STAMP)
 
 # javac compiles every source anyway; an empty $(OUT_DIR) keeps a class of a renamed type from staying behind, which on a
 # case-insensitive file system (macOS) takes the new name's place when the rename changes only the case (Objecttype -> ObjectType).
-# The recipe runs only when the generated parser, a source, a resource, a source directory or the ANTLR jar is newer than
-# the stamp.
-$(OUT_STAMP): $(GEN_STAMP) $(MAIN_SRC) $(MAIN_RES) $(MAIN_DIRS) $(ANTLR4_JAR)
+# The recipe runs only when the generated parser, a source, a resource, a source directory, the ANTLR jar or this Makefile
+# (DOCLINT among its flags) is newer than the stamp.
+$(OUT_STAMP): $(GEN_STAMP) $(MAIN_SRC) $(MAIN_RES) $(MAIN_DIRS) $(ANTLR4_JAR) Makefile
 	rm -rf $(OUT_DIR)
 	mkdir -p $(OUT_DIR)
 	touch $@.begin
