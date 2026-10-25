@@ -22,9 +22,10 @@
 # not a second way to run it. Every target runs its command without the MAKEFLAGS of this make, so a
 # script behaves as it does on its own. Works with GNU make 3.81 (macOS) and newer.
 
-.DEFAULT_GOAL := gates
+.DEFAULT_GOAL := help
 
-CORES := $(strip $(shell getconf _NPROCESSORS_ONLN 2>/dev/null))
+# one gate per core, read from the machine; `override`, so a command line cannot set it
+override CORES := $(strip $(shell getconf _NPROCESSORS_ONLN 2>/dev/null))
 ifeq ($(CORES),)
 $(error getconf _NPROCESSORS_ONLN gave no number of cores; make gates runs one gate per core)
 endif
@@ -39,7 +40,7 @@ GATES := 01-self-contained 02-ir-schema 04-case-schema 03-verifier 05-oracle 06-
          09-catala 10-regelspraak 11-toka-parity 12-drools 13-reftype 14-flogic 15-graph 16-scenario \
          17-readings
 
-.PHONY: gates $(BUILDS) $(GATES)
+.PHONY: help gates $(BUILDS) $(GATES)
 
 # The commands, with the environment .github/workflows/gates.yml gives each gate: the OCaml gates under
 # `opam exec`, sh or bash as the script needs.
@@ -68,6 +69,10 @@ CMD.14-flogic         := opam exec -- bash scripts/check-flogic.sh
 CMD.15-graph          := opam exec -- bash scripts/check-graph.sh
 CMD.16-scenario       := bash scripts/check-scenario.sh
 CMD.17-readings       := opam exec -- bash scripts/check-readings.sh
+
+help:
+	@echo 'make gates    runs the gate set: the three builds, then the 17 gates in parallel (CLAUDE.md, Gate set);'
+	@echo '              logs and summary under out/gates/<run>/. A single gate runs with its script.'
 
 gates:
 	@mkdir -p out/gates; mkdir $(LOGS) || { echo "make gates: $(LOGS) exists; start the run again" >&2; exit 2; }
