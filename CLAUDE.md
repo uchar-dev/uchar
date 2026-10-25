@@ -156,14 +156,18 @@ workspace (`scripts/lib/ocaml-build.sh`), the RegelSpraak frontend
 (`scripts/lib/drools-jar.sh`). Then it runs the gates in parallel in the
 same checkout (`make -k -j<cores>`), with one log per gate under
 `out/gates/<run>/` and a summary with one line per gate in the order of
-`.github/workflows/gates.yml`; a red build, a red gate or a gate without
-a line makes it exit non-zero. A single gate runs with its script. Every
+`.github/workflows/gates.yml`. A single gate runs with its script. Every
 gate builds what it needs only when a source is newer than the product:
 dune only when a source is newer than the stamp of the last green build
 of the workspace, the frontend only when a source is newer than its
 classes, the jar only when a source is newer than the jar. So after the
-first step of `make gates` no gate builds, and no two gates write the
-same file. Current gates:
+build step no gate builds, and no two gates write the same file, on two
+conditions: no source changes while the gates run, and no other gate,
+build or `make gates` runs in the same checkout meanwhile. The first is
+checked at the end, in the step `after-run`: the three builds run again
+and must be fresh, and none of their products may be newer than the end
+of the build step. A red build, a red gate, a red `after-run` or a
+missing line makes `make gates` exit non-zero. Current gates:
 
 1. `scripts/check-self-contained.sh` — artifact zones (`corpus/golden`,
    `corpus/negative`, `corpus/red`, `spec/schema`, `spec/verifier`,

@@ -11,14 +11,22 @@
 # backend jar (scripts/lib/drools-jar.sh). When all three are green it runs the 17 gates in parallel in
 # this checkout, `make -k -j<cores>`, the number of cores read from the machine. A gate builds what it
 # needs only when a source is newer, so after the build step no gate builds, and no two gates write the
-# same file.
+# same file — on two conditions: no source changes while the gates run, and no other gate, build or
+# `make gates` runs in this checkout meanwhile (two runs of gate 12 share backends/drools/target, two
+# runs of gate 10 share frontends/regelspraak/out-test). The first condition is checked at the end, in
+# the step `after-run`: it runs the three builds again, each must be fresh, and none of the three
+# products (_build/.gates-built, frontends/regelspraak/out/.compiled, the shaded jar) may be newer than
+# the end of the build step; otherwise a source changed or a gate built during the run, and the gates may
+# have read different versions of a tree.
 #
-# Each target writes its output to out/gates/<run>/<target>.log. out/gates/<run>/summary.txt holds one
-# line per build target and one per gate, in the order of .github/workflows/gates.yml:
+# Each target writes its output to out/gates/<run>/<target>.log; the builds of after-run write theirs
+# under out/gates/<run>/after/. out/gates/<run>/summary.txt holds one line per build target, one per gate
+# in the order of .github/workflows/gates.yml, and the line of after-run:
 #     <target> rc=<status> <seconds>s                       (a gate)
 #     <target> rc=<status> <seconds>s <status line>         (a build: fresh (…), rebuilt (…) or FAIL — …)
-# A target without a line did not run and counts as red; when a build is red, the gates do not run. The
-# exit status is 0 only when every build and every gate is green.
+#     after-run rc=<status> <seconds>s <what it found>
+# A line that is missing counts as red: its target did not run; when a build is red, the gates do not
+# run. The exit status is 0 only when every line is green.
 #
 # A gate runs on its own with its script, exactly as its command below says (`bash
 # scripts/check-drools.sh`). That `make 12-drools` also runs one gate is a consequence of the targets here,
@@ -42,6 +50,9 @@ BUILDS := ocaml frontend jar
 GATES := 01-self-contained 02-ir-schema 04-case-schema 03-verifier 05-oracle 06-clingo 07-noop 08-red \
          09-catala 10-regelspraak 11-toka-parity 12-drools 13-reftype 14-flogic 15-graph 16-scenario \
          17-readings
+# the products the three builds vouch for, in the order of BUILDS (after-run)
+PRODUCTS := _build/.gates-built frontends/regelspraak/out/.compiled \
+            backends/drools/target/uchar-drools-backend-*-shaded.jar
 
 .PHONY: help gates $(BUILDS) $(GATES)
 
@@ -101,10 +112,26 @@ gates:
 	@echo "start $$(date '+%F %T') $$(git rev-parse --short HEAD) $$(git branch --show-current)" > $(LOGS)/summary.txt
 	@t0=$$(date +%s); \
 	if $(MAKE) --no-print-directory -k -j3 RUN=$(RUN) $(BUILDS); then \
+	  touch $(LOGS)/.built; \
 	  $(MAKE) --no-print-directory -k -j$(CORES) RUN=$(RUN) $(GATES); \
+	  t1=$$(date +%s); \
+	  $(MAKE) --no-print-directory -k -j3 RUN=$(RUN)/after $(BUILDS) >/dev/null; \
+	  why=; \
+	  for b in $(BUILDS); do \
+	    if [ -f $(LOGS)/after/$$b.line ]; then l=$$(cat $(LOGS)/after/$$b.line); else l="$$b did not run"; fi; \
+	    case "$$l" in *' rc=0 '*': fresh ('*) ;; *) why="$$why; $$l" ;; esac; \
+	  done; \
+	  new=$$(find $(PRODUCTS) -newer $(LOGS)/.built 2>&1); \
+	  if [ -n "$$new" ]; then why="$$why; newer than the end of the build step: $$(echo $$new)"; fi; \
+	  if [ -z "$$why" ]; then \
+	    echo "after-run rc=0 $$(( $$(date +%s) - t1 ))s the three builds fresh, no product newer than the end of the build step" > $(LOGS)/after-run.line; \
+	  else \
+	    echo "after-run rc=1 $$(( $$(date +%s) - t1 ))s $${why#; } — a source changed or a gate built during the run; the gates may have read different versions" > $(LOGS)/after-run.line; \
+	  fi; \
+	  cat $(LOGS)/after-run.line; \
 	fi; \
 	red=0; \
-	for t in $(BUILDS) $(GATES); do \
+	for t in $(BUILDS) $(GATES) after-run; do \
 	  if [ -f $(LOGS)/$$t.line ]; then line=$$(cat $(LOGS)/$$t.line); else line="$$t did not run"; fi; \
 	  case "$$line" in *' rc=0 '*) ;; *) red=$$((red + 1)) ;; esac; \
 	  echo "$$line" >> $(LOGS)/summary.txt; \
