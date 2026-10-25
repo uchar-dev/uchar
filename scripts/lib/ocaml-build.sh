@@ -1,7 +1,7 @@
 # shellcheck shell=sh
 # The OCaml workspace, BUILT WHEN A SOURCE IS NEWER than its last successful build, for the eleven gates
-# that run its executables (3, 5, 6, 7, 8, 9, 11, 13, 14, 15, 17) and for the `ocaml` target of the root
-# Makefile. Sourced from the repository root:
+# that run its executables (3, 5, 6, 7, 8, 9, 11, 13, 14, 15, 17), for the `ocaml` target of the root
+# Makefile and for scripts/admit.sh. Sourced from the repository root:
 #
 #     . scripts/lib/ocaml-build.sh
 #     ensure_ocaml || <fail the gate>

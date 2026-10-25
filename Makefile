@@ -25,13 +25,15 @@
 #     <target> rc=<status> <seconds>s                       (a gate)
 #     <target> rc=<status> <seconds>s <status line>         (a build: fresh (…), rebuilt (…) or FAIL — …)
 #     after-run rc=<status> <seconds>s <what it found>
-# A line that is missing counts as red: its target did not run; when a build is red, the gates do not
-# run. The exit status is 0 only when every line is green.
+# A line is green when it begins with `<target> rc=0`. A line that is missing counts as red: its target
+# did not run; when a build is red, the gates do not run. The exit status is 0 only when every line is
+# green. A target without a command stops make while it reads this file, before anything runs.
 #
-# A gate runs on its own with its script, exactly as its command below says (`bash
-# scripts/check-drools.sh`). That `make 12-drools` also runs one gate is a consequence of the targets here,
-# not a second way to run it. Every target runs its command without the MAKEFLAGS of this make, so a
-# script behaves as it does on its own. Works with GNU make 3.81 (macOS) and newer.
+# `make gates` is the one way to run the set; a bare `make` prints how. A gate runs on its own with its
+# script, exactly as its command below says (`bash scripts/check-drools.sh`). That `make 12-drools` also
+# runs one gate is a consequence of the targets here, not a second way to run it. Every target runs its
+# command without the MAKEFLAGS of this make, so a script behaves as it does on its own. Works with GNU
+# make 3.81 (macOS) and newer.
 
 .DEFAULT_GOAL := help
 
