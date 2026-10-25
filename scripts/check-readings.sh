@@ -143,8 +143,8 @@ while IFS= read -r ir; do
   parallel_task "$work/readings" "exec.$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --readings "$ir" $cases
   parallel_task "$work/readings" "drl.$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --readings --drl "$ir" $cases
 done < "$work/goldens"
-parallel_run "$work/traces" "$traces" || fail "a trace did not end (the parallel line above names it)"
-parallel_run "$work/readings" "$jvms" || fail "a reading did not end (the parallel line above names it)"
+parallel_run "$work/traces" "$traces" || fail "parallel_run failed over the traces (the parallel line above says why)"
+parallel_run "$work/readings" "$jvms" || fail "parallel_run failed over the readings (the parallel line above says why)"
 # the plain replay that check 2 asks of a golden whose readings end in EXCLUDE or ERROR
 i=0
 while IFS= read -r ir; do
@@ -156,7 +156,7 @@ while IFS= read -r ir; do
       parallel_task "$work/replays" "$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" $cases ;;
   esac
 done < "$work/goldens"
-parallel_run "$work/replays" "$jvms" || fail "a replay did not end (the parallel line above names it)"
+parallel_run "$work/replays" "$jvms" || fail "parallel_run failed over the replays (the parallel line above says why)"
 
 i=0
 while IFS= read -r ir; do

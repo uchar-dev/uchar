@@ -113,7 +113,7 @@ while IFS= read -r case; do
 done < "$list"
 echo "check-clingo: replays on $procs processes (one per core)"
 if ! parallel_run "$tasks" "$procs"; then
-    echo 'check-clingo: FAIL (a replay process ended without an exit status; the parallel line above names it)' >&2
+    echo 'check-clingo: FAIL (parallel_run failed over the replays; the parallel line above says why)' >&2
     exit 1
 fi
 

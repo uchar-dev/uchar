@@ -1527,7 +1527,7 @@ while IFS= read -r ir; do
   cases=$(cat "$work/cases/$i")
   [ -z "$cases" ] || parallel_task "$work/exec" "$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" $cases
 done < "$work/goldens"
-parallel_run "$work/exec" "$procs" || fail "the exec-model replay did not end for every golden (the parallel line above names it)"
+parallel_run "$work/exec" "$procs" || fail "parallel_run failed over the exec-model replays (the parallel line above says why)"
 
 i=0
 while IFS= read -r ir; do
@@ -1648,7 +1648,7 @@ while IFS= read -r ir; do
   while IFS= read -r c; do drl_cases+=("$c"); done < "$work/cases/$i"
   [ ${#drl_cases[@]} -eq 0 ] || parallel_task "$work/drl" "$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "${drl_cases[@]}"
 done < "$work/goldens"
-parallel_run "$work/drl" "$procs" || fail "the DRL-text replay did not end for every golden (the parallel line above names it)"
+parallel_run "$work/drl" "$procs" || fail "parallel_run failed over the DRL-text replays (the parallel line above says why)"
 i=0
 while IFS= read -r ir; do
   i=$((i + 1))

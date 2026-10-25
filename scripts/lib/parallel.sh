@@ -1,7 +1,9 @@
 # shellcheck shell=sh
-# Collect in parallel, judge in order: the helper with which gates 6 (check-clingo), 12 (check-drools), 13
-# (check-reftype-derivation) and 17 (check-readings) run their costly call per golden or per case — a
-# `java -jar` of the Drools backend, the clingo runner, the reference runner — on several processes at once.
+# Collect in parallel, judge in order: the helper with which gates 6 (check-clingo), 12 (check-drools) and 17
+# (check-readings) run their costly call per golden or per case on several processes at once: gate 6 the
+# clingo runner, gate 12 a `java -jar` of the Drools backend, gate 17 the reference runner's trace and a
+# `java -jar` of the backend. Gate 13 (check-reftype-derivation) takes only PARALLEL_JVM_FLAGS from it: its
+# four legs run as four processes of its own (`&` and `wait`), each one golden after the other.
 # Sourced from the repository root (POSIX sh: dash as CI's /bin/sh, bash, macOS sh):
 #
 #     . scripts/lib/parallel.sh
@@ -31,18 +33,20 @@
 #   start leaves the shell's message (in .out or .err, as STDERR says) and 126 or 127. The gate's loop meets
 #   either at its golden or case, in the arm it has for a bad result, and fails there by name. The status
 #   of a task never stops the other tasks: the shell that runs a task always ends with 0. parallel_run
-#   fails (status 1, a `parallel: FAIL — …` line with the task's command) only when a task has no .rc
-#   after xargs ends — the shell that ran it died, or xargs stopped — or when xargs ends with a status
-#   other than 0. A directory without tasks runs nothing. Each pass of a gate takes a directory of its own.
+#   fails (status 1, one `parallel: FAIL — …` line that says which) in three cases: N is not a whole
+#   number above 0, and nothing runs; a task has no .rc after xargs ends — the shell that ran it died, or
+#   xargs stopped — and the line names the task's command; xargs ends with a status other than 0. A
+#   directory without tasks runs nothing. Each pass of a gate takes a directory of its own.
 # parallel_jobs D
 #   prints the number of processes: the number of cores (getconf _NPROCESSORS_ONLN) divided by D, at least
 #   1. There is no knob: each gate states its D and the measurement it rests on. A machine that gives no
 #   number of cores fails the call (status 1, a `parallel: FAIL — …` line).
 # PARALLEL_JVM_FLAGS
-#   the flags of every replay JVM of the four gates, `java $PARALLEL_JVM_FLAGS -jar "$JAR" …` (unquoted: two
-#   words). They stop the JIT compiler at its first tier and take the single-threaded collector, and change
-#   no result. Measured 2026-10-25 on 16 cores, 54 goldens (every sixth with a case file), one `java -jar`
-#   per golden, the wall clock, and for one process also the CPU time (user+sys):
+#   the flags of every replay JVM of gates 12, 13 and 17, `java $PARALLEL_JVM_FLAGS -jar "$JAR" …` (unquoted:
+#   two words); gate 6 starts no JVM. They stop the JIT compiler at its first tier and take the
+#   single-threaded collector, and change no result. Measured 2026-10-25 on 16 cores, 54 goldens (every
+#   sixth with a case file), one `java -jar` per golden, the wall clock, and for one process also the CPU
+#   time (user+sys):
 #                          1 process          4 processes    8 processes    16 processes
 #     exec, no flags       24.7 s (86 s cpu)   8.3 s          6.7 s          6.7 s
 #     exec, these flags    21.3 s (33 s cpu)   6.1 s          3.6 s          3.3 s
