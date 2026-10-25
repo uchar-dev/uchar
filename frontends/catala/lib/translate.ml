@@ -162,8 +162,7 @@ let note_optional (element : I.datatype) : unit =
 
 (* A Catala enum is a keuzetype (IR-SPEC ch. 2.4) and lands on ONE of its two
    wire variants — which one is decided by the payloads, not by the frontend
-   (maintainer decision 2026-09-01, the keuzetype-familie card; this supersedes
-   the uniform SumType mapping of PHASE5B-KERNEL §2.7). An enum with at least
+   (maintainer decision 2026-09-01, the keuzetype-familie card). An enum with at least
    one payload-carrying constructor is the row-36 SumType. An ALL-NULLARY enum
    has NO SumType image: WF-087 declares a payloadless SumType ill-formed, so
    it normalises to the Enumeration domain — the enum's base name is the
@@ -1326,7 +1325,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
              multi-state output has no single attribute to bind and stays
              refused ([read_subscope_output], the row-9 flank). *)
           let vname = state_attr_name (M.remove (ScopeVar.get_info v)) in
-          (* a context (reentrant) variable is no longer refused (besluit 6):
+          (* a context (reentrant) variable is admitted (besluit 6):
              it is an ordinary attribute whose OWN default becomes the base of
              a defaults group, and a caller override rides above it as a
              generated highest default ([build_subscope] below; the merge is in
@@ -2008,7 +2007,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
     (callee : ScopeName.t) (sd : untyped Sc.scope_decl) (accessed : StructField.t) :
     I.function_def * per_element_meta =
   let cname = ScopeName.base callee in
-  (* a declared subscope inside the callee is no longer own-creation-refused
+  (* a declared subscope inside the callee is not own-creation-refused
      (PHASE5C-TUTORIAL §3a, 2026-08-25): if its OWN callee also passes this
      analysis it is nested function composition — a subscope-output read lowers
      to a nested [Invoke] ([read_subscope_output] below, [per_element_call]
@@ -2216,9 +2215,9 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
     | [] -> refuse "per-element callee %S output %S has an empty defaults chain" cname out_name
   in
   let body = body_of out_defaults in
-  (* the closed-body arithmetic fence (besluit 1-A, 2026-08-24; NARROWED
-     2026-08-25 by card clingo-bodymult). clingo's closed-body term
-     ([closed_term], §S15) now carries — beyond the additive [Plus]/[Min] — the
+  (* the closed-body arithmetic fence (besluit 1-A, 2026-08-24; card
+     clingo-bodymult). clingo's closed-body term ([closed_term], §S15)
+     carries — beyond the additive [Plus]/[Min] — the
      multiplicative [Times], the money×rate cent product ([Rounding] over a Maal),
      and a division by a COMPILE-TIME CONSTANT divisor. It still faults on binary
      subtraction ([Reduced_by] — the additive family is Plus/Min only), a

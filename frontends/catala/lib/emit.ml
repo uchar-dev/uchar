@@ -339,8 +339,7 @@ let named what key (ident : string option) =
 
 (* ObjectType with its members as nodes (IR-SPEC ch. 2.2). The translator
    fills no member facet: no plural, dimension or timeline table. A filled
-   one refuses rather than being written in a guessed form, which also
-   retires the old constant-null granularity branch. *)
+   one refuses rather than being written in a guessed form. *)
 let object_type (key, (o : object_type)) : json =
   named "object type" key o.ot_ident;
   let unfilled table = function

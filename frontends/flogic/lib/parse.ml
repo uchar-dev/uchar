@@ -424,11 +424,8 @@ let parse_stmt st : stmt =
       loop ();
       expect st "END";
       (* Flora-2 leaves the rule id optional; uchar does not. A nameless
-         rule would reach the wire as `name: null`, which WF-107 refuses
-         (until that rule no WF rule crossed it: WF-020 filtered nulls out
-         and never looked at a defaults group's name at all) and which one
-         Drools branch cannot render. Naming is the author's job, not the
-         frontend's to invent. *)
+         rule would reach the wire as `name: null`, which WF-107 refuses.
+         Naming is the author's job, not the frontend's to invent. *)
       if rule_id = None then
         refuse ~line:l0
           "a rule with no id: write @!{'name'} before the head — a rule reaches the wire by \
