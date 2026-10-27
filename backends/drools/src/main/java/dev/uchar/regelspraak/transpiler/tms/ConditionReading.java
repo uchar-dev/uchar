@@ -37,7 +37,10 @@ import java.util.Objects;
  * @param object the object the form ran on, a bean of the build's bean model, compared by identity
  * @param form   the form, by its JSON pointer
  * @param status how the condition came out, or why the form has no reading on the object
- * @param nodes  the nodes in the order of their numbers; empty where the status is {@link Status#DISPLACED} or
+ * @param nodes  the nodes in the order of their numbers; for a {@link Status#DISPLACED} default that a higher default
+ *               of its chain, or the exception groups of the default it is the content of, displaced, the nodes of its
+ *               condition, and of its value where the condition holds, evaluated on the fixpoint world as at its turn;
+ *               empty for every other {@link Status#DISPLACED} form, where the status is
  *               {@link Status#OUTSIDE_VALIDITY}, and where a form with a dated validity faults a session without an
  *               evaluation date
  */
@@ -59,10 +62,15 @@ public record ConditionReading(Object object, String form, Status status, List<N
         /** The evaluation of the condition faults (RUNTIME-SEMANTICS ch. 5.2), or the form has a dated validity and the
          *  session has no evaluation date (ch. 8.1): the session has no answer. */
         FAULTS,
-        /** The form was not at its turn on the object: a higher default decided, or an exception group of the default
-         *  settled (ch. 7.1, 7.9); the target of an initialisation, a default's or a rule's, holds a value of the input
-         *  or of another writer (ch. 5.4, 7.3); or the subject of a creation of the 1:1 shape is linked in the input
-         *  (ch. 5.5). */
+        /** The form was not at its turn on the object. A default that a higher default of its chain displaced, by a
+         *  decision or by the conflict of its exception groups (ch. 7.1, 7.9), every default within the exception groups
+         *  of such a default, the content of a default whose exception groups settled, and an ordinary rule that the
+         *  fold of ch. 7.10 took into the stack below the default that decided: the nodes are those of its condition,
+         *  and of its value where the condition holds, evaluated on the fixpoint world as at its turn (ch. 5.12); the
+         *  status says it was not at its turn, the nodes what it found, a fault of its condition or its value at its
+         *  nodes. The target of an initialisation, a default's or a rule's, holds a value of the input or of another
+         *  writer (ch. 5.4, 7.3), or the subject of a creation of the 1:1 shape is linked in the input (ch. 5.5):
+         *  without nodes. */
         DISPLACED,
         /** The validity window of the form does not admit the session's evaluation date (ch. 8.2). */
         OUTSIDE_VALIDITY

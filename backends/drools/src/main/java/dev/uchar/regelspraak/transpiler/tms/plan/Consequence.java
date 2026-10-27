@@ -540,11 +540,18 @@ public sealed interface Consequence {
      * slots, null at every other slot, inserted as {@code insertion} says. The consequence of the reading rule of a form
      * in a build with readings, whose left-hand side is that of the form's own rule without its test
      * ({@code TmsTranspiler#readingsOf}); {@code slots} are the slots that left-hand side binds. It computes nothing,
-     * and no rule reads what it inserts.
+     * and no rule reads what it inserts. {@code speculative} where the reading rule is a default's without the control
+     * facts of its stack, whose reading is a {@code Reading} of kind {@code SPECULATIVE}.
      */
-    record Reading(String subject, String form, List<Integer> slots, int size, Insertion insertion) implements Consequence {
+    record Reading(String subject, String form, List<Integer> slots, int size, Insertion insertion, boolean speculative)
+            implements Consequence {
         public Reading {
             slots = List.copyOf(slots);
+        }
+
+        /** The consequence of the reading rule that keeps the form's turn. */
+        public Reading(String subject, String form, List<Integer> slots, int size, Insertion insertion) {
+            this(subject, form, slots, size, insertion, false);
         }
     }
 

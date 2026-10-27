@@ -1287,8 +1287,10 @@ final class DrlRendering {
                 body.append("    waarden.add(").append(c.slots.containsKey(s) ? c.slots.get(s) : "null").append(");\n");
             body.append("    return waarden;\n");
             fill(place, null, "java.util.List " + name + "(" + c.declaration() + ")", body.toString());
-            insert(b, "    ", x.insertion(), "new " + typeName(Reading.class) + "(" + x.subject() + ", " + str(x.form())
-                    + ", " + name + "(" + c.arguments() + "))");
+            String reading = typeName(Reading.class);
+            insert(b, "    ", x.insertion(), "new " + reading + "(" + x.subject() + ", " + str(x.form())
+                    + ", " + name + "(" + c.arguments() + ")"
+                    + (x.speculative() ? ", " + reading + ".Kind.SPECULATIVE" : "") + ")");
         }
 
         private List<String> texts(List<String> values) {

@@ -58,7 +58,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       written-back beans, by identity: the object of the reading for a member of its own, the object the path
  *       reached for one over a path, and none where a link on the path is absent (RUNTIME-SEMANTICS ch. 5.12); and no
  *       other node names one;</li>
- *   <li>a displaced default and a form outside its validity have no nodes;</li>
+ *   <li>a default that a higher default displaced (RUNTIME-SEMANTICS ch. 5.12) has the nodes of its condition, and of
+ *       its value where the condition holds, as a reading at its turn, and the checks of the operands and the stops
+ *       below hold for them as well; a displaced form that is no default has no nodes, and of the defaults only an
+ *       initialisation, a default or a rule the fold of ch. 7.10 took in, whose target the input fills; a form outside
+ *       its validity has no nodes;</li>
  *   <li>the stop of every composite follows from the verdicts of its members (RUNTIME-SEMANTICS ch. 5.10): a member is
  *       reached exactly where the stop rule did not settle the verdict before it, and the composite's verdict is the
  *       stop rule's;</li>
@@ -78,8 +82,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@value #EXPECTED_MIN_NODES} nodes, {@value #EXPECTED_MIN_OPERANDS} operands held to the fixpoint,
  * {@value #EXPECTED_MIN_COMPOUNDS} composites held to the stop rule, {@value #EXPECTED_MIN_DISPLACED} displaced and
  * {@value #EXPECTED_MIN_OUTSIDE} outside their validity; measured 2026-10-27, {@value #EXPECTED_MIN_OBJECTS} nodes whose
- * object is held to the walk, {@value #EXPECTED_MIN_NAVIGATED} of them over a path. A smaller count is a corpus that
- * lost forms, or a reading that silently stopped giving nodes or objects; a growing corpus needs no change here.
+ * object is held to the walk, {@value #EXPECTED_MIN_NAVIGATED} of them over a path, and
+ * {@value #EXPECTED_MIN_DISPLACED_READ} displaced readings with nodes. A smaller count is a corpus that lost forms, or a
+ * reading that silently stopped giving nodes or objects; a growing corpus needs no change here.
  */
 class ReadingsCorpusWitnessTest {
 
@@ -90,6 +95,7 @@ class ReadingsCorpusWitnessTest {
     static final int EXPECTED_MIN_OPERANDS = 3611;
     static final int EXPECTED_MIN_COMPOUNDS = 1199;
     static final int EXPECTED_MIN_DISPLACED = 178;
+    static final int EXPECTED_MIN_DISPLACED_READ = 207;
     static final int EXPECTED_MIN_OUTSIDE = 13;
     static final int EXPECTED_MIN_OBJECTS = 5961;
     static final int EXPECTED_MIN_NAVIGATED = 746;
@@ -97,6 +103,8 @@ class ReadingsCorpusWitnessTest {
     /** What the witness counted on one branch. */
     private static final class Counts {
         int readings, nodes, operands, compounds, displaced, outside, holds, fails, faults;
+        /** Displaced readings with nodes, those of a default a higher one displaced, and their nodes. */
+        int displacedRead, displacedNodes;
         /** Nodes whose object is held to the walk; of them those over a path, and of those the ones without an object. */
         int objects, navigated, unlinked;
         final Map<String, Integer> kinds = new java.util.TreeMap<>();
@@ -138,7 +146,8 @@ class ReadingsCorpusWitnessTest {
             }
             System.out.println("ReadingsCorpusWitnessTest " + branch + ": " + n.readings + " lezingen met knopen ("
                     + n.holds + " geldt, " + n.fails + " faalt, " + n.faults + " fout), " + n.nodes + " knopen, "
-                    + n.operands + " operanden, " + n.compounds + " samenstellingen, " + n.displaced + " verdrongen, "
+                    + n.operands + " operanden, " + n.compounds + " samenstellingen, " + n.displaced + " verdrongen ("
+                    + n.displacedRead + " gelezen, met " + n.displacedNodes + " knopen), "
                     + n.outside + " buiten geldigheid, " + n.objects + " objecten (" + n.navigated + " over een pad, waarvan "
                     + n.unlinked + " zonder object); per soort " + n.kinds);
             int r = n.readings, k = n.nodes, o = n.operands, s = n.compounds, d = n.displaced, b = n.outside;
@@ -151,6 +160,9 @@ class ReadingsCorpusWitnessTest {
                     + EXPECTED_MIN_COMPOUNDS);
             assertTrue(d >= EXPECTED_MIN_DISPLACED, () -> branch + ": verdrongen " + d + ", onder de vloer "
                     + EXPECTED_MIN_DISPLACED);
+            int dr = n.displacedRead;
+            assertTrue(dr >= EXPECTED_MIN_DISPLACED_READ, () -> branch + ": verdrongen met knopen " + dr
+                    + ", onder de vloer " + EXPECTED_MIN_DISPLACED_READ);
             assertTrue(b >= EXPECTED_MIN_OUTSIDE, () -> branch + ": buiten geldigheid " + b + ", onder de vloer "
                     + EXPECTED_MIN_OUTSIDE);
             int j = n.objects, v = n.navigated;
@@ -179,29 +191,47 @@ class ReadingsCorpusWitnessTest {
         List<Runnable> operands = new ArrayList<>();
         for (ConditionReading r : readings) {
             String at = which + " " + r.form() + " op " + name(label, r.object());
-            switch (r.status()) {
-                case DISPLACED, OUTSIDE_VALIDITY -> {
-                    if (!r.nodes().isEmpty()) differences.add(at + ": " + r.status() + " met knopen");
-                    if (r.status() == ConditionReading.Status.DISPLACED) n.displaced++;
-                    else n.outside++;
-                    continue;
-                }
-                default -> { }
+            // a rule that the fold of ch. 7.10 took into a stack on the type of the object reads there as a default of
+            // that stack, which the decisions below hold
+            boolean ofStack = decisions.stream().anyMatch(d -> d.object() == r.object() && inStack(d, r.form()));
+            boolean ofDefault = ofStack || r.form().startsWith("/rules/prioritizedDefaults/");
+            boolean displaced = r.status() == ConditionReading.Status.DISPLACED;
+            if (r.status() == ConditionReading.Status.OUTSIDE_VALIDITY || displaced && r.nodes().isEmpty()) {
+                if (!r.nodes().isEmpty()) differences.add(at + ": " + r.status() + " met knopen");
+                if (displaced) {
+                    n.displaced++;
+                    // a default displaced by a higher one is read all the same; only the input on the target of an
+                    // initialisation leaves a default nothing to read (ch. 7.3)
+                    String unread = ofDefault ? unread(document, model, r) : null;
+                    if (unread != null) differences.add(at + ": DISPLACED zonder knopen, " + unread);
+                } else n.outside++;
+                continue;
             }
             if (r.nodes().isEmpty()) {
                 if (r.status() != ConditionReading.Status.FAULTS)
                     differences.add(at + ": " + r.status() + " zonder knopen");
                 continue;
             }
-            n.readings++;
-            n.nodes += r.nodes().size();
-            switch (r.status()) {
-                case HOLDS -> n.holds++;
-                case FAILS -> n.fails++;
-                default -> n.faults++;
-            }
             Form form = form(document, p, r.form());
-            n.kinds.merge(form.kind(), 1, Integer::sum);
+            if (displaced) {
+                // a default that was not at its turn, read as at its turn: the nodes of its condition, and of its
+                // value where the condition holds
+                n.displaced++;
+                n.displacedRead++;
+                n.displacedNodes += r.nodes().size();
+                if (!ofDefault) differences.add(at + ": DISPLACED met knopen, en de vorm is geen default van een stapel");
+                String turn = readAsAtItsTurn(form, r);
+                if (turn != null) differences.add(at + ": DISPLACED " + turn);
+            } else {
+                n.readings++;
+                n.nodes += r.nodes().size();
+                switch (r.status()) {
+                    case HOLDS -> n.holds++;
+                    case FAILS -> n.fails++;
+                    default -> n.faults++;
+                }
+                n.kinds.merge(form.kind(), 1, Integer::sum);
+            }
             // every node is the node of the document its number names
             Map<Integer, ConditionReading.NodeReading> byNumber = new HashMap<>();
             int previous = -1;
@@ -216,10 +246,8 @@ class ReadingsCorpusWitnessTest {
                 String kind = p.positions().of(form.nodes().get(x.node())).kind();
                 if (!kind.equals(x.kind())) differences.add(at + ": knoop " + x.node() + " is een " + kind + ", niet " + x.kind());
             }
-            // the reading holds where the form fired; a rule that the fold of ch. 7.10 took into a stack on the type of
-            // the object reads there as a default of that stack, which the decisions below hold
-            boolean ofStack = decisions.stream().anyMatch(d -> d.object() == r.object() && inStack(d, r.form()));
-            if (!ofStack) fired(at, form, r, values, fp, session, byNumber, differences);
+            // the reading holds where the form fired; a displaced default did not fire
+            if (!ofStack && !displaced) fired(at, form, r, values, fp, session, byNumber, differences);
             // every operand that reads a member has the value the fixpoint gives it, and names the object it read it on
             for (ConditionReading.NodeReading x : r.nodes()) {
                 if (x.node() >= form.nodes().size()) continue;
@@ -296,6 +324,49 @@ class ReadingsCorpusWitnessTest {
                     if (decides) differences.add(at + ": niemand besliste, en " + r.form() + " geldt met een besluit");
                 }
         }
+    }
+
+    /** Null where a displaced reading of the default {@code r} without nodes is the reading of an initialisation, a
+     *  default or a rule the fold of ch. 7.10 took in, whose target the input fills on the object: the one default
+     *  that has nothing to read where it is displaced (RUNTIME-SEMANTICS ch. 5.12, 7.3); else why it should have been
+     *  read. Read before the fixpoint is written back, so that the bean holds the input. */
+    private static String unread(JsonNode document, RegelSpraakModel model, ConditionReading r) {
+        JsonNode v = document.at(r.form());
+        if (!v.path("initialisation").asBoolean(false))
+            return "en een default die een hogere verdrong heeft de knopen van zijn voorwaarde en zijn waarde";
+        String target = r.form().startsWith("/rules/prioritizedDefaults/")
+                ? document.at(r.form().substring(0, r.form().indexOf("/defaults/"))).path("attribute").asText()
+                : v.path("target").path("attribute").asText();
+        String declared = declaredName(typeOf(model, r.object()), target);
+        if (declared == null) return "en de initialisatie schrijft geen attribuut van het object: " + target;
+        Object input = Accessors.leesEigenschap(r.object(), Namen.property(declared));
+        return ComputeHelpers.isEmpty(input) ? "en de invoer laat het doel " + target + " van de initialisatie leeg"
+                : null;
+    }
+
+    /** Null where the displaced reading {@code r} of {@code form} has the nodes of a reading at its turn: the root of
+     *  its condition reached, and the root of its value reached exactly where the condition holds (a form without a
+     *  condition, where its value is its reading); else the difference. */
+    private static String readAsAtItsTurn(Form form, ConditionReading r) {
+        Map<Integer, ConditionReading.NodeReading> byNumber = new HashMap<>();
+        for (ConditionReading.NodeReading x : r.nodes()) byNumber.put(x.node(), x);
+        int c = form.conditionNodes();
+        boolean holds;
+        if (c == 0) holds = true;
+        else {
+            ConditionReading.NodeReading root = byNumber.get(0);
+            if (root == null || !root.reached()) return "las de wortel van zijn voorwaarde niet";
+            if (root.fault() != null) holds = false;
+            else if (root.value() instanceof Boolean b) holds = b;
+            // a condition read over a timeline has periods and no verdict
+            else return null;
+        }
+        if (form.nodes().size() == c) return null;
+        ConditionReading.NodeReading value = byNumber.get(c);
+        if (value == null) return "mist de wortel van zijn waarde, knoop " + c;
+        if (holds && !value.reached()) return "las zijn waarde niet, waar zijn voorwaarde geldt";
+        if (!holds && value.reached()) return "las zijn waarde, waar zijn voorwaarde niet geldt";
+        return null;
     }
 
     /** One form of the document: its kind, its name as the writer of its values, the target it writes, and its nodes in

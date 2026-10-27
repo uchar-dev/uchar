@@ -184,7 +184,9 @@ public final class DroolsBackend {
      * beside the rule of every form with a condition, or without one that computes a value (card
      * readings-of-unconditional-forms), a reading rule, with the left-hand side of the form's own rule without its test,
      * which inserts the values that rule binds as a logical fact, so that {@link #readingsOf} reads per form and object
-     * how the condition came out at the fixpoint and what each of its nodes found. The reading
+     * how the condition came out at the fixpoint and what each of its nodes found; beside the rule of a default whose
+     * turn the control facts of its stack guard, a second reading rule without those control facts, which reads the
+     * default where a higher one displaced it as well. The reading
      * rules read what the other rules derive and nothing reads what they insert, so the facts the other rules derive
      * at the fixpoint are those of the build without them. They belong to no form: {@link Observer} and
      * {@link #coverage} do not see them, and they count among the rules of the fire cap ({@link #fire}). Without
@@ -679,7 +681,8 @@ public final class DroolsBackend {
      * boolean)}), after a {@link #fire} that reached its fixpoint: per form with a condition, or without one that
      * computes a value, and object the form runs on, one {@link ConditionReading}, how the condition came out there, or
      * that a form without one was at its turn, and per node of it what the evaluation reached and found, the contributors of a fold among it, with the values, the functions, the stop rule and the order of the
-     * form's own rule; or that the form was not at its turn there, or outside its validity. It reads the facts of the
+     * form's own rule; or that the form was not at its turn there, a default that a higher one displaced with the
+     * nodes it found as at its turn, or outside its validity. It reads the facts of the
      * reading rules and evaluates nothing of the session again: no value is read off a bean, nothing is deposited and
      * nothing written, and it reads alike before and after {@link #setDerivedValues}. Where an evaluation fault stands
      * the session has no answer, which {@link #fixpointOf} gives; a consumer reads the faults first. How the records

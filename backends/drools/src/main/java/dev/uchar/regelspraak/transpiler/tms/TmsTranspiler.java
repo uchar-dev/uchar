@@ -1597,6 +1597,9 @@ public final class TmsTranspiler {
         for (ReadingRule r : readingRules) {
             rules.add(r.plan());
             readingRuleOf.put(r.plan().name(), r.ownRule());
+            if (r.speculative() == null) continue;
+            rules.add(r.speculative());
+            readingRuleOf.put(r.speculative().name(), r.ownRule());
         }
         // a standing is built once per member, for every rule that reads it, and only for one a lowered rule reads: a
         // standing nothing reads would only add firings
@@ -3776,6 +3779,10 @@ public final class TmsTranspiler {
         List<RulePlan> out = new ArrayList<>();
         out.add(as(role, reads.rulePlan(ruleName, items, decision)));
         // the control facts stay: a default a higher one displaced is not at its turn (RUNTIME-SEMANTICS ch. 7.1, 7.9).
+        // Beside that reading rule, where control facts guard the turn, a speculative one without them reads the
+        // default where it is displaced as well (ch. 5.12): the turn stays with truth maintenance, which keeps the
+        // reading of the turn where the default is at its turn. The input test of an initialisation default is on the
+        // subject pattern, in both: a target the input fills leaves the default without a reading.
         // A default without a justification, and an ordinary rule without a condition that the fold of ch. 7.10 took in
         // (its justification the fold's vacuous one, which stands nowhere in the document), has no condition to read:
         // on an attribute it has the reading of its consequence, which holds where it is at its turn; a characteristic
@@ -3783,7 +3790,8 @@ public final class TmsTranspiler {
         ResolvedRule madeFrom = stacks.ruleOf(d);
         boolean unconditional = testTerm == null || (madeFrom != null && madeFrom.condition() == null);
         if (noted != null && !(unconditional && b.characteristic))
-            readingRule(ruleName, pointerOf(d), reads, reads.readingPlan(control, false), unconditional ? null : testTerm,
+            readingRule(ruleName, pointerOf(d), reads, reads.readingPlan(control, false),
+                    control.isEmpty() ? null : reads.readingPlan(List.of(), false), unconditional ? null : testTerm,
                     value, unconditional ? null : d.condition(), b.characteristic ? null : d.consequence(), noted,
                     k.validity(), !control.isEmpty() || d.initialisation());
         if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, d.condition(), l -> guard.get()));
@@ -3857,10 +3865,12 @@ public final class TmsTranspiler {
      * form has a guard of its turn (control facts of a defaults stack, the guard of an initialisation, the 1:1 guard of
      * an object creation), the planned condition and value of the form's own rule, the very terms its test and its
      * consequence evaluate, the condition null for a form without one, and the nodes of the reading in their order, a
-     * node evaluated per member of a fold left out.
+     * node evaluated per member of a fold left out; and for a default whose turn the control facts of its stack guard,
+     * its speculative reading rule, the same left-hand side without those control facts ({@link Reading.Kind}), null
+     * for every other form.
      */
-    private record ReadingRule(RulePlan plan, String ownRule, String pointer, Validity validity, boolean guarded,
-                               Term condition, Term value, List<Site> sites) {
+    private record ReadingRule(RulePlan plan, RulePlan speculative, String ownRule, String pointer, Validity validity,
+                               boolean guarded, Term condition, Term value, List<Site> sites) {
 
         /** The subject pattern of the reading rule. */
         Subject subject() {
@@ -3899,10 +3909,23 @@ public final class TmsTranspiler {
     private void readingRule(String ruleName, String pointer, Reads reads, List<LhsItem> items, Term condition,
                              Term value, Condition irCondition, Expr irValue, Noted noted, Validity validity,
                              boolean guarded) {
+        readingRule(ruleName, pointer, reads, items, null, condition, value, irCondition, irValue, noted, validity,
+                guarded);
+    }
+
+    /** As {@link #readingRule(String, String, Reads, List, Term, Term, Condition, Expr, Noted, Validity, boolean)},
+     *  with beside it, where {@code speculativeItems} is not null, the speculative reading rule of a default
+     *  ({@link Reading.Kind#SPECULATIVE}): the left-hand side of the reading rule with {@code speculativeItems}, those
+     *  items without the control facts of the default's stack, after the subject pattern. */
+    private void readingRule(String ruleName, String pointer, Reads reads, List<LhsItem> items,
+                             List<LhsItem> speculativeItems, Term condition, Term value, Condition irCondition,
+                             Expr irValue, Noted noted, Validity validity, boolean guarded) {
         if (pointer == null)
             throw new IllegalStateException("de vorm van de regel " + ruleName + " staat niet in het document dat de lader"
                     + " las: een lezing noemt haar vorm naar haar plaats");
-        RulePlan plan = as(RuleOrigin.Role.READING, reads.readingRulePlan(ruleName + ": lezing", pointer, items));
+        RulePlan plan = as(RuleOrigin.Role.READING, reads.readingRulePlan(ruleName + ": lezing", pointer, items, false));
+        RulePlan speculative = speculativeItems == null ? null : as(RuleOrigin.Role.READING,
+                reads.readingRulePlan(ruleName + ": lezing buiten de beurt", pointer, speculativeItems, true));
         if ((condition == null) != (irCondition == null))
             throw new IllegalStateException("de leesregel van " + pointer + " heeft een voorwaarde zonder haar knopen, of"
                     + " knopen zonder haar voorwaarde");
@@ -3931,7 +3954,8 @@ public final class TmsTranspiler {
             sites.add(new Site(i, at.kind(), t, noted.units().get(n), fold == null ? null : fold.get(reads.subject),
                     n instanceof Condition.QuantifierFold q ? q : null, derived, object == null ? -1 : object));
         }
-        readingRules.add(new ReadingRule(plan, ruleName, pointer, validity, guarded, condition, value, sites));
+        readingRules.add(new ReadingRule(plan, speculative, ruleName, pointer, validity, guarded, condition, value,
+                sites));
     }
 
     /** The variables the top level of {@code lhs} declares, which a consequence can name: the variable of each pattern
@@ -3965,12 +3989,19 @@ public final class TmsTranspiler {
      * record. Where the form's reading rule stood at the fixpoint, its {@link Reading} carries the values the form's own
      * rule bound there, and the record is the evaluation of the rule's condition over them, and of its value where the
      * condition holds, by the recording rendering ({@link RecordingRendering}), which deposits nothing; a form without a
-     * condition holds there, and its record is the evaluation of its value; else the form was not at its turn there,
-     * {@link ConditionReading.Status#DISPLACED}, or its validity does not admit the session's evaluation date,
-     * {@link ConditionReading.Status#OUTSIDE_VALIDITY}, or the session has no date and the form a dated validity,
-     * {@link ConditionReading.Status#FAULTS}, each without nodes. A form without a guard of its turn inside its
-     * validity has a reading on every object it runs on, and an object without one is a broken contract, refused
-     * loudly; so is a reading on an object no form runs on.
+     * condition holds there, and its record is the evaluation of its value. Where it did not stand, the form was not at
+     * its turn there. A default whose turn the control facts of its stack guard has a speculative reading rule without
+     * them ({@link Reading.Kind#SPECULATIVE}): where its {@link Reading} stands, the default was displaced by a higher
+     * default of its chain, by the exception groups of the default it is the content of, or with the default whose
+     * exception group it is, and the record is {@link ConditionReading.Status#DISPLACED} with the evaluation of its
+     * condition, and of its value where the condition holds, over the values that rule bound, a fault of the condition
+     * at its nodes. Elsewhere the record has no nodes: {@link ConditionReading.Status#DISPLACED} where a guard of the
+     * form's turn kept it, the input on the target of an initialisation, an initialisation default's among them, or the
+     * 1:1 guard of an object creation; {@link ConditionReading.Status#OUTSIDE_VALIDITY} where its validity does not
+     * admit the session's evaluation date; {@link ConditionReading.Status#FAULTS} where the session has no date and the
+     * form a dated validity. A form without a guard of its turn inside its validity has a reading on every object it
+     * runs on, and an object without one is a broken contract, refused loudly; so is a reading on an object no form
+     * runs on.
      *
      * <p>A node that reads a member over a path names the object the path reached, off the slot the form's own rule
      * bound it in beside the member (a {@link PathState}'s {@code reached}, or the reference fields of the subject's
@@ -3989,38 +4020,47 @@ public final class TmsTranspiler {
             throw new IllegalStateException("deze build heeft geen leesregels: bouw met lezingen"
                     + " (DroolsBackend.build met readings) om de lezingen van de voorwaarden te lezen");
         requireFixpoint(session);
-        Map<String, Map<Object, Reading>> facts = new HashMap<>();
+        Map<Reading.Kind, Map<String, Map<Object, Reading>>> facts = new java.util.EnumMap<>(Reading.Kind.class);
+        for (Reading.Kind kind : Reading.Kind.values()) facts.put(kind, new HashMap<>());
         for (Object f : session.getObjects(new ClassObjectFilter(Reading.class))) {
             Reading r = (Reading) f;
-            Reading other = facts.computeIfAbsent(r.form(), k -> new IdentityHashMap<>()).put(r.subject(), r);
+            Reading other = facts.get(r.kind()).computeIfAbsent(r.form(), k -> new IdentityHashMap<>()).put(r.subject(), r);
             if (other != null)
                 throw new IllegalStateException("twee lezingen van " + r.form() + " op " + FactNames.object(r.subject())
-                        + ": " + other.values() + " en " + r.values());
+                        + " (" + r.kind() + "): " + other.values() + " en " + r.values());
         }
         LocalDate date = null;
         for (Object f : session.getObjects(new ClassObjectFilter(EvaluationDate.class))) date = ((EvaluationDate) f).date();
         Map<String, Map<Object, List<Contribution>>> contributions = null;
         List<ConditionReading> out = new ArrayList<>();
         for (ReadingRule r : readingRules) {
-            Map<Object, Reading> ofForm = facts.getOrDefault(r.pointer(), Map.of());
+            Map<Object, Reading> ofForm = facts.get(Reading.Kind.TURN).getOrDefault(r.pointer(), Map.of());
+            // a default stands in a stack per concrete type that composes it, each with a reading rule of its own, and a
+            // speculative one only where control facts guard its turn there
+            Map<Object, Reading> displaced = r.speculative() == null ? Map.of()
+                    : facts.get(Reading.Kind.SPECULATIVE).getOrDefault(r.pointer(), Map.of());
             for (Object o : session.getObjects(new ClassObjectFilter(r.subject().beanClass()))) {
                 if (!r.inRange(o)) continue;
                 Reading reading = ofForm.isEmpty() ? null : ofForm.remove(o);
-                if (reading == null) {
+                Reading speculative = displaced.isEmpty() ? null : displaced.remove(o);
+                // the reading of the turn where the form is at its turn; else, of a default that a higher one displaced,
+                // the speculative reading, DISPLACED with the nodes it found (RUNTIME-SEMANTICS ch. 5.12)
+                Reading read = reading != null ? reading : speculative;
+                if (read == null) {
                     out.add(new ConditionReading(o, r.pointer(), withoutReading(r, o, date), List.of()));
                     continue;
                 }
                 if (contributions == null && r.sites().stream().anyMatch(x -> x.fold() != null))
                     contributions = contributions(session);
-                out.add(reading(r, o, reading, contributions));
+                out.add(reading(r, o, read, reading == null, contributions));
             }
         }
-        facts.forEach((form, rest) -> {
+        facts.forEach((kind, ofKind) -> ofKind.forEach((form, rest) -> {
             if (!rest.isEmpty())
-                throw new IllegalStateException("lezingen van " + form + " op "
+                throw new IllegalStateException("lezingen (" + kind + ") van " + form + " op "
                         + rest.keySet().stream().map(FactNames::object).toList() + ", en daar loopt geen vorm van deze"
                         + " build");
-        });
+        }));
         return out;
     }
 
@@ -4049,8 +4089,10 @@ public final class TmsTranspiler {
         return out;
     }
 
-    /** The reading of {@code r} on {@code o} over the values of {@code reading}. */
-    private ConditionReading reading(ReadingRule r, Object o, Reading reading,
+    /** The reading of {@code r} on {@code o} over the values of {@code reading}; where {@code displaced}, a reading of
+     *  the speculative reading rule, of a default that was not at its turn: evaluated as at its turn, its status
+     *  {@link ConditionReading.Status#DISPLACED}, a fault of its condition at its nodes. */
+    private ConditionReading reading(ReadingRule r, Object o, Reading reading, boolean displaced,
                                      Map<String, Map<Object, List<Contribution>>> contributions) {
         Object[] w = reading.values().toArray();
         List<dev.uchar.regelspraak.transpiler.tms.plan.Read> slots = r.plan().readings().slots();
@@ -4094,7 +4136,7 @@ public final class TmsTranspiler {
                     oc == null ? null : oc.fault(), !found ? null : s.navigates() ? w[s.objectSlot()] : own(s, o),
                     contributors));
         }
-        return new ConditionReading(o, r.pointer(), status, nodes);
+        return new ConditionReading(o, r.pointer(), displaced ? ConditionReading.Status.DISPLACED : status, nodes);
     }
 
     /** The object a reached node {@code s} without a path reads a member of, on the object {@code o} of its reading:
@@ -6674,8 +6716,9 @@ public final class TmsTranspiler {
         /** The reading rule {@code name} of the form {@code pointer}: the planned items before the subject pattern, the
          *  subject pattern as it stands now, the planned items right after it and {@code items}, as {@link #rulePlan}
          *  assembles them, in the main group and of no form, and a consequence that inserts the {@link Reading} of the
-         *  subject with every slot this left-hand side binds. */
-        RulePlan readingRulePlan(String name, String pointer, List<LhsItem> items) {
+         *  subject with every slot this left-hand side binds, of kind {@link Reading.Kind#SPECULATIVE} where
+         *  {@code speculative}. */
+        RulePlan readingRulePlan(String name, String pointer, List<LhsItem> items, boolean speculative) {
             List<LhsItem> lhs = new ArrayList<>(head());
             lhs.add(new Subject(beanClass(subject), SUBJECT, subjectAlpha, subjectJoins, subjectBetaTests,
                     subjectBindings));
@@ -6686,7 +6729,8 @@ public final class TmsTranspiler {
             for (dev.uchar.regelspraak.transpiler.tms.plan.Read l : slots)
                 if (l.name() != null && declared.contains(l.name())) bound.add(l.slot());
             return new RulePlan(name, null, null, new ReadTable(slots), withoutUnfilledDepositFlag(lhs),
-                    new Consequence.Reading(SUBJECT, pointer, bound, slots.size(), Consequence.Insertion.LOGICAL));
+                    new Consequence.Reading(SUBJECT, pointer, bound, slots.size(), Consequence.Insertion.LOGICAL,
+                            speculative));
         }
 
         /** The name of the variable that binds slot {@code slot}, which an item of the plan names to read it. */

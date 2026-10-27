@@ -41,8 +41,10 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.objectType;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.pathCheck;
 import static dev.uchar.regelspraak.cases.TmsDocuments.sourceRole;
+import static dev.uchar.regelspraak.cases.TmsDocuments.subtype;
 import static dev.uchar.regelspraak.cases.TmsDocuments.unit;
 import static dev.uchar.regelspraak.cases.TmsDocuments.unitSystem;
+import static dev.uchar.regelspraak.cases.TmsDocuments.withExceptions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -60,9 +62,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *   <li>Folds over a role, a Ploeg with its Wachten: a count with a filter, whose filter node is evaluated per member
  *       and has no reading; a quantifier fold over a role with two members, each a contributor with its verdict, in no
  *       order, since its matrix can neither fault nor deposit; and a characteristic check over a role.</li>
- *   <li>Defaults: a chain with its decider in the middle, the default above it failing and the one below it displaced;
- *       and an attribute default whose condition holds and whose consequence is leeg, which gave no value, so that the
- *       default below it decides.</li>
+ *   <li>Defaults: a chain with its decider in the middle, the default above it failing and the one below it displaced,
+ *       and read all the same; and an attribute default whose condition holds and whose consequence is leeg, which gave
+ *       no value, so that the default below it decides. The defaults a higher default displaced, in a chain, in an
+ *       exception group, as the content of a default whose exception group decided, as a rule a subtype's stack takes
+ *       in, and as the initialisation default.</li>
  *   <li>A form outside its validity, and an initialisation, at its turn where the target is empty and displaced where
  *       the input fills it.</li>
  * </ul>
@@ -204,21 +208,140 @@ class ReadingsWitnessTest {
                 instance("J1", "Jutter", Map.of(), List.of("erkend", "havenmeester"), Map.of()),
                 instance("J2", "Jutter", Map.of(), List.of("ijverig", "erkend"), Map.of())), List.of());
         bothBranches(ir, c, List.of(
-                // the decider in the middle: the default above it fails, the one below it is displaced (ch. 7.1)
+                // the decider in the middle: the default above it fails, the one below it is displaced (ch. 7.1), and
+                // read all the same (ch. 5.12)
                 "J1 " + P + "0/defaults/0 FAILS | 0 CharacteristicCheck false",
                 "J1 " + P + "0/defaults/1 HOLDS | 0 CharacteristicCheck true",
-                "J1 " + P + "0/defaults/2 DISPLACED",
+                "J1 " + P + "0/defaults/2 DISPLACED | 0 CharacteristicCheck true",
                 // the consequence of a default whose condition fails is not reached
                 "J1 " + P + "1/defaults/0 FAILS | 0 CharacteristicCheck false | 1 AttributeReference -",
                 "J1 " + P + "1/defaults/1 HOLDS | 0 CharacteristicCheck true | 1 Literal 10",
-                "J1 " + P + "1/defaults/2 DISPLACED",
+                "J1 " + P + "1/defaults/2 DISPLACED | 0 CharacteristicCheck true | 1 Literal 20",
                 "J2 " + P + "0/defaults/0 HOLDS | 0 CharacteristicCheck true",
-                "J2 " + P + "0/defaults/1 DISPLACED",
-                "J2 " + P + "0/defaults/2 DISPLACED",
+                "J2 " + P + "0/defaults/1 DISPLACED | 0 CharacteristicCheck true",
+                "J2 " + P + "0/defaults/2 DISPLACED | 0 CharacteristicCheck false",
                 // the condition holds and the consequence is leeg: the default gave no value, and the one below decides
                 "J2 " + P + "1/defaults/0 HOLDS | 0 CharacteristicCheck true | 1 AttributeReference leeg",
                 "J2 " + P + "1/defaults/1 HOLDS | 0 CharacteristicCheck true | 1 Literal 10",
-                "J2 " + P + "1/defaults/2 DISPLACED"));
+                "J2 " + P + "1/defaults/2 DISPLACED | 0 CharacteristicCheck false | 1 Literal -"));
+    }
+
+    // ---------------- displaced defaults ----------------
+
+    private static final String DISPLACED_MODEL = TmsDocuments.model(List.of(
+            objectType("Jutter", List.of(attribute("bonus", WHOLE), attribute("vergoeding", WHOLE),
+                            attribute("heffing", WHOLE), attribute("toeslag", WHOLE)),
+                    List.of("ijverig", "erkend", "havenmeester", "vrijgesteld", "grondX", "grondY", "grondZ")),
+            objectType("Strandrecht", List.of(attribute("uitkering", WHOLE)), List.of("betwist", "geborgen")),
+            subtype("Wrakrecht", "Strandrecht", List.of(), List.of())), List.of());
+
+    private static final List<String> DISPLACED_RULES = List.of(
+            // a subtype's own rule on a target whose chain declares a defaults group: the base of the Wrakrecht stack,
+            // below the exception it inherits (ch. 7.10)
+            computingRule("uitkering van een wrakrecht", "BEREKENING", "Wrakrecht", "uitkering", number("20"),
+                    check("geborgen", false)));
+
+    private static final List<String> DISPLACED_GROUPS = List.of(
+            characteristicGroup("vrijstelling van een jutter", "Jutter", "vrijgesteld", List.of(
+                    decision(check("ijverig", false), true),
+                    decision(check("havenmeester", false), false))),
+            attributeGroup("vergoeding van een jutter", "Jutter", "vergoeding", List.of(
+                    defaultEntry(check("ijverig", false), number("30")),
+                    defaultEntry(check("erkend", false), ownRead("bonus", "Jutter")),
+                    defaultEntry(check("havenmeester", false), number("20")))),
+            attributeGroup("heffing van een jutter", "Jutter", "heffing", List.of(
+                    defaultEntry(check("grondX", false), number("40")),
+                    withExceptions(check("grondY", false), number("15"),
+                            List.of(List.of(defaultEntry(check("grondZ", false), number("5"))))))),
+            attributeGroup("toeslag van een jutter", "Jutter", "toeslag", List.of(
+                    defaultEntry(check("erkend", false), number("10")),
+                    TmsDocuments.initialisationEntry(number("3")))),
+            attributeGroup("uitkering van een strandrecht", "Strandrecht", "uitkering", List.of(
+                    defaultEntry(check("betwist", false), number("99")),
+                    defaultEntry(compound("all", 0, List.of()), number("50")))));
+
+    /** A default that a higher default displaced is read all the same (RUNTIME-SEMANTICS ch. 5.12; card
+     *  readings-of-displaced-defaults): its status stays {@code DISPLACED}, and its nodes are those of its condition,
+     *  and of its value where the condition holds, evaluated on the fixpoint world as at its turn. Below the decider of
+     *  a chain of attribute defaults, on J1 a default that held and gave a value (the bonus 7) and on J2 one that held
+     *  and gave none, and one that did not hold; a characteristic default below the decider, on J1 one that held and on
+     *  J2 one that did not; on J1, below a default that decided, a form-a default and the default in its exception
+     *  group; on J2, where that exception group decided, the content of the form-a default; on the Wrakrecht W1, the
+     *  subtype's own rule, which the fold of ch. 7.10 takes into the stack below the inherited exception that decided;
+     *  and the initialisation default below a default that decided, read on J1, whose target the input leaves empty,
+     *  and without nodes on J2, whose target the input fills (ch. 7.3).
+     *
+     *  <p><b>Red</b> on the code before the card: every one of these displaced defaults had the status
+     *  {@code DISPLACED} and no nodes. */
+    @Test void displaced_defaults_are_read() throws Exception {
+        Path ir = TmsDocuments.document(DISPLACED_MODEL, DISPLACED_RULES, List.of(), DISPLACED_GROUPS);
+        JsonNode c = TmsDocuments.caseDocument(List.of(
+                instance("J1", "Jutter", Map.of("bonus", "7"),
+                        List.of("ijverig", "erkend", "havenmeester", "grondX", "grondY", "grondZ"), Map.of()),
+                instance("J2", "Jutter", Map.of("toeslag", "9"), List.of("ijverig", "erkend", "grondY", "grondZ"),
+                        Map.of()),
+                instance("W1", "Wrakrecht", Map.of(), List.of("betwist", "geborgen"), Map.of())), List.of());
+        String heffing = P + "2/defaults/1";
+        bothBranches(ir, c, List.of(
+                "J1 " + P + "0/defaults/0 HOLDS | 0 CharacteristicCheck true",
+                // a characteristic default below the decider whose justification holds
+                "J1 " + P + "0/defaults/1 DISPLACED | 0 CharacteristicCheck true",
+                "J1 " + P + "1/defaults/0 HOLDS | 0 CharacteristicCheck true | 1 Literal 30",
+                // held, and gave a value
+                "J1 " + P + "1/defaults/1 DISPLACED | 0 CharacteristicCheck true | 1 AttributeReference 7",
+                "J1 " + P + "1/defaults/2 DISPLACED | 0 CharacteristicCheck true | 1 Literal 20",
+                "J1 " + P + "2/defaults/0 HOLDS | 0 CharacteristicCheck true | 1 Literal 40",
+                // a form-a default below the decider, and the default in its exception group
+                "J1 " + heffing + " DISPLACED | 0 CharacteristicCheck true | 1 Literal 15",
+                "J1 " + heffing + "/exceptions/members/0/defaults/0 DISPLACED | 0 CharacteristicCheck true | 1 Literal 5",
+                "J1 " + P + "3/defaults/0 HOLDS | 0 CharacteristicCheck true | 1 Literal 10",
+                // the initialisation default below the decider, its target empty in the input
+                "J1 " + P + "3/defaults/1 DISPLACED | 0 Literal 3",
+                "J2 " + P + "0/defaults/0 HOLDS | 0 CharacteristicCheck true",
+                "J2 " + P + "0/defaults/1 DISPLACED | 0 CharacteristicCheck false",
+                "J2 " + P + "1/defaults/0 HOLDS | 0 CharacteristicCheck true | 1 Literal 30",
+                // held, and gave no value
+                "J2 " + P + "1/defaults/1 DISPLACED | 0 CharacteristicCheck true | 1 AttributeReference leeg",
+                // did not hold
+                "J2 " + P + "1/defaults/2 DISPLACED | 0 CharacteristicCheck false | 1 Literal -",
+                "J2 " + P + "2/defaults/0 FAILS | 0 CharacteristicCheck false | 1 Literal -",
+                // the exception group decided: the content of the form-a default, its fall-back, was not at its turn
+                "J2 " + heffing + " DISPLACED | 0 CharacteristicCheck true | 1 Literal 15",
+                "J2 " + heffing + "/exceptions/members/0/defaults/0 HOLDS | 0 CharacteristicCheck true | 1 Literal 5",
+                "J2 " + P + "3/defaults/0 HOLDS | 0 CharacteristicCheck true | 1 Literal 10",
+                // the input fills the target: the initialisation default has nothing to read (ch. 7.3)
+                "J2 " + P + "3/defaults/1 DISPLACED",
+                "W1 " + P + "4/defaults/0 HOLDS | 0 CharacteristicCheck true | 1 Literal 99",
+                // the subtype's own rule, the base of its stack below the inherited exception
+                "W1 " + R + "0/versions/0 DISPLACED | 0 CharacteristicCheck true | 1 Literal 20"));
+        // the canonical text writes the nodes of a displaced default under its status line, as of every reading
+        Path chain = TmsDocuments.document(DISPLACED_MODEL, List.of(), List.of(), List.of(DISPLACED_GROUPS.get(1)));
+        Path cases = java.nio.file.Files.createTempFile("verdrongen", ".json");
+        cases.toFile().deleteOnExit();
+        java.nio.file.Files.writeString(cases, TmsDocuments.caseDocument(List.of(
+                instance("J1", "Jutter", Map.of("bonus", "7"), List.of("ijverig", "erkend", "havenmeester"), Map.of()),
+                instance("J2", "Jutter", Map.of(), List.of("ijverig", "erkend"), Map.of())), List.of()).toString());
+        String r = "reading " + P + "0/defaults/";
+        flag(chain, cases, List.of("case " + cases.getFileName(),
+                r + "0 \"J1\" 0 CharacteristicCheck true",
+                r + "0 \"J1\" 1 Literal 30",
+                r + "0 \"J1\" HOLDS",
+                r + "0 \"J2\" 0 CharacteristicCheck true",
+                r + "0 \"J2\" 1 Literal 30",
+                r + "0 \"J2\" HOLDS",
+                r + "1 \"J1\" 0 CharacteristicCheck true",
+                r + "1 \"J1\" 1 AttributeReference 7",
+                r + "1 \"J1\" DISPLACED",
+                r + "1 \"J2\" 0 CharacteristicCheck true",
+                r + "1 \"J2\" 1 AttributeReference empty",
+                r + "1 \"J2\" DISPLACED",
+                r + "2 \"J1\" 0 CharacteristicCheck true",
+                r + "2 \"J1\" 1 Literal 20",
+                r + "2 \"J1\" DISPLACED",
+                r + "2 \"J2\" 0 CharacteristicCheck false",
+                r + "2 \"J2\" 1 Literal unreached",
+                r + "2 \"J2\" DISPLACED",
+                "READINGS 1"));
     }
 
     // ---------------- validity and initialisation ----------------
@@ -294,8 +417,9 @@ class ReadingsWitnessTest {
                 instanceWithRoles("W3", "Wacht", Map.of(), List.of(), Map.of())), List.of());
         bothBranches(ir, c, List.of(
                 "P1 " + P + "0/defaults/0 HOLDS | 0 CharacteristicCheck true | 1 Literal 10",
-                // a higher default decided: the initialisation default is not at its turn (ch. 7.1)
-                "P1 " + P + "0/defaults/1 DISPLACED",
+                // a higher default decided: the initialisation default is not at its turn (ch. 7.1), and is read all
+                // the same (ch. 5.12)
+                "P1 " + P + "0/defaults/1 DISPLACED | 0 Literal 3",
                 // the sum over both Wachten: each contributes its vangst
                 "P1 " + R + "0/versions/0 HOLDS | 0 Aggregation 10 [W1 4 reached, W2 6 reached]",
                 "P2 " + P + "0/defaults/0 FAILS | 0 CharacteristicCheck false | 1 Literal -",
@@ -596,6 +720,42 @@ class ReadingsWitnessTest {
                 r + "6/versions/0 \"W3\" HOLDS",
                 r + "6/versions/0 \"W4\" 0 AttributeReference empty on none",
                 r + "6/versions/0 \"W4\" HOLDS",
+                "READINGS 1"));
+    }
+
+    /** The justification of a displaced default that faults: the fault stands at its nodes, by the EF code of its kind,
+     *  and the status stays {@code DISPLACED} (RUNTIME-SEMANTICS ch. 5.12): the session never evaluated the default,
+     *  and has no such fault. A characteristic default below one that decides on both Jutters, whose justification
+     *  ends in an {@code Unresolved} condition (EF-019): on J1, who is erkend, the composite reaches it and faults; on
+     *  J2 it stops at its first member. The same document is the reference interpreter's
+     *  {@code WV-5.12-fout-in-een-verdrongen-default}.
+     *
+     *  <p><b>Red</b> on the code before the card readings-of-displaced-defaults: the displaced default had no nodes. */
+    @Test void a_displaced_default_whose_justification_faults() throws Exception {
+        String unresolved = "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"zijn erkenning is onleesbaar\"}}";
+        Path ir = TmsDocuments.document(TmsDocuments.model(List.of("ijverig", "erkend", "vrijgesteld")), List.of(),
+                List.of(), List.of(characteristicGroup("vrijstelling van een jutter", "Jutter", "vrijgesteld", List.of(
+                        decision(check("ijverig", false), true),
+                        decision(compound("all", 0, List.of(check("erkend", false), unresolved)), false)))));
+        Path c = java.nio.file.Files.createTempFile("verdrongen-fout", ".json");
+        c.toFile().deleteOnExit();
+        java.nio.file.Files.writeString(c, TmsDocuments.caseDocument(List.of(
+                TmsDocuments.jutter("J1", List.of("ijverig", "erkend")), TmsDocuments.jutter("J2", List.of("ijverig"))),
+                List.of(TmsDocuments.consistent())).toString());
+        String r = "reading " + P + "0/defaults/";
+        flag(ir, c, List.of("case " + c.getFileName(),
+                r + "0 \"J1\" 0 CharacteristicCheck true",
+                r + "0 \"J1\" HOLDS",
+                r + "0 \"J2\" 0 CharacteristicCheck true",
+                r + "0 \"J2\" HOLDS",
+                r + "1 \"J1\" 0 Compound fault EF-019",
+                r + "1 \"J1\" 1 CharacteristicCheck true",
+                r + "1 \"J1\" 2 Unresolved fault EF-019",
+                r + "1 \"J1\" DISPLACED",
+                r + "1 \"J2\" 0 Compound false",
+                r + "1 \"J2\" 1 CharacteristicCheck false",
+                r + "1 \"J2\" 2 Unresolved unreached",
+                r + "1 \"J2\" DISPLACED",
                 "READINGS 1"));
     }
 

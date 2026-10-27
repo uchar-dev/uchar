@@ -121,7 +121,10 @@ class RuleOriginWitnessTest {
                 stack + ": default 0 -> DEFAULT own /rules/prioritizedDefaults/0/defaults/0",
                 stack + ": default 1 -> DEFAULT own /rules/rules/0/versions/0",
                 stack + ": default 0: lezing -> DEFAULT reading /rules/prioritizedDefaults/0/defaults/0",
-                stack + ": default 1: lezing -> DEFAULT reading /rules/rules/0/versions/0"), table(b, stack));
+                stack + ": default 1: lezing -> DEFAULT reading /rules/rules/0/versions/0",
+                // below the inherited default, the rule has a speculative reading rule as well (ch. 5.12)
+                stack + ": default 1: lezing buiten de beurt -> DEFAULT reading /rules/rules/0/versions/0"),
+                table(b, stack));
         assertEquals("uitkering van een wrakrecht", document("jutterswet-wrakbasis").at("/rules/rules/0/name").asText());
         TmsTranspiler t = b.execModelTranspiler();
         assertEquals(new RuleOrigin("uitkering van een wrakrecht", RuleOrigin.Kind.FORM, RuleOrigin.Role.OWN, null, null),

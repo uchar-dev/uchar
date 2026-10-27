@@ -241,7 +241,8 @@ final class PatternDslRendering {
                         insert(drools, x.insertion(), stackFact(x.fact(), subject, key.of(w))));
             }
             case Consequence.Reading x -> consequenceItem(x.subject(), x.slots(), x.size(), (drools, subject, w) ->
-                    insert(drools, x.insertion(), new Reading(subject, x.form(), w)));
+                    insert(drools, x.insertion(), new Reading(subject, x.form(), w,
+                            x.speculative() ? Reading.Kind.SPECULATIVE : Reading.Kind.TURN)));
             case Consequence.Payout x -> consequenceItem(x.subject(), slotsOf(x.pot(), x.list()), (drools, source, w) -> {
                 for (Object fact : ComputeHelpers.payout(x.form(), source, x.method(), w[x.pot()], w[x.list()],
                         x.weighted(), x.capped(), x.descending(), x.decimals(), x.share(), x.rest(), x.writer()))

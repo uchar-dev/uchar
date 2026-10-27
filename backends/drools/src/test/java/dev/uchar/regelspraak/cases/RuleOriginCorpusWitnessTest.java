@@ -54,8 +54,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <ul>
  *   <li>every rule of a form ({@code FORM}, {@code DEFAULT}, {@code STACK}) has a role, and it is the role the label in
  *       its name spells ({@link #roleByName}): the witness reads the name as an oracle of its own, where the lowering
- *       notes the role while it builds the rule and never reads a name; a reading rule has the form, kind and pointer
- *       of the rule it reads and the role {@code READING};</li>
+ *       notes the role while it builds the rule and never reads a name; a reading rule, and the speculative reading
+ *       rule of a default, has the form, kind and pointer of the rule it reads and the role {@code READING};</li>
  *   <li>every rule of a fold names its fold, and the pointer resolves in the golden's document to an
  *       {@code Aggregation} or a {@code QuantifierFold} below the default it lowers, or below the form it is of;</li>
  *   <li>two folds of one form and one subject never name one node ({@link #foldsOfOneSubject}): the lowering builds a
@@ -140,6 +140,8 @@ class RuleOriginCorpusWitnessTest {
     private static final Pattern FORM_PLACE = Pattern.compile("(/rules/[A-Za-z]+/[0-9]+)/");
     private static final Set<String> FOLD_NODES = Set.of("Aggregation", "QuantifierFold");
     private static final String READING = ": lezing";
+    /** The name of the speculative reading rule of a default, beside its reading rule (RUNTIME-SEMANTICS ch. 5.12). */
+    private static final String SPECULATIVE_READING = ": lezing buiten de beurt";
     /** The number of the fold in the name of a rule of a fold. */
     private static final Pattern FOLD_NUMBER = Pattern.compile(" (?:in|aan) vouw ([0-9]+)");
     /** The binding of the fold's subject in the DRL text of a rule of a fold. */
@@ -225,7 +227,9 @@ class RuleOriginCorpusWitnessTest {
             String form = t.formOf(rule);
             if (form == null && o.kind() != RuleOrigin.Kind.NO_FORM) {
                 // a reading rule: no form for the observer, and the origin of the rule it reads, in its own role
-                String own = rule.endsWith(READING) ? rule.substring(0, rule.length() - READING.length()) : null;
+                String own = rule.endsWith(READING) ? rule.substring(0, rule.length() - READING.length())
+                        : rule.endsWith(SPECULATIVE_READING)
+                        ? rule.substring(0, rule.length() - SPECULATIVE_READING.length()) : null;
                 RuleOrigin read = own == null ? null : t.originOf(own);
                 if (!build.readings() || read == null || !o.equals(new RuleOrigin(read.form(), read.kind(),
                         RuleOrigin.Role.READING, read.pointer(), null)))
@@ -275,7 +279,7 @@ class RuleOriginCorpusWitnessTest {
      *  the lowering does not consult. The label of a rule of a stack follows the stack's name; any other rule of a form
      *  whose name carries no label of a helper rule is the form's own. */
     static RuleOrigin.Role roleByName(String rule, RuleOrigin o) {
-        if (rule.endsWith(READING)) return RuleOrigin.Role.READING;
+        if (rule.endsWith(READING) || rule.endsWith(SPECULATIVE_READING)) return RuleOrigin.Role.READING;
         if (rule.endsWith(": fout in de voorwaarde")) return RuleOrigin.Role.CONDITION_FAULT;
         if (rule.endsWith(": deponering in de voorwaarde")) return RuleOrigin.Role.CONDITION_DEPOSIT;
         if (rule.endsWith(": geen rekendatum")) return RuleOrigin.Role.NO_EVALUATION_DATE;
