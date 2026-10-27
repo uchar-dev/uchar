@@ -104,3 +104,40 @@ De keuze komt in de spec (RUNTIME-SEMANTICS en de paragraaf van de binding) en i
 ## Niet
 
 De regelset zelf: het weghalen van brug K14 doet de werkbank na de pin-bump.
+
+## Voorlopige besluiten (Fable-advies, 2026-10-27)
+
+*Uit `research/subtype-characteristic-in-fold-filter-2026-10-27/fable-advies.md` (gelezen op `088659f0`), door de
+hoofdsessie als voorlopig besluit overgenomen. Het advies noemt per uitvoerder de plaatsen in de code, de golden
+met haar waarden en de bouwvolgorde. Acceptatie (b) (de uitleg van de toolchain) en (d) (hww-06 met `check` en
+`scenario-test`) doet de hoofdsessie bij de pin-bump van de toolchain.*
+
+- **D1 Weergave.** `CharacteristicCheck {characteristic, host: S}` met S een strikt subtype van het type van het
+  ene gebonden object van de positie: de versmallende host. Geen nieuw knooppunt, geen nieuw veld, geen
+  schemawijziging. De frontend emitteert hem alleen waar de keten van het onderwerp K niet draagt.
+- **D2 Lezing** (RUNTIME-SEMANTICS ch. 5.8b regel 4). Waar iff het object een instantie van S is (extensioneel,
+  ch. 2.2) en K heeft zoals S het declareert; `negated` is het complement. Declaratiesleutel en graafknoop: S.
+- **D3 Ontkenning.** Een lid buiten S: positief onwaar, ontkend waar — het gewone complement (ch. 5.8a regel 4,
+  WF-122 (c)); niet de hop-lezing van ch. 5.8 regel 3. Gepind door `hoogste rustloon` (40, niet 30).
+- **D4 WF-109.** De flank "nul voldoend, één overlappend" is op een positie met één gebonden object een lezing;
+  op de feitcreatie-guard blijft hij `only-some-objects`. Getuige herschreven naar de guard.
+- **D5 Positie.** Elke positie met één gebonden object (regel, consistentie, verdeling, creatie, default,
+  vouwfilter, kwantorfilter en -test, unieselectie). Niet: de genavigeerde check, de verankerde check, de guard.
+- **D6 Siblings.** Twee onvergelijkbare declaranten: frontend weigert met een benoemde diagnose die ze noemt;
+  geen vereniging geëmitteerd (de wire kan haar wel dragen; verwijding later). Eén declarant op welke diepte ook
+  onder het onderwerp: die host.
+- **D7 Attribuut.** Niet in deze kaart. Richting voor de volgende: versmallende eigen lezing (`subjectType` S ⊏
+  onderwerp) leest leeg buiten S, ch. 1.2-discipline, geen typetoets als conjunct.
+- **D8 Verifier.** WF-100 en WF-034 ongewijzigd: de host moet K declareren; zonder host moet het onderwerp K
+  declareren (nieuwe negatieve getuige).
+- **D9 Frontend-diagnose.** Geen declarant onder het onderwerp: RGS-092 `no-characteristic-no-role` als nu.
+- **D10 ref.** `owner_hosts` kent drie uitkomsten; het statische type is `env.subj`; de foutzin voor een vreemde
+  host blijft (suite r. 6126).
+- **D11 clingo.** `isa(X,S), has(X,K)`; ontkend via helper onder NAF.
+- **D12 Drools.** Klassetoets + lezing op beide takken; DROOLS-240 alleen nog voor een onvergelijkbare host; een
+  ontbrekende stand leest als "buiten S", nooit als een patroon dat het lid uit de regel laat vallen.
+- **D13 Lezing ch. 5.12.** Knoop `CharacteristicCheck <oordeel>`, geen `on`-deel; geen nieuwe regelvorm.
+- **D14 Uitleg.** Niets extra op de wire; de distributie leest `host` als holder (`Verbaliser` r. 1815), eigen
+  kaart bij de pin-bump.
+- **D15 Getuigen.** Golden `jutterswet-ploegblokkade` (bron + scenario, 3 cases, 6 regels); negatief herschreven +
+  nieuw; werkvoorbeeld C in ref- en clingo-suite; frontend-JUnit; `EXPECTED_PLAYED` 281.
