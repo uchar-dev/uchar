@@ -4646,6 +4646,34 @@ lives on, which is the object read. The rules:
    reading had to be made true of the bean model as well — both its branches
    compared owner and pattern by NAME until 2026-09-19, which refused a legal
    supertype owner in both while the other three answered.
+4. **The narrowing host** (card `subtype-characteristic-in-fold-filter`,
+   2026-10-27; `IR-SPEC.md` ch. 4.6 (q2)). At a position that binds ONE object
+   (rule 2) — a rule's subject, the subject of a consistency, an allocation, a
+   creation and a defaults group, the member of a fold's filter, the member of
+   a quantifier fold's filter and test — a check that neither navigates nor
+   carries a whole-period qualifier may name as its owner a type `S` strictly
+   below the type `T` the position binds. No binding satisfies such an owner,
+   and it is a reading all the same, the one exception to rule 2's "designates
+   nothing": the check holds iff the object is an instance of `S` (ch. 2.2,
+   extensionally: an instance of a subtype of `S` is one) and has the
+   characteristic `K` as `S` declares it, and `negated` holds exactly where the
+   positive form does not. An object outside `S` has no `K`, and that is a fact
+   about the object and not an absent link: the positive form is **onwaar**
+   there and the negated form **waar**, the plain complement of the role check
+   (ch. 5.8a rule 4) and not the navigated check's asymmetry (ch. 5.8 rule 3).
+   Rule 1 holds unchanged, with `S` as the key: WF-100 requires `S` to declare
+   `K`, its time-dependence decides between this chapter's scalar read and
+   ch. 3.3's refusal of a timeline in a scalar condition, and the dependency
+   edge is `char:S:K`. Where no type the position binds lies above `S` — at the
+   guard of a fact creation, which binds two objects, on a navigated check,
+   whose `K` lives on the reached object, and under a whole-period qualifier,
+   which the bean model folds before it reads the owner — the owner is no
+   reading and WF-109 refuses it; an executor that meets one anyway faults, as
+   rule 2 requires. The population a fold ranges over is not narrowed by the
+   check: an object outside `S` is a member of the fold and fails or passes the
+   filter like any other, which is the difference between this rule and an
+   `elementType` below the role's filler (ch. 3.4a), which leaves that object
+   out of the fold.
 
 Worked example A, the single-object position (`ref/test/test_ref.ml` ch. 5.8b
 verbatim; its ASP mirror in `backends/clingo/test/test_clingo.ml`). Two object
@@ -4697,6 +4725,38 @@ unchanged: "indien het sein niet gehesen is" filters the complement. A
 SUPERTYPE owner reads the same doel — the golden `jutterswet-bakensein` puts
 `gehesen` on a `Baken` the doel inherits from, with the anker and the step
 each declaring a `gehesen` of their own, and all four executors answer 1.
+
+Worked example C, the narrowing host (rule 4; the `jutterswet-ploegblokkade`
+golden, case 1, verbatim in gates 5, 6 and 12 and as WV-5.8b-C in
+`ref/test/test_ref.ml` and `backends/clingo/test/test_clingo.ml`). `Wrakrecht`
+⊏ `Jutrecht` ⊏ `Strandrecht`; only `Wrakrecht` declares `vaartijd`, which a
+rule derives where the zeeweken of its logboek reach the drempel (5). Ploeg P1
+holds, over the role `rechten` filled by `Strandrecht`, the Jutrecht J1 (loon 5,
+grens 10), the Wrakrechten W1 (loon 20, zeeweken 6) and W2 (loon 30, zeeweken
+2, grens 25), and the plain Strandrecht S1 (loon 40). "Het hoogste vaarloon"
+of a Jutrecht is the largest loon of the other rechten of its ploeg that have
+the vaartijd, "het hoogste rustloon" the same over those that do not; the
+filters carry the check with owner `Wrakrecht` on the member, a `Strandrecht`.
+
+| member | instance of `Wrakrecht` | `vaartijd` | "hij heeft de vaartijd" | "hij heeft geen vaartijd" |
+|---|---|---|---|---|
+| J1 | no | — | onwaar | waar |
+| W1 | yes | yes | waar | onwaar |
+| W2 | yes | no | onwaar | waar |
+| S1 | no | — | onwaar | waar |
+
+So hoogste vaarloon of J1 is **20** (W1 only: not 30, W2 lacks the vaartijd,
+and not 40, S1 is no Wrakrecht), and hoogste rustloon of J1 is **40** (W2 and
+S1) — a reading in which an object outside the owner holds in neither
+polarity, the navigated check's, gives **30**, and one that leaves it out of
+the fold gives 30 as well. Of W1 the vaarloon is **leeg** (no other member
+holds) and the rustloon **40**; of W2 the vaarloon is **20** and the rustloon
+**40**. As a rule's condition on the supertype, "Een Strandrecht is zeewaardig
+indien hij de vaartijd heeft" holds for W1 alone, and its negated twin
+"landvast" for J1, W2 and S1. In the test of a quantifier fold, "Een
+Jutrecht is ploegvarend indien ten minste één van de rechten van de ploeg van
+het Jutrecht de vaartijd heeft" holds for J1, W1 and W2, each of whose ranges
+holds W1; with only S1 beside it (case 2), J1 is not ploegvarend.
 
 ### 5.9 Uniqueness: the union and the scope
 
@@ -5426,7 +5486,9 @@ as a timeline (the operand of a whole-period test, the base of a temporal
 total or of a time-proportional part) and under a `DimensionCellRead` — and
 a `CharacteristicCheck` — of the subject's own characteristic, which a
 `host` names in a rule's condition as well (ch. 5.8b), or over a role
-(`navigation`), also under the whole-period qualifier. Of a member of its
+(`navigation`), also under the whole-period qualifier. A check with a
+narrowing host (ch. 5.8b rule 4) is a read of the subject's own
+characteristic, on an object outside the host as well, and names no object. Of a member of its
 own the object is the object of the reading; over a path, the object the
 hops reached. Where a link on the path is absent there is no object: the
 read is leeg (ch. 5.8 rule 1), the check holds in neither polarity
