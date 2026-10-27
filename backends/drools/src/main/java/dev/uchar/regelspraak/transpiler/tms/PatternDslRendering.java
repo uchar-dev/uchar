@@ -28,6 +28,9 @@ import org.drools.model.Rule;
 import org.drools.model.RuleItemBuilder;
 import org.drools.model.Variable;
 import org.drools.model.functions.Function1;
+import org.drools.model.functions.Function2;
+import org.drools.model.functions.Function3;
+import org.drools.model.functions.Function4;
 import org.drools.model.functions.Predicate1;
 import org.drools.model.functions.Predicate10;
 import org.drools.model.functions.Predicate11;
@@ -112,27 +115,28 @@ final class PatternDslRendering {
     static Rule rule(RulePlan plan, Function<String, Global<?>> globals) {
         PatternDslRendering w = new PatternDslRendering(plan.readings());
         List<RuleItemBuilder<?>> items = new ArrayList<>();
-        for (LhsItem item : plan.leftSide()) items.add(w.rendering(item));
+        for (LhsItem item : plan.leftSide()) items.addAll(w.rendering(item));
         items.add(w.consequence(plan.consequence(), globals));
         org.drools.model.impl.RuleBuilder b = PatternDSL.rule(TmsTranspiler.PKG, plan.name());
         if (plan.agendaGroup() != null) b = b.attribute(Rule.Attribute.AGENDA_GROUP, plan.agendaGroup());
         return b.build(items.toArray(new RuleItemBuilder[0]));
     }
 
-    /** The rendering of {@code item} of a whole plan. */
-    private RuleItemBuilder<?> rendering(LhsItem item) {
+    /** The rendering of {@code item} of a whole plan: one item, but a test over more values than one test of the DSL
+     *  takes, which comes with the bundles it reads ({@link #test}). */
+    private List<RuleItemBuilder<?>> rendering(LhsItem item) {
         return switch (item) {
-            case Subject o -> subject(o);
+            case Subject o -> List.of(subject(o));
             case FactPattern p -> {
                 // a consequence may name the object a pattern binds, as the fault of a session without a date does
                 Rendered w = pattern(p);
                 if (values.putIfAbsent(p.name(), w.variable()) != null)
                     throw new IllegalStateException("de variabele " + p.name() + " wordt twee keer gebonden");
-                yield w.def();
+                yield List.of(w.def());
             }
-            case Not n -> not(n);
-            case Exists b -> exists(b);
-            case Accumulation a -> accumulation(a);
+            case Not n -> List.of(not(n));
+            case Exists b -> List.of(exists(b));
+            case Accumulation a -> List.of(accumulation(a));
             case TestItem t -> test(t);
         };
     }
@@ -643,12 +647,29 @@ final class PatternDslRendering {
         }
     }
 
-    /** The test of the condition over the values at its slots, as a standalone test after the patterns that bind them,
-     *  asking of the condition what the plan's role says ({@link ClosureRendering#test(TestItem)});
-     *  a condition that reads nothing is a constant. The analysis refuses a condition over more than
-     *  {@link TmsTranspiler#MAX_READS} values, the most the DSL's standalone test takes. */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private RuleItemBuilder<?> test(TestItem test) {
+    /** The most bound values one standalone test of the DSL takes: its functions run up to {@code Predicate13}. */
+    private static final int TEST_VALUES = 13;
+
+    /** The most values one bundle holds: {@code DSL.from}, which makes a bundle, takes at most four variables. */
+    private static final int BUNDLE_VALUES = 4;
+
+    /** The values of a test that reads more than {@link #TEST_VALUES} of them, or the bundles of such values, in the
+     *  order the test reads them: the one object a pattern {@code from} binds per match. A record, not an array: a
+     *  {@code from} over an array binds each of its elements. */
+    private record Bundle(Object[] values) {}
+
+    /**
+     * The test of the condition over the values at its slots, as a standalone test after the patterns that bind them,
+     * asking of the condition what the plan's role says ({@link ClosureRendering#test(TestItem)}); a condition that
+     * reads nothing is a constant. Over at most {@link #TEST_VALUES} values the test takes each as an argument of its
+     * own. Over more, the values go to it in {@link Bundle}s of at most {@link #BUNDLE_VALUES} consecutive values, each
+     * a pattern {@code from} right before the test, and where those bundles are more than {@link #TEST_VALUES}, the
+     * bundles go to it in bundles of their own, level by level ({@link #bundled}); the test opens them in the same
+     * order ({@link #opened}). A bundle is a value of the match, as the values in it are, so that the test holds for a
+     * match exactly where it holds over those values.
+     */
+    @SuppressWarnings("rawtypes")
+    private List<RuleItemBuilder<?>> test(TestItem test) {
         int[] pos = test.slots().stream().mapToInt(Integer::intValue).toArray();
         int n = test.size();
         Predicate<Object[]> compiled = ClosureRendering.test(test);
@@ -657,9 +678,67 @@ final class PatternDslRendering {
             for (int j = 0; j < pos.length; j++) w[pos[j]] = args[j];
             return compiled.test(w);
         };
-        String id = test.id();
         Variable[] v = new Variable[pos.length];
         for (int j = 0; j < pos.length; j++) v[j] = variable(pos[j]);
+        if (v.length <= TEST_VALUES) return List.of(expr(test.id(), v, t));
+        List<RuleItemBuilder<?>> items = new ArrayList<>();
+        int levels = 0;
+        while (v.length > TEST_VALUES) v = bundled(test.id(), levels++, v, items);
+        int depth = levels;
+        items.add(expr(test.id(), v, args -> t.test(opened(args, depth, pos.length))));
+        return items;
+    }
+
+    /** The bundles of level {@code level} of the test {@code id} over {@code in}, the values or the bundles of the level
+     *  below, in order: per at most {@link #BUNDLE_VALUES} consecutive ones a pattern {@code from} that binds their
+     *  {@link Bundle}, added to {@code items}; the variables of those bundles, in order. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Variable[] bundled(String id, int level, Variable[] in, List<RuleItemBuilder<?>> items) {
+        Variable[] out = new Variable[(in.length + BUNDLE_VALUES - 1) / BUNDLE_VALUES];
+        for (int k = 0; k < out.length; k++) {
+            Variable[] part = Arrays.copyOfRange(in, k * BUNDLE_VALUES, Math.min(in.length, (k + 1) * BUNDLE_VALUES));
+            String name = "$bundle_" + id + "_" + level + "_" + k;
+            Variable<Object> b = (Variable) DSL.declarationOf(Bundle.class, name, from(part));
+            if (!bound.add(name) || values.putIfAbsent(name, b) != null)
+                throw new IllegalStateException("de variabele " + name + " wordt twee keer gebonden");
+            items.add(PatternDSL.pattern(b));
+            out[k] = b;
+        }
+        return out;
+    }
+
+    /** The source of the {@link Bundle} of the values {@code in}, one to {@link #BUNDLE_VALUES} variables. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static org.drools.model.From<?> from(Variable[] in) {
+        return switch (in.length) {
+            case 1 -> DSL.from(in[0], (Function1) a -> new Bundle(new Object[]{a}));
+            case 2 -> DSL.from(in[0], in[1], (Function2) (a, b) -> new Bundle(new Object[]{a, b}));
+            case 3 -> DSL.from(in[0], in[1], in[2], (Function3) (a, b, c) -> new Bundle(new Object[]{a, b, c}));
+            case 4 -> DSL.from(in[0], in[1], in[2], in[3],
+                    (Function4) (a, b, c, d) -> new Bundle(new Object[]{a, b, c, d}));
+            default -> throw new IllegalStateException("een bundel van " + in.length + " waarden; de DSL neemt er"
+                    + " hoogstens " + BUNDLE_VALUES);
+        };
+    }
+
+    /** The {@code count} values in the bundles {@code args} of {@code depth} levels, in order. */
+    private static Object[] opened(Object[] args, int depth, int count) {
+        Object[] level = args;
+        for (int d = 0; d < depth; d++) {
+            List<Object> below = new ArrayList<>();
+            for (Object b : level) below.addAll(Arrays.asList(((Bundle) b).values()));
+            level = below.toArray();
+        }
+        if (level.length != count)
+            throw new IllegalStateException("de bundels van een toets houden " + level.length + " waarden, de toets"
+                    + " leest er " + count);
+        return level;
+    }
+
+    /** The standalone test {@code id} over the at most {@link #TEST_VALUES} variables {@code v}, which hands their values
+     *  to {@code t} in order. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static RuleItemBuilder<?> expr(String id, Variable[] v, Predicate<Object[]> t) {
         return switch (v.length) {
             case 0 -> DSL.expr(id, t.test(new Object[0]));
             case 1 -> DSL.expr(id, v[0], (Predicate1) a -> t.test(new Object[]{a}));
@@ -688,8 +767,8 @@ final class PatternDslRendering {
             case 13 -> DSL.expr(id, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11], v[12],
                     (Predicate13) (a, b, d, e, f, g, h, i, j, k, l, m, p) ->
                             t.test(new Object[]{a, b, d, e, f, g, h, i, j, k, l, m, p}));
-            default -> throw new IllegalStateException("een toets over " + v.length + " waarden; de analyse weigert"
-                    + " er meer dan " + TmsTranspiler.MAX_READS);
+            default -> throw new IllegalStateException("een toets over " + v.length + " waarden; de DSL neemt er"
+                    + " hoogstens " + TEST_VALUES);
         };
     }
 

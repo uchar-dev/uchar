@@ -1441,7 +1441,12 @@ EXPECTED_CHANNEL=(
 # the switch relation, in the filter of a sum over a hub), hand-written IR with hand-computed cases. No source file of
 # this backend changed; they play on both with PLAYED 2 and 2. The golden anchor-depth-two of the same commit is pinned
 # in EXPECTED_CHANNEL (DROOLS-293).
-EXPECTED_PLAYED=279
+# 279 -> 280 (2026-10-27, card test-beyond-thirteen-reads): the golden jutterswet-strandvoogdkeuring, a condition that
+# reads eighteen values, four over a role, written in RegelSpraak with hand-computed cases. The exec-model branch passes
+# a test over more than thirteen values its values in bundles (PatternDslRendering.test), the DRL-text branch calls its
+# test function with all of them, and the analysis refuses no condition for its number of values any more (DROOLS-264,
+# retired). It plays on both with PLAYED 2.
+EXPECTED_PLAYED=280
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

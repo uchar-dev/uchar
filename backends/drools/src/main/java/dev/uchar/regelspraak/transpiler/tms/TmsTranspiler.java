@@ -222,10 +222,6 @@ public final class TmsTranspiler {
      *  needs no bound on the generations: under this budget a stratum makes finitely many objects and links. */
     public static final int CREATION_BUDGET = 100;
 
-    /** The most values one condition of this branch reads at once: the DSL's standalone test takes at most thirteen
-     *  bound variables. A consequence has no such ceiling ({@link Consequence}). */
-    static final int MAX_READS = 13;
-
     static final String INCONSISTENCY = FactModelGenerator.PACKAGE + ".Inconsistentie";
 
     private final RegelSpraakModel model;
@@ -1759,7 +1755,7 @@ public final class TmsTranspiler {
         Noted noted = endReading();
         boolean canFail = reads.canFail();
         reads.stop();
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read, r.condition());
+        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
         ElementKey key = member.key();
         derived.put(key, member);
         reads.recorder();
@@ -2106,7 +2102,7 @@ public final class TmsTranspiler {
         Noted noted = endReading();
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read, r.condition());
+        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
         List<LhsItem> blockadeItems = blockade == null ? List.of() : blockade.apply(reads);
         items.addAll(blockadeItems);
         String name = r.name();
@@ -2215,7 +2211,7 @@ public final class TmsTranspiler {
         Set<Integer> read = reads.follow();
         Term testTerm = conditionTerm(c, reads);
         reads.stop();
-        List<LhsItem> items = reads.plan(TestItem.Role.FAULT, testTerm, read, c);
+        List<LhsItem> items = reads.plan(TestItem.Role.FAULT, testTerm, read);
         if (blockade != null) items.addAll(blockade.apply(reads));
         Consequence fault = new Consequence.TestFault(SUBJECT, testTerm, TestItem.Role.FAULT, List.copyOf(read), reads.size(),
                 new Consequence.FaultName(form, model.emittedRuleName(form)), Consequence.Insertion.LOGICAL);
@@ -2249,7 +2245,7 @@ public final class TmsTranspiler {
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
         if (depositFlag < 0) throw new IllegalStateException("de voorwaarde van \"" + form + "\" deelt, maar kreeg geen sonde");
-        List<LhsItem> items = reads.plan(TestItem.Role.DEPOSIT, testTerm, read, c);
+        List<LhsItem> items = reads.plan(TestItem.Role.DEPOSIT, testTerm, read);
         if (blockade != null) items.addAll(blockade.apply(reads));
         reads.recorder();
         return as(RuleOrigin.Role.CONDITION_DEPOSIT, reads.rulePlan(ruleName + ": deponering in de voorwaarde", items,
@@ -2283,7 +2279,7 @@ public final class TmsTranspiler {
         boolean canFail = reads.canFail();
         reads.stop();
         Term violated = new Term.Call(StaticFunction.NIET, List.of(holds), source(c.assertion().source()));
-        List<LhsItem> items = reads.plan(conditionRole(canFail), violated, read, c.assertion());
+        List<LhsItem> items = reads.plan(conditionRole(canFail), violated, read);
         String name = c.name();
         reads.recorder();
         List<RulePlan> out = new ArrayList<>();
@@ -2419,7 +2415,7 @@ public final class TmsTranspiler {
         // a key the case gives as the asOfDate-bucket scalar is the fault of the key-form rule beside this one
         if (timeline >= 0) participation.add(bucketScalar(keySlots.get(timeline), false));
         if (scope >= 0) participation.add(filled(scope));
-        List<LhsItem> items = reads.plan(TestItem.Role.VORM, all(participation), read, null);
+        List<LhsItem> items = reads.plan(TestItem.Role.VORM, all(participation), read);
         List<Term> components = new ArrayList<>();
         for (int i = 0; i < keySlots.size(); i++) {
             Term component = new Term.SlotValue(keySlots.get(i), null);
@@ -2462,7 +2458,7 @@ public final class TmsTranspiler {
         List<Term> bucket = new ArrayList<>();
         for (int i : preceding) bucket.add(filled(i));
         bucket.add(bucketScalar(timeline, true));
-        List<LhsItem> items = reads.plan(TestItem.Role.VORM, all(bucket), read, null);
+        List<LhsItem> items = reads.plan(TestItem.Role.VORM, all(bucket), read);
         reads.recorder();
         return as(RuleOrigin.Role.UNIQUENESS_KEY_FORM_FAULT, reads.rulePlan(ruleName + ": sleutelvorm van "
                 + type.name + " " + (b + 1), items,
@@ -2682,7 +2678,7 @@ public final class TmsTranspiler {
         int g = weight == null ? -1 : member.own(weight);
         int k = key == null ? -1 : member.own(key);
         int m = maximum == null ? -1 : member.own(maximum);
-        List<LhsItem> memberRule = member.plan(TestItem.Role.CONDITION, null, Set.of(), null);
+        List<LhsItem> memberRule = member.plan(TestItem.Role.CONDITION, null, Set.of());
         member.recorder();
         out.add(as(RuleOrigin.Role.ALLOCATION_RECIPIENT, member.rulePlan(ruleName + ": ontvanger", memberRule,
                 new Consequence.Recipient(FOLD_SUBJECT, name, recipient, g, k, m, Consequence.Insertion.LOGICAL))));
@@ -2698,7 +2694,7 @@ public final class TmsTranspiler {
         reads.stop();
         int p = reads.own(pot);
         int list = reads.recipients(name);
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read, v.condition());
+        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
         ElementKey shareKey = share.key(), restKey = rest == null ? null : rest.key();
         reads.recorder();
         out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, new Consequence.Payout(SUBJECT, name, method,
@@ -2892,7 +2888,7 @@ public final class TmsTranspiler {
         use.add(phase);
         int origin = reads.origin();
         use.add(origin);
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read, oc.condition(),
+        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read,
                 creationGuard(name, reads, phase));
         // the fault this creation stated at a making for the subject blocks it there: the driver counts every firing of a
         // creation rule as a making, so a creation that fired again on its own fault would never let a stratum end
@@ -3054,7 +3050,7 @@ public final class TmsTranspiler {
         reads.stop();
         int stratum = stratum(fc, fc.name());
         int phase = reads.creationPhase(stratum);
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read, anchorGuard);
+        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
         List<RoleBindingRef> steps = new ArrayList<>();
         for (ResolvedFactCreation.PathStep t : fc.pathSteps()) steps.add(t.roleBinding());
         steps.add(fc.path());
@@ -3760,7 +3756,7 @@ public final class TmsTranspiler {
         if (b.characteristic) {
             noted = endReading();
             control = guard.get();
-            items = reads.plan(conditionRole(canFail), testTerm, read, d.condition(), control);
+            items = reads.plan(conditionRole(canFail), testTerm, read, control);
             decision = new Consequence.Decision(SUBJECT, constant(d.decision()), List.of(), reads.size(), false, null, facts,
                     Consequence.Insertion.LOGICAL);
         } else {
@@ -3770,7 +3766,7 @@ public final class TmsTranspiler {
             reads.stop();
             noted = endReading();
             control = guard.get();
-            items = reads.plan(conditionRole(canFail), testTerm, read, d.condition(), control);
+            items = reads.plan(conditionRole(canFail), testTerm, read, control);
             decision = new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), true,
                     new Consequence.FaultName(name, name), facts, Consequence.Insertion.LOGICAL);
         }
@@ -5588,7 +5584,7 @@ public final class TmsTranspiler {
         int value = memberValue == null ? -1 : memberValue.time() == null ? reads.own(memberValue) : reads.timeline(memberValue);
         String total = memberValue == null || memberValue.time() == null ? null : memberValue.time().name();
         reads.stop();
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read, filter);
+        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
         Consequence.Input input = kind == Expr.FunctionKind.AANTAL ? new Consequence.Input.Count()
                 : new Consequence.Input.MemberValue(value, total, kind == Expr.FunctionKind.AANTAL_GEVULDE);
         String formName = model.emittedRuleName(form);
@@ -5625,7 +5621,7 @@ public final class TmsTranspiler {
         if (reads.depositFlagSlot() < 0)
             throw new IllegalStateException("het filter van " + key + " deponeert, maar kreeg geen sonde");
         int member = reads.member();
-        List<LhsItem> items = reads.plan(TestItem.Role.DEPOSIT, testTerm, read, filter);
+        List<LhsItem> items = reads.plan(TestItem.Role.DEPOSIT, testTerm, read);
         recorder.accept(reads);
         Set<Integer> use = new TreeSet<>(read);
         use.add(member);
@@ -5660,7 +5656,7 @@ public final class TmsTranspiler {
             use.add(p.count());
             use.add(p.place());
         }
-        List<LhsItem> items = reads.plan(TestItem.Role.FAULT, testTerm, read, filter);
+        List<LhsItem> items = reads.plan(TestItem.Role.FAULT, testTerm, read);
         recorder.accept(reads);
         return as(RuleOrigin.Role.FOLD_FILTER_FAULT, reads.rulePlan(ruleName, items,
                 new Consequence.FilterFault(FOLD_SUBJECT, key, member, testTerm,
@@ -5696,7 +5692,7 @@ public final class TmsTranspiler {
         reads.stop();
         int member = reads.member();
         bucket.add(bucketScalar(value, true));
-        List<LhsItem> items = reads.plan(TestItem.Role.VORM, all(bucket), read, filter);
+        List<LhsItem> items = reads.plan(TestItem.Role.VORM, all(bucket), read);
         recorder.accept(reads);
         return as(RuleOrigin.Role.FOLD_MEMBER_FAULT, reads.rulePlan(ruleName, items,
                 new Consequence.MemberFault(FOLD_SUBJECT, key, member,
@@ -6356,7 +6352,7 @@ public final class TmsTranspiler {
                 use.add(p.place());
             }
         } else range.join().accept(reads);
-        List<LhsItem> items = reads.plan(conditionRole(filterCanFail), filter, read, kv.filter());
+        List<LhsItem> items = reads.plan(conditionRole(filterCanFail), filter, read);
         Consequence.Input input = ordered
                 ? new Consequence.Input.MemberTest(matrix, depositFlag, new Consequence.FoldPlace(0, places,
                         Consequence.PlaceReason.QUANTIFIER))
@@ -6651,19 +6647,19 @@ public final class TmsTranspiler {
         }
 
         /** The left-hand side of the rule after its subject pattern, once its condition and its value are compiled:
-         *  the parameter items, the standing items, and the test of {@code conditionTerm} over the values at
-         *  {@code read}, which asks {@code role} of it ({@link TestItem.Role}); {@link #rulePlan} takes them with
-         *  what the form adds after them. A test of deposits takes the probe of this rule ({@link #depositFlagSlot}). */
-        List<LhsItem> plan(TestItem.Role role, Term testTerm, Set<Integer> read, Condition conditionTerm) {
-            return plan(role, testTerm, read, conditionTerm, List.of());
+         *  the parameter items, the standing items, and the test {@code testTerm}, the condition compiled, over the
+         *  values at {@code read}, which asks {@code role} of it ({@link TestItem.Role}); {@link #rulePlan} takes them
+         *  with what the form adds after them. A test of deposits takes the probe of this rule
+         *  ({@link #depositFlagSlot}). */
+        List<LhsItem> plan(TestItem.Role role, Term testTerm, Set<Integer> read) {
+            return plan(role, testTerm, read, List.of());
         }
 
-        /** As {@link #plan(TestItem.Role, Term, Set, Conditie)}, with {@code control} between the standing items and the
+        /** As {@link #plan(TestItem.Role, Term, Set)}, with {@code control} between the standing items and the
          *  test: the guard of a creation, whose ids the analysis draws before the test's, or the control-fact patterns
          *  of a default, so that a default a higher one displaced is not tested at all. */
-        List<LhsItem> plan(TestItem.Role role, Term testTerm, Set<Integer> read, Condition conditionTerm,
-                           List<LhsItem> control) {
-            TestItem test = testItem(role, testTerm, read, conditionTerm);
+        List<LhsItem> plan(TestItem.Role role, Term testTerm, Set<Integer> read, List<LhsItem> control) {
+            TestItem test = testItem(role, testTerm, read);
             List<LhsItem> out = new ArrayList<>(parameters);
             out.addAll(states);
             out.addAll(control);
@@ -6671,13 +6667,10 @@ public final class TmsTranspiler {
             return out;
         }
 
-        /** The test of {@code conditionTerm}, compiled into {@code test}, over the values at {@code read}, asking
-         *  {@code role} of it; null where the rule has no condition. */
-        private TestItem testItem(TestItem.Role role, Term testTerm, Set<Integer> read, Condition conditionTerm) {
+        /** The test {@code testTerm}, the condition compiled, over the values at {@code read}, asking {@code role} of
+         *  it; null where the rule has no condition. */
+        private TestItem testItem(TestItem.Role role, Term testTerm, Set<Integer> read) {
             if (testTerm == null) return null;
-            int[] pos = positions(read);
-            if (pos.length > MAX_READS)
-                throw new Refusal(DroolsCode.TEST_ITEM_MANY_READS.reason("count", pos.length, "snippet", snippet(conditionTerm), "limit", MAX_READS));
             return new TestItem(id("voorwaarde"), role, testTerm, role == TestItem.Role.DEPOSIT ? depositFlag : -1,
                     List.copyOf(read), slots.size());
         }
@@ -7249,8 +7242,8 @@ public final class TmsTranspiler {
 
         /** {@code slot}, the slot of a member read over a path under {@code key}, after the slot of the object it reaches
          *  where {@code reached}, the variable that binds that object, is not null ({@link #objectOf}). The object is the
-         *  reading's ({@link #reserveSlot}): the test of the rule takes as many bound values as in a build without
-         *  readings ({@link TmsTranspiler#MAX_READS}). */
+         *  reading's ({@link #reserveSlot}): the test of the rule takes the values it takes in a build without
+         *  readings. */
         private int withObject(int slot, String key, String reached) {
             if (reached != null) objects.put(slot, reserveSlot(ReadKind.PATH_OBJECT, "object " + key, reached));
             return slot;
@@ -7527,10 +7520,6 @@ public final class TmsTranspiler {
                 : t.isBoolean() ? Boolean.class : null;
         if (javaClass == null) throw new Refusal(DroolsCode.PARAMETER_DATATYPE_NOT_CARRIED.reason("parameter", p.name(), "typeName", typeName(t)));
         globals.put(name, javaClass);
-    }
-
-    private static int[] positions(Set<Integer> use) {
-        return use.stream().mapToInt(Integer::intValue).toArray();
     }
 
     // ---------------- standings ----------------

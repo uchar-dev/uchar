@@ -759,10 +759,10 @@ class ReadingsWitnessTest {
                 "READINGS 1"));
     }
 
-    /** A condition that reads as many bound values as the test of a rule takes (thirteen, {@code MAX_READS}), three of
-     *  them over a path, is carried by the build with readings as by the production build: the object a read over a
-     *  path reached is bound for the reading, and stays out of the values the test reads. W1 holds post P1, W2 none, so
-     *  that the composite stops on W2 at its first read over the path, which names no object.
+    /** A condition that reads thirteen bound values, the most one test of the DSL takes, three of them over a path, is
+     *  carried by the build with readings as by the production build: the object a read over a path reached is bound
+     *  for the reading, and stays out of the values the test reads. W1 holds post P1, W2 none, so that the composite
+     *  stops on W2 at its first read over the path, which names no object.
      *
      *  <p><b>Red</b> on the code of card reading-read-objects ({@code f0ff72ab}): the build with readings put the slot
      *  of each object among the values of the test, sixteen, and refused the rule (DROOLS-264, "een voorwaarde die 16
@@ -824,6 +824,92 @@ class ReadingsWitnessTest {
                         .append(n + 2).append(" Literal -");
         }
         bothBranches(ir, c, true, List.of(w1.toString(), w2.toString()));
+    }
+
+    /** A condition that reads thirteen, fourteen and sixty bound values, three of them over a path, plays in the
+     *  production build and is read in the build with readings, on both branches: the exec-model branch passes more
+     *  than thirteen values to the test in bundles, sixty in bundles of bundles. Each member is an equality of a
+     *  Wachter's own whole number, or of one of his post, with a value of its own, so that a value the test receives
+     *  in the place of another fails its member. W1 meets every member; W2 has no post, so that the composite stops at
+     *  its first read over the path, which names no object; W3 misses the last of his own members by one, so that the
+     *  composite stops there and no read over the path is reached.
+     *
+     *  <p><b>Red</b> on {@code 4e158666}: the production build refused the rule of fourteen values (DROOLS-264, "een
+     *  voorwaarde die 14 waarden leest"), and, run alone, the rule of sixty ("… 60 waarden …"). */
+    @Test void conditions_that_read_more_values_than_one_test_takes() throws Exception {
+        for (int values : List.of(13, 14, 60)) wideCondition(values - 3);
+    }
+
+    /** The witness of {@link #conditions_that_read_more_values_than_one_test_takes} with {@code own} members of the
+     *  Wachter's own and three over his post. */
+    private static void wideCondition(int own) throws Exception {
+        List<String> attributes = new ArrayList<>();
+        List<String> members = new ArrayList<>();
+        Map<String, String> w1 = new java.util.TreeMap<>(), w3 = new java.util.TreeMap<>();
+        for (int i = 1; i <= own; i++) {
+            String a = "waarde " + i;
+            attributes.add(attribute(a, WHOLE));
+            members.add(comparison("equal", ownRead(a, "Wachter"), number(String.valueOf(i))));
+            w1.put(a, String.valueOf(i));
+            w3.put(a, String.valueOf(i == own ? i + 1 : i));
+        }
+        List<String> postAttributes = new ArrayList<>();
+        Map<String, String> p1 = new java.util.TreeMap<>();
+        for (int j = 1; j <= 3; j++) {
+            String a = "postwaarde " + j;
+            postAttributes.add(attribute(a, WHOLE));
+            members.add(comparison("equal", TmsDocuments.pathRead(a, "Post", "postbezetting", "post"),
+                    number(String.valueOf(own + j))));
+            p1.put(a, String.valueOf(own + j));
+        }
+        String model = TmsDocuments.model(List.of(objectType("Wachter", attributes, List.of("inzetbaar")),
+                        objectType("Post", postAttributes, List.of())),
+                List.of(factTypeOneToMany("postbezetting", "post", "Post", "wachter", "Wachter", "wachters")));
+        Path ir = TmsDocuments.document(model, List.of(characteristicRule("inzet", "Wachter", "inzetbaar",
+                compound("all", 0, members))));
+        JsonNode c = TmsDocuments.caseOn(null, List.of(
+                instanceWithRoles("P1", "Post", p1, List.of(), Map.of()),
+                instanceWithRoles("W1", "Wachter", w1, List.of(), Map.of("post", List.of("P1"))),
+                instanceWithRoles("W2", "Wachter", w1, List.of(), Map.of()),
+                instanceWithRoles("W3", "Wachter", w3, List.of(), Map.of("post", List.of("P1")))), List.of());
+        String values = (own + 3) + " waarden";
+        for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
+            List<String> derived = CaseRunner.forMeasurement(ir, branch, false).withSession(c, (build, session, labels) -> {
+                assertEquals(null, DroolsBackend.fire(build, session).noFixpoint(), branch + ": een fixpunt");
+                Map<Object, String> label = new IdentityHashMap<>();
+                labels.forEach((l, o) -> label.put(o, l));
+                List<String> out = new ArrayList<>();
+                for (var k : DroolsBackend.fixpointOf(build, session, label::get).characteristics())
+                    out.add(label.get(k.object()) + " " + k.characteristic());
+                return out;
+            });
+            assertEquals(List.of("W1 inzetbaar"), derived, branch + ", " + values + ": de productiebuild");
+        }
+        StringBuilder r1 = new StringBuilder("W1 " + R + "0/versions/0 HOLDS | 0 Compound true");
+        StringBuilder r2 = new StringBuilder("W2 " + R + "0/versions/0 FAILS | 0 Compound false");
+        StringBuilder r3 = new StringBuilder("W3 " + R + "0/versions/0 FAILS | 0 Compound false");
+        for (int k = 1; k <= own + 3; k++) {
+            int n = 3 * k - 2;
+            boolean overPath = k > own;
+            String read = " | " + n + " Comparison true | " + (n + 1) + " AttributeReference " + k + " @";
+            String literal = " | " + (n + 2) + " Literal " + k;
+            String unreached = " | " + n + " Comparison - | " + (n + 1) + " AttributeReference - | " + (n + 2)
+                    + " Literal -";
+            r1.append(read).append(overPath ? "P1" : "W1").append(literal);
+            // no post: the first read over the path is leeg and names no object, and the composite stops there
+            if (!overPath) r2.append(read).append("W2").append(literal);
+            else if (k == own + 1)
+                r2.append(" | ").append(n).append(" Comparison false | ").append(n + 1)
+                        .append(" AttributeReference leeg").append(literal);
+            else r2.append(unreached);
+            // the last own member is one off: the composite stops there
+            if (k < own) r3.append(read).append("W3").append(literal);
+            else if (k == own)
+                r3.append(" | ").append(n).append(" Comparison false | ").append(n + 1).append(" AttributeReference ")
+                        .append(k + 1).append(" @W3").append(literal);
+            else r3.append(unreached);
+        }
+        bothBranches(ir, c, true, List.of(r1.toString(), r2.toString(), r3.toString()));
     }
 
     /** The output of {@code --readings} on {@code ir} and the case {@code c}, on both branches, the expected lines. */

@@ -285,7 +285,7 @@ public enum DroolsCode {
     COMPARISON_INCOMPATIBLE_TYPES("DROOLS-261", Kind.REFUSAL, "comparison-incompatible-types", "spelling,leftType,rightType,snippet", null),
     DAY_KIND_PREDICATE_OUTSIDE("DROOLS-262", Kind.REFUSAL, "day-kind-predicate-outside", "snippet", null),
     PREDICATE_OVER_NAVIGATED_PATH("DROOLS-263", Kind.REFUSAL, "predicate-over-navigated-path", "spelling,snippet", null),
-    TEST_ITEM_MANY_READS("DROOLS-264", Kind.REFUSAL, "test-item-many-reads", "count,snippet,limit", null),
+    TEST_ITEM_MANY_READS("DROOLS-264", Kind.RETIRED, "test-item-many-reads", "count,snippet,limit", null),
     UNIQUENESS_SCOPE_ROLE_UNDECLARED("DROOLS-265", Kind.CONTRACT, "uniqueness-scope-role-undeclared", "factType,role", null),
     UNIQUENESS_SCOPE_CREATED_RELATION("DROOLS-266", Kind.REFUSAL, "uniqueness-scope-created-relation", "factType", null),
     UNIQUENESS_SCOPE_NO_FIELD("DROOLS-267", Kind.LIMIT, "uniqueness-scope-no-field", "reason", null),
