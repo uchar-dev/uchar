@@ -5,9 +5,10 @@
    the order of ch. 5.10 and 5.11, recorded per node: whether the evaluation
    reached it, and the verdict, the value or the fault it found there. A form
    without a condition that computes a value has the reading of its value,
-   which holds where the form is at its turn. A form
-   outside its validity and a form not at its turn (a displaced default, an
-   initialisation whose target holds a value of the input or of another
+   which holds where the form is at its turn. A default that a higher default
+   displaced is read all the same, as at its turn, and keeps the status
+   Displaced. A form outside its validity and any other form not at its turn
+   (an initialisation whose target holds a value of the input or of another
    writer, a 1:1 creation whose subject the input links) have no nodes. A
    reading deposits nothing and writes nothing: the evaluation is the
    session's own ([Eval]), watched through [Eval.observer], with every
@@ -518,13 +519,17 @@ let default_pointers (doc : document) =
    ([Eval.run_defaults_group]). A default the walk reaches has the reading of
    its justification, and of its consequence where that holds; a default
    below the one that decided, and every default within it, is displaced,
-   and so is a default whose exception groups settled. An attribute default
+   and so is a default whose exception groups settled. A displaced default
+   has the same reading, with the status Displaced: the speculation of
+   ch. 7.1, on the fixpoint world, which WF-051 keeps from depending on the
+   stack's own target. An attribute default
    without a justification — the initialisation default, an ordinary rule
    without a condition folded into the stack — has the reading of its
    consequence, which holds where the default is at its turn; a
    characteristic default without one has nothing to read. An
    initialisation's turn, a default's or a folded rule's, is that of an
-   initialisation: a target the input fills displaces it. *)
+   initialisation: a target the input fills displaces it, without a reading,
+   also below a default that decided. *)
 let defaults json env ~world0 ~world =
   let doc = env.Eval.doc in
   let pointers = default_pointers doc in
@@ -584,11 +589,41 @@ let defaults json env ~world0 ~world =
                       (fun (eg : exception_group) -> List.concat_map every eg.eg_defaults)
                       egs.egs_members
               in
-              let displace ds =
-                List.iter
-                  (fun d -> List.iter (fun form -> emit (without ~form Displaced self)) (every d))
-                  ds
+              (* the initialisation default's turn: a target the input fills
+                 displaces it (ch. 7.3) *)
+              let input_filled (d : default) =
+                d.default_initialisation
+                &&
+                match (l.pd_attribute, SMap.find_opt self.label world0.World.instances) with
+                | Some a, Some (i0 : World.instance) -> World.attr i0 a <> Value.Empty
+                | _ -> false
               in
+              (* A default that was not at its turn is read all the same, on
+                 the level that declared it (ch. 7.10), as the speculation of
+                 ch. 7.1 would have read it: the status stays Displaced, and a
+                 fault stays at its nodes. An initialisation default whose
+                 target the input fills has nothing to read. *)
+              let read_displaced env (d : default) =
+                match reading_of l d with
+                | None -> ()
+                | Some (form, _, _, _) when input_filled d -> emit (without ~form Displaced self)
+                | Some (form, condition, value, numbered) ->
+                    emit { (read_on ~form ~numbered env world self ~condition ~value) with status = Displaced }
+              in
+              (* [d], read on the level of [env], and every default within
+                 its exception groups, read on that level as well *)
+              let rec displace_all env (d : default) =
+                read_displaced env d;
+                match d.default_exceptions with
+                | None -> ()
+                | Some egs ->
+                    List.iter
+                      (fun (eg : exception_group) -> List.iter (displace_all env) eg.eg_defaults)
+                      egs.egs_members
+              in
+              (* the defaults [ds] below the one that decided, the first of
+                 them at index [from] of its chain *)
+              let displace ~env_at ~from ds = List.iteri (fun k d -> displace_all (env_at (from + k)) d) ds in
               match admitted env l.pd_validity with
               | (Some false | None) as a ->
                   let status = if a = None then Faults else Outside_validity in
@@ -600,13 +635,7 @@ let defaults json env ~world0 ~world =
                   (* whether the default's own justification and consequence decide,
                      its reading emitted *)
                   let own env (d : default) =
-                    let input_filled =
-                      d.default_initialisation
-                      &&
-                      match (l.pd_attribute, SMap.find_opt self.label world0.World.instances) with
-                      | Some a, Some (i0 : World.instance) -> World.attr i0 a <> Value.Empty
-                      | _ -> false
-                    in
+                    let input_filled = input_filled d in
                     match reading_of l d with
                     | Some (form, _, _, _) when input_filled ->
                         emit (without ~form Displaced self);
@@ -653,13 +682,13 @@ let defaults json env ~world0 ~world =
                                   false egs.egs_members
                           in
                           if settled then (
-                            (match reading_of l d with
-                            | Some (form, _, _, _) -> emit (without ~form Displaced self)
-                            | None -> ());
-                            displace rest;
+                            (* the content of the default, its fall-back,
+                               is not at its turn *)
+                            read_displaced env d;
+                            displace ~env_at ~from:(i + 1) rest;
                             true)
                           else if has_content && own env d then (
-                            displace rest;
+                            displace ~env_at ~from:(i + 1) rest;
                             true)
                           else go (i + 1) rest
                     in

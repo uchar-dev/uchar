@@ -9302,8 +9302,10 @@ let () =
    nodes of its value from 0. The initialisation default of the opgave group
    holds where it is at its turn (case 5: nothing above it decides, the input
    leaves the waarde empty) and is displaced where a higher default decided
-   (case 1) or the input fills the target (case 7). The lines of the two forms
-   in each case's canonical text (card readings-of-unconditional-forms). *)
+   (case 1), where it is read all the same (card
+   readings-of-displaced-defaults), or the input fills the target (case 7),
+   where it has nothing to read. The lines of the two forms in each case's
+   canonical text (card readings-of-unconditional-forms). *)
 let () =
   let golden = "corpus/golden/jutterswet-opgave-bedrag/" in
   let rule = "/rules/rules/2/versions/0 \"V\" " and init = "/rules/prioritizedDefaults/0/defaults/2 \"V\" " in
@@ -9324,7 +9326,7 @@ let () =
       in
       check ("WV-5.12-opgave-bedrag " ^ file) (got = expected);
       if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
-    [ ("case1-geen-opgave.json", [ "DISPLACED" ], "112.5", "110");
+    [ ("case1-geen-opgave.json", [ "DISPLACED"; "0 Literal 25 \"EUR\"" ], "112.5", "110");
       ("case5-niets.json", [ "HOLDS"; "0 Literal 25 \"EUR\"" ], "27.5", "25");
       ("case7-doel-zelf-zonder-feiten.json", [ "DISPLACED" ], "82.5", "80") ]
 
@@ -9388,6 +9390,125 @@ let () =
             line 3 "J2" "HOLDS" ]
       in
       check "WV-5.12-gedurende-clip" (got = expected);
+      if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
+
+(* WV-5.12-nestuitzondering-verdrongen: the worked example of a displaced
+   default in ch. 5.12, the golden anchor/jutterswet-nestuitzondering of
+   ch. 7.9 (card readings-of-displaced-defaults). Default 0 carries grondX ->
+   40.00 and the unordered exception groups grondY -> 10.00, grondZ ->
+   20.00 and grondW -> 10.00; default 1 is a group-default with the members
+   grondB1 -> 15.00 and grondB2 -> 25.00. In case 1 (grondX, grondY) the
+   group of grondY decides 10.00 for default 0, so its own content, the
+   fall-back, is displaced and read: it held and gave 40; the members of the
+   group-default below it are displaced and did not hold; grondZ and grondW,
+   siblings of the group that decided, were at their turn and fail. In case 9
+   (grondX, grondB1, grondB2) the exception groups decide nothing and
+   default 0 falls back to 40; both members below it are displaced, and both
+   held, with the 15 and the 25 whose conflict the session never reached. *)
+let () =
+  let golden = "corpus/golden/anchor/jutterswet-nestuitzondering/" in
+  let d = "/rules/prioritizedDefaults/0/defaults/" in
+  let x0 m = Printf.sprintf "%s0/exceptions/members/%d/defaults/0" d m
+  and x1 m = Printf.sprintf "%s1/exceptions/members/%d/defaults/0" d m in
+  let form f cells = List.map (fun c -> Printf.sprintf "%s \"M\" %s" f c) cells in
+  List.iter
+    (fun (file, lines) ->
+      let got = readings_of (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ file)) in
+      let expected = List.sort compare (List.concat lines) in
+      check ("WV-5.12-nestuitzondering-verdrongen " ^ file) (got = expected);
+      if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
+    [ ( "case1-alleen-y.json",
+        [ form (d ^ "0") [ "DISPLACED"; "0 CharacteristicCheck true"; "1 Literal 40" ];
+          form (x0 0) [ "HOLDS"; "0 CharacteristicCheck true"; "1 Literal 10" ];
+          form (x0 1) [ "FAILS"; "0 CharacteristicCheck false"; "1 Literal unreached" ];
+          form (x0 2) [ "FAILS"; "0 CharacteristicCheck false"; "1 Literal unreached" ];
+          form (x1 0) [ "DISPLACED"; "0 CharacteristicCheck false"; "1 Literal unreached" ];
+          form (x1 1) [ "DISPLACED"; "0 CharacteristicCheck false"; "1 Literal unreached" ] ] );
+      ( "case9-verdrongen-conflict.json",
+        [ form (d ^ "0") [ "HOLDS"; "0 CharacteristicCheck true"; "1 Literal 40" ];
+          form (x0 0) [ "FAILS"; "0 CharacteristicCheck false"; "1 Literal unreached" ];
+          form (x0 1) [ "FAILS"; "0 CharacteristicCheck false"; "1 Literal unreached" ];
+          form (x0 2) [ "FAILS"; "0 CharacteristicCheck false"; "1 Literal unreached" ];
+          form (x1 0) [ "DISPLACED"; "0 CharacteristicCheck true"; "1 Literal 15" ];
+          form (x1 1) [ "DISPLACED"; "0 CharacteristicCheck true"; "1 Literal 25" ] ] ) ]
+
+(* WV-5.12-vondstwaardering-verdrongen: displaced attribute defaults and the
+   initialisation default, the golden anchor/jutterswet-vondstwaardering of
+   ch. 7.6 (card readings-of-displaced-defaults). The chain: an erkend
+   jutter gets his basisbedrag, a kandidaat his kandidaatbedrag, and else the
+   initialisation default 25. A default below the one that decided is read
+   all the same, its status DISPLACED: in cases 1 and 6 the kandidaat default
+   did not hold. The initialisation default below a default that decided is
+   read where the input leaves the waardering empty (cases 1 and 2: it would
+   have given 25), and has nothing to read where the input fills it (case 5,
+   and case 6, where the erkend default decided as well): the input test is
+   its own justification (ch. 7.3), not the turn of the chain. *)
+let () =
+  let golden = "corpus/golden/anchor/jutterswet-vondstwaardering/" in
+  let form j cells = List.map (fun c -> Printf.sprintf "/rules/prioritizedDefaults/0/defaults/%d \"M\" %s" j c) cells in
+  let failing j = form j [ "FAILS"; "0 CharacteristicCheck false"; "1 AttributeReference unreached" ] in
+  let displaced_failing j = form j [ "DISPLACED"; "0 CharacteristicCheck false"; "1 AttributeReference unreached" ] in
+  List.iter
+    (fun (file, lines) ->
+      let got = readings_of (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ file)) in
+      let expected = List.sort compare (List.concat lines) in
+      check ("WV-5.12-vondstwaardering-verdrongen " ^ file) (got = expected);
+      if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
+    [ ( "case1-erkend.json",
+        [ form 0 [ "HOLDS"; "0 CharacteristicCheck true"; "1 AttributeReference 50" ]; displaced_failing 1;
+          form 2 [ "DISPLACED"; "0 Literal 25" ] ] );
+      ( "case2-doorval.json",
+        [ form 0 [ "HOLDS"; "0 CharacteristicCheck true"; "1 AttributeReference empty" ];
+          form 1 [ "HOLDS"; "0 CharacteristicCheck true"; "1 AttributeReference 30" ];
+          form 2 [ "DISPLACED"; "0 Literal 25" ] ] );
+      ( "case3-doorval-init.json",
+        [ form 0 [ "HOLDS"; "0 CharacteristicCheck true"; "1 AttributeReference empty" ]; failing 1;
+          form 2 [ "HOLDS"; "0 Literal 25" ] ] );
+      ("case4-init.json", [ failing 0; failing 1; form 2 [ "HOLDS"; "0 Literal 25" ] ]);
+      ("case5-input-blijft.json", [ failing 0; failing 1; form 2 [ "DISPLACED" ] ]);
+      ( "case6-default-overschrijft.json",
+        [ form 0 [ "HOLDS"; "0 CharacteristicCheck true"; "1 AttributeReference 50" ]; displaced_failing 1;
+          form 2 [ "DISPLACED" ] ] ) ]
+
+(* WV-5.12-fout-in-een-verdrongen-default: the justification of a displaced
+   default that faults (card readings-of-displaced-defaults). A
+   characteristic default below one that decides on both Jutters; its
+   justification ends in an Unresolved condition (EF-019). On J1, who is
+   erkend, the composite reaches it: the fault stands at the member and at
+   the composite, and the status stays DISPLACED, since the session never
+   evaluated the default and has no such fault. On J2 the composite stops at
+   its first member. The same document is the Drools backend's
+   ReadingsWitnessTest. *)
+let () =
+  let doc =
+    {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[],"characteristics":[{"node":"Characteristic","name":"ijverig","kind":"adjectival"},{"node":"Characteristic","name":"erkend","kind":"adjectival"},{"node":"Characteristic","name":"vrijgesteld","kind":"adjectival"}]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[],"prioritizedDefaults":[{"node":"PrioritizedDefaults","name":"vrijstelling van een jutter","subject":"Jutter","characteristic":"vrijgesteld","defaults":[{"node":"Default","decision":true,"justification":{"node":"CharacteristicCheck","characteristic":"ijverig","negated":false,"source":{"snippet":"hij ijverig is"}}},{"node":"Default","decision":false,"justification":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"CharacteristicCheck","characteristic":"erkend","negated":false,"source":{"snippet":"hij erkend is"}},{"node":"Unresolved","source":{"snippet":"zijn erkenning is onleesbaar"}}],"source":{"snippet":"all 0"}}}],"validity":{"node":"Validity"}}]},"diagnostics":[]}|}
+  in
+  let case_data =
+    {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"J1","objectType":"Jutter","attributes":{},"roles":{},"characteristics":["ijverig","erkend"]},{"label":"J2","objectType":"Jutter","attributes":{},"roles":{},"characteristics":["ijverig"]}],"parameters":{}},"expected":[{"kind":"consistent"}]}|}
+  in
+  let write suffix body_text =
+    let f = Filename.temp_file "ref-wv512" suffix in
+    let oc = open_out f in
+    output_string oc body_text;
+    close_out oc;
+    f
+  in
+  let irf = write ".ir.json" doc and casef = write ".case.json" case_data in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      let got = readings_of irf casef in
+      let line j subject cell = Printf.sprintf "/rules/prioritizedDefaults/0/defaults/%d \"%s\" %s" j subject cell in
+      let expected =
+        List.sort compare
+          [ line 0 "J1" "0 CharacteristicCheck true"; line 0 "J1" "HOLDS";
+            line 0 "J2" "0 CharacteristicCheck true"; line 0 "J2" "HOLDS";
+            line 1 "J1" "0 Compound fault EF-019"; line 1 "J1" "1 CharacteristicCheck true";
+            line 1 "J1" "2 Unresolved fault EF-019"; line 1 "J1" "DISPLACED";
+            line 1 "J2" "0 Compound false"; line 1 "J2" "1 CharacteristicCheck false";
+            line 1 "J2" "2 Unresolved unreached"; line 1 "J2" "DISPLACED" ]
+      in
+      check "WV-5.12-fout-in-een-verdrongen-default" (got = expected);
       if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
 
 (* WV-5.12-kustwacht: the object a node read its member on, the worked

@@ -17,5 +17,10 @@
   ../../corpus/golden/jutterswet-opgave-bedrag/case7-doel-zelf-zonder-feiten.json
   ; and so is the example of the object a node read its member on
   ../../corpus/golden/anchor/jutterswet-kustwacht/ir.json
-  ../../corpus/golden/anchor/jutterswet-kustwacht/case2.json)
+  ../../corpus/golden/anchor/jutterswet-kustwacht/case2.json
+  ; and so are the examples of a displaced default
+  ../../corpus/golden/anchor/jutterswet-nestuitzondering/ir.json
+  ../../corpus/golden/anchor/jutterswet-nestuitzondering/case1-alleen-y.json
+  ../../corpus/golden/anchor/jutterswet-nestuitzondering/case9-verdrongen-conflict.json
+  (glob_files ../../corpus/golden/anchor/jutterswet-vondstwaardering/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))
