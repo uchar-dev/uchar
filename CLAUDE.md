@@ -396,7 +396,11 @@ missing line makes `make gates` exit non-zero. Current gates:
     (2026-08-29, PRIORITIZED-DEFAULTS-EVOLUTIE Q3) it carries a spec-ch.-7
     prioritizedDefaults lowering the production toolchain does not have, so
     the backend implements the uchar spec beyond the ported production
-    semantics — and replays every `case*.json`. A golden whose forms the loader+transpiler carry
+    semantics — and replays every `case*.json`. Since the card
+    `test-beyond-thirteen-reads` (2026-10-27) a condition may read any
+    number of values: the exec-model branch passes more than thirteen
+    to its test in bundles (`PatternDslRendering.test`), the DRL-text
+    branch calls its test function with all of them. A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
     (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
     over the corpus). Not-carried forms never vanish silently: per-form
@@ -420,7 +424,8 @@ missing line makes `make gates` exit non-zero. Current gates:
     the sources in both directions (every code raised but one of the
     kind `RETIRED`, which no place may name and which keeps its number,
     since the card `frontend-kwantor-over-een-pad` (2026-10-20)
-    DROOLS-026 and DROOLS-258; every raised code
+    DROOLS-026 and DROOLS-258, since the card
+    `test-beyond-thirteen-reads` (2026-10-27) DROOLS-264; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`

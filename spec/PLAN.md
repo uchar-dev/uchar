@@ -1365,6 +1365,21 @@ over a path counted as an input of the test, so a condition of 13 reads, a few
 over a role, exceeded the 13 bound values of the exec-model branch (DROOLS-264,
 found on the v2 rule set). Provisional decisions V1–V8 stand in the card.
 
+**A test reads any number of values (2026-10-27, card
+`test-beyond-thirteen-reads`):** the analysis no longer refuses a condition
+for the number of values it reads (DROOLS-264 retired). The limit of 13 sat
+in the exec-model rendering only (`DSL.expr` takes up to `Predicate13`); over
+thirteen values `PatternDslRendering.test` now passes them in bundles of at
+most four (a pattern `from` per bundle, bundled again level by level while
+more than thirteen remain), and the DRL-text branch calls its test function
+with all of them. A test of at most thirteen values renders as before: the
+DRL text of every other golden is byte-equal, and the v2 rule set builds
+with the same rules (339, 493 with readings). New golden
+`jutterswet-strandvoogdkeuring` (eighteen values, four over a role); gate 12
+`EXPECTED_PLAYED` 280. Open: a function of the DRL text takes at most 255
+parameters, a limit without a code of its own (V4). Provisional decisions
+V1–V7 stand in the card.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
