@@ -474,8 +474,12 @@ missing line makes `make gates` exit non-zero. Current gates:
     with readings (`DroolsBackend.build(…, readings)`): beside the rule of
     every form with a condition a reading rule, with the left-hand side of
     the form's rule without its test, whose facts `readingsOf` reads per
-    form, object and node; the production build is byte-equal to the one
-    before. The suite holds it: `ReadingRulesFixpointWitnessTest` (with and
+    form, object and node, and beside the rule of a default whose turn
+    the control facts of its stack guard a speculative reading rule
+    without them, whose readings `readingsOf` reads as `DISPLACED` where
+    the default was not at its turn (card
+    `readings-of-displaced-defaults`, 2026-10-27); the production build is
+    byte-equal to the one before. The suite holds it: `ReadingRulesFixpointWitnessTest` (with and
     without readings the facts at the fixpoint are equal, per case, on both
     branches), `ReadingsCorpusWitnessTest` (the readings agree with the
     fixpoint: a reading holds where its form fired, an operand has the
@@ -666,6 +670,13 @@ missing line makes `make gates` exit non-zero. Current gates:
     ch. 5.12, "The object of a read"), compared verbatim with the rest of
     its line; floor `EXPECTED_MIN_OBJECT_LINES=746` (measured 2026-10-27),
     and the reader of that object passes five rows of its own.
+    Since the card `readings-of-displaced-defaults` (2026-10-27) a
+    default that a higher default of its chain displaced is read as at
+    its turn and keeps the status `DISPLACED` (ch. 5.12, "A displaced
+    default is read"); its node lines are compared verbatim like every
+    other, and floor `EXPECTED_MIN_DISPLACED_NODE_LINES=484` (measured
+    2026-10-27, 207 readings) counts them, its counter passing two rows
+    of its own.
     The jar is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`). The
     traces run on one process per core, the readings and the plain
     replays on one per two cores with the replay flags of

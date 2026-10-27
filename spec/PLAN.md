@@ -1348,6 +1348,23 @@ first). Provisional decisions V1–V8 of the builder stand in the card; the
 that form. Next: card `readings-of-displaced-defaults` (a displaced default
 read all the same, `DISPLACED` with nodes).
 
+**A displaced default is read (2026-10-27, card
+`readings-of-displaced-defaults`):** RUNTIME-SEMANTICS ch. 5.12 reads a default
+that a higher default of its chain displaced, or whose exception group settled,
+as at its turn, on the fixpoint world, and keeps the status `DISPLACED`, with
+nodes; WF-051 makes that reading the speculative evaluation of ch. 7.1. An
+initialisation the input displaced and a 1:1 creation keep `DISPLACED` without
+nodes. The Drools backend has a speculative reading rule beside the reading
+rule of each guarded default, without the control patterns, so the turn stays
+with truth maintenance; ref reads it in `displace`. The build with readings
+grew (corpus +2.8 % firings, v2 +17 %); the production build is unchanged.
+The distribution's card `explanation-read-objects-and-displaced` (part 2)
+names per displaced variant what it found. The same landing repaired a
+regression of `reading-read-objects` (`f5d668de`): the object slot of a read
+over a path counted as an input of the test, so a condition of 13 reads, a few
+over a role, exceeded the 13 bound values of the exec-model branch (DROOLS-264,
+found on the v2 rule set). Provisional decisions V1–V8 stand in the card.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
