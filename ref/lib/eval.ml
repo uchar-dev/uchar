@@ -425,10 +425,25 @@ let quantifier_fold_shape ~(quantifier_kind : quantifier_kind) ~(cutoff : int op
    this helper then sees a subject the host is satisfied by.
 
    Where the field is ABSENT, or names the subject's own type, nothing changes:
-   the declaration consulted and the object read coincide. *)
-let owner_hosts (doc : document) ~(otype : string) ~(characteristic : string option)
-    (holder : string option) =
+   the declaration consulted and the object read coincide.
+
+   A host strictly below [subj], the static type of the one object the
+   position binds, is the NARROWING host (ch. 4.6 (q2), RUNTIME-SEMANTICS
+   ch. 5.8b rule 4): the check reads that object's own characteristic, which
+   the host declares, and is false on an object outside the host. The answer
+   says which of the two readings the check has; a host the object can never
+   be faults as before, in the same sentence. *)
+type hosting = Hosted | Narrowing of string
+
+let owner_hosts (doc : document) ~(otype : string) ~(subj : string option)
+    ~(characteristic : string option) (holder : string option) =
+  let below e =
+    match subj with
+    | Some s -> norm e <> norm s && Ir_v0.Checks.subtype_of doc ~sub:e ~super:s
+    | None -> false
+  in
   match holder with
+  | Some e when below e -> Narrowing e
   (* the owner is satisfied EXTENSIONALLY: a subject of a subtype IS an
      object of the owner type, so an inherited characteristic check reads
      the object it is hosted on (ch. 2.2) *)
@@ -437,7 +452,18 @@ let owner_hosts (doc : document) ~(otype : string) ~(characteristic : string opt
         "characteristic check %S is hosted on %S while the subject is %S: the host names the \
          object the check is about, and this reader has no other object to read"
         (Option.value characteristic ~default:"?") e otype
-  | _ -> ()
+  | _ -> Hosted
+
+(* The refusal of a narrowing host where the check reads no characteristic of
+   the subject's own: a navigated check, whose characteristic lives on the
+   reached object, and a check under the whole-period qualifier (WF-109,
+   IR-SPEC ch. 4.6 (q2)). *)
+let narrowing_refused ~(characteristic : string option) e form =
+  Value.fault
+    "characteristic check %S on %s is hosted on %S, a type strictly below its subject: a \
+     narrowing host reads the subject's own characteristic, and this form reads another \
+     (WF-109)"
+    (Option.value characteristic ~default:"?") form e
 
 (* RUNTIME-SEMANTICS ch. 5.5 / ch. 5.8b, WF-109: is this fact creation's guard
    about the TARGET? The guard is the one condition position with two objects
@@ -468,9 +494,13 @@ let owner_hosts (doc : document) ~(otype : string) ~(characteristic : string opt
      this construct and not a fall-through, because the sentence has to say
      which two objects one name reached.
 
-   ZERO satisfying bindings is deliberately NOT a fault here: it falls to the
-   anchor, where [owner_hosts] faults with its own named sentence one step
-   later. One refusal per defect. *)
+   ZERO satisfying bindings is deliberately NOT a fault here where no binding
+   overlaps the host either: it falls to the anchor, where [owner_hosts] faults
+   with its own named sentence one step later. One refusal per defect. A host
+   strictly below one of the two bindings overlaps it and faults HERE, in the
+   verifier's sentence: on the anchor [owner_hosts] would read it as a narrowing
+   host, a reading of the one-object positions that this position does not
+   have (ch. 4.6 (q2)). *)
 let guard_on_target (doc : document) (fc : resolved_fact_creation) =
   match (fc.anchor_point, fc.fc_target, fc.fc_condition) with
   | ( Some a,
@@ -483,6 +513,10 @@ let guard_on_target (doc : document) (fc : resolved_fact_creation) =
          [None] is the settled reading, whose one satisfying binding decides *)
       match Ir_v0.Checks.wf109_host_sentence ~host:e ~bound ~hits ~near with
       | None -> List.exists (fun (r, _) -> r = "target") hits
+      (* a host strictly below one of the two: the guard names no bound object,
+         and the anchor would read it as a narrowing host, which this position
+         does not have *)
+      | Some m when hits = [] && near <> [] -> Value.fault "%s" m
       | Some _ when hits = [] -> false
       | Some m -> Value.fault "%s" m)
   | _ -> false
@@ -2342,17 +2376,26 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
         (Option.value day_kind ~default:"?")
   | Predicate _ -> Value.faultc "REF-008" "predicate kind not implemented in this card"
   | Characteristic_check { characteristic; navigation_binding = None; negation; holder; time_period; _ } ->
-      owner_hosts env.doc ~otype:self.otype ~characteristic holder;
+      let hosting = owner_hosts env.doc ~otype:self.otype ~subj:env.subj ~characteristic holder in
       let k = req "CharacteristicCheck.characteristic" characteristic in
       (* [owner_hosts] above has already established that a `host`, where
-         present, names the subject's own type — so the declaration this
-         resolves against and the instance read are one object *)
-      (match time_period with
-      | Some gp ->
+         present, names a type the subject is, or a narrowing host — so the
+         instance read is the subject itself *)
+      (match time_period, hosting with
+      | Some _, Narrowing e -> narrowing_refused ~characteristic e "the whole-period qualifier"
+      | Some gp, Hosted ->
           (* ch. 3.9, the specified collapse — NOT the scalar context
              ch. 3.3 refuses below *)
           whole_period_characteristic env ~ot:self.otype ~inst:(Some self) ~characteristic:k ~negation gp
-      | None ->
+      | None, Narrowing e ->
+          (* ch. 5.8b rule 4: the declaration key is the host, whatever the
+             object; an object outside the host has no K, so the positive
+             form is false there and the negated form true *)
+          if characteristic_temporal (object_type env e) k then
+            Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k;
+          let has = isa env self.otype e && World.has_char self k in
+          if negation then not has else has
+      | None, Hosted ->
           if characteristic_temporal (object_type env self.otype) k then
             Value.fault "temporal characteristic %S in a scalar condition is refused (ch. 3.3)" k;
           let has = World.has_char self k in
@@ -2368,7 +2411,9 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
       (* the owner is a HOSTING statement about the pattern, not about the
          reached type, so it is crossed against the subject here exactly as on
          the scalar arm — the characteristic itself still lives on the far side *)
-      owner_hosts env.doc ~otype:self.otype ~characteristic holder;
+      (match owner_hosts env.doc ~otype:self.otype ~subj:env.subj ~characteristic holder with
+       | Narrowing e -> narrowing_refused ~characteristic e "a role"
+       | Hosted -> ());
       let k = req "CharacteristicCheck.characteristic" characteristic in
       let role = bound_role env rb (* D53: the hop is the binding *) in
       if role.role_many then

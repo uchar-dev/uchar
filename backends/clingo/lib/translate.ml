@@ -7838,7 +7838,9 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          passes for free — a timeline with no segments derives no _d row and
          so no failure, and (on the navigated form) so does a hop that
          reaches nothing. *)
-      Eval.owner_hosts ctx.doc ~otype:subject_ot ~characteristic holder;
+      (match Eval.owner_hosts ctx.doc ~otype:subject_ot ~subj:(Some subject_ot) ~characteristic holder with
+       | Eval.Narrowing e -> Eval.narrowing_refused ~characteristic e "the whole-period qualifier"
+       | Eval.Hosted -> ());
       let k = req "characteristic" characteristic in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;
@@ -7905,10 +7907,25 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
       (* ch. 3.9: "Negation complements the folded result" — the QUALIFIER's
          "niet gedurende …", on top of the verdict *)
       [ (if gp.gp_negated then "" else "not ") ^ fails ]
-  | Characteristic_check { characteristic; navigation_binding = None; negation; holder; _ } ->
-      Eval.owner_hosts ctx.doc ~otype:subject_ot ~characteristic holder;
+  | Characteristic_check { characteristic; navigation_binding = None; negation; holder; _ } -> (
+      let hosting = Eval.owner_hosts ctx.doc ~otype:subject_ot ~subj:(Some subject_ot) ~characteristic holder in
       let k = req "characteristic" characteristic in
-      [ (if negation then "not " else "") ^ Printf.sprintf "has(%s,%s)" subject (str k) ]
+      match hosting with
+      | Eval.Hosted -> [ (if negation then "not " else "") ^ Printf.sprintf "has(%s,%s)" subject (str k) ]
+      | Eval.Narrowing e ->
+          (* the narrowing host (RUNTIME-SEMANTICS ch. 5.8b rule 4): an
+             instance of the host that has the characteristic; the negation is
+             the plain complement, a helper under negation-as-failure with the
+             subject kept bound by its isa base, as the negated role check *)
+          let within = [ Printf.sprintf "isa(%s,%s)" subject (str e); Printf.sprintf "has(%s,%s)" subject (str k) ] in
+          if negation then begin
+            ctx.fresh <- ctx.fresh + 1;
+            let p = Printf.sprintf "nh%d" ctx.fresh in
+            emit ctx "%s(%s) :- %s." p subject
+              (String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: within));
+            [ Printf.sprintf "not %s(%s)" p subject ]
+          end
+          else within)
   | Characteristic_check { characteristic; negation; navigation_binding = Some rb; holder; _ } ->
       (* the navigated check (ch. 5.8): the hop is a POSITIVE literal;
          only the characteristic sits under the negation. An absent link
@@ -7916,7 +7933,9 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          deliberate v0 asymmetry, encoded for free. *)
       (* WF-100, keyed on the SUBJECT here too: the owner is a hosting
          statement about the pattern, not about the reached type *)
-      Eval.owner_hosts ctx.doc ~otype:subject_ot ~characteristic holder;
+      (match Eval.owner_hosts ctx.doc ~otype:subject_ot ~subj:(Some subject_ot) ~characteristic holder with
+       | Eval.Narrowing e -> Eval.narrowing_refused ~characteristic e "a role"
+       | Eval.Hosted -> ());
       let k = req "characteristic" characteristic in
       let env =
         { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty;

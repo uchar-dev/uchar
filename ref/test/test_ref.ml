@@ -9132,6 +9132,82 @@ let readings_of ?(evaluate = true) irf casef =
    or from the test's own build directory (dune runtest) *)
 let corpus_file rel = if Sys.file_exists rel then rel else Filename.concat "../.." rel
 
+(* WV-5.8b-C: the narrowing host, RUNTIME-SEMANTICS ch. 5.8b rule 4 and its
+   worked example C verbatim. `Wrakrecht` below `Jutrecht` below `Strandrecht`;
+   only `Wrakrecht` declares `vaartijd`. At a position whose one bound object is
+   a Strandrecht, the check hosted on `Wrakrecht` holds for an instance of
+   Wrakrecht that has the vaartijd and for no other object; the negation is the
+   complement. A host the subject can never be keeps the fault of ch. 5.8b. The
+   second half replays case 1 of the golden jutterswet-ploegblokkade and reads
+   its absolute values: 20 and 40, where an object outside the host that held
+   in neither polarity, or left the fold, would give 30. *)
+let () =
+  let doc =
+    let sup n p (name, o) : string * Ir_v0.Ast.object_type = if name = n then (name, { o with ot_supertype = Some p }) else (name, o) in
+    { empty_doc with
+      object_types =
+        [ ot "Strandrecht" [] []; sup "Jutrecht" "Strandrecht" (ot "Jutrecht" [] []);
+          sup "Wrakrecht" "Jutrecht" (ot "Wrakrecht" [] [ "vaartijd" ]); ot "Ploeg" [] [] ] }
+  in
+  let w =
+    List.fold_left World.add_instance World.empty
+      [ inst "J1" "Jutrecht" []; { (inst "W1" "Wrakrecht" []) with chars = [ "vaartijd" ] };
+        inst "W2" "Wrakrecht" []; inst "S1" "Strandrecht" [] ]
+  in
+  let kc ~negation holder : Ir_v0.Ast.condition_expr =
+    Characteristic_check
+      { characteristic = Some "vaartijd"; negation; holder; time_period = None; source_name = None;
+        navigation_binding = None; anchor = None }
+  in
+  let env = { (env_of doc) with subj = Some "Strandrecht" } in
+  let ec label c = Eval.eval_cond env w (World.get w label) ~err:no_err c in
+  let row label ~has ~has_not =
+    check ("WV-5.8b-C-" ^ label ^ "-heeft") (ec label (kc ~negation:false (Some "Wrakrecht")) = has);
+    check ("WV-5.8b-C-" ^ label ^ "-heeft-geen") (ec label (kc ~negation:true (Some "Wrakrecht")) = has_not)
+  in
+  row "J1" ~has:false ~has_not:true;
+  row "W1" ~has:true ~has_not:false;
+  row "W2" ~has:false ~has_not:true;
+  row "S1" ~has:false ~has_not:true;
+  (* a host strictly below the subject reads; a host the subject can never be still faults, in its sentence *)
+  (match ec "S1" (kc ~negation:false (Some "Ploeg")) with
+  | exception Value.Fault { text = m; _ } ->
+      check ("WV-5.8b-C-vreemde-gastheer-weigert (got: " ^ m ^ ")")
+        (Case.contains ~needle:"is hosted on \"Ploeg\" while the subject is \"Strandrecht\"" m)
+  | _ -> check "WV-5.8b-C-vreemde-gastheer-weigert (no fault at all)" false);
+  (* the navigated check with a narrowing host has no reading (WF-109) *)
+  (match
+     ec "W1"
+       (Characteristic_check
+          { characteristic = Some "vaartijd"; negation = false; holder = Some "Wrakrecht"; time_period = None;
+            source_name = None; navigation_binding = Some { rb_fact_type = "f"; rb_role = "r" }; anchor = None })
+   with
+  | exception Value.Fault { text = m; _ } ->
+      check ("WV-5.8b-C-genavigeerd-weigert (got: " ^ m ^ ")")
+        (Case.contains ~needle:"a type strictly below its subject" m)
+  | _ -> check "WV-5.8b-C-genavigeerd-weigert (no fault at all)" false);
+  let golden = "corpus/golden/jutterswet-ploegblokkade/" in
+  let d = Ir_v0.Loader.load_file (corpus_file (golden ^ "ir.json")) in
+  let c =
+    Case.load_file d (corpus_file (golden ^ "case1-een-ploeg-met-twee-wrakrechten-en-een-kaal-strandrecht.json"))
+  in
+  let final =
+    Eval.evaluate
+      { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of; locals = World.SMap.empty;
+        btypes = World.SMap.empty; subj = None; form = None }
+      c.world
+  in
+  let value label a = Value.to_string (World.attr (World.get final label) a) in
+  let has label k = World.has_char (World.get final label) k in
+  check "WV-5.8b-C-golden-case-1" (Case.check c final = []);
+  check "WV-5.8b-C-vaarloon-J1-20" (value "J1" "hoogste vaarloon" = "20");
+  check "WV-5.8b-C-vaarloon-W1-leeg" (World.attr (World.get final "W1") "hoogste vaarloon" = Value.Empty);
+  check "WV-5.8b-C-vaarloon-W2-20" (value "W2" "hoogste vaarloon" = "20");
+  List.iter (fun l -> check ("WV-5.8b-C-rustloon-" ^ l ^ "-40") (value l "hoogste rustloon" = "40")) [ "J1"; "W1"; "W2" ];
+  check "WV-5.8b-C-zeewaardig" (List.map (fun l -> has l "zeewaardig") [ "J1"; "W1"; "W2"; "S1" ] = [ false; true; false; false ]);
+  check "WV-5.8b-C-landvast" (List.map (fun l -> has l "landvast") [ "J1"; "W1"; "W2"; "S1" ] = [ true; false; true; true ]);
+  check "WV-5.8b-C-ploegvarend" (List.map (fun l -> has l "ploegvarend") [ "J1"; "W1"; "W2" ] = [ true; true; true ])
+
 (* WV-5.12-ploegaandeel: the chapter's worked example verbatim, the golden of
    ch. 5.10's first example. The composite stops after member 1 on J1, reads
    both members on J2 and J3, and the value 1 is reached where it holds. *)

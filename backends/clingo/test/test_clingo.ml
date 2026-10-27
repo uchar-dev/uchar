@@ -3032,6 +3032,45 @@ let () =
     ~case_text:owner_case
     ~needle:"is hosted on \"Jutter\" while the subject is \"Vondst\""
 
+(* --- WV-5.8b-C: the narrowing host (RUNTIME-SEMANTICS ch. 5.8b rule 4) ---
+   The ASP mirror of ref's WV-5.8b-C: case 1 of the golden
+   jutterswet-ploegblokkade, whose expectations are worked example C's
+   absolute values (hoogste vaarloon of J1 20, hoogste rustloon of J1, W1 and
+   W2 40, landvast J1, W2 and S1). The check hosted on `Wrakrecht` at a
+   `Strandrecht` position is `isa(X,"Wrakrecht"), has(X,"vaartijd")`, and its
+   negation a helper under negation-as-failure, so S1 and J1 pass the negated
+   filter and fail the positive one. A narrowing host on a navigated check is
+   refused at translation, in ref's sentence. *)
+let () =
+  let corpus rel =
+    In_channel.with_open_text (if Sys.file_exists rel then rel else Filename.concat "../../../../.." rel)
+      In_channel.input_all
+  in
+  let golden = "corpus/golden/jutterswet-ploegblokkade/" in
+  let ir = corpus (golden ^ "ir.json") in
+  let case_text = corpus (golden ^ "case1-een-ploeg-met-twee-wrakrechten-en-een-kaal-strandrecht.json") in
+  ref_matches ~name:"WV-5.8b-C narrowing host" ~ir ~case_text;
+  clingo_matches ~name:"WV-5.8b-C narrowing host" ~ir ~case_text;
+  (* the zeewaardig rule's own check (rule 4 of the document), given a hop *)
+  let navigated =
+    let open Yojson.Safe.Util in
+    let hop =
+      `Assoc [ ("node", `String "RoleBinding"); ("factType", `String "StrandrechtHeeftLogboek"); ("role", `String "logboek") ]
+    in
+    let with_hop = function `Assoc kv -> `Assoc (kv @ [ ("navigation", hop) ]) | j -> j in
+    let map_field k f = function
+      | `Assoc kv -> `Assoc (List.map (fun (k', v) -> if k' = k then (k', f v) else (k', v)) kv)
+      | j -> j
+    in
+    let on_rule r = map_field "versions" (fun vs -> `List (List.map (map_field "condition" with_hop) (to_list vs))) r in
+    let doc = Yojson.Safe.from_string ir in
+    let rules = doc |> member "rules" |> member "rules" |> to_list in
+    let rules = List.mapi (fun i r -> if i = 4 then on_rule r else r) rules in
+    Yojson.Safe.to_string (map_field "rules" (map_field "rules" (fun _ -> `List rules)) doc)
+  in
+  faults_with ~name:"WV-5.8b-C narrowing host on a navigated check" ~ir:navigated ~case_text
+    ~needle:"a type strictly below its subject"
+
 (* --- WF-109: the characteristic check's HOST (IR-SPEC ch. 4.6 (q2)) ------
    The ASP mirror of ref's ch. 5.8b worked example B, and the second half of
    the field: WF-100 settles which DECLARATION the check resolves against,
