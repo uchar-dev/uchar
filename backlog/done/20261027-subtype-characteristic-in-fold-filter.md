@@ -376,3 +376,28 @@ Toe te voegen aan de rij `Kenmerk` (ch. 2.2), na "**Bijgesteld 2026-09-20 (WF-10
   de variant met de leeg-tak wel.
 - DROOLS-295 is nieuw in het register (`LIMIT`); een catalogus van de distributie die de Drools-codes spiegelt, krijgt
   hem mee.
+
+## Landing in de toolchain (2026-10-27, hoofdsessie)
+
+Toolchain `304fc5ef..6cdc893a` (pin `5e327c95`, `make gates` groen in 5m30s, replay-pin 251):
+
+- **Acceptatie (b).** `Verbaliser` las een kenmerkcheck op het onderwerp en citeerde de voorwaarde waar het onderwerp
+  het kenmerk niet declareert. Nu leest hij een host die strikt onder het onderwerp ligt (`checkedType`): in de
+  voorwaarde van een regel een `NAME` met `declaration: KENMERK, owner: Wrakrecht` (ook voor een object buiten de host,
+  "S is niet zeewaardig, want niet geldt: het onderwerp de vaartijd heeft"), en in het filter van een berekende vouw
+  een `QUOTE` met die declaratie. `ExplanationNarrowingHostServiceTest` (golden `jutterswet-ploegblokkade`, case 1)
+  was rood op de pin alleen. Een vouw die operand van een vergelijking is (de regel `blokkade`, de vorm van hww-06)
+  citeert de toolchain als één stuk, bij elk filter, ook zonder versmallende host; daar noemt de uitleg het kenmerk
+  dus niet apart. Dat is een eigen toolchain-kaart als de werkbank het nodig heeft.
+- **Acceptatie (d)**, met `check` en `scenario-test` van v2/herleving-ww (werkbank-regels `9590119`) op deze
+  toolchain, in kopieën buiten de werkbank (`werk/subtype-characteristic-in-fold-filter/v2-tc/`):
+
+  | kopie | `check` | `scenario-test` |
+  |---|---|---|
+  | ongewijzigd | PASS | 175 PASS |
+  | brug K14 vervangen door `.. hij heeft de wekeneis` | PASS, geen WARNING | rood: stopt na 46 PASS bij het eerste scenariodocument met een FAIL |
+  | de leeg-tak gehouden, `... hij heeft de wekeneis` in plaats van de drempeltoets | PASS, geen WARNING | 175 PASS |
+
+  De tweede kopie verandert de betekenis: een nieuw recht zonder aantal kalenderweken in zijn referteperiode telt in
+  K14 mee (open punt 25), en "heeft de wekeneis" is daar onwaar (hww-17 geeft zonder aantal geen wekeneis). De
+  vervanging die de uitkomsten houdt is de derde.
