@@ -400,7 +400,14 @@ missing line makes `make gates` exit non-zero. Current gates:
     `test-beyond-thirteen-reads` (2026-10-27) a condition may read any
     number of values: the exec-model branch passes more than thirteen
     to its test in bundles (`PatternDslRendering.test`), the DRL-text
-    branch calls its test function with all of them. A golden whose forms the loader+transpiler carry
+    branch calls its test function with all of them. Since the card
+    `subtype-characteristic-in-fold-filter` (2026-10-27) a characteristic
+    check whose host lies strictly below the subject of its rule (the
+    narrowing host, RUNTIME-SEMANTICS ch. 5.8b rule 4) reads the standing
+    of the host's characteristic, and a rule of its own puts a false
+    standing on every object of the subject's type outside the host
+    (`TmsTranspiler.outsideStateRule`), so such an object reads false
+    instead of leaving the rule. A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
     (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
     over the corpus). Not-carried forms never vanish silently: per-form

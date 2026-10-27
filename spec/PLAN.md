@@ -1380,6 +1380,27 @@ with the same rules (339, 493 with readings). New golden
 parameters, a limit without a code of its own (V4). Provisional decisions
 V1–V7 stand in the card.
 
+**A characteristic of a subtype (2026-10-27, card
+`subtype-characteristic-in-fold-filter`, from the werkbank):** a
+`CharacteristicCheck` may name as its `host` a type strictly below the one
+object its position binds — the narrowing host (IR-SPEC ch. 4.6 (q2),
+RUNTIME-SEMANTICS ch. 5.8b rule 4): true for an instance of the host that has
+the characteristic, false for every other object, the negation the
+complement. WF-109 admits it at a one-object position on a check without
+navigation and whole-period qualifier; the guard of a fact creation keeps
+`only-some-objects`. The RegelSpraak frontend writes it where exactly one type
+below the subject declares the written name (siblings: a marker that names
+them); ref, clingo and both Drools branches read it (Drools through a false
+standing outside the host, DROOLS-295 for the forms it does not carry). New
+golden `jutterswet-ploegblokkade`; gate 12 `EXPECTED_PLAYED` 281. Open: an
+attribute of a subtype (D7, empty outside the declaring type, a card of its
+own); the union over siblings; the navigated check with a narrowing host. On
+v2, "hij heeft de wekeneis" alone is not outcome-equal to bridge K14 (a right
+without a count of calendar weeks counts there); with the empty branch kept it
+is (175 of 175 scenario cases). Design advice in
+`research/subtype-characteristic-in-fold-filter-2026-10-27/`; provisional
+decisions D1–D15 and B1–B8 stand in the card.
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
