@@ -25,6 +25,11 @@
 #      silent green);
 #   5. the counting floors below.
 #
+# THE OBJECT OF A READ (card reading-read-objects, 2026-10-27). A node that reads a member over a path of
+# roles writes, after its value and its unit, `on` and the object the path reached, or `on none` where a
+# link on it is absent (ch. 5.12). It stands in the line, so the comparison holds it verbatim: an object
+# apart is a line apart. EXPECTED_MIN_OBJECT_LINES counts those lines.
+#
 # THE COMPARISON RULE. Every line is compared verbatim, except the position of a contributor of a
 # quantifier fold. Since the card fold-contributor-verdicts (2026-10-21) ch. 5.12 records the table of
 # ch. 3.9a at the node of such a fold: per contributor the verdict of the matrix on it, or its fault, and
@@ -87,6 +92,7 @@ EXPECTED_MIN_UNREACHED=3118          # 2026-10-21: measured 3118 (node lines `un
 EXPECTED_MIN_CONTRIBUTOR_LINES=314   # 2026-10-21: measured 314 (node lines with contributors)
 EXPECTED_MIN_TIMELINE_LINES=76       # 2026-10-21: measured 76 (node lines with a timeline)
 EXPECTED_MIN_UNREACHED_CONTRIBUTORS=106 # 2026-10-21: measured 106 (contributors of ref not reached, each with its verdict)
+EXPECTED_MIN_OBJECT_LINES=746        # 2026-10-27: measured 746 (node lines with the object of a read over a path, `on`; 113 `on none`)
 
 # --- tools ---------------------------------------------------------------------------------------------
 if ! command -v dune >/dev/null 2>&1 && command -v opam >/dev/null 2>&1; then
@@ -211,13 +217,14 @@ printf '%s\n' "${READINGS_ERROR_KNOWN[@]+"${READINGS_ERROR_KNOWN[@]}"}" > "$work
 # --- 3, 4 and 5: the comparison --------------------------------------------------------------------------
 python3 -I - "$work" "$EXPECTED_MIN_COMPARED_GOLDENS" "$EXPECTED_MIN_COMPARED_CASES" "$EXPECTED_MIN_READINGS" \
   "$EXPECTED_MIN_NODE_LINES" "$EXPECTED_MIN_UNREACHED" "$EXPECTED_MIN_CONTRIBUTOR_LINES" \
-  "$EXPECTED_MIN_TIMELINE_LINES" "$EXPECTED_MIN_UNREACHED_CONTRIBUTORS" "$n_traced" "$elapsed" "$nocase" <<'PY'
+  "$EXPECTED_MIN_TIMELINE_LINES" "$EXPECTED_MIN_UNREACHED_CONTRIBUTORS" "$EXPECTED_MIN_OBJECT_LINES" "$n_traced" \
+  "$elapsed" "$nocase" <<'PY'
 import os, sys
 
 work = sys.argv[1]
 floors = dict(zip(['goldens', 'cases', 'readings', 'nodes', 'unreached', 'contributors', 'timelines',
-                   'unreached_contributors'], map(int, sys.argv[2:10])))
-n_traced, elapsed, nocase = int(sys.argv[10]), sys.argv[11], sys.argv[12].split()
+                   'unreached_contributors', 'objects'], map(int, sys.argv[2:11])))
+n_traced, elapsed, nocase = int(sys.argv[11]), sys.argv[12], sys.argv[13].split()
 problems = []
 
 # --- the canonical text, read back (RUNTIME-SEMANTICS ch. 5.12) ---
@@ -275,6 +282,20 @@ def split(line):
         out[member] = (body[j + 1:v], body[v + 1:r])
         i = r + 2
     return line[:k], out
+
+def object_tail(head):
+    """the object a node line names after `on` — a name, or `none` — or None for a line without one"""
+    if head.endswith(' on none'):
+        return 'none'
+    k = head.rfind(' on ')
+    while k >= 0:
+        try:
+            if scan_object(head, k + 4) == len(head):
+                return head[k + 4:]
+        except (ValueError, IndexError):
+            pass
+        k = head.rfind(' on ', 0, k)
+    return None
 
 def contributors_agree(ref, drools):
     """the members, and per member its verdict, value or fault verbatim and its position where both write
@@ -357,7 +378,18 @@ rows = [
     ('a made object is one member',
      [P + '1 Aggregation 1 contributors [«"maak; een"»("J1")#1 empty reached]'],
      [P + '1 Aggregation 1 contributors [«"maak; een"»("J1")#1 empty reached]'], True),
+    ('the object of a read apart differs', [P + '2 AttributeReference 12 on "P1"'], [P + '2 AttributeReference 12 on "P3"'],
+     False),
+    ('an object against none differs', [P + '2 AttributeReference empty on none'],
+     [P + '2 AttributeReference empty on "P3"'], False),
 ]
+for name, line, tail in [('a label', P + '2 AttributeReference 12 on "P1"', '"P1"'),
+                         ('none', P + '0 CharacteristicCheck false on none', 'none'),
+                         ('a made object', P + '2 AttributeReference 5 on «"maak"»("J1")#1', '«"maak"»("J1")#1'),
+                         ('a text that holds " on "', P + '2 AttributeReference "kom on "', None),
+                         ('no object', P + '2 AttributeReference 12', None)]:
+    if object_tail(line) != tail:
+        problems.append('the object reader fails its row "%s": it reads %r' % (name, object_tail(line)))
 for name, ref, drools, agree in rows:
     o_r, o_d = differences(ref, drools)
     if (not o_r and not o_d) != agree:
@@ -422,6 +454,7 @@ def blocks(path):
     return out
 
 counts = dict.fromkeys(floors, 0)
+unlinked = 0  # the node lines with `on none`, reported beside the floor of the object lines
 excluded, seen_errors, seen_deviations, manifest_names = {}, set(), set(), set()
 for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
     name, file, status = row.rstrip('\n').split('\t')
@@ -476,6 +509,11 @@ for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
                         counts['readings'] += 1
                         continue
                     counts['nodes'] += 1
+                    tail = object_tail(head)
+                    if tail is not None:
+                        counts['objects'] += 1
+                        unlinked += tail == 'none'
+                        head = head[:-len(' on ' + tail)]
                     if head.endswith(' unreached'):
                         counts['unreached'] += 1
                     if c is not None:
@@ -494,15 +532,16 @@ if counts['cases'] == 0:
 names = {'goldens': 'EXPECTED_MIN_COMPARED_GOLDENS', 'cases': 'EXPECTED_MIN_COMPARED_CASES', 'readings': 'EXPECTED_MIN_READINGS',
          'nodes': 'EXPECTED_MIN_NODE_LINES', 'unreached': 'EXPECTED_MIN_UNREACHED',
          'contributors': 'EXPECTED_MIN_CONTRIBUTOR_LINES', 'timelines': 'EXPECTED_MIN_TIMELINE_LINES',
-         'unreached_contributors': 'EXPECTED_MIN_UNREACHED_CONTRIBUTORS'}
+         'unreached_contributors': 'EXPECTED_MIN_UNREACHED_CONTRIBUTORS', 'objects': 'EXPECTED_MIN_OBJECT_LINES'}
 for k, floor in floors.items():
     if counts[k] < floor:
         problems.append('%d %s compared, but %s pins at least %d — the comparison shrank (a deliberate removal lowers the floor in the same commit)' % (counts[k], k.replace('_', ' '), names[k], floor))
 
 print('  counted: ref traced %d golden case files; compared per branch: %d goldens, %d case files, %d readings, '
-      '%d node lines, %d unreached, %d with contributors, %d with a timeline; %d contributors of ref not reached' % (
+      '%d node lines, %d unreached, %d with contributors, %d with a timeline, %d with the object of a read (%d of them '
+      'on none); %d contributors of ref not reached' % (
           n_traced, counts['goldens'], counts['cases'], counts['readings'], counts['nodes'], counts['unreached'],
-          counts['contributors'], counts['timelines'], counts['unreached_contributors']))
+          counts['contributors'], counts['timelines'], counts['objects'], unlinked, counts['unreached_contributors']))
 for k in sorted(excluded):
     print('  excluded by the backend: %3d golden(s) %s' % (excluded[k], k))
 for name in sorted(seen_errors):
@@ -513,9 +552,10 @@ if problems:
     print('\n'.join('check-readings: FAIL — ' + p for p in problems), file=sys.stderr)
     sys.exit(1)
 print('check-readings: PASS (ref traced %d golden case files; on both branches %d goldens and %d case files compared, '
-      '%d readings, %d node lines of which %d unreached, %d with contributors and %d with a timeline, %d contributors '
-      'of ref not reached, all at or above their floors; deviations %d; %d comparison rows, %d tripwire rows; %s s)' % (
+      '%d readings, %d node lines of which %d unreached, %d with contributors, %d with a timeline and %d with the object '
+      'of a read, %d contributors of ref not reached, all at or above their floors; deviations %d; %d comparison rows, '
+      '%d tripwire rows; %s s)' % (
           n_traced, counts['goldens'], counts['cases'], counts['readings'], counts['nodes'], counts['unreached'],
-          counts['contributors'], counts['timelines'], counts['unreached_contributors'], len(deviations), len(rows),
-          len(tripwire_rows), elapsed))
+          counts['contributors'], counts['timelines'], counts['objects'], counts['unreached_contributors'],
+          len(deviations), len(rows), len(tripwire_rows), elapsed))
 PY
