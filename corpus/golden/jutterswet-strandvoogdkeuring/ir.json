@@ -1,0 +1,864 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandpost",
+        "animate": false,
+        "plural": "Strandposten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "hoogte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zichtveld",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kustlengte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "bemand",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "diensttijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "rang",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal meldingen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal bergingen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal nachtdiensten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal reddingen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zwemvaardigheid",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kaartkennis",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "getijkennis",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "seinkennis",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "knoopkennis",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "leeftijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "ervaren",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "strandvoogdwaardig",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "postindeling",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "strandpost",
+            "objectType": "Strandpost",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "plural": "jutters",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "rang van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rang",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De rang van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "diensttijd",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn diensttijd"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "1"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn diensttijd plus 1"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "strandvoogdkeuring",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "strandvoogdwaardig",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is strandvoogdwaardig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "ervaren",
+                  "negated": false,
+                  "source": {
+                    "snippet": "hij is ervaren"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "diensttijd",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn diensttijd"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "2"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn diensttijd is groter dan 2"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "rang",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn rang"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "3"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "3"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn rang is groter dan 3"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "aantal vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn aantal vondsten"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "4"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "4"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn aantal vondsten is groter dan 4"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "aantal meldingen",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn aantal meldingen"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "5"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "5"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn aantal meldingen is groter dan 5"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "aantal bergingen",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn aantal bergingen"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "6"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "6"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn aantal bergingen is groter dan 6"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "aantal nachtdiensten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn aantal nachtdiensten"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "7"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "7"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn aantal nachtdiensten is groter dan 7"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "aantal reddingen",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn aantal reddingen"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "8"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "8"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn aantal reddingen is groter dan 8"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "zwemvaardigheid",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn zwemvaardigheid"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "9"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "9"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn zwemvaardigheid is groter dan 9"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "kaartkennis",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn kaartkennis"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "10"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "10"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn kaartkennis is groter dan 10"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "getijkennis",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn getijkennis"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "11"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "11"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn getijkennis is groter dan 11"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "seinkennis",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn seinkennis"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "12"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "12"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn seinkennis is groter dan 12"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "knoopkennis",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn knoopkennis"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "13"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "13"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn knoopkennis is groter dan 13"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "leeftijd",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn leeftijd"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "17"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "17"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn leeftijd is groter dan 17"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "hoogte",
+                    "subjectType": "Strandpost",
+                    "source": {
+                      "snippet": "de hoogte van zijn strandpost"
+                    },
+                    "path": [
+                      {
+                        "node": "RoleBinding",
+                        "factType": "postindeling",
+                        "role": "strandpost"
+                      }
+                    ]
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "18"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "18"
+                    }
+                  },
+                  "source": {
+                    "snippet": "de hoogte van zijn strandpost is groter dan 18"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "zichtveld",
+                    "subjectType": "Strandpost",
+                    "source": {
+                      "snippet": "het zichtveld van zijn strandpost"
+                    },
+                    "path": [
+                      {
+                        "node": "RoleBinding",
+                        "factType": "postindeling",
+                        "role": "strandpost"
+                      }
+                    ]
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "19"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "19"
+                    }
+                  },
+                  "source": {
+                    "snippet": "het zichtveld van zijn strandpost is groter dan 19"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "kustlengte",
+                    "subjectType": "Strandpost",
+                    "source": {
+                      "snippet": "de kustlengte van zijn strandpost"
+                    },
+                    "path": [
+                      {
+                        "node": "RoleBinding",
+                        "factType": "postindeling",
+                        "role": "strandpost"
+                      }
+                    ]
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "20"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "20"
+                    }
+                  },
+                  "source": {
+                    "snippet": "de kustlengte van zijn strandpost is groter dan 20"
+                  }
+                },
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "bemand",
+                  "negated": false,
+                  "source": {
+                    "snippet": "zijn strandpost is bemand"
+                  },
+                  "navigation": {
+                    "node": "RoleBinding",
+                    "factType": "postindeling",
+                    "role": "strandpost"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - hij is ervaren - zijn diensttijd is groter dan 2 - zijn rang is groter dan 3 - zijn aantal vondsten is groter dan 4 - zijn aantal meldingen is groter dan 5 - zijn aantal bergingen is groter dan 6 - zijn aantal nachtdiensten is groter dan 7 - zijn aantal reddingen is groter dan 8 - zijn zwemvaardigheid is groter dan 9 - zijn kaartkennis is groter dan 10 - zijn getijkennis is groter dan 11 - zijn seinkennis is groter dan 12 - zijn knoopkennis is groter dan 13 - zijn leeftijd is groter dan 17 - de hoogte van zijn strandpost is groter dan 18 - het zichtveld van zijn strandpost is groter dan 19 - de kustlengte van zijn strandpost is groter dan 20 - zijn strandpost is bemand"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

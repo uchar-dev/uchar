@@ -1,0 +1,293 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S2",
+        "objectType": "Strandpost",
+        "attributes": {
+          "hoogte": {
+            "number": "19"
+          },
+          "zichtveld": {
+            "number": "20"
+          },
+          "kustlengte": {
+            "number": "21"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S3",
+        "objectType": "Strandpost",
+        "attributes": {
+          "hoogte": {
+            "number": "19"
+          },
+          "zichtveld": {
+            "number": "20"
+          },
+          "kustlengte": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "bemand"
+        ]
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "diensttijd": {
+            "number": "4"
+          },
+          "aantal vondsten": {
+            "number": "5"
+          },
+          "aantal meldingen": {
+            "number": "6"
+          },
+          "aantal bergingen": {
+            "number": "7"
+          },
+          "aantal nachtdiensten": {
+            "number": "8"
+          },
+          "aantal reddingen": {
+            "number": "9"
+          },
+          "zwemvaardigheid": {
+            "number": "10"
+          },
+          "kaartkennis": {
+            "number": "11"
+          },
+          "getijkennis": {
+            "number": "12"
+          },
+          "seinkennis": {
+            "number": "13"
+          },
+          "knoopkennis": {
+            "number": "14"
+          },
+          "leeftijd": {
+            "number": "18"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "ervaren"
+        ]
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "diensttijd": {
+            "number": "5"
+          },
+          "aantal vondsten": {
+            "number": "5"
+          },
+          "aantal meldingen": {
+            "number": "6"
+          },
+          "aantal bergingen": {
+            "number": "7"
+          },
+          "aantal nachtdiensten": {
+            "number": "8"
+          },
+          "aantal reddingen": {
+            "number": "9"
+          },
+          "zwemvaardigheid": {
+            "number": "10"
+          },
+          "kaartkennis": {
+            "number": "11"
+          },
+          "getijkennis": {
+            "number": "12"
+          },
+          "seinkennis": {
+            "number": "13"
+          },
+          "knoopkennis": {
+            "number": "14"
+          },
+          "leeftijd": {
+            "number": "18"
+          }
+        },
+        "roles": {
+          "strandpost": [
+            "S2"
+          ]
+        },
+        "characteristics": [
+          "ervaren"
+        ]
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {
+          "diensttijd": {
+            "number": "8"
+          },
+          "aantal vondsten": {
+            "number": "5"
+          },
+          "aantal meldingen": {
+            "number": "6"
+          },
+          "aantal bergingen": {
+            "number": "7"
+          },
+          "aantal nachtdiensten": {
+            "number": "8"
+          },
+          "aantal reddingen": {
+            "number": "9"
+          },
+          "zwemvaardigheid": {
+            "number": "10"
+          },
+          "kaartkennis": {
+            "number": "11"
+          },
+          "getijkennis": {
+            "number": "12"
+          },
+          "seinkennis": {
+            "number": "13"
+          },
+          "knoopkennis": {
+            "number": "14"
+          },
+          "leeftijd": {
+            "number": "18"
+          }
+        },
+        "roles": {
+          "strandpost": [
+            "S3"
+          ]
+        },
+        "characteristics": [
+          "ervaren"
+        ]
+      },
+      {
+        "label": "J6",
+        "objectType": "Jutter",
+        "attributes": {
+          "diensttijd": {
+            "number": "9"
+          },
+          "aantal vondsten": {
+            "number": "5"
+          },
+          "aantal meldingen": {
+            "number": "6"
+          },
+          "aantal bergingen": {
+            "number": "7"
+          },
+          "aantal nachtdiensten": {
+            "number": "8"
+          },
+          "aantal reddingen": {
+            "number": "9"
+          },
+          "zwemvaardigheid": {
+            "number": "10"
+          },
+          "kaartkennis": {
+            "number": "11"
+          },
+          "getijkennis": {
+            "number": "12"
+          },
+          "seinkennis": {
+            "number": "13"
+          },
+          "knoopkennis": {
+            "number": "14"
+          },
+          "leeftijd": {
+            "number": "18"
+          }
+        },
+        "roles": {
+          "strandpost": [
+            "S3"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "rang",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "rang",
+      "value": {
+        "number": "6"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "rang",
+      "value": {
+        "number": "9"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J6",
+      "attribute": "rang",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J3",
+      "characteristic": "strandvoogdwaardig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J4",
+      "characteristic": "strandvoogdwaardig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J5",
+      "characteristic": "strandvoogdwaardig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J6",
+      "characteristic": "strandvoogdwaardig"
+    }
+  ]
+}

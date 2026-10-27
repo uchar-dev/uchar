@@ -1,0 +1,156 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandpost",
+        "attributes": {
+          "hoogte": {
+            "number": "19"
+          },
+          "zichtveld": {
+            "number": "20"
+          },
+          "kustlengte": {
+            "number": "21"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "bemand"
+        ]
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "diensttijd": {
+            "number": "3"
+          },
+          "aantal vondsten": {
+            "number": "5"
+          },
+          "aantal meldingen": {
+            "number": "6"
+          },
+          "aantal bergingen": {
+            "number": "7"
+          },
+          "aantal nachtdiensten": {
+            "number": "8"
+          },
+          "aantal reddingen": {
+            "number": "9"
+          },
+          "zwemvaardigheid": {
+            "number": "10"
+          },
+          "kaartkennis": {
+            "number": "11"
+          },
+          "getijkennis": {
+            "number": "12"
+          },
+          "seinkennis": {
+            "number": "13"
+          },
+          "knoopkennis": {
+            "number": "14"
+          },
+          "leeftijd": {
+            "number": "18"
+          }
+        },
+        "roles": {
+          "strandpost": [
+            "S1"
+          ]
+        },
+        "characteristics": [
+          "ervaren"
+        ]
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "diensttijd": {
+            "number": "6"
+          },
+          "aantal vondsten": {
+            "number": "5"
+          },
+          "aantal meldingen": {
+            "number": "6"
+          },
+          "aantal bergingen": {
+            "number": "7"
+          },
+          "aantal nachtdiensten": {
+            "number": "8"
+          },
+          "aantal reddingen": {
+            "number": "9"
+          },
+          "zwemvaardigheid": {
+            "number": "10"
+          },
+          "kaartkennis": {
+            "number": "11"
+          },
+          "getijkennis": {
+            "number": "12"
+          },
+          "seinkennis": {
+            "number": "13"
+          },
+          "knoopkennis": {
+            "number": "13"
+          },
+          "leeftijd": {
+            "number": "18"
+          }
+        },
+        "roles": {
+          "strandpost": [
+            "S1"
+          ]
+        },
+        "characteristics": [
+          "ervaren"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "rang",
+      "value": {
+        "number": "4"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "rang",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "strandvoogdwaardig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J2",
+      "characteristic": "strandvoogdwaardig"
+    }
+  ]
+}

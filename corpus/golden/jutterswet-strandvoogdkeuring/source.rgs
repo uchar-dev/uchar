@@ -1,0 +1,54 @@
+Objecttype de Strandpost (mv: Strandposten)
+    is bemand kenmerk (bijvoeglijk);
+    de hoogte Numeriek (geheel getal);
+    het zichtveld Numeriek (geheel getal);
+    de kustlengte Numeriek (geheel getal);
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is ervaren kenmerk (bijvoeglijk);
+    is strandvoogdwaardig kenmerk (bijvoeglijk);
+    de diensttijd Numeriek (geheel getal);
+    de rang Numeriek (geheel getal);
+    het aantal vondsten Numeriek (geheel getal);
+    het aantal meldingen Numeriek (geheel getal);
+    het aantal bergingen Numeriek (geheel getal);
+    het aantal nachtdiensten Numeriek (geheel getal);
+    het aantal reddingen Numeriek (geheel getal);
+    de zwemvaardigheid Numeriek (geheel getal);
+    de kaartkennis Numeriek (geheel getal);
+    de getijkennis Numeriek (geheel getal);
+    de seinkennis Numeriek (geheel getal);
+    de knoopkennis Numeriek (geheel getal);
+    de leeftijd Numeriek (geheel getal);
+
+Feittype postindeling
+    de strandpost Strandpost
+    de jutter (mv: jutters) Jutter
+Eén strandpost telt meerdere jutters
+
+Regel rang van een jutter
+    geldig altijd
+        De rang van een Jutter moet berekend worden als zijn diensttijd plus 1.
+
+Regel strandvoogdkeuring
+    geldig altijd
+        Een Jutter is strandvoogdwaardig
+        indien hij aan alle volgende voorwaarden voldoet:
+        - hij is ervaren
+        - zijn diensttijd is groter dan 2
+        - zijn rang is groter dan 3
+        - zijn aantal vondsten is groter dan 4
+        - zijn aantal meldingen is groter dan 5
+        - zijn aantal bergingen is groter dan 6
+        - zijn aantal nachtdiensten is groter dan 7
+        - zijn aantal reddingen is groter dan 8
+        - zijn zwemvaardigheid is groter dan 9
+        - zijn kaartkennis is groter dan 10
+        - zijn getijkennis is groter dan 11
+        - zijn seinkennis is groter dan 12
+        - zijn knoopkennis is groter dan 13
+        - zijn leeftijd is groter dan 17
+        - de hoogte van zijn strandpost is groter dan 18
+        - het zichtveld van zijn strandpost is groter dan 19
+        - de kustlengte van zijn strandpost is groter dan 20
+        - zijn strandpost is bemand.
