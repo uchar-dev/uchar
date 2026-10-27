@@ -779,7 +779,7 @@ from 228 to 229 with the added witness and to 260 with the 31 first pins
 | `wf109-host-ambiguous-supertype` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Baken', which the anchor 'Kustvak' and the … | `host: "Baken"`, a supertype of anchor and target |
 | `wf109-host-ambiguous-self-typed` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Wachter', which the anchor 'Wachter' and the … | `host: "Wachter"` on a self-typed creation |
 | `wf109-host-outside-range` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Jutter', which no object bound here can be | `host: "Jutter"` where the subject is `Vondst` |
-| `wf109-host-partial-population` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Strandvondst', which no object bound here IS | `host: "Strandvondst"`, a subtype of the subject `Vondst` |
+| `wf109-host-partial-population` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Strandvondst', which no object bound here IS | `host: "Strandvondst"`, a subtype of the subject `Vondst`; rewritten to the guard of a fact creation on 2026-10-27 (below, `subtype-characteristic-in-fold-filter`) |
 | `wf109-host-third-type` | WF-109 | B10 (D48) | herschreven (m) | the characteristic check is hosted on 'Post', which no object bound here can be | `host: "Post"`, beside the legal target host `Sein` of the second creation |
 | `wf097-clip-characteristic-host` | WF-097 | B10 (D48) | herschreven (m) | host 'Jutter' on a gedurende clip member | `host: "Jutter"` on the member of the clip; the message names `host` |
 | `wf097-day-count-characteristic-host` | WF-097 | B10 (D48) | herschreven (m) | host 'Jutter' on a gedurende clip member | idem, on the day count's clip |
@@ -851,3 +851,26 @@ a quantifier); the owner's role stays to-one.
 | directory | rule | card | stamp | arm | reason |
 | --- | --- | --- | --- | --- | --- |
 | `wf045-instance-cycle-to-many-satellite-step` | WF-045 | B2.1 | verwijderd-met-reden | `WF-045.dependency-cycle`, the hop after the predecessor reaching a to-many role | a fold over the termijnen of the vorige vergunning lands in the household of the predecessor, every member of which stands at its depth: since B2.1 a shifted read whatever the cardinality on the satellite's side. Measured 2026-10-22: the document is verifier-clean on the verifier of the card. The form is a clause of the golden `corpus/golden/jutterswet-vergunningtermijnen` (the verlengde einddag, a sum over the termijnen of the vorige vergunning) |
+
+### `subtype-characteristic-in-fold-filter` (2026-10-27)
+
+The card (`backlog/done/20261027-subtype-characteristic-in-fold-filter.md`,
+voorlopige besluiten D1–D4) admits a host strictly below the one object a
+position binds: the narrowing host (`spec/IR-SPEC.md` ch. 4.6 (q2),
+`spec/RUNTIME-SEMANTICS.md` ch. 5.8b rule 4), on a check that neither navigates
+nor carries a whole-period qualifier. The witness of that flank stood on a rule
+and was rewritten to the guard of a fact creation, which binds two objects and
+keeps the flank `only-some-objects`; the two fences on the check and the
+required host got witnesses of their own. Measured 2026-10-27: the verifier of
+`af5fd045`, before the card, refused each of the four documents in the arm of
+its row, the three broken from the golden with `WF-109.only-some-objects` at
+each of the golden's checks besides; after it each reports the arm of its row
+alone, and the old witness's document (a rule on `Vondst` hosted on
+`Strandvondst`) is clean.
+
+| directory | rule | card | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf109-host-partial-population` | WF-109 | D4 | herschreven | `WF-109.only-some-objects`, `host=Seinmast` | broken from `jutterswet-seinhijsing`: the guard's host `Seinmast`, a strict subtype of the target `Sein`; until 2026-10-27 a rule's host `Strandvondst` below its subject `Vondst`, which is now a narrowing host |
+| `wf109-narrowing-host-navigated` | WF-109 | D5 | toegevoegd | `WF-109.only-some-objects`, `host=Wrakrecht` | broken from `jutterswet-ploegblokkade`: a navigated check ("zijn logboek vol is") with the host `Wrakrecht` below its subject `Strandrecht` |
+| `wf109-narrowing-host-period` | WF-109 | D5 | toegevoegd | `WF-109.only-some-objects`, `host=Wrakrecht` | broken from `jutterswet-ploegblokkade`: a check under the whole-period qualifier with the host `Wrakrecht` below its subject `Strandrecht` |
+| `wf034-characteristic-of-subtype-without-host` | WF-034 | D8 | toegevoegd | `WF-034.characteristic-undeclared`, `characteristic=vaartijd`, `objectType=Strandrecht` | broken from `jutterswet-ploegblokkade`: the check of `vaartijd`, declared on `Wrakrecht`, without its host |

@@ -1,0 +1,3 @@
+WF-034.characteristic-undeclared
+characteristic=vaartijd
+objectType=Strandrecht

@@ -1,0 +1,726 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandrecht",
+        "animate": false,
+        "plural": "Strandrechten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "loon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "zeewaardig",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "landvast",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutrecht",
+        "supertype": "Strandrecht",
+        "animate": false,
+        "plural": "Jutrechten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "grens",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hoogste vaarloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hoogste rustloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "blokkade",
+            "kind": "possessive"
+          },
+          {
+            "node": "Characteristic",
+            "name": "ploegvarend",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Wrakrecht",
+        "supertype": "Jutrecht",
+        "animate": false,
+        "plural": "Wrakrechten",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "vaartijd",
+            "kind": "possessive"
+          },
+          {
+            "node": "Characteristic",
+            "name": "aangemonsterd",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Ploeg",
+        "animate": false,
+        "plural": "Ploegen",
+        "attributes": [],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Logboek",
+        "animate": false,
+        "plural": "Logboeken",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "zeeweken",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "PloegBetreftStrandrecht",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "ploeg",
+            "objectType": "Ploeg",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "recht",
+            "objectType": "Strandrecht",
+            "plural": "rechten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "StrandrechtHeeftLogboek",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "recht",
+            "objectType": "Strandrecht",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "logboek",
+            "objectType": "Logboek",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "vaartijddrempel",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vaartijd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vaartijd",
+              "subjectType": "Wrakrecht",
+              "source": {
+                "snippet": "Een Wrakrecht heeft de vaartijd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "zeeweken",
+                "subjectType": "Logboek",
+                "source": {
+                  "snippet": "de zeeweken van het logboek van het Wrakrecht"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "StrandrechtHeeftLogboek",
+                    "role": "logboek"
+                  }
+                ]
+              },
+              "right": {
+                "node": "ParameterReference",
+                "parameter": "vaartijddrempel",
+                "source": {
+                  "snippet": "de vaartijddrempel"
+                }
+              },
+              "source": {
+                "snippet": "de zeeweken van het logboek van het Wrakrecht groter of gelijk is aan de vaartijddrempel"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "hoogste vaarloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "hoogste vaarloon",
+              "subjectType": "Jutrecht",
+              "source": {
+                "snippet": "Het hoogste vaarloon van een Jutrecht"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "loon",
+                  "subjectType": "Strandrecht",
+                  "source": {
+                    "snippet": "het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft de vaartijd"
+                  }
+                }
+              ],
+              "elementType": "Strandrecht",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "IdentityCheck",
+                    "anchor": "form",
+                    "negated": true,
+                    "source": {
+                      "snippet": "hij is niet het Jutrecht zelf"
+                    }
+                  },
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "vaartijd",
+                    "negated": false,
+                    "host": "Wrakrecht",
+                    "source": {
+                      "snippet": "hij heeft de vaartijd"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft de vaartijd"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "PloegBetreftStrandrecht",
+                  "role": "ploeg"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "PloegBetreftStrandrecht",
+                  "role": "recht"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft de vaartijd"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "hoogste rustloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "hoogste rustloon",
+              "subjectType": "Jutrecht",
+              "source": {
+                "snippet": "Het hoogste rustloon van een Jutrecht"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "maximum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "loon",
+                  "subjectType": "Strandrecht",
+                  "source": {
+                    "snippet": "het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft geen vaartijd"
+                  }
+                }
+              ],
+              "elementType": "Strandrecht",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "IdentityCheck",
+                    "anchor": "form",
+                    "negated": true,
+                    "source": {
+                      "snippet": "hij is niet het Jutrecht zelf"
+                    }
+                  },
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "vaartijd",
+                    "negated": true,
+                    "host": "Wrakrecht",
+                    "source": {
+                      "snippet": "hij heeft geen vaartijd"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft geen vaartijd"
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "PloegBetreftStrandrecht",
+                  "role": "ploeg"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "PloegBetreftStrandrecht",
+                  "role": "recht"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft geen vaartijd"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "blokkade",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "blokkade",
+              "subjectType": "Jutrecht",
+              "source": {
+                "snippet": "Een Jutrecht heeft de blokkade"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "grens",
+                    "subjectType": "Jutrecht",
+                    "source": {
+                      "snippet": "zijn grens"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn grens is gevuld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Aggregation",
+                    "kind": "maximum",
+                    "arguments": [
+                      {
+                        "node": "AttributeReference",
+                        "attribute": "loon",
+                        "subjectType": "Strandrecht",
+                        "source": {
+                          "snippet": "het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: .. hij is niet het Jutrecht zelf .. het Strandrecht heeft de vaartijd"
+                        }
+                      }
+                    ],
+                    "elementType": "Strandrecht",
+                    "filter": {
+                      "node": "Compound",
+                      "quantifier": "all",
+                      "threshold": 0,
+                      "parts": [
+                        {
+                          "node": "IdentityCheck",
+                          "anchor": "form",
+                          "negated": true,
+                          "source": {
+                            "snippet": "hij is niet het Jutrecht zelf"
+                          }
+                        },
+                        {
+                          "node": "CharacteristicCheck",
+                          "characteristic": "vaartijd",
+                          "negated": false,
+                          "host": "Wrakrecht",
+                          "source": {
+                            "snippet": "het Strandrecht heeft de vaartijd"
+                          }
+                        }
+                      ],
+                      "source": {
+                        "snippet": "aan alle volgende voorwaarden voldoen: .. hij is niet het Jutrecht zelf .. het Strandrecht heeft de vaartijd"
+                      }
+                    },
+                    "sourcePath": [
+                      {
+                        "node": "RoleBinding",
+                        "factType": "PloegBetreftStrandrecht",
+                        "role": "ploeg"
+                      },
+                      {
+                        "node": "RoleBinding",
+                        "factType": "PloegBetreftStrandrecht",
+                        "role": "recht"
+                      }
+                    ],
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: .. hij is niet het Jutrecht zelf .. het Strandrecht heeft de vaartijd"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "grens",
+                    "subjectType": "Jutrecht",
+                    "source": {
+                      "snippet": "zijn grens"
+                    }
+                  },
+                  "source": {
+                    "snippet": "(de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: .. hij is niet het Jutrecht zelf .. het Strandrecht heeft de vaartijd) is groter dan zijn grens"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn grens is gevuld - (de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: .. hij is niet het Jutrecht zelf .. het Strandrecht heeft de vaartijd) is groter dan zijn grens"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zeewaardig",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zeewaardig",
+              "subjectType": "Strandrecht",
+              "source": {
+                "snippet": "Een Strandrecht is zeewaardig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "aangemonsterd",
+              "negated": false,
+              "host": "Wrakrecht",
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "year",
+                "negated": false
+              },
+              "source": {
+                "snippet": "hij gedurende het gehele jaar aangemonsterd is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "landvast",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "landvast",
+              "subjectType": "Strandrecht",
+              "source": {
+                "snippet": "Een Strandrecht is landvast"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "vaartijd",
+              "negated": true,
+              "host": "Wrakrecht",
+              "source": {
+                "snippet": "hij geen vaartijd heeft"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "ploegvarend",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "ploegvarend",
+              "subjectType": "Jutrecht",
+              "source": {
+                "snippet": "Een Jutrecht is ploegvarend"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Strandrecht",
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "vaartijd",
+                "negated": false,
+                "host": "Wrakrecht",
+                "source": {
+                  "snippet": "ten minste één van de rechten van de ploeg van het Jutrecht de vaartijd heeft"
+                }
+              },
+              "source": {
+                "snippet": "ten minste één van de rechten van de ploeg van het Jutrecht de vaartijd heeft"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "PloegBetreftStrandrecht",
+                  "role": "ploeg"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "PloegBetreftStrandrecht",
+                  "role": "recht"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

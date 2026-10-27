@@ -1,2 +1,2 @@
 WF-109.only-some-objects
-host=Strandvondst
+host=Seinmast

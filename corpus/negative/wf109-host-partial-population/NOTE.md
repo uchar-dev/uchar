@@ -1,42 +1,36 @@
 Violates WF-109 (`spec/IR-SPEC.md` ch. 4.6 (q2)) on its **partial-population
-flank**: the host names a STRICT SUBTYPE of the only object the position binds,
-so the reading would hold for some objects and fault for the rest.
+flank at the guard of a fact creation**: the host names a STRICT SUBTYPE of the
+target, one of the two objects the guard binds, so the guard would read some
+targets and have no reading for the others.
 
-    WF-109 FAIL /rules/rules/0/versions/0/condition/host: the
-    characteristic check is hosted on 'Strandvondst', which no object bound here
-    IS: only SOME objects of the subject 'Vondst' are one, so the host would
+    WF-109.only-some-objects FAIL /rules/factCreations/0/versions/0/condition/host:
+    the characteristic check is hosted on 'Seinmast', which no object bound
+    here IS: only SOME objects of the target 'Sein' are one, so the host would
     hold for some of them and fault for the rest
 
-Broken from `corpus/golden/jutterswet-keurhouder` by adding one declaration and
-moving one field: a `Strandvondst` subtype of `Vondst`, and the first rule's
-host from `Vondst` to `Strandvondst`. `gekeurd` is inherited, so WF-100 is
-satisfied and this rule is the only one speaking.
+Broken from `corpus/golden/jutterswet-seinhijsing` by adding one declaration and
+changing one field: a `Seinmast` subtype of `Sein`, and the host of the first
+fact creation's guard from `Sein` to `Seinmast`. `gehesen` is inherited, so
+WF-100 is satisfied and this guard is the only one speaking.
 
-Why this arm exists, and why it is a FAIL and not a pass. WF-109 asks two
-questions of a binding: does it SATISFY the host (`T ⊑ O` — every object it can
-hold is one) and does it OVERLAP the host (some object could be both). The
-overlap question is what catches `wf109-subtype-overlap`; the satisfaction
-question is what catches this one. Counting by overlap ALONE would admit this
-document, and then `ref` would answer for a `Strandvondst` and fault for a plain
-`Vondst` — a verdict that depends on the case rather than on the wire, which is
-precisely the state WF-109 exists to end. So the rule requires exactly one
-SATISFYING binding and no second OVERLAPPING one, and a host that only
-sometimes applies has zero of the first.
+Why the guard and not a rule. At a position that binds ONE object — a rule's
+subject, the member of a filter or a quantifier's test — a host strictly below
+that object's type is the narrowing host (ch. 4.6 (q2); `RUNTIME-SEMANTICS.md`
+ch. 5.8b rule 4): the check reads the object's own characteristic, true on an
+instance of the host that has it and false on every other object, and the
+golden `jutterswet-ploegblokkade` replays it. The guard of a fact creation binds
+TWO objects, the anchor and the target, and the host is what says which of them
+the guard is about. A host below the target is satisfied by neither binding and
+overlaps one, so it names no bound object: there is no reading for a target
+outside `Seinmast`, and the guard keeps this refusal.
 
-*What is NOT decided here.* Whether a partially-applicable host should read
-**false** for the objects it does not cover, rather than being refused, is a
-normative question nobody has answered; refusing it leaves that open, and
-answering it would settle it by accident.
+Falsifiable in two directions, each verifier-checked on 2026-10-27; **one
+turns this case clean and the other moves it to another rule**:
 
-Falsifiable in three directions; **two turn this case clean and the third
-moves it to another rule**:
-
-- put `Vondst` back in the field, or empty it — clean, the golden;
-- declare the subject `Strandvondst` instead — clean: host and subject then
-  coincide;
-- drop the `Strandvondst` declaration — NOT clean. The host then resolves to
-  nothing and the document is **WF-034 (q)** instead, a different rule and a
-  different report; WF-109 steps aside for an undeclared host.
-
-Since L5 the field is `host` (delta B10); the report cites `…/host`, and
-`expect.txt` pins the arm.
+- put `Sein` back in the field — clean, the golden; an empty field is clean as
+  well, and then the guard is an anchor-side check, which the anchor `Kustvak`
+  answers through its own `gehesen`;
+- drop the `Seinmast` declaration — NOT clean. The host then resolves to
+  nothing and the document is **WF-034 (q)** instead (`WF-034.host-undeclared`),
+  a different rule and a different report; WF-109 steps aside for an undeclared
+  host.

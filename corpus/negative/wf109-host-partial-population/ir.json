@@ -4,58 +4,170 @@
     "objectTypes": [
       {
         "node": "ObjectType",
-        "name": "Vondst",
+        "name": "Kustvak",
         "animate": false,
-        "plural": "Vondsten",
+        "plural": "Kustvakken",
         "attributes": [
           {
             "node": "Attribute",
-            "name": "afslag",
+            "name": "vakseinaantal",
             "datatype": {
-              "node": "Text"
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
             }
           },
           {
             "node": "Attribute",
-            "name": "keurstatus",
+            "name": "duisteraantal",
             "datatype": {
-              "node": "Text"
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
             }
           }
         ],
         "characteristics": [
           {
             "node": "Characteristic",
-            "name": "gekeurd",
+            "name": "gehesen",
             "kind": "adjectival"
           }
         ]
       },
       {
         "node": "ObjectType",
-        "name": "Jutter",
-        "animate": true,
-        "plural": "Jutters",
+        "name": "Post",
+        "animate": false,
+        "plural": "Posten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "seinaantal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gehesen",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Sein",
+        "animate": false,
+        "plural": "Seinen",
         "attributes": [],
         "characteristics": [
           {
             "node": "Characteristic",
-            "name": "penninggerechtigd",
+            "name": "gehesen",
             "kind": "adjectival"
           }
         ]
       },
       {
         "node": "ObjectType",
-        "name": "Strandvondst",
-        "supertype": "Vondst",
+        "name": "Seinmast",
+        "supertype": "Sein",
         "animate": false,
-        "plural": "Strandvondsten",
+        "plural": "Seinmasten",
         "attributes": [],
         "characteristics": []
       }
     ],
-    "factTypes": [],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "kustligging",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "kustvak",
+            "objectType": "Kustvak",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "post",
+            "objectType": "Post",
+            "plural": "posten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "seinvoering",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "post",
+            "objectType": "Post",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "sein",
+            "objectType": "Sein",
+            "plural": "seinen",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "vakbeseining",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "seinvak",
+            "objectType": "Kustvak",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vaksein",
+            "objectType": "Sein",
+            "plural": "vakseinen",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "vakverduistering",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "duistervak",
+            "objectType": "Kustvak",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "duistersein",
+            "objectType": "Sein",
+            "plural": "duisterseinen",
+            "many": true
+          }
+        ]
+      }
+    ],
     "parameters": [],
     "domains": [],
     "unitSystems": [],
@@ -67,7 +179,7 @@
     "rules": [
       {
         "node": "Rule",
-        "name": "afslag van een gekeurde vondst",
+        "name": "seinaantal van een post",
         "versions": [
           {
             "validity": {
@@ -75,41 +187,49 @@
             },
             "target": {
               "node": "AttributeReference",
-              "attribute": "afslag",
-              "subjectType": "Vondst",
+              "attribute": "seinaantal",
+              "subjectType": "Post",
               "source": {
-                "snippet": "De afslag van een Vondst"
+                "snippet": "Het seinaantal van een Post"
               }
             },
             "value": {
-              "node": "Literal",
-              "value": {
-                "text": "zeeveiling"
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "seinen",
+                  "subjectType": "Post",
+                  "source": {
+                    "snippet": "seinen van de post"
+                  }
+                }
+              ],
+              "elementType": "Sein",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "seinvoering",
+                "role": "sein"
               },
               "type": {
-                "node": "Text"
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
               },
               "source": {
-                "snippet": "'zeeveiling'"
-              }
-            },
-            "condition": {
-              "node": "CharacteristicCheck",
-              "characteristic": "gekeurd",
-              "negated": false,
-              "host": "Strandvondst",
-              "source": {
-                "snippet": "de Vondst gekeurd is"
+                "snippet": "het aantal seinen van de post"
               }
             },
             "initialisation": false,
-            "presentation": "equation"
+            "presentation": "calculation"
           }
         ]
       },
       {
         "node": "Rule",
-        "name": "keurstatus van een ongekeurde vondst",
+        "name": "vakseinaantal van een kustvak",
         "versions": [
           {
             "validity": {
@@ -117,35 +237,93 @@
             },
             "target": {
               "node": "AttributeReference",
-              "attribute": "keurstatus",
-              "subjectType": "Vondst",
+              "attribute": "vakseinaantal",
+              "subjectType": "Kustvak",
               "source": {
-                "snippet": "De keurstatus van een Vondst"
+                "snippet": "Het vakseinaantal van een Kustvak"
               }
             },
             "value": {
-              "node": "Literal",
-              "value": {
-                "text": "onbekeurd"
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vakseinen",
+                  "subjectType": "Kustvak",
+                  "source": {
+                    "snippet": "vakseinen van het kustvak"
+                  }
+                }
+              ],
+              "elementType": "Sein",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vakbeseining",
+                "role": "vaksein"
               },
               "type": {
-                "node": "Text"
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
               },
               "source": {
-                "snippet": "'onbekeurd'"
-              }
-            },
-            "condition": {
-              "node": "CharacteristicCheck",
-              "characteristic": "gekeurd",
-              "negated": true,
-              "host": "Vondst",
-              "source": {
-                "snippet": "de Vondst niet gekeurd is"
+                "snippet": "het aantal vakseinen van het kustvak"
               }
             },
             "initialisation": false,
-            "presentation": "equation"
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "duisteraantal van een kustvak",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "duisteraantal",
+              "subjectType": "Kustvak",
+              "source": {
+                "snippet": "Het duisteraantal van een Kustvak"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "duisterseinen",
+                  "subjectType": "Kustvak",
+                  "source": {
+                    "snippet": "duisterseinen van het kustvak"
+                  }
+                }
+              ],
+              "elementType": "Sein",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vakverduistering",
+                "role": "duistersein"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal duisterseinen van het kustvak"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
           }
         ]
       }
@@ -155,7 +333,80 @@
     "allocations": [],
     "consistencies": [],
     "uniquenesses": [],
-    "factCreations": [],
+    "factCreations": [
+      {
+        "node": "FactCreation",
+        "name": "vakbeseining door het kustvak",
+        "versions": [
+          {
+            "factType": "vakbeseining",
+            "anchorRole": "seinvak",
+            "targetRole": "vaksein",
+            "anchor": "Kustvak",
+            "path": [
+              {
+                "node": "RoleBinding",
+                "factType": "kustligging",
+                "role": "post"
+              },
+              {
+                "node": "RoleBinding",
+                "factType": "seinvoering",
+                "role": "sein"
+              }
+            ],
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "gehesen",
+              "negated": false,
+              "host": "Seinmast",
+              "source": {
+                "snippet": "het sein gehesen is"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            }
+          }
+        ]
+      },
+      {
+        "node": "FactCreation",
+        "name": "vakverduistering door het kustvak",
+        "versions": [
+          {
+            "factType": "vakverduistering",
+            "anchorRole": "duistervak",
+            "targetRole": "duistersein",
+            "anchor": "Kustvak",
+            "path": [
+              {
+                "node": "RoleBinding",
+                "factType": "kustligging",
+                "role": "post"
+              },
+              {
+                "node": "RoleBinding",
+                "factType": "seinvoering",
+                "role": "sein"
+              }
+            ],
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "gehesen",
+              "negated": true,
+              "host": "Sein",
+              "source": {
+                "snippet": "het sein niet gehesen is"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            }
+          }
+        ]
+      }
+    ],
     "startPointDeterminations": [],
     "ruleGroups": []
   },

@@ -833,16 +833,21 @@ let populations_overlap doc a b =
    the ASP backend calls) take them from, so a host that names no single object
    is refused in the same words wherever it is met. [bound] is the (role, type)
    list of the objects the position binds, [hits] those that SATISFY the host
-   (`T ⊑ O`), [near] those that OVERLAP it ([populations_overlap]). [None] is the
-   one reading the wire settles: exactly one binding satisfies, and no other can
-   be the host's object. *)
-let wf109_host_arm ~host ~(bound : (string * string) list) ~hits ~near =
+   (`T ⊑ O`), [near] those that OVERLAP it ([populations_overlap]). [None] is a
+   reading the wire settles: exactly one binding satisfies, and no other can be
+   the host's object; or, with [narrowing], the position binds one object and the
+   host is a type strictly below it — the narrowing host (IR-SPEC ch. 4.6 (q2),
+   RUNTIME-SEMANTICS ch. 5.8b rule 4), which reads the object as an instance of
+   the host or not. [narrowing] is the caller's: a check that neither navigates
+   nor carries a whole-period qualifier, at a position that binds one object. *)
+let wf109_host_arm ?(narrowing = false) ~host ~(bound : (string * string) list) ~hits ~near () =
   let named (r, t) = "the " ^ r ^ " '" ^ t ^ "'" in
   let here = String.concat " and " (List.map named bound) in
   let hosted = "the characteristic check is hosted on '" ^ host ^ "', which " in
   match (bound, hits, near) with
   | [], _, _ -> None
   | _, [ _ ], [ _ ] -> None
+  | [ _ ], [], [ _ ] when narrowing -> None
   | _, [ h ], others ->
       let rest = String.concat " and " (List.map named (List.filter (fun b -> b <> h) others)) in
       Some
@@ -872,7 +877,7 @@ let wf109_host_arm ~host ~(bound : (string * string) list) ~hits ~near =
 
 (* the sentence alone, for the executors that refuse in it *)
 let wf109_host_sentence ~host ~bound ~hits ~near =
-  Option.map (fun (_, _, sentence) -> sentence) (wf109_host_arm ~host ~bound ~hits ~near)
+  Option.map (fun (_, _, sentence) -> sentence) (wf109_host_arm ~host ~bound ~hits ~near ())
 
 (* The type on [from]'s chain that DECLARES [member] — [from] itself when it
    declares it. The ch. 7.2 conflict key names this type and not the
@@ -6804,9 +6809,19 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
            subtype edge smuggle a second candidate past: `Sein ⊑ Kustvak` makes
            a concrete `Sein` fill an anchor declared `Kustvak`, so a `Sein` host
            names two objects at run time and one on paper. Overlap alone is not
-           enough either: it would ADMIT a host naming a strict subtype of the
-           binding, where the reading holds for some objects and faults for
-           others — a verdict the wire cannot settle, so it keeps failing. *)
+           enough either: at the guard of a fact creation, which binds two
+           objects, it would admit a host naming a strict subtype of one of
+           them, and the guard has no reading for the objects outside it.
+
+           A host strictly below the ONE object a position binds is the
+           narrowing host (IR-SPEC ch. 4.6 (q2), RUNTIME-SEMANTICS ch. 5.8b
+           rule 4): the check reads that object's own characteristic, true on
+           an instance of the host that has it and false on every other object,
+           so the wire settles the reading. It is admitted on the check that
+           neither navigates nor carries a whole-period qualifier: on a
+           navigated check the characteristic lives on the reached object, and
+           under the qualifier the bean-model branches fold before they read
+           the host, so there it stays `only-some-objects`. *)
       (match holder with
        | Some e when object_type ctx e <> None ->
            let bound =
@@ -6819,7 +6834,10 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
            in
            let hits = List.filter (fun (_, t) -> is_sub ctx ~sub:t ~super:e) bound in
            let near = List.filter (fun (_, t) -> populations_overlap ctx.doc t e) bound in
-           (match wf109_host_arm ~host:e ~bound ~hits ~near with
+           (* the narrowing host: a type strictly below the one object bound
+              here, on a check that reads that object's own characteristic *)
+           let narrowing = navigation_binding = None && time_period = None in
+           (match wf109_host_arm ~narrowing ~host:e ~bound ~hits ~near () with
             | None -> []
             | Some (slug, params, m) -> [ v ~params ("WF-109." ^ slug) (sub "host") m ])
        | _ -> [])
