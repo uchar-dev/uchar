@@ -1,0 +1,92 @@
+Scenario een ploeg met twee wrakrechten en een kaal strandrecht
+Gegeven is de volgende situatie:
+de parameter de vaartijddrempel is 5
+een Ploeg P1
+- de rechten zijn J1, W1, W2 en S1
+een Jutrecht J1
+- het loon is 5
+- de grens is 10
+een Wrakrecht W1
+- het loon is 20
+- het logboek is L1
+een Wrakrecht W2
+- het loon is 30
+- de grens is 25
+- het logboek is L2
+een Strandrecht S1
+- het loon is 40
+een Logboek L1
+- de zeeweken is 6
+een Logboek L2
+- de zeeweken is 2
+Met als verwacht resultaat:
+- W1 heeft de vaartijd
+- W2 heeft geen vaartijd
+- het hoogste vaarloon van J1 is 20
+- het hoogste vaarloon van W1 is leeg
+- het hoogste vaarloon van W2 is 20
+- het hoogste rustloon van J1 is 40
+- het hoogste rustloon van W1 is 40
+- het hoogste rustloon van W2 is 40
+- J1 heeft de blokkade
+- W1 heeft geen blokkade
+- W2 heeft geen blokkade
+- W1 is zeewaardig
+- W2 is niet zeewaardig
+- J1 is niet zeewaardig
+- S1 is niet zeewaardig
+- W1 is niet landvast
+- W2 is landvast
+- J1 is landvast
+- S1 is landvast
+- J1 is ploegvarend
+- W1 is ploegvarend
+- W2 is ploegvarend
+- de gegevens zijn consistent
+
+Scenario een jutrecht met alleen een kaal strandrecht
+Gegeven is de volgende situatie:
+de parameter de vaartijddrempel is 5
+een Ploeg P1
+- de rechten zijn J1 en S1
+een Jutrecht J1
+- het loon is 5
+- de grens is 10
+een Strandrecht S1
+- het loon is 40
+Met als verwacht resultaat:
+- het hoogste vaarloon van J1 is leeg
+- het hoogste rustloon van J1 is 40
+- J1 heeft geen blokkade
+- J1 is niet zeewaardig
+- S1 is niet zeewaardig
+- J1 is landvast
+- S1 is landvast
+- J1 is niet ploegvarend
+- de gegevens zijn consistent
+
+Scenario een wrakrecht zonder logboek
+Gegeven is de volgende situatie:
+de parameter de vaartijddrempel is 5
+een Ploeg P1
+- de rechten zijn J1 en W1
+een Jutrecht J1
+- het loon is 5
+- de grens is 10
+een Wrakrecht W1
+- het loon is 20
+Met als verwacht resultaat:
+- W1 heeft geen vaartijd
+- het hoogste vaarloon van J1 is leeg
+- het hoogste vaarloon van W1 is leeg
+- het hoogste rustloon van J1 is 20
+- het hoogste rustloon van W1 is 5
+- J1 heeft geen blokkade
+- W1 heeft geen blokkade
+- W1 is niet zeewaardig
+- J1 is niet zeewaardig
+- W1 is landvast
+- J1 is landvast
+- J1 is niet ploegvarend
+- W1 is niet ploegvarend
+- de gegevens zijn consistent

@@ -3106,7 +3106,8 @@ final class RuleChecker {
     /** The own reads of a condition: the sides of a comparison, the operand of a predicate, the bounds of a window,
      *  an own characteristic check in either polarity, through every composite. The filter and the test of a
      *  quantifier fold read the element and not the subject, and stay out, as a fold's filter does in a value; a
-     *  navigated or hosted characteristic check reads another object. */
+     *  navigated characteristic check, and one hosted on a type the subject is not below, reads another object. A check
+     *  hosted on a type below the subject reads the subject's own characteristic, under the host that declares it. */
     private static void collectOwnReads(Condition c, ObjectType subject, Set<ReadNode> result,
                                            Map<ReadNode, String> text) {
         switch (c) {
@@ -3122,6 +3123,8 @@ final class RuleChecker {
             }
             case Condition.CharacteristicCheck k -> {
                 if (k.navigation() == null && k.owner() == null) result.add(readNode(subject, k.characteristic(), true, text));
+                else if (k.navigation() == null && k.owner() != subject && k.owner().isA(subject))
+                    result.add(readNode(k.owner(), k.characteristic(), true, text));
             }
             case Condition.Compound sg -> sg.components().forEach(o -> collectOwnReads(o, subject, result, text));
             default -> { }
@@ -3401,6 +3404,8 @@ final class RuleChecker {
             String versionName = versions.size() > 1 ? name + " #" + (i + 1) : name;
             builder.setSubject(ruleSubjectOf(rsr.resultaatDeel())); // so "zijn …" resolves against the rule subject
             builder.setVariables(rsr.variabeleDeel());          // §11 capture "Daarbij geldt:" vars in BOTH forms (clears per rule)
+            // the guard of a fact creation binds two objects, so a check there names no subtype of either as its host
+            builder.narrowingHosts(rsr.resultaatDeel() == null || rsr.resultaatDeel().feitCreatie() == null);
             Condition condition = rsr.voorwaardeDeel() != null ? buildCondition(rsr.voorwaardeDeel()) : null;
             // The set fence on the CONDITION, here rather than in the naloop: this is the one place every
             // resultaatdeel kind's voorwaarde passes through, so one call covers the constructs that do
@@ -3409,6 +3414,7 @@ final class RuleChecker {
             checkSetRead(condition, builder.subject());
             resultClause(name, versionName, rsr.resultaatDeel(), rsr.voorwaardeDeel(), condition, validity);
             conditions(rsr);   // exhaustive condition type-check (§5), unchanged
+            builder.narrowingHosts(true);
         }
     }
 
@@ -5913,6 +5919,20 @@ final class RuleChecker {
      *  kenmerk), so the ordinary verbatim-first de-negation handles a "niet" or "geen" there and a kenmerk
      *  literally named "niet …" or "geen …" still binds positively. */
     private Condition elementCharacteristicCheck(ObjectType elem, String name, boolean withIndefiniteArticle, boolean hasVerb, Source source) {
+        Condition k = elementCharacteristicBinding(elem, name, withIndefiniteArticle, hasVerb, source);
+        if (k != null) {
+            if (!withIndefiniteArticle) checkNegationKind(elem, k, hasVerb);
+            return k;
+        }
+        if (!withIndefiniteArticle)
+            return hostedBelow(elem, name, hasVerb, t -> elementCharacteristicBinding(t, name, false, hasVerb, source), source);
+        return builder.narrowingHost(elem, name, source,
+                t -> elementCharacteristicBinding(t, name, true, hasVerb, source));
+    }
+
+    /** {@link #elementCharacteristicCheck} on the chain of {@code elem} alone. */
+    private Condition elementCharacteristicBinding(ObjectType elem, String name, boolean withIndefiniteArticle, boolean hasVerb,
+                                                   Source source) {
         if (withIndefiniteArticle && hasVerb) return possessiveCharacteristicCheck(elem, name, source);
         if (withIndefiniteArticle) {
             Condition k = nominalCharacteristicCheck(elem, name, source);
@@ -5924,9 +5944,7 @@ final class RuleChecker {
             }
             return k;
         }
-        Condition kc = characteristicCheckCondition(elem, name, null, hasVerb, source);
-        if (kc != null) checkNegationKind(elem, kc, hasVerb);
-        return kc;
+        return characteristicCheckCondition(elem, name, null, hasVerb, source);
     }
 
     /** The §8.2 whole-period qualifier of {@code c}, for the two condition forms that carry Expr operands
@@ -6169,7 +6187,8 @@ final class RuleChecker {
         boolean anchored = reach == ExpressionBuilder.Reach.FORM && builder.inPerElementContext()
                 || lhs instanceof Expr.AttributeReference a && a.anchored();
         if (reach == ExpressionBuilder.Reach.FORM) subject = builder.formSubject();
-        Condition c = characteristicCheckOn(subject, lhs, nameCtx, withIndefiniteArticle, hasVerb, source);
+        // an anchored check carries no host (WF-122 (b)), so it reads no characteristic of a subtype either
+        Condition c = characteristicCheckOn(subject, lhs, nameCtx, withIndefiniteArticle, hasVerb, !anchored, source);
         if (!anchored || c == null || c instanceof Condition.Unresolved) return c;
         if (c instanceof Condition.CharacteristicCheck k && k.owner() == null)
             return new Condition.CharacteristicCheck(k.characteristic(), k.navigation(), k.negation(), null, k.period(),
@@ -6179,9 +6198,11 @@ final class RuleChecker {
     }
 
     /** {@link #characteristicCheckPredicateBare} on {@code subject}: the check or the role check {@code lhs} and the
-     *  name write. */
+     *  name write. With {@code narrowing}, a name that binds no characteristic and no role of the subject binds a
+     *  characteristic one type below it declares, hosted on that type ({@link ExpressionBuilder#narrowingHost}). */
     private Condition characteristicCheckOn(ObjectType subject, Expr lhs, KaleNaamContext nameCtx,
-                                            boolean withIndefiniteArticle, boolean hasVerb, Source source) {
+                                            boolean withIndefiniteArticle, boolean hasVerb, boolean narrowing,
+                                            Source source) {
         String suffix = stripArticle(src(nameCtx));
         String head = subjectHead(lhs, subject);
         // not the subject itself -> a navigated kenmerk ("zijn reis is duurzaam", or the EEN-form "zijn reis is
@@ -6203,9 +6224,12 @@ final class RuleChecker {
             if (kc != null) { checkNegationKind(subject, kc, hasVerb); return kc; }
             // a leftover "geen <name>" that is a role is the INVERSE rolcheck (the subject does not fill it);
             // otherwise the positive rolcheck.
-            if (name.regionMatches(true, 0, "geen ", 0, 5))
-                return roleMembership(subject, name.substring(5).trim(), source, true);
-            return roleMembership(subject, name, source);
+            Condition role = name.regionMatches(true, 0, "geen ", 0, 5)
+                    ? roleMembership(subject, name.substring(5).trim(), source, true)
+                    : roleMembership(subject, name, source);
+            if (role != null || !narrowing) return role;
+            return hostedBelow(subject, name, hasVerb,
+                    t -> characteristicCheckCondition(t, name, null, hasVerb, source), source);
         }
         // EEN-form: the grammar conflates a kenmerknaam and a rolnaam after "een", so disambiguate by lookup,
         // kenmerk-first (Tabel 16). The verb selects which kenmerk SOORT the EEN-form may bind: "is een <k>" is
@@ -6216,7 +6240,20 @@ final class RuleChecker {
         // een <rolnaam>" (incl. the far-side "heeft een <rol>" exists-join).
         Condition k = hasVerb ? possessiveCharacteristicCheck(subject, name, source)
                                     : nominalCharacteristicCheck(subject, name, source);
-        return k != null ? k : roleMembership(subject, name, source);
+        if (k != null) return k;
+        Condition role = roleMembership(subject, name, source);
+        if (role != null || !narrowing) return role;
+        return builder.narrowingHost(subject, name, source, t -> hasVerb ? possessiveCharacteristicCheck(t, name, source)
+                : nominalCharacteristicCheck(t, name, source));
+    }
+
+    /** {@link ExpressionBuilder#narrowingHost} with {@code bind}, and the Tabel 16 register of a negation it binds, read
+     *  on the host that declares the characteristic. */
+    private Condition hostedBelow(ObjectType subject, String name, boolean hasVerb,
+                                  java.util.function.Function<ObjectType, Condition> bind, Source source) {
+        Condition c = builder.narrowingHost(subject, name, source, bind);
+        if (c instanceof Condition.CharacteristicCheck k) checkNegationKind(k.owner(), k, hasVerb);
+        return c;
     }
 
     /** The declared §3.12 dagsoort whose name matches {@code written} (case-insensitive), or null. The

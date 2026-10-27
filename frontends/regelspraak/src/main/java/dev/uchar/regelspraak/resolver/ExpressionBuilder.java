@@ -2420,7 +2420,47 @@ final class ExpressionBuilder {
         // §5.6: the written form may be the kenmerk's inflected/nominalized spelling
         // ("die een minderjarige zijn" against the declared "minderjarig") — bind it morphologically.
         String characteristic = CharacteristicMatcher.find(elem, nameSource);
-        return characteristic != null ? new Condition.CharacteristicCheck(characteristic, source(p)) : null;
+        if (characteristic != null) return new Condition.CharacteristicCheck(characteristic, source(p));
+        String written = nameSource;
+        return narrowingHost(elem, written, source(p), t -> {
+            String g = CharacteristicMatcher.find(t, written);
+            return g == null ? null : new Condition.CharacteristicCheck(g, source(p));
+        });
+    }
+
+    /** False while the condition of a fact creation is built: its guard binds two objects, the anchor and the target, and
+     *  a narrowing host would name a subtype of one of them (IR-SPEC ch. 4.6 (q2)). */
+    private boolean narrowingHosts = true;
+
+    void narrowingHosts(boolean allowed) { narrowingHosts = allowed; }
+
+    /**
+     * The check of a characteristic that no type on the chain of {@code subject} declares, hosted on the one type strictly
+     * below {@code subject} that declares it: the narrowing host (IR-SPEC ch. 4.6 (q2), RUNTIME-SEMANTICS ch. 5.8b
+     * rule 4). It holds for an object of that type that has the characteristic, and for no other object; its negation
+     * is the complement. {@code bind} binds the written name on one type, as the caller binds it on {@code subject}:
+     * the check, or null. Null where no type below {@code subject} binds the name, and at the condition of a fact
+     * creation. Where the bindings below are declared on more than one type, a marker that names them: under single
+     * inheritance those types are siblings, and one host reads only one of them.
+     */
+    Condition narrowingHost(ObjectType subject, String written, Source source,
+                            java.util.function.Function<ObjectType, Condition> bind) {
+        if (subject == null || !narrowingHosts) return null;
+        Map<ObjectType, Condition.CharacteristicCheck> byDeclarant = new LinkedHashMap<>();
+        for (ObjectType t : model.objectTypes.values())
+            if (t != subject && t.isA(subject) && bind.apply(t) instanceof Condition.CharacteristicCheck k
+                    && k.navigation() == null && k.owner() == null)
+                byDeclarant.putIfAbsent(t.declarantOf(k.characteristic()), k);
+        if (byDeclarant.isEmpty()) return null;
+        if (byDeclarant.size() > 1)
+            return new Condition.Unresolved(source, Msg.frontend("RGS-092.characteristic-on-sibling-subtypes",
+                    "name", written, "subject", subject.name,
+                    "declarants", new Msg.Enumeration(dev.uchar.regelspraak.message.Component.FRONTEND,
+                            byDeclarant.keySet().stream().map(d -> "'" + d.name + "'").toList())));
+        Map.Entry<ObjectType, Condition.CharacteristicCheck> only = byDeclarant.entrySet().iterator().next();
+        Condition.CharacteristicCheck k = only.getValue();
+        return new Condition.CharacteristicCheck(k.characteristic(), null, k.negation(), only.getKey(), k.period(),
+                k.source());
     }
 
     /** §5.6/§13.4.13.5-.7 a getal/datum/tekst elementairpredicaat "die &lt;op&gt; &lt;expr&gt;" (the vragende-meervoud

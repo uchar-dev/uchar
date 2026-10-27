@@ -1,0 +1,237 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {
+          "rechten": [
+            "J1",
+            "W1",
+            "W2",
+            "S1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutrecht",
+        "attributes": {
+          "loon": {
+            "number": "5"
+          },
+          "grens": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "W1",
+        "objectType": "Wrakrecht",
+        "attributes": {
+          "loon": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "logboek": [
+            "L1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "W2",
+        "objectType": "Wrakrecht",
+        "attributes": {
+          "loon": {
+            "number": "30"
+          },
+          "grens": {
+            "number": "25"
+          }
+        },
+        "roles": {
+          "logboek": [
+            "L2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Strandrecht",
+        "attributes": {
+          "loon": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "L1",
+        "objectType": "Logboek",
+        "attributes": {
+          "zeeweken": {
+            "number": "6"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "L2",
+        "objectType": "Logboek",
+        "attributes": {
+          "zeeweken": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "vaartijddrempel": {
+        "number": "5"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "W1",
+      "characteristic": "vaartijd"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "W2",
+      "characteristic": "vaartijd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "hoogste vaarloon",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "W1",
+      "attribute": "hoogste vaarloon"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W2",
+      "attribute": "hoogste vaarloon",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "hoogste rustloon",
+      "value": {
+        "number": "40"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W1",
+      "attribute": "hoogste rustloon",
+      "value": {
+        "number": "40"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "W2",
+      "attribute": "hoogste rustloon",
+      "value": {
+        "number": "40"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "blokkade"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "W1",
+      "characteristic": "blokkade"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "W2",
+      "characteristic": "blokkade"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W1",
+      "characteristic": "zeewaardig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "W2",
+      "characteristic": "zeewaardig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "zeewaardig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "zeewaardig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "W1",
+      "characteristic": "landvast"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W2",
+      "characteristic": "landvast"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "landvast"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "landvast"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "ploegvarend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W1",
+      "characteristic": "ploegvarend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "W2",
+      "characteristic": "ploegvarend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

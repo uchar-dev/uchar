@@ -318,6 +318,7 @@ RGS-092.nested-bullet	deze bullet van de samengestelde voorwaarde is geen genest
 RGS-092.elementary-form	de elementaire voorwaarde heeft geen van de §13.4.15-vormen — geen expressie met operator, geen periodevergelijking en geen regelpredicaat
 RGS-092.not-absorbed	de gulzige ontleding trok de ontkenning 'niet' in het onderwerp; een vergelijking of een leeg-/gevuld-controle kan haar daar niet uit terughalen, en de positieve vorm emitteren zou de vraag omkeren (§8.1)
 RGS-092.no-characteristic-no-role	de geschreven naam bindt geen kenmerk en geen rol van het onderwerp (§8.1.7/§8.1.8), dus er is geen lidmaatschap om te toetsen
+RGS-092.characteristic-on-sibling-subtypes	de naam '{name}' bindt geen kenmerk en geen rol van het onderwerp '{subject}', en meer dan één type eronder declareert het kenmerk: {declarants}; een kenmerkcheck leest het kenmerk van één type onder het onderwerp (IR-SPEC ch. 4.6 (q2)), dus de naam wijst er geen aan
 RGS-092.whole-period-role	de controle 'gedurende de/het gehele <periode>' hoort bij een kenmerkcontrole over een tijdsafhankelijk onderwerp; over deze lidmaatschapsvorm (een §8.1.7-rolcontrole) heeft zij geen omschreven betekenis (§8.2)
 RGS-092.negation-form	de vorm 'is niet een <naam>' bond geen kenmerk en geen rol van het onderwerp (§8.1.8.3), dus er is niets om te ontkennen
 RGS-093	kopvorm: 'is {word}' mist het lidwoord — een supertype wordt geschreven als 'is een {word}'

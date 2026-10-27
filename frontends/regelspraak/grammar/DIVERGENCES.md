@@ -1452,6 +1452,63 @@ is") is a marker with its WARNING, and with "hij" a syntax error.
 
 ---
 
+## A characteristic of a subtype — the narrowing host (2026-10-27)
+
+Not a dialect extension: the reading of a sanctioned sentence under the subtype
+extension (§5). Member resolution walks the chain upward only (IR-SPEC ch. 2.2),
+so "hij heeft de vaartijd" said of a Strandrecht binds nothing where only its
+subtype Wrakrecht declares `vaartijd`, and the frontend left a marker with an
+`RGS-092` WARNING. The sentence is written where a fold ranges over a role the
+supertype fills and its filter asks a characteristic of the subtype ("alle
+rechten van de ploeg die aan alle volgende voorwaarden voldoen: .. hij heeft de
+vaartijd"), and the wire carries it: a `CharacteristicCheck` whose `host` is a
+type strictly below the one object its position binds, the narrowing host
+(IR-SPEC ch. 4.6 (q2), RUNTIME-SEMANTICS ch. 5.8b rule 4). It holds for an
+instance of the host that has the characteristic and for no other object; its
+negation is the complement.
+
+**Where the frontend binds it.** Where a name binds no characteristic of the
+subject's chain and no role the subject fills, the frontend looks at every type
+strictly below the subject and binds the name there the way it binds it on the
+subject: the whole name first, then `niet`/`geen` as the negation, the article
+stripped, the inflected form, and, after `een`, the kind the verb selects. The
+order is the old order with one step after it, so a name that bound before binds
+the same thing now and no document without the form changes. The positions are
+those of a check of the subject's own characteristic that binds one object: a
+rule's condition and every condition built the same way (a consistency, an
+allocation, a creation, a default), the member of a filter (the composite
+"die aan … voldoen" and "die zeevast zijn"), and the member of a quantifier's
+test. The host is the type that DECLARES the characteristic, at any depth below
+the subject; the Tabel 16 register of a negation is read on it.
+
+**Where it does not.** The navigated check ("zijn logboek is vol") and the check
+with the form anchor ("het Jutrecht zelf heeft …") keep their binding, which
+reads a characteristic of the reached type or of the form subject's chain; the
+condition of a fact creation binds two objects, and there a host below one of
+them names neither (WF-109), so no narrowing host is written in it.
+
+**Refused loudly.** Where the types below the subject that bind the name are
+more than one, they are siblings (WF-105 keeps a name off two types of one
+chain), and one host reads one of them. The check stays a marker, and the
+WARNING names them: `RGS-092` with the part
+`RGS-092.characteristic-on-sibling-subtypes` (`name`, `subject`,
+`declarants`). The union of the two is expressible on the wire (an `atLeast 1`
+composite of two hosted checks) and is not written: no sentence asks for it yet.
+Where no type below binds the name, the marker and its reason
+`RGS-092.no-characteristic-no-role` are those of before.
+
+**Not covered: an attribute of a subtype.** "zijn grens is gevuld" said of a
+Strandrecht, where only Jutrecht declares `grens`, gets the frontend's answer of
+before: an own read names the subject type (WF-053), and the reading a read of a
+subtype's attribute would get (leeg outside the declaring type) is a decision of
+its own.
+
+Measured 2026-10-27: every source of the corpus re-emits byte-identically, the
+casus of the parity zone too. Witnesses: `NarrowingHostTest`, the golden
+`jutterswet-ploegblokkade`.
+
+---
+
 ## A quantifier over a written path — the range is the path (2026-10-20)
 
 Not a dialect extension: the wire form IR-SPEC ch. 4.5 carries

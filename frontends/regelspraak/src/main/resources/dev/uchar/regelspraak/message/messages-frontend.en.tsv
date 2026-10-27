@@ -318,6 +318,7 @@ RGS-092.nested-bullet	this bullet of the compound condition is no nested compoun
 RGS-092.elementary-form	the elementary condition has none of the §13.4.15 forms — no expression with an operator, no period comparison and no rule predicate
 RGS-092.not-absorbed	the greedy parse pulled the negation 'niet' into the subject; a comparison or an empty/filled check cannot retrieve it from there, and emitting the positive form would invert the question (§8.1)
 RGS-092.no-characteristic-no-role	the written name binds no characteristic and no role of the subject (§8.1.7/§8.1.8), so there is no membership to test
+RGS-092.characteristic-on-sibling-subtypes	the name '{name}' binds no characteristic and no role of the subject '{subject}', and more than one type below it declares the characteristic: {declarants}; a characteristic check reads the characteristic of one type below the subject (IR-SPEC ch. 4.6 (q2)), so the name designates none of them
 RGS-092.whole-period-role	the check 'gedurende de/het gehele <periode>' belongs to a characteristic check over a time-dependent subject; over this membership form (a §8.1.7 role check) it has no defined meaning (§8.2)
 RGS-092.negation-form	the form 'is niet een <naam>' bound no characteristic and no role of the subject (§8.1.8.3), so there is nothing to negate
 RGS-093	head form: 'is {word}' lacks the article — a supertype is written as 'is een {word}'

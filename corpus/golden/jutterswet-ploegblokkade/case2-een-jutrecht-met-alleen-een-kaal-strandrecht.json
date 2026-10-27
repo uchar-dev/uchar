@@ -1,0 +1,98 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {
+          "rechten": [
+            "J1",
+            "S1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutrecht",
+        "attributes": {
+          "loon": {
+            "number": "5"
+          },
+          "grens": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Strandrecht",
+        "attributes": {
+          "loon": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "vaartijddrempel": {
+        "number": "5"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "hoogste vaarloon"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "hoogste rustloon",
+      "value": {
+        "number": "40"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "blokkade"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "zeewaardig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "zeewaardig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "landvast"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "landvast"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "ploegvarend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

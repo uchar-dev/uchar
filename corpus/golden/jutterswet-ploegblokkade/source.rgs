@@ -1,0 +1,72 @@
+Objecttype het Strandrecht (mv: Strandrechten)
+    het loon Numeriek (getal met 2 decimalen);
+    is zeewaardig kenmerk (bijvoeglijk);
+    is landvast kenmerk (bijvoeglijk);
+
+Objecttype het Jutrecht is een Strandrecht (mv: Jutrechten)
+    de grens Numeriek (getal met 2 decimalen);
+    het hoogste vaarloon Numeriek (getal met 2 decimalen);
+    het hoogste rustloon Numeriek (getal met 2 decimalen);
+    de blokkade kenmerk (bezittelijk);
+    is ploegvarend kenmerk (bijvoeglijk);
+
+Objecttype het Wrakrecht is een Jutrecht (mv: Wrakrechten)
+    de vaartijd kenmerk (bezittelijk);
+
+Objecttype de Ploeg (mv: Ploegen)
+
+Objecttype het Logboek (mv: Logboeken)
+    de zeeweken Numeriek (geheel getal);
+
+Feittype PloegBetreftStrandrecht
+    de ploeg Ploeg
+    het recht (mv: rechten) Strandrecht
+Eén ploeg betreft meerdere rechten
+
+Feittype StrandrechtHeeftLogboek
+    het recht Strandrecht
+    het logboek Logboek
+Eén recht heeft één logboek
+
+Parameter de vaartijddrempel : Numeriek (geheel getal)
+
+Regel vaartijd
+    geldig altijd
+        Een Wrakrecht heeft de vaartijd
+        indien de zeeweken van het logboek van het Wrakrecht groter of gelijk is aan de vaartijddrempel.
+
+Regel hoogste vaarloon
+    geldig altijd
+        Het hoogste vaarloon van een Jutrecht moet berekend worden als de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen:
+        - hij is niet het Jutrecht zelf
+        - hij heeft de vaartijd.
+
+Regel hoogste rustloon
+    geldig altijd
+        Het hoogste rustloon van een Jutrecht moet berekend worden als de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen:
+        - hij is niet het Jutrecht zelf
+        - hij heeft geen vaartijd.
+
+Regel blokkade
+    geldig altijd
+        Een Jutrecht heeft de blokkade
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn grens is gevuld
+        - (de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen:
+        .. hij is niet het Jutrecht zelf
+        .. het Strandrecht heeft de vaartijd) is groter dan zijn grens.
+
+Regel zeewaardig
+    geldig altijd
+        Een Strandrecht is zeewaardig
+        indien hij de vaartijd heeft.
+
+Regel landvast
+    geldig altijd
+        Een Strandrecht is landvast
+        indien hij geen vaartijd heeft.
+
+Regel ploegvarend
+    geldig altijd
+        Een Jutrecht is ploegvarend
+        indien ten minste één van de rechten van de ploeg van het Jutrecht de vaartijd heeft.
