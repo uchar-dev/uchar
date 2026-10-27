@@ -5360,6 +5360,29 @@ the segments of the compared timeline where it holds, with their values,
 cut where the segments of the totalled timeline are cut (the `ref/` test
 `WV-5.12-gedurende-clip`).
 
+**The object of a read** (card `reading-read-objects`, 2026-10-27). A
+node that reads a member of one object names the object it read the member
+on, where the evaluation reached it and it did not fault. Such a node is an
+`AttributeReference` (IR-SPEC ch. 4.1a) — of the subject's own member
+(ch. 5.8 rule 4) or over a path of roles, also where the evaluation reads it
+as a timeline (the operand of a whole-period test, the base of a temporal
+total or of a time-proportional part) and under a `DimensionCellRead` — and
+a `CharacteristicCheck` — of the subject's own characteristic, which a
+`host` names in a rule's condition as well (ch. 5.8b), or over a role
+(`navigation`), also under the whole-period qualifier. Of a member of its
+own the object is the object of the reading; over a path, the object the
+hops reached. Where a link on the path is absent there is no object: the
+read is leeg (ch. 5.8 rule 1), the check holds in neither polarity
+(rule 3), and the node names none. A node that was not reached, or that
+faults (a to-many hop, rule 2), names no object. A `RoleMembership` (it
+reads a relation, and its subject is the object of the reading), an
+`IdentityCheck`, a `ParameterReference`, a `BinderRef`, a `ContextValue`
+and the node of a fold over a set read no member of one object and name
+none; a node without a reading of its own (above) has none to name, and the
+contributors of a fold name their members already. The object is what the
+evaluation read, not a second walk: an executor names the object its own
+evaluation of the node reached.
+
 **Folds over a set.** A node that the evaluation reads once per member of
 a fold over a set — the source, the filter and the matrix of an
 aggregation with a range or over an instance-set union (ch. 3.4, 3.4a,
@@ -5419,7 +5442,16 @@ readings-of-unconditional-forms, 2026-10-22*: until then the text said
 "the unit it carries", and `ref` wrote the unit a value carried in its own
 evaluation, where the Drools backend, which computes in the effective unit,
 wrote that one; the two first met on the values of forms without a
-condition). After the node of a fold over a set stand its contributors,
+condition). After the value of a node that reads a member over a path of
+roles, and its unit, stands `on` and the object the path reached, named as
+the object of a reading is, or `on none` where a link on the path is
+absent:
+`<form> <object> <number> <kind> <found> ["<unit>"] on <object>|none`. A
+node that reads a member of its own writes no object, since the object of
+the reading stands at the head of its line (ch. 5.8 rule 4), and neither
+does a node that was not reached or that faulted (card
+`reading-read-objects`, 2026-10-27). After the node of a fold over a set
+stand its contributors,
 `contributors [<object> <value|verdict|fault> reached|unreached; …]`,
 sorted, each found written as at a node, and `unordered` in place of the
 position where the executor keeps no order. `runner --trace` prints this
@@ -5557,6 +5589,45 @@ text the two forms read in case 5:
 /rules/rules/2/versions/0 "V" HOLDS
 ```
 
+**Worked example — the object of a read** (absolute; the
+`jutterswet-kustwacht` anchor of ch. 5.8, case 2, verbatim in the `ref/`
+test `WV-5.12-kustwacht`). V1 (gevarenklasse 5, verraderlijk) is the
+kustvak of post P1 (hoogte 12); post P3 (hoogte 9) lies in no kustvak; W1
+mans P1, W4 mans P3, W3 mans nothing. Every node of these six forms reads
+over a path, and has number 0: the three rules on an attribute have no
+condition and read their value, the three on a characteristic their
+condition. Per object, what the node found and the object it read on:
+
+| form | W1 | W3 | W4 | P1 | P3 |
+|------|----|----|----|----|----|
+| `/rules/rules/0/versions/0` uitkijkbonus ← de hoogte van zijn post | 12 on P1 | leeg, none | 9 on P3 | | |
+| `/rules/rules/1/versions/0` risicotoeslag ← de gevarenklasse van het kustvak van zijn post | 5 on V1 | leeg, none | leeg, none | | |
+| `/rules/rules/2/versions/0` vakklasse ← de gevarenklasse van het kustvak | | | | 5 on V1 | leeg, none |
+| `/rules/rules/3/versions/0` risicopost indien zijn kustvak verraderlijk is | | | | true on V1 | false, none |
+| `/rules/rules/4/versions/0` gevarenwacht indien zijn post risicopost is | true on P1 | false, none | false on P3 | | |
+| `/rules/rules/5/versions/0` rustwacht indien zijn post geen risicopost is | false on P1 | false, none | true on P3 | | |
+
+W3's paths meet the absent link at their first step, W4's path of two
+steps at its second. Rule 5 makes rule 3 of ch. 5.8 readable in the reading
+itself: W3 and W4 both fail rule 4, but in rule 5 they differ, and the
+object says why — W4 read P3, which is no risicopost, while W3 read
+nothing, and the negation does not resurrect an absent link. In the
+canonical text W3 and W4 read, on rules 1 and 5:
+
+```
+/rules/rules/1/versions/0 "W3" 0 AttributeReference empty on none
+/rules/rules/1/versions/0 "W3" HOLDS
+/rules/rules/1/versions/0 "W4" 0 AttributeReference empty on none
+/rules/rules/1/versions/0 "W4" HOLDS
+/rules/rules/5/versions/0 "W3" 0 CharacteristicCheck false on none
+/rules/rules/5/versions/0 "W3" FAILS
+/rules/rules/5/versions/0 "W4" 0 CharacteristicCheck true on "P3"
+/rules/rules/5/versions/0 "W4" HOLDS
+```
+
+The three worked examples above read only members of their own subject:
+their lines carry no object.
+
 **The artifacts.** The `ref/` tests `WV-5.12-ploegaandeel`,
 `WV-5.12-keurgemiddelde` and `WV-5.12-opgave-bedrag` (the three examples
 above),
@@ -5578,9 +5649,27 @@ default and by the input). Gate 17
 golden case file, to those of the Drools backend on both its branches: per
 contributor the member and its verdict, value or fault verbatim, the
 position where both write one; and where the backend writes `unordered`, no
-contributor of the trace may carry a fault.
+contributor of the trace may carry a fault. The object of a read stands in
+the line of its node, so the gate holds it verbatim. `WV-5.12-kustwacht`
+(the example above) and `WV-5.12-gelezen-objecten` (a member of the
+subject's own; a path of one step in a condition and of two as the value of
+a computation; an absent link at the first step and at the second; a check
+over a role of an input characteristic and of a derived one; a read in the
+value of a computation with a condition, not reached where the condition
+fails; and a path over the relation a fact creation lays) pin it in `ref/`,
+the latter also in the Drools backend's `ReadingsWitnessTest`, whose
+records name the object of a member of the subject's own as well; and the
+backend's `ReadingsCorpusWitnessTest` holds the object of every node of
+every case the backend plays to the object the node's walk reaches on the
+written-back beans.
 
-Three boundaries, recorded rather than left implicit. The status `FAULTS`
+Four boundaries, recorded rather than left implicit. The object of the
+`AttributeReference` under a `DimensionCellRead` stays outside gate 17 and
+outside that corpus witness: `ref` refuses the cell (REF-002), the case
+format carries no dimensioned input, so no golden with case files reads
+one, and the Drools backend reads a cell only of the subject's own
+attribute (a cell over a path it refuses, DROOLS-189), whose object the
+text does not write. The status `FAULTS`
 and a fault at a node stay outside that differential: a golden does not
 fault at its fixpoint, and `runner --trace` refuses a case that pins one.
 A fault of a contributor after the stop is inside it for one kind: the
