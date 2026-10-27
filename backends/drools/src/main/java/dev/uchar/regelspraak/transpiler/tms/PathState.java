@@ -14,8 +14,11 @@ import java.util.Objects;
  * have no match at all, where a leeg test or a negated comparison over it must still hold.
  *
  * <p>{@code path} names the subject type and the reference fields the path walks; the subject is compared by identity.
+ * {@code reached} is the object the path reaches, the one whose standing {@code value} carries, compared by identity,
+ * and null where a link is absent: the object a reading of a condition names for a node that reads the member over
+ * this path (RUNTIME-SEMANTICS ch. 5.12, {@link ConditionReading.NodeReading#object}).
  */
-public record PathState(Object subject, String path, ElementKey member, Object value) {
+public record PathState(Object subject, String path, ElementKey member, Object value, Object reached) {
 
     public PathState {
         Objects.requireNonNull(subject, "subject");
@@ -25,15 +28,16 @@ public record PathState(Object subject, String path, ElementKey member, Object v
 
     @Override public boolean equals(Object o) {
         return o instanceof PathState p && p.subject == subject && p.path.equals(path) && p.member.equals(member)
-                && Objects.equals(p.value, value);
+                && Objects.equals(p.value, value) && p.reached == reached;
     }
 
     @Override public int hashCode() {
-        return Objects.hash(System.identityHashCode(subject), path, member, value);
+        return Objects.hash(System.identityHashCode(subject), path, member, value, System.identityHashCode(reached));
     }
 
     @Override public String toString() {
         return "PathState(" + FactNames.object(subject) + ", " + path + ", " + FactNames.member(member) + ", "
-                + (value == null ? "absent or empty" : value) + ")";
+                + (value == null ? "absent or empty" : value) + ", "
+                + (reached == null ? "no object reached" : FactNames.object(reached)) + ")";
     }
 }

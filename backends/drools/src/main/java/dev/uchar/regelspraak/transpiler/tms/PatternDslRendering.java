@@ -195,9 +195,10 @@ final class PatternDslRendering {
                             x.bucketScalar() ? ComputeHelpers.bucketScalarOf(a[1]) : a[1])));
             case Consequence.InsertPathState x -> x.source() == Consequence.StateSource.MISSING_LINK
                     ? new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
-                            insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(), null)))
-                    : new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.value())}, (drools, a) ->
-                            insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(), a[1])));
+                            insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(), null, null)))
+                    : new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.value()), known(x.reached())},
+                            (drools, a) -> insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(), a[1],
+                                    a[2])));
             case Consequence.UniquenessKey x -> uniquenessKey(x);
             case Consequence.UniquenessViolation x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new UniquenessViolation(x.uniqueness(), a[0])));
@@ -733,6 +734,7 @@ final class PatternDslRendering {
         field(PathState.class, "path", PathState::path);
         field(PathState.class, "member", PathState::member);
         field(PathState.class, "value", PathState::value);
+        field(PathState.class, "reached", PathState::reached);
         field(ParameterState.class, "parameter", ParameterState::parameter);
         field(ParameterState.class, "value", ParameterState::value);
         field(EvaluationDate.class, "date", EvaluationDate::date);

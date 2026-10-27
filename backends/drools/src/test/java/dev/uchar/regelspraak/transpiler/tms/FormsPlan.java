@@ -120,10 +120,10 @@ final class FormsPlan {
                 Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("padstand zonder link", null, null, new ReadTable(List.of()),
                 List.of(new Subject(wachter, O, List.of(), List.of(), List.of())), new Consequence.InsertPathState(O, "Wachter:post",
-                ElementKey.of("post", "hoogte", false), Consequence.StateSource.MISSING_LINK, -1,
+                ElementKey.of("post", "hoogte", false), Consequence.StateSource.MISSING_LINK, -1, null,
                 Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("padstand", null, null, one, List.of(subject), new Consequence.InsertPathState(O,
-                "Wachter:post", ElementKey.of("post", "hoogte", false), Consequence.StateSource.REACHED, 0,
+                "Wachter:post", ElementKey.of("post", "hoogte", false), Consequence.StateSource.REACHED, 0, O,
                 Consequence.Insertion.LOGICAL)));
         // the reading rule of a build with readings (card fixpoint-readings): the bound slot and a probe slot, which no
         // pattern binds and the reading carries as null

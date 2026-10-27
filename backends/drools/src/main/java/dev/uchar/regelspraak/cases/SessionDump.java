@@ -496,9 +496,11 @@ final class SessionDump {
      * its decimal without trailing zeros, a date and a date-time in the ISO form of the cases, a text quoted, a truth
      * value as {@code true} or {@code false}, leeg as {@code empty}, a timeline as its periods {@code [from to value]};
      * a unit by its rendering; a fault by the EF code of its kind (RUNTIME-SEMANTICS ch. 5.7b), {@code -} where it has
-     * none, and never by its sentence, which differs between executors; the contributors of a fold sorted by member,
-     * each with its value or the code of its fault and whether it was reached ({@code unordered} where its fold keeps
-     * no order). {@code labels} maps each case label to its input bean.
+     * none, and never by its sentence, which differs between executors; after the value of a node that reads a member
+     * over a path ({@link dev.uchar.regelspraak.transpiler.tms.TmsTranspiler#navigates}) and did not fault, {@code on}
+     * and the object the path reached, named as above, or {@code on none} where a link on it is absent; the
+     * contributors of a fold sorted by member, each with its value or the code of its fault and whether it was reached
+     * ({@code unordered} where its fold keeps no order). {@code labels} maps each case label to its input bean.
      */
     static List<String> readingLines(DroolsBackend.Build build, KieSession session, Map<String, Object> labels) {
         Naming n = naming(session, labels);
@@ -515,6 +517,9 @@ final class SessionDump {
                 if (x.fault() != null) b.append(" fault ").append(code(x.fault()));
                 else b.append(' ').append(canonical(x.value()));
                 if (x.unit() != null) b.append(' ').append(quote(x.unit().rendering()));
+                // the object a read over a path reached; the subject's own member stands at the head of the line
+                if (x.fault() == null && build.execModelTranspiler().navigates(r.form(), x.node()))
+                    b.append(" on ").append(x.object() == null ? "none" : n.nameOf(x.object()));
                 if (!x.contributors().isEmpty()) {
                     List<String> cs = new ArrayList<>();
                     for (ConditionReading.Contributor c : x.contributors())

@@ -342,7 +342,7 @@ class CreationPlanWitnessTest {
                         + " State.value VALUE]",
                 "  consequence InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
                         + " member=ElementKey[objectType=haven, name=afgeleide openingsdag, characteristic=false],"
-                        + " source=REACHED, value=0, insertion=LOGICAL]",
+                        + " source=REACHED, value=0, reached=$stap_keten_26, insertion=LOGICAL]",
                 "rule padstand Vondst.jutter.haven naar Haven.afgeleide openingsdag: link afwezig |"
                         + " form null | group null",
                 "  readings []",
@@ -357,7 +357,7 @@ class CreationPlanWitnessTest {
                         + " null = $overzijde_keten_38] beta [] na [] bind []]",
                 "  consequence InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
                         + " member=ElementKey[objectType=haven, name=afgeleide openingsdag, characteristic=false],"
-                        + " source=MISSING_LINK, value=-1, insertion=LOGICAL]",
+                        + " source=MISSING_LINK, value=-1, reached=null, insertion=LOGICAL]",
                 "rule padstand Vondst.jutter.haven naar Haven.openingsdag: link aanwezig | form null |"
                         + " group null",
                 "  readings [0 REACHED_INPUT $v (invoer Vondst:jutter.haven"
@@ -373,7 +373,7 @@ class CreationPlanWitnessTest {
                         + " $overzijde_keten_46] beta [] na [] bind [$v = [] Haven.openingsdag VALUE]",
                 "  consequence InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
                         + " member=ElementKey[objectType=haven, name=openingsdag, characteristic=false], source=REACHED,"
-                        + " value=0, insertion=LOGICAL]",
+                        + " value=0, reached=$stap_keten_44, insertion=LOGICAL]",
                 "rule padstand Vondst.jutter.haven naar Haven.openingsdag: link afwezig | form null |"
                         + " group null",
                 "  readings []",
@@ -388,7 +388,7 @@ class CreationPlanWitnessTest {
                         + " null = $overzijde_keten_54] beta [] na [] bind []]",
                 "  consequence InsertPathState[subject=$onderwerp, path=Vondst:jutter.haven,"
                         + " member=ElementKey[objectType=haven, name=openingsdag, characteristic=false],"
-                        + " source=MISSING_LINK, value=-1, insertion=LOGICAL]"),
+                        + " source=MISSING_LINK, value=-1, reached=null, insertion=LOGICAL]"),
                 plans(golden("jutterswet-havenketen"), p -> p.consequence() instanceof Consequence.InsertPathState
                         && p.leftSide().stream().anyMatch(CreationPlanWitnessTest::readsLinks)));
     }

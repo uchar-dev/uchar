@@ -1236,7 +1236,8 @@ final class DrlRendering {
                         ? route(Route.BUCKET_SCALAR) + "(" + variable(x.value()) + ")" : variable(x.value())) + ")");
                 case Consequence.InsertPathState x -> insert(b, "    ", x.insertion(), "new " + typeName(PathState.class) + "("
                         + x.subject() + ", " + str(x.path()) + ", " + key(x.member()) + ", "
-                        + (x.source() == Consequence.StateSource.MISSING_LINK ? "null" : variable(x.value())) + ")");
+                        + (x.source() == Consequence.StateSource.MISSING_LINK ? "null, null"
+                                : variable(x.value()) + ", " + x.reached()) + ")");
                 case Consequence.Contribution x -> contribution(x, b);
                 case Consequence.FilterDeposit x -> insert(b, "    ", x.insertion(), "new "
                         + typeName(FilterDeposit.class) + "(" + str(x.fold()) + ", " + x.subject() + ", "

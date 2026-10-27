@@ -31,6 +31,10 @@ public enum ReadKind {
     PATH_STATE,
     /** An input member at the end of a path of input links, bound off the beans ({@code genavigeerd}). */
     INPUT_PATH,
+    /** In a build with readings, the object a path reaches, null where a link on it is absent, bound beside the member
+     *  read over it, off its {@code PathState} or along the reference fields of the subject's bean
+     *  ({@code navigated}): the object a reading names for the node that reads the member. */
+    PATH_OBJECT,
     /** A parameter, through its {@code ParameterState} ({@code parameter}). */
     PARAMETER,
     /** The session's evaluation date, through its {@code EvaluationDate} ({@code rekendatum}). */

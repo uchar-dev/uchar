@@ -379,6 +379,9 @@ public final class TmsTranspiler {
     /** Beside {@link #noted}: the nodes whose reading follows from the outcomes of terms of the rule ({@link Derived},
      *  {@link #noteDerived}), by identity. */
     private Map<Object, Derived> notedDerived;
+    /** Beside {@link #noted}: per node that reads a member over a path, the slot of the object the path reaches
+     *  ({@link #noteObject}), by identity. */
+    private Map<Object, Integer> notedObjects;
     /** While the rules of a fold are built ({@link #foldFor}): whether the fold's subject is the subject of the form being
      *  lowered, which its rules then bind as {@link #FOLD_SUBJECT}, so that an anchored node reads there. */
     private boolean foldOnForm;
@@ -3791,7 +3794,8 @@ public final class TmsTranspiler {
 
     /** What the analysis noted while the condition and the value of one form's own rule compiled ({@link #note}): the
      *  term of each node and the unit of each expression node, by identity of the node. */
-    private record Noted(Map<Object, Term> terms, Map<Object, Unit> units, Map<Object, Derived> derived) {}
+    private record Noted(Map<Object, Term> terms, Map<Object, Unit> units, Map<Object, Derived> derived,
+                         Map<Object, Integer> objects) {}
 
     /**
      * The reading of a node that no term of the rule computes, and that follows from the outcomes of {@code inputs},
@@ -3809,15 +3813,17 @@ public final class TmsTranspiler {
         noted = new IdentityHashMap<>();
         notedUnits = new IdentityHashMap<>();
         notedDerived = new IdentityHashMap<>();
+        notedObjects = new IdentityHashMap<>();
     }
 
     /** What {@link #beginReading} noted since it started, and the end of it; null in a build without readings. */
     private Noted endReading() {
         if (positions == null) return null;
-        Noted n = new Noted(noted, notedUnits, notedDerived);
+        Noted n = new Noted(noted, notedUnits, notedDerived, notedObjects);
         noted = null;
         notedUnits = null;
         notedDerived = null;
+        notedObjects = null;
         return n;
     }
 
@@ -3828,14 +3834,22 @@ public final class TmsTranspiler {
         noted = null;
         notedUnits = null;
         notedDerived = null;
+        notedObjects = null;
         readingRules.subList(keep, readingRules.size()).clear();
     }
 
     /** One node of a form's reading: its number, its kind as the wire spells it, the term that computes it in the
      *  form's own rule, its unit, and for the node of a fold over a set the fold, whose contributions are its
-     *  contributors, with the quantifier fold the node is where it is one. */
+     *  contributors, with the quantifier fold the node is where it is one; and for a node that reads a member over a
+     *  path, the slot of the object the path reaches, -1 for every other node. */
     private record Site(int node, String kind, Term term, Unit unit, Fold fold, Condition.QuantifierFold quantifier,
-                        Derived derived) {}
+                        Derived derived, int objectSlot) {
+
+        /** Whether the node reads a member over a path of roles (RUNTIME-SEMANTICS ch. 5.8). */
+        boolean navigates() {
+            return objectSlot >= 0;
+        }
+    }
 
     /**
      * The reading rule of one form in a build with readings, with what {@link #readingsOf} needs to read its facts:
@@ -3913,8 +3927,9 @@ public final class TmsTranspiler {
                 continue;
             }
             Map<ObjectType, Fold> fold = folds.get(n);
+            Integer object = noted.objects().get(n);
             sites.add(new Site(i, at.kind(), t, noted.units().get(n), fold == null ? null : fold.get(reads.subject),
-                    n instanceof Condition.QuantifierFold q ? q : null, derived));
+                    n instanceof Condition.QuantifierFold q ? q : null, derived, object == null ? -1 : object));
         }
         readingRules.add(new ReadingRule(plan, ruleName, pointer, validity, guarded, condition, value, sites));
     }
@@ -3956,6 +3971,11 @@ public final class TmsTranspiler {
      * {@link ConditionReading.Status#FAULTS}, each without nodes. A form without a guard of its turn inside its
      * validity has a reading on every object it runs on, and an object without one is a broken contract, refused
      * loudly; so is a reading on an object no form runs on.
+     *
+     * <p>A node that reads a member over a path names the object the path reached, off the slot the form's own rule
+     * bound it in beside the member (a {@link PathState}'s {@code reached}, or the reference fields of the subject's
+     * bean), null where a link is absent; a node that reads a member of the subject names the subject. A node that was
+     * not reached or faulted names none.
      *
      * <p>A contributor of a fold is read off its {@link Contribution} facts on the object: of a quantifier fold whose
      * matrix can fault or deposit, in their order with the stop rule of RUNTIME-SEMANTICS ch. 5.10 replayed over their
@@ -4061,32 +4081,62 @@ public final class TmsTranspiler {
         List<ConditionReading.NodeReading> nodes = new ArrayList<>();
         for (Site s : r.sites()) {
             if (s.derived() != null) {
-                nodes.add(derivedReading(s, rec));
+                nodes.add(derivedReading(s, rec, o));
                 continue;
             }
             RecordingRendering.Outcome oc = rec.outcome(s.term());
             List<ConditionReading.Contributor> contributors = oc == null || s.fold() == null ? List.of()
                     : contributors(s, contributions.getOrDefault(s.fold().key(), Map.of()).getOrDefault(o, List.of()),
                             rec);
+            boolean found = oc != null && oc.fault() == null;
             nodes.add(new ConditionReading.NodeReading(s.node(), s.kind(), oc != null,
                     oc == null ? null : RecordingRendering.given(oc.value()), s.unit(),
-                    oc == null ? null : oc.fault(), contributors));
+                    oc == null ? null : oc.fault(), !found ? null : s.navigates() ? w[s.objectSlot()] : own(s, o),
+                    contributors));
         }
         return new ConditionReading(o, r.pointer(), status, nodes);
     }
 
+    /** The object a reached node {@code s} without a path reads a member of, on the object {@code o} of its reading:
+     *  {@code o} itself for a read of an attribute or a check of a characteristic, whose member is the subject's own
+     *  there (RUNTIME-SEMANTICS ch. 5.8 rule 4, ch. 5.8b), and null for every other node, which reads no member of one
+     *  object. */
+    private static Object own(Site s, Object o) {
+        return s.kind().equals("AttributeReference") || s.kind().equals("CharacteristicCheck") ? o : null;
+    }
+
     /** The reading of the node of {@code s}, whose reading follows from the outcomes of its inputs in the evaluation
-     *  {@code rec} ({@link Derived}): reached where every input was reached without a fault. */
-    private static ConditionReading.NodeReading derivedReading(Site s, RecordingRendering rec) {
+     *  {@code rec} ({@link Derived}), on the object {@code o}: reached where every input was reached without a fault. */
+    private static ConditionReading.NodeReading derivedReading(Site s, RecordingRendering rec, Object o) {
         List<Object> values = new ArrayList<>();
         for (Term t : s.derived().inputs()) {
-            RecordingRendering.Outcome o = rec.outcome(t);
-            if (o == null || o.fault() != null)
-                return new ConditionReading.NodeReading(s.node(), s.kind(), false, null, s.unit(), null, List.of());
-            values.add(o.value());
+            RecordingRendering.Outcome oc = rec.outcome(t);
+            if (oc == null || oc.fault() != null)
+                return new ConditionReading.NodeReading(s.node(), s.kind(), false, null, s.unit(), null, null, List.of());
+            values.add(oc.value());
         }
         return new ConditionReading.NodeReading(s.node(), s.kind(), true,
-                RecordingRendering.given(s.derived().compute().apply(values)), s.unit(), null, List.of());
+                RecordingRendering.given(s.derived().compute().apply(values)), s.unit(), null, own(s, o), List.of());
+    }
+
+    /**
+     * Whether node {@code node} of the reading of the form {@code form} reads a member over a path of roles
+     * (RUNTIME-SEMANTICS ch. 5.8), whose object the canonical text of ch. 5.12 names: an attribute read or a
+     * characteristic check with a path, also where the evaluation reads it as a timeline. False for a node of the form
+     * that reads a member of its subject, or none.
+     *
+     * @throws IllegalStateException a build without readings, and a form or a node the readings of this build do not
+     *                               have
+     */
+    public boolean navigates(String form, int node) {
+        if (positions == null)
+            throw new IllegalStateException("deze build heeft geen leesregels: bouw met lezingen"
+                    + " (DroolsBackend.build met readings) om de lezingen van de voorwaarden te lezen");
+        for (ReadingRule r : readingRules) {
+            if (!r.pointer().equals(form)) continue;
+            for (Site s : r.sites()) if (s.node() == node) return s.navigates();
+        }
+        throw new IllegalStateException("de lezingen van deze build hebben geen knoop " + node + " van " + form);
     }
 
     /** The contributors of the fold of {@code s}, from its {@code contributions} on the object, as the evaluation
@@ -4172,6 +4222,14 @@ public final class TmsTranspiler {
         if (noted == null || memberwise > 0) return;
         noted.put(node, t);
         if (node instanceof Expr e) notedUnits.put(node, eff.unitOf(e));
+    }
+
+    /** Notes that {@code node} reads a member over a path whose value {@code reads} binds at slot {@code slot}, so that
+     *  its reading names the object the path reaches ({@link Reads#objectOf}), as {@link #note} notes a term; nothing at
+     *  any other moment. */
+    private void noteObject(Object node, Reads reads, int slot) {
+        if (noted == null || memberwise > 0) return;
+        notedObjects.put(node, reads.objectOf(slot));
     }
 
     /** Notes that the reading of {@code node}, a condition, follows from the outcomes of {@code inputs} by
@@ -5840,7 +5898,9 @@ public final class TmsTranspiler {
             return reads.own(member(reads.subject, a.attribute(), false));
         }
         Path p = path(reads.subject, path, a.objectType(), Msg.drools("PART.desc.read", "snippet", snippet(a.source())));
-        return reads.navigated(p, member(p.reaches(), a.attribute(), false));
+        int i = reads.navigated(p, member(p.reaches(), a.attribute(), false));
+        noteObject(a, reads, i);
+        return i;
     }
 
     // ---------------- conditions ----------------
@@ -5935,6 +5995,7 @@ public final class TmsTranspiler {
         }
         Path p = path(reads.subject, nav, null, Msg.drools("PART.desc.characteristic-check", "snippet", snippet(k)));
         int i = reads.navigated(p, member(p.reaches(), k.characteristic(), true));
+        noteObject(k, reads, i);
         return new Term.Call(StaticFunction.CHARACTERISTIC_CHECK_ALONG_PATH, List.of(new Term.SlotValue(i, null), constant(desired)),
                 source(k.source()));
     }
@@ -5961,8 +6022,9 @@ public final class TmsTranspiler {
                     null), CHARACTERISTIC_TEST, null, source(k.source()));
         }
         Path p = path(reads.subject, nav, null, description);
-        return wholePeriod(k.period(), new Term.SlotValue(reads.navigated(p, timeMember(p.reaches(), k.characteristic(), true, description)),
-                null), CHARACTERISTIC_TEST, null, source(k.source()));
+        int i = reads.navigated(p, timeMember(p.reaches(), k.characteristic(), true, description));
+        noteObject(k, reads, i);
+        return wholePeriod(k.period(), new Term.SlotValue(i, null), CHARACTERISTIC_TEST, null, source(k.source()));
     }
 
     /**
@@ -6032,7 +6094,9 @@ public final class TmsTranspiler {
         }
         Path q = path(reads.subject, path, a.objectType(), description);
         Member member = timeMember(q.reaches(), a.attribute(), false, description);
-        Term whole = fullTimeline(reads.navigated(q, member), member, q, reads, source(a.source()));
+        int i = reads.navigated(q, member);
+        noteObject(a, reads, i);
+        Term whole = fullTimeline(i, member, q, reads, source(a.source()));
         note(a, whole);
         return wholePeriod(p.period(), whole, testCode, null, source(p.source()));
     }
@@ -6426,6 +6490,9 @@ public final class TmsTranspiler {
         private final Set<String> names = new HashSet<>();
         private final Map<ElementKey, Member> derived = new LinkedHashMap<>();
         private final Map<String, PathRead> paths = new LinkedHashMap<>();
+        /** In a build with readings, per slot of a member read over a path, the slot of the object the path reaches
+         *  ({@link #navigated}). */
+        private final Map<Integer, Integer> objects = new HashMap<>();
         private final Set<String> channelNames = new LinkedHashSet<>();
         /** The indices the expression being compiled reads, or null outside such a compilation. */
         private Set<Integer> use;
@@ -7086,12 +7153,19 @@ public final class TmsTranspiler {
          *  An attribute on a timeline is read through its standing at the end of the path, as {@link #timeline} reads
          *  one of the subject's own, so the read carries the case's input convention, a {@code List<Period>} or an
          *  {@link BucketScalar}; a characteristic on a timeline, which is input only, is bound as its true periods, a
-         *  {@code List<Period>} ({@link TmsTranspiler#inputForm}). */
+         *  {@code List<Period>} ({@link TmsTranspiler#inputForm}). In a build with readings, in a form's own rule, the
+         *  object the path reaches is bound as well, off the same pattern, in a slot of its own ({@link #objectOf}), null
+         *  where a link is absent: the object a reading names for the node that reads the member (RUNTIME-SEMANTICS
+         *  ch. 5.12). */
         int navigated(Path path, Member member) {
             String key = "pad " + path.key() + " " + member.key();
             int known = existing(key);
             if (known >= 0) return known;
             String w = readName(String.join(" ", path.roles()) + " " + member.name());
+            // the variable of the object, unique by the number of the member's slot, which no other variable has; only
+            // in a form's own rule while its reading is noted: a rule of a fold has no reading of its own, and a
+            // binding more there changes the order in which the DRL-text branch fires its contributions
+            String reached = noted == null || memberwise > 0 ? null : "$bereikt_" + slots.size();
             ElementKey lk = member.key();
             if (member.time() != null && member.characteristic() && writers.containsKey(lk))
                 throw new Refusal(DroolsCode.TIMELINE_CHARACTERISTIC_WRITTEN.reason("member", member.name(), "objectType", member.declarant().name));
@@ -7104,15 +7178,37 @@ public final class TmsTranspiler {
                 Alpha ofPath = new Alpha(id("padstand"), List.of(new Alpha.FieldTest("path", Alpha.Comparator.GELIJK, ps),
                         new Alpha.FieldTest("member", Alpha.Comparator.GELIJK, lk)));
                 Join onSubject = onSubjectHere(id("padstand-onderwerp"));
-                states(new FactPattern(PathState.class, st, List.of(ofPath), List.of(onSubject),
-                        List.of(Binding.of(w, PathState.class, "value"))));
+                List<Binding> bindings = new ArrayList<>(List.of(Binding.of(w, PathState.class, "value")));
+                if (reached != null) bindings.add(Binding.of(reached, PathState.class, "reached"));
+                states(new FactPattern(PathState.class, st, List.of(ofPath), List.of(onSubject), bindings));
                 paths.put(p.key(), p);
-                return allocateSlot(ReadKind.PATH_STATE, key, w);
+                return withObject(allocateSlot(ReadKind.PATH_STATE, key, w), key, reached);
             }
             // input over links that are input: bound off the subject's bean, null where a link is absent
             bindSubject(new Binding(w, path.fields(), new Binding.Field(member.javaClass(), member.name()), inputForm(member),
                     null));
-            return allocateSlot(ReadKind.INPUT_PATH, key, w);
+            // the object, along the same fields up to the last, which it reads there
+            List<Binding.Field> fields = path.fields();
+            if (reached != null)
+                bindSubject(new Binding(reached, fields.subList(0, fields.size() - 1), fields.get(fields.size() - 1),
+                        Binding.ReadForm.VALUE, null));
+            return withObject(allocateSlot(ReadKind.INPUT_PATH, key, w), key, reached);
+        }
+
+        /** {@code slot}, the slot of a member read over a path under {@code key}, after the slot of the object it reaches
+         *  where {@code reached}, the variable that binds that object, is not null ({@link #objectOf}). */
+        private int withObject(int slot, String key, String reached) {
+            if (reached != null) objects.put(slot, allocateSlot(ReadKind.PATH_OBJECT, "object " + key, reached));
+            return slot;
+        }
+
+        /** The slot of the object the path of the member read at slot {@code slot} reaches ({@link #navigated}), in a
+         *  build with readings. Refused loudly where that read binds none: a fault of this class. */
+        int objectOf(int slot) {
+            Integer o = objects.get(slot);
+            if (o == null)
+                throw new IllegalStateException("slot " + slot + " leest geen lid over een pad met het bereikte object");
+            return o;
         }
 
         /** A parameter, bound off its {@link ParameterState}: no test or consequence names a global itself, since two
@@ -7500,10 +7596,10 @@ public final class TmsTranspiler {
     /**
      * The two generic rules that keep one {@link PathState} per object of the subject type for a derived member read over
      * a path: where every link on the path is present, the standing of the member on the object the path reaches,
-     * joined on that object; where a link is absent, null. The links are input, read off the bean in the left-hand
-     * side, and do not change while the session fires, so exactly one of the two holds for each object. Both rules
-     * read the path along its reference fields ({@link Path#fields}): the test whether it reaches an object, and the
-     * binding of that object, which walks to the last field and reads it there.
+     * joined on that object, and that object; where a link is absent, null for both. The links are input, read off the
+     * bean in the left-hand side, and do not change while the session fires, so exactly one of the two holds for each
+     * object. Both rules read the path along its reference fields ({@link Path#fields}): the test whether it reaches an
+     * object, and the binding of that object, which walks to the last field and reads it there.
      */
     private List<RulePlan> pathStateRules(PathRead p) {
         Path path = p.path();
@@ -7526,12 +7622,13 @@ public final class TmsTranspiler {
         RulePlan present = new RulePlan(name + "link aanwezig", null, null,
                 oneSlot(ReadKind.REACHED_STATE, "stand " + ps + " " + lk, "$v"),
                 List.of(new Subject(javaClass, SUBJECT, List.of(link), List.of(), List.of(reaches)), state),
-                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.REACHED, 0, Consequence.Insertion.LOGICAL));
+                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.REACHED, 0, "$bereikt",
+                        Consequence.Insertion.LOGICAL));
 
         Alpha noLink = alongPath(id("geen-link"), fields, Alpha.Comparator.LEEG);
         RulePlan absent = new RulePlan(name + "link afwezig", null, null, new ReadTable(List.of()),
                 List.of(new Subject(javaClass, SUBJECT, List.of(noLink), List.of(), List.of())),
-                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.MISSING_LINK, -1,
+                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.MISSING_LINK, -1, null,
                         Consequence.Insertion.LOGICAL));
         return List.of(present, absent);
     }
@@ -7549,8 +7646,9 @@ public final class TmsTranspiler {
      * near bean, each ending in a pattern over the reached bean ({@link #chain}). Where the chain reaches an object the
      * standing carries the member's value there, read off that bean where no form writes the member and through its
      * standing where one does, or where it is an attribute on a timeline, whose standing carries the case's input
-     * convention; where it does not, the value is null, under a {@code not} over the same chain. A link that a creation
-     * adds takes the standing along.
+     * convention, and the object it reaches is the one the chain's last pattern binds; where it does not, the value and
+     * the object are null, under a {@code not} over the same chain. A link that a creation adds takes the standing
+     * along.
      */
     private List<RulePlan> linkPathStateRules(PathRead p) {
         Path path = p.path();
@@ -7581,7 +7679,8 @@ public final class TmsTranspiler {
             value = oneSlot(ReadKind.REACHED_INPUT, "invoer " + ps + " " + lk, "$v");
         }
         RulePlan present = new RulePlan(name + "link aanwezig", null, null, value, items,
-                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.REACHED, 0, Consequence.Insertion.LOGICAL));
+                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.REACHED, 0,
+                        chain.get(chain.size() - 1).name(), Consequence.Insertion.LOGICAL));
 
         // no combination of the chain's objects: what the chain declares lives inside the negation, and it reads the
         // subject alone from before it
@@ -7589,7 +7688,7 @@ public final class TmsTranspiler {
         RulePlan absent = new RulePlan(name + "link afwezig", null, null, new ReadTable(List.of()),
                 List.of(new Subject(javaClass, SUBJECT, List.of(), List.of(), List.of()),
                         new Not(none, Exists.declared(none), List.of(SUBJECT))),
-                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.MISSING_LINK, -1,
+                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.MISSING_LINK, -1, null,
                         Consequence.Insertion.LOGICAL));
         return List.of(present, absent);
     }

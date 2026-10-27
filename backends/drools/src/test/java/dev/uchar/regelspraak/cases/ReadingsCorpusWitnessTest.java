@@ -8,6 +8,7 @@ import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.loader.NodePositions;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
+import dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef;
 import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.core.Namen;
@@ -52,6 +53,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>every operand that reads a member, an attribute read the evaluation reached, has the value the fixpoint gives
  *       that member on the object the read reaches ({@code DroolsBackend.reached}), the derived value or else the
  *       input; and every check of a characteristic of the object itself has the verdict of what stands there;</li>
+ *   <li>every node that reads a member of one object, an attribute read or a characteristic check the evaluation
+ *       reached without a fault, names the very object {@code DroolsBackend.reached} reaches over its walk on the
+ *       written-back beans, by identity: the object of the reading for a member of its own, the object the path
+ *       reached for one over a path, and none where a link on the path is absent (RUNTIME-SEMANTICS ch. 5.12); and no
+ *       other node names one;</li>
  *   <li>a displaced default and a form outside its validity have no nodes;</li>
  *   <li>the stop of every composite follows from the verdicts of its members (RUNTIME-SEMANTICS ch. 5.10): a member is
  *       reached exactly where the stop rule did not settle the verdict before it, and the composite's verdict is the
@@ -71,8 +77,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Floors, measured 2026-10-21: {@value #EXPECTED_MIN_READINGS} (case, form, object) with nodes per branch,
  * {@value #EXPECTED_MIN_NODES} nodes, {@value #EXPECTED_MIN_OPERANDS} operands held to the fixpoint,
  * {@value #EXPECTED_MIN_COMPOUNDS} composites held to the stop rule, {@value #EXPECTED_MIN_DISPLACED} displaced and
- * {@value #EXPECTED_MIN_OUTSIDE} outside their validity. A smaller count is a corpus that lost forms, or a reading that
- * silently stopped giving nodes; a growing corpus needs no change here.
+ * {@value #EXPECTED_MIN_OUTSIDE} outside their validity; measured 2026-10-27, {@value #EXPECTED_MIN_OBJECTS} nodes whose
+ * object is held to the walk, {@value #EXPECTED_MIN_NAVIGATED} of them over a path. A smaller count is a corpus that
+ * lost forms, or a reading that silently stopped giving nodes or objects; a growing corpus needs no change here.
  */
 class ReadingsCorpusWitnessTest {
 
@@ -84,10 +91,14 @@ class ReadingsCorpusWitnessTest {
     static final int EXPECTED_MIN_COMPOUNDS = 1199;
     static final int EXPECTED_MIN_DISPLACED = 178;
     static final int EXPECTED_MIN_OUTSIDE = 13;
+    static final int EXPECTED_MIN_OBJECTS = 5961;
+    static final int EXPECTED_MIN_NAVIGATED = 746;
 
     /** What the witness counted on one branch. */
     private static final class Counts {
         int readings, nodes, operands, compounds, displaced, outside, holds, fails, faults;
+        /** Nodes whose object is held to the walk; of them those over a path, and of those the ones without an object. */
+        int objects, navigated, unlinked;
         final Map<String, Integer> kinds = new java.util.TreeMap<>();
     }
 
@@ -128,7 +139,8 @@ class ReadingsCorpusWitnessTest {
             System.out.println("ReadingsCorpusWitnessTest " + branch + ": " + n.readings + " lezingen met knopen ("
                     + n.holds + " geldt, " + n.fails + " faalt, " + n.faults + " fout), " + n.nodes + " knopen, "
                     + n.operands + " operanden, " + n.compounds + " samenstellingen, " + n.displaced + " verdrongen, "
-                    + n.outside + " buiten geldigheid; per soort " + n.kinds);
+                    + n.outside + " buiten geldigheid, " + n.objects + " objecten (" + n.navigated + " over een pad, waarvan "
+                    + n.unlinked + " zonder object); per soort " + n.kinds);
             int r = n.readings, k = n.nodes, o = n.operands, s = n.compounds, d = n.displaced, b = n.outside;
             assertTrue(r >= EXPECTED_MIN_READINGS, () -> branch + ": lezingen " + r + ", onder de vloer "
                     + EXPECTED_MIN_READINGS);
@@ -141,6 +153,11 @@ class ReadingsCorpusWitnessTest {
                     + EXPECTED_MIN_DISPLACED);
             assertTrue(b >= EXPECTED_MIN_OUTSIDE, () -> branch + ": buiten geldigheid " + b + ", onder de vloer "
                     + EXPECTED_MIN_OUTSIDE);
+            int j = n.objects, v = n.navigated;
+            assertTrue(j >= EXPECTED_MIN_OBJECTS, () -> branch + ": objecten " + j + ", onder de vloer "
+                    + EXPECTED_MIN_OBJECTS);
+            assertTrue(v >= EXPECTED_MIN_NAVIGATED, () -> branch + ": objecten over een pad " + v + ", onder de vloer "
+                    + EXPECTED_MIN_NAVIGATED);
         }
         assertEquals(List.of(), differences, "lezingen die niet met het fixpunt overeenstemmen");
     }
@@ -203,10 +220,20 @@ class ReadingsCorpusWitnessTest {
             // the object reads there as a default of that stack, which the decisions below hold
             boolean ofStack = decisions.stream().anyMatch(d -> d.object() == r.object() && inStack(d, r.form()));
             if (!ofStack) fired(at, form, r, values, fp, session, byNumber, differences);
-            // every operand that reads a member has the value the fixpoint gives it
+            // every operand that reads a member has the value the fixpoint gives it, and names the object it read it on
             for (ConditionReading.NodeReading x : r.nodes()) {
-                if (!x.reached() || x.fault() != null || x.node() >= form.nodes().size()) continue;
+                if (x.node() >= form.nodes().size()) continue;
                 Object node = form.nodes().get(x.node());
+                boolean member = node instanceof Expr.AttributeReference || node instanceof Condition.CharacteristicCheck;
+                if ((!member || !x.reached() || x.fault() != null) && x.object() != null)
+                    differences.add(at + ": knoop " + x.node() + " (" + x.kind() + ") noemt het object "
+                            + name(label, x.object()) + ", en leest geen lid of vond er niets");
+                if (!x.reached() || x.fault() != null) continue;
+                if (member)
+                    operands.add(() -> {
+                        String difference = object(model, p.loaded(), r.object(), node, x.object(), n, label);
+                        if (difference != null) differences.add(at + ": knoop " + x.node() + " " + difference);
+                    });
                 if (node instanceof Expr.AttributeReference a) {
                     operands.add(() -> {
                         String difference = operand(model, p.loaded(), r.object(), a, x.value(), n);
@@ -384,6 +411,30 @@ class ReadingsCorpusWitnessTest {
             for (String x : chain)
                 if (pointer.equals(x) || pointer.startsWith(x + "/exceptions/")) return true;
         return false;
+    }
+
+    /** Null where {@code named}, the object the node {@code node} of a reading on {@code subject} names, an attribute
+     *  read or a characteristic check, is the object its walk reaches on the beans once the fixpoint is written back
+     *  ({@code DroolsBackend.reached}), by identity; else the difference. A walk the branch refuses is not held. */
+    private static String object(RegelSpraakModel model, IrLoader.Loaded loaded, Object subject, Object node,
+                                 Object named, Counts n, Map<Object, String> label) {
+        ObjectType type = typeOf(model, subject);
+        List<RoleBindingRef> walk =
+                loaded.navigationBindings().getOrDefault(node, List.of());
+        Object reached;
+        try {
+            reached = node instanceof Expr.AttributeReference a ? DroolsBackend.reached(model, subject, type, a, walk)
+                    : DroolsBackend.reached(model, subject, type, (Condition.CharacteristicCheck) node, walk);
+        } catch (CaseRunner.Excluded e) {
+            return null;
+        }
+        n.objects++;
+        if (!walk.isEmpty()) {
+            n.navigated++;
+            if (reached == null) n.unlinked++;
+        }
+        return named == reached ? null : "noemt het object " + (named == null ? "geen" : name(label, named))
+                + ", en de wandeling bereikt " + (reached == null ? "geen" : name(label, reached));
     }
 
     /** Null where the value {@code read} of the read {@code a} on {@code subject} is the one the fixpoint gives the member

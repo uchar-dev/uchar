@@ -175,16 +175,19 @@ public sealed interface Consequence {
     /**
      * The standing of member {@code member} at the end of the path {@code path} on the object {@code subject} binds:
      * where every link on the path is present ({@code source} {@code REACHED}), the value in slot {@code value} of the
-     * value array, the member's standing on the object the path reaches; where a link is absent
-     * ({@code MISSING_LINK}), null, and {@code value} is -1.
+     * value array, the member's standing on the object the path reaches, and that object, which the variable
+     * {@code reached} of the left-hand side binds; where a link is absent ({@code MISSING_LINK}), null for both,
+     * {@code value} is -1 and {@code reached} null.
      */
-    record InsertPathState(String subject, String path, ElementKey member, StateSource source, int value, Insertion insertion)
-            implements Consequence {
+    record InsertPathState(String subject, String path, ElementKey member, StateSource source, int value, String reached,
+                           Insertion insertion) implements Consequence {
         public InsertPathState {
             if (source != StateSource.REACHED && source != StateSource.MISSING_LINK
-                    || (source == StateSource.REACHED) != (value >= 0))
-                throw new IllegalArgumentException("een padstand neemt de stand op het bereikte object uit een slot, of"
-                        + " is leeg bij een ontbrekende link, zonder slot; niet " + source + " met slot " + value);
+                    || (source == StateSource.REACHED) != (value >= 0)
+                    || (source == StateSource.REACHED) != (reached != null))
+                throw new IllegalArgumentException("een padstand neemt de stand op het bereikte object uit een slot en"
+                        + " dat object uit een variabele, of is leeg bij een ontbrekende link, zonder slot en zonder"
+                        + " object; niet " + source + " met slot " + value + " en object " + reached);
         }
     }
 

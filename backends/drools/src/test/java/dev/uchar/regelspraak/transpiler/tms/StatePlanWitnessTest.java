@@ -149,14 +149,14 @@ class StatePlanWitnessTest {
                         + " State.value VALUE]",
                 "  consequence InsertPathState [subject=$onderwerp, path=Melding:vondst.jutter,"
                         + " member=ElementKey[objectType=jutter, name=premie, characteristic=false], source=REACHED,"
-                        + " value=0, insertion=LOGICAL]",
+                        + " value=0, reached=$bereikt, insertion=LOGICAL]",
                 "rule padstand Melding.vondst.jutter naar Jutter.premie: link afwezig | form null | group null",
                 "  readings []",
                 "  subject Melding $onderwerp alpha [geen-link_74: [[Melding.vondst, Vondst.jutter] null VALUE"
                         + " LEEG]] bind []",
                 "  consequence InsertPathState [subject=$onderwerp, path=Melding:vondst.jutter,"
                         + " member=ElementKey[objectType=jutter, name=premie, characteristic=false], source=MISSING_LINK,"
-                        + " value=-1, insertion=LOGICAL]",
+                        + " value=-1, reached=null, insertion=LOGICAL]",
                 "rule padstand Controle.melding.vondst.jutter naar Jutter.premie: link aanwezig | form null | group"
                         + " null",
                 "  readings [0 REACHED_STATE $v (stand Controle:melding.vondst.jutter"
@@ -169,7 +169,7 @@ class StatePlanWitnessTest {
                         + " State.value VALUE]",
                 "  consequence InsertPathState [subject=$onderwerp, path=Controle:melding.vondst.jutter,"
                         + " member=ElementKey[objectType=jutter, name=premie, characteristic=false], source=REACHED,"
-                        + " value=0, insertion=LOGICAL]",
+                        + " value=0, reached=$bereikt, insertion=LOGICAL]",
                 "rule padstand Controle.melding.vondst.jutter naar Jutter.premie: link afwezig | form null | group"
                         + " null",
                 "  readings []",
@@ -177,7 +177,7 @@ class StatePlanWitnessTest {
                         + " Vondst.jutter] null VALUE LEEG]] bind []",
                 "  consequence InsertPathState [subject=$onderwerp, path=Controle:melding.vondst.jutter,"
                         + " member=ElementKey[objectType=jutter, name=premie, characteristic=false], source=MISSING_LINK,"
-                        + " value=-1, insertion=LOGICAL]",
+                        + " value=-1, reached=null, insertion=LOGICAL]",
                 "rule stand Jutter.premie: uit een afleiding | form null | group null",
                 "  readings [0 DERIVATION $v (afleiding ElementKey[objectType=jutter, name=premie,"
                         + " characteristic=false])]",

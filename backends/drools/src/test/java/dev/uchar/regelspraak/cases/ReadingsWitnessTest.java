@@ -475,6 +475,130 @@ class ReadingsWitnessTest {
                 "READINGS 1"));
     }
 
+    // ---------------- the objects a reading read its members on ----------------
+
+    /** A node that reads a member of one object names the object it read it on (RUNTIME-SEMANTICS ch. 5.12): the
+     *  object of the reading for a member of its own, the object the path reached for one over a path, and none where
+     *  a link on the path is absent. Seven forms on Kustvakken, Posten and Wachters: a computation from the Wachter's own
+     *  diensttijd; a comparison of the hoogte of his post, one step; the gevarenklasse of the kustvak of his post, two
+     *  steps, as the value of a computation without a condition; a check of the kustvak of a Post, of a characteristic
+     *  of the input; a check of the post of a Wachter, of a characteristic a rule derives; the hoogte of his post in
+     *  the value of a computation with a condition, which is not reached where the condition fails; and the
+     *  gevarenklasse of his wachtvak, over the relation a fact creation lays. W1 holds post P1 in kustvak V1, W4 post
+     *  P3, which lies in no kustvak, and W3 no post, so that his paths and W4's of two steps meet an absent link. The
+     *  document, from the RegelSpraak frontend with its {@code source.rgs} beside it, is under
+     *  {@code src/test/resources/readings/read-objects}, and is the reference interpreter's
+     *  {@code WV-5.12-gelezen-objecten}; each object was written by hand from the case.
+     *
+     *  <p>A record is a line as {@link ReadingsWitnessTest} writes one, each node that names an object followed by
+     *  {@code @} and its label.
+     *
+     *  <p><b>Red</b> before the card reading-read-objects: {@code ConditionReading.NodeReading} had no object, so this
+     *  class did not compile, and the canonical text had no {@code on}. */
+    @Test void the_objects_a_reading_read_its_members_on() throws Exception {
+        Path dir = Path.of("src", "test", "resources", "readings", "read-objects");
+        JsonNode c = TmsDocuments.JSON.readTree(dir.resolve("case.json").toFile());
+        bothBranches(dir.resolve("ir.json"), c, true, List.of(
+                // a characteristic of the input on the kustvak of a Post, and none where the Post lies in no kustvak
+                "P1 " + R + "3/versions/0 HOLDS | 0 CharacteristicCheck true @V1",
+                "P3 " + R + "3/versions/0 FAILS | 0 CharacteristicCheck false",
+                // the Wachter's own diensttijd: the object of the reading
+                "W1 " + R + "0/versions/0 HOLDS | 0 Binary 5 | 1 AttributeReference 4 @W1 | 2 Literal 1",
+                // one step, in a condition
+                "W1 " + R + "1/versions/0 HOLDS | 0 Comparison true | 1 AttributeReference 12 @P1 | 2 Literal 10",
+                // two steps, the value of a computation without a condition
+                "W1 " + R + "2/versions/0 HOLDS | 0 AttributeReference 5 @V1",
+                // a characteristic a rule derives, on the post of the Wachter
+                "W1 " + R + "4/versions/0 HOLDS | 0 CharacteristicCheck true @P1",
+                // one step in the value of a computation with a condition, after the check of his own characteristic
+                "W1 " + R + "5/versions/0 HOLDS | 0 CharacteristicCheck true @W1 | 1 Binary 14"
+                        + " | 2 AttributeReference 12 @P1 | 3 Literal 2",
+                // over the relation the fact creation vakbewaking lays: V1's posten are P1, whose wachter is W1
+                "W1 " + R + "6/versions/0 HOLDS | 0 AttributeReference 5 @V1",
+                "W3 " + R + "0/versions/0 HOLDS | 0 Binary 2 | 1 AttributeReference 1 @W3 | 2 Literal 1",
+                // no post: every path of W3 meets an absent link at its first step, and names no object
+                "W3 " + R + "1/versions/0 FAILS | 0 Comparison false | 1 AttributeReference leeg | 2 Literal 10",
+                "W3 " + R + "2/versions/0 HOLDS | 0 AttributeReference leeg",
+                "W3 " + R + "4/versions/0 FAILS | 0 CharacteristicCheck false",
+                "W3 " + R + "5/versions/0 HOLDS | 0 CharacteristicCheck true @W3 | 1 Binary 2"
+                        + " | 2 AttributeReference leeg | 3 Literal 2",
+                "W3 " + R + "6/versions/0 HOLDS | 0 AttributeReference leeg",
+                "W4 " + R + "0/versions/0 HOLDS | 0 Binary 8 | 1 AttributeReference 7 @W4 | 2 Literal 1",
+                "W4 " + R + "1/versions/0 FAILS | 0 Comparison false | 1 AttributeReference 9 @P3 | 2 Literal 10",
+                // P3 lies in no kustvak: the second step is absent
+                "W4 " + R + "2/versions/0 HOLDS | 0 AttributeReference leeg",
+                "W4 " + R + "4/versions/0 FAILS | 0 CharacteristicCheck false @P3",
+                // the condition fails, so the read in the value is not reached and names no object
+                "W4 " + R + "5/versions/0 FAILS | 0 CharacteristicCheck false @W4 | 1 Binary - | 2 AttributeReference -"
+                        + " | 3 Literal -",
+                // no kustvak, so no wachtvak either
+                "W4 " + R + "6/versions/0 HOLDS | 0 AttributeReference leeg"));
+        String r = "reading " + R;
+        flag(dir.resolve("ir.json"), dir.resolve("case.json"), List.of("case case.json",
+                r + "0/versions/0 \"W1\" 0 Binary 5",
+                r + "0/versions/0 \"W1\" 1 AttributeReference 4",
+                r + "0/versions/0 \"W1\" 2 Literal 1",
+                r + "0/versions/0 \"W1\" HOLDS",
+                r + "0/versions/0 \"W3\" 0 Binary 2",
+                r + "0/versions/0 \"W3\" 1 AttributeReference 1",
+                r + "0/versions/0 \"W3\" 2 Literal 1",
+                r + "0/versions/0 \"W3\" HOLDS",
+                r + "0/versions/0 \"W4\" 0 Binary 8",
+                r + "0/versions/0 \"W4\" 1 AttributeReference 7",
+                r + "0/versions/0 \"W4\" 2 Literal 1",
+                r + "0/versions/0 \"W4\" HOLDS",
+                r + "1/versions/0 \"W1\" 0 Comparison true",
+                r + "1/versions/0 \"W1\" 1 AttributeReference 12 on \"P1\"",
+                r + "1/versions/0 \"W1\" 2 Literal 10",
+                r + "1/versions/0 \"W1\" HOLDS",
+                r + "1/versions/0 \"W3\" 0 Comparison false",
+                r + "1/versions/0 \"W3\" 1 AttributeReference empty on none",
+                r + "1/versions/0 \"W3\" 2 Literal 10",
+                r + "1/versions/0 \"W3\" FAILS",
+                r + "1/versions/0 \"W4\" 0 Comparison false",
+                r + "1/versions/0 \"W4\" 1 AttributeReference 9 on \"P3\"",
+                r + "1/versions/0 \"W4\" 2 Literal 10",
+                r + "1/versions/0 \"W4\" FAILS",
+                r + "2/versions/0 \"W1\" 0 AttributeReference 5 on \"V1\"",
+                r + "2/versions/0 \"W1\" HOLDS",
+                r + "2/versions/0 \"W3\" 0 AttributeReference empty on none",
+                r + "2/versions/0 \"W3\" HOLDS",
+                r + "2/versions/0 \"W4\" 0 AttributeReference empty on none",
+                r + "2/versions/0 \"W4\" HOLDS",
+                r + "3/versions/0 \"P1\" 0 CharacteristicCheck true on \"V1\"",
+                r + "3/versions/0 \"P1\" HOLDS",
+                r + "3/versions/0 \"P3\" 0 CharacteristicCheck false on none",
+                r + "3/versions/0 \"P3\" FAILS",
+                r + "4/versions/0 \"W1\" 0 CharacteristicCheck true on \"P1\"",
+                r + "4/versions/0 \"W1\" HOLDS",
+                r + "4/versions/0 \"W3\" 0 CharacteristicCheck false on none",
+                r + "4/versions/0 \"W3\" FAILS",
+                r + "4/versions/0 \"W4\" 0 CharacteristicCheck false on \"P3\"",
+                r + "4/versions/0 \"W4\" FAILS",
+                r + "5/versions/0 \"W1\" 0 CharacteristicCheck true",
+                r + "5/versions/0 \"W1\" 1 Binary 14",
+                r + "5/versions/0 \"W1\" 2 AttributeReference 12 on \"P1\"",
+                r + "5/versions/0 \"W1\" 3 Literal 2",
+                r + "5/versions/0 \"W1\" HOLDS",
+                r + "5/versions/0 \"W3\" 0 CharacteristicCheck true",
+                r + "5/versions/0 \"W3\" 1 Binary 2",
+                r + "5/versions/0 \"W3\" 2 AttributeReference empty on none",
+                r + "5/versions/0 \"W3\" 3 Literal 2",
+                r + "5/versions/0 \"W3\" HOLDS",
+                r + "5/versions/0 \"W4\" 0 CharacteristicCheck false",
+                r + "5/versions/0 \"W4\" 1 Binary unreached",
+                r + "5/versions/0 \"W4\" 2 AttributeReference unreached",
+                r + "5/versions/0 \"W4\" 3 Literal unreached",
+                r + "5/versions/0 \"W4\" FAILS",
+                r + "6/versions/0 \"W1\" 0 AttributeReference 5 on \"V1\"",
+                r + "6/versions/0 \"W1\" HOLDS",
+                r + "6/versions/0 \"W3\" 0 AttributeReference empty on none",
+                r + "6/versions/0 \"W3\" HOLDS",
+                r + "6/versions/0 \"W4\" 0 AttributeReference empty on none",
+                r + "6/versions/0 \"W4\" HOLDS",
+                "READINGS 1"));
+    }
+
     /** The output of {@code --readings} on {@code ir} and the case {@code c}, on both branches, the expected lines. */
     private static void flag(Path ir, Path c, List<String> expected) {
         for (boolean drl : List.of(false, true)) {
@@ -494,6 +618,12 @@ class ReadingsWitnessTest {
 
     /** The readings of {@code c} on both branches, each the expected list. */
     private static void bothBranches(Path ir, JsonNode c, List<String> expected) throws Exception {
+        bothBranches(ir, c, false, expected);
+    }
+
+    /** As {@link #bothBranches(Path, JsonNode, List)}, each node that names an object followed by its label where
+     *  {@code objects}. */
+    private static void bothBranches(Path ir, JsonNode c, boolean objects, List<String> expected) throws Exception {
         for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
             List<String> records = CaseRunner.forMeasurement(ir, branch, true).withSession(c, (build, session, labels) -> {
                 DroolsBackend.Firing firing = DroolsBackend.fire(build, session);
@@ -501,15 +631,16 @@ class ReadingsWitnessTest {
                 Map<Object, String> label = new IdentityHashMap<>();
                 labels.forEach((l, o) -> label.put(o, l));
                 List<String> out = new ArrayList<>();
-                for (ConditionReading r : DroolsBackend.readingsOf(build, session)) out.add(line(label, r));
+                for (ConditionReading r : DroolsBackend.readingsOf(build, session)) out.add(line(label, r, objects));
                 return out.stream().sorted().toList();
             });
             assertEquals(expected, records, branch + ": de lezingen");
         }
     }
 
-    /** A record as one line ({@link ReadingsWitnessTest}). */
-    private static String line(Map<Object, String> label, ConditionReading r) {
+    /** A record as one line ({@link ReadingsWitnessTest}), each node that names an object followed by {@code @} and its
+     *  label where {@code objects}. */
+    private static String line(Map<Object, String> label, ConditionReading r, boolean objects) {
         StringBuilder b = new StringBuilder(label.get(r.object()) + " " + r.form() + " " + r.status());
         for (ConditionReading.NodeReading n : r.nodes()) {
             b.append(" | ").append(n.node()).append(' ').append(n.kind()).append(' ');
@@ -519,6 +650,7 @@ class ReadingsWitnessTest {
             }
             b.append(n.fault() != null ? "fault " + n.fault().getMessage() : text(n.value()));
             if (n.unit() != null) b.append(' ').append(n.unit().rendering());
+            if (objects && n.object() != null) b.append(" @").append(label.get(n.object()));
             if (!n.contributors().isEmpty() || n.kind().equals("Aggregation") || n.kind().equals("QuantifierFold")) {
                 List<String> cs = new ArrayList<>();
                 for (ConditionReading.Contributor x : n.contributors())

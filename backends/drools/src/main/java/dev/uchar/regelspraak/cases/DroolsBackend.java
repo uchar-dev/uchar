@@ -9,6 +9,7 @@ import dev.uchar.regelspraak.cases.CaseRunner.Excluded;
 import dev.uchar.regelspraak.engine.BeanCompiler;
 import dev.uchar.regelspraak.engine.ScenarioResult;
 import dev.uchar.regelspraak.graph.ProducerConsumer;
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.ir.ResolvedStartPointDetermination;
 import dev.uchar.regelspraak.loader.IrLoader;
@@ -764,15 +765,40 @@ public final class DroolsBackend {
      */
     public static Object reached(RegelSpraakModel model, Object subject, ObjectType subjectType,
                                  Expr.AttributeReference read, List<RoleBindingRef> walk) {
+        Objects.requireNonNull(read, "read");
+        return reached(model, subject, subjectType, walk, read.objectType(), Msg.drools("PART.desc.read", "snippet",
+                read.source() != null && read.source().snippet() != null ? read.source().snippet() : read.attribute()));
+    }
+
+    /**
+     * As {@link #reached(RegelSpraakModel, Object, ObjectType, Expr.AttributeReference, List)}, for the characteristic
+     * check {@code check}: the object whose characteristic it reads, from {@code subject}, over {@code walk}, the walk of
+     * the check's {@code navigation} ({@link TmsTranspiler#navigationBindings}), whose last hop reaches the type that
+     * declares the characteristic; {@code subject} itself over an empty walk, the check of its own characteristic. Null
+     * where a link on the walk is absent; a check over it holds in neither polarity (RUNTIME-SEMANTICS ch. 5.8, rule 3).
+     *
+     * @throws CaseRunner.Excluded a walk the branch does not read, as the other form refuses it: one that does not
+     *                             resolve from {@code subjectType} (DROOLS-280), one over a to-many role (DROOLS-281),
+     *                             and one with a hop the bean model gives no reference field (DROOLS-282)
+     */
+    public static Object reached(RegelSpraakModel model, Object subject, ObjectType subjectType,
+                                 Condition.CharacteristicCheck check, List<RoleBindingRef> walk) {
+        Objects.requireNonNull(check, "check");
+        return reached(model, subject, subjectType, walk, null, Msg.drools("PART.desc.characteristic-check", "snippet",
+                check.source() != null && check.source().snippet() != null ? check.source().snippet()
+                        : check.characteristic()));
+    }
+
+    /** The object {@code walk} reaches from {@code subject}, over the hops the branch reads, the last reaching
+     *  {@code endpoint} where it is not null; refused in the sentence of {@code description}. */
+    private static Object reached(RegelSpraakModel model, Object subject, ObjectType subjectType,
+                                  List<RoleBindingRef> walk, ObjectType endpoint, Msg description) {
         Objects.requireNonNull(model, "model");
         Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(subjectType, "subjectType");
-        Objects.requireNonNull(read, "read");
         Objects.requireNonNull(walk, "walk");
         if (walk.isEmpty()) return subject;
-        Msg description = Msg.drools("PART.desc.read", "snippet",
-                read.source() != null && read.source().snippet() != null ? read.source().snippet() : read.attribute());
-        FactModelGenerator.NavigationWalk w = FactModelGenerator.navigationWalk(model, subjectType, walk, read.objectType());
+        FactModelGenerator.NavigationWalk w = FactModelGenerator.navigationWalk(model, subjectType, walk, endpoint);
         if (w == null)
             throw new Excluded(DroolsCode.NAVIGATION_DOES_NOT_RESOLVE.reason("description", description, "subject",
                     subjectType.name));

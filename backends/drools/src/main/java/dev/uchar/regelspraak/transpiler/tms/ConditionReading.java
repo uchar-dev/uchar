@@ -7,8 +7,8 @@ import java.util.Objects;
 
 /**
  * The reading of the condition of one form on one object at the fixpoint of a session of a build with readings
- * ({@code DroolsBackend.readingsOf}, card fixpoint-readings): the evaluation of the condition, and of the form's value
- * where the condition holds, over the values the form's own rule bound at the fixpoint, with the functions, the stop
+ * ({@code DroolsBackend.readingsOf}, RUNTIME-SEMANTICS ch. 5.12): the evaluation of the condition, and of the form's
+ * value where the condition holds, over the values the form's own rule bound at the fixpoint, with the functions, the stop
  * rule and the order of evaluation of that rule (RUNTIME-SEMANTICS ch. 5.10, 5.11), recording per node what the
  * evaluation reached and what it found. It is read off the session, never computed from the beans: the values are those
  * the rule's test saw, and a reading deposits nothing, faults nothing and writes nothing.
@@ -22,8 +22,7 @@ import java.util.Objects;
  * {@code assertion}, a default's {@code justification}. A fact creation whose condition is a check on its target, which
  * filters the targets, has none. A form without a condition that computes a value — a rule on an attribute, an
  * attribute default without a justification, an ordinary rule without a condition that the fold took into a stack —
- * has the reading of its value (card readings-of-unconditional-forms): {@link Status#HOLDS} where it is at its turn,
- * its nodes those of the value, the root 0.
+ * has the reading of its value: {@link Status#HOLDS} where it is at its turn, its nodes those of the value, the root 0.
  *
  * <p>The nodes are numbered in the pre-order of the document over the nodes of the condition union (IR-SPEC ch. 4.5) and
  * the expression union (IR-SPEC ch. 4): first those of the condition, its root 0, then those of the form's value where it
@@ -31,7 +30,9 @@ import java.util.Objects;
  * its fields and the fields in the order the document writes them. A text part, a whole-period qualifier, a dimension
  * selection, a type and a role binding are no nodes. A node inside the filter, the matrix or the source of a fold over a
  * set is evaluated per member of the fold, in its own rules, and has no reading of its own: the node of the fold
- * carries its contributors, and the numbers count those nodes all the same.
+ * carries its contributors, and the numbers count those nodes all the same. A node that reads a member of one object
+ * names the object it read it on ({@link NodeReading#object}): over a path of roles the object the path reached, which
+ * the form's own rule bound beside the member, never a second walk over the beans.
  *
  * @param object the object the form ran on, a bean of the build's bean model, compared by identity
  * @param form   the form, by its JSON pointer
@@ -87,11 +88,19 @@ public record ConditionReading(Object object, String form, Status status, List<N
      *                     {@code ComputeFault}, an {@code InputFormFault} or a division by a numeric zero, unnamed, as
      *                     the evaluation raises it, whose sentence names an object of the session by its type and
      *                     identity where it names one, as a {@code Fault} of {@code Fixpoint} does without labels
+     * @param object       for a node that reads a member of one object, an {@code AttributeReference} or a
+     *                     {@code CharacteristicCheck}, the object it read the member on, a bean of the build's bean
+     *                     model, compared by identity (RUNTIME-SEMANTICS ch. 5.12): over a path of roles the object the
+     *                     path reached, and without one the object of the reading, whose own member it read (ch. 5.8
+     *                     rule 4). Null where the node was not reached or faulted, where a link on its path is absent
+     *                     (the read is leeg, ch. 5.8 rule 1, and a check holds in neither polarity, rule 3), and for
+     *                     every other node. Whether a node reads over a path is the document's: the node's kind and its
+     *                     walk tell an absent link from a node that reads no member
      * @param contributors for the node of a fold over a set that the evaluation reached, its contributors; empty for
      *                     every other node
      */
     public record NodeReading(int node, String kind, boolean reached, Object value, Unit unit, RuntimeException fault,
-                              List<Contributor> contributors) {
+                              Object object, List<Contributor> contributors) {
         public NodeReading {
             Objects.requireNonNull(kind, "kind");
             contributors = List.copyOf(contributors);

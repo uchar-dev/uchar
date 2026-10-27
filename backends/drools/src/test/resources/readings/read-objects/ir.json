@@ -1,0 +1,606 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Kustvak",
+        "animate": false,
+        "plural": "Kustvakken",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gevarenklasse",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "verraderlijk",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Post",
+        "animate": false,
+        "plural": "Posten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "hoogte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "risicopost",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Wachter",
+        "animate": true,
+        "plural": "Wachters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "diensttijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "rang",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "uitkijkbonus",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "risicotoeslag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vakklasse",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "ervaren",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "gevarenwacht",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "hooggeplaatst",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "kustligging",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "kustvak",
+            "objectType": "Kustvak",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "post",
+            "objectType": "Post",
+            "plural": "posten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "postbezetting",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "post",
+            "objectType": "Post",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "wachter",
+            "objectType": "Wachter",
+            "plural": "wachters",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "vakbewaking",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "wachtvak",
+            "objectType": "Kustvak",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vakwachter",
+            "objectType": "Wachter",
+            "plural": "vakwachters",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "rang van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rang",
+              "subjectType": "Wachter",
+              "source": {
+                "snippet": "De rang van een Wachter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "diensttijd",
+                "subjectType": "Wachter",
+                "source": {
+                  "snippet": "zijn diensttijd"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "1"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "1"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn diensttijd plus 1"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "hooggeplaatst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "hooggeplaatst",
+              "subjectType": "Wachter",
+              "source": {
+                "snippet": "Een Wachter is hooggeplaatst"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "hoogte",
+                "subjectType": "Post",
+                "source": {
+                  "snippet": "de hoogte van zijn post"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "postbezetting",
+                    "role": "post"
+                  }
+                ]
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "10"
+                }
+              },
+              "source": {
+                "snippet": "de hoogte van zijn post groter is dan 10"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "risicotoeslag van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "risicotoeslag",
+              "subjectType": "Wachter",
+              "source": {
+                "snippet": "De risicotoeslag van een Wachter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "gevarenklasse",
+              "subjectType": "Kustvak",
+              "source": {
+                "snippet": "de gevarenklasse van het kustvak van zijn post"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "postbezetting",
+                  "role": "post"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "kustligging",
+                  "role": "kustvak"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "risicopost",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "risicopost",
+              "subjectType": "Post",
+              "source": {
+                "snippet": "Een Post is risicopost"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "verraderlijk",
+              "negated": false,
+              "source": {
+                "snippet": "zijn kustvak verraderlijk is"
+              },
+              "navigation": {
+                "node": "RoleBinding",
+                "factType": "kustligging",
+                "role": "kustvak"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gevarenwacht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gevarenwacht",
+              "subjectType": "Wachter",
+              "source": {
+                "snippet": "Een Wachter is gevarenwacht"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "risicopost",
+              "negated": false,
+              "source": {
+                "snippet": "zijn post risicopost is"
+              },
+              "navigation": {
+                "node": "RoleBinding",
+                "factType": "postbezetting",
+                "role": "post"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "uitkijkbonus van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "uitkijkbonus",
+              "subjectType": "Wachter",
+              "source": {
+                "snippet": "De uitkijkbonus van een Wachter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "hoogte",
+                "subjectType": "Post",
+                "source": {
+                  "snippet": "de hoogte van zijn post"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "postbezetting",
+                    "role": "post"
+                  }
+                ]
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de hoogte van zijn post plus 2"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "ervaren",
+              "negated": false,
+              "source": {
+                "snippet": "hij ervaren is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vakklasse van een wachter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vakklasse",
+              "subjectType": "Wachter",
+              "source": {
+                "snippet": "De vakklasse van een Wachter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "gevarenklasse",
+              "subjectType": "Kustvak",
+              "source": {
+                "snippet": "de gevarenklasse van zijn wachtvak"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "vakbewaking",
+                  "role": "wachtvak"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [
+      {
+        "node": "FactCreation",
+        "name": "vakbewaking",
+        "versions": [
+          {
+            "factType": "vakbewaking",
+            "anchorRole": "wachtvak",
+            "targetRole": "vakwachter",
+            "anchor": "Kustvak",
+            "path": [
+              {
+                "node": "RoleBinding",
+                "factType": "kustligging",
+                "role": "post"
+              },
+              {
+                "node": "RoleBinding",
+                "factType": "postbezetting",
+                "role": "wachter"
+              }
+            ],
+            "validity": {
+              "node": "Validity"
+            }
+          }
+        ]
+      }
+    ],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -1,0 +1,68 @@
+Objecttype het Kustvak (mv: Kustvakken)
+    is verraderlijk kenmerk (bijvoeglijk);
+    de gevarenklasse Numeriek (geheel getal);
+
+Objecttype de Post (mv: Posten)
+    is risicopost kenmerk (bijvoeglijk);
+    de hoogte Numeriek (geheel getal);
+
+Objecttype de Wachter (mv: Wachters) (bezield)
+    is ervaren kenmerk (bijvoeglijk);
+    is gevarenwacht kenmerk (bijvoeglijk);
+    is hooggeplaatst kenmerk (bijvoeglijk);
+    de diensttijd Numeriek (geheel getal);
+    de rang Numeriek (geheel getal);
+    de uitkijkbonus Numeriek (geheel getal);
+    de risicotoeslag Numeriek (geheel getal);
+    de vakklasse Numeriek (geheel getal);
+
+Feittype kustligging
+    het kustvak Kustvak
+    de post (mv: posten) Post
+Eén kustvak telt meerdere posten
+
+Feittype postbezetting
+    de post Post
+    de wachter (mv: wachters) Wachter
+Eén post telt meerdere wachters
+
+Feittype vakbewaking
+    het wachtvak Kustvak
+    de vakwachter (mv: vakwachters) Wachter
+Eén wachtvak telt meerdere vakwachters
+
+Regel rang van een wachter
+    geldig altijd
+        De rang van een Wachter moet berekend worden als zijn diensttijd plus 1.
+
+Regel hooggeplaatst
+    geldig altijd
+        Een Wachter is hooggeplaatst
+        indien de hoogte van zijn post groter is dan 10.
+
+Regel risicotoeslag van een wachter
+    geldig altijd
+        De risicotoeslag van een Wachter moet berekend worden als de gevarenklasse van het kustvak van zijn post.
+
+Regel risicopost
+    geldig altijd
+        Een Post is risicopost
+        indien zijn kustvak verraderlijk is.
+
+Regel gevarenwacht
+    geldig altijd
+        Een Wachter is gevarenwacht
+        indien zijn post risicopost is.
+
+Regel uitkijkbonus van een wachter
+    geldig altijd
+        De uitkijkbonus van een Wachter moet berekend worden als de hoogte van zijn post plus 2
+        indien hij ervaren is.
+
+Regel vakbewaking
+    geldig altijd
+        Een vakwachter van een Kustvak is een wachter van de post van het kustvak.
+
+Regel vakklasse van een wachter
+    geldig altijd
+        De vakklasse van een Wachter moet berekend worden als de gevarenklasse van zijn wachtvak.
