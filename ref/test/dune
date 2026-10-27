@@ -14,5 +14,8 @@
   ../../corpus/golden/jutterswet-opgave-bedrag/ir.json
   ../../corpus/golden/jutterswet-opgave-bedrag/case1-geen-opgave.json
   ../../corpus/golden/jutterswet-opgave-bedrag/case5-niets.json
-  ../../corpus/golden/jutterswet-opgave-bedrag/case7-doel-zelf-zonder-feiten.json)
+  ../../corpus/golden/jutterswet-opgave-bedrag/case7-doel-zelf-zonder-feiten.json
+  ; and so is the example of the object a node read its member on
+  ../../corpus/golden/anchor/jutterswet-kustwacht/ir.json
+  ../../corpus/golden/anchor/jutterswet-kustwacht/case2.json)
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

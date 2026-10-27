@@ -121,7 +121,10 @@ let rec filter_in_order p = function
    of a whole-period test, the base of a temporal total or of a
    time-proportional part, which the evaluation reads whole ([timeline],
    None for an absent one), and a condition it reads over a timeline, the
-   part of that timeline in which the condition holds ([periods]). With no
+   part of that timeline in which the condition holds ([periods]); and
+   [reached] is told, per node that reads a member over a path of roles
+   (ch. 5.8), the label of the object the path reached, None where a link on
+   it is absent. With no
    observer, as in every session, the evaluation is the one it always was;
    with one, a quantifier fold also evaluates its matrix on the contributors
    the evaluation does not reach, for the observer alone (ch. 5.12). *)
@@ -134,12 +137,17 @@ type member_found =
    after a fault (ch. 5.10 over the contributors, ch. 3.9a) *)
 type contribution = { found : member_found; reached : bool }
 
+(* a node that reads a member over a path of roles (ch. 5.8): an attribute
+   read, also one read as a timeline, and a characteristic check *)
+type navigating = Navigated_read of expr | Navigated_check of condition_expr
+
 type observer = {
   expr : expr -> (unit -> Value.t) -> Value.t;
   cond : condition_expr -> (unit -> bool) -> bool;
   member : string -> contribution -> unit;
   timeline : expr -> Timeline.t option -> unit;
   periods : condition_expr -> Timeline.t -> unit;
+  reached : navigating -> string option -> unit;
 }
 
 let observer : observer option ref = ref None
@@ -147,6 +155,7 @@ let contribute ?(reached = true) label found =
   match !observer with None -> () | Some o -> o.member label { found; reached }
 let read_whole e tl = match !observer with None -> () | Some o -> o.timeline e tl
 let held_over c tl = match !observer with None -> () | Some o -> o.periods c tl
+let object_reached node target = match !observer with None -> () | Some o -> o.reached node target
 
 (* a set of half-open day intervals as the timeline that marks them, each
    period without a value *)
@@ -791,8 +800,12 @@ let whole_period_operand env world (self : World.instance) (e : expr) : Timeline
             World.timeline self a
         | Some bindings -> (
             match nav_target env world self ~bindings ~endpoint:otn with
-            | None -> None
-            | Some target -> World.timeline target a)
+            | None ->
+                object_reached (Navigated_read e) None;
+                None
+            | Some target ->
+                object_reached (Navigated_read e) (Some target.label);
+                World.timeline target a)
       in
       read_whole e tl;
       Option.value tl ~default:[]
@@ -1014,8 +1027,12 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
           (* the navigated read (ch. 5.8): walk the to-one hops; an absent
              link anywhere reads the whole operand as leeg *)
           match nav_target env world self ~bindings ~endpoint:ot with
-          | None -> Value.Empty
-          | Some target -> World.attr target name))
+          | None ->
+              object_reached (Navigated_read e) None;
+              Value.Empty
+          | Some target ->
+              object_reached (Navigated_read e) (Some target.label);
+              World.attr target name))
   | Binary { op = (Plus | Min) as op; left_side; right_side; _ }
     when List.exists
            (fun e ->
@@ -2363,10 +2380,12 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
       let reached = Option.value role.role_object_type_name ~default:"" in
       match role_linked_instances world self role with
       | [] -> (
+          object_reached (Navigated_check c) None;
           match time_period with
           | Some gp -> whole_period_characteristic env ~ot:reached ~inst:None ~characteristic:k ~negation gp
           | None -> false)
       | [ target ] -> (
+          object_reached (Navigated_check c) (Some target.label);
           match time_period with
           | Some gp ->
               whole_period_characteristic env ~ot:target.otype ~inst:(Some target) ~characteristic:k ~negation gp

@@ -9390,6 +9390,106 @@ let () =
       check "WV-5.12-gedurende-clip" (got = expected);
       if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
 
+(* WV-5.12-kustwacht: the object a node read its member on, the worked
+   example of ch. 5.12 on the golden of ch. 5.8 (anchor jutterswet-kustwacht,
+   case 2). V1 (gevarenklasse 5, verraderlijk) holds post P1 (hoogte 12); P3
+   (hoogte 9) lies in no kustvak; W1 mans P1, W4 mans P3, W3 nothing. Every
+   node of these forms reads over a path, so each names the object the path
+   reached, or none where a link on it is absent: W3 at the first step, W4 at
+   the second. The negated check of rule 5 tells W3 from W4 by the object
+   (ch. 5.8 rule 3). *)
+let () =
+  let golden = "corpus/golden/anchor/jutterswet-kustwacht/" in
+  let got = readings_of (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ "case2.json")) in
+  let line form subject cell = Printf.sprintf "/rules/rules/%d/versions/0 \"%s\" %s" form subject cell in
+  let expected =
+    List.sort compare
+      [ line 0 "W1" "0 AttributeReference 12 on \"P1\""; line 0 "W1" "HOLDS";
+        line 0 "W3" "0 AttributeReference empty on none"; line 0 "W3" "HOLDS";
+        line 0 "W4" "0 AttributeReference 9 on \"P3\""; line 0 "W4" "HOLDS";
+        line 1 "W1" "0 AttributeReference 5 on \"V1\""; line 1 "W1" "HOLDS";
+        line 1 "W3" "0 AttributeReference empty on none"; line 1 "W3" "HOLDS";
+        line 1 "W4" "0 AttributeReference empty on none"; line 1 "W4" "HOLDS";
+        line 2 "P1" "0 AttributeReference 5 on \"V1\""; line 2 "P1" "HOLDS";
+        line 2 "P3" "0 AttributeReference empty on none"; line 2 "P3" "HOLDS";
+        line 3 "P1" "0 CharacteristicCheck true on \"V1\""; line 3 "P1" "HOLDS";
+        line 3 "P3" "0 CharacteristicCheck false on none"; line 3 "P3" "FAILS";
+        line 4 "W1" "0 CharacteristicCheck true on \"P1\""; line 4 "W1" "HOLDS";
+        line 4 "W3" "0 CharacteristicCheck false on none"; line 4 "W3" "FAILS";
+        line 4 "W4" "0 CharacteristicCheck false on \"P3\""; line 4 "W4" "FAILS";
+        line 5 "W1" "0 CharacteristicCheck false on \"P1\""; line 5 "W1" "FAILS";
+        line 5 "W3" "0 CharacteristicCheck false on none"; line 5 "W3" "FAILS";
+        line 5 "W4" "0 CharacteristicCheck true on \"P3\""; line 5 "W4" "HOLDS" ]
+  in
+  check "WV-5.12-kustwacht" (got = expected);
+  if got <> expected then List.iter (Printf.printf "  got: %s\n") got
+
+(* WV-5.12-gelezen-objecten: the object a node read its member on, over every
+   shape of read: the Wachter's own diensttijd, which names none in the text
+   (its object is the subject at the head of the line); the hoogte of his
+   post, one step, in a condition; the gevarenklasse of the kustvak of his
+   post, two steps, as the value of a computation; a check of the kustvak of a
+   Post, of an input characteristic; a check of the post of a Wachter, of a
+   characteristic a rule derives; the hoogte of his post in the value of a
+   computation with a condition, not reached where the condition fails; and
+   the gevarenklasse of his wachtvak, over the relation a fact creation lays.
+   W3 has no post and P3 lies in no kustvak, so their paths meet an absent
+   link. The same document is the Drools backend's ReadingsWitnessTest
+   (src/test/resources/readings/read-objects, with its source.rgs); each
+   object was written by hand from the case. *)
+let () =
+  let doc =
+    {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Kustvak","animate":false,"plural":"Kustvakken","attributes":[{"node":"Attribute","name":"gevarenklasse","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"verraderlijk","kind":"adjectival"}]},{"node":"ObjectType","name":"Post","animate":false,"plural":"Posten","attributes":[{"node":"Attribute","name":"hoogte","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"risicopost","kind":"adjectival"}]},{"node":"ObjectType","name":"Wachter","animate":true,"plural":"Wachters","attributes":[{"node":"Attribute","name":"diensttijd","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"rang","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"uitkijkbonus","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"risicotoeslag","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"vakklasse","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"ervaren","kind":"adjectival"},{"node":"Characteristic","name":"gevarenwacht","kind":"adjectival"},{"node":"Characteristic","name":"hooggeplaatst","kind":"adjectival"}]}],"factTypes":[{"node":"FactType","name":"kustligging","reciprocal":false,"roles":[{"node":"Role","name":"kustvak","objectType":"Kustvak","many":false},{"node":"Role","name":"post","objectType":"Post","plural":"posten","many":true}]},{"node":"FactType","name":"postbezetting","reciprocal":false,"roles":[{"node":"Role","name":"post","objectType":"Post","many":false},{"node":"Role","name":"wachter","objectType":"Wachter","plural":"wachters","many":true}]},{"node":"FactType","name":"vakbewaking","reciprocal":false,"roles":[{"node":"Role","name":"wachtvak","objectType":"Kustvak","many":false},{"node":"Role","name":"vakwachter","objectType":"Wachter","plural":"vakwachters","many":true}]}],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"rang van een wachter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"rang","subjectType":"Wachter","source":{"snippet":"De rang van een Wachter"}},"value":{"node":"Binary","op":"plus","left":{"node":"AttributeReference","attribute":"diensttijd","subjectType":"Wachter","source":{"snippet":"zijn diensttijd"}},"right":{"node":"Literal","value":{"number":"1"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"1"}},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"zijn diensttijd plus 1"}},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"hooggeplaatst","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"hooggeplaatst","subjectType":"Wachter","source":{"snippet":"Een Wachter is hooggeplaatst"}},"value":{"node":"Literal","value":{"boolean":true},"type":{"node":"Boolean"},"source":{"snippet":"waar"}},"condition":{"node":"Comparison","op":"greater","left":{"node":"AttributeReference","attribute":"hoogte","subjectType":"Post","source":{"snippet":"de hoogte van zijn post"},"path":[{"node":"RoleBinding","factType":"postbezetting","role":"post"}]},"right":{"node":"Literal","value":{"number":"10"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"10"}},"source":{"snippet":"de hoogte van zijn post groter is dan 10"}},"initialisation":false}]},{"node":"Rule","name":"risicotoeslag van een wachter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"risicotoeslag","subjectType":"Wachter","source":{"snippet":"De risicotoeslag van een Wachter"}},"value":{"node":"AttributeReference","attribute":"gevarenklasse","subjectType":"Kustvak","source":{"snippet":"de gevarenklasse van het kustvak van zijn post"},"path":[{"node":"RoleBinding","factType":"postbezetting","role":"post"},{"node":"RoleBinding","factType":"kustligging","role":"kustvak"}]},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"risicopost","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"risicopost","subjectType":"Post","source":{"snippet":"Een Post is risicopost"}},"value":{"node":"Literal","value":{"boolean":true},"type":{"node":"Boolean"},"source":{"snippet":"waar"}},"condition":{"node":"CharacteristicCheck","characteristic":"verraderlijk","negated":false,"source":{"snippet":"zijn kustvak verraderlijk is"},"navigation":{"node":"RoleBinding","factType":"kustligging","role":"kustvak"}},"initialisation":false}]},{"node":"Rule","name":"gevarenwacht","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"gevarenwacht","subjectType":"Wachter","source":{"snippet":"Een Wachter is gevarenwacht"}},"value":{"node":"Literal","value":{"boolean":true},"type":{"node":"Boolean"},"source":{"snippet":"waar"}},"condition":{"node":"CharacteristicCheck","characteristic":"risicopost","negated":false,"source":{"snippet":"zijn post risicopost is"},"navigation":{"node":"RoleBinding","factType":"postbezetting","role":"post"}},"initialisation":false}]},{"node":"Rule","name":"uitkijkbonus van een wachter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"uitkijkbonus","subjectType":"Wachter","source":{"snippet":"De uitkijkbonus van een Wachter"}},"value":{"node":"Binary","op":"plus","left":{"node":"AttributeReference","attribute":"hoogte","subjectType":"Post","source":{"snippet":"de hoogte van zijn post"},"path":[{"node":"RoleBinding","factType":"postbezetting","role":"post"}]},"right":{"node":"Literal","value":{"number":"2"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"2"}},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"de hoogte van zijn post plus 2"}},"condition":{"node":"CharacteristicCheck","characteristic":"ervaren","negated":false,"source":{"snippet":"hij ervaren is"}},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"vakklasse van een wachter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"vakklasse","subjectType":"Wachter","source":{"snippet":"De vakklasse van een Wachter"}},"value":{"node":"AttributeReference","attribute":"gevarenklasse","subjectType":"Kustvak","source":{"snippet":"de gevarenklasse van zijn wachtvak"},"path":[{"node":"RoleBinding","factType":"vakbewaking","role":"wachtvak"}]},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[{"node":"FactCreation","name":"vakbewaking","versions":[{"factType":"vakbewaking","anchorRole":"wachtvak","targetRole":"vakwachter","anchor":"Kustvak","path":[{"node":"RoleBinding","factType":"kustligging","role":"post"},{"node":"RoleBinding","factType":"postbezetting","role":"wachter"}],"validity":{"node":"Validity"}}]}],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+  in
+  let case_data =
+    {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"V1","objectType":"Kustvak","attributes":{"gevarenklasse":{"number":"5"}},"roles":{},"characteristics":["verraderlijk"]},{"label":"P1","objectType":"Post","attributes":{"hoogte":{"number":"12"}},"roles":{"kustvak":["V1"]},"characteristics":[]},{"label":"P3","objectType":"Post","attributes":{"hoogte":{"number":"9"}},"roles":{},"characteristics":[]},{"label":"W1","objectType":"Wachter","attributes":{"diensttijd":{"number":"4"}},"roles":{"post":["P1"]},"characteristics":["ervaren"]},{"label":"W3","objectType":"Wachter","attributes":{"diensttijd":{"number":"1"}},"roles":{},"characteristics":["ervaren"]},{"label":"W4","objectType":"Wachter","attributes":{"diensttijd":{"number":"7"}},"roles":{"post":["P3"]},"characteristics":[]}],"parameters":{}},"expected":[{"kind":"consistent"}]}|}
+  in
+  let write suffix body_text =
+    let f = Filename.temp_file "ref-wv512" suffix in
+    let oc = open_out f in
+    output_string oc body_text;
+    close_out oc;
+    f
+  in
+  let irf = write ".ir.json" doc and casef = write ".case.json" case_data in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      let got = readings_of irf casef in
+      let line form subject cell = Printf.sprintf "/rules/rules/%d/versions/0 \"%s\" %s" form subject cell in
+      let expected =
+        List.sort compare
+          [ line 0 "W1" "0 Binary 5"; line 0 "W1" "1 AttributeReference 4"; line 0 "W1" "2 Literal 1";
+            line 0 "W1" "HOLDS"; line 0 "W3" "0 Binary 2"; line 0 "W3" "1 AttributeReference 1";
+            line 0 "W3" "2 Literal 1"; line 0 "W3" "HOLDS"; line 0 "W4" "0 Binary 8";
+            line 0 "W4" "1 AttributeReference 7"; line 0 "W4" "2 Literal 1"; line 0 "W4" "HOLDS";
+            line 1 "W1" "0 Comparison true"; line 1 "W1" "1 AttributeReference 12 on \"P1\"";
+            line 1 "W1" "2 Literal 10"; line 1 "W1" "HOLDS"; line 1 "W3" "0 Comparison false";
+            line 1 "W3" "1 AttributeReference empty on none"; line 1 "W3" "2 Literal 10"; line 1 "W3" "FAILS";
+            line 1 "W4" "0 Comparison false"; line 1 "W4" "1 AttributeReference 9 on \"P3\"";
+            line 1 "W4" "2 Literal 10"; line 1 "W4" "FAILS";
+            line 2 "W1" "0 AttributeReference 5 on \"V1\""; line 2 "W1" "HOLDS";
+            line 2 "W3" "0 AttributeReference empty on none"; line 2 "W3" "HOLDS";
+            line 2 "W4" "0 AttributeReference empty on none"; line 2 "W4" "HOLDS";
+            line 3 "P1" "0 CharacteristicCheck true on \"V1\""; line 3 "P1" "HOLDS";
+            line 3 "P3" "0 CharacteristicCheck false on none"; line 3 "P3" "FAILS";
+            line 4 "W1" "0 CharacteristicCheck true on \"P1\""; line 4 "W1" "HOLDS";
+            line 4 "W3" "0 CharacteristicCheck false on none"; line 4 "W3" "FAILS";
+            line 4 "W4" "0 CharacteristicCheck false on \"P3\""; line 4 "W4" "FAILS";
+            line 5 "W1" "0 CharacteristicCheck true"; line 5 "W1" "1 Binary 14";
+            line 5 "W1" "2 AttributeReference 12 on \"P1\""; line 5 "W1" "3 Literal 2"; line 5 "W1" "HOLDS";
+            line 5 "W3" "0 CharacteristicCheck true"; line 5 "W3" "1 Binary 2";
+            line 5 "W3" "2 AttributeReference empty on none"; line 5 "W3" "3 Literal 2"; line 5 "W3" "HOLDS";
+            line 5 "W4" "0 CharacteristicCheck false"; line 5 "W4" "1 Binary unreached";
+            line 5 "W4" "2 AttributeReference unreached"; line 5 "W4" "3 Literal unreached";
+            line 5 "W4" "FAILS";
+            line 6 "W1" "0 AttributeReference 5 on \"V1\""; line 6 "W1" "HOLDS";
+            line 6 "W3" "0 AttributeReference empty on none"; line 6 "W3" "HOLDS";
+            line 6 "W4" "0 AttributeReference empty on none"; line 6 "W4" "HOLDS" ]
+      in
+      check "WV-5.12-gelezen-objecten" (got = expected);
+      if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
+
 (* --- ch. 6.2/6.4: the instance-ordered cycle -------------------------------- *)
 
 (* The document and the case as files, loaded the way the runner loads them,

@@ -22,7 +22,9 @@
    number; the node of a fold over a set carries its contributors instead.
    The numbering is checked against the document itself: the kinds of the
    nodes under the form's pointer, read off the JSON, must be the kinds of
-   the walk, number for number, or the reading fails naming the form.
+   the walk, number for number, or the reading fails naming the form. A node
+   that reads a member over a path of roles (ch. 5.8) records the object the
+   path reached, or that a link on it is absent.
 
    [lines] gives the readings in the canonical text the Drools backend's
    readings are held to (scripts/check-readings.sh). *)
@@ -222,6 +224,10 @@ type node = {
   scope : (string * expr) list; (* the binders of the enclosing Lets, outermost first *)
   mutable outcome : outcome option; (* None: not reached *)
   mutable members : (string * Eval.contribution) list; (* in reverse fold order *)
+  mutable target : string option option;
+      (* a node that reads a member over a path: Some (Some label) the object
+         the path reached, Some None where a link on it is absent; None where
+         the evaluation did not walk the path *)
 }
 
 type status = Holds | Fails | Faults | Displaced | Outside_validity
@@ -279,6 +285,17 @@ let observing (nodes : node list) f =
           match !stack with `Node n :: _ -> n.members <- (label, c) :: n.members | _ -> ());
       timeline = (fun e tl -> read (S_expr e) (Whole tl));
       periods = (fun c tl -> read (S_cond c) (Over tl));
+      reached =
+        (fun node target ->
+          let site = match node with Eval.Navigated_read e -> S_expr e | Navigated_check c -> S_cond c in
+          match List.find_opt (fun n -> same n.site site) nodes with
+          | Some n when n.own ->
+              if n.target <> None then
+                failwith
+                  (Printf.sprintf "ref/lib/reading.ml: node %d (%s) walks its path twice in one reading"
+                     n.number n.kind);
+              n.target <- Some target
+          | _ -> ());
     }
   in
   let saved = !Eval.observer in
@@ -290,7 +307,8 @@ let drop (_ : Value.deposit) = ()
 (* A form's numbered nodes, fresh for one reading. *)
 let fresh numbered =
   List.map
-    (fun (number, site, kind, own, scope) -> { number; kind; site; own; scope; outcome = None; members = [] })
+    (fun (number, site, kind, own, scope) ->
+      { number; kind; site; own; scope; outcome = None; members = []; target = None })
     numbered
 
 (* The reading of [condition] on [self], and of the value where it holds:
@@ -795,7 +813,9 @@ let fault_text = function Some c -> "fault " ^ c | None -> "fault -"
    form, the object and the status, and per node with a reading of its own
    one line with the number and the kind of the node and what the
    evaluation found there — [unreached]; a verdict; a value, with the unit of
-   a number; [fault] with the EF code of the fault (ch. 5.7b) or [-]; and the
+   a number; [fault] with the EF code of the fault (ch. 5.7b) or [-]; after
+   the value of a node that reads a member over a path, [on] and the object
+   the path reached, or [on none] where a link on it is absent; and the
    contributors of a fold over a set, sorted, each with its value, verdict
    or fault and [reached] or [unreached]. An
    expression whose value is leeg, which a read of a leeg binder ended or
@@ -843,6 +863,25 @@ let lines env ~world (rs : reading list) =
       | Some (Whole None) -> with_unit (b ^ " empty") (static_unit ())
       | Some (Whole (Some tl)) -> with_unit (b ^ " " ^ timeline_text tl) (static_unit ())
       | Some (Over tl) -> b ^ " " ^ timeline_text tl
+    in
+    (* the object a read over a path reached; the subject's own member stands
+       at the head of the line *)
+    let navigates =
+      match n.site with
+      | S_expr (Attribute_reference { navigation_bindings = Some _; _ })
+      | S_cond (Characteristic_check { navigation_binding = Some _; _ }) ->
+          true
+      | _ -> false
+    in
+    let found =
+      match (n.target, n.outcome) with
+      | Some target, Some (Got _ | Held _ | Whole _ | Over _) ->
+          found ^ " on " ^ (match target with Some l -> name l | None -> "none")
+      | None, Some (Got _ | Held _ | Whole _ | Over _) when navigates ->
+          failwith
+            (Printf.sprintf "ref/lib/reading.ml: node %d (%s) of %s read a member over a path without walking it"
+               n.number n.kind head)
+      | _ -> found
     in
     (* the filled count is a count (ch. 3.4c): its contributor is the member
        it counts, the one whose value is filled, and not that value *)
