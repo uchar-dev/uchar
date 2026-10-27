@@ -7041,14 +7041,22 @@ public final class TmsTranspiler {
         }
 
         /** A slot that a binding of the plan binds to the variable {@code name}, read once per rule under
-         *  {@code key}. */
+         *  {@code key}, and read by the expression being compiled. */
         private int allocateSlot(ReadKind category, String key, String name) {
+            int i = reserveSlot(category, key, name);
+            if (use != null) use.add(i);
+            return i;
+        }
+
+        /** As {@link #allocateSlot}, a slot the expression being compiled does not read: it stays out of {@link #use},
+         *  the values a test or a consequence takes, and only the reading of a build with readings, which carries every
+         *  bound slot, reads it. */
+        private int reserveSlot(ReadKind category, String key, String name) {
             int i = slots.size();
             dev.uchar.regelspraak.transpiler.tms.plan.Read l = new dev.uchar.regelspraak.transpiler.tms.plan.Read(i, category, scoped(key), name);
             slots.add(l);
             index.put(scoped(key), i);
             names.add(name);
-            if (use != null) use.add(i);
             return i;
         }
 
@@ -7196,9 +7204,11 @@ public final class TmsTranspiler {
         }
 
         /** {@code slot}, the slot of a member read over a path under {@code key}, after the slot of the object it reaches
-         *  where {@code reached}, the variable that binds that object, is not null ({@link #objectOf}). */
+         *  where {@code reached}, the variable that binds that object, is not null ({@link #objectOf}). The object is the
+         *  reading's ({@link #reserveSlot}): the test of the rule takes as many bound values as in a build without
+         *  readings ({@link TmsTranspiler#MAX_READS}). */
         private int withObject(int slot, String key, String reached) {
-            if (reached != null) objects.put(slot, allocateSlot(ReadKind.PATH_OBJECT, "object " + key, reached));
+            if (reached != null) objects.put(slot, reserveSlot(ReadKind.PATH_OBJECT, "object " + key, reached));
             return slot;
         }
 

@@ -599,6 +599,73 @@ class ReadingsWitnessTest {
                 "READINGS 1"));
     }
 
+    /** A condition that reads as many bound values as the test of a rule takes (thirteen, {@code MAX_READS}), three of
+     *  them over a path, is carried by the build with readings as by the production build: the object a read over a
+     *  path reached is bound for the reading, and stays out of the values the test reads. W1 holds post P1, W2 none, so
+     *  that the composite stops on W2 at its first read over the path, which names no object.
+     *
+     *  <p><b>Red</b> on the code of card reading-read-objects ({@code f0ff72ab}): the build with readings put the slot
+     *  of each object among the values of the test, sixteen, and refused the rule (DROOLS-264, "een voorwaarde die 16
+     *  waarden leest"), on both branches, where the production build carried it. */
+    @Test void a_condition_that_reads_as_many_values_as_a_test_takes() throws Exception {
+        List<String> own = List.of("diensttijd", "rang", "leeftijd", "ervaring", "nachten", "dagen", "uren", "ronden",
+                "meldingen", "vangsten");
+        List<String> post = List.of("hoogte", "breedte", "diepte");
+        List<String> attributes = new ArrayList<>();
+        for (String a : own) attributes.add(attribute(a, WHOLE));
+        List<String> postAttributes = new ArrayList<>();
+        for (String a : post) postAttributes.add(attribute(a, WHOLE));
+        String model = TmsDocuments.model(List.of(objectType("Wachter", attributes, List.of("inzetbaar")),
+                        objectType("Post", postAttributes, List.of())),
+                List.of(factTypeOneToMany("postbezetting", "post", "Post", "wachter", "Wachter", "wachters")));
+        List<String> members = new ArrayList<>();
+        for (String a : own) members.add(comparison("greater", ownRead(a, "Wachter"), number("0")));
+        for (String a : post) members.add(comparison("greater", TmsDocuments.pathRead(a, "Post", "postbezetting", "post"),
+                number("0")));
+        Path ir = TmsDocuments.document(model, List.of(characteristicRule("inzet", "Wachter", "inzetbaar",
+                compound("all", 0, members))));
+        Map<String, String> ones = new java.util.TreeMap<>();
+        for (String a : own) ones.put(a, "1");
+        Map<String, String> postOnes = new java.util.TreeMap<>();
+        for (String a : post) postOnes.put(a, "1");
+        JsonNode c = TmsDocuments.caseOn(null, List.of(
+                instanceWithRoles("P1", "Post", postOnes, List.of(), Map.of()),
+                instanceWithRoles("W1", "Wachter", ones, List.of(), Map.of("post", List.of("P1"))),
+                instanceWithRoles("W2", "Wachter", ones, List.of(), Map.of())), List.of());
+        // the production build carries the rule: W1 is inzetbaar, W2 is not
+        for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
+            List<String> derived = CaseRunner.forMeasurement(ir, branch, false).withSession(c, (build, session, labels) -> {
+                assertEquals(null, DroolsBackend.fire(build, session).noFixpoint(), branch + ": een fixpunt");
+                Map<Object, String> label = new IdentityHashMap<>();
+                labels.forEach((l, o) -> label.put(o, l));
+                List<String> out = new ArrayList<>();
+                for (var k : DroolsBackend.fixpointOf(build, session, label::get).characteristics())
+                    out.add(label.get(k.object()) + " " + k.characteristic());
+                return out;
+            });
+            assertEquals(List.of("W1 inzetbaar"), derived, branch + ": de productiebuild");
+        }
+        StringBuilder w1 = new StringBuilder("W1 " + R + "0/versions/0 HOLDS | 0 Compound true");
+        StringBuilder w2 = new StringBuilder("W2 " + R + "0/versions/0 FAILS | 0 Compound false");
+        for (int k = 0; k < 13; k++) {
+            int n = 1 + 3 * k;
+            boolean overPath = k >= own.size();
+            w1.append(" | ").append(n).append(" Comparison true | ").append(n + 1).append(" AttributeReference 1 @")
+                    .append(overPath ? "P1" : "W1").append(" | ").append(n + 2).append(" Literal 0");
+            if (!overPath)
+                w2.append(" | ").append(n).append(" Comparison true | ").append(n + 1)
+                        .append(" AttributeReference 1 @W2 | ").append(n + 2).append(" Literal 0");
+            // no post: the first read over the path is leeg and names no object, and the composite stops there
+            else if (k == own.size())
+                w2.append(" | ").append(n).append(" Comparison false | ").append(n + 1)
+                        .append(" AttributeReference leeg | ").append(n + 2).append(" Literal 0");
+            else
+                w2.append(" | ").append(n).append(" Comparison - | ").append(n + 1).append(" AttributeReference - | ")
+                        .append(n + 2).append(" Literal -");
+        }
+        bothBranches(ir, c, true, List.of(w1.toString(), w2.toString()));
+    }
+
     /** The output of {@code --readings} on {@code ir} and the case {@code c}, on both branches, the expected lines. */
     private static void flag(Path ir, Path c, List<String> expected) {
         for (boolean drl : List.of(false, true)) {
