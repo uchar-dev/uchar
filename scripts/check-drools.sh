@@ -1446,7 +1446,13 @@ EXPECTED_CHANNEL=(
 # a test over more than thirteen values its values in bundles (PatternDslRendering.test), the DRL-text branch calls its
 # test function with all of them, and the analysis refuses no condition for its number of values any more (DROOLS-264,
 # retired). It plays on both with PLAYED 2.
-EXPECTED_PLAYED=280
+# 280 -> 281 (2026-10-27, card subtype-characteristic-in-fold-filter): the golden jutterswet-ploegblokkade, the narrowing
+# host (RUNTIME-SEMANTICS ch. 5.8b rule 4): a characteristic of a subtype read in the filters of folds over a role the
+# supertype fills, as a rule's condition on the supertype and in a quantifier's test, written in RegelSpraak with
+# hand-computed cases. The analysis reads the standing of the host's characteristic, and a rule puts an onwaar standing
+# on every object of the subject's type outside the host (TmsTranspiler.outsideStateRule), so such an object reads
+# onwaar instead of leaving the rule. It plays on both with PLAYED 3.
+EXPECTED_PLAYED=281
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

@@ -315,7 +315,8 @@ public enum DroolsCode {
     QUANTIFIER_MEMBER_TWO_ROUTES("DROOLS-291", Kind.LIMIT, "quantifier-member-two-routes", "description", null),
     INSTANCE_READ_OUTSIDE("DROOLS-292", Kind.CONTRACT, "instance-read-outside", "cycles,reads", null),
     ANCHOR_FORM_SUBJECT_UNBOUND("DROOLS-293", Kind.REFUSAL, "anchor-form-subject-unbound", "snippet", null),
-    ANCHORED_FORM_NOT_CARRIED("DROOLS-294", Kind.REFUSAL, "anchored-form-not-carried", "snippet", null);
+    ANCHORED_FORM_NOT_CARRIED("DROOLS-294", Kind.REFUSAL, "anchored-form-not-carried", "snippet", null),
+    NARROWING_HOST_NOT_CARRIED("DROOLS-295", Kind.LIMIT, "narrowing-host-not-carried", "snippet", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

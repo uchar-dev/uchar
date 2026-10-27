@@ -30,6 +30,14 @@ public final class Host {
         return subject != null && subject.chain().contains(host);
     }
 
+    /** Whether {@code k} names a narrowing host over {@code subject}: a type strictly below it, whose characteristic the
+     *  check reads on the subject itself, false where the subject is not an instance of the host
+     *  ({@code spec/RUNTIME-SEMANTICS.md} ch. 5.8b rule 4). */
+    public static boolean narrows(Condition.CharacteristicCheck k, ObjectType subject) {
+        ObjectType host = k.owner();
+        return host != null && subject != null && host != subject && host.chain().contains(subject);
+    }
+
     /** The reason both branches give when a creation guard carrying a whole-period qualifier declines on the anker. */
     public static final String TARGET_ATTEMPT_WHOLE_PERIOD =
             "voorwaarde niet naar anker of doel te lowereren — gehele-periodekwalificatie: alleen de anker is gebonden (WF-109)";

@@ -321,6 +321,8 @@ public final class TmsTranspiler {
     /** The members a lowered rule reads through their standing, on its subject or at the end of a path: the derived
      *  ones, and every attribute on a timeline ({@link Reads#timeline}). Each gets its standing rules. */
     private final Map<ElementKey, Member> read = new LinkedHashMap<>();
+    /** The onwaar standings outside a narrowing host that the lowered rules read ({@link Reads#narrowed}). */
+    private final Map<String, Outside> outsideStandings = new LinkedHashMap<>();
     /** The reads of a derived member over a path: each gets its two path-standing rules. */
     private final Map<String, PathRead> pathReads = new LinkedHashMap<>();
     /** The producers whose §9.5 channel a lowered condition reads, by the name the channel test spells: each gets the
@@ -1603,6 +1605,7 @@ public final class TmsTranspiler {
         for (PathRead p : pathReads.values())
             states.addAll(p.path().created() ? linkPathStateRules(p) : pathStateRules(p));
         for (Member member : read.values()) states.addAll(member.characteristic() ? characteristicStateRules(member) : attributeStateRules(member));
+        for (Outside o : outsideStandings.values()) states.add(outsideStateRule(o));
         for (String producer : channels) states.addAll(channelStateRules(producer));
         for (String parameter : globals.keySet()) states.add(parameterStateRule(parameter));
         List<Modelplan.Global> declarations = new ArrayList<>();
@@ -6012,10 +6015,24 @@ public final class TmsTranspiler {
     /** A characteristic check: of the subject, a bound truth value, complemented where the check is negated; over a
      *  role, the reached object's, and a check over an absent link holds in neither polarity (RUNTIME-SEMANTICS ch. 5.8
      *  rule 3). The standings are total, so no negation is needed here. Under the whole-period qualifier the check
-     *  folds the characteristic's true periods instead ({@link #wholePeriodCharacteristicCheck}). */
+     *  folds the characteristic's true periods instead ({@link #wholePeriodCharacteristicCheck}). With a narrowing host
+     *  (ch. 5.8b rule 4) the subject's standing of the host's characteristic is read, which is onwaar on a subject
+     *  outside the host ({@link Reads#narrowed}). */
     private Term characteristicCheck(Condition.CharacteristicCheck k, Reads reads) {
-        // WF-109: the host is satisfied extensionally; a host the subject is no instance of names another object, which
-        // a rule condition does not bind
+        // WF-109: the host is satisfied extensionally, or it narrows the subject to a subtype; a host the subject can be
+        // no instance of names another object, which a rule condition does not bind
+        if (Host.narrows(k, reads.subject)) {
+            if (k.period() != null || k.navigation() != null || navigationBindings.containsKey(k))
+                throw new Refusal(DroolsCode.NARROWING_HOST_NOT_CARRIED.reason("snippet", snippet(k)));
+            Member member = member(k.owner(), k.characteristic(), true);
+            // the standings are the declarant's, so a host below the declarant would read the objects between the two
+            // as inside the host
+            if (member.declarant() != k.owner())
+                throw new Refusal(DroolsCode.NARROWING_HOST_NOT_CARRIED.reason("snippet", snippet(k)));
+            int i = reads.narrowed(member);
+            return new Term.Call(StaticFunction.KENMERK, List.of(new Term.SlotValue(i, null), constant(!k.negation())),
+                    source(k.source()));
+        }
         if (!Host.hostOp(k, reads.subject))
             throw new Refusal(DroolsCode.CHARACTERISTIC_HOST_NOT_SUBJECT.reason("snippet", snippet(k)));
         if (k.period() != null) {
@@ -6527,6 +6544,8 @@ public final class TmsTranspiler {
         /** The variables of this rule's slots, so that a read name ({@link #readName}) is one no other slot has. */
         private final Set<String> names = new HashSet<>();
         private final Map<ElementKey, Member> derived = new LinkedHashMap<>();
+        /** The onwaar standings outside a narrowing host this rule reads ({@link #narrowed}), by member and subject type. */
+        private final Map<String, Outside> outsideHost = new LinkedHashMap<>();
         private final Map<String, PathRead> paths = new LinkedHashMap<>();
         /** In a build with readings, per slot of a member read over a path, the slot of the object the path reaches
          *  ({@link #navigated}). */
@@ -6789,6 +6808,7 @@ public final class TmsTranspiler {
          *  standings it needs, and the contribution rules of its folds with what those read. */
         void recorder() {
             read.putAll(derived);
+            outsideHost.forEach(outsideStandings::putIfAbsent);
             for (PathRead p : paths.values()) {
                 pathReads.putIfAbsent(p.key(), p);
                 if (writers.containsKey(p.member().key()) || timelineAttribute(p.member()))
@@ -7140,6 +7160,27 @@ public final class TmsTranspiler {
             Alpha ofMember = equal(id("stand"), memberField, lk);
             Join onSubject = onSubjectHere(id("stand-onderwerp"));
             return new FactPattern(javaClass, name, List.of(ofMember), List.of(onSubject), List.of(Binding.of(w, javaClass, field)));
+        }
+
+        /**
+         * The standing of characteristic {@code member} of the subject, where its declarant lies strictly below the
+         * subject's type: a narrowing host (RUNTIME-SEMANTICS ch. 5.8b rule 4). The standing is read whether a form
+         * writes the characteristic or the input sets it, so the subject pattern reads no getter its class does not
+         * have; beside the three standing rules of the declarant ({@link #characteristicStateRules}), one rule puts an
+         * onwaar standing on every object of the subject's type outside the declarant
+         * ({@link TmsTranspiler#outsideStateRule}), so the standing is total over the subjects this rule runs on and a
+         * subject outside the host reads onwaar instead of leaving the rule.
+         */
+        int narrowed(Member member) {
+            String key = "versmald " + member.key();
+            int known = existing(key);
+            if (known >= 0) return known;
+            String w = readName(member.name());
+            ElementKey lk = member.key();
+            states(state(CharacteristicState.class, "$stand_" + slots.size(), "characteristic", lk, "holds", w));
+            derived.put(lk, member);
+            outsideHost.putIfAbsent(lk + " " + subject.name, new Outside(member, subject));
+            return allocateSlot(ReadKind.CHARACTERISTIC_STATE, key, w);
         }
 
         int own(Member member) {
@@ -7550,6 +7591,30 @@ public final class TmsTranspiler {
                         new Not(derived(key))),
                 new Consequence.InsertCharacteristicState(SUBJECT, key, Consequence.StateSource.NONE, false, Consequence.Insertion.LOGICAL));
         return List.of(inputData, derivation, falsePlan);
+    }
+
+    /** A characteristic {@code member} read with a narrowing host on subjects of type {@code within}, a strict supertype
+     *  of its declarant ({@link Reads#narrowed}). */
+    private record Outside(Member member, ObjectType within) {}
+
+    /**
+     * The rule that puts an onwaar {@link CharacteristicState} of {@code o}'s characteristic on every object of type
+     * {@code within} that is no instance of the declarant (RUNTIME-SEMANTICS ch. 5.8b rule 4): such an object has no
+     * characteristic to hold, and a narrowing host reads it as not holding. Its subject pattern admits exactly the
+     * objects whose class is none of the declarant's and its subtypes' classes, so the declarant's own standing rules
+     * and this one never put a standing on one object both.
+     */
+    private RulePlan outsideStateRule(Outside o) {
+        Member member = o.member();
+        Set<Class<?>> inside = new LinkedHashSet<>();
+        for (ObjectType t : model.objectTypes.values()) if (t.isA(member.declarant())) inside.add(beanClass(t));
+        Alpha outside = new Alpha(id("buiten-gastheer"), List.of(new Alpha.FieldTest(null, Alpha.Comparator.CLASS_NOT_IN,
+                Collections.unmodifiableSet(inside))));
+        return new RulePlan("kenmerkstand " + member.declarant().name + "." + member.name() + ": onwaar buiten "
+                + member.declarant().name + " op " + o.within().name, null, null, new ReadTable(List.of()),
+                List.of(new Subject(beanClass(o.within()), SUBJECT, List.of(outside), List.of(), List.of())),
+                new Consequence.InsertCharacteristicState(SUBJECT, member.key(), Consequence.StateSource.NONE, false,
+                        Consequence.Insertion.LOGICAL));
     }
 
     /** The test that the input of characteristic {@code member} on the subject's bean, read as whether it holds
