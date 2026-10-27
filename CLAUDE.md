@@ -652,7 +652,7 @@ missing line makes `make gates` exit non-zero. Current gates:
     tripwire, held on a listed case too). A difference fails unless the
     reason-carrying `DEVIATIONS` names the case and the branch (empty
     since the gate began); both lists fail when stale, in both
-    directions, and the comparison rule passes twelve rows of its own and
+    directions, and the comparison rule passes fourteen rows of its own and
     the tripwire three. Floors `EXPECTED_MIN_TRACED_CASES=835`,
     `EXPECTED_MIN_COMPARED_GOLDENS=261`, `EXPECTED_MIN_COMPARED_CASES=706`,
     `EXPECTED_MIN_READINGS=3826`, `EXPECTED_MIN_NODE_LINES=13971`,
@@ -660,6 +660,12 @@ missing line makes `make gates` exit non-zero. Current gates:
     and `EXPECTED_MIN_TIMELINE_LINES=76` (measured 2026-10-21), and
     `EXPECTED_MIN_UNREACHED_CONTRIBUTORS=106` (contributors of the trace
     not reached, measured 2026-10-21, card `fold-contributor-verdicts`).
+    Since the card `reading-read-objects` (2026-10-27) a node that reads
+    a member over a path of roles writes, after its value, the object the
+    path reached (`on "<object>"`, `on none` where a link is absent;
+    ch. 5.12, "The object of a read"), compared verbatim with the rest of
+    its line; floor `EXPECTED_MIN_OBJECT_LINES=746` (measured 2026-10-27),
+    and the reader of that object passes five rows of its own.
     The jar is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`). The
     traces run on one process per core, the readings and the plain
     replays on one per two cores with the replay flags of

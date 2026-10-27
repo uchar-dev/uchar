@@ -1332,6 +1332,22 @@ counting compound); (7) gate 2 has no self-test rows for the schema side of
 the anchor; (8) the keyword's price: a declared name with the separate word
 "zelf" no longer parses, fact type names excepted (none in the repository).
 
+**A reading names the object it read a member on (2026-10-27, card
+`reading-read-objects`):** RUNTIME-SEMANTICS ch. 5.12 records, at a node that
+reads a member of one object (an attribute read, a characteristic check, own or
+over a path of roles), the object it read the member on; the canonical text
+writes it only where the node walks a path (`on "<object>"`, `on none` where a
+link is absent), so no existing line changed, and gate 17 compares it between
+ref and both Drools branches. `PathState` carries the object its path reached,
+so the path-state rules of the production DRL text gained one argument; facts
+and firings are unchanged. The distribution's card
+`explanation-read-objects-and-displaced` reads it to name the object of every
+value an explanation names (an interim on `DroolsBackend.reached` landed there
+first). Provisional decisions V1–V8 of the builder stand in the card; the
+`DimensionCellRead` arm is pinned by the Drools witness only, since ref refuses
+that form. Next: card `readings-of-displaced-defaults` (a displaced default
+read all the same, `DISPLACED` with nodes).
+
 ## 10. Rough effort
 
 Phase 0 in weeks; Phases 1+2 together a few months of serious work; Phases 3
