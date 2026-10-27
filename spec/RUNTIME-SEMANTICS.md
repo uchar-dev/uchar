@@ -5279,12 +5279,23 @@ allocation, a creation — has none: there is nothing to read.
 | `FAILS` | the condition does not hold | the nodes of the condition |
 | `FAULTS` | the evaluation of the condition faults (ch. 5.7) | the nodes, the fault at those it reached |
 | `FAULTS` | the form has a dated validity and the session no evaluation date (ch. 8.1) | none |
-| `DISPLACED` | the form is not at its turn: a higher default of its chain decided, or an exception group of the default settled (ch. 7.1, 7.9); the target of an initialisation — a rule's, a folded one's in a stack, or the initialisation default's — holds a value of the input or of another writer (ch. 5.4, 7.3); the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
+| `DISPLACED` | the form is a default that is not at its turn because a higher default of its chain decided or settled (ch. 7.1, 7.9): a default below the one that decides, at the root or in an exception group, and every default inside its exception groups; the content of a default whose exception groups settled; an ordinary rule that ch. 7.10 folds into a stack, below the default that decides; the initialisation default below the default that decides, where the input leaves its target empty | the nodes of the condition, and of the value where the condition holds, as at its turn (**A displaced default is read**, below) |
+| `DISPLACED` | the target of an initialisation — a rule's, a folded one's in a stack, or the initialisation default's — holds a value of the input or of another writer (ch. 5.4, 7.3); the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
 | `OUTSIDE_VALIDITY` | the validity window of the form does not admit the evaluation date (ch. 8.2) | none |
 
-A form that is not at its turn, or outside its validity, is not evaluated,
-so it has no nodes. Every default below the one that decides is displaced,
-and with it every default inside its exception groups.
+The session does not evaluate a form that is not at its turn or outside its
+validity. Every default below the one that decides is displaced, and with
+it every default inside its exception groups. A displaced default is read
+all the same (below); an initialisation whose target the input or another
+writer fills, a creation whose subject the input links and a form outside
+its validity have no nodes. The emptiness of the target in the input is the
+justification of an initialisation (ch. 7.3) and the link in the input the
+guard of a 1:1 creation (ch. 5.5), and neither is a node of the form: where
+they keep the form from its turn, there is no node whose evaluation the
+reading could record. The two rows of `DISPLACED` are told apart by their
+nodes: a default that a higher one displaced has the nodes of its
+condition, or of its value where it has no condition, and a form of the
+second row has none.
 
 **The evaluation.** The condition is evaluated with the object as its
 subject, on the fixpoint world, in the order of ch. 5.10 and 5.11. Where it
@@ -5302,8 +5313,12 @@ fixpoint world, in the order of ch. 5.11, and its status is `HOLDS`, also
 where the value is leeg or faults; where it is not at its turn, or the
 window of its validity does not admit the evaluation date, its status is
 `DISPLACED`, `OUTSIDE_VALIDITY` or `FAULTS` as a form with a condition has
-it, without nodes. An initialisation without a condition — a rule's, a
-folded one's in a stack, or the initialisation default (ch. 7.3) — is not
+it: an attribute default without a justification, and an ordinary rule
+without a condition that ch. 7.10 folds into a stack, that a default above
+it displaced has the nodes of its value (**A displaced default is read**,
+below), and every other one has none. An initialisation without a
+condition — a rule's, a folded one's in a stack, or the initialisation
+default (ch. 7.3) — is not
 at its turn where its target holds a value of the input or of another
 writer (ch. 5.4, 7.3). An attribute default without a justification, and an
 ordinary rule without a condition that ch. 7.10 folds into a stack, is not
@@ -5311,6 +5326,48 @@ at its turn where a default above it decided or an exception group of it
 settled (ch. 7.1, 7.9). Elsewhere the form is at its turn; a computation or
 an equation without a condition outside a stack is at its turn on every
 object it runs on.
+
+**A displaced default is read** (card `readings-of-displaced-defaults`,
+2026-10-27). A default that is not at its turn because a higher default of
+its chain decided or settled is read as a default at its turn is: its
+justification, with the object as its subject, on the fixpoint world, and
+its consequence where the justification holds, each on the level that
+declared it (ch. 7.10); an attribute default without a justification has
+the reading of its consequence. Its status stays `DISPLACED` — it says
+that the default was not at its turn — and its nodes say what it found
+there: on an attribute whether its justification held and the value it
+would have given, leeg included; on a characteristic whether its
+justification held. Its decision, to attribute or not, stands on the wire
+(`Default.decision`, IR-SPEC ch. 6.1) and is no node. This reading is the
+speculative
+evaluation of ch. 7.1, made once, on the fixpoint world. WF-051 folds every
+read of every default of a group — its justification and its consequence,
+recursively through its exception groups (ch. 7.9), and the reads of the
+rules a stack folds in (ch. 7.10) — into the group's negative edges toward
+its target, and a group whose defaults depend on its own output is
+ill-formed (ch. 7.4), so the group decides above everything its defaults
+read. What a displaced default reads at the fixpoint is therefore what it
+would have read at its turn: the fixpoint world gives the reading the
+speculation of ch. 7.1 would have made. A fault of its justification or its consequence — a date step out
+of range, a context value without an evaluation date, an `Unresolved`
+node — stands at its nodes and leaves the status `DISPLACED`: the session
+never evaluated the default and has no such fault, as a contributor after
+the stop of a quantifier fold carries a fault the session did not raise.
+A §9.5 deposit is dropped, as in every reading.
+
+Which defaults are read so: every default below the one that decides in
+its chain, at the root or in an exception group, with every default inside
+its exception groups; every default below one that settled by the conflict
+of its exception groups (ch. 7.9: settling displaces); the content of a
+default whose exception groups decided or conflicted — the fall-back that
+did not come to its turn; an ordinary rule that ch. 7.10 folds into a
+stack, below the default that decides; and the initialisation default
+below the default that decides, where the input leaves its target empty.
+Not so: an initialisation whose target the input or another writer fills
+(the second row), a group-default and a characteristic default without a
+justification (nothing to read, displaced or not), and a member of a
+declared-unordered group of exception groups, which decides on its own
+(ch. 7.2, 7.9) and is at its turn wherever the default that carries it is.
 
 **A reading deposits nothing and writes nothing.** A §9.5 deposit the
 evaluation makes is dropped, a value it computes is written nowhere, and no
@@ -5572,12 +5629,14 @@ default 25,00 € without a justification,
 
 | case | input | waarde | `…/defaults/2` | `/rules/rules/2/versions/0`: nodes 0, 1, 2 |
 |------|----|----|----|----|
-| `case1-geen-opgave` | taxatie 100,00 €, bergingskosten 10,00 € | 110,00 € (the computation) | `DISPLACED` | `HOLDS`: 112,50 €, 110,00 €, 2,50 € |
+| `case1-geen-opgave` | taxatie 100,00 €, bergingskosten 10,00 € | 110,00 € (the computation) | `DISPLACED`: 25,00 € | `HOLDS`: 112,50 €, 110,00 €, 2,50 € |
 | `case5-niets` | — | 25,00 € (the initialisation default) | `HOLDS`: 25,00 € | `HOLDS`: 27,50 €, 25,00 €, 2,50 € |
 | `case7-doel-zelf-zonder-feiten` | waarde 80,00 € | 80,00 € (the input) | `DISPLACED` | `HOLDS`: 82,50 €, 80,00 €, 2,50 € |
 
 In case 1 the computation above the initialisation default decided
-(ch. 7.1); in case 7 the input fills the target (ch. 7.3). In the canonical
+(ch. 7.1), and the default is read all the same (**A displaced default is
+read**, above: it would have given 25,00 €); in case 7 the input fills the
+target (ch. 7.3), and it has nothing to read. In the canonical
 text the two forms read in case 5:
 
 ```
@@ -5628,6 +5687,70 @@ canonical text W3 and W4 read, on rules 1 and 5:
 The three worked examples above read only members of their own subject:
 their lines carry no object.
 
+**Worked example — a displaced default** (absolute; the
+`jutterswet-nestuitzondering` anchor of ch. 7.9, cases 1 and 9, verbatim
+in the `ref/` test `WV-5.12-nestuitzondering-verdrongen`). One defaults
+group on `Jutter.heffing`: default 0 is a form-a default `grondX → 40.00`
+with the unordered exception groups `grondY → 10.00`, `grondZ → 20.00` and
+`grondW → 10.00`; default 1 is a group-default, which has no reading of its
+own, with the members `grondB1 → 15.00` and `grondB2 → 25.00`. Each
+default reads its justification, node 0 `CharacteristicCheck`, and its
+consequence, node 1 `Literal`. With P for
+`/rules/prioritizedDefaults/0/defaults`, the readings on the Jutter M:
+
+| form | case 1 (grondX, grondY): heffing 10.00 | case 9 (grondX, grondB1, grondB2): heffing 40.00 |
+|------|----|----|
+| `P/0`, grondX → 40.00 | `DISPLACED`: true, 40 | `HOLDS`: true, 40 |
+| `P/0/exceptions/members/0/defaults/0`, grondY → 10.00 | `HOLDS`: true, 10 | `FAILS`: false, *unreached* |
+| `P/0/exceptions/members/1/defaults/0`, grondZ → 20.00 | `FAILS`: false, *unreached* | `FAILS`: false, *unreached* |
+| `P/0/exceptions/members/2/defaults/0`, grondW → 10.00 | `FAILS`: false, *unreached* | `FAILS`: false, *unreached* |
+| `P/1/exceptions/members/0/defaults/0`, grondB1 → 15.00 | `DISPLACED`: false, *unreached* | `DISPLACED`: true, 15 |
+| `P/1/exceptions/members/1/defaults/0`, grondB2 → 25.00 | `DISPLACED`: false, *unreached* | `DISPLACED`: true, 25 |
+
+In case 1 the exception group of grondY decides 10.00 for default 0, so
+the content of default 0, its fall-back, was not at its turn: it held and
+would have given 40. grondZ and grondW are members beside the group that
+decided, at their turn, and fail. Default 1 is below the default that
+decides, and its members are displaced; neither held. In case 9 the
+exception groups decide nothing and default 0 falls back to 40.00; the two
+members of default 1 are displaced, and both held — the 15 and the 25
+whose conflict at `Jutter.heffing/1` the session never reached (ch. 7.9).
+In the canonical text case 1 reads, for default 0 and the first member of
+default 1:
+
+```
+/rules/prioritizedDefaults/0/defaults/0 "M" 0 CharacteristicCheck true
+/rules/prioritizedDefaults/0/defaults/0 "M" 1 Literal 40
+/rules/prioritizedDefaults/0/defaults/0 "M" DISPLACED
+/rules/prioritizedDefaults/0/defaults/1/exceptions/members/0/defaults/0 "M" 0 CharacteristicCheck false
+/rules/prioritizedDefaults/0/defaults/1/exceptions/members/0/defaults/0 "M" 1 Literal unreached
+/rules/prioritizedDefaults/0/defaults/1/exceptions/members/0/defaults/0 "M" DISPLACED
+```
+
+**Worked example — the initialisation default** (absolute; the
+`jutterswet-vondstwaardering` anchor of ch. 7.6, all six cases, verbatim in
+the `ref/` test `WV-5.12-vondstwaardering-verdrongen`). The chain on
+`Jutter.waardering`: default 0 `erkend → zijn basisbedrag`, default 1
+`kandidaat → zijn kandidaatbedrag`, default 2 the initialisation default
+25. Nodes 0 and 1 of defaults 0 and 1 are the `CharacteristicCheck` and the
+`AttributeReference`; node 0 of default 2 is its `Literal`.
+
+| case | input | waardering | default 0 | default 1 | default 2 |
+|------|----|----|----|----|----|
+| `case1-erkend` | erkend, basisbedrag 50 | 50 | `HOLDS`: true, 50 | `DISPLACED`: false, *unreached* | `DISPLACED`: 25 |
+| `case2-doorval` | erkend, kandidaat, kandidaatbedrag 30 | 30 | `HOLDS`: true, leeg | `HOLDS`: true, 30 | `DISPLACED`: 25 |
+| `case3-doorval-init` | erkend | 25 | `HOLDS`: true, leeg | `FAILS`: false, *unreached* | `HOLDS`: 25 |
+| `case4-init` | — | 25 | `FAILS`: false, *unreached* | `FAILS`: false, *unreached* | `HOLDS`: 25 |
+| `case5-input-blijft` | waardering 40 | 40 | `FAILS`: false, *unreached* | `FAILS`: false, *unreached* | `DISPLACED`, no nodes |
+| `case6-default-overschrijft` | erkend, basisbedrag 50, waardering 40 | 50 | `HOLDS`: true, 50 | `DISPLACED`: false, *unreached* | `DISPLACED`, no nodes |
+
+In cases 1 and 2 a higher default decided and the input leaves the
+waardering empty: the initialisation default is read, and would have given
+25. In case 6 a higher default decided as well, but the input fills the
+target: the emptiness of the target in the input is the justification of
+the initialisation default (ch. 7.3), not the turn of its chain, so it has
+no nodes, as in case 5.
+
 **The artifacts.** The `ref/` tests `WV-5.12-ploegaandeel`,
 `WV-5.12-keurgemiddelde` and `WV-5.12-opgave-bedrag` (the three examples
 above),
@@ -5661,7 +5784,23 @@ the latter also in the Drools backend's `ReadingsWitnessTest`, whose
 records name the object of a member of the subject's own as well; and the
 backend's `ReadingsCorpusWitnessTest` holds the object of every node of
 every case the backend plays to the object the node's walk reaches on the
-written-back beans.
+written-back beans. `WV-5.12-nestuitzondering-verdrongen` and
+`WV-5.12-vondstwaardering-verdrongen` (the two examples above) and
+`WV-5.12-fout-in-een-verdrongen-default` (a justification of a displaced
+default that faults: the fault at its nodes, the status `DISPLACED`) pin
+the reading of a displaced default in `ref/`, the last also in the Drools
+backend's `ReadingsWitnessTest`, beside its records of displaced defaults:
+an attribute default that held and gave a value, one that held and gave
+none, one that did not hold, a characteristic default, a default in an
+exception group below a displaced default, the content of a default whose
+exception group decided, a subtype's rule that ch. 7.10 folds into a stack
+below the inherited exception that decides, and the initialisation default
+below the default that decides, read where the input leaves its target
+empty and without nodes where the input fills it. The backend's
+`ReadingsCorpusWitnessTest` holds every displaced default of every case it
+plays to the nodes of a reading at its turn, and every operand in them to
+the value of the fixpoint; gate 17 compares their node lines as it
+compares every other, and counts them.
 
 Four boundaries, recorded rather than left implicit. The object of the
 `AttributeReference` under a `DimensionCellRead` stays outside gate 17 and
@@ -5672,6 +5811,11 @@ attribute (a cell over a path it refuses, DROOLS-189), whose object the
 text does not write. The status `FAULTS`
 and a fault at a node stay outside that differential: a golden does not
 fault at its fixpoint, and `runner --trace` refuses a case that pins one.
+Neither does a displaced default of a golden fault in its reading
+(measured 2026-10-27: none of the 207 displaced readings with nodes on the
+case files gate 17 compares carries a fault), so the fault at the nodes of
+a displaced default is pinned by `WV-5.12-fout-in-een-verdrongen-default`
+and its twin in `ReadingsWitnessTest` only.
 A fault of a contributor after the stop is inside it for one kind: the
 golden `jutterswet-keurtermijn` (card
 `clingo-day-kind-walk-after-fold-stop`, 2026-10-21) reads `"W2" fault
