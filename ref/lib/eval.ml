@@ -432,7 +432,7 @@ let quantifier_fold_shape ~(quantifier_kind : quantifier_kind) ~(cutoff : int op
    ch. 5.8b rule 4): the check reads that object's own characteristic, which
    the host declares, and is false on an object outside the host. The answer
    says which of the two readings the check has; a host the object can never
-   be faults as before, in the same sentence. *)
+   be faults, in the sentence below. *)
 type hosting = Hosted | Narrowing of string
 
 let owner_hosts (doc : document) ~(otype : string) ~(subj : string option)
