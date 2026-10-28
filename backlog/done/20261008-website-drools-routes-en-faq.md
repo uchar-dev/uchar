@@ -226,3 +226,25 @@ de eigenaar).
 
 Sinds `20261008-tms-omschakeling` (2026-10-10) heet de verlaging van de exec-model-tak `TmsTranspiler`
 (`transpiler/tms/`, met truth maintenance); `ExecModelTranspiler` in het schema bestaat niet meer.
+
+## Result (hoofdsessie, 2026-10-28)
+
+Geland in de website-repo (`uchar-dev/website`), commit `48244df`, samen met de bijwerking van alle pagina's naar
+uchar `d42bfdcd` en toolchain `6be9ee38`. De sectie staat in `ontwikkelaar.html` als § 6 (`id="drools-routes"`),
+direct na `#gates`, met de FAQ onder `id="faq"`.
+
+- Diagram 1 (vier routes naar een KieBase, lagen A–E) en diagram 2 (uchar daarin: `IrLoader`, één analyse
+  `TmsTranspiler`, de weergaven `DrlRendering` en `PatternDslRendering`, de dienst `decision-service` op de
+  exec-model-weergave) als inline SVG; op telefoonbreedte scrollen ze binnen hun blok (CSS-klasse
+  `flow--scroll`).
+- De stand van de kaart van 8 oktober is bijgewerkt: geen `DrlTranspiler`/`ExecModelTranspiler`, het vuurplafond
+  `max(10 000, 4 × R × N0)` in plaats van `fireAllRules(100_000)`, de DRL-tekst met functies en herkomst per regel.
+  Klassen en methoden van Drools zijn nagezocht in de jars van 8.44.0.Final; weggelaten wat niet te controleren
+  was (`.xls`, de naam `kie-maven-plugin`, de naam Phreak als algoritme). Vraag 9 heet "Waarom drie uitvoerders?",
+  omdat ref geen engine-backend is (`backends/README.md`).
+- Het feitenblad heet `_research/J-drools-routes.md` (H en I waren bezet) en is, zoals de andere feitenbladen,
+  niet gecommit.
+- Acceptatie: (a) sectie en ankers aanwezig; (b) feitenblad met bron per bewering; (c) `python3 _research/check.py`
+  exit 0; (d) `grep -ci video ontwikkelaar.html` geeft 0; (e) geen privé- of machinepaden, check.py groen.
+- Het DRL-voorbeeld (`jutterswet-uitsluiting-rgs`) is na een verse build van `bin/regelspraak` opnieuw gemaakt en
+  gelijk aan wat op de pagina staat.
