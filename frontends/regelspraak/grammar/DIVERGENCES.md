@@ -3809,7 +3809,8 @@ a `SemanticTokens.Document`: per file the spans, and the diagnostics. The CLI wr
 `--ir` reads several files, and resolved once; a reference may cross a file boundary. The output is written also when
 the model carries an ERROR or a syntax error, because that is where it helps most: exit 0 when the file is written, 2
 on wrong usage (no output file, no source, or `--tokens` beside `--ir` or `--cases`). The diagnostics go to stderr as
-well, each with its file and line. `--ir` and `--cases` do not change.
+well, each with its file and line. `--ir` and `--cases` do not change. A chain that carries a block of the scenario
+layer is read as a test document (below).
 
 **Form.**
 
@@ -3871,8 +3872,9 @@ parse gave; only ANTLR's recovery after a syntax error leaves one (below).
 `dimensionLabel`, `timeline`, `dayKind`, `vocabulary` (the opener `(<vocabulary>:` of a designation, which the lexer
 reads as one token with its bracket and colon), `namedForm` (the name of a rule, a decision table or an exception
 block, and a reference to one: `regelversie <naam>`, the carrier of `Uitzondering op`), `ruleGroup`, `variable` (a
-`Daarbij geldt` variable, declared there and read in its own rule), and `unresolved` for a word in a name place that
-names nothing (also an enumeration value no domain declares). A plural (`(mv: …)`) is a reference to the singular's
+`Daarbij geldt` variable, declared there and read in its own rule), `label`, `situation`, `parameterSet` and
+`scenario` in a test document (below), and `unresolved` for a word in a name place that names nothing (also an
+enumeration value no domain declares). A plural (`(mv: …)`) is a reference to the singular's
 declaration. A unit is declared by its word (`de meter`); its abbreviations and plural refer to it. A time unit and a
 sign that no unit system of the files declares are a `unit` without `declaredAt`.
 
@@ -3894,6 +3896,29 @@ names (the role `mast` of the fact type that relates a post, not that of the one
 navigation the rule's subject decides, read with the resolution's own `ExpressionBuilder` on a copy of the model. A name
 that stays one of several declarations of its kind carries its kind and no `declaredAt`: a wrong link would be worse
 than none. The resolution and this pass can part; the corpus witness measures it.
+
+**A test document.** A chain that carries a block of the scenario layer — a token `Situatie`, `Parameterset` or
+`Scenario` on the default channel, which no production document carries, since none of the three is a word of
+`regelSpraakDocument` — is a test document, and is read as `--cases` reads it ("Scenariotoetsen"): parsed from
+`testDocument`, its definitions and rules resolved by the one model pipeline, its scenario blocks by `ScenarioResolver`.
+Its diagnostics are those of that route: a syntax error is `RGS-216`, the scenario blocks carry their own ERRORs, a test
+document without a scenario carries `RGS-095`, and the emitter's WARNINGs are those of the IR document the scenarios
+lower to. Any other chain is read as `--ir` reads it. The output has the same form. In the blocks of the scenario layer:
+
+- the name of a situation, a parameter set and a scenario is a declaration of kind `situation`, `parameterSet` and
+  `scenario`; a basis (`gebaseerd op de situatie …`) and the parameter set a scenario chooses refer to it;
+- the scope of a scenario refers to its forms (`namedForm`) or to its rule group (`ruleGroup`);
+- a label (`een Jutter J1`) is of kind `label`. A situation and a scenario merge their blocks — the bases expanded in
+  written order, then their own block — and one label is one instance there ("Scenariotoetsen", the merge): the first
+  opener of a label in that order is its declaration, and a later opener of it, a role value (`de vondsten zijn V1 en
+  V2`) and a label in an expectation refer to that one. A label that no opener of the merge opens is `unresolved`;
+- the object type after `een` is an `objectType`; the name in a bullet and in an expectation is read against the object
+  type of the instance, as the scenario route reads it: an attribute by its declared name, a role through the fact
+  types the type takes part in, a characteristic with the matcher of the rule text, each after one leading article,
+  which stays a keyword. Where the opener or the label names no type, every type's members are candidates, as for a
+  name its place does not decide;
+- `de parameter …` names a `parameter`; the negation `geen` or `niet` before a characteristic in an expectation and the
+  word `volgens` of an inconsistency are keywords; the rule an inconsistency names is a text literal, a `string`.
 
 **After a syntax error.** The parse tree is ANTLR's recovery. Rule text in it is read as any rule text: a word there
 that names nothing is `unresolved`. A word the recovery placed in no name and no rule text keeps its lexical kind
@@ -3925,14 +3950,14 @@ passes the output on (a language server itself is no part of this output):
 | `dimension` | `enum` | |
 | `unit` | `type` | `defaultLibrary` where it has no `declaredAt` |
 | `unitSystem`, `vocabulary`, `ruleGroup` | `namespace` | |
-| `namedForm` | `function` | |
+| `namedForm`, `scenario` | `function` | |
+| `label` | `variable` | |
+| `situation`, `parameterSet` | `namespace` | |
 | `unresolved`, `word` | none: a language server reports an `unresolved` span as a diagnostic, and passes neither | |
 
 A span with `"declaration": true` takes the modifier `declaration`.
 
-**Not covered.** A test document of the scenario layer (`--cases`, `ScenarioResolver`): its scenario blocks are no
-part of `regelSpraakDocument`, so they are a syntax error here. The words of a designation's text, which no rule reads,
-are one `designation` span.
+**Not covered.** The words of a designation's text, which no rule reads, are one `designation` span.
 
 **Witnesses.** `SemanticTokensTest`: a Jutterswet model of two files with every kind of name, a name over two lines, a
 name that names nothing, a `// Bron:` comment, a reference across the file boundary, and a character outside the Basic
@@ -3943,6 +3968,12 @@ coverage and the positions (`SemanticTokensCheck`, which lexes the files again i
 declaration of its kind, every reference whose kind has declarations carrying one, no `unresolved` in a document
 without diagnostics (a reason-carrying list, stale-failing, is empty), and a `word` only in a document with a syntax
 error; floors on the files, the spans and the name spans per kind. `SemanticTokensRecoveryTest`: the seven broken
-sources, and every golden cut at forty places and with each of twenty lines left out. Measured on the casus of the
+sources, and every golden cut at forty places and with each of twenty lines left out.
+`SemanticTokensScenarioTest`: a test document of two files with a parameter set, two situations (one based on the
+other), two scenarios with both scope forms, a peildatum, a parameter set, a basis and an inline situation, every form
+of the table "case expectation", a label opened again in a later block of its merge, and one name that names nothing;
+its diagnostics are those of the scenario route. `SemanticTokensCorpusTest` also reads every golden `scenario.rgs` with
+its `source.rgs` as one test document: the coverage and the positions, every reference linked, no ERROR, no
+`unresolved` and no `word`; floors on the documents and on the name spans of the four kinds. Measured on the casus of the
 parity zone (its 47 fragments as one document, outside the suite because the zone's material stays out of this one):
 complete coverage, every reference linked, and 24 spans `unresolved`, each a name the fragments do not declare.

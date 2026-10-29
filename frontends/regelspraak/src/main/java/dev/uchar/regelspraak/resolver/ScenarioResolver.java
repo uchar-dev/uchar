@@ -85,6 +85,30 @@ public final class ScenarioResolver {
     // ---------------- entry point ----------------
 
     public static ScenarioBundle resolve(String source) {
+        return read(source).bundle();
+    }
+
+    /** A test document as the scenario route reads it: the tree, the token stream it was parsed from, its
+     *  non-scenario blocks as the document the model pipeline read, whether the parse reported a syntax error, and
+     *  the resolution. The semantic tokens read the same tree ({@link SemanticTokens}). */
+    record Read(TestDocumentContext test, CommonTokenStream tokens, RegelSpraakDocumentContext production,
+                boolean recovered, ScenarioBundle bundle) {}
+
+    /** Whether {@code source} carries a block of the scenario layer: a token that opens one ({@code Situatie},
+     *  {@code Parameterset}, {@code Scenario}) on the default channel. Those tokens are no word of
+     *  {@code regelSpraakDocument}, so a production document never carries one: a source that does is a test
+     *  document, or a syntax error on the production route. */
+    static boolean opensScenarioBlock(String source) {
+        RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source));
+        lexer.removeErrorListeners();
+        for (Token t : lexer.getAllTokens())
+            if (t.getChannel() == Token.DEFAULT_CHANNEL && (t.getType() == RegelSpraakLexer.SITUATIE
+                    || t.getType() == RegelSpraakLexer.PARAMETERSET || t.getType() == RegelSpraakLexer.SCENARIO))
+                return true;
+        return false;
+    }
+
+    static Read read(String source) {
         RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         RegelSpraak parser = new RegelSpraak(tokens);
@@ -99,9 +123,10 @@ public final class ScenarioResolver {
         parser.removeErrorListeners(); parser.addErrorListener(listener);
 
         TestDocumentContext test = parser.testDocument();
-        RegelSpraakModel model = Resolver.build(productionDocument(test), tokens, syntax);
+        RegelSpraakDocumentContext production = productionDocument(test);
+        RegelSpraakModel model = Resolver.build(production, tokens, syntax);
         ScenarioResolver r = new ScenarioResolver(model, test);
-        return new ScenarioBundle(model, r.resolveScenarios());
+        return new Read(test, tokens, production, !syntax.isEmpty(), new ScenarioBundle(model, r.resolveScenarios()));
     }
 
     /** The non-scenario blocks of {@code test} as a {@code regelSpraakDocument} of their own, in document order. The
@@ -738,19 +763,7 @@ public final class ScenarioResolver {
                      List<RoleAssignment> roles) {
         if (ot == null) return;
         String written = withoutArticle(writtenWithArticle);
-        // the fact type travels with the role: the consumers of the situation cannot recover it from the name
-        record Hit(FactType factType, Role role) {}
-        List<Hit> hits = new ArrayList<>();
-        for (FactType ft : model.factTypes.values()) {
-            if (ft.roles.size() == 2) {
-                Role a = ft.roles.get(0), b = ft.roles.get(1);
-                if (fills(ot, a) && isNamed(b, written)) hits.add(new Hit(ft, b));
-                if (fills(ot, b) && isNamed(a, written)) hits.add(new Hit(ft, a));
-            } else if (ft.roles.size() == 1 && ft.reciprocal) {
-                Role r = ft.roles.get(0);
-                if (fills(ot, r) && isNamed(r, written)) hits.add(new Hit(ft, r));
-            }
-        }
+        List<RoleHit> hits = rolesNamed(model, ot, written);
         if (hits.isEmpty()) {
             error(line,
                     "RGS-246", params("objectType", ot.name, "role", written));
@@ -761,7 +774,7 @@ public final class ScenarioResolver {
                     "RGS-247", params("role", written, "objectType", ot.name));
             return;
         }
-        Hit hit = hits.get(0);
+        RoleHit hit = hits.get(0);
         Role far = hit.role();
         if (far.many() && !listForm) {
             error(line,
@@ -778,7 +791,28 @@ public final class ScenarioResolver {
                 model.objectTypeByName(far.objectTypeName()), List.copyOf(labels), far.many(), line)));
     }
 
-    private boolean fills(ObjectType ot, Role r) {
+    /** A role a situation names from an instance, with its fact type: the consumers of the situation cannot recover
+     *  the fact type from the name. */
+    record RoleHit(FactType factType, Role role) {}
+
+    /** Every role {@code written} names from an instance of {@code ot}: the other role of a fact type in which
+     *  {@code ot} fills a role, or the one role of a reciprocal fact type it fills, by its declared name or plural. */
+    static List<RoleHit> rolesNamed(RegelSpraakModel model, ObjectType ot, String written) {
+        List<RoleHit> hits = new ArrayList<>();
+        for (FactType ft : model.factTypes.values()) {
+            if (ft.roles.size() == 2) {
+                Role a = ft.roles.get(0), b = ft.roles.get(1);
+                if (fills(model, ot, a) && isNamed(b, written)) hits.add(new RoleHit(ft, b));
+                if (fills(model, ot, b) && isNamed(a, written)) hits.add(new RoleHit(ft, a));
+            } else if (ft.roles.size() == 1 && ft.reciprocal) {
+                Role r = ft.roles.get(0);
+                if (fills(model, ot, r) && isNamed(r, written)) hits.add(new RoleHit(ft, r));
+            }
+        }
+        return hits;
+    }
+
+    private static boolean fills(RegelSpraakModel model, ObjectType ot, Role r) {
         ObjectType t = model.objectTypeByName(r.objectTypeName());
         return t != null && ot.isA(t);
     }
@@ -791,7 +825,7 @@ public final class ScenarioResolver {
                                               Map<String, List<Segment>> timelines) {
         int line = pw.getStart().getLine();
         String written = src(pw.parameterNaam());
-        Parameter p = parameterByName(withoutArticle(written));
+        Parameter p = parameterByName(model, withoutArticle(written));
         if (p == null) {
             error(line, "RGS-250", params("parameter", written));
             return null;
@@ -868,7 +902,7 @@ public final class ScenarioResolver {
         Set<String> incomplete = new java.util.HashSet<>();
         for (ParameterWaardeContext pw : rules) {
             String written = src(pw.parameterNaam());
-            Parameter p = parameterByName(withoutArticle(written));
+            Parameter p = parameterByName(model, withoutArticle(written));
             if (p == null) error(pw.getStart().getLine(),
                     "RGS-250", params("parameter", written));
             else if (!setLine(setName, pw, p, parameters)) incomplete.add(norm(p.name()));
@@ -1434,7 +1468,8 @@ public final class ScenarioResolver {
 
     // ---------------- small helpers ----------------
 
-    private Parameter parameterByName(String name) {
+    /** The parameter {@code name} names, its case and spacing aside; null for none. */
+    static Parameter parameterByName(RegelSpraakModel model, String name) {
         Parameter exact = model.parameters.get(name);
         if (exact != null) return exact;
         for (var e : model.parameters.entrySet()) if (norm(e.getKey()).equals(norm(name))) return e.getValue();

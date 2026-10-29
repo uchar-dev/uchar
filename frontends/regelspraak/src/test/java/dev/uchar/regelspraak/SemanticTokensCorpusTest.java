@@ -103,4 +103,61 @@ class SemanticTokensCorpusTest {
             assertTrue(n >= floor.getValue(), () -> "name spans " + floor.getKey().wire() + " " + n + " < floor " + floor.getValue());
         }
     }
+
+    /** Floors of the test documents, measured at the build (card semantic-tokens-scenario-layer, 2026-10-29): the
+     *  goldens with a {@code scenario.rgs}, and the name spans of the kinds of the scenario layer in them. */
+    private static final int MIN_TEST_DOCUMENTS = 36;
+    private static final Map<Kind, Integer> MIN_SCENARIO_NAMES = new EnumMap<>(Map.ofEntries(
+            Map.entry(Kind.LABEL, 1558), Map.entry(Kind.SITUATION, 6), Map.entry(Kind.PARAMETER_SET, 8),
+            Map.entry(Kind.SCENARIO, 126)));
+
+    /** Every golden {@code scenario.rgs} with its {@code source.rgs}, read as one test document as gate 16 reads the
+     *  two ({@code --cases}): the properties of a production document above, no ERROR (the goldens lower to their
+     *  case files), and so no span {@code unresolved} and no {@code word}. */
+    @Test void every_golden_test_document_is_covered_and_resolved() throws IOException {
+        Path corpus = corpus();
+        List<Path> scenarios;
+        try (Stream<Path> s = Files.walk(corpus)) {
+            scenarios = s.filter(p -> p.getFileName().toString().equals("scenario.rgs")).sorted().toList();
+        }
+        List<String> problems = new ArrayList<>();
+        Map<Kind, Integer> names = new EnumMap<>(Kind.class);
+        int spans = 0;
+        for (Path scenario : scenarios) {
+            String golden = corpus.relativize(scenario.getParent()).toString();
+            List<SemanticTokens.SourceFile> files = List.of(
+                    new SemanticTokens.SourceFile(golden + "/source.rgs",
+                            Files.readString(scenario.resolveSibling("source.rgs"), StandardCharsets.UTF_8)),
+                    new SemanticTokens.SourceFile(golden + "/scenario.rgs", Files.readString(scenario, StandardCharsets.UTF_8)));
+            SemanticTokens.Document d;
+            try {
+                d = Resolver.tokens(files);
+                SemanticTokensCheck.check(files, d);
+            } catch (AssertionError | RuntimeException e) {
+                problems.add(golden + ": " + e);
+                continue;
+            }
+            for (SemanticTokens.FileDiagnostic x : d.diagnostics())
+                if (x.severity() == dev.uchar.regelspraak.model.RegelSpraakModel.Severity.ERROR)
+                    problems.add(golden + ": an ERROR " + x.code() + " " + x.file() + ":" + x.line() + ": " + x.message());
+            for (SemanticTokens.FileSpans fs : d.files())
+                for (SemanticTokens.Span s : fs.spans()) {
+                    spans++;
+                    if (s.kind().names()) names.merge(s.kind(), 1, Integer::sum);
+                    String where = fs.file() + ":" + s.line() + ":" + s.column() + " '" + s.text() + "'";
+                    if (SemanticTokensCheck.unlinked(s)) problems.add(where + ": a " + s.kind().wire() + " without its declaration");
+                    if (s.kind() == Kind.WORD) problems.add(where + ": a word outside every name");
+                    if (s.kind() == Kind.UNRESOLVED) problems.add(where + ": unresolved in a golden test document");
+                }
+        }
+        System.out.println("semantic tokens over the test documents: goldens=" + scenarios.size() + " spans=" + spans
+                + " names=" + names);
+        assertTrue(problems.isEmpty(), () -> problems.size() + " problem(s):\n  " + String.join("\n  ", problems));
+        assertTrue(scenarios.size() >= MIN_TEST_DOCUMENTS,
+                () -> "test documents read " + scenarios.size() + " < floor " + MIN_TEST_DOCUMENTS);
+        for (var floor : MIN_SCENARIO_NAMES.entrySet()) {
+            int n = names.getOrDefault(floor.getKey(), 0);
+            assertTrue(n >= floor.getValue(), () -> "name spans " + floor.getKey().wire() + " " + n + " < floor " + floor.getValue());
+        }
+    }
 }

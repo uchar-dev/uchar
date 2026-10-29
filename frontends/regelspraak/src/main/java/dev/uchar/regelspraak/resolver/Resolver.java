@@ -59,7 +59,9 @@ public final class Resolver {
      *  read as one chain, each text followed by a line end, exactly as {@code --ir} reads them, and resolved once; the
      *  result holds per file the spans that cover its text, each with a kind and a position in that file, and the
      *  diagnostics of the resolution with the file and line they stand on. The IR is not touched: this is an output
-     *  beside it. A syntax error or an ERROR does not stop it; that is where the output helps most. */
+     *  beside it. A syntax error or an ERROR does not stop it; that is where the output helps most. A chain that carries
+     *  a block of the scenario layer is a test document and is read as {@code --cases} reads it, with its
+     *  diagnostics. */
     public static SemanticTokens.Document tokens(java.util.List<SemanticTokens.SourceFile> files) {
         if (files.isEmpty()) throw new IllegalArgumentException("semantic tokens: geen bronbestand opgegeven");
         StringBuilder chain = new StringBuilder();
@@ -71,9 +73,35 @@ public final class Resolver {
             chain.append(text).append('\n');
             lineNumber += (int) (text + '\n').chars().filter(c -> c == '\n').count();
         }
-        Parsed p = parse(chain.toString(), IntStream.UNKNOWN_SOURCE_NAME);
+        String text = chain.toString();
+        if (ScenarioResolver.opensScenarioBlock(text)) {
+            ScenarioResolver.Read r = ScenarioResolver.read(text);
+            RegelSpraakModel m = r.bundle().model();
+            requireScenario(r.bundle());
+            RegelSpraakModel irModel = r.bundle().scenarios().isEmpty() ? m
+                    : dev.uchar.regelspraak.emit.CaseEmitter.withScope(m, r.bundle().scenarios().get(0).scope());
+            return SemanticTokens.of(files, text, firstLines, r.tokens(), r.production(), r.test(), m,
+                    diagnostics(m, irModel), r.recovered());
+        }
+        Parsed p = parse(text, IntStream.UNKNOWN_SOURCE_NAME);
         RegelSpraakModel m = build(p.doc(), p.tokens(), p.syntax());
-        return SemanticTokens.of(files, chain.toString(), firstLines, p.tokens(), p.doc(), m, !p.syntax().isEmpty());
+        return SemanticTokens.of(files, text, firstLines, p.tokens(), p.doc(), null, m, diagnostics(m, m),
+                !p.syntax().isEmpty());
+    }
+
+    /** The diagnostics a route prints for {@code model}: the model's, then the WARNINGs the emitter adds for what the
+     *  wire cannot carry of {@code irModel}, the model it writes. */
+    private static java.util.List<Diagnostic> diagnostics(RegelSpraakModel model, RegelSpraakModel irModel) {
+        java.util.List<Diagnostic> all = new java.util.ArrayList<>(model.diagnostics);
+        all.addAll(dev.uchar.regelspraak.emit.IrEmitter.unwrittenAllocations(irModel));
+        return all;
+    }
+
+    /** A test document lowers its scenarios to case files, so one without a scenario is an ERROR. */
+    private static void requireScenario(ScenarioResolver.ScenarioBundle b) {
+        if (b.scenarios().isEmpty())
+            b.model().diagnostics.add(new Diagnostic(Severity.ERROR,
+                    "RGS-095", params(), 0));
     }
 
     /** The model of a parsed document: definitions, the syntax diagnostics the parse raised, the rule
@@ -326,9 +354,7 @@ public final class Resolver {
         }
         ScenarioResolver.ScenarioBundle b = ScenarioResolver.resolve(sourceText.toString());
         RegelSpraakModel m = b.model();
-        if (b.scenarios().isEmpty())
-            m.diagnostics.add(new Diagnostic(Severity.ERROR,
-                    "RGS-095", params(), 0));
+        requireScenario(b);
         RegelSpraakModel irModel = b.scenarios().isEmpty() ? m
                 : dev.uchar.regelspraak.emit.CaseEmitter.withScope(m, b.scenarios().get(0).scope());
         // one chain of files, one line count: each diagnostic names the file and the line in that file, and only

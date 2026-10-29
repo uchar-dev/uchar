@@ -59,6 +59,7 @@ public final class SemanticTokens {
         UNIT_SYSTEM("unitSystem"), UNIT("unit"), DIMENSION("dimension"), DIMENSION_LABEL("dimensionLabel"),
         TIMELINE("timeline"), DAY_KIND("dayKind"), VOCABULARY("vocabulary"), NAMED_FORM("namedForm"),
         RULE_GROUP("ruleGroup"), VARIABLE("variable"),
+        LABEL("label"), SITUATION("situation"), PARAMETER_SET("parameterSet"), SCENARIO("scenario"),
         UNRESOLVED("unresolved");
 
         private final String wire;
@@ -68,7 +69,7 @@ public final class SemanticTokens {
         public String wire() { return wire; }
 
         /** Whether a span of this kind names a declaration: it is the declaration, or a reference to one. */
-        public boolean names() { return ordinal() >= OBJECT_TYPE.ordinal() && ordinal() <= VARIABLE.ordinal(); }
+        public boolean names() { return ordinal() >= OBJECT_TYPE.ordinal() && ordinal() <= SCENARIO.ordinal(); }
     }
 
     /** One source file: the name the output gives it, and its text. */
@@ -260,15 +261,19 @@ public final class SemanticTokens {
 
     /** The semantic tokens of {@code files}, resolved as the chain {@code chain} (each file's text followed by a line
      *  end, as {@code Resolver --ir} reads several files) into {@code model} from {@code doc} over {@code tokens};
-     *  {@code firstLine} holds the line of the chain each file begins on. */
+     *  {@code firstLine} holds the line of the chain each file begins on. For a test document, {@code test} is its
+     *  tree and {@code doc} the non-scenario blocks the model pipeline read from it; null otherwise.
+     *  {@code diagnostics} are those the route prints. */
     static Document of(List<SourceFile> files, String chain, int[] firstLine, CommonTokenStream tokens,
-                       RegelSpraakDocumentContext doc, RegelSpraakModel model, boolean recovered) {
+                       RegelSpraakDocumentContext doc, TestDocumentContext test, RegelSpraakModel model,
+                       List<Diagnostic> diagnostics, boolean recovered) {
         SemanticTokens s = new SemanticTokens(chain, files, firstLine, tokens, model, recovered);
         s.declarations(doc);
         for (Decl d : s.declarations.keySet()) s.longest = Math.max(s.longest, d.name().split(" ").length + 2);
+        if (test != null) s.scenarioLayer(test);
         s.references(doc);
         s.ruleTexts(doc);
-        return s.document(model);
+        return s.document(diagnostics);
     }
 
     // ---------------------------------------------------------------------------------------------------------------
@@ -1082,6 +1087,263 @@ public final class SemanticTokens {
     private static String src(ParserRuleContext ctx) { return DefinitionResolver.src(ctx); }
 
     // ---------------------------------------------------------------------------------------------------------------
+    // Pass 4: the blocks of the scenario layer in a test document (grammar/DIVERGENCES.md, "Scenariotoetsen"), read as
+    // the scenario route reads them (ScenarioResolver): a situation, a parameter set and a scenario by their names, a
+    // label by the instance a situation or scenario merges it into, and the names in a bullet by the object type of
+    // that instance.
+    // ---------------------------------------------------------------------------------------------------------------
+
+    /** The instance a label opens in a merge: the declaration of the label, which is its first opener in the merge
+     *  order, and the object type that opener writes (null where it names none). */
+    private record Opened(Decl label, ObjectType objectType) {}
+
+    private void scenarioLayer(TestDocumentContext test) {
+        List<ParseTree> blocks = test.children == null ? List.of() : test.children;
+        Map<String, SituatieDefinitieContext> situations = new LinkedHashMap<>();
+        for (ParseTree b : blocks) {
+            if (b instanceof SituatieDefinitieContext sd && sd.situatieNaam() != null) {
+                String name = src(sd.situatieNaam());
+                claim(sd.situatieNaam(), Kind.SITUATION, true, Decl.of(Kind.SITUATION, null, name));
+                situations.putIfAbsent(norm(name), sd);
+            } else if (b instanceof ParametersetDefinitieContext pd && pd.parametersetNaam() != null)
+                claim(pd.parametersetNaam(), Kind.PARAMETER_SET, true,
+                        Decl.of(Kind.PARAMETER_SET, null, src(pd.parametersetNaam())));
+            else if (b instanceof ScenarioContext sc && sc.scenarioNaam() != null)
+                claim(sc.scenarioNaam(), Kind.SCENARIO, true, Decl.of(Kind.SCENARIO, null, src(sc.scenarioNaam())));
+        }
+        Map<String, List<SituatieBlokContext>> expanded = new HashMap<>();
+        for (ParseTree b : blocks) {
+            if (b instanceof SituatieDefinitieContext sd) {
+                List<SituatieBlokContext> merge = new ArrayList<>();
+                for (ScenarioBasisContext base : sd.scenarioBasis()) merge.addAll(basis(base, situations, expanded));
+                situationBlock(sd.situatieBlok(), merge);
+            } else if (b instanceof ParametersetDefinitieContext pd) {
+                for (ParameterWaardeContext row : pd.parameterWaarde()) parameterValue(row);
+            } else if (b instanceof ScenarioContext sc) scenario(sc, situations, expanded);
+            else continue;
+            references(b);
+        }
+    }
+
+    /** The basis {@code base} names: a reference to its situation, and the blocks that situation merges. */
+    private List<SituatieBlokContext> basis(ScenarioBasisContext base, Map<String, SituatieDefinitieContext> situations,
+                                            Map<String, List<SituatieBlokContext>> expanded) {
+        if (base.situatieNaam() == null) return List.of();
+        String name = src(base.situatieNaam());
+        claimFree(range(base.situatieNaam()), Kind.SITUATION, lookup(Kind.SITUATION, null, name));
+        return expansion(norm(name), situations, expanded, new java.util.HashSet<>());
+    }
+
+    /** The blocks situation {@code name} merges, in merge order: its bases expanded in written order, then its own
+     *  block; computed once per name, as the scenario route folds them out. A basis that names no situation and a
+     *  basis that closes a cycle add nothing: the scenario route refuses both. */
+    private List<SituatieBlokContext> expansion(String name, Map<String, SituatieDefinitieContext> situations,
+                                                Map<String, List<SituatieBlokContext>> expanded,
+                                                java.util.Set<String> path) {
+        List<SituatieBlokContext> done = expanded.get(name);
+        if (done != null) return done;
+        SituatieDefinitieContext sd = situations.get(name);
+        if (sd == null || !path.add(name)) return List.of();
+        List<SituatieBlokContext> result = new ArrayList<>();
+        for (ScenarioBasisContext base : sd.scenarioBasis())
+            if (base.situatieNaam() != null)
+                result.addAll(expansion(norm(src(base.situatieNaam())), situations, expanded, path));
+        if (sd.situatieBlok() != null) result.add(sd.situatieBlok());
+        path.remove(name);
+        expanded.put(name, result);
+        return result;
+    }
+
+    /** The labels {@code merge} opens, each with the instance of its first opener. */
+    private Map<String, Opened> opened(List<SituatieBlokContext> merge) {
+        Map<String, Opened> result = new LinkedHashMap<>();
+        for (SituatieBlokContext block : merge)
+            for (SituatieOnderdeelContext part : block.situatieOnderdeel())
+                if (part instanceof InstantieOnderdeelContext io && io.instantie().UPPER_ID() != null) {
+                    InstantieContext inst = io.instantie();
+                    result.putIfAbsent(inst.UPPER_ID().getText(),
+                            new Opened(labelDeclaration(inst), objectTypeOf(inst)));
+                }
+        return result;
+    }
+
+    /** The declaration an opener {@code een <objecttype> <LABEL>} would be: one per opener, since the same label
+     *  names other instances in other merges. */
+    private Decl labelDeclaration(InstantieContext inst) {
+        return Decl.of(Kind.LABEL, "@" + pieceOfToken[inst.UPPER_ID().getSymbol().getTokenIndex()],
+                inst.UPPER_ID().getText());
+    }
+
+    private ObjectType objectTypeOf(InstantieContext inst) {
+        return inst.objectTypeNaam() == null ? null : model.objectTypeByName(src(inst.objectTypeNaam()));
+    }
+
+    /** {@code block} merged after {@code before}: its openers, which open a label or name the instance an earlier
+     *  block of the merge opened, and its bullets and parameter values. Returns the labels of the whole merge. */
+    private Map<String, Opened> situationBlock(SituatieBlokContext block, List<SituatieBlokContext> before) {
+        List<SituatieBlokContext> merge = new ArrayList<>(before);
+        if (block != null) merge.add(block);
+        Map<String, Opened> labels = opened(merge);
+        if (block == null) return labels;
+        for (SituatieOnderdeelContext part : block.situatieOnderdeel()) {
+            if (part instanceof InstantieOnderdeelContext io) instance(io.instantie(), labels);
+            else if (part instanceof ParameterWaardeOnderdeelContext po) parameterValue(po.parameterWaarde());
+        }
+        return labels;
+    }
+
+    private void instance(InstantieContext inst, Map<String, Opened> labels) {
+        objectTypeReference(inst.objectTypeNaam());
+        if (inst.UPPER_ID() != null) {
+            Decl own = labelDeclaration(inst);
+            Decl first = labels.get(inst.UPPER_ID().getText()).label();
+            claim(range(inst.UPPER_ID()), Kind.LABEL, first.equals(own), first);
+        }
+        ObjectType ot = objectTypeOf(inst);
+        for (ToewijzingContext t : inst.toewijzing()) {
+            if (t instanceof AttribuutToewijzingContext a) member(range(a.toewijzingNaam()), Kind.ATTRIBUTE, ot);
+            else if (t instanceof RolToOneToewijzingContext r) {
+                role(range(r.toewijzingNaam()), ot);
+                instanceReference(r.UPPER_ID(), labels);
+            } else if (t instanceof RolToManyToewijzingContext r) {
+                role(range(r.toewijzingNaam()), ot);
+                for (TerminalNode label : r.UPPER_ID()) instanceReference(label, labels);
+            } else if (t instanceof KenmerkToewijzingContext k) member(range(k.kaleNaam()), Kind.CHARACTERISTIC, ot);
+        }
+    }
+
+    /** A parameter value {@code de parameter <naam> is <waarde>}: the parameter, by the scenario route's lookup. */
+    private void parameterValue(ParameterWaardeContext row) {
+        int[] r = withoutArticle(range(row.parameterNaam()));
+        if (r == null) return;
+        RegelSpraakModel.Parameter p = ScenarioResolver.parameterByName(model, text(r[0], r[1]));
+        claim(r, p == null ? Kind.UNRESOLVED : Kind.PARAMETER, false,
+                p == null ? null : lookup(Kind.PARAMETER, null, p.name()));
+    }
+
+    private void scenario(ScenarioContext sc, Map<String, SituatieDefinitieContext> situations,
+                          Map<String, List<SituatieBlokContext>> expanded) {
+        ScenarioScopeContext scope = sc.scenarioScope();
+        if (scope instanceof ScopeEnkeleRegelContext s)
+            claimFree(range(s.enkeleRegelReferentie()), Kind.NAMED_FORM, formReference(src(s.enkeleRegelReferentie())));
+        else if (scope instanceof ScopeMeerdereRegelsContext s)
+            for (RegelReferentieContext ref : s.regelReferentie())
+                claimFree(range(ref), Kind.NAMED_FORM, formReference(src(ref)));
+        else if (scope instanceof ScopeRegelgroepContext s)
+            claimFree(range(s.enkeleRegelReferentie()), Kind.RULE_GROUP,
+                    lookup(Kind.RULE_GROUP, null, src(s.enkeleRegelReferentie())));
+        if (sc.scenarioParameterset() != null && sc.scenarioParameterset().parametersetNaam() != null) {
+            ParametersetNaamContext set = sc.scenarioParameterset().parametersetNaam();
+            claimFree(range(set), Kind.PARAMETER_SET, lookup(Kind.PARAMETER_SET, null, src(set)));
+        }
+        List<SituatieBlokContext> merge = new ArrayList<>();
+        for (ScenarioBasisContext base : sc.scenarioBasis()) merge.addAll(basis(base, situations, expanded));
+        Map<String, Opened> labels = situationBlock(sc.inlineSituatie() == null ? null
+                : sc.inlineSituatie().situatieBlok(), merge);
+        for (VerwachtingContext v : sc.verwachting()) expectation(v, labels);
+    }
+
+    private void expectation(VerwachtingContext v, Map<String, Opened> labels) {
+        if (v instanceof VerwachtAttribuutLeegContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
+        else if (v instanceof VerwachtTijdlijnLeegContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
+        else if (v instanceof VerwachtAttribuutWaardeContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
+        else if (v instanceof VerwachtKenmerkContext k) characteristicOf(k.UPPER_ID(), k.kaleNaam(), labels);
+        else if (v instanceof VerwachtKenmerkHeeftContext k) characteristicOf(k.UPPER_ID(), k.kaleNaam(), labels);
+        else if (v instanceof VerwachtInconsistentContext c && c.inconsistentieSleutel() != null) {
+            InconsistentieSleutelContext key = c.inconsistentieSleutel();
+            // 'volgens' is a word to the lexer and a keyword of the expectation on this one position
+            claim(key.volgensWoord(), Kind.KEYWORD, false, null);
+            instanceReference(key.UPPER_ID(), labels);
+        }
+    }
+
+    private void attributeOf(TerminalNode label, VerwachtingNaamContext name, Map<String, Opened> labels) {
+        instanceReference(label, labels);
+        member(range(name), Kind.ATTRIBUTE, typeOf(label, labels));
+    }
+
+    /** {@code <LABEL> is|heeft [geen|niet] <kenmerk>}: the negation stays a keyword ('geen' is a word to the lexer,
+     *  which the scenario route reads as the negation), and the rest names the characteristic. */
+    private void characteristicOf(TerminalNode label, KaleNaamContext name, Map<String, Opened> labels) {
+        instanceReference(label, labels);
+        int[] r = range(name);
+        if (r != null && r[0] < r[1]) {
+            String first = pieceText(r[0]).toLowerCase(Locale.ROOT);
+            if (first.equals("geen") || first.equals("niet")) {
+                if (first.equals("geen")) claim(new int[]{r[0], r[0]}, Kind.KEYWORD, false, null);
+                r = new int[]{next(r[0], r[1]), r[1]};
+            }
+        }
+        member(r, Kind.CHARACTERISTIC, typeOf(label, labels));
+    }
+
+    private ObjectType typeOf(TerminalNode label, Map<String, Opened> labels) {
+        Opened o = label == null ? null : labels.get(label.getText());
+        return o == null ? null : o.objectType();
+    }
+
+    /** A label in a bullet: the instance the merge opened under it, or unresolved where none did. */
+    private void instanceReference(TerminalNode label, Map<String, Opened> labels) {
+        if (label == null) return;
+        Opened o = labels.get(label.getText());
+        claim(range(label), o == null ? Kind.UNRESOLVED : Kind.LABEL, false, o == null ? null : o.label());
+    }
+
+    /** A member of an instance of {@code ot} written over {@code range}, a leading article apart, read as the
+     *  scenario route reads it: an attribute by {@link ObjectType#attributeName}, a characteristic by
+     *  {@link CharacteristicMatcher}. Where the type is unknown — the opener or the label names nothing, which the
+     *  scenario route reports there — every type's members are candidates, as for a name its place does not decide. */
+    private void member(int[] range, Kind kind, ObjectType ot) {
+        int[] r = withoutArticle(range);
+        if (r == null) return;
+        String written = text(r[0], r[1]);
+        List<Candidate> candidates;
+        if (ot == null) candidates = members(written, kind);
+        else {
+            String own = kind == Kind.ATTRIBUTE ? ot.attributeName(written) : CharacteristicMatcher.find(ot, written);
+            ObjectType declarant = own == null ? null : ot.declarantOf(own);
+            candidates = own == null ? List.of() : List.of(memberCandidate(kind, declarant == null ? ot : declarant, own));
+        }
+        claimName(r, kind, candidates);
+    }
+
+    /** A role named from an instance of {@code ot} over {@code range}, by the scenario route's lookup. */
+    private void role(int[] range, ObjectType ot) {
+        int[] r = withoutArticle(range);
+        if (r == null) return;
+        String written = text(r[0], r[1]);
+        List<Candidate> candidates = new ArrayList<>();
+        if (ot == null) candidates.addAll(roles(written));
+        else
+            for (ScenarioResolver.RoleHit hit : ScenarioResolver.rolesNamed(model, ot, written))
+                candidates.add(new Candidate(lookup(Kind.ROLE, hit.factType().name, hit.role().name()), null,
+                        model.objectTypeByName(hit.role().objectTypeName()), null, hit.factType()));
+        claimName(r, Kind.ROLE, candidates);
+    }
+
+    /** A name of {@code kind}: unresolved without a candidate, linked to the one candidate, and of its kind without a
+     *  declaration where several remain. */
+    private void claimName(int[] range, Kind kind, List<Candidate> candidates) {
+        if (candidates.isEmpty()) { claim(range, Kind.UNRESOLVED, false, null); return; }
+        Candidate c = candidates.size() == 1 ? candidates.get(0) : null;
+        claim(range, kind, false, c == null ? null : c.target(), c == null ? null : c.generatedFrom());
+    }
+
+    /** {@code range} without a leading article, which the scenario route strips from a written name and which stays
+     *  a keyword; null for null. */
+    private int[] withoutArticle(int[] range) {
+        if (range == null || range[0] >= range[1] || !articleType(pieces.get(range[0]).type())) return range;
+        return new int[]{next(range[0], range[1]), range[1]};
+    }
+
+    /** The first piece after {@code i} that is not hidden, up to {@code last}. */
+    private int next(int i, int last) {
+        int j = i + 1;
+        while (j < last && pieces.get(j).hidden()) j++;
+        return j;
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
     // The output.
     // ---------------------------------------------------------------------------------------------------------------
 
@@ -1111,7 +1373,7 @@ public final class SemanticTokens {
         return location(pieces.get(at).start());
     }
 
-    private Document document(RegelSpraakModel model) {
+    private Document document(List<Diagnostic> all) {
         List<List<Span>> perFile = new ArrayList<>();
         for (int f = 0; f < files.size(); f++) perFile.add(new ArrayList<>());
         int i = 0;
@@ -1148,8 +1410,6 @@ public final class SemanticTokens {
         List<FileSpans> result = new ArrayList<>();
         for (int f = 0; f < files.size(); f++) result.add(new FileSpans(files.get(f).name(), List.copyOf(perFile.get(f))));
         List<FileDiagnostic> diagnostics = new ArrayList<>();
-        List<Diagnostic> all = new ArrayList<>(model.diagnostics);
-        all.addAll(dev.uchar.regelspraak.emit.IrEmitter.unwrittenAllocations(model));
         for (Diagnostic d : all) {
             if (d.line() <= 0 || d.line() > lineStart.length) {
                 diagnostics.add(new FileDiagnostic(d.severity(), d.code(), d.params(), d.message(), null, 0));
