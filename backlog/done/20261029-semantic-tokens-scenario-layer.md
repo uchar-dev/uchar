@@ -111,3 +111,11 @@ Geen IR-wijziging, dus geen rij voor `spec/CONSTRUCTS.md` en geen tekst voor `sp
 
 Voor de werkbank (niet in deze kaart): de vier soorten in `SOORTEN` (`werkbank/static/kleuren.js`) en de css, anders
 meldt zij ze als onbekend; de opmerking in `KleurMeldingen` dat de tokens de scenariolaag niet lezen, vervalt.
+
+## Landing in de toolchain (2026-10-29, hoofdsessie)
+
+Toolchain `57ae7d51`, pin `9f97a9ae`, gepusht. `TokensCommandTest` kreeg een test op het pad van de werkbank: een model
+en een toetsdocument door `bin/regelspraak tokens`, zonder diagnose en met het label als declaratie en verwijzing
+(5 van 5 groen). Usage van `bin/regelspraak` en de README noemen het toetsdocument. `make gates` van de toolchain:
+zeven stappen groen in 5m25s (replay 251 goldens, 678 cases; pin 251 ongewijzigd). De eerste poging stopte bij
+`check-pin.sh`, omdat de nieuwe submodule-commit nog niet in de index stond; met `git add uchar` vooraf groen.
