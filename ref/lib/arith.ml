@@ -91,7 +91,7 @@ let restatement (powers : Ir_v0.Ast.measure_unit) =
 (* multiplicative factor taking a quantity in unit [a] to unit [b], F(a)/F(b);
    both must be convertible (ch. 2.6, rule 1) *)
 let conv_factor (a : Ir_v0.Ast.measure_unit) (b : Ir_v0.Ast.measure_unit) =
-  if convertible a b then Q.div (total_factor a) (total_factor b)
+  if convertible a b then restatement (Ir_v0.Units.factor a b)
   else fault "incompatible units: %s vs %s" (display_unit a) (display_unit b)
 
 (* restate a number in unit [ub] into unit [ua] (ch. 2.6: the right operand
