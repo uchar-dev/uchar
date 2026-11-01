@@ -250,8 +250,9 @@ let unit_fields ~extra path kvs : unit_factor =
     exponent = ext_field path kvs "exponent" int_;
   }
 
-(* A unit where it occurs. An empty list and a written exponent 1 load: they are
-   WF-124's, which names them where a load error could only refuse the document. *)
+(* A unit where it occurs. The verifier loads an empty list and a written exponent
+   0 or 1: they are WF-124's, which names them. An executor refuses the first two
+   ([executor_refusals]): neither has a value it can compute with. *)
 let measure_unit path j : measure_unit =
   List.mapi
     (fun i x ->
@@ -1979,7 +1980,11 @@ let vocabularies (j : json) : vocabulary_table =
    So is an Unresolved marker without a source (WF-113 (b)): the verifier
    loads it so that the rule names it, and an executor refuses it in the rule's
    sentence ([Checks.marker_without_source]), since no report can account for
-   a marker that has no text to quote. And so are the three values the schema
+   a marker that has no text to quote. So is a unit without a factor and a factor
+   with exponent 0 (WF-124, [Checks.empty_unit_refusal],
+   [Checks.exponent_zero_refusal]): one reads as a unit that is no unit, the other
+   as a factor that changes nothing, and computing on either answers a number for
+   a document no one wrote. And so are the three values the schema
    does not admit and a verifier rule refuses by name: the quantifier `the` on
    a QuantifierFold (WF-108 (a), [Checks.quantifier_fold_the_refusal]) and a
    severity `error`, `info` or null (WF-113 (a), [Checks.severity_refusal]).
@@ -1993,7 +1998,7 @@ let vocabularies (j : json) : vocabulary_table =
 type reader = Verifier | Executor
 
 (* The executor's refusals, after the structural load: every Literal,
-   ContextValue, VariableReference, Unresolved, QuantifierFold and Diagnostic node of the
+   ContextValue, VariableReference, Unresolved, QuantifierFold, Number, Unit and Diagnostic node of the
    document as written, in document order, a literal's variant crossed
    against its type before its string is read. A literal without a type is
    WF-034's typeless value node, with no type to cross its variant against;
@@ -2027,6 +2032,15 @@ let executor_refusals (j : json) =
             fail path (Checks.variable_reference_refusal name)
         | Some (`String "Unresolved") ->
             if not (List.mem_assoc "source" kvs) then fail path Checks.marker_without_source
+        | Some (`String "Number") -> (
+            match List.assoc_opt "unit" kvs with
+            | Some (`List []) -> fail (path / "unit") Checks.empty_unit_refusal
+            | _ -> ())
+        | Some (`String "Unit") -> (
+            match (List.assoc_opt "exponent" kvs, List.assoc_opt "abbreviation" kvs) with
+            | Some (`Int 0), Some (`String a) ->
+                fail (path / "exponent") (Checks.exponent_zero_refusal a)
+            | _ -> ())
         | Some (`String "QuantifierFold") -> (
             match field path kvs "quantifier" with
             | `String s when Spelling.is_refused Spelling.quantifier s ->

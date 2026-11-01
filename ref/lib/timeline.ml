@@ -574,47 +574,37 @@ let grid_unit (doc : Ir_v0.Ast.document) (g : Ir_v0.Ast.grain) :
             unit to integrate against (ch. 3.6)"
            (List.length ks) (time_unit_name because))
 
-(* the multiplier of one segment (ch. 3.6 "Units"): a plain or unitless
-   value is weighted by a bare count, but a RATE value is INTEGRATED —
-   the count is a duration stated in the GRID's own unit, so a
-   denominator convertible to it cancels through the declared factors and
-   the total carries the numerator alone (€/mnd × mnd = €, the §4.20
-   Tabel 30 row-2 result the frontend types statically; €/jr over a
-   per-month grid cancels exactly as well — 12 months IS one year by the
-   declared factor). A denominator the declarations do not connect to the
-   grid unit is refused loudly, naming BOTH units: no executor may invent
-   a factor nobody declared. *)
+(* the multiplier of one segment (ch. 3.6 "Units"; ch. 2.6, rule 8): a plain or
+   unitless value is weighted by a bare count, but a value with a negative factor
+   is INTEGRATED — the count is a duration stated in the GRID's own unit, and the
+   product takes one power of the factor of that class (€/mnd × mnd = €, the §4.20
+   Tabel 30 row-2 result the frontend types statically; €/jr over a per-month grid
+   cancels by the declared factor, €/dg^2 over days is €/dg). A value whose
+   negative factors the declarations do not connect to the grid unit is refused
+   loudly, naming BOTH units: no executor may invent a factor nobody declared. *)
 let duration ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result option) units (v : Value.t) : Value.t
     =
   let plain = Num (Q.of_int units, Unitless) in
   match v with
-  | Num (_, Unit u) when Ir_v0.Units.denominator u <> None -> (
-      let denominator = Option.get (Ir_v0.Units.denominator u) in
+  | Num (_, Unit u) when Ir_v0.Units.negatives u <> [] -> (
       match grid_unit with
       | None ->
           fault "the temporal total of a %s value reached the collapse without a grid unit (ch. 3.6)"
             (Arith.show_unit (Unit u))
       | Some (Error why) -> fault "the temporal total of a %s value: %s" (Arith.show_unit (Unit u)) why
       | Some (Ok gu) ->
-          if Arith.convertible denominator gu then Num (Q.of_int units, Unit gu)
+          let of_grid (f : Ir_v0.Ast.unit_factor) =
+            Arith.convertible (Ir_v0.Units.of_declared f) gu
+          in
+          if List.exists of_grid (Ir_v0.Units.negatives u) then Num (Q.of_int units, Unit gu)
           else
             fault
               "the temporal total of a %s value cannot integrate over a %s grid: the declarations \
                connect no conversion between its denominator and the grid unit (ch. 3.6)"
               (Arith.show_unit (Unit u))
               (Arith.display_unit gu))
-  (* a value unit without a denominator keeps the plain rule, and so does
-     a unitless value. A Product is built ONLY by Arith.mul out of two
-     denominator-free units, so it never carries a denominator either —
-     the guard below is the fail-fast for a representation change that
-     would silently drop one. *)
-  | Num (_, Unit _) | Num (_, Unitless) -> plain
-  | Num (_, Product (a, b)) ->
-      if Ir_v0.Units.denominator a <> None || Ir_v0.Units.denominator b <> None then
-        fault "the temporal total of a %s value: a unit product with a denominator has no \
-               integration rule (ch. 3.6)"
-          (Arith.show_unit (Product (a, b)));
-      plain
+  (* a value unit without a negative factor keeps the plain rule, and so does a
+     unitless value *)
   | _ -> plain
 
 (* totaal(tl) = Σ value(s) × duration(van, tot); a leeg segment

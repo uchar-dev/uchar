@@ -90,13 +90,8 @@ let is_version_pointer at = form_pointer at <> at
 
 (* --- name normalisation ------------------------------------------------- *)
 
-let collapse_ws s =
-  String.split_on_char ' ' s
-  |> List.concat_map (String.split_on_char '\t')
-  |> List.filter (fun x -> x <> "")
-  |> String.concat " "
-
-let norm s = String.lowercase_ascii (collapse_ws s)
+let collapse_ws = Units.collapse_ws
+let norm = Units.norm
 
 let strip_article s =
   let n = norm s in
@@ -181,59 +176,11 @@ let unit_of = function
   | Number { measure_unit; _ } | Percentage { measure_unit; _ } -> measure_unit
   | _ -> None
 
-(* Convertibility at dump level: same shape (plain vs rate), canonical names
-   equal within the same system, rates side by side (IR-SPEC ch. 2.5). A side of
-   one factor is that factor's canonical name, or its abbreviation; a side of
-   more is a product, opaque, and matches only the product of the same names; an
-   empty numerator is the name "1". Conservative: unknown structure counts as
-   compatible, so this check under-reports rather than mis-fires. *)
-let units_convertible (a : measure_unit) (b : measure_unit) =
-  let side (fs : measure_unit) =
-    match fs with
-    | [] -> Some "1"
-    | [ f ] when Units.exponent f = 1 -> (
-        match f.canonical_form with Some c -> Some (norm c) | None -> Option.map norm f.abbr_text)
-    | fs ->
-        Some
-          (norm
-             (String.concat "·"
-                (List.concat_map
-                   (fun (f : unit_factor) ->
-                     List.init (abs (Units.exponent f)) (fun _ -> Units.name f))
-                   fs)))
-  in
-  let same x y = match (side x, side y) with Some p, Some q -> p = q | _ -> true in
-  same (Units.positives a) (Units.positives b)
-  &&
-  match (Units.denominator a, Units.denominator b) with
-  | None, None -> true
-  | Some x, Some y -> same x y
-  | _ -> false
-
 let units_compatible a b =
   match a, b with
   | None, None -> true
-  | Some x, Some y -> units_convertible x y
+  | Some x, Some y -> Units.convertible x y
   | _ -> false
-
-(* A unit whose numerator holds no factor: "1/dg" is dg⁻¹. *)
-let is_reciprocal (u : measure_unit) = u <> [] && Units.positives u = []
-
-(* A numerator of more than one atom: "€·m", and m with exponent 2. *)
-let is_product (u : measure_unit) =
-  List.fold_left (fun n f -> n + Units.exponent f) 0 (Units.positives u) > 1
-
-(* what is left of a rate when its denominator cancels: its numerator, and no
-   unit at all for a reciprocal (E⁻¹ × E) *)
-let numerator_unit (u : measure_unit) = Units.numerator u
-
-(* E⁻¹, the unit of a unitless number divided by E: None where E has a product
-   in it *)
-let reciprocal_unit (u : measure_unit) =
-  match Units.denominator u with
-  | _ when is_product u -> None
-  | Some n when is_product n -> None
-  | _ -> Some (Units.canonical_order (Units.inverted u))
 
 (* WF-035/036 mirrored convenience (IR-SPEC ch. 4.6): a unitless numeric
    literal adopts its sibling's unit before any unit-compatibility check. *)
@@ -276,7 +223,8 @@ let time_unit_of_spelling s =
   | "milliseconde" | "ms" | "milliseconden" | "millisecondes" -> Some Tu_millisecond
   | _ -> None
 
-let time_unit_of_unit (e : measure_unit) = time_unit_of_spelling (Units.numerator_text e)
+let time_unit_of_unit (e : measure_unit) =
+  if Units.is_atom e then time_unit_of_spelling (Units.numerator_text e) else None
 
 (* sub-day units demand millisecond-precision operands *)
 let time_unit_sub_day = function
@@ -1371,7 +1319,7 @@ let rec ggd a b = if b = 0 then a else ggd b (a mod b)
    chain it can FOLLOW (until L3 it also tested a factor it FOUND for
    positivity, since then the factor's wire form); a missing half is simply
    nothing to look at. WF-035/WF-023 cross units for
-   COMPATIBILITY through [units_convertible], which reads a missing
+   COMPATIBILITY through [Units.convertible], which reads a missing
    [canonical_form] as the abbreviation and a missing factor not at all — so a
    half-filled unit is compatible with its whole sibling by construction.
    WF-091 compares two units BYTE for byte, which passes the moment the
@@ -1426,12 +1374,14 @@ let check_unit_form ~systems at (u : unit_factor) =
    that reads the same is the same list: it holds a factor at all, an exponent is
    never 0 and never a written 1, an atom stands once, and the factors stand in
    the canonical order. *)
+let empty_unit_refusal = "a unit without a factor: a number without a unit carries no unit field"
+
+let exponent_zero_refusal unit =
+  Printf.sprintf "the factor '%s' has exponent 0: a factor with exponent 0 is no factor" unit
+
 let check_unit_list at (u : measure_unit) =
   let named (f : unit_factor) = Units.name f in
-  (if u = [] then
-     [ v "WF-124.empty-unit" at
-         "a unit without a factor: a number without a unit carries no unit field" ]
-   else [])
+  (if u = [] then [ v "WF-124.empty-unit" at empty_unit_refusal ] else [])
   @ List.concat
       (List.mapi
          (fun i (f : unit_factor) ->
@@ -1439,9 +1389,7 @@ let check_unit_list at (u : measure_unit) =
            match f.exponent with
            | Some 0 ->
                [ v ~params:[ ("unit", named f) ] "WF-124.exponent-zero" here
-                   (Printf.sprintf
-                      "the factor '%s' has exponent 0: a factor with exponent 0 is no factor"
-                      (named f)) ]
+                   (exponent_zero_refusal (named f)) ]
            | Some 1 ->
                [ v ~params:[ ("unit", named f) ] "WF-124.exponent-one-written" here
                    (Printf.sprintf
@@ -2886,7 +2834,7 @@ let use_site_domain ?(source = "the declaration it reads from") at ~what ~decl ~
 (* Structural identity of a unit (ch. 2.5): abbreviation, declaring system,
    canonical unit, conversion factor and — recursively — the denominator of a
    composite rate. EXACT, never converting, which is the whole point: `kg`
-   and `t` share a canonical unit and a shape, so [units_convertible] (what
+   and `t` share a canonical unit and a dimension, so [Units.convertible] (what
    WF-035 and WF-023 cross) calls them compatible, and a lie inside the
    convertible class is compatible by construction. Only identity sees it.
 
@@ -3093,44 +3041,6 @@ let derived_number ~whole_part ~decimal_places (measure_unit : measure_unit opti
   | Some u when Units.is_percentage u -> Percentage { whole_part; decimal_places; measure_unit }
   | _ -> Number { whole_part; decimal_places; sign_char = Some Unspecified; measure_unit }
 
-(* The ch. 2.6 times join, in the three shapes the IR fixes: a unitless operand
-   hands the other unit through (the dimensionless 1 absorbs), a rate times its
-   convertible denominator unit CANCELS to the numerator ("€/jr maal jr = €"),
-   and to no unit for a reciprocal ("1/dg maal dg"), and a reciprocal times
-   another plain unit is the rate ("1/dg maal € = €/dg"). Two plain units are
-   ch. 2.5's opaque PRODUCT, whose algebra the spec fixes (sorted multiset of
-   atomic factors, no canonical, no factor) but whose wire SPELLING it does not:
-   an identity cross there would pin an `abbreviation` and a `system` ch. 2.5
-   does not require. An unspellable rate factor is the shape the frontend
-   refuses outright (RUNTIME-SEMANTICS ch. 2.10). This function makes no claim
-   at either. *)
-let times_unit (a : measure_unit option) (b : measure_unit option) : measure_unit option option =
-  match (a, b) with
-  | None, x | x, None -> Some x
-  | Some x, Some y ->
-      let cancel (rate : measure_unit) (plain : measure_unit) =
-        let is_plain = Units.denominator plain = None in
-        match Units.denominator rate with
-        | Some n when is_plain && units_convertible plain n -> Some (numerator_unit rate)
-        | Some n when is_plain && is_reciprocal rate && not (is_product plain) ->
-            Some (Some (Units.over plain n))
-        | _ -> None
-      in
-      (match cancel x y with Some u -> Some u | None -> cancel y x)
-
-(* The ch. 2.6 quotient join: a unitless divisor hands the dividend's unit
-   through, a unitless dividend gives the reciprocal, convertible units cancel,
-   and two plain units form a rate. No claim where the unit has no normal form:
-   the frontend refuses those shapes. *)
-let quotient_unit (a : measure_unit option) (b : measure_unit option) : measure_unit option option =
-  match (a, b) with
-  | x, None -> Some x
-  | None, Some y -> Option.map Option.some (reciprocal_unit y)
-  | Some x, Some y when units_convertible x y -> Some None
-  | Some x, Some y when Units.denominator x = None && Units.denominator y = None ->
-      Some (Some (Units.over x y))
-  | _ -> None
-
 (* The RegelSpraak frontend's set reading (`ExpressionBuilder`), mirrored — the
    scheidslijn the §4.20 denominator strip below turns on, taken from the
    emitter rather than restated beside it. An aggregation operand list is a
@@ -3216,42 +3126,30 @@ let composite_expectation ctx ~binders (e : expr) :
   | Binary { op = Times; left_side; right_side; _ } -> (
       match (operand_t left_side, operand_t right_side) with
       | Some l, Some r when is_number_like l && is_number_like r -> (
-          match times_unit (unit_of l) (unit_of r) with
-          | None -> None
-          | Some u ->
-              (* the UNIT and the WHOLENESS. ch. 2.3: a product is never whole,
-                 not even of two whole operands. The decimals stay unclaimed:
-                 ch. 2.3's "sum of the operands' decimals" is a claim the Catala
-                 plugin does not share (it writes its pinned ch. 2.9 scale), and
-                 this derivation writes a placeholder 0 there. The wholeness was
-                 unclaimed for the same reason until 2026-09-25; by then no
-                 product in golden, red, negative or the parity zone was
-                 annotated whole any more (measured: 0 of 57). *)
-              Some
-                ( "the times composite", "the type derived from its operands",
-                  derived_number ~whole_part:false ~decimal_places:0 u,
-                  [ "decimals" ] ))
+          (* the UNIT (ch. 2.6, rule 2) and the WHOLENESS. ch. 2.3: a product is
+             never whole, not even of two whole operands. The decimals stay
+             unclaimed: ch. 2.3's "sum of the operands' decimals" is a claim the
+             Catala plugin does not share (it writes its pinned ch. 2.9 scale),
+             and this derivation writes a placeholder 0 there. *)
+          let u, _ = Units.times (unit_of l) (unit_of r) in
+          Some
+            ( "the times composite", "the type derived from its operands",
+              derived_number ~whole_part:false ~decimal_places:0 u,
+              [ "decimals" ] ))
       | _ -> None)
   | Binary { op = Divided_by; left_side; right_side; _ } -> (
-      (* a quotient is never whole (ch. 2.3) and derives its unit (ch. 2.6). Its
-         decimals, maxDec, are the under-report ch. 2.4 names. A percentage
-         operand or a quotient with no normal form claims no unit, and then no
-         soort: a derivation that names no unit cannot tell a percentage from
-         a number. *)
+      (* a quotient is never whole (ch. 2.3) and derives its unit (ch. 2.6, rule 3).
+         Its decimals, maxDec, are the under-report ch. 2.4 names. A percentage
+         operand claims no unit, and then no soort: a derivation that names no
+         unit cannot tell a percentage from a number. *)
       let what = "the " ^ Spelling.encode Spelling.binary_op Divided_by ^ " composite" in
       match (operand_t left_side, operand_t right_side) with
-      | Some (Number _ as l), Some (Number _ as r) -> (
-          match quotient_unit (unit_of l) (unit_of r) with
-          | Some u ->
-              Some
-                ( what, "the type a quotient derives",
-                  derived_number ~whole_part:false ~decimal_places:0 u,
-                  [ "decimals" ] )
-          | None ->
-              Some
-                ( what, "the type a quotient derives",
-                  derived_number ~whole_part:false ~decimal_places:0 None,
-                  [ "soort"; "unit"; "decimals" ] ))
+      | Some (Number _ as l), Some (Number _ as r) ->
+          let u, _ = Units.divide (unit_of l) (unit_of r) in
+          Some
+            ( what, "the type a quotient derives",
+              derived_number ~whole_part:false ~decimal_places:0 u,
+              [ "decimals" ] )
       | Some l, Some r when is_number_like l && is_number_like r ->
           Some
             ( what, "the type a quotient derives",
@@ -3373,15 +3271,21 @@ let composite_expectation ctx ~binders (e : expr) :
                      RegelSpraak frontend strips the rate its own sum of two
                      '%' rates carries (measured 2026-09-24: without the
                      second arm, WF-091 refused the unit of that total) *)
-                  let d =
-                    match t0 with
-                    | Number ({ measure_unit = Some u; _ } as n) when Units.denominator u <> None ->
-                        Number { n with measure_unit = numerator_unit u }
-                    | Percentage ({ measure_unit = Some u; _ } as p) when Units.denominator u <> None ->
-                        Percentage { p with measure_unit = numerator_unit u }
-                    | other -> other
-                  in
-                  Some (what, "the type derived from its first operand", d, []))
+                  match t0 with
+                  | Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }
+                    when Units.negatives u <> [] -> (
+                      (* more than one negative factor: which one rises is the
+                         grid's to say, and the grid is not read here. No claim. *)
+                      match (Units.integrated u, t0) with
+                      | None, _ -> None
+                      | Some left, Number n ->
+                          Some (what, "the type derived from its first operand",
+                                Number { n with measure_unit = left }, [])
+                      | Some left, Percentage p ->
+                          Some (what, "the type derived from its first operand",
+                                Percentage { p with measure_unit = left }, [])
+                      | Some _, _ -> None)
+                  | other -> Some (what, "the type derived from its first operand", other, []))
           | Minimum | Maximum ->
               if rest = [] then
                 Some

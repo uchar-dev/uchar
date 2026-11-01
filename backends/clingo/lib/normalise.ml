@@ -18,8 +18,8 @@
 
    THE CONVERSION TABLE IS THE CANONICAL NAME, NOT THE UNIT SYSTEM (maintainer
    decision 2026-09-19, the kruis-stelsel-eenheid card). Convertibility in this
-   IR is [Ir_v0.Checks.units_convertible]: equal canonical names and equal
-   shape. It says nothing about the DECLARING unit system, which is why the
+   IR is [Ir_v0.Units.convertible]: equal dimension over the canonical names.
+   It says nothing about the DECLARING unit system, which is why the
    verifier admits — and ref and the Drools backend both compute — a `t` bound
    declared in system Massa over a `kg` base declared in system Gewicht, both
    canonical `kg`. This pass therefore gathers its table by canonical name
@@ -52,9 +52,8 @@
         faults, keeping the refusal rather than silently picking a divide-down
         canonical).
      3. both sides of a restatement NAME the canonical they convert into
-        ([unit_named]). [units_convertible] is deliberately conservative — a
-        unit naming no canonical and no abbreviation (ch. 2.5's opaque product)
-        counts as compatible with everything — and this pass would otherwise
+        ([unit_named]). [Units.convertible] is deliberately conservative — a
+        unit naming no canonical and no abbreviation counts as compatible with everything — and this pass would otherwise
         read that permission as a licence to RELABEL an opaque literal as the
         target's unit. Convertibility that is merely unknown is not a conversion
         factor, so an unnamed side keeps the standing refusal.
@@ -83,11 +82,11 @@ let fault = Value.fault
 
 let unit_abbr (u : measure_unit) = Ir_v0.Units.numerator_text u
 
-(* the declared units of a unit system, each a plain unit — each declared unit
-   once, its spellings being names of that one unit; a rate never enters
-   normalisation (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3: its
-   numerator/denominator normalise per their own systems, out of scope here and
-   left to the existing refusal). *)
+(* the declared units of a unit system, each a unit of one factor with exponent 1
+   — each declared unit once, its spellings being names of that one unit; a unit
+   of more factors or with a power never enters normalisation
+   (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3: its factors normalise per their own
+   systems, out of scope here and left to the existing refusal). *)
 let plain_units (s : unit_system) : measure_unit list =
   List.map (fun d -> Ir_v0.Units.of_declared d.ge_unit) s.unit_list
 
@@ -109,7 +108,7 @@ let unit_named (u : measure_unit) =
    with the naming demand above. This is the relation that makes the table
    cross unit systems. *)
 let restates_into (tu : measure_unit) (u : measure_unit) =
-  unit_named u && unit_named tu && Checks.units_convertible u tu
+  unit_named u && unit_named tu && Ir_v0.Units.convertible u tu
 
 (* SAME QUANTITY, NO FACTOR: the pair a scaled-integer encoding may cross
    without carrying any conversion at all, because the exact conversion factor
@@ -205,7 +204,7 @@ let decimals_of_lexeme lex =
 let restate_lit ~tu ~to_finest (e : expr) : expr =
   match e with
   | Literal ({ variant = Lv_number lex; typ = Some (Number n); _ } as lit)
-    when (match n.measure_unit with Some u -> Ir_v0.Units.denominator u = None && restates_into tu u | None -> false) ->
+    when (match n.measure_unit with Some u -> Ir_v0.Units.is_atom u && restates_into tu u | None -> false) ->
       let u = Option.get n.measure_unit in
       let r = to_finest u in
       if Q.equal r Q.one then
@@ -237,7 +236,7 @@ let rec has_restatable ~tu (e : expr) : bool =
   let opt = function Some x -> has_restatable ~tu x | None -> false in
   match e with
   | Literal { typ = Some (Number { measure_unit = Some u; _ }); _ } ->
-      Ir_v0.Units.denominator u = None && restates_into tu u && u <> tu
+      Ir_v0.Units.is_atom u && restates_into tu u && u <> tu
   | Binary { op = Plus | Min | Reduced_by; left_side; right_side; _ } -> opt left_side || opt right_side
   | Rounding { base_expr; _ } -> opt base_expr
   | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr || opt minimum || opt maximum
@@ -284,7 +283,7 @@ let normalise_rule (doc : document) (r : resolved_rule) : resolved_rule =
       Some value_node ) -> (
       match target_unit doc ~ot ~attr:a with
       | Some tu
-        when Ir_v0.Units.denominator tu = None
+        when Ir_v0.Units.is_atom tu
              && (match tu with
                 | { system = Some s; _ } :: _ -> Checks.find_ci doc.unit_systems s <> None
                 | _ -> false)

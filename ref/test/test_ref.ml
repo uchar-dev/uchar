@@ -464,7 +464,7 @@ let () =
       check "WV-2.6-b" (Q.equal v (q "200") && u = eur)
   | _ -> check "WV-2.6-b" false);
   (match Arith.mul (num_with_unit eur "3") (num_with_unit meter "2") with
-  | Value.Num (v, Value.Product _) -> check "WV-2.6-c" (Q.equal v (q "6"))
+  | Value.Num (v, Value.Unit u) -> check "WV-2.6-c" (Q.equal v (q "6") && Ir_v0.Units.render u = "m·€")
   | _ -> check "WV-2.6-c" false);
   (match Arith.div_ ~err:no_err (num_with_unit eur "6") (num_with_unit eur "3") with
   | Value.Num (v, Value.Unitless) -> check "WV-2.6-d" (Q.equal v (q "2"))
@@ -504,7 +504,7 @@ let () =
    ch. 2.5, and it converts, multiplies and compares by the factors of E *)
 let () =
   let wk = unit_ ~canonical_form:"dg" ~factor:(7, 1) "wk" in
-  let reciprocal u = Option.get (Ir_v0.Checks.reciprocal_unit u) in
+  let reciprocal u = Ir_v0.Units.canonical_order (Ir_v0.Units.inverted u) in
   let per_dg = reciprocal dg and per_wk = reciprocal wk in
   let unit_is name v value (u : Ir_v0.Ast.measure_unit) =
     match v with
@@ -544,15 +544,115 @@ let () =
     [ { abbr_text = Some "m"; system = Some "test"; canonical_form = None;
         factor_to_canonical = None; exponent = Some 2 } ]
   in
-  check "WV-2.6-the-unit-m^2-has-no-inverse" (Ir_v0.Checks.reciprocal_unit m_squared = None);
-  (* a product is opaque (IR-SPEC ch. 2.5, point 4): its value stands, and it restates into nothing *)
+  check "WV-2.6-the-inverse-of-m^2-is-1/m^2" (Ir_v0.Units.render (reciprocal m_squared) = "1/m^2");
+  (* a product carries its factors: it restates like any other unit *)
   (match Arith.mul (num_with_unit meter "2") (num_with_unit meter "3") with
-  | Value.Num (v, (Value.Product _ as product)) ->
+  | Value.Num (v, (Value.Unit _ as product)) ->
       check "WV-2.6-2m-times-3m-is-6" (Q.equal v (q "6"));
-      expect_fault_msg "WV-2.6-2m-times-3m-does-not-restate-into-a-declared-m^2"
-        (fun () -> Arith.restate_into (Value.Unit m_squared) v product)
-        "incompatible units"
+      check "WV-2.6-2m-times-3m-restates-into-a-declared-m^2"
+        (Q.equal (Arith.restate_into (Value.Unit (List.map (fun f -> Ir_v0.Units.with_exponent f 2) meter)) v product) (q "6"))
   | _ -> check "WV-2.6-2m-times-3m-is-6" false)
+
+(* a file of the corpus, from the workspace root (gate 5 runs the suite there)
+   or from the test's own build directory (dune runtest) *)
+let corpus_file rel = if Sys.file_exists rel then rel else Filename.concat "../.." rel
+
+(* The table of RUNTIME-SEMANTICS ch. 2.6, row by row, with wk = 7 dg, cm = 1/100 m
+   and jr = 12 mnd. A row reads the value and the spelling of the unit, "geen" for
+   no unit. *)
+let () =
+  let power (u : Ir_v0.Ast.measure_unit) e = List.map (fun f -> Ir_v0.Units.with_exponent f e) u in
+  let over = Ir_v0.Units.over in
+  let wk = unit_ ~canonical_form:"dg" ~factor:(7, 1) "wk" in
+  let cm = unit_ ~canonical_form:"m" ~factor:(1, 100) "cm" in
+  let sec = unit_ ~canonical_form:"s" "s" in
+  let nn = unit_ ~canonical_form:"n" "n" in
+  let m2 = power meter 2 and cm2 = power cm 2 in
+  let m2_per_s = over m2 sec in
+  let per u = power u (-1) in
+  let is name v value spelling =
+    match v () with
+    | Value.Num (got, Value.Unit u) ->
+        check ("WV-2.6-" ^ name) (Q.equal got (q value) && Ir_v0.Units.render u = spelling)
+    | Value.Num (got, Value.Unitless) ->
+        check ("WV-2.6-" ^ name) (Q.equal got (q value) && spelling = "geen")
+    | _ -> check ("WV-2.6-" ^ name) false
+    | exception Value.Fault _ -> check ("WV-2.6-" ^ name) false
+  in
+  let of_unit u s = num_with_unit u s in
+  let restated name into value from expected =
+    match Arith.restate_into (Value.Unit into) (q value) (Value.Unit from) with
+    | got -> check ("WV-2.6-" ^ name) (Q.equal got (q expected))
+    | exception Value.Fault _ -> check ("WV-2.6-" ^ name) false
+  in
+  let mul = Arith.mul and div = Arith.div_ ~err:no_err in
+  is "2m-times-3m-is-6-m^2" (fun () -> mul (of_unit meter "2") (of_unit meter "3")) "6" "m^2";
+  restated "6-m^2-in-an-m^2-attribute-is-6" m2 "6" m2 "6";
+  expect_fault_msg "WV-2.6-6-m^2-in-an-m^2/s-attribute-is-a-fault"
+    (fun () -> Arith.restate_into (Value.Unit m2) (q "6") (Value.Unit m2_per_s))
+    "incompatible units: m^2 vs m^2/s";
+  is "2cm-times-3m-is-600-cm^2" (fun () -> mul (of_unit cm "2") (of_unit meter "3")) "600" "cm^2";
+  restated "600-cm^2-in-an-m^2-attribute-is-3/50" m2 "600" cm2 "3/50";
+  is "6-m^2-divided-by-2m-is-3-m" (fun () -> div (of_unit m2 "6") (of_unit meter "2")) "3" "m";
+  is "6-m^2-divided-by-2cm-is-300-m" (fun () -> div (of_unit m2 "6") (of_unit cm "2")) "300" "m";
+  is "1-divided-by-4-m^2-is-1/4-per-m^2" (fun () -> div (n "1") (of_unit m2 "4")) "1/4" "1/m^2";
+  is "100-eur-per-jr-times-6mnd-is-50-eur" (fun () -> mul (of_unit eur_per_jr "100") (of_unit mnd "6")) "50" "€";
+  is "30-eur-per-dg-times-1wk-is-210-eur" (fun () -> mul (of_unit (over eur dg) "30") (of_unit wk "1")) "210" "€";
+  is "2-per-dg-times-3wk-is-42" (fun () -> mul (of_unit (per dg) "2") (of_unit wk "3")) "42" "geen";
+  is "7-per-wk-times-3dg-is-3" (fun () -> mul (of_unit (per wk) "7") (of_unit dg "3")) "3" "geen";
+  is "3dg-divided-by-1wk-is-3/7" (fun () -> div (of_unit dg "3") (of_unit wk "1")) "3/7" "geen";
+  is "5-eur-per-dg-per-m-times-2dg-times-3m-is-30-eur"
+    (fun () -> mul (mul (of_unit (over eur (Ir_v0.Units.canonical_order (dg @ meter))) "5") (of_unit dg "2")) (of_unit meter "3"))
+    "30" "€";
+  is "1-eur-per-jr-times-1-kg-per-jr-is-kg-eur-per-jr^2"
+    (fun () -> mul (of_unit eur_per_jr "1") (of_unit (over kg jr) "1")) "1" "kg·€/jr^2";
+  is "1-eur-per-jr-times-1m-is-m-eur-per-jr" (fun () -> mul (of_unit eur_per_jr "1") (of_unit meter "1")) "1" "m·€/jr";
+  is "6-eur-divided-by-2-per-n-is-3-n-eur" (fun () -> div (of_unit eur "6") (of_unit (per nn) "2")) "3" "n·€";
+  is "1-divided-by-2-eur-per-dg-is-1/2-dg-per-eur" (fun () -> div (n "1") (of_unit (over eur dg) "2")) "1/2" "dg/€";
+  check "WV-2.6-2-m^2-equals-20000-cm^2"
+    (try Arith.compare_op Equal (of_unit m2 "2") (of_unit cm2 "20000") with Value.Fault _ -> false);
+  (* the rules behind the table: omrekenbaar is equal dimension, whichever way the
+     unit is spelled, and a product takes its unit from the left *)
+  check "WV-2.6-cm-m-is-convertible-to-m^2" (Arith.convertible (Ir_v0.Units.canonical_order (cm @ meter)) m2);
+  check "WV-2.6-factor-cm-m-into-m^2-1/100"
+    (try Q.equal (Arith.conv_factor (Ir_v0.Units.canonical_order (cm @ meter)) m2) (q "1/100")
+     with Value.Fault _ -> false);
+  check "WV-2.6-m^2-against-m-is-no-unit-pair" (not (Arith.convertible m2 meter));
+  check "WV-2.6-m^2-against-m^2/s-is-no-unit-pair" (not (Arith.convertible m2 m2_per_s));
+  is "unitless-times-m^2-keeps-m^2" (fun () -> mul (n "2") (of_unit m2 "3")) "6" "m^2";
+  is "m^2-divided-by-unitless-keeps-m^2" (fun () -> div (of_unit m2 "6") (n "2")) "3" "m^2";
+  is "eur-per-mnd-divided-by-eur-per-jr-restates" (fun () -> div (of_unit (over eur mnd) "1") (of_unit eur_per_jr "1")) "12" "geen";
+  is "eur-per-jr-divided-by-mnd-is-12-eur-per-jr^2" (fun () -> div (of_unit eur_per_jr "1") (of_unit mnd "1")) "12" "€/jr^2";
+  is "3m-times-2cm-is-3/50-m^2" (fun () -> mul (of_unit meter "3") (of_unit cm "2")) "3/50" "m^2"
+
+(* WF-124 (a), (b): an executor reads no unit without a factor and no factor with
+   exponent 0. The verifier loads both, so that the rule names them. *)
+let () =
+  let refused name file at frag =
+    (match Ir_v0.Loader.load_file (corpus_file file) with
+    | _ -> check (name ^ " (the executor loaded it)") false
+    | exception Ir_v0.Loader.Error (path, m) ->
+        check name (substring path at && substring m frag));
+    check (name ^ ": the verifier loads it")
+      (match Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier (corpus_file file) with
+      | _ -> true
+      | exception Ir_v0.Loader.Error _ -> false)
+  in
+  refused "WV-2.5-an-executor-refuses-a-unit-without-a-factor" "corpus/negative/wf124-empty-unit/ir.json"
+    "/unit" "a unit without a factor";
+  refused "WV-2.5-an-executor-refuses-a-factor-with-exponent-0" "corpus/negative/wf124-exponent-zero/ir.json"
+    "/exponent" "has exponent 0"
+
+(* A half-filled conversion pair is a fault of the unit it stands on, wherever a
+   product meets it (WF-092; ch. 2.5, Restatement). *)
+let () =
+  let half : Ir_v0.Ast.measure_unit =
+    [ { abbr_text = Some "cm"; system = Some "test"; canonical_form = Some "m";
+        factor_to_canonical = None; exponent = None } ]
+  in
+  expect_fault_msg "WV-2.6-a-product-over-a-half-pair-is-a-fault"
+    (fun () -> Arith.mul (num_with_unit meter "2") (num_with_unit half "3"))
+    "unit cm names canonical unit \"m\" but carries no conversion factor into it"
 
 (* IR-SPEC ch. 2.5, point 5: a unit is one list of factors, in the canonical
    order, and its spelling comes from that list *)
@@ -2697,7 +2797,22 @@ let () =
     (Timeline.grand_total ~grid_unit:(grid mnd) month
        [ seg "2024-01-01" "2024-02-01" (n "10");
          seg "2024-02-01" "2024-03-01" (num_with_unit eur "5") ])
-    "15"
+    "15";
+  (* ch. 2.6, rule 8: the integration multiplies by the grid unit, so the factor of
+     its class rises one power and the others stay *)
+  let totals_to name v value spelling =
+    match Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 v) with
+    | Value.Num (got, Value.Unit u) ->
+        check name (Q.equal got (q value) && Ir_v0.Units.render u = spelling)
+    | _ -> check name false
+    | exception Value.Fault _ -> check name false
+  in
+  let per_mnd_squared = Ir_v0.Units.over eur (List.map (fun f -> Ir_v0.Units.with_exponent f 2) mnd) in
+  totals_to "WV-2.6-rule-8-eur-per-mnd^2-over-months-is-eur-per-mnd" (num_with_unit per_mnd_squared "10") "120" "€/mnd";
+  totals_to "WV-2.6-rule-8-eur-per-m-per-mnd-over-months-is-eur-per-m"
+    (num_with_unit (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ mnd))) "10") "120" "€/m";
+  expect_fault "WV-2.6-rule-8-no-negative-factor-of-the-grid" (fun () ->
+      Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit (Ir_v0.Units.over eur kg) "10")))
 
 (* the grid unit is looked up in the DOCUMENT's declared unit systems
    (ch. 3.6 / ch. 3.8 spelling table), once per fold: present, absent, and
@@ -9209,10 +9324,6 @@ let readings_of ?(evaluate = true) irf casef =
   let final = if evaluate then Eval.evaluate env c.world else c.world in
   Reading.lines env ~world:final
     (Reading.readings (Yojson.Safe.from_file irf) env ~world0:c.world ~world:final)
-
-(* a file of the corpus, from the workspace root (gate 5 runs the suite there)
-   or from the test's own build directory (dune runtest) *)
-let corpus_file rel = if Sys.file_exists rel then rel else Filename.concat "../.." rel
 
 (* WV-2.6: a product restates into nothing, over a whole document as well. The verifier admits the document, whose
    rule writes m × m into an attribute in m·m/s. *)

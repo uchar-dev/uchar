@@ -16167,13 +16167,151 @@ let () =
   faults_with ~name:"a reciprocal times a quantity by a factor that is no whole number"
     ~ir:(reciprocal_doc ~target_unit:"none" ~value:(reciprocal_binary "times" "per_wk" "dg"))
     ~case_text:reciprocal_case
-    ~needle:"the factor 1/7 from the quantity into the denominator is no whole number";
+    ~needle:"the factor 1/7 from the right operand into the left unit is no whole number";
   faults_with ~name:"an additive join of two reciprocals keeps the fence"
     ~ir:(reciprocal_doc ~target_unit:"per_dg" ~value:(reciprocal_binary "plus" "per_dg" "per_wk"))
     ~case_text:reciprocal_case ~needle:"non-identical units under an additive join";
   faults_with ~name:"a write across two reciprocals keeps the fence"
     ~ir:(reciprocal_doc ~target_unit:"per_wk" ~value:(reciprocal_read "per_dg"))
     ~case_text:reciprocal_case ~needle:{|non-identical units under the write to "target"|}
+
+(* The algebra of ch. 2.6 in the integer encoding (ASP-TRANSLATION S6, S19): a
+   product or quotient takes factor 1 or a whole multiplication of its right
+   operand, a comparison multiplies both sides, and what would need a division or
+   a factor at a write keeps its fence. *)
+let factors_doc ~attributes ~condition ~value =
+  let unit_of ?exponent abbreviation system canonical (num, den) =
+    Printf.sprintf
+      {|{ "node": "Unit", "abbreviation": "%s", "system": "%s", "canonical": "%s", "factorToCanonical": { "num": %d, "den": %d }%s }|}
+      abbreviation system canonical num den
+      (match exponent with Some e -> Printf.sprintf {|, "exponent": %d|} e | None -> "")
+  in
+  let eur = unit_of "€" "Geld" "€" (1, 1) in
+  let m ?exponent () = unit_of ?exponent "m" "Lengte" "m" (1, 1) in
+  let cm ?exponent () = unit_of ?exponent "cm" "Lengte" "m" (1, 100) in
+  let dg ?exponent () = unit_of ?exponent "dg" "Tijd" "dg" (1, 1) in
+  let wk ?exponent () = unit_of ?exponent "wk" "Tijd" "dg" (7, 1) in
+  let sec ?exponent () = unit_of ?exponent "s" "Tijd" "s" (1, 1) in
+  let unit_named = function
+    | "none" -> None
+    | "m" -> Some [ m () ]
+    | "cm" -> Some [ cm () ]
+    | "m2" -> Some [ m ~exponent:2 () ]
+    | "cm2" -> Some [ cm ~exponent:2 () ]
+    | "per_m2" -> Some [ m ~exponent:(-2) () ]
+    | "m2_per_s" -> Some [ m ~exponent:2 (); sec ~exponent:(-1) () ]
+    | "dg" -> Some [ dg () ]
+    | "wk" -> Some [ wk () ]
+    | "eur" -> Some [ eur ]
+    | "eur_m" -> Some [ m (); eur ]
+    | "eur_per_dg" -> Some [ eur; dg ~exponent:(-1) () ]
+    | "eur_per_dg_per_m" -> Some [ eur; dg ~exponent:(-1) (); m ~exponent:(-1) () ]
+    | other -> failwith ("factors_doc: unknown unit " ^ other)
+  in
+  (* an operand has no decimals, so that a product of three stays inside the
+     encoding's range fence *)
+  let attribute (name, unit_name) =
+    Printf.sprintf
+      {|{ "node": "Attribute", "name": "%s", "datatype": { "node": "Number", "whole": false, "decimals": %d, "sign": "unspecified"%s } }|}
+      name
+      (if name = "target" then 2 else 0)
+      (match unit_named unit_name with
+      | Some fs -> {|, "unit": [ |} ^ String.concat ", " fs ^ " ]"
+      | None -> "")
+  in
+  let system name units =
+    Printf.sprintf {|{ "node": "UnitSystem", "name": "%s", "units": [ %s ] }|} name (String.concat ", " units)
+  in
+  String.concat ""
+    [ {|{ "format": "uchar-ir-v1", "model": { "objectTypes": [
+        { "node": "ObjectType", "name": "J", "animate": false, "plural": "Js", "attributes": [ |};
+      String.concat ", " (List.map attribute attributes);
+      {| ], "characteristics": [] } ],
+        "factTypes": [], "parameters": [], "domains": [], "unitSystems": [ |};
+      String.concat ", "
+        [ system "Geld" [ eur ]; system "Lengte" [ m (); cm () ]; system "Tijd" [ dg (); wk (); sec () ] ];
+      {| ], "dimensions": [], "timelines": [], "dayKinds": [] },
+      "rules": { "rules": [ { "node": "Rule", "name": "r", "versions": [ {
+        "validity": { "node": "Validity" },
+        "target": { "node": "AttributeReference", "attribute": "target", "subjectType": "J", "source": { "snippet": "t" } },
+        "value": |};
+      value; condition;
+      {|, "initialisation": false, "presentation": "calculation" } ] } ],
+        "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+        "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
+      "diagnostics": [] }|} ]
+
+let factors_case inputs target =
+  Printf.sprintf
+    {|{ "format": "uchar-case-v0", "asOfDate": null, "input": { "instances": [
+      { "label": "A", "objectType": "J", "attributes": { %s }, "roles": {}, "characteristics": [] } ],
+      "parameters": {} },
+      "expected": [ %s ] }|}
+    (String.concat ", " (List.map (fun (k, v) -> Printf.sprintf {|"%s": { "number": "%s" }|} k v) inputs))
+    (match target with
+    | Some v ->
+        Printf.sprintf {|{ "kind": "attributeValue", "label": "A", "attribute": "target", "value": { "number": "%s" } }|} v
+    | None -> {|{ "kind": "attributeEmpty", "label": "A", "attribute": "target" }|})
+
+let () =
+  let binary op l r =
+    Printf.sprintf
+      {|{ "node": "Binary", "op": "%s", "left": %s, "right": %s, "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" }, "source": { "snippet": "b" } }|}
+      op l r
+  in
+  let read = reciprocal_read in
+  let doc ?(condition = "") attributes value = factors_doc ~attributes ~condition ~value in
+  both_answer ~name:"m × m in m^2 translates with factor 1"
+    ~ir:(doc [ ("a", "m"); ("b", "m"); ("target", "m2") ] (binary "times" (read "a") (read "b")))
+    ~case_text:(factors_case [ ("a", "2"); ("b", "3") ] (Some "6.00"));
+  faults_with ~name:"cm × m in m^2 is refused at the write"
+    ~ir:(doc [ ("a", "cm"); ("b", "m"); ("target", "m2") ] (binary "times" (read "a") (read "b")))
+    ~case_text:(factors_case [ ("a", "2"); ("b", "3") ] None)
+    ~needle:{|non-identical units under the write to "target"|};
+  faults_with ~name:"m × m in m^2/s is refused at the write"
+    ~ir:(doc [ ("a", "m"); ("b", "m"); ("target", "m2_per_s") ] (binary "times" (read "a") (read "b")))
+    ~case_text:(factors_case [ ("a", "2"); ("b", "3") ] None)
+    ~needle:{|non-identical units under the write to "target"|};
+  faults_with ~name:"m × cm has the factor 1/100 and is refused by name"
+    ~ir:(doc [ ("a", "m"); ("b", "cm"); ("target", "m2") ] (binary "times" (read "a") (read "b")))
+    ~case_text:(factors_case [ ("a", "2"); ("b", "3") ] None)
+    ~needle:"the factor 1/100 from the right operand into the left unit is no whole number";
+  both_answer ~name:"€/dg × wk multiplies the right operand by 7"
+    ~ir:(doc [ ("a", "eur_per_dg"); ("b", "wk"); ("target", "eur") ] (binary "times" (read "a") (read "b")))
+    ~case_text:(factors_case [ ("a", "30"); ("b", "1") ] (Some "210.00"));
+  both_answer ~name:"€/dg/m × dg × m has factor 1 twice"
+    ~ir:
+      (doc
+         [ ("a", "eur_per_dg_per_m"); ("b", "dg"); ("c", "m"); ("target", "eur") ]
+         (binary "times" (binary "times" (read "a") (read "b")) (read "c")))
+    ~case_text:(factors_case [ ("a", "5"); ("b", "2"); ("c", "3") ] (Some "30.00"));
+  both_answer ~name:"€ × m is the unit m·€"
+    ~ir:(doc [ ("a", "eur"); ("b", "m"); ("target", "eur_m") ] (binary "times" (read "a") (read "b")))
+    ~case_text:(factors_case [ ("a", "2"); ("b", "3") ] (Some "6.00"));
+  both_answer ~name:"m^2 ÷ m in m has factor 1"
+    ~ir:(doc [ ("a", "m2"); ("b", "m"); ("target", "m") ] (binary "dividedBy" (read "a") (read "b")))
+    ~case_text:(factors_case [ ("a", "6"); ("b", "2") ] (Some "3.00"));
+  both_answer ~name:"€ ÷ a provably unitless divisor keeps €"
+    ~ir:(doc [ ("a", "eur"); ("b", "none"); ("target", "eur") ] (binary "dividedBy" (read "a") (read "b")))
+    ~case_text:(factors_case [ ("a", "6"); ("b", "2") ] (Some "3.00"));
+  both_answer ~name:"a unitless number ÷ m^2 is 1/m^2"
+    ~ir:(doc [ ("a", "none"); ("b", "m2"); ("target", "per_m2") ] (binary "dividedBy" (read "a") (read "b")))
+    ~case_text:(factors_case [ ("a", "1"); ("b", "4") ] (Some "0.25"));
+  faults_with ~name:"a whole factor on the divisor stays outside the encoding (dg ÷ wk)"
+    ~ir:(doc [ ("a", "dg"); ("b", "wk"); ("target", "none") ] (binary "dividedBy" (read "a") (read "b")))
+    ~case_text:(factors_case [ ("a", "3"); ("b", "1") ] None)
+    ~needle:"a unit-carrying multiplicative operand is not translated";
+  let holds =
+    Printf.sprintf
+      {|, "condition": { "node": "Comparison", "op": "greaterOrEqual", "left": %s, "right": %s, "source": { "snippet": "c" } }|}
+      (read "a") (read "b")
+  in
+  both_answer ~name:"m^2 against cm^2 multiplies both sides: 2 m^2 ≥ 20000 cm^2"
+    ~ir:(doc ~condition:holds [ ("a", "m2"); ("b", "cm2"); ("c", "none"); ("target", "none") ] (read "c"))
+    ~case_text:(factors_case [ ("a", "2"); ("b", "20000"); ("c", "5") ] (Some "5.00"));
+  both_answer ~name:"m^2 against cm^2 multiplies both sides: 2 m^2 < 20001 cm^2"
+    ~ir:(doc ~condition:holds [ ("a", "m2"); ("b", "cm2"); ("c", "none"); ("target", "none") ] (read "c"))
+    ~case_text:(factors_case [ ("a", "2"); ("b", "20001"); ("c", "5") ] None)
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

@@ -970,22 +970,12 @@ let attr_temporal_decl ctx ~otype ~attr =
   | Some ot -> Ir_v0.Checks.attr_temporal ot attr
   | None -> false
 
-(* E⁻¹ against a plain unit E' convertible to E: the pair whose product has no
-   unit (ch. 2.6). *)
-let reciprocal_cancels (reciprocal : measure_unit) (plain : measure_unit) =
-  Ir_v0.Checks.is_reciprocal reciprocal && Ir_v0.Units.denominator plain = None
-  && match Ir_v0.Units.denominator reciprocal with
-     | Some n -> Normalise.restates_into n plain
-     | None -> false
-
 (* the EFFECTIVE unit of an expression, derived from declarations
    (attribute/parameter datatypes) and the ch. 2.6 join rules — never
    from the node's own static annotation: a composite annotated
    eenheid:null still carries its operands' units at runtime, and
    reading the annotation let a unit-carrying comparison of two plus
-   composites slip the fence (a hunted silent split). Multiplicative
-   operands are fenced unit-free at their own translation, so those
-   nodes contribute None. *)
+   composites slip the fence (a hunted silent split). *)
 let rec eff_unit ctx (e : expr) : measure_unit option =
   match e with
   | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } ->
@@ -1003,24 +993,15 @@ let rec eff_unit ctx (e : expr) : measure_unit option =
       match Option.bind left_side (eff_unit ctx) with
       | Some u -> Some u
       | None -> Option.bind right_side (eff_unit ctx))
-  | Binary { op = Times; left_side; right_side; _ } -> (
-      (* the admitted factor-free product (ch. 2.6, Arith.mul): a unitless
-         operand times a unit-carrying operand adopts THAT unit, value
-         unchanged — so a restating position consuming the product sees the
-         real unit and its own fence still fires on a genuine mismatch (the
-         loud-witness). E⁻¹ × E leaves no unit. Any other two-unit product
-         faults at its own translation (mul_units_ok), so reporting the left
-         there is moot. *)
-      match (Option.bind left_side (eff_unit ctx), Option.bind right_side (eff_unit ctx)) with
-      | Some a, Some b when reciprocal_cancels a b || reciprocal_cancels b a -> None
-      | Some u, _ -> Some u
-      | None, r -> r)
-  | Binary { op = Divided_by | Divided_by_abs; left_side; right_side; _ } -> (
-      (* eenheidloos ÷ E is E⁻¹, value unchanged (ch. 2.6); every other
-         unit-carrying quotient faults at its own translation (quotient_units_ok) *)
-      match (Option.bind left_side (eff_unit ctx), Option.bind right_side (eff_unit ctx)) with
-      | None, Some b -> Ir_v0.Checks.reciprocal_unit b
-      | _ -> None)
+  | Binary { op = Times; left_side; right_side; _ } ->
+      (* ch. 2.6, rule 2. A restating position consuming the product sees the real
+         unit and its own fence still fires on a genuine mismatch. The admission
+         of the product, and the factor on the value, are [mul_units_ok] and
+         [product_factor]. *)
+      fst (Ir_v0.Units.times (Option.bind left_side (eff_unit ctx)) (Option.bind right_side (eff_unit ctx)))
+  | Binary { op = Divided_by | Divided_by_abs; left_side; right_side; _ } ->
+      (* ch. 2.6, rule 3; the admission is [quotient_units_ok] *)
+      fst (Ir_v0.Units.divide (Option.bind left_side (eff_unit ctx)) (Option.bind right_side (eff_unit ctx)))
   | Binary _ -> None
   | Rounding { base_expr; _ } | Clamp { base_expr; _ } -> Option.bind base_expr (eff_unit ctx)
   | Temporal_read { base_expr; _ } -> eff_unit ctx base_expr
@@ -1054,7 +1035,12 @@ let rec eff_unit ctx (e : expr) : measure_unit option =
          €/mnd result type. Whether the strip lands EXACTLY in this
          integer encoding is the translating arm's fence
          ([grid_strip_ok]), not this analysis's. *)
-      Option.bind (eff_unit ctx arg) Ir_v0.Checks.numerator_unit
+      (match eff_unit ctx arg with
+      | Some u when Ir_v0.Units.negatives u <> [] -> (
+          (* more than one negative factor: no strip here, and the write fence
+             below refuses the value by name *)
+          match Ir_v0.Units.integrated u with Some left -> left | None -> Some u)
+      | plain -> plain)
   | Function_call { kind = Sum_function | Total | Minimum | Maximum | First | Last; call_arguments = arg :: _; _ }
     ->
       eff_unit ctx arg
@@ -2430,27 +2416,29 @@ let as_of_bucket_units ctx ~otype ~attr =
    [what] names the fold site. *)
 let grid_strip_ok ctx ~what ~(gran : grain) (u : measure_unit option) =
   match u with
-  | Some rate when Ir_v0.Units.denominator rate <> None -> (
-      let n = Option.get (Ir_v0.Units.denominator rate) in
+  | Some rate when Ir_v0.Units.negatives rate <> [] -> (
       match Uchar_ref.Timeline.grid_unit ctx.doc gran with
       | Error why -> fault "the noemer strip of %s: %s" what why
-      | Ok gu ->
-          if not (Uchar_ref.Arith.convertible n gu) then
-            fault
-              "the noemer strip of %s cannot integrate a %s value over a %s grid: the \
-               declarations connect no conversion between its denominator and the grid unit \
-               (ch. 3.6); ref refuses the shape too"
-              what
-              (Uchar_ref.Arith.display_unit rate)
-              (Uchar_ref.Arith.display_unit gu)
-          else if not (Q.equal (Uchar_ref.Arith.conv_factor gu n) Q.one) then
-            fault
-              "the noemer strip of %s restates a %s value into a %s grid by a declared factor \
-               other than 1, which this integer encoding does not carry (ref applies the exact \
-               factor); only a denominator identical to the grid unit cancels here"
-              what
-              (Uchar_ref.Arith.display_unit rate)
-              (Uchar_ref.Arith.display_unit gu))
+      | Ok gu -> (
+          let of_grid f = Uchar_ref.Arith.convertible (Ir_v0.Units.of_declared f) gu in
+          match List.find_opt of_grid (Ir_v0.Units.negatives rate) with
+          | None ->
+              fault
+                "the noemer strip of %s cannot integrate a %s value over a %s grid: the \
+                 declarations connect no conversion between its denominator and the grid unit \
+                 (ch. 3.6); ref refuses the shape too"
+                what
+                (Uchar_ref.Arith.display_unit rate)
+                (Uchar_ref.Arith.display_unit gu)
+          | Some f ->
+              if not (Q.equal (Uchar_ref.Arith.conv_factor gu (Ir_v0.Units.of_declared f)) Q.one) then
+                fault
+                  "the noemer strip of %s restates a %s value into a %s grid by a declared factor \
+                   other than 1, which this integer encoding does not carry (ref applies the exact \
+                   factor); only a denominator identical to the grid unit cancels here"
+                  what
+                  (Uchar_ref.Arith.display_unit rate)
+                  (Uchar_ref.Arith.display_unit gu)))
   | _ -> ()
 
 (* harmonise two scaled terms for comparison. Self-fenced: every caller
@@ -2847,25 +2835,22 @@ let unit_free_ok ctx e =
            algebra applies conversion factors this integer encoding does not carry)"
   | None -> ()
 
-(* The product of E⁻¹ and a plain unit E' convertible to E leaves no unit: ref
-   restates the E' operand into E (Arith.mul), which the integer encoding can
-   hold where that factor is a whole number: Some (true, k) when the RIGHT
-   operand is the plain one, Some (false, k) when the LEFT is, k its factor.
-   A factor that is no whole number would need a division here and faults by
-   name. None for any other pair. *)
-let reciprocal_factor ctx (l : expr) (r : expr) : (bool * int) option =
-  let whole (plain : measure_unit) (rate : measure_unit) =
-    let k = Uchar_ref.Arith.conv_factor plain (Option.get (Ir_v0.Units.denominator rate)) in
-    if not (Z.equal (Q.den k) Z.one) then
-      fault
-        "a product of %s and %s is not translated: the factor %s from the quantity into the \
-         denominator is no whole number, and this integer encoding carries no fraction"
-        (Uchar_ref.Arith.display_unit rate) (Uchar_ref.Arith.display_unit plain) (Q.to_string k);
-    Z.to_int (Q.num k)
-  in
+(* ch. 2.6, rule 2: the factor of a product of two unit-carrying operands, the
+   right operand restated into the left factor of its class. The integer encoding
+   holds that factor where it is whole: the term of the right operand times k,
+   with k = 1 where the product only changes the unit. A factor that is no whole
+   number would need a division here and faults by name. None where an operand
+   carries no unit. *)
+let product_factor ctx (l : expr) (r : expr) : int option =
   match (eff_unit ctx l, eff_unit ctx r) with
-  | Some a, Some b when reciprocal_cancels a b -> Some (true, whole b a)
-  | Some a, Some b when reciprocal_cancels b a -> Some (false, whole a b)
+  | (Some a as ul), (Some b as ur) ->
+      let k = Uchar_ref.Arith.restatement (snd (Ir_v0.Units.times ul ur)) in
+      if not (Z.equal (Q.den k) Z.one) then
+        fault
+          "a product of %s and %s is not translated: the factor %s from the right operand into \
+           the left unit is no whole number, and this integer encoding carries no fraction"
+          (Uchar_ref.Arith.display_unit a) (Uchar_ref.Arith.display_unit b) (Q.to_string k);
+      Some (Z.to_int (Q.num k))
   | _ -> None
 
 (* positions where ref RESTATES one operand into the other's unit — the
@@ -2877,7 +2862,7 @@ let reciprocal_factor ctx (l : expr) (r : expr) : (bool * int) option =
    else faults.
 
    "The same quantity" is not record equality. Convertibility here is a
-   canonical-NAME law ([Ir_v0.Checks.units_convertible], the predicate the
+   canonical-NAME law ([Ir_v0.Units.convertible], the predicate the
    verifier and ref/ both read), and it says nothing about the system that
    DECLARES a unit; so `kg` in system Gewicht and `kg` in system Massa are one
    unit in two records, their exact conversion factor is 1, and their ground
@@ -2895,17 +2880,14 @@ let units_identical_ok ~what (l : measure_unit option) (r : measure_unit option)
         what
   | _ -> ()
 
-(* The comparison of two convertible reciprocals restates by an exact factor
-   p/q that the integer encoding can carry here, unlike at an additive join: a
-   comparison multiplies both sides, x·p against y·q, and divides nothing
-   (ch. 2.6; 1/dg against 1/wk: x·7 against y). (p, q) for such a pair, (1, 1)
-   for every other pair that passes the fence, and every other pair of
-   non-identical units keeps the fence. *)
+(* The comparison of two convertible units restates by an exact factor p/q that
+   the integer encoding can carry here, unlike at an additive join: a comparison
+   multiplies both sides, x·p against y·q, and divides nothing (ch. 2.6; 1/dg
+   against 1/wk: x·7 against y; m^2 against cm^2: x·10000 against y). (p, q) for
+   such a pair; every other pair of non-identical units keeps the fence. *)
 let comparison_factors ctx (l : expr) (r : expr) : int * int =
   match (eff_unit ctx l, eff_unit ctx r) with
-  | Some a, Some b
-    when Ir_v0.Checks.is_reciprocal a && Ir_v0.Checks.is_reciprocal b
-         && Normalise.restates_into a b ->
+  | Some a, Some b when a <> b && Normalise.restates_into a b ->
       let k = Uchar_ref.Arith.conv_factor a b in
       (Z.to_int (Q.num k), Z.to_int (Q.den k))
   | ul, ur ->
@@ -2933,7 +2915,8 @@ let rec provably_unitless ctx (e : expr) : bool =
       | _ -> false)
   | Literal { typ = Some (Number { measure_unit = None; _ }); _ } -> true
   | Binary { op = Times; left_side = Some l; right_side = Some r; _ }
-    when reciprocal_factor ctx l r <> None ->
+    when product_factor ctx l r <> None && eff_unit ctx e = None ->
+      (* no unit is left of the two *)
       true
   | Binary { op = Plus | Min | Reduced_by | Times; left_side = Some l; right_side = Some r; _ } ->
       (* a sum/difference/product is unit-free only when BOTH operands are *)
@@ -2994,18 +2977,15 @@ let pct_left_ok ctx (e : expr option) =
   | Some ex when provably_pure_pct ctx ex -> ()
   | _ -> unit_free_ok ctx e
 
-(* the admitted factor-free product (ch. 2.6; ASP-TRANSLATION S6): a unitless
-   operand TIMES a unit-carrying operand adopts that unit with the numeric
-   value unchanged (Arith.mul, (Unitless, Unit u) -> Num(v, u); NO conversion
-   factor), so the integer encoding is exact and the product adopts the unit
-   (eff_unit above carries it onward). Soundness fence: the operand admitted AS
-   the unitless side must be PROVABLY unit-free, never merely eff_unit-blind —
-   a unit hidden behind an unanalysable node (a Let, a field access, a division)
-   would otherwise become a silent unit×unit product with no downstream unit to
-   fence it. A product of TWO unit-carrying operands — a rate cancellation
-   (€/jr × jr), an opaque product unit (€ × m) — composes units / applies
-   factors this integer encoding does not carry, so it keeps faulting loudly
-   (the standing fence until the defaults-round waist question). *)
+(* the admitted product (ch. 2.6; ASP-TRANSLATION S6). Two unit-carrying operands
+   compose their units, and [product_factor] says what the value takes: nothing,
+   a whole factor, or a refusal. A unitless operand times a unit-carrying one
+   adopts that unit with the value unchanged (Arith.mul), so the encoding is exact
+   and the product adopts the unit (eff_unit above carries it onward). Soundness
+   fence: the operand admitted AS the unitless side must be PROVABLY unit-free,
+   never merely eff_unit-blind — a unit hidden behind an unanalysable node (a Let,
+   a field access, a division) would otherwise become a silent unit×unit product
+   with no downstream unit to fence it. *)
 let mul_units_ok ctx ~what (l : expr option) (r : expr option) =
   let ul = Option.bind l (eff_unit ctx) and ur = Option.bind r (eff_unit ctx) in
   let proven_free = function Some e -> provably_unitless ctx e | None -> true in
@@ -3017,25 +2997,22 @@ let mul_units_ok ctx ~what (l : expr option) (r : expr option) =
       what
   in
   match (ul, ur) with
-  | Some a, Some b when reciprocal_cancels a b || reciprocal_cancels b a -> ()
-  | Some _, Some _ ->
-      fault
-        "a product of two unit-carrying operands under %s is not translated (ref's unit \
-         algebra composes units / applies conversion factors this integer encoding does not carry)"
-        what
   | Some _, None when not (proven_free r) -> hidden ()
   | None, Some _ when not (proven_free l) -> hidden ()
   | _ -> ()
 
-(* a quotient's operands: unit-free, or a provably unitless dividend over a
-   unit-carrying divisor, whose reciprocal unit changes nothing in the value
-   (eenheidloos ÷ E is E⁻¹, ch. 2.6) *)
+(* a quotient's operands (ch. 2.6, rule 3): admitted where the value takes no
+   factor. Two unit-carrying operands whose quotient asks for one keep the fence
+   (dg ÷ wk would multiply the divisor by 7; ASP-TRANSLATION S19). An operand
+   admitted as the unitless side must be provably so, as at [mul_units_ok]. *)
 let quotient_units_ok ctx left_side right_side =
+  let ul = eff_unit ctx left_side and ur = eff_unit ctx right_side in
   let admitted =
-    provably_unitless ctx left_side
-    && match eff_unit ctx right_side with
-       | Some u -> Ir_v0.Checks.reciprocal_unit u <> None
-       | None -> false
+    match (ul, ur) with
+    | None, Some _ -> provably_unitless ctx left_side
+    | Some _, None -> provably_unitless ctx right_side
+    | Some _, Some _ -> Q.equal (Uchar_ref.Arith.restatement (snd (Ir_v0.Units.divide ul ur))) Q.one
+    | None, None -> false
   in
   if not admitted then begin
     unit_free_ok ctx (Some left_side);
@@ -6049,9 +6026,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          truncation can diverge from ref's exact rationals. *)
       numeric_ok ctx left_side;
       numeric_ok ctx right_side;
-      (* Maal admits the factor-free unitless × unit-carrying product (the
-         product adopts the unit, value unchanged); a two-unit product still
-         faults. Percentage-van admits a pure-% left operand (its ÷100 is
+      (* Maal admits the unitless × unit-carrying product (the product adopts the
+         unit, value unchanged) and a two-unit product with a whole factor.
+         Percentage-van admits a pure-% left operand (its ÷100 is
          already the scale fold — PRIORITIZED-DEFAULTS-EVOLUTIE §8.3), else
          unit-free; its right operand keeps every unit refused (the ch. 2.6
          right-unit adoption has no eff_unit witness and no corpus case
@@ -6073,8 +6050,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       range_guard ctx ~subject
         ~body:((base :: ctx.rule_guard) @ bl @ br)
         [ (tl, 46340); (tr, 46340) ];
-      (* the plain operand of E⁻¹ × E' restated into E; the fence above holds
-         the bare term, this one the restated term *)
+      (* the right operand restated into the left factor of its class; the fence
+         above holds the bare term, this one the restated term *)
       let restated t k =
         if k = 1 then t
         else begin
@@ -6082,14 +6059,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           Printf.sprintf "(%s*%d)" t k
         end
       in
-      let tl, tr =
+      let tr =
         match (op, left_side, right_side) with
         | Times, Some le, Some re -> (
-            match reciprocal_factor ctx le re with
-            | Some (true, k) -> (tl, restated tr k)
-            | Some (false, k) -> (restated tl k, tr)
-            | None -> (tl, tr))
-        | _ -> (tl, tr)
+            match product_factor ctx le re with Some k -> restated tr k | None -> tr)
+        | _ -> tr
       in
       let term = Printf.sprintf "(%s*%s)" tl tr in
       ctx.signs <- (term, Product (tl, tr)) :: ctx.signs;

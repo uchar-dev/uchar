@@ -1,6 +1,9 @@
 (test
  (name test_ref)
  (deps
+  ; an executor refuses these two at load (WF-124 (a), (b))
+  ../../corpus/negative/wf124-empty-unit/ir.json
+  ../../corpus/negative/wf124-exponent-zero/ir.json
   ; the first worked example of RUNTIME-SEMANTICS ch. 5.12 is a corpus golden
   ../../corpus/golden/jutterswet-ploegaandeel/ir.json
   ../../corpus/golden/jutterswet-ploegaandeel/case.json

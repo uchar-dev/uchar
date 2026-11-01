@@ -808,7 +808,6 @@ let timeline_text (tl : Timeline.t) =
 let unit_text = function
   | Value.Unitless -> None
   | Value.Unit e -> Some (Arith.display_unit e)
-  | Value.Product (a, b) -> Some (Arith.display_unit a ^ "*" ^ Arith.display_unit b)
 
 (* An object of the session as the canonical text names it: an input object
    by its case label, quoted; an object a creation made by that creation's

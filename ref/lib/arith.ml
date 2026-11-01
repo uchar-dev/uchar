@@ -19,7 +19,6 @@ let display_unit (e : Ir_v0.Ast.measure_unit) = Ir_v0.Units.render e
 let show_unit = function
   | Unitless -> "(unitless)"
   | Unit e -> display_unit e
-  | Product (a, b) -> display_unit a ^ "*" ^ display_unit b
 
 (* The wire carries the canonical factor as the exact rational {num, den}
    (IR-SPEC ch. 2.5; the loader hands it over as the pair), so it is read as
@@ -32,9 +31,8 @@ let rational ({ num; den } : Ir_v0.Ast.rational) = Q.make (Z.of_int num) (Z.of_i
    it converts into and the factor that does the converting (WF-092).
 
    The BARE form — both null — is the legitimate self-standing spelling
-   (every duration parameter and duration operand carries it, and it is
-   also ch. 2.5's opaque product: no canonical, no factor) and reads as
-   factor 1. That does NOT make it inert. [units_convertible] reads a
+   (every duration parameter and duration operand carries it) and reads as
+   factor 1. That does NOT make it inert. [Units.convertible] reads a
    missing canonical as the ABBREVIATION, so a bare unit is a canonical
    TARGET for every declared unit whose canonical string spells that
    abbreviation, and a quantity crossing into it restates on THAT unit's
@@ -67,7 +65,13 @@ let factor ?shown (e : Ir_v0.Ast.unit_factor) =
   | None, Some c ->
       fault "unit %s names canonical unit %S but carries no conversion factor into it" shown c
 
-let convertible a b = Ir_v0.Checks.units_convertible a b
+let convertible a b = Ir_v0.Units.convertible a b
+
+let factor_power ?shown (f : Ir_v0.Ast.unit_factor) =
+  let e = Ir_v0.Units.exponent f in
+  let x = factor ?shown f in
+  let power = Q.make (Z.pow (Q.num x) (abs e)) (Z.pow (Q.den x) (abs e)) in
+  if e < 0 then Q.inv power else power
 
 (* the product of the factors of a unit, each to the power of its exponent; a
    half-filled pair in the numerator is reported under the whole unit, one in the
@@ -75,19 +79,20 @@ let convertible a b = Ir_v0.Checks.units_convertible a b
 let total_factor (u : Ir_v0.Ast.measure_unit) =
   List.fold_left
     (fun acc f ->
-      let e = Ir_v0.Units.exponent f in
-      let shown = if e > 0 then Some (display_unit u) else None in
-      let x = factor ?shown f in
-      let power = Q.make (Z.pow (Q.num x) (abs e)) (Z.pow (Q.den x) (abs e)) in
-      if e < 0 then Q.div acc power else Q.mul acc power)
+      let shown = if Ir_v0.Units.exponent f > 0 then Some (display_unit u) else None in
+      Q.mul acc (factor_power ?shown f))
     Q.one u
 
-(* multiplicative factor taking a quantity in unit [a] to unit [b];
-   both must be convertible (same canonical chain, a rate side by side) *)
+(* the value of the factor [Units.times] and [Units.divide] hand over: no unit of
+   its own, so a half-filled pair is reported under the name of its factor *)
+let restatement (powers : Ir_v0.Ast.measure_unit) =
+  List.fold_left (fun acc f -> Q.mul acc (factor_power f)) Q.one powers
+
+(* multiplicative factor taking a quantity in unit [a] to unit [b], F(a)/F(b);
+   both must be convertible (ch. 2.6, rule 1) *)
 let conv_factor (a : Ir_v0.Ast.measure_unit) (b : Ir_v0.Ast.measure_unit) =
-  match (Ir_v0.Units.denominator a, Ir_v0.Units.denominator b) with
-  | None, None | Some _, Some _ -> Q.div (total_factor a) (total_factor b)
-  | _ -> fault "rate/plain unit mismatch: %s vs %s" (display_unit a) (display_unit b)
+  if convertible a b then Q.div (total_factor a) (total_factor b)
+  else fault "incompatible units: %s vs %s" (display_unit a) (display_unit b)
 
 (* restate a number in unit [ub] into unit [ua] (ch. 2.6: the right operand
    is restated into the left operand's unit, with exact factors) *)
@@ -135,28 +140,15 @@ let sub_reduced l r =
       let rq, ru = coalesce0 "verminderd met" r in
       Num (Q.sub lq (restate_into lu rq ru), join_units lu ru)
 
+let unit_option = function Unitless -> None | Unit u -> Some u
+let unit_of_option = function None -> Unitless | Some u -> Unit u
+
+(* maal (ch. 2.6, rule 2): the unit of the product, and on the value the factor
+   of the right factors a left factor of their class took in *)
 let mul l r =
   let lq, lu = coalesce0 "maal" l and rq, ru = coalesce0 "maal" r in
-  match (lu, ru) with
-  | Unitless, u | u, Unitless -> Num (Q.mul lq rq, u)
-  | Unit a, Unit b -> (
-      let without_denominator rate =
-        match Ir_v0.Checks.numerator_unit rate with Some u -> Unit u | None -> Unitless
-      in
-      match (Ir_v0.Units.denominator a, Ir_v0.Units.denominator b) with
-      | Some n, None when convertible n b ->
-          (* a rate times its denominator unit cancels: €/jr × jr = €, and E⁻¹ × E is unitless *)
-          Num (Q.mul lq (Q.mul rq (conv_factor b n)), without_denominator a)
-      | None, Some n when convertible n a ->
-          Num (Q.mul rq (Q.mul lq (conv_factor a n)), without_denominator b)
-      (* a reciprocal times another plain unit is the rate: 1/dg × € = €/dg *)
-      | Some n, None when Ir_v0.Checks.is_reciprocal a && not (Ir_v0.Checks.is_product b) ->
-          Num (Q.mul lq rq, Unit (Ir_v0.Units.over b n))
-      | None, Some n when Ir_v0.Checks.is_reciprocal b && not (Ir_v0.Checks.is_product a) ->
-          Num (Q.mul lq rq, Unit (Ir_v0.Units.over a n))
-      | None, None -> Num (Q.mul lq rq, Product (a, b))
-      | _ -> fault "unit product not modelled: %s * %s" (show_unit lu) (show_unit ru))
-  | _ -> fault "unit product not modelled: %s * %s" (show_unit lu) (show_unit ru)
+  let u, powers = Ir_v0.Units.times (unit_option lu) (unit_option ru) in
+  Num (Q.mul (Q.mul lq rq) (restatement powers), unit_of_option u)
 
 (* percentage van: l/100 × r, exactly; result carries the right unit *)
 let pct_of l r =
@@ -183,20 +175,9 @@ let div_gen ~err ~collapse l r =
             Empty
           end
           else
-            let q, u =
-              match (lu, ru) with
-              | u, Unitless -> (Q.div lq rq, u)
-              | Unit a, Unit b when convertible a b ->
-                  (Q.div lq (Q.mul rq (conv_factor b a)), Unitless)
-              | Unit a, Unit b
-                when Ir_v0.Units.denominator a = None && Ir_v0.Units.denominator b = None ->
-                  (Q.div lq rq, Unit (Ir_v0.Units.over a b))
-              | Unitless, Unit b when Ir_v0.Checks.reciprocal_unit b <> None ->
-                  (* eenheidloos ÷ E is E⁻¹ *)
-                  (Q.div lq rq, Unit (Option.get (Ir_v0.Checks.reciprocal_unit b)))
-              | _ -> fault "unit quotient not modelled: %s / %s" (show_unit lu) (show_unit ru)
-            in
-            collapse q u)
+            (* ch. 2.6, rule 3 *)
+            let u, powers = Ir_v0.Units.divide (unit_option lu) (unit_option ru) in
+            collapse (Q.mul (Q.div lq rq) (restatement powers)) (unit_of_option u))
 
 (* --- rounding (ch. 2.5): five modes, no banker's, default rekenkundig -- *)
 
