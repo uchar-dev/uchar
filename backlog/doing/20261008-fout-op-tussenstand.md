@@ -238,3 +238,169 @@ exec-modeltak' in de tabellen beschrijven de verwijderde destructieve verlaging.
 besluit wachten (een deling in een default, een deling in een initialisatie naast een andere schrijver) staan nu in de
 exec-model-tak en zijn dekkingsverlies (punt 2 van de lijst in het `Result:` van die kaart); (c) geldt voor de
 exec-model-tak en de DRL-teksttak.
+
+## Result:
+
+Gebouwd op main `7c0220d11` in de worktree `wt/fout-op-tussenstand`. De kaart blijft in `doing/`; de hoofdsessie landt.
+
+### Commits
+
+- `e1e7c507f` claim
+- `9d05d1dd6` ref: fout en deponering per (vorm, onderwerp), vervangen bij her-evaluatie, gemeld aan het fixpunt van het stratum; de blokkade van een initialisatie vóór haar voorwaarde; `WV-5.7-fixpoint`
+- `57a33a48a` ref: een andere schrijver die de waarde van de initialisatie schrijft, verdringt haar ook (gevonden door gate 17)
+- `aae4466a1` clingo: fail-fasts en deponeringen krijgen de bewaking van de `val`-kop; README [S3], [S4] weg
+- `2c1f05cdc` Drools: DROOLS-120 en DROOLS-165 `RETIRED`, de vormen spelen; getuigen aangepast
+- `1b4b30610` spec (voorstel): `RUNTIME-SEMANTICS.md` ch. 5.4, 5.6, 5.7, 5.7b, 6.1, 7.1, 7.5, 7.8; `ASP-TRANSLATION.md`
+- `dff96768f` goldens en rode cases; `EXPECTED_PLAYED` en de lijst van gate 8 (voorstel)
+- de commit met dit Result
+
+### Meettabel
+
+De proefdocumenten staan onder `werk/fout-op-tussenstand/probe/`; D heeft naast de regel van de kaart een tweede regel (`grondslag`), zodat het document een volgorde heeft. E is toegevoegd: B met initialisatie 7, zodat de tussenstand een harde fout geeft (90/7 past niet, EF-006).
+
+Op main `7c0220d11` (case zoals in de kaart; `v` = voorwaarts, `o` = omgekeerd):
+
+| | ref | clingo | Drools exec en DRL (gelijk) |
+|---|---|---|---|
+| A v | PASS | `expected consistent, but the model carries 1 inconsistent fact(s)` | `EXCLUDE DROOLS-120` |
+| A o | `channel carries: standaardbergloon × V1` | idem | `EXCLUDE DROOLS-120` |
+| B v | PASS | PASS | PLAYED 1 |
+| B o | `channel carries: aandeel × V1` | PASS | PLAYED 1 |
+| C v, o | `channel carries: standaardtoeslag × V2` | `model carries 1 inconsistent fact(s)` | PLAYED 1 |
+| D v, o | `channel carries: heffing van een jutter × J1` | `model carries 1 inconsistent fact(s)` | PLAYED 1 |
+| E v | PASS | PASS | PLAYED 1 |
+| E o | `EVALUATION FAULT: EF-006: V1.aandeel: value 90/7 …` | PASS | PLAYED 1 |
+
+Sinds de kaart `zero-division-channel` zijn de uitkomsten "EVALUATION FAULT" en `viol(...)` van de kaart bij A, B en C een kanaalfeit EF-005 geworden; `DelingDoorNul` bestaat niet meer. Bij clingo droeg het feit bij A de verkeerde naam (`erkenning × V5`: `ctx.rule_name` bleef staan van de vorige regel).
+
+Op de eindstand: elke cel van A, B, C, D en E in beide volgordes en op alle vier de uitvoerders `PASS` of `PLAYED 1`, met A bergloon 30; B bergloon 30 en aandeel 3; C toeslag 7; D heffing 9; E bergloon 30 en aandeel 3; alle consistent (`werk/fout-op-tussenstand/logs/measure-final.log`).
+
+### Wat er veranderde
+
+**Spec (voorstel).** De alinea "Faults and deposits are read at the fixpoint" in ch. 5.7 na "Divergence by two writers", met de voorgestelde tekst letterlijk, drie zinnen eraan (een fout staat in plaats van de write; meerdere fouten noemt het rapport alle; de blokkade komt vóór voorwaarde en waarde) en uitgewerkte voorbeelden A, B, C, D met absolute uitkomsten. Vervallen: de zin van ch. 6.1 over deponeringen (residu (b)) en de zin van ch. 7.1 dat tijdelijke deponeringen blijven staan. Ch. 5.4 krijgt de zin dat een andere schrijver met dezelfde waarde de initialisatie ook verdringt, ch. 5.6 één zin, ch. 7.5 en 7.8 de verwijzing, en de tabel van ch. 5.7b twee getuigen bij EF-005 en één bij EF-006.
+
+**Ref.** `World.t` draagt `outcomes`: per (form, at) de deponeringen of de fout van de laatste evaluatie. `channel` is daaruit afgeleid. `Eval.over_subjects` vangt `Value.Fault` per onderwerp, zet de wereld terug op die van vóór de evaluatie en bewaart de fout; `raise_standing_fault` meldt aan het einde van elk stratum, na generaties en checks. Een geblokkeerde initialisatie rekent voorwaarde en waarde niet uit. Een uniciteit heeft haar uitkomst onder `at = ""`.
+
+**Clingo.** `translate_rule`: de voorwaarde van een initialisatie krijgt `init_guard` als `rule_guard`. `translate_chain`: voorwaarde en gevolg van een default krijgen `reached n`, de rechtvaardiging en bij een initialisatiedefault `not hi(S)`. Nieuw veld `deposit_guard`, alleen op `deposit`: een gedeclareerde default deponeert onder `decN(S,_)`; in `rule_guard` zou dat zijn eigen premisse zijn, omdat de waardehelpers `rule_guard` dragen. Het kanaal heet nu de doelvorm, of bij een uit v0 ontsuikerde vorm de regelnaam.
+
+**Drools.** `Consequence.Decision` draagt `deposit` (twee weergaven: `PatternDslRendering`, `DrlRendering`): waar het besluit gevuld is, deponeert het wat de sonde hoorde; bij leeg niets. Een deling in de rechtvaardiging gaat via `depositRule` met `decidedBy`: de deponering staat zolang `Decides` of `Outcome` van die default staat. De rol `CONDITION_DEPOSIT` komt nu ook bij `Kind.DEFAULT` voor. De twee refusal-plaatsen en `division(Condition, Expr)` zijn weg. De wortel in een default blijft geweigerd.
+
+### Goldens
+
+Twaalf goldens, elk document in beide volgordes (achtervoegsel `-omgekeerd`), met `source.rgs`, `ir.json`, `NOTE.md`:
+
+| golden | cases per volgorde |
+|---|---|
+| `jutterswet-initialisatie-naast-regel` (A) | 5 |
+| `jutterswet-lezer-van-initialisatie` (B) | 3 |
+| `jutterswet-voorwaarde-onder-invoer` (C) | 4 |
+| `jutterswet-deponering-onder-invoer` (D) | 4 |
+| `jutterswet-fout-op-tussenstand` (E) | 2 |
+| `jutterswet-deling-in-afwijking` (declared groups, DROOLS-165) | 10 |
+
+Zes rode cases, elk één case: `corpus/red/jutterswet-fout-aan-fixpunt`, `jutterswet-initialisatie-past-niet`, `jutterswet-afwijking-past-niet`, elk met `-omgekeerd`, EF-006.
+
+### Rood eerst
+
+Op de binaries van `7c0220d11` (`logs/red-final.log`), per golden het aantal rode cases:
+
+| golden | ref | clingo | Drools |
+|---|---|---|---|
+| initialisatie-naast-regel | 0 van 5 | 4 van 5 | EXCLUDE DROOLS-120 |
+| -omgekeerd | 2 van 5 | 4 van 5 | EXCLUDE DROOLS-120 |
+| lezer-van-initialisatie | 0 van 3 | 0 | PLAYED 3 |
+| -omgekeerd | 1 van 3 | 0 | PLAYED 3 |
+| voorwaarde-onder-invoer, beide | 1 van 4 | 2 van 4 | PLAYED 4 |
+| deponering-onder-invoer, beide | 1 van 4 | 1 van 4 | PLAYED 4 |
+| fout-op-tussenstand | 0 van 2 | 0 | PLAYED 2 |
+| -omgekeerd | 2 van 2 | 0 | PLAYED 2 |
+| deling-in-afwijking, beide | 0 van 10 | 8 van 10 | EXCLUDE DROOLS-165 |
+
+Twee goldens zijn op de basis dus op geen enkele uitvoerder rood (`lezer-van-initialisatie` en `fout-op-tussenstand` voorwaarts): dat zijn de controles van hun omgekeerde tweeling. De flankcases en de rode cases van `jutterswet-fout-aan-fixpunt` waren op ref en clingo al groen, omdat ze vastleggen wat moet blijven; zij gaan rood onder M4 hieronder. De rode cases `initialisatie-past-niet` en `afwijking-past-niet` waren op Drools een weigering.
+
+`ref/test` op de basis met de nieuwe tests: 54 keer FAIL, onder meer `WV-5.7-fixpoint-a [erkenning, standaardbergloon, bergloon] (expected consistent, but the channel carries: standaardbergloon × V1)` en `WV-5.7-fixpoint-fault-between … (fault: V1.aandeel: value 90/7 does not fit …)`. Getuigen Drools op de basis: de oude tekst pinde de weigering.
+
+### Mutaties (niet gecommit; `werk/fout-op-tussenstand/probe/mutate_ref.sh`, `mutate_rest.py`, logs `mut-*.log`)
+
+| | recept | uitkomst |
+|---|---|---|
+| M1 | ref: `blocked` altijd onwaar | onder meer `WV-5.7-fixpoint-c`, `-d` rood |
+| M2 | `set_outcome`: lege uitkomst verwijdert niet | `-a` 5, `-b` 20, `-fault-between` 20 |
+| M3 | `over_subjects`: fout niet vangen (`when false`) | `-a-nonexact` 5, `-fault-between` 12 |
+| M4 | `raise_standing_fault` niet aanroepen | `-fault-stands`, en de WF-rijen die een fout verwachten |
+| M5 | `write_attr` laat `init_written` staan | `-a-equal` 5, `-a` 5, `-b` 20 |
+| M6 | eigendomsverlies telt niet als verandering | `-a-equal` 1 |
+| C1 | clingo: `deposit_guard` leeg | deling-in-afwijking case 2, 3, 9 |
+| C2 | `rule_guard` van het gevolg leeg | A case 1, 2; deling case 5, 6 |
+| C3 | `rule_guard` van de rechtvaardiging leeg | deling case 5, 6 |
+| C4 | `init_guard` niet op de voorwaarde | C case 1, 2; D case 1 |
+| C5 | kanaalsleutel altijd de doelvorm | A case 5 |
+| D1 | Drools: `Decision` zonder `deposit` | exec en DRL: deling case 4 |
+| D2 | `depositRule` zonder `decidedBy` | exec en DRL: deling case 9 |
+| D3 | exec: deponering vóór de leeg-toets | exec: deling case 2, 3; DRL `PLAYED 10` |
+| D4 | DRL: `decisionOf` zonder deponering | DRL: deling case 4; exec `PLAYED 10` |
+
+### Aangepaste verwachtingen en getuigen
+
+Geen vloer verlaagd. `EXPECTED_PLAYED` 281 → 293. In `scripts/check-red.sh` zes `NOFAULT`-regels erbij (reden hieronder).
+
+Suite van clingo (`test_clingo.ml`), omdat ref op de tussenstand niet meer faalt:
+- 15 rijen `named_refusal ~ref_plays:false` → `~ref_plays:true`: tr-cr-1, tr-w-1, tr-pm-1, tr-pm2-1, tr-pm2-ctl, tr-kv-1, tr-kv-listed, r6-dmd-1, r6-ebar, r6-alle-fold, r6-pres, tr-of-1, r6-of-alle, r6-agg-comp, r6-nav. Oud: ref faalt op de pass vóór de creatie. Nieuw: ref speelt, clingo weigert nog in de genoemde zin.
+- tr-pm2-ctl: de rijen `hb` (bonus leeg) → bonus 4, consistent. De oude rijen zijn nooit gelezen, omdat ref faalde; 4 volgt met de hand uit restpost 1 en de gemaakte schuit.
+- 4 rijen `pinned_silent` → `both_answer`: t1 ([S3]), r6-alle-nul, r6-agg-ite, r6-regelcond-nul ([S4]). De README-afwijkingen [S3] en [S4] zijn weg; [S3] noemde dit "a norm question for the maintainer".
+
+Drools:
+- `DefaultsDivisionWitnessTest`: vijf rijen `refused` → `played` met dezelfde waarden; `a_division_under_another_operation_stays_refused` → `…_decides_with_its_deposit` (V3 5,00 en `Vondst.verhouding` EF-031); nieuw `a_default_that_a_higher_one_displaces_does_not_deposit`. De wortelrij blijft geweigerd.
+- `ZeroDivisorWitnessTest.a_zero_divisor_in_the_consequence_of_a_default`: weigering → V1 0,75, V3 1,00, consistent, beide takken.
+- `TmsInitialisationWitnessTest.a_division_in_an_initialisation_beside_another_writer_is_refused` → `…_counts_at_the_fixpoint`: elke volgorde, beide takken, V1 30 consistent en V2 leeg met EF-005.
+- `TmsCreationInputWitnessTest.a_division_in_an_initialisation_beside_a_writer_on_a_sister_subtype`: weigering met de supertype-regel → `gespeeld`.
+- `LetCarrierWalkWitnessTest.the_defaults_division_fence_fires_through_a_let` → `a_division_behind_a_let_in_a_default_plays`: toeslag 5,0000.
+- `CompanionPathWitnessTest.the_defaults_division_fence_stays_standing_for_a_division_in_a_letbody` → `a_division_in_a_let_body_in_a_default_falls_through`: toeslag 0,0000, consistent.
+- `FilterFaultWitnessTest.a_defaults_group_with_a_fold_that_can_fail_is_refused` → `…_plays_the_higher_default`: J1 1, consistent.
+- `StackCompositionWitnessTest.a_refused_stack_…`: het apparaat voor de geweigerde stack is nu een wortel in plaats van een deling.
+- `DefaultsplanWitnessTest`: 22 plannen `, facts=[` → `, deposit=null, facts=[`, het nieuwe recordveld in de dump.
+- `DepositFlagSlotWitnessTest`: een `Decision` met `deposit` vult haar sonde (nieuwe tak in de switch).
+
+### Getuigen uit de aanvulling (ref, elke volgorde, `logs/witness-1.log`)
+
+Documenten uitgeschreven met de `main` van de testklassen.
+
+- **`TmsInputFormWitnessTest` deel E: dezelfde klasse, gerepareerd.** case2: basis 5 van 6 volgordes PASS, 1 keer fout over V4; nu 6 van 6. case en case3 faalden en falen in elke volgorde: die fout staat aan het fixpunt, zoals de getuige beschrijft.
+- **`TmsTimelineWitnessTest` B2: andere oorzaak, blijft staan.** 1 van 2 volgordes `J1.jaardeel = … 306 … 59, expected … 4`, op de basis en nu gelijk. Ref houdt een geschreven tijdlijn vast waarvan de voorwaarde later onwaar wordt.
+- **`TmsWholePeriodWitnessTest` A: andere oorzaak, blijft staan.** 8 van 24 volgordes PASS, op de basis en nu gelijk (`J1.stilpremie = 30`, `J2.trouwpremie = 10`): hetzelfde.
+- **`TmsWholePeriodWitnessTest` A3: andere oorzaak, blijft staan.** 0 van 6 PASS, gelijk: `J5.ongelijkpremie = 10` in elke volgorde (de vergelijking tegen leeg, ch. 1.2), `J1.gelijkpremie = 20` in 3 volgordes (geschreven waarde).
+
+De gedeelde oorzaak bij B2, A en het tweede deel van A3 is de geschreven waarde die blijft staan: het andere residu van ch. 6.1 ("a condition-guarded attribute write whose condition later turns false keeps its written value"). Het besluit van 2026-10-09 noemt fout en deponering, niet de waarde, dus dit is niet gerepareerd.
+
+### `deling-door-leeg-onder-initialisatie`
+
+Op de eindstand geven beide cases op ref, clingo, exec en DRL `PASS` of `PLAYED 1`: case 1 `aandeel` leeg en inconsistent onder `standaardaandeel`, case 2 `aandeel` 5, consistent. De twee gemeten afwijkingen van die kaart (clingo's deponering en de naam `?`) zijn daarmee weg. Van haar acceptatie blijft: een eigen golden met die vorm (A case 3 en 5 dekken hem op één initialisatie met andere schrijver) en (c), de andere kanaalproducenten onder een initialisatie, niet nagelopen. De hoofdsessie kan haar sluiten of tot die twee punten terugbrengen.
+
+### Voorlopige besluiten
+
+1. **Twee leesregels voor een default.** Een gedeclareerde default deponeert alleen waar hij beslist (ch. 7.1). Een uit v0 ontsuikerde vorm deponeert waar hij wordt uitgerekend, ook bij een lege waarde, onder de regelnaam, want ch. 7.8 en `deling-door-leeg-onder-initialisatie` case 1 eisen dat, en ref en Drools doen het zo. Alternatief: ook de initialisatie speculatief, wat ch. 7.3 letterlijk zou kunnen dragen, maar dat verandert case 1 en de flank van A.
+2. **Meerdere staande fouten.** Ref rapporteert code en parameters van de eerste in sorteervolgorde (onafhankelijk van de documentvolgorde), de teksten van alle in de tekst. `Value.Fault` draagt één code; gate 8 leest één `CODE`-regel van ref. Geen rode case raakt dit.
+3. **Alle fouten uit een evaluatie op een onderwerp zijn uitgesteld**, ook EF-015 en EF-017. Fouten buiten een onderwerp (een geldigheid zonder datum, een statische weigering) blijven meteen vallen; EF-016 ook, want dat is geen uitkomst van één vorm.
+4. **Eigenaarschap telt als verandering.** Schrijft een andere schrijver de waarde die de initialisatie al schreef, dan geeft `write_attr` `changed = true`, omdat de blokkade dat leest. Zonder dat bleef de deponering van de initialisatie staan (M6). Gevonden doordat gate 17 ref's trace (`HOLDS`) tegen Drools (`DISPLACED`) hield op `jutterswet-lezer-van-initialisatie-omgekeerd` case 3.
+5. **Rode EF-006-flanken staan op Drools als `NOFAULT`.** Die tak kent geen schrijfgrens (de bestaande regel `decimal-nonterminating`). De flank "een fout aan het fixpunt blijft gemeld" is voor Drools gedekt door `TmsFaultWitnessTest` (wortel) en voor de deponeringen door de goldens.
+6. **Golden E en de golden voor gedeclareerde groepen zijn extra** ten opzichte van de kaart, omdat EF-005 geen harde fout meer is en anders niets de harde fout en DROOLS-165 in de corpus vastlegt.
+
+### Voorstel `spec/CONSTRUCTS.md`
+
+Rij 8, achteraan: "**Faults and deposits at the fixpoint (2026-11-01, card `fout-op-tussenstand`, RUNTIME-SEMANTICS ch. 5.7):** an evaluation fault and a §9.5 deposit are outcomes of one form's evaluation on one subject; re-evaluation replaces them, a form that does not decide is not evaluated, and the session reports what stands at the fixpoint of the form's stratum. Tracked delta against v0's persist-always deposits and immediate faults. A declared default deposits only where it decides; a v0 form the desugaring reads as a default deposits where it is evaluated. Goldens `jutterswet-initialisatie-naast-regel`, `jutterswet-lezer-van-initialisatie`, `jutterswet-voorwaarde-onder-invoer`, `jutterswet-deponering-onder-invoer`, `jutterswet-fout-op-tussenstand`, `jutterswet-deling-in-afwijking`, each in both rule orders."
+
+### Voorstel `spec/PLAN.md`
+
+In de alinea "Faults and deposits count at the fixpoint (2026-10-09 …)": "to be built" vervalt, en erachter: "Built 2026-11-01. A write whose condition later turns false keeps its value in the reference interpreter: the residual of ch. 6.1 stays, and `TmsTimelineWitnessTest` B2 and `TmsWholePeriodWitnessTest` A and A3 still measure it." In de alinea rond regel 1065 vervalt "Recorded, not opened: this branch withdraws a deposit made at an intermediate state where ref keeps it …".
+
+### Wat bleef liggen
+
+- De geschreven waarde die blijft staan (B2, A, A3 hierboven); een eigen kaart of normvraag.
+- Clingo weigert de 15 `named_refusal`-rijen nog in de genoemde zin, ook waar ref nu speelt. De README zegt het; de weigering is te ruim geworden en niet onjuist. Een kaart kan haar versmallen.
+- `IR-SPEC.md` regel 8899 en `RUNTIME-SEMANTICS.md` ch. 6.1 ("channel facts are never retracted") gaan over consistentie en uniciteit, die aan het fixpunt van hun stratum vuren. Ze spreken het besluit niet tegen, maar lezen stug naast ch. 5.7. Ik heb ze niet aangeraakt (IR-SPEC viel buiten de opdracht).
+- Ref's `run_consistency` vuurt nog steeds pas na de laatste generatie; dat hoeft niet meer voor de juistheid, omdat de uitkomst nu vervangt.
+- `vouwfilter-resterende-vormen` niet aangeraakt. Een deling in een vouwfilter onder een gedeclareerde default is wel gemeten: het proefdocument (`jutterswet`-model van `fold-filter-divides-by-zero`, `zware vondsten` als default) geeft op ref, clingo, exec en DRL 1 met EF-005 onder `Jutter.zware vondsten`; er is geen golden voor.
+
+### Gates (elk apart, in de worktree, op `dff96768f`, `logs/gates-r2.summary`)
+
+Groen: 1, 2, 3, 4, 5 (ref-suite 1686, 960 cases), 6 (suite 2238, 960 cases), 7, 8 (63 rode cases), 10 (154 rgs-goldens), 12 (293 gespeeld, DRL 293, JUnit 1714), 13, 17 (293 goldens vergeleken). Niet gedraaid: 9, 11, 14, 15, 16; die draait de hoofdsessie met `make gates`.
