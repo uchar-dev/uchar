@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.transpiler.core;
 
+import dev.uchar.regelspraak.core.TimeCalculation;
 import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.loader.IrLoader;
@@ -290,12 +291,11 @@ public final class EffectiveUnit {
      * timeline-declared attribute (all 19 such folds are TOTAAL, 4 of them over a rate), which is precisely why
      * the corpus could not have been the source of this rule.
      *
-     * <p>What this does NOT check, deliberately: that the denominator is the grid's own unit ("€/kg" on a MAAND
-     * timeline). {@code ref} does check it; doing so here would need a granularity→unit mapping this class has no
-     * honest source for, and guessing one from abbreviations is the kind of name test this backend has already
-     * been bitten by. So it takes the one negative factor, and a unit with more than one stands unchanged, where the
-     * write boundary refuses it. The shape is absent from the corpus (all four rate cases are €/mnd on MAAND), and it is
-     * a question about the FOLD's value, which the verifier and ref own, not about a restatement.
+     * <p>The factor that rises is the one the calendar table spells as the unit of the attribute's grid, so "€/m/mnd" on
+     * a MAAND timeline is "€/m". What this does NOT check, deliberately: that there is one ("€/kg" on a MAAND timeline).
+     * {@code ref} does check it, and so does {@code TmsTranspiler.integrable}, which refuses such a member before a value
+     * is folded. Here the one negative factor rises, and a unit with more than one stands unchanged, where the write
+     * boundary refuses it.
      */
     /** The fold kinds that carry the §7.1 per-element timeline fold — the same two both consumers admit. */
     private static boolean foldsTimeline(Expr.FunctionKind kind) {
@@ -305,7 +305,10 @@ public final class EffectiveUnit {
     private static Unit afterTimeFolding(Expr operand, Unit u) {
         if (u == null || u.denominator() == null) return u;
         if (!(operand instanceof Expr.AttributeReference a) || a.objectType() == null) return u;
-        return Namen.containsName(a.objectType().granularityMembers(), a.attribute()) ? u.afterTimeFold() : u;
+        for (var member : a.objectType().granularityMembers().entrySet())
+            if (Namen.norm(member.getKey()).equals(Namen.norm(a.attribute())))
+                return TimeCalculation.afterTimeFold(u, member.getValue(), null);
+        return u;
     }
 
     private Unit letUnit(Expr e, Map<String, Unit> environment, int depth, Unit annotation) {

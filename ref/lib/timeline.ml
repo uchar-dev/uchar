@@ -514,13 +514,7 @@ let complement (true_periods : (int * int) list) ~(span : (int * int) list) : (i
       List.rev (walk sv [] inside))
     span
 
-(* the time unit the granularity's grid counts in (ch. 3.2 job 1) *)
-let granularity_time_unit : Ir_v0.Ast.grain -> Ir_v0.Checks.time_unit = function
-  | Day -> Tu_day
-  | Week -> Tu_week
-  | Month -> Tu_month
-  | Quarter -> Tu_quarter
-  | Year -> Tu_year
+let granularity_time_unit = Ir_v0.Checks.granularity_time_unit
 
 let time_unit_name : Ir_v0.Checks.time_unit -> string = function
   | Tu_year -> "jr"
@@ -546,14 +540,7 @@ let time_unit_name : Ir_v0.Checks.time_unit -> string = function
 let grid_unit (doc : Ir_v0.Ast.document) (g : Ir_v0.Ast.grain) :
     (Ir_v0.Ast.measure_unit, string) result =
   let because = granularity_time_unit g in
-  let candidates =
-    List.concat_map
-      (fun (_, (es : Ir_v0.Ast.unit_system)) ->
-        List.map (fun (d : Ir_v0.Ast.declared_unit) -> d.ge_unit) es.unit_list)
-      doc.unit_systems
-    |> List.filter (fun (e : Ir_v0.Ast.unit_factor) ->
-           Ir_v0.Checks.time_unit_of_unit (Ir_v0.Units.of_declared e) = Some because)
-  in
+  let candidates = Ir_v0.Checks.grid_candidates doc g in
   (* the factor as the rational it is, so two spellings of one value are
      one grid *)
   let key (e : Ir_v0.Ast.unit_factor) =
@@ -574,40 +561,46 @@ let grid_unit (doc : Ir_v0.Ast.document) (g : Ir_v0.Ast.grain) :
             unit to integrate against (ch. 3.6)"
            (List.length ks) (time_unit_name because))
 
-(* the multiplier of one segment (ch. 3.6 "Units"; ch. 2.6, rule 8): a plain or
+(* what one segment contributes (ch. 3.6 "Units"; ch. 2.6, rule 8): a plain or
    unitless value is weighted by a bare count, but a value with a negative factor
-   is INTEGRATED — the count is a duration stated in the GRID's own unit, and the
-   product takes one power of the factor of that class (€/mnd × mnd = €, the §4.20
-   Tabel 30 row-2 result the frontend types statically; €/jr over a per-month grid
-   cancels by the declared factor, €/dg^2 over days is €/dg). A value whose
-   negative factors the declarations do not connect to the grid unit is refused
-   loudly, naming BOTH units: no executor may invent a factor nobody declared. *)
-let duration ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result option) units (v : Value.t) : Value.t
+   is INTEGRATED — the count is a duration stated in the GRID's own unit, so the
+   negative factor of that class takes one power and the value the factor between
+   them (€/mnd × mnd = €, the §4.20 Tabel 30 row-2 result the frontend types
+   statically; €/m/mnd over months is €/m; €/jr over a per-month grid cancels by
+   the declared factor; €/dg^2 over days is €/dg). A value with no negative factor
+   of the class of the grid unit is refused loudly, naming BOTH units: no executor
+   may invent a factor nobody declared. *)
+let integrated_segment ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result option) units (v : Value.t) : Value.t
     =
-  let plain = Num (Q.of_int units, Unitless) in
   match v with
-  | Num (_, Unit u) when Ir_v0.Units.negatives u <> [] -> (
+  | Num (q, Unit u) when Ir_v0.Units.negatives u <> [] -> (
       match grid_unit with
       | None ->
           fault "the temporal total of a %s value reached the collapse without a grid unit (ch. 3.6)"
             (Arith.show_unit (Unit u))
       | Some (Error why) -> fault "the temporal total of a %s value: %s" (Arith.show_unit (Unit u)) why
-      | Some (Ok gu) ->
-          let of_grid (f : Ir_v0.Ast.unit_factor) =
-            Arith.convertible (Ir_v0.Units.of_declared f) gu
-          in
-          if List.exists of_grid (Ir_v0.Units.negatives u) then Num (Q.of_int units, Unit gu)
-          else
-            fault
-              "the temporal total of a %s value cannot integrate over a %s grid: the declarations \
-               connect no conversion between its denominator and the grid unit (ch. 3.6)"
-              (Arith.show_unit (Unit u))
-              (Arith.display_unit gu))
+      | Some (Ok gu) -> (
+          let g = List.hd gu in
+          match Ir_v0.Units.negative_of_grid g u with
+          | Some f ->
+              let powers =
+                if Ir_v0.Units.same_atom g f then []
+                else Ir_v0.Units.factor gu (Ir_v0.Units.of_declared f)
+              in
+              Num
+                ( Q.mul (Q.mul q (Q.of_int units)) (Arith.restatement powers),
+                  Arith.unit_of_option (Ir_v0.Units.risen u f) )
+          | None ->
+              fault
+                "the temporal total of a %s value cannot integrate over a %s grid: the declarations \
+                 connect no conversion between its denominator and the grid unit (ch. 3.6)"
+                (Arith.show_unit (Unit u))
+                (Arith.display_unit gu)))
   (* a value unit without a negative factor keeps the plain rule, and so does a
      unitless value *)
-  | _ -> plain
+  | _ -> Arith.mul v (Num (Q.of_int units, Unitless))
 
-(* totaal(tl) = Σ value(s) × duration(van, tot); a leeg segment
+(* totaal(tl) = Σ value(s) × duration(van, tot) (a segment: [integrated_segment]); a leeg segment
    contributes 0; a segmentless timeline totals to 0 (the absent-timeline
    leeg case is the caller's, ch. 3.6). [grid_unit] is resolved once per
    fold by the caller (it needs the document); its absence only bites a
@@ -619,6 +612,6 @@ let grand_total ?grid_unit (g : Ir_v0.Ast.grain) (tl : t) : Value.t =
       | Empty -> acc
       | v ->
           let units = whole_units g s.s_from s.s_to in
-          Arith.add acc (Arith.mul v (duration ?grid_unit units v)))
+          Arith.add acc (integrated_segment ?grid_unit units v))
     (Num (Q.zero, Unitless))
     (normalise tl)

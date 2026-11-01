@@ -2042,6 +2042,37 @@ let () =
     ~needle:
       "restates a EUR/jr value into a mnd grid by a declared factor other than 1, which this \
        integer encoding does not carry";
+  (* ch. 2.6, rule 8 with more than one negative factor: the factor of the grid
+     rises, the other stays, and the write fence compares EUR/m with EUR/m. *)
+  let meter_unit =
+    {|{ "node": "Unit", "abbreviation": "m", "system": "Maat", "canonical": "m",
+      "factorToCanonical": { "num": 1, "den": 1 } }|}
+  in
+  let kg_unit =
+    {|{ "node": "Unit", "abbreviation": "kg", "system": "Maat", "canonical": "kg",
+      "factorToCanonical": { "num": 1, "den": 1 } }|}
+  in
+  let per factor = String.sub factor 0 (String.rindex factor '}') ^ {|, "exponent": -1 }|} in
+  clingo_matches ~name:"rule 8: EUR/m/mnd over a month grid leaves EUR/m"
+    ~ir:
+      (set_fold_doc ~kind:"total" ~operand_ot:"Vondst"
+         ~rate_unit:(eur meter_unit ^ ", " ^ per mnd_unit)
+         ~objective_unit:(eur meter_unit))
+    ~case_text:(set_fold_case ~v1:v1_timeline);
+  faults_with ~name:"rule 8: the integrated total no longer fits the rate with both factors"
+    ~ir:
+      (set_fold_doc ~kind:"total" ~operand_ot:"Vondst"
+         ~rate_unit:(eur meter_unit ^ ", " ^ per mnd_unit)
+         ~objective_unit:(eur meter_unit ^ ", " ^ per mnd_unit))
+    ~case_text:(set_fold_case ~v1:v1_timeline)
+    ~needle:{|non-identical units under the write to "bewaarlast"|};
+  faults_with ~name:"rule 8: two negative factors, none of the grid, is the existing fault by name"
+    ~ir:
+      (set_fold_doc ~kind:"total" ~operand_ot:"Vondst"
+         ~rate_unit:(eur kg_unit ^ ", " ^ per meter_unit)
+         ~objective_unit:(eur kg_unit ^ ", " ^ per meter_unit))
+    ~case_text:(set_fold_case ~v1:v1_timeline)
+    ~needle:"the declarations connect no conversion between its denominator and the grid unit";
   (* the strip is the AGGREGATION's, so a rate TARGET no longer matches: the
      integrated value is EUR and the target EUR/mnd. ref refuses the same
      write (EVALUATION FAULT: incompatible units: EUR/mnd vs EUR). Were the

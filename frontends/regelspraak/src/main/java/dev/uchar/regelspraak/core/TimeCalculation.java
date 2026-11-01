@@ -29,6 +29,48 @@ public final class TimeCalculation {
         return e == null || !e.isAtom() ? null : spellingChronoUnit(e.abbreviation());
     }
 
+    /** The time unit the grid of {@code g} counts in, as {@link #chronoUnit(Unit)} names it. */
+    public static String gridChronoUnit(RegelSpraakModel.Granularity g) {
+        return switch (g) {
+            case DAG -> "DAYS";
+            case WEEK -> "WEEKS";
+            case MAAND -> "MONTHS";
+            case KWARTAAL -> "KWARTAAL";
+            case JAAR -> "YEARS";
+        };
+    }
+
+    /** Whether a negative factor of {@code u} is the time unit {@code grid} by the calendar table. */
+    public static boolean hasNegativeFactorOfGrid(Unit u, String grid) {
+        return u.negativeFactors().stream().anyMatch(f -> grid.equals(spellingChronoUnit(f.abbreviation())));
+    }
+
+    /** The unit a fold over a timeline of grid {@code g} leaves (RUNTIME-SEMANTICS ch. 2.6, rule 8): the negative factor of
+     *  the grid's class rises one power. That is the factor the calendar table spells as the grid's unit, else, where
+     *  {@code model} is given, the first of the class the document declares that unit in: over months "€/m/mnd" gives
+     *  "€/m" and "€/jr/m" with "jr = 12 mnd" gives "€/m". Without a factor of the class the reading of a unit without a
+     *  grid stands ({@link Unit#afterTimeFold}). */
+    public static Unit afterTimeFold(Unit u, RegelSpraakModel.Granularity g, RegelSpraakModel model) {
+        String grid = gridChronoUnit(g);
+        for (Unit.Factor f : u.negativeFactors())
+            if (grid.equals(spellingChronoUnit(f.abbreviation()))) return u.risen(f);
+        String gridClass = model == null ? null : gridClass(model, grid);
+        if (gridClass != null)
+            for (Unit.Factor f : u.negativeFactors())
+                if (gridClass.equals(f.quantityClass())) return u.risen(f);
+        return u.afterTimeFold();
+    }
+
+    /** The class of the unit the document declares for the grid unit {@code grid}; null where it declares none or
+     *  units of several classes, where no factor can be named as the grid's. */
+    private static String gridClass(RegelSpraakModel model, String grid) {
+        java.util.Set<String> classes = new java.util.LinkedHashSet<>();
+        for (RegelSpraakModel.UnitSystem s : model.unitSystems.values())
+            for (Unit u : s.units.values())
+                if (grid.equals(chronoUnit(u))) classes.add(u.factors().get(0).quantityClass());
+        return classes.size() == 1 ? classes.iterator().next() : null;
+    }
+
     /** Whether {@code spelling} stands in the NORMATIVE calendar table (uchar's RUNTIME-SEMANTICS ch. 3.8,
      *  thirty spellings over nine units). That table is what decides which of the two readings a duration
      *  unit has — "a spelling outside the table is a declared day kind" — so the day-kind registration guard

@@ -2824,7 +2824,32 @@ let () =
   check "WV-2.6-rule-8-two-negative-factors-are-the-grid's-to-say"
     (integrated (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ mnd))) = "geen claim");
   expect_fault "WV-2.6-rule-8-no-negative-factor-of-the-grid" (fun () ->
-      Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit (Ir_v0.Units.over eur kg) "10")))
+      Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit (Ir_v0.Units.over eur kg) "10")));
+  let eur_per_m_per_mnd = Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ mnd)) in
+  let over_mnd u =
+    match Ir_v0.Units.integrated ~grid:(List.hd mnd) u with
+    | Some (Some left) -> Ir_v0.Units.render left
+    | Some None -> "geen"
+    | None -> "geen claim"
+  in
+  check "WV-2.6-rule-8-the-factor-of-the-grid-rises" (over_mnd eur_per_m_per_mnd = "€/m");
+  check "WV-2.6-rule-8-the-grid-names-the-factor-whatever-its-place"
+    (over_mnd (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (mnd @ kg))) = "€/kg");
+  check "WV-2.6-rule-8-a-factor-of-the-class-rises-where-the-grid's-own-is-absent"
+    (over_mnd (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ jr))) = "€/m");
+  check "WV-2.6-rule-8-the-grid's-own-factor-goes-before-its-class"
+    (over_mnd (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (jr @ mnd))) = "€/jr");
+  check "WV-2.6-rule-8-two-negative-factors-without-the-grid-claim-nothing"
+    (over_mnd (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ kg))) = "geen claim");
+  check "WV-2.6-rule-8-one-negative-factor-without-the-grid-still-rises"
+    (over_mnd (Ir_v0.Units.over eur kg) = "€");
+  totals_to "WV-2.6-rule-8-eur-per-jr-per-m-over-months-restates-into-eur-per-m"
+    (num_with_unit (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ jr))) "10") "10" "€/m";
+  totals_to "WV-2.6-rule-8-the-negative-factor-rises-beside-a-positive-one-of-the-grid"
+    (num_with_unit (Ir_v0.Units.over (Ir_v0.Units.canonical_order (mnd @ eur)) jr) "10") "10" "mnd·€";
+  expect_fault "WV-2.6-rule-8-two-negative-factors-none-of-the-grid" (fun () ->
+      Timeline.grand_total ~grid_unit:(grid mnd) month
+        (year_2024 (num_with_unit (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ kg))) "10")))
 
 (* the grid unit is looked up in the DOCUMENT's declared unit systems
    (ch. 3.6 / ch. 3.8 spelling table), once per fold: present, absent, and

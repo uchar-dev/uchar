@@ -358,6 +358,39 @@ class UnitIdentityTest {
                 "14 per week is 2 per dag");
     }
 
+    private static RegelSpraakModel totalOver(String rate, String target) {
+        return Resolver.resolve("""
+            Eenheidsysteem Tijd
+                de maand mnd
+                het jaar jr = 12 mnd
+            Eenheidsysteem Munt
+                de euro (mv: euros) EUR €
+            Eenheidsysteem Maat
+                de meter m
+                de kilo kg
+            Objecttype de Haven (mv: Havens)
+                het tarief Numeriek (geheel getal) met eenheid %s voor elke maand;
+                het totaalbedrag Numeriek (geheel getal) met eenheid %s;
+            Regel totaalbedrag
+                geldig altijd
+                    Het totaalbedrag van een Haven moet berekend worden als het totaal van zijn tarief.
+            """.formatted(rate, target));
+    }
+
+    /** Ch. 2.6, rule 8: of more than one negative factor the factor of the class of the grid rises, its own atom first. */
+    @Test void a_total_over_a_timeline_raises_the_factor_of_the_grid() {
+        assertClean(totalOver("€/m/mnd", "€/m"));
+        assertClean(totalOver("€/mnd/m", "€/m"));
+        assertClean(totalOver("€/jr/m", "€/m"));
+        assertClean(totalOver("€/jr/mnd", "€/jr"));
+        assertClean(totalOver("€/mnd^2", "€/mnd"));
+        assertTrue(refused(totalOver("€/m/mnd", "€/m/mnd"), "RGS-335"), "het totaal is €/m, geen tarief meer");
+        assertTrue(refused(totalOver("€/m/mnd", "€/mnd"), "RGS-335"), "de factor van het rooster stijgt, niet de andere");
+        // no factor of the grid: the unit stands, and that a total over this attribute integrates nothing is the executors' fault
+        assertClean(totalOver("€/kg/m", "€/kg/m"));
+        assertTrue(refused(totalOver("€/kg/m", "€/kg"), "RGS-335"), "geen factor van het rooster stijgt");
+    }
+
     /** A scenario input in the other reciprocal restates exactly, by the inverted factor of the denominator. */
     @Test void a_scenario_value_in_a_reciprocal_restates_into_the_declared_reciprocal() {
         String source = TIME + """

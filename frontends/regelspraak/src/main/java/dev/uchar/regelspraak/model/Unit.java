@@ -42,7 +42,7 @@ public record Unit(List<Factor> factors) {
         /** The canonical unit, or the abbreviation of a bare unit, which is the canonical target of every unit that
          *  names it. A name is compared as written: a copy that lies in case alone is another class, and a site that
          *  must restate it faults rather than guess. */
-        String quantityClass() { return canonical != null ? canonical : abbreviation; }
+        public String quantityClass() { return canonical != null ? canonical : abbreviation; }
 
         boolean sameAtom(Factor o) {
             return Objects.equals(abbreviation, o.abbreviation) && Objects.equals(system, o.system)
@@ -199,24 +199,30 @@ public record Unit(List<Factor> factors) {
     /** One factor with exponent 1: the only unit a calendar table or a canonical table can name. */
     public boolean isAtom() { return factors.size() == 1 && factors.get(0).exponent() == 1; }
 
+    /** The factors with a negative exponent, in the order of the list. */
+    public List<Factor> negativeFactors() { return negatives(); }
+
     /** The one negative factor as a stand-alone unit of exponent 1; null where there is no negative factor or more than
-     *  one. It is the unit a fold over a timeline can integrate against without the grid in hand. */
+     *  one. */
     public Unit negativeAtom() {
         List<Factor> below = negatives();
         return below.size() == 1 ? new Unit(List.of(below.get(0).withExponent(1))) : null;
     }
 
-    /** The unit a fold over a timeline leaves (ch. 2.6, rule 8): the integration multiplies by the grid unit, so the one
-     *  negative factor rises one power, "€/mnd" gives "€", "€/dg^2" gives "€/dg" and "1/dg" no unit (null). A unit with
-     *  no negative factor or more than one stands unchanged: which one rises is the grid's to say, this model does not
-     *  hold the grid, and the write boundary then refuses the value by name. */
+    /** The unit a fold over a timeline leaves where the reader does not hold the grid (ch. 2.6, rule 8): the one negative
+     *  factor rises one power, "€/mnd" gives "€", "€/dg^2" gives "€/dg" and "1/dg" no unit (null). A unit with no negative
+     *  factor or more than one stands unchanged: which one rises is the grid's to say, and the write boundary then
+     *  refuses the value by name. {@link dev.uchar.regelspraak.core.TimeCalculation#afterTimeFold} holds the grid. */
     public Unit afterTimeFold() {
         List<Factor> below = negatives();
-        if (below.size() != 1) return this;
+        return below.size() == 1 ? risen(below.get(0)) : this;
+    }
+
+    /** This unit with the negative factor {@code f} one power higher: null where no factor is left. */
+    public Unit risen(Factor f) {
         List<Factor> all = new ArrayList<>(factors);
-        int at = all.indexOf(below.get(0));
-        all.set(at, below.get(0).withExponent(below.get(0).exponent() + 1));
-        all.removeIf(f -> f.exponent() == 0);
+        all.set(all.indexOf(f), f.withExponent(f.exponent() + 1));
+        all.removeIf(x -> x.exponent() == 0);
         return all.isEmpty() ? null : new Unit(all);
     }
 

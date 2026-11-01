@@ -226,6 +226,20 @@ let time_unit_of_spelling s =
 let time_unit_of_unit (e : measure_unit) =
   if Units.is_atom e then time_unit_of_spelling (Units.numerator_text e) else None
 
+(* the time unit the granularity's grid counts in (ch. 3.2 job 1) *)
+let granularity_time_unit : grain -> time_unit = function
+  | Day -> Tu_day
+  | Week -> Tu_week
+  | Month -> Tu_month
+  | Quarter -> Tu_quarter
+  | Year -> Tu_year
+
+(* The declared units the grid of a grain counts in, by the calendar table. *)
+let grid_candidates (doc : document) (g : grain) : unit_factor list =
+  let because = granularity_time_unit g in
+  List.concat_map (fun (_, (es : unit_system)) -> List.map (fun (d : declared_unit) -> d.ge_unit) es.unit_list) doc.unit_systems
+  |> List.filter (fun (e : unit_factor) -> time_unit_of_unit (Units.of_declared e) = Some because)
+
 (* sub-day units demand millisecond-precision operands *)
 let time_unit_sub_day = function
   | Tu_hour | Tu_minute | Tu_second | Tu_millisecond -> true
@@ -3070,6 +3084,20 @@ let set_reading ctx ~ranged (args : expr list) : bool option =
   | [ Attribute_reference _ ] when ranged -> None
   | _ -> Some false
 
+(* The declared unit of the grid a total of [args] folds over, where the operand
+   is an attribute with a granularity and the document declares that unit in one
+   class; a claim over several classes would be a guess, and ref faults on them. *)
+let fold_grid ctx (args : expr list) =
+  match args with
+  | Attribute_reference { object_type = Some otn; attribute_ref = Some a; _ } :: _ -> (
+      match Option.map (fun (ot : object_type) -> find_ci ot.attribute_granularity a) (object_type ctx otn) with
+      | Some (Some (Some g)) -> (
+          match grid_candidates ctx.doc g with
+          | e :: rest when List.for_all (fun x -> Units.atom_class x = Units.atom_class e) rest -> Some e
+          | _ -> None)
+      | _ -> None)
+  | _ -> None
+
 (* The expectation for one composite position, or [None] where v0 derives
    nothing there. The tuple is (what the message names, what the message
    calls the source, the derived datatype, the facets NOT claimed).
@@ -3274,9 +3302,9 @@ let composite_expectation ctx ~binders (e : expr) :
                   match t0 with
                   | Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }
                     when Units.negatives u <> [] -> (
-                      (* more than one negative factor: which one rises is the
-                         grid's to say, and the grid is not read here. No claim. *)
-                      match (Units.integrated u, t0) with
+                      (* more than one negative factor and none of the grid: an
+                         executor refuses the fold, and there is no unit to claim *)
+                      match (Units.integrated ?grid:(fold_grid ctx (a0 :: rest)) u, t0) with
                       | None, _ -> None
                       | Some left, Number n ->
                           Some (what, "the type derived from its first operand",

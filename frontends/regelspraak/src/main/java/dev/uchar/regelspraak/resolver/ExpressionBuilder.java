@@ -2938,6 +2938,13 @@ final class ExpressionBuilder {
                 && !(a.objectType() != null && a.objectType().granularityOf(a.attribute()) != null);
     }
 
+    /** Ch. 2.6, rule 8: over the grid of the attribute a fold reads, and without a grid where its operand reads none. */
+    private Unit afterTimeFold(Unit unit, Expr operand) {
+        RegelSpraakModel.Granularity g = operand instanceof Expr.AttributeReference a && a.objectType() != null
+                ? a.objectType().granularityOf(a.attribute()) : null;
+        return g == null ? unit.afterTimeFold() : TimeCalculation.afterTimeFold(unit, g, model);
+    }
+
     private Datatype functionType(Expr.FunctionKind kind, List<Expr> args) {
         Datatype first = args.isEmpty() ? unknown() : args.get(0).type();
         return switch (kind) {
@@ -2959,7 +2966,7 @@ final class ExpressionBuilder {
             // One predicate, no other behaviour moves.
             case TOTAAL -> setRead(args) ? first
                     : first instanceof Datatype.Numeric n && n.unit() != null && n.unit().denominator() != null
-                    ? new Datatype.Numeric(n.wholeNumber(), n.decimals(), n.sign(), n.unit().afterTimeFold())
+                    ? new Datatype.Numeric(n.wholeNumber(), n.decimals(), n.sign(), afterTimeFold(n.unit(), args.get(0)))
                     : first;
             // §4.12/§4.13: a multi-operand min/max result is the SMALLEST/LARGEST VALUE, whose
             // precision is value-dependent and not statically known. A single-operand min/max over a

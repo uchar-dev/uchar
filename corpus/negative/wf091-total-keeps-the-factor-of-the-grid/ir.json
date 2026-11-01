@@ -1,0 +1,370 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Haven",
+        "animate": false,
+        "plural": "Havens",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "havengeldtarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "m",
+                  "system": "Kademaat",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "mnd",
+                  "system": "Ligtijd",
+                  "canonical": "mnd",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "havengeld per meter",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "m",
+                  "system": "Kademaat",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kadeopbrengst per meter",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "m",
+                  "system": "Kademaat",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Schuit",
+        "animate": false,
+        "plural": "Schuiten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "kadetarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "m",
+                  "system": "Kademaat",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "mnd",
+                  "system": "Ligtijd",
+                  "canonical": "mnd",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "ligplaats",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "thuishaven",
+            "objectType": "Haven",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "schuit",
+            "objectType": "Schuit",
+            "plural": "schuiten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "€",
+              "euro",
+              "euros"
+            ]
+          }
+        ]
+      },
+      {
+        "node": "UnitSystem",
+        "name": "Ligtijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "mnd",
+            "system": "Ligtijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "maand"
+            ]
+          }
+        ]
+      },
+      {
+        "node": "UnitSystem",
+        "name": "Kademaat",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "m",
+            "system": "Kademaat",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "meter",
+              "meters"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "havengeld per meter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "havengeld per meter",
+              "subjectType": "Haven",
+              "source": {
+                "snippet": "Het havengeld per meter van een Haven"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "havengeldtarief",
+                  "subjectType": "Haven",
+                  "source": {
+                    "snippet": "zijn havengeldtarief"
+                  }
+                }
+              ],
+              "elementType": "Haven",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "m",
+                    "system": "Kademaat",
+                    "canonical": "m",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "mnd",
+                    "system": "Ligtijd",
+                    "canonical": "mnd",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "het totaal van zijn havengeldtarief"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

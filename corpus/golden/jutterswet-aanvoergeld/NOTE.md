@@ -85,20 +85,9 @@ expectations (gate 7). Gate 10 re-emits `source.rgs` byte-identically.
 
 ## Measured boundary of the form
 
-Two richer shapes of the same witness were built and rejected by
-measurement, not by taste — each would have turned gate 6 red:
-
-* a `t`-declared parameter compared against a `kg` attribute (truthful
-  types on both sides, a genuine conversion) —
-  `TRANSLATION FAULT: non-identical units under a comparison are not
-  translated (ref restates with an exact conversion factor this integer
-  encoding does not carry)`;
-* a composite-unit rate (`€/kg`) multiplied by the weight, which cancels
-  to `€` — `TRANSLATION FAULT: non-identical units under the write to
-  "aanvoergeld" are not translated (…)`, the ASP backend's unit-free
-  requirement on multiplicative operands.
-
-Both forms are carried by `ref` and by Drools; only the ASP encoding
-declines them. A golden must pass every gate, so the witness stays inside
-the identically-united additive/comparison subset all three executors
-carry.
+The witness stays inside the identically-united additive and comparison
+subset. Two richer shapes of it are carried by every executor as well, and
+are no part of this document: a `t`-declared parameter compared against a
+`kg` attribute, where the ASP backend multiplies both sides by the declared
+factor (ch. 2.6, rule 5), and a composite-unit rate (`€/kg`) multiplied by
+the weight, which cancels to `€` (rule 2).

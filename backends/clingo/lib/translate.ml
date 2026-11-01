@@ -1037,9 +1037,22 @@ let rec eff_unit ctx (e : expr) : measure_unit option =
          ([grid_strip_ok]), not this analysis's. *)
       (match eff_unit ctx arg with
       | Some u when Ir_v0.Units.negatives u <> [] -> (
-          (* more than one negative factor: no strip here, and the write fence
-             below refuses the value by name *)
-          match Ir_v0.Units.integrated u with Some left -> left | None -> Some u)
+          (* the factor of the attribute's grid rises. More than one negative
+             factor and none of the grid: no strip here, and the fold's arm refuses
+             the value by name. A grid the document does not name is that arm's
+             fault too, not this analysis's. *)
+          let grid =
+            let ranged = source_role <> None || source_path <> None in
+            Option.bind (fold_operand_otype ~element_object_type ~ranged object_type) (fun ot ->
+                Option.bind (Ir_v0.Checks.effective_ot ctx.doc ot) (fun (decl : object_type) ->
+                    match Ir_v0.Checks.find_ci decl.attribute_granularity a with
+                    | Some (Some g) -> (
+                        match Uchar_ref.Timeline.grid_unit ctx.doc g with
+                        | Ok [ gf ] -> Some gf
+                        | _ -> None)
+                    | _ -> None))
+          in
+          match Ir_v0.Units.integrated ?grid u with Some left -> left | None -> Some u)
       | plain -> plain)
   | Function_call { kind = Sum_function | Total | Minimum | Maximum | First | Last; call_arguments = arg :: _; _ }
     ->
@@ -2420,8 +2433,7 @@ let grid_strip_ok ctx ~what ~(gran : grain) (u : measure_unit option) =
       match Uchar_ref.Timeline.grid_unit ctx.doc gran with
       | Error why -> fault "the noemer strip of %s: %s" what why
       | Ok gu -> (
-          let of_grid f = Uchar_ref.Arith.convertible (Ir_v0.Units.of_declared f) gu in
-          match List.find_opt of_grid (Ir_v0.Units.negatives rate) with
+          match Ir_v0.Units.negative_of_grid (List.hd gu) rate with
           | None ->
               fault
                 "the noemer strip of %s cannot integrate a %s value over a %s grid: the \

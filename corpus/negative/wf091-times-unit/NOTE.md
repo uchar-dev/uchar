@@ -23,10 +23,7 @@ verifier-clean.
 This is the one arm with **no corpus witness at all**: measured 2026-09-04,
 no `times` node in golden, red, negative or the parity zone carries two
 unit-bearing operands, so the cancel rule is pinned by this negative and by
-nothing else. The two remaining `times` shapes stay outside the rule on
-purpose — an opaque product (ch. 2.5 fixes its algebra but not its wire
-spelling) and an unspellable rate factor (the shape the frontend refuses
-outright) — and the `times` arm claims the unit only, never the precision.
+nothing else. The `times` arm claims the unit only, never the precision.
 
 Falsifiable: drop `unit` and this case turns clean; keep it and remove the
 `Maal` branch and this case turns clean while the additive cases stay red.

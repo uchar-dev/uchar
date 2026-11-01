@@ -190,6 +190,23 @@ class EffectiveUnitWitnessTest {
         }
     }
 
+    /** Ch. 2.6, rule 8: of more than one negative factor the one of the attribute's grid rises, on a fold over its
+     *  timeline; with none of that grid the unit stands, and the write boundary refuses it. */
+    @Test void a_fold_over_a_timeline_raises_the_factor_of_its_grid() {
+        Unit rate = Unit.divide(Unit.compound(new Unit("EUR", "Munt"), new Unit("m", "Maat")), new Unit("mnd", "Tijd"));
+        assertEquals("EUR/m/mnd", rate.rendering());
+        ObjectType ot = new ObjectType("Haven");
+        ot.attributes.put("tarief", num(rate));
+        Expr.AttributeReference read = new Expr.AttributeReference("tarief", ot, "een haven", null, num(TON), source());
+        for (Expr.FunctionKind kind : List.of(Expr.FunctionKind.TOTAAL, Expr.FunctionKind.SOM)) {
+            Expr.FunctionCall fold = new Expr.FunctionCall(kind, List.of(read), ot, null, null, num(TON), source());
+            ot.attributeGranularity.put("tarief", dev.uchar.regelspraak.model.RegelSpraakModel.Granularity.MAAND);
+            assertEquals("EUR/m", bare().unitOf(fold).rendering(), kind + " over maanden");
+            ot.attributeGranularity.put("tarief", dev.uchar.regelspraak.model.RegelSpraakModel.Granularity.DAG);
+            assertEquals(rate, bare().unitOf(fold), kind + " over dagen: geen factor van het rooster");
+        }
+    }
+
     @Test void rounding_and_clamp_carry_the_unit_of_their_base() {
         ObjectType ot = vondst();
         assertEquals(KG, bare().unitOf(

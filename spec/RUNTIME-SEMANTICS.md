@@ -530,11 +530,16 @@ is bare; half a conversion pair is WF-092 and a fault in an executor. The
 7. **Rounding, clamping.** The unit of the base. **Percentage van**: the right unit.
    **Power**: both operands unitless (WF-035). **Decimals**: Tabel 13.
 8. **Fold over a timeline** (§4.20, ch. 3.6). The integration over the grid
-   multiplies by the grid unit (rule 2), so `€/mnd` over months is `€` and `€/dg^2`
-   over days is `€/dg`. `ref` holds the test that a negative factor of the value has
-   the class of the grid unit. Where a consumer does not hold the grid, it takes the
-   one negative factor, and a unit with none or with more than one stands unchanged,
-   which its write boundary then refuses.
+   multiplies by the grid unit, and the negative factor of the class of the grid unit
+   rises one power: the grid's own atom where the value's unit has it, else the first
+   of its class, into which the grid unit restates. `€/mnd` over months is `€`,
+   `€/dg^2` over days is `€/dg`, `€/m/mnd` over months is `€/m`, `€/mnd/jr` over months
+   is `€/jr`, `€/jr/m` over months with `jr = 12 mnd` is `€/m` at 1/12 of the value per
+   month. A value with no negative factor of that class is a fault that names both
+   units, in every executor. A reader that claims the unit of a fold without a grid in
+   hand takes the one negative factor, and a unit with more than one stands unchanged.
+   Worked examples, absolute, `jutterswet-kadetarief`: 12 `€/m/mnd` over three months
+   is 36 `€/m`.
 
 The order of the list (WF-124 (d)) makes `m·s` and `s·m` one list, and the rule
 that the right operand restates into the left makes the spelling of a result depend
@@ -1910,9 +1915,9 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
 - **Units, the explicit rate operand.** When the timeline's value *does*
   carry a rate unit, the collapse is an **integration**, and the
   whole-unit count is not a bare number but a **duration stated in the
-  grid's own unit**: `value × duration` cancels the denominator and the
-  total carries the **numerator alone** — `€/mnd` over a per-month
-  timeline totals to `€`. This is the one collapse that changes the unit,
+  grid's own unit**: `value × duration` cancels the negative factor of the
+  grid's class by one power (ch. 2.6, rule 8) — `€/mnd` over a per-month
+  timeline totals to `€`, `€/m/mnd` to `€/m`. This is the one collapse that changes the unit,
   and it is the runtime half of the §4.20 Tabel-30 result type (row 2,
   `Eenheid1`), so a `€`-declared target accepts the total without any
   restatement.
@@ -1926,9 +1931,9 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   **10 €**, not 120; and a month-sized unit that is not a calendar
   spelling at all (`€/bm` with `bm` canonically a month) cancels by its
   declared factor, the spelling table never entering. Three things are
-  refused **loudly**, never guessed: a denominator the declarations
-  connect to no grid-sized unit (the refusal NAMES both the value's unit
-  and the grid's), a document that declares **no** unit for this grid,
+  refused **loudly**, never guessed: a unit none of whose negative factors the
+  declarations connect to a grid-sized unit (`€/kg`, `€/kg/m`; the refusal NAMES
+  both the value's unit and the grid's), a document that declares **no** unit for this grid,
   and a document that declares **several** grid units with different
   canonical chains. A value unit **without** a denominator keeps the
   plain rule above, and a unitless value keeps a unitless total — those
@@ -1944,12 +1949,10 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   *Executor note (2026-09-04):* the number the collapse produces is not
   always the bare whole-unit count. Where the denominator is the grid
   unit itself the two coincide, but a convertible foreign denominator
-  scales by the declared factor. The v0 Drools backend weights
-  unit-blind, so on a `€/jr` per-month timeline it answers 120 where this
-  rule gives 10 — a **semantic** divergence, not a refusal. No corpus
-  form carries it (every corpus temporal total is unitless), so gate 12
-  cannot see it; it is backend-card material, recorded here rather than
-  silently absent.
+  scales by the declared factor. The Drools backend weights unit-blind,
+  so it carries a negative factor that is the grid's own unit and refuses
+  every other by name (`€/jr` on a per-month timeline), and the ASP backend
+  refuses a factor other than 1 by name as well.
 - **The per-element fold over a set (§7.1).** `het totaal van <temporal
   attribute> van alle <set>` folds **twice**: each set member's own
   timeline collapses over time first — by the rule above, at that

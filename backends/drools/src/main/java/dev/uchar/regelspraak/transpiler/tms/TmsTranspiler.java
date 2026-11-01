@@ -5448,8 +5448,9 @@ public final class TmsTranspiler {
     /**
      * {@code member}, a member on a timeline whose total over time is taken, where that total is the bare value times the
      * count of whole units of the member's grid, as the runtime's {@code rsTijdTotaal} computes it: a number without a
-     * unit, with a unit without a denominator, or a rate whose denominator is the time unit of the grid itself
-     * ({@code EUR/mnd} on a grid of months), where the integration of RUNTIME-SEMANTICS ch. 3.6 cancels it one for one.
+     * unit, with a unit without a denominator, or a rate with a negative factor in the time unit of the grid itself
+     * ({@code EUR/mnd} and {@code EUR/m/mnd} on a grid of months), where the integration of RUNTIME-SEMANTICS ch. 3.6
+     * cancels that factor one for one.
      * Refused by name: a value that is no number (WF-091); a rate over a grid whose unit the document does not declare
      * as exactly one unit ({@link #gridUnit}), which the reference interpreter refuses to integrate (ch. 3.6) and
      * {@code rsTijdTotaal} would weigh as if it did; and a rate whose denominator is another unit, which the reference
@@ -5461,19 +5462,13 @@ public final class TmsTranspiler {
             throw new Refusal(DroolsCode.TEMPORAL_TOTAL_NON_NUMBER.reason("description", description, "member", member.name()));
         Unit e = member.datatype().unitOf();
         if (e == null || e.denominator() == null) return member;
-        String grid = switch (member.time()) {
-            case DAG -> "DAYS";
-            case WEEK -> "WEEKS";
-            case MAAND -> "MONTHS";
-            case KWARTAAL -> "KWARTAAL";
-            case JAAR -> "YEARS";
-        };
+        String grid = TimeCalculation.gridChronoUnit(member.time());
         // the reference interpreter resolves the grid's unit before it looks at the denominator, so a document without
         // one is refused for that whatever the denominator
         String withoutGridUnit = gridUnit(member.time(), grid);
         if (withoutGridUnit != null)
             throw new Refusal(DroolsCode.TEMPORAL_TOTAL_RATE_UNIT.reason("description", description, "member", member.name(), "unit", e.rendering(), "reason", withoutGridUnit));
-        if (!grid.equals(TimeCalculation.chronoUnit(e.negativeAtom())))
+        if (!TimeCalculation.hasNegativeFactorOfGrid(e, grid))
             throw new Refusal(DroolsCode.RATE_DENOMINATOR_NOT_GRID.reason("description", description, "member", member.name(), "rate", e.rendering(), "grid", member.time()));
         return member;
     }

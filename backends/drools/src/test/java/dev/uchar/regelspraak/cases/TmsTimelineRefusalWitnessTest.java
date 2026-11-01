@@ -266,6 +266,17 @@ class TmsTimelineRefusalWitnessTest {
                         + " vergoeding') over 'vergoeding' met het tarief EUR/jr op een raster van MAAND: de noemer"
                         + " is niet de eenheid van het raster, en de tak herrekent hem niet (RUNTIME-SEMANTICS ch. 3.6);"
                         + " geen golden met cases heeft het")));
+        // two negative factors and none of the grid: 10 EUR/kg/m per month through 2024
+        out.add(new Row("twee-noemers-geen-van-het-raster", TmsTimelineDocuments.ir(rateModel(EUR_PER_KG_PER_M, List.of(
+                                TmsDocuments.unitSystem("Munt", List.of(EUR)), TmsDocuments.unitSystem("Tijd", List.of(MND, JR)),
+                                TmsDocuments.unitSystem("Maat", List.of(TmsDocuments.unit("kg", "Maat", "kg", 1, 1),
+                                        TmsDocuments.unit("m", "Maat", "m", 1, 1))))),
+                        List.of(WACHTSOM_RATE), List.of()),
+                rateCase("10"),
+                List.of("transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
+                        + " vergoeding') over 'vergoeding' met het tarief EUR/kg/m op een raster van MAAND: de noemer"
+                        + " is niet de eenheid van het raster, en de tak herrekent hem niet (RUNTIME-SEMANTICS ch. 3.6);"
+                        + " geen golden met cases heeft het")));
         // a rate over a grid whose unit the document does not declare: no unit system spells mnd at all, or two spell
         // it with different canonical chains
         out.add(new Row("kale-noemer", TmsTimelineDocuments.ir(rateModel(EUR_PER_BARE_MND,
@@ -372,6 +383,8 @@ class TmsTimelineRefusalWitnessTest {
     static final String EUR_PER_MND = EUR + "," + denominator(TmsDocuments.unit("mnd", "Tijd", "mnd", 1, 1));
     /** EUR per mnd with the denominator written by its abbreviation alone, as a calendar unit may be. */
     static final String EUR_PER_BARE_MND = EUR + "," + denominator(TmsDocuments.unit("mnd"));
+    static final String EUR_PER_KG_PER_M = EUR + "," + denominator(TmsDocuments.unit("kg", "Maat", "kg", 1, 1)) + ","
+            + denominator(TmsDocuments.unit("m", "Maat", "m", 1, 1));
 
     /** A Unit node as the factor of a denominator. */
     private static String denominator(String unit) {

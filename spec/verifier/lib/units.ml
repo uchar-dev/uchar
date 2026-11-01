@@ -83,6 +83,11 @@ let convertible (a : measure_unit) (b : measure_unit) =
    units whose value it is. *)
 let factor (a : measure_unit) (b : measure_unit) : measure_unit = a @ inverted b
 
+(* One atom: abbreviation, system and conversion pair, whatever the exponents. *)
+let same_atom (x : unit_factor) (f : unit_factor) =
+  x.abbr_text = f.abbr_text && x.system = f.system && x.canonical_form = f.canonical_form
+  && x.factor_to_canonical = f.factor_to_canonical
+
 (* Rule 2 with its unitless case: a factor of the right unit that is an atom of
    the left adds its exponent, one of the same class is restated into that atom
    first, any other joins the list. An exponent 0 leaves it, and a list that
@@ -98,11 +103,7 @@ let times (a : measure_unit option) (b : measure_unit option) : measure_unit opt
       let step (fs, powers) (f : unit_factor) =
         let e = exponent f in
         let add target = List.map (fun x -> if x == target then { x with exponent = Some (exponent x + e) } else x) fs in
-        let same_atom (x : unit_factor) =
-          x.abbr_text = f.abbr_text && x.system = f.system && x.canonical_form = f.canonical_form
-          && x.factor_to_canonical = f.factor_to_canonical
-        in
-        match List.find_opt same_atom fs with
+        match List.find_opt (same_atom f) fs with
         | Some x -> (add x, powers)
         | None -> (
             let c = atom_class f in
@@ -121,16 +122,31 @@ let divide (a : measure_unit option) (b : measure_unit option) : measure_unit op
   | None, Some v -> (Some (canonical_order (inverted v)), [])
   | Some _, Some v -> times a (Some (inverted v))
 
-(* Rule 8, without a grid: a fold over a timeline multiplies by the one negative
-   factor's own unit, so that factor rises one power. [None] for a unit with no
-   negative factor or more than one, where only a reader that holds the grid
-   unit can say which one rises; [Some None] where nothing is left. *)
-let integrated (u : measure_unit) : measure_unit option option =
-  match negatives u with
-  | [ f ] ->
-      let rest = List.map (fun x -> if x == f then with_exponent x (exponent x + 1) else x) u in
-      Some (match List.filter (fun x -> exponent x <> 0) rest with [] -> None | l -> Some l)
-  | _ -> None
+(* Rule 8: the factor a fold over a grid of unit [grid] raises, the negative
+   factor of the grid's class: the grid's own atom where the unit has it, else the
+   first of its class. [None] where no negative factor has that class. *)
+let negative_of_grid (grid : unit_factor) (u : measure_unit) =
+  let below = negatives u in
+  match List.find_opt (same_atom grid) below with
+  | Some _ as own -> own
+  | None ->
+      let c = atom_class grid in
+      List.find_opt (fun f -> c <> None && atom_class f = c) below
+
+(* [u] with its negative factor [f] one power higher; [None] where nothing is left. *)
+let risen (u : measure_unit) (f : unit_factor) : measure_unit option =
+  let up x = if x == f then with_exponent x (exponent x + 1) else x in
+  match List.filter (fun x -> exponent x <> 0) (List.map up u) with [] -> None | l -> Some l
+
+(* The unit a fold over a timeline leaves, for a reader that claims it: the factor
+   of the grid rises, and where the grid is not known or no factor has its class
+   the one negative factor does. [None] for a unit with no negative factor, or with
+   more than one and none to name; [Some None] where nothing is left. An executor
+   that integrates faults on a unit without a factor of the grid. *)
+let integrated ?grid (u : measure_unit) : measure_unit option option =
+  match (Option.bind grid (fun g -> negative_of_grid g u), negatives u) with
+  | Some f, _ | None, [ f ] -> Some (risen u f)
+  | None, _ -> None
 
 (* A unit whose one positive factor is '%', with or without a denominator: the
    reading that makes a number a percentage. *)

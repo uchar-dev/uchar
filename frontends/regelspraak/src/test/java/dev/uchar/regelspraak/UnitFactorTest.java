@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak;
 
+import dev.uchar.regelspraak.core.TimeCalculation;
 import dev.uchar.regelspraak.model.Unit;
 import org.junit.jupiter.api.Test;
 
@@ -261,6 +262,22 @@ class UnitFactorTest {
         assertEquals(twoBelow, twoBelow.afterTimeFold(), "welke factor stijgt, zegt alleen het rooster");
         assertEquals("dg", Unit.compound(EUR, DG).negativeAtom().rendering());
         assertNull(twoBelow.negativeAtom());
+    }
+
+    /** Rule 8 with the grid in hand: of more than one negative factor the factor of the grid's class rises. */
+    @Test void a_time_fold_over_a_grid_raises_the_factor_of_that_grid() {
+        var month = dev.uchar.regelspraak.model.RegelSpraakModel.Granularity.MAAND;
+        var day = dev.uchar.regelspraak.model.RegelSpraakModel.Granularity.DAG;
+        Unit mnd = new Unit("mnd", "Tijd");
+        Unit perMeterPerMonth = Unit.divide(Unit.compound(EUR, M), mnd);
+        assertEquals("EUR/m/mnd", perMeterPerMonth.rendering());
+        assertEquals("EUR/m", TimeCalculation.afterTimeFold(perMeterPerMonth, month, null).rendering());
+        Unit perMeterPerDay = Unit.divide(Unit.compound(EUR, DG), M);
+        assertEquals("EUR/m", TimeCalculation.afterTimeFold(perMeterPerDay, day, null).rendering());
+        assertEquals(perMeterPerDay, TimeCalculation.afterTimeFold(perMeterPerDay, month, null),
+                "geen factor van het rooster: de eenheid blijft staan, en de schrijfgrens weigert");
+        assertEquals("EUR", TimeCalculation.afterTimeFold(Unit.compound(EUR, DG), month, null).rendering(),
+                "één negatieve factor stijgt ook zonder het rooster, zoals altijd");
     }
 
     /** A calendar table names one factor with exponent 1. */

@@ -1,0 +1,29 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Eenheidsysteem Ligtijd
+    de maand mnd
+
+Eenheidsysteem Kademaat
+    de meter (mv: meters) m
+
+Objecttype de Haven (mv: Havens)
+    het havengeldtarief Numeriek (geheel getal) met eenheid €/m/mnd voor elke maand;
+    het havengeld per meter Numeriek (geheel getal) met eenheid €/m;
+    de kadeopbrengst per meter Numeriek (geheel getal) met eenheid €/m;
+
+Objecttype de Schuit (mv: Schuiten)
+    het kadetarief Numeriek (geheel getal) met eenheid €/m/mnd voor elke maand;
+
+Feittype ligplaats
+    de thuishaven Haven
+    de schuit (mv: schuiten) Schuit
+Eén thuishaven heeft meerdere schuiten
+
+Regel havengeld per meter
+    geldig altijd
+        Het havengeld per meter van een Haven moet berekend worden als het totaal van zijn havengeldtarief.
+
+Regel kadeopbrengst per meter
+    geldig altijd
+        De kadeopbrengst per meter van een Haven moet berekend worden als het totaal van het kadetarief van alle schuiten van de Haven.
