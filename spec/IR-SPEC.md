@@ -1427,7 +1427,7 @@ therefore correct, and is the only reading that keeps that arithmetic exact.
 5. *The normal form.* A unit is a product of factors with a whole exponent,
    and the wire writes it in one form: the factors with a positive exponent as
    the numerator (`abbreviation`, a product of point 4 from two factors on, so
-   `m²` is `m·m`), the one factor with exponent −1 as the `denominator`. So
+   `m × m` is `m·m`), the one factor with exponent −1 as the `denominator`. So
    `€/dg` and `€ · dg⁻¹` are one unit. No factor at all is no unit: a number
    without a unit carries no `unit`. A numerator without a factor is the
    **reciprocal** `1/E`, E⁻¹: `abbreviation` `"1"`, with no `system`, no
@@ -1437,7 +1437,10 @@ therefore correct, and is the only reading that keeps that arithmetic exact.
    factor 1: `1/dg` is convertible to `1/wk`, and not to `dg` or to `€/dg`.
    The inverse of `1/E` is E and the inverse of the rate `a/b` is `b/a`. What
    the form cannot write — a second factor with a negative exponent (`€/u/s`,
-   `dg⁻²`) — has no wire type: a producer refuses it by name.
+   `dg⁻²`) — has no wire type: a producer refuses it by name. A declared
+   product (`m²`, written `m·m`) has a wire form, but a producer refuses that
+   spelling by name as well: a value in a derived product does not reach it
+   (RUNTIME-SEMANTICS ch. 2.6), so no golden can carry it.
 
 Worked examples (expected values exact):
 

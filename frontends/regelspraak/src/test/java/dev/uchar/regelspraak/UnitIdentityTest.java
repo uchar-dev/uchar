@@ -164,28 +164,25 @@ class UnitIdentityTest {
         assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains("\"abbreviation\":\"1\",\"denominator\""));
     }
 
-    /** m^2 is read: it is the unit of m maal m, and not m. */
-    @Test void a_power_is_the_product_of_its_unit_and_not_the_unit() {
-        String attributes = """
-                de lengte Numeriek (geheel getal) met eenheid m;
-                de oppervlakte Numeriek (geheel getal) met eenheid m^2;
+    /** m^2 is read and refused, and it does not degrade to m: no golden can carry the product through the executors. */
+    @Test void a_power_is_refused_and_is_not_the_unit() {
+        for (String spelling : java.util.List.of("m^2", "m^3")) {
+            RegelSpraakModel m = withAttributes("""
+                    de lengte Numeriek (geheel getal) met eenheid m;
+                    de oppervlakte Numeriek (geheel getal) met eenheid %s;
+                """.formatted(spelling),
+                    "De oppervlakte van een Verkoop moet berekend worden als de lengte van de Verkoop maal de lengte van de Verkoop.");
+            assertTrue(refused(m, "RGS-360"), () -> spelling + ": verwachtte RGS-360, kreeg " + m.errors());
+        }
+        assertClean(withAttributes("""
+                de lengte Numeriek (geheel getal) met eenheid m^1;
                 de omtrek Numeriek (geheel getal) met eenheid m;
-            """;
-        RegelSpraakModel area = withAttributes(attributes,
-                "De oppervlakte van een Verkoop moet berekend worden als de lengte van de Verkoop maal de lengte van de Verkoop.");
-        assertClean(area);
-        assertTrue(IrEmitter.emit(area).replaceAll("\\s+", "").contains("\"abbreviation\":\"m\\u00b7m\""));
-        assertFalse(withAttributes(attributes,
-                "De omtrek van een Verkoop moet berekend worden als de oppervlakte van de Verkoop.").errors().isEmpty(),
-                "m^2 past niet op m");
-        assertFalse(withAttributes(attributes,
-                "De oppervlakte van een Verkoop moet berekend worden als de lengte van de Verkoop.").errors().isEmpty(),
-                "m past niet op m^2");
+            """, "De omtrek van een Verkoop moet berekend worden als de lengte van de Verkoop."));
     }
 
     /** What has no normal form is an error by name and no unit, also the two spellings that once lost a part in silence. */
     @Test void a_spelling_without_a_normal_form_is_refused_by_name() {
-        for (String spelling : java.util.List.of("€/dg/m", "m^0", "m^-2", "€/dg^2", "m^2/dg", "2/dg", "1/dg/m", "1/dg^2", "m^1/2")) {
+        for (String spelling : java.util.List.of("€/dg/m", "m^0", "m^-2", "m^2", "€/dg^2", "m^2/dg", "2/dg", "1/dg/m", "1/dg^2", "m^1/2")) {
             RegelSpraakModel m = withAttributes("    het cijfer Numeriek (getal met 2 decimalen) met eenheid " + spelling + ";\n",
                     "Het cijfer van een Verkoop moet berekend worden als 1.");
             assertTrue(refused(m, "RGS-360"), () -> spelling + ": verwachtte RGS-360, kreeg " + m.errors());

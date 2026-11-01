@@ -672,4 +672,4 @@ RGS-356	the list mixes the bullet signs '{sign}' and '{other}': the depth counts
 RGS-357	'{form}' reads {node} over [{path}], and that read lies outside the scope of the instance-ordered cycle over the fact type '{factType}' (clause {clause}): a cycle over such a fact type, which links two objects of one type, is admitted only where every read behind an edge inside the cycle lands in the household of the object or of its predecessor (WF-045, IR-SPEC ch. 5.3); write the value read into an own member of the object, so that the read does not close the cycle, or bring the read within that scope
 RGS-358	'{read}' cannot read the rule subject here: {reason}
 RGS-359	assignment: the value has the unit '{unit}', which does not fit an attribute without a unit
-RGS-360	the unit model cannot express the unit '{spelling}': it has one unit, a power with a whole number of at least 2, the exponent -1, and one unit (or 1) over one denominator with exponent 1
+RGS-360	the unit model cannot express the unit '{spelling}': it has one unit, the exponent -1, and one unit (or 1) over one denominator with exponent 1

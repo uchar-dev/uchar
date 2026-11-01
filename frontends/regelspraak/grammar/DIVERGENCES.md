@@ -3806,10 +3806,12 @@ The grammar accepts more than a normal form can write, and the resolver reads it
 | Spelling | Unit |
 |---|---|
 | `m`, `m^1` | `m` |
-| `m^2` | `m·m`, the unit of `m maal m` |
 | `dg^-1`, `1/dg` | the reciprocal `1/dg` |
 | `€/dg` | the rate `€/dg` |
-| `€/u/s`, `1/dg/m`, `m^0`, `m^-2`, `€/dg^2`, `m^2/s`, `2/dg`, `m^1/2` | RGS-360, an error by name, and no unit |
+| `€/u/s`, `1/dg/m`, `m^0`, `m^-2`, `m^2`, `€/dg^2`, `m^2/s`, `2/dg`, `m^1/2` | RGS-360, an error by name, and no unit |
+
+`m^2` is valid in the arbiter's grammar and has a wire form, the opaque product `m·m`. It is refused because no golden can
+carry that form: `ref` faults on the write of `m maal m` into it and clingo refuses every product.
 
 A number divided by a unit has the reciprocal of that unit, where the arbiter gives the unit itself (Tabel 14, row 4):
 a dimensional divergence. A reciprocal assigned to a target without a unit is RGS-359, which names the unit.

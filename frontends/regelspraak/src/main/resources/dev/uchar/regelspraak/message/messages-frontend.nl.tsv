@@ -672,4 +672,4 @@ RGS-356	de lijst mengt de bullettekens '{sign}' en '{other}': de diepte telt de 
 RGS-357	'{form}' leest {node} over [{path}], en die lezing valt buiten de afbakening van de per object geordende kring over het feittype '{factType}' (clausule {clause}): een kring over zo'n feittype, dat twee objecten van één type verbindt, is alleen toegelaten als elke lezing achter een rand binnen de kring in het huishouden van het object of van zijn voorganger landt (WF-045, IR-SPEC ch. 5.3); schrijf de gelezen waarde in een eigen lid van het object, zodat de lezing de kring niet sluit, of breng de lezing binnen die afbakening
 RGS-358	'{read}' kan het regelonderwerp hier niet lezen: {reason}
 RGS-359	toekenning: de waarde heeft de eenheid '{unit}', en die past niet op een attribuut zonder eenheid
-RGS-360	de eenheid '{spelling}' kan het Eenheid-model niet uitdrukken: het kent één eenheid, een macht met een geheel getal van minstens 2, de exponent -1, en één eenheid (of 1) over één noemer met exponent 1
+RGS-360	de eenheid '{spelling}' kan het Eenheid-model niet uitdrukken: het kent één eenheid, de exponent -1, en één eenheid (of 1) over één noemer met exponent 1

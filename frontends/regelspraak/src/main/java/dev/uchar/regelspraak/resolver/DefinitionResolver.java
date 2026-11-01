@@ -684,10 +684,11 @@ public final class DefinitionResolver {
     private Unit unitOf(EenheidExpressieContext e) { return unitOf(model, e); }
 
     /** §13.3.3.2: a unit expression, read into the normal form of {@link Unit}. A power with exponent 1 is its unit,
-     *  a higher power the product of that many ("m^2" is "m·m", the unit of m maal m), exponent -1 and "1/dg" the
-     *  reciprocal, and one denominator over one numerator a rate (€/jr). What has no normal form is an error by name
-     *  and no unit: a second denominator (€/u/s), exponent 0 or below -1, a power beside a denominator (m^2/s), a
-     *  number other than 1 over a unit, an exponent that is not whole.
+     *  exponent -1 and "1/dg" the reciprocal, and one denominator over one numerator a rate (€/jr). What has no normal
+     *  form is an error by name and no unit: a second denominator (€/u/s), exponent 0 or below -1, a power beside a
+     *  denominator (m^2/s), a number other than 1 over a unit, an exponent that is not whole. So is m^2: the wire can
+     *  spell it as the opaque product m·m, but ref faults on the write of m maal m into it and clingo refuses every
+     *  product, so no golden can carry the form through the executors.
      *  Package-static so the attribute-datatype path (here) and the §13.2.17 numeric LITERAL path
      *  ({@link ExpressionBuilder}) resolve a composite (rate) unit IDENTICALLY — a literal "120 EUR/jr"
      *  must carry the same {@code Unit.compound(EUR, jr)} an attribute "met eenheid EUR/jr"
@@ -716,11 +717,7 @@ public final class DefinitionResolver {
         if (firstPower(powers.get(0))) return first;
         Integer exponent = wholeExponent(powers.get(0));
         if (exponent == null) return null;
-        if (exponent == -1) return Unit.reciprocal(first);
-        if (exponent < 2) return null;
-        Unit product = first;
-        for (int i = 1; i < exponent; i++) product = Unit.product(product, first);
-        return product;
+        return exponent == -1 ? Unit.reciprocal(first) : null;
     }
 
     private static Unit resolved(RegelSpraakModel model, EenheidMachtContext power) {
