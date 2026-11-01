@@ -61,6 +61,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * that reads through a role of the element; the destructive branch refused it.
  * <li>{@code fold-under-let-beside-division} ({@code FoldCompanionWitnessTest}): a fold and a division under one Let; the
  * destructive branch refused it.
+ * <li>{@code rate-times-converted-quantity} and {@code quotient-of-convertible-units}: "dagloon (€/dg) maal werkduur (wk)"
+ * with 10,00 and 3 is 210,00, and "zoekduur (dg) gedeeld door seizoensduur (wk)" with 14 and 4 is 0,50: the operand
+ * restated into the unit of the other (ch. 2.6). Clingo declines both.
  * </ul>
  *
  * <p><b>Measured</b> 2026-10-10 with the verifier, the reference interpreter, the ASP runner, the jar of the claim of
@@ -74,7 +77,7 @@ class TmsLikeRefWitnessTest {
     private static final Path MAP = Path.of("src", "test", "resources", "like-ref");
 
     /** The number of documents under {@link #MAP}: a document that disappears must say so here. */
-    private static final int COUNT = 26;
+    private static final int COUNT = 28;
 
     @Test void each_document_plays_like_ref() throws Exception {
         List<String> deviating = new ArrayList<>();

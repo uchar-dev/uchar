@@ -154,6 +154,33 @@ class EffectiveUnitWitnessTest {
         assertTrue(out.convertibleTo(Unit.product(KG, EUR)), "alleen een identiek product is converteerbaar");
     }
 
+    @Test void a_quotient_derives_its_unit_and_does_not_read_its_annotation() {
+        // ch. 2.6: the quotient's annotation is a repetition like the product's, and the lie in num(TON) stays unread
+        ObjectType ot = vracht();
+        Expr.Literal one = new Expr.Literal("1", num(null), source());
+        assertEquals(Unit.reciprocal(JR), bare().unitOf(new Expr.Binary(Expr.BinOp.GEDEELD_DOOR,
+                one, lyingRef(ot, "looptijd"), num(TON), source())), "eenheidloos gedeeld door jr is 1/jr");
+        assertEquals(EUR_PER_JR, bare().unitOf(new Expr.Binary(Expr.BinOp.GEDEELD_DOOR,
+                lyingRef(ot, "prijs"), lyingRef(ot, "looptijd"), num(TON), source())), "€ gedeeld door jr is €/jr");
+        assertNull(bare().unitOf(new Expr.Binary(Expr.BinOp.GEDEELD_DOOR,
+                lyingRef(ot, "prijs"), lyingRef(ot, "prijs"), num(TON), source())), "€ gedeeld door € heeft geen eenheid");
+        assertEquals(EUR, bare().unitOf(new Expr.Binary(Expr.BinOp.GEDEELD_DOOR,
+                lyingRef(ot, "prijs"), one, num(TON), source())), "€ gedeeld door een getal is €");
+    }
+
+    @Test void a_reciprocal_falls_away_against_its_unit_and_makes_a_rate_of_another() {
+        ObjectType ot = vracht();
+        ot.attributes.put("tempo", num(Unit.reciprocal(JR)));
+        assertNull(bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL,
+                lyingRef(ot, "tempo"), lyingRef(ot, "looptijd"), num(TON), source())), "1/jr maal jr heeft geen eenheid");
+        assertNull(bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL,
+                lyingRef(ot, "looptijd"), lyingRef(ot, "tempo"), num(TON), source())), "en andersom");
+        assertEquals(EUR_PER_JR, bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL,
+                lyingRef(ot, "tempo"), lyingRef(ot, "prijs"), num(TON), source())), "1/jr maal € is €/jr");
+        assertEquals(EUR_PER_JR, bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL,
+                lyingRef(ot, "prijs"), lyingRef(ot, "tempo"), num(TON), source())), "en andersom");
+    }
+
     @Test void a_value_aggregation_carries_the_unit_of_operand_zero() {
         // §4.6 Eenheid1 — and the exact class the WF-091 card left open: a fold RESULT type has no single
         // declaration behind it, so the verifier cannot cross it and only this derivation can.

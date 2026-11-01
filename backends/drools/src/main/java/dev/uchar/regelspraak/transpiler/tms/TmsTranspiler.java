@@ -4372,7 +4372,9 @@ public final class TmsTranspiler {
     /** The arithmetic operators on numbers, a percentage being a number in the unit % (RUNTIME-SEMANTICS ch. 2.2, 2.6),
      *  through the runtime's exact helpers and with their leeg tables (ch. 1.2); a date plus or minus a duration through
      *  {@link #dateCalculation}, a power through {@link #power}. A sum or a difference restates its right operand into the
-     *  left one's unit (ch. 2.6); a product, a quotient and a percentage of a value do not. A division faults on a numeric
+     *  left one's unit, a product of a rate and a quantity restates the quantity into the rate's denominator, and a quotient
+     *  of two convertible units restates its right operand into the left one's unit (ch. 2.6); a percentage of a value
+     *  does not. A division faults on a numeric
      *  zero (ch. 1.4, point 4), and one of a filled dividend by a leeg divisor deposits where the evaluation reaches it and
      *  its operands qualify ({@link #depositSite}, {@link DepositFlag}). The operands are evaluated left before right
      *  (ch. 5.11). */
@@ -4384,9 +4386,13 @@ public final class TmsTranspiler {
         boolean division = op == Expr.BinOp.GEDEELD_DOOR || op == Expr.BinOp.GEDEELD_DOOR_ABS;
         // a condition that holds a division carries the rule that inserts its fault (voorwaardefoutregel)
         if (division) reads.markFail();
-        Term l = value(b.left(), reads), right = value(b.right(), reads);
+        Term left = value(b.left(), reads), right = value(b.right(), reads);
+        Unit lu = eff.unitOf(b.left()), ru = eff.unitOf(b.right());
+        Term l = op == Expr.BinOp.MAAL ? intoDenominator(left, lu, ru) : left;
         Term r = op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN || op == Expr.BinOp.VERMINDERD_MET
-                ? restated(right, eff.unitOf(b.right()), eff.unitOf(b.left()), "een additieve operandgrens")
+                ? restated(right, ru, lu, "een additieve operandgrens")
+                : op == Expr.BinOp.MAAL ? intoDenominator(right, ru, lu)
+                : division && lu != null && lu.convertibleTo(ru) ? restated(right, ru, lu, "een quotiënt")
                 : right;
         int depositFlag = division && depositSite(b) ? reads.depositFlag() : -1;
         String source = source(b.source());
@@ -4400,6 +4406,14 @@ public final class TmsTranspiler {
             case GEDEELD_DOOR_ABS -> new Term.Division(StaticFunction.DIVIDED_ABS, l, r, depositFlag, source);
             case TOT_DE_MACHT -> throw new IllegalStateException("een macht gaat door macht()");
         };
+    }
+
+    /** The operand {@code t} of a product restated into the denominator of its other operand, where that is a rate
+     *  whose denominator {@code unit} converts to: 3 wk times 1/dg counts 21 dg (ch. 2.6). */
+    private static Term intoDenominator(Term t, Unit unit, Unit other) {
+        return unit != null && unit.denominator() == null && other != null && other.denominator() != null
+                && unit.convertibleTo(other.denominator())
+                ? restated(t, unit, other.denominator(), "de noemer van een rate") : t;
     }
 
     /** A power with a whole exponent of at least 0 written as a literal, exact (RUNTIME-SEMANTICS ch. 2.2), a leeg base

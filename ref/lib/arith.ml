@@ -73,6 +73,11 @@ let factor (e : Ir_v0.Ast.measure_unit) =
 
 let convertible a b = Ir_v0.Checks.units_convertible a b
 
+(* the name ch. 2.5 gives a product: its atomic factors, sorted *)
+let product_name (a : Ir_v0.Ast.measure_unit) (b : Ir_v0.Ast.measure_unit) =
+  let factors u = Ir_v0.Checks.product_factors (unit_name u) in
+  String.concat "·" (List.sort String.compare (factors a @ factors b))
+
 (* multiplicative factor taking a quantity in unit [a] to unit [b];
    both must be convertible (same canonical chain, rates recursively) *)
 let rec conv_factor (a : Ir_v0.Ast.measure_unit) (b : Ir_v0.Ast.measure_unit) =
@@ -88,6 +93,9 @@ let restate_into ua q ub =
   match (ua, ub) with
   | Unitless, Unitless -> q
   | Unit a, Unit b when convertible a b -> Q.mul q (conv_factor b a)
+  (* a declared "m^2" is the unit "m·m", and m × m is the same unit by its factors: the opaque product of
+     ch. 2.5 is convertible to an identical product, with nothing to restate *)
+  | Unit a, Product (x, y) when unit_name a = product_name x y -> q
   | Unit _, Unitless | Unitless, Unit _ ->
       (* unitless side adopts the other unit, value unchanged (the
          unitless-literal adoption of IR-SPEC ch. 2.5) *)
@@ -133,12 +141,20 @@ let mul l r =
   match (lu, ru) with
   | Unitless, u | u, Unitless -> Num (Q.mul lq rq, u)
   | Unit a, Unit b -> (
+      let without_denominator rate =
+        match Ir_v0.Checks.numerator_unit rate with Some u -> Unit u | None -> Unitless
+      in
       match (a.denominator, b.denominator) with
       | Some n, None when convertible n b ->
-          (* a rate times its denominator unit cancels: €/jr × jr = € *)
-          Num (Q.mul lq (Q.mul rq (conv_factor b n)), Unit { a with denominator = None })
+          (* a rate times its denominator unit cancels: €/jr × jr = €, and E⁻¹ × E is unitless *)
+          Num (Q.mul lq (Q.mul rq (conv_factor b n)), without_denominator a)
       | None, Some n when convertible n a ->
-          Num (Q.mul rq (Q.mul lq (conv_factor a n)), Unit { b with denominator = None })
+          Num (Q.mul rq (Q.mul lq (conv_factor a n)), without_denominator b)
+      (* a reciprocal times another plain unit is the rate: 1/dg × € = €/dg *)
+      | Some n, None when Ir_v0.Checks.is_reciprocal a && not (Ir_v0.Checks.is_product b) ->
+          Num (Q.mul lq rq, Unit { b with denominator = Some n })
+      | None, Some n when Ir_v0.Checks.is_reciprocal b && not (Ir_v0.Checks.is_product a) ->
+          Num (Q.mul lq rq, Unit { a with denominator = Some n })
       | None, None -> Num (Q.mul lq rq, Product (a, b))
       | _ -> fault "unit product not modelled: %s * %s" (show_unit lu) (show_unit ru))
   | _ -> fault "unit product not modelled: %s * %s" (show_unit lu) (show_unit ru)
@@ -175,8 +191,10 @@ let div_gen ~err ~collapse l r =
                   (Q.div lq (Q.mul rq (conv_factor b a)), Unitless)
               | Unit a, Unit b when a.denominator = None && b.denominator = None ->
                   (Q.div lq rq, Unit { a with denominator = Some b })
-              | Unitless, Unit _ | _ ->
-                  fault "unit quotient not modelled: %s / %s" (show_unit lu) (show_unit ru)
+              | Unitless, Unit b when Ir_v0.Checks.reciprocal_unit b <> None ->
+                  (* eenheidloos ÷ E is E⁻¹ *)
+                  (Q.div lq rq, Unit (Option.get (Ir_v0.Checks.reciprocal_unit b)))
+              | _ -> fault "unit quotient not modelled: %s / %s" (show_unit lu) (show_unit ru)
             in
             collapse q u)
 

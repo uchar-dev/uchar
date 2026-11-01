@@ -16099,6 +16099,80 @@ let () =
       check (label ^ " (" ^ text ^ ")")
         (code = None && Uchar_ref.Case.contains ~needle:"the diagnosis run of clingo exited 65" text)
 
+(* The reciprocal (ch. 2.6): a product that cancels restates the plain operand
+   into the denominator, which this encoding carries for a whole factor only, and
+   a comparison cross-multiplies. An additive join and a write would have to
+   divide or carry a factor at the write boundary, so the standing fence holds
+   them, by name. *)
+let reciprocal_doc ~target_unit ~value =
+  let unit_of abbreviation factor =
+    Printf.sprintf
+      {|{ "node": "Unit", "abbreviation": "%s", "system": "Tijd", "canonical": "dg", "factorToCanonical": { "num": %d, "den": 1 } }|}
+      abbreviation factor
+  in
+  let dg = unit_of "dg" 1 and wk = unit_of "wk" 7 in
+  let reciprocal u = Printf.sprintf {|{ "node": "Unit", "abbreviation": "1", "denominator": %s }|} u in
+  let attribute name unit_json =
+    Printf.sprintf
+      {|{ "node": "Attribute", "name": "%s", "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"%s } }|}
+      name
+      (match unit_json with Some u -> {|, "unit": |} ^ u | None -> "")
+  in
+  let unit_named = function
+    | "per_dg" -> Some (reciprocal dg)
+    | "per_wk" -> Some (reciprocal wk)
+    | "dg" -> Some dg
+    | _ -> None
+  in
+  String.concat ""
+    [ {|{ "format": "uchar-ir-v1", "model": { "objectTypes": [
+        { "node": "ObjectType", "name": "J", "animate": false, "plural": "Js", "attributes": [ |};
+      String.concat ", "
+        [ attribute "per_dg" (unit_named "per_dg"); attribute "per_wk" (unit_named "per_wk");
+          attribute "dg" (unit_named "dg"); attribute "target" (unit_named target_unit) ];
+      {| ], "characteristics": [] } ],
+        "factTypes": [], "parameters": [], "domains": [],
+        "unitSystems": [ { "node": "UnitSystem", "name": "Tijd", "units": [ |};
+      dg; ", "; wk;
+      {| ] } ], "dimensions": [], "timelines": [], "dayKinds": [] },
+      "rules": { "rules": [ { "node": "Rule", "name": "r", "versions": [ {
+        "validity": { "node": "Validity" },
+        "target": { "node": "AttributeReference", "attribute": "target", "subjectType": "J", "source": { "snippet": "t" } },
+        "value": |};
+      value;
+      {|, "initialisation": false, "presentation": "calculation" } ] } ],
+        "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+        "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
+      "diagnostics": [] }|} ]
+
+let reciprocal_read name =
+  Printf.sprintf
+    {|{ "node": "AttributeReference", "attribute": "%s", "subjectType": "J", "source": { "snippet": "%s" } }|}
+    name name
+
+let reciprocal_binary op l r =
+  Printf.sprintf
+    {|{ "node": "Binary", "op": "%s", "left": %s, "right": %s, "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" }, "source": { "snippet": "b" } }|}
+    op (reciprocal_read l) (reciprocal_read r)
+
+let reciprocal_case =
+  {|{ "format": "uchar-case-v0", "asOfDate": null, "input": { "instances": [
+      { "label": "A", "objectType": "J", "attributes": {}, "roles": {}, "characteristics": [] } ],
+      "parameters": {} },
+      "expected": [ { "kind": "attributeEmpty", "label": "A", "attribute": "target" } ] }|}
+
+let () =
+  faults_with ~name:"a reciprocal times a quantity by a factor that is no whole number"
+    ~ir:(reciprocal_doc ~target_unit:"none" ~value:(reciprocal_binary "times" "per_wk" "dg"))
+    ~case_text:reciprocal_case
+    ~needle:"the factor 1/7 from the quantity into the denominator is no whole number";
+  faults_with ~name:"an additive join of two reciprocals keeps the fence"
+    ~ir:(reciprocal_doc ~target_unit:"per_dg" ~value:(reciprocal_binary "plus" "per_dg" "per_wk"))
+    ~case_text:reciprocal_case ~needle:"non-identical units under an additive join";
+  faults_with ~name:"a write across two reciprocals keeps the fence"
+    ~ir:(reciprocal_doc ~target_unit:"per_wk" ~value:(reciprocal_read "per_dg"))
+    ~case_text:reciprocal_case ~needle:{|non-identical units under the write to "target"|}
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

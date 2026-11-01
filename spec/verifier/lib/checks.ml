@@ -204,6 +204,47 @@ let units_compatible a b =
   | Some x, Some y -> units_convertible x y
   | _ -> false
 
+(* A unit in its normal form (IR-SPEC ch. 2.5): the factors with a positive
+   exponent as the numerator, the one factor with exponent -1 as the
+   denominator. A numerator without a factor is spelled "1", so "1/dg" is dg⁻¹. *)
+let reciprocal_numerator = "1"
+
+let is_reciprocal (u : measure_unit) =
+  u.denominator <> None && u.abbr_text = Some reciprocal_numerator
+
+(* the atomic factors of a product's name, ch. 2.5: "€·m" *)
+let product_factors (name : string) =
+  let separator = "·" in
+  let width = String.length separator and n = String.length name in
+  let rec go start i acc =
+    if i + width > n then List.rev (String.sub name start (n - start) :: acc)
+    else if String.sub name i width = separator then
+      go (i + width) (i + width) (String.sub name start (i - start) :: acc)
+    else go start (i + 1) acc
+  in
+  go 0 0 []
+
+let is_product (u : measure_unit) =
+  match u.abbr_text with Some a -> List.length (product_factors a) > 1 | None -> false
+
+(* what is left of a rate when its denominator cancels: its numerator, and no
+   unit at all for a reciprocal (E⁻¹ × E) *)
+let numerator_unit (u : measure_unit) =
+  if is_reciprocal u then None else Some { u with denominator = None }
+
+(* E⁻¹, the unit of a unitless number divided by E: None where E has a product
+   in it, whose inverse would need two factors with a negative exponent *)
+let reciprocal_unit (u : measure_unit) =
+  match u.denominator with
+  | _ when is_product u -> None
+  | Some n when is_product n -> None
+  | None ->
+      Some
+        { abbr_text = Some reciprocal_numerator; system = None; canonical_form = None;
+          factor_to_canonical = None; denominator = Some u }
+  | Some n when is_reciprocal u -> Some n
+  | Some n -> Some { n with denominator = Some { u with denominator = None } }
+
 (* WF-035/036 mirrored convenience (IR-SPEC ch. 4.6): a unitless numeric
    literal adopts its sibling's unit before any unit-compatibility check. *)
 let is_unitless_numeric_literal = function
@@ -1388,6 +1429,23 @@ let rec check_unit_form ~systems at (u : measure_unit) =
                 factor has one spelling, here %s"
                named num den (rational_render { num = num / g; den = den / g })) ]
     | _ -> [])
+  @ (if u.abbr_text <> Some reciprocal_numerator then []
+     else if u.denominator = None then
+       [ v "WF-123.one-without-denominator" at
+           "the unit '1' stands without a denominator: it is the numerator of a reciprocal, and a \
+            number without a unit carries no unit at all" ]
+     else
+       (if u.system <> None || u.canonical_form <> None || u.factor_to_canonical <> None then
+          [ v "WF-123.one-with-conversion" at
+              "the numerator '1' of a reciprocal carries a system or a conversion pair: it is no unit \
+               and converts into nothing" ]
+        else [])
+       @ (match u.denominator with
+         | Some { denominator = Some _; _ } ->
+             [ v "WF-123.reciprocal-of-rate" (at ^ "/denominator")
+                 "the denominator of a reciprocal is itself a rate: the inverse of a rate is one unit \
+                  over the other, in the normal form of IR-SPEC ch. 2.5" ]
+         | _ -> []))
   @ (match u.denominator with Some n -> check_unit_form ~systems (at ^ "/denominator") n | None -> [])
 
 (* every unit a datatype carries, denominators and composite element/field/
@@ -1427,9 +1485,15 @@ let wf092 ctx =
       List.concat
         (List.mapi
            (fun j (d : declared_unit) ->
-             check_unit_form ~systems
-               (Printf.sprintf "/eenheidstelsels/%s/units/%d" sn j)
-               d.ge_unit)
+             let at = Printf.sprintf "/eenheidstelsels/%s/units/%d" sn j in
+             (if d.ge_unit.abbr_text = Some reciprocal_numerator then
+                [ v ~params:[ ("unitSystem", sn) ] "WF-123.declared-one" at
+                    (Printf.sprintf
+                       "the unit system '%s' declares the unit '1': it is the numerator of a \
+                        reciprocal, and it needs no declaration"
+                       sn) ]
+              else [])
+             @ check_unit_form ~systems at d.ge_unit)
            es.unit_list))
     ctx.doc.unit_systems
   @ List.concat_map
@@ -2970,19 +3034,17 @@ let derived_number ~whole_part ~decimal_places (measure_unit : measure_unit opti
   | Some { abbr_text = Some "%"; _ } -> Percentage { whole_part; decimal_places; measure_unit }
   | _ -> Number { whole_part; decimal_places; sign_char = Some Unspecified; measure_unit }
 
-(* The ch. 2.6 times join, in the two shapes the IR fixes: a unitless operand
-   hands the other unit through (the dimensionless 1 absorbs), and a rate
-   times its convertible denominator unit CANCELS to the numerator ("€/jr
-   maal jr = €"). The third shape — two plain units — is ch. 2.5's opaque
-   PRODUCT, whose algebra the spec fixes (sorted multiset of atomic factors,
-   no canonical, no factor) but whose wire SPELLING it does not: an identity
-   cross there would pin an `abbreviation` and a `system` ch. 2.5 does not
-   require. The fourth — an unspellable rate factor — is the shape the
-   frontend refuses outright (RUNTIME-SEMANTICS ch. 2.10). This function
-   makes no claim at either, and the corpus carries zero of both (measured
-   2026-09-04: no times node in golden, red, negative or the parity zone has
-   two unit-bearing operands, so the cancel arm is pinned by a negative and
-   nothing else). *)
+(* The ch. 2.6 times join, in the three shapes the IR fixes: a unitless operand
+   hands the other unit through (the dimensionless 1 absorbs), a rate times its
+   convertible denominator unit CANCELS to the numerator ("€/jr maal jr = €"),
+   and to no unit for a reciprocal ("1/dg maal dg"), and a reciprocal times
+   another plain unit is the rate ("1/dg maal € = €/dg"). Two plain units are
+   ch. 2.5's opaque PRODUCT, whose algebra the spec fixes (sorted multiset of
+   atomic factors, no canonical, no factor) but whose wire SPELLING it does not:
+   an identity cross there would pin an `abbreviation` and a `system` ch. 2.5
+   does not require. An unspellable rate factor is the shape the frontend
+   refuses outright (RUNTIME-SEMANTICS ch. 2.10). This function makes no claim
+   at either. *)
 let times_unit (a : measure_unit option) (b : measure_unit option) : measure_unit option option =
   match (a, b) with
   | None, x | x, None -> Some x
@@ -2990,10 +3052,25 @@ let times_unit (a : measure_unit option) (b : measure_unit option) : measure_uni
       let cancel (rate : measure_unit) (plain : measure_unit) =
         match rate.denominator with
         | Some n when plain.denominator = None && units_convertible plain n ->
-            Some (Some { rate with denominator = None })
+            Some (numerator_unit rate)
+        | Some n when plain.denominator = None && is_reciprocal rate && not (is_product plain) ->
+            Some (Some { plain with denominator = Some n })
         | _ -> None
       in
       (match cancel x y with Some u -> Some u | None -> cancel y x)
+
+(* The ch. 2.6 quotient join: a unitless divisor hands the dividend's unit
+   through, a unitless dividend gives the reciprocal, convertible units cancel,
+   and two plain units form a rate. No claim where the unit has no normal form:
+   the frontend refuses those shapes. *)
+let quotient_unit (a : measure_unit option) (b : measure_unit option) : measure_unit option option =
+  match (a, b) with
+  | x, None -> Some x
+  | None, Some y -> Option.map Option.some (reciprocal_unit y)
+  | Some x, Some y when units_convertible x y -> Some None
+  | Some x, Some y when x.denominator = None && y.denominator = None ->
+      Some (Some { x with denominator = Some y })
+  | _ -> None
 
 (* The RegelSpraak frontend's set reading (`ExpressionBuilder`), mirrored — the
    scheidslijn the §4.20 denominator strip below turns on, taken from the
@@ -3031,13 +3108,12 @@ let set_reading ctx ~ranged (args : expr list) : bool option =
    What is NOT here, and why — the fourth class of RUNTIME-SEMANTICS
    ch. 2.10, kept identical to the exception set of gate 13
    (`scripts/check-reftype-derivation.sh`, which keys on (node, op) and
-   (node, kind) for exactly this reason): a division, a power, a
-   percentage-of, a root, an absolute value and the seven date/time
-   extractors, where v0 states no result-unit rule; and duration /
-   absoluteDuration, where the annotation IS the source (the operator's
-   own parameter, WF-038). Not derived means not crossed — and named, never
-   silently skipped. A `dividedBy` and a `power` are here for their
-   WHOLENESS alone (ch. 2.3), which leaves that unit set as it was. Two
+   (node, kind) for exactly this reason): a power, a percentage-of, a root,
+   an absolute value and the seven date/time extractors, where v0 states no
+   result-unit rule; and duration / absoluteDuration, where the annotation
+   IS the source (the operator's own parameter, WF-038). Not derived means
+   not crossed — and named, never silently skipped. A `power` is here for
+   its WHOLENESS alone (ch. 2.3), which leaves that unit set as it was. Two
    node kinds are left out for the opposite reason:
    an IfThenElse and a Let already cross their whole type against their
    branches and their body under WF-069 and WF-076. *)
@@ -3097,19 +3173,42 @@ let composite_expectation ctx ~binders (e : expr) :
                   derived_number ~whole_part:false ~decimal_places:0 u,
                   [ "decimals" ] ))
       | _ -> None)
-  | Binary { op = (Divided_by | Power) as op; left_side; right_side; _ } -> (
-      (* the WHOLENESS only (ch. 2.3: a quotient and a power are never whole).
-         Their unit is ch. 2.10's fourth class, which v0 derives nothing for,
-         so the unit exception set stays gate 13's; their decimals, maxDec, are
-         the under-report ch. 2.4 names; and the soort goes with the unit,
-         since a derivation that names no unit cannot tell a percentage from a
-         number. Measured 2026-09-25: no quotient or power in golden, red,
-         negative or the parity zone is annotated whole (0 of 74). *)
+  | Binary { op = Divided_by; left_side; right_side; _ } -> (
+      (* a quotient is never whole (ch. 2.3) and derives its unit (ch. 2.6). Its
+         decimals, maxDec, are the under-report ch. 2.4 names. A percentage
+         operand or a quotient with no normal form claims no unit, and then no
+         soort: a derivation that names no unit cannot tell a percentage from
+         a number. *)
+      let what = "the " ^ Spelling.encode Spelling.binary_op Divided_by ^ " composite" in
+      match (operand_t left_side, operand_t right_side) with
+      | Some (Number _ as l), Some (Number _ as r) -> (
+          match quotient_unit (unit_of l) (unit_of r) with
+          | Some u ->
+              Some
+                ( what, "the type a quotient derives",
+                  derived_number ~whole_part:false ~decimal_places:0 u,
+                  [ "decimals" ] )
+          | None ->
+              Some
+                ( what, "the type a quotient derives",
+                  derived_number ~whole_part:false ~decimal_places:0 None,
+                  [ "soort"; "unit"; "decimals" ] ))
+      | Some l, Some r when is_number_like l && is_number_like r ->
+          Some
+            ( what, "the type a quotient derives",
+              derived_number ~whole_part:false ~decimal_places:0 None,
+              [ "soort"; "unit"; "decimals" ] )
+      | _ -> None)
+  | Binary { op = Power; left_side; right_side; _ } -> (
+      (* the WHOLENESS only (ch. 2.3: a power is never whole). Its unit is
+         ch. 2.10's fourth class, which v0 derives nothing for, so the unit
+         exception set stays gate 13's; its decimals, maxDec, are the
+         under-report ch. 2.4 names; and the soort goes with the unit. *)
       match (operand_t left_side, operand_t right_side) with
       | Some l, Some r when is_number_like l && is_number_like r ->
           Some
-            ( "the " ^ Spelling.encode Spelling.binary_op op ^ " composite",
-              (if op = Divided_by then "the type a quotient derives" else "the type a power derives"),
+            ( "the " ^ Spelling.encode Spelling.binary_op Power ^ " composite",
+              "the type a power derives",
               derived_number ~whole_part:false ~decimal_places:0 None,
               [ "soort"; "unit"; "decimals" ] )
       | _ -> None)
@@ -3218,7 +3317,7 @@ let composite_expectation ctx ~binders (e : expr) :
                   let d =
                     match t0 with
                     | Number ({ measure_unit = Some ({ denominator = Some _; _ } as u); _ } as n) ->
-                        Number { n with measure_unit = Some { u with denominator = None } }
+                        Number { n with measure_unit = numerator_unit u }
                     | Percentage ({ measure_unit = Some ({ denominator = Some _; _ } as u); _ } as p) ->
                         Percentage { p with measure_unit = Some { u with denominator = None } }
                     | other -> other

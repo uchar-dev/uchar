@@ -41,9 +41,9 @@ import java.util.Objects;
  *   <li>a duration function ({@code TIJDSDUUR} / {@code ABSOLUTE_TIJDSDUUR}): the node type's unit is the
  *       OPERATOR's parameter ("de tijdsduur van A tot B in jaren", WF-038), not a derived result;</li>
  *   <li>ch. 2.10's FOURTH class, which says something weaker: every POSITION whose result unit v0 does not
- *       DERIVE (a division, a power, a percentage-of, a root, an absolute value, the date/time extractors)
+ *       DERIVE (a power, a percentage-of, a root, an absolute value, the date/time extractors)
  *       keeps the annotation because there is nothing to put in its place — not because the annotation is the
- *       source. A position, not a node kind: {@code GEDEELD_DOOR} and {@code PLUS} are both {@code Binary}
+ *       source. A position, not a node kind: {@code TOT_DE_MACHT} and {@code PLUS} are both {@code Binary}
  *       and only one of them derives, which is why the {@code switch}es below dispatch on the OP and the
  *       KIND, and why the harness's clamp keys on (node, op) / (node, kind) too. The ASP translator answers
  *       {@code None} there and fences; this backend has no such fence and computes with the annotation. Measured 2026-09-04: no corpus annotation at such a position
@@ -229,7 +229,7 @@ public final class EffectiveUnit {
         if (e instanceof Expr.Clamp bg) return unit(bg.base(), environment, depth + 1);
         if (e instanceof Expr.Binary b) {
             // §4 / ch. 2.6: an additive result carries the left unit and a unitless side adopts the other.
-            // Every other operator (division, power, percentage-of) has no v0 join rule here — annotation.
+            // Every other operator (power, percentage-of) has no v0 join rule here — annotation.
             return switch (b.op()) {
                 case PLUS, MIN, VERMINDERD_MET -> {
                     Unit l = unit(b.left(), environment, depth + 1);
@@ -237,6 +237,8 @@ public final class EffectiveUnit {
                 }
                 case MAAL -> timesUnit(unit(b.left(), environment, depth + 1),
                                          unit(b.right(), environment, depth + 1));
+                case GEDEELD_DOOR, GEDEELD_DOOR_ABS -> quotientUnit(unit(b.left(), environment, depth + 1),
+                                                                    unit(b.right(), environment, depth + 1), annotation);
                 default -> annotation;
             };
         }
@@ -308,8 +310,9 @@ public final class EffectiveUnit {
      * §4.4 / ch. 2.6, the MAAL join — the Java twin of the frontend's {@code Typing.compoundUnit}, which
      * is where this rule is authored. One unit-bearing operand hands its unit through (the factor-free product).
      * TWO of them do NOT: a rate times its (convertible) denominator unit CANCELS to the numerator ("€/jr maal jr
-     * = €"), and anything else is the OPAQUE product ("€ maal kg = €·kg") — a unit with no canonical, convertible
-     * only to an identical product.
+     * = €"), and to no unit for a reciprocal ("1/dg maal dg"); a reciprocal times another plain unit is the rate
+     * ("1/dg maal € = €/dg"), and anything else is the OPAQUE product ("€ maal kg = €·kg") — a unit with no canonical,
+     * convertible only to an identical product.
      *
      * <p>That opacity is load-bearing here, not cosmetic: it is what stands between a two-unit product and a
      * restatement by a live factor. Handing back the left operand's unit would scale €·kg into a € target.
@@ -347,7 +350,25 @@ public final class EffectiveUnit {
         if (rightUnit == null) return el;
         if (el.denominator() != null && rightUnit.denominator() == null && rightUnit.convertibleTo(el.denominator())) return el.numerator();
         if (rightUnit.denominator() != null && el.denominator() == null && el.convertibleTo(rightUnit.denominator())) return rightUnit.numerator();
+        if (el.isReciprocal() && rightUnit.denominator() == null && !rightUnit.isProduct()) return Unit.compound(rightUnit, el.denominator());
+        if (rightUnit.isReciprocal() && el.denominator() == null && !el.isProduct()) return Unit.compound(el, rightUnit.denominator());
         return opaqueProduct(el, rightUnit);
+    }
+
+    /**
+     * ch. 2.6, the quotient join, the twin of the same arm in {@code Typing}: a unitless divisor hands the dividend's
+     * unit through, a unitless dividend gives the reciprocal, convertible units cancel and two plain units form a rate.
+     * A shape with no normal form reaches a consumer only on a document the frontend never wrote, and the annotation
+     * stands there as at the fourth class.
+     */
+    private static Unit quotientUnit(Unit el, Unit rightUnit, Unit annotation) {
+        if (rightUnit == null) return el;
+        if (el == null) {
+            Unit inverse = Unit.reciprocal(rightUnit);
+            return inverse != null ? inverse : annotation;
+        }
+        if (el.convertibleTo(rightUnit)) return null;
+        return el.denominator() == null && rightUnit.denominator() == null ? Unit.compound(el, rightUnit) : annotation;
     }
 
     /**

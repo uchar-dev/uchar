@@ -497,6 +497,57 @@ let () =
   check "WV-2.5-100eur/mnd-is-1200eur/jr"
     (Q.equal (restate ~into:eur_per_jr "100" { eur with denominator = Some mnd }) (q "1200"))
 
+(* RUNTIME-SEMANTICS ch. 2.6, the reciprocal's worked examples verbatim: E⁻¹ is
+   the unit of a unitless number divided by E, in the normal form of IR-SPEC
+   ch. 2.5, and it converts, multiplies and compares by the factors of E *)
+let () =
+  let wk = unit_ ~canonical_form:"dg" ~factor:(7, 1) "wk" in
+  let reciprocal u = Option.get (Ir_v0.Checks.reciprocal_unit u) in
+  let per_dg = reciprocal dg and per_wk = reciprocal wk in
+  let unit_is name v value (u : Ir_v0.Ast.measure_unit) =
+    match v with
+    | Value.Num (got, Value.Unit su) -> check name (Q.equal got (q value) && su = u)
+    | _ -> check name false
+  in
+  let unitless_is name v value =
+    match v with
+    | Value.Num (got, Value.Unitless) -> check name (Q.equal got (q value))
+    | _ -> check name false
+  in
+  check "WV-2.6-1/dg-spelling" (per_dg.abbr_text = Some "1" && per_dg.denominator = Some dg);
+  unit_is "WV-2.6-14/7dg-is-2-per-dg" (Arith.div_ ~err:no_err (n "14") (num_with_unit dg "7")) "2" per_dg;
+  unitless_is "WV-2.6-2-per-dg-times-7dg-is-14" (Arith.mul (num_with_unit per_dg "2") (num_with_unit dg "7")) "14";
+  unitless_is "WV-2.6-2-per-dg-times-3wk-is-42" (Arith.mul (num_with_unit per_dg "2") (num_with_unit wk "3")) "42";
+  unitless_is "WV-2.6-3wk-times-2-per-dg-is-42" (Arith.mul (num_with_unit wk "3") (num_with_unit per_dg "2")) "42";
+  unitless_is "WV-2.6-7-per-wk-times-3dg-is-3" (Arith.mul (num_with_unit per_wk "7") (num_with_unit dg "3")) "3";
+  check "WV-2.6-2-per-dg-is-14-per-wk"
+    (Arith.compare_op Equal (num_with_unit per_dg "2") (num_with_unit per_wk "14") = true);
+  check "WV-2.6-5/2-per-dg-above-14-per-wk"
+    (Arith.compare_op Greater (num_with_unit per_dg "5/2") (num_with_unit per_wk "14") = true);
+  check "WV-2.6-factor-per-wk-into-per-dg-1/7" (Q.equal (Arith.conv_factor per_wk per_dg) (q "1/7"));
+  unit_is "WV-2.6-2-per-dg-plus-7-per-wk-is-3-per-dg"
+    (Arith.add (num_with_unit per_dg "2") (num_with_unit per_wk "7")) "3" per_dg;
+  unit_is "WV-2.6-1-per-dg-times-3eur-is-3eur-per-dg"
+    (Arith.mul (num_with_unit per_dg "1") (num_with_unit eur "3")) "3" { eur with denominator = Some dg };
+  unit_is "WV-2.6-3eur-times-1-per-dg-is-3eur-per-dg"
+    (Arith.mul (num_with_unit eur "3") (num_with_unit per_dg "1")) "3" { eur with denominator = Some dg };
+  unit_is "WV-2.6-1/(1-per-dg)-is-dg" (Arith.div_ ~err:no_err (n "1") (num_with_unit per_dg "2")) "1/2" dg;
+  unit_is "WV-2.6-1/(eur-per-dg)-is-dg-per-eur"
+    (Arith.div_ ~err:no_err (n "1") (num_with_unit { eur with denominator = Some dg } "2")) "1/2"
+    { dg with denominator = Some eur };
+  check "WV-2.6-1-per-dg-against-dg-is-no-unit-pair" (not (Arith.convertible per_dg dg));
+  check "WV-2.6-1-per-dg-against-eur-per-dg-is-no-unit-pair"
+    (not (Arith.convertible per_dg { eur with denominator = Some dg }));
+  let m_squared : Ir_v0.Ast.measure_unit =
+    { (unit_ ~canonical_form:"m" "m·m") with canonical_form = None; factor_to_canonical = None }
+  in
+  check "WV-2.6-the-unit-m^2-has-no-inverse" (Ir_v0.Checks.reciprocal_unit m_squared = None);
+  (match Arith.mul (num_with_unit meter "2") (num_with_unit meter "3") with
+  | Value.Num (v, (Value.Product _ as product)) ->
+      check "WV-2.6-2m-times-3m-is-6-in-the-declared-m^2"
+        (Q.equal (Arith.restate_into (Value.Unit m_squared) v product) (q "6"))
+  | _ -> check "WV-2.6-2m-times-3m-is-6-in-the-declared-m^2" false)
+
 (* ...and the factor that is not a whole number, the case the exact rational
    exists for: an hour declared as {1, 24} of a day. 36 uur restated in dg is
    3/2 exactly, and 3/2 dg is 36 uur again. The JSON number a v0 wire carried

@@ -1,0 +1,220 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "dagloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                },
+                "denominator": {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "werkduur",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "wk",
+                "system": "Tijd",
+                "canonical": "dg",
+                "factorToCanonical": {
+                  "num": 7,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "loon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "EUR",
+                "system": "Munt",
+                "canonical": "EUR",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "wk",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 7,
+              "den": 1
+            },
+            "spellings": [
+              "week"
+            ]
+          }
+        ]
+      },
+      {
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "loon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "loon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het loon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "dagloon",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn dagloon"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "werkduur",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn werkduur"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              },
+              "source": {
+                "snippet": "zijn dagloon maal zijn werkduur"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

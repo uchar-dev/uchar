@@ -970,6 +970,14 @@ let attr_temporal_decl ctx ~otype ~attr =
   | Some ot -> Ir_v0.Checks.attr_temporal ot attr
   | None -> false
 
+(* E⁻¹ against a plain unit E' convertible to E: the pair whose product has no
+   unit (ch. 2.6). *)
+let reciprocal_cancels (reciprocal : measure_unit) (plain : measure_unit) =
+  Ir_v0.Checks.is_reciprocal reciprocal && plain.denominator = None
+  && match reciprocal.denominator with
+     | Some n -> Normalise.restates_into n plain
+     | None -> false
+
 (* the EFFECTIVE unit of an expression, derived from declarations
    (attribute/parameter datatypes) and the ch. 2.6 join rules — never
    from the node's own static annotation: a composite annotated
@@ -1000,11 +1008,19 @@ let rec eff_unit ctx (e : expr) : measure_unit option =
          operand times a unit-carrying operand adopts THAT unit, value
          unchanged — so a restating position consuming the product sees the
          real unit and its own fence still fires on a genuine mismatch (the
-         loud-witness). A two-unit product faults at its own translation
-         (mul_units_ok), so reporting the left there is moot. *)
-      match Option.bind left_side (eff_unit ctx) with
-      | Some u -> Some u
-      | None -> Option.bind right_side (eff_unit ctx))
+         loud-witness). E⁻¹ × E leaves no unit. Any other two-unit product
+         faults at its own translation (mul_units_ok), so reporting the left
+         there is moot. *)
+      match (Option.bind left_side (eff_unit ctx), Option.bind right_side (eff_unit ctx)) with
+      | Some a, Some b when reciprocal_cancels a b || reciprocal_cancels b a -> None
+      | Some u, _ -> Some u
+      | None, r -> r)
+  | Binary { op = Divided_by | Divided_by_abs; left_side; right_side; _ } -> (
+      (* eenheidloos ÷ E is E⁻¹, value unchanged (ch. 2.6); every other
+         unit-carrying quotient faults at its own translation (quotient_units_ok) *)
+      match (Option.bind left_side (eff_unit ctx), Option.bind right_side (eff_unit ctx)) with
+      | None, Some b -> Ir_v0.Checks.reciprocal_unit b
+      | _ -> None)
   | Binary _ -> None
   | Rounding { base_expr; _ } | Clamp { base_expr; _ } -> Option.bind base_expr (eff_unit ctx)
   | Temporal_read { base_expr; _ } -> eff_unit ctx base_expr
@@ -1038,9 +1054,7 @@ let rec eff_unit ctx (e : expr) : measure_unit option =
          €/mnd result type. Whether the strip lands EXACTLY in this
          integer encoding is the translating arm's fence
          ([grid_strip_ok]), not this analysis's. *)
-      Option.map
-        (fun (u : measure_unit) -> { u with denominator = None })
-        (eff_unit ctx arg)
+      Option.bind (eff_unit ctx arg) Ir_v0.Checks.numerator_unit
   | Function_call { kind = Sum_function | Total | Minimum | Maximum | First | Last; call_arguments = arg :: _; _ }
     ->
       eff_unit ctx arg
@@ -2834,6 +2848,27 @@ let unit_free_ok ctx e =
            algebra applies conversion factors this integer encoding does not carry)"
   | None -> ()
 
+(* The product of E⁻¹ and a plain unit E' convertible to E leaves no unit: ref
+   restates the E' operand into E (Arith.mul), which the integer encoding can
+   hold where that factor is a whole number: Some (true, k) when the RIGHT
+   operand is the plain one, Some (false, k) when the LEFT is, k its factor.
+   A factor that is no whole number would need a division here and faults by
+   name. None for any other pair. *)
+let reciprocal_factor ctx (l : expr) (r : expr) : (bool * int) option =
+  let whole (plain : measure_unit) (rate : measure_unit) =
+    let k = Uchar_ref.Arith.conv_factor plain (Option.get rate.denominator) in
+    if not (Z.equal (Q.den k) Z.one) then
+      fault
+        "a product of %s and %s is not translated: the factor %s from the quantity into the \
+         denominator is no whole number, and this integer encoding carries no fraction"
+        (Uchar_ref.Arith.display_unit rate) (Uchar_ref.Arith.display_unit plain) (Q.to_string k);
+    Z.to_int (Q.num k)
+  in
+  match (eff_unit ctx l, eff_unit ctx r) with
+  | Some a, Some b when reciprocal_cancels a b -> Some (true, whole b a)
+  | Some a, Some b when reciprocal_cancels b a -> Some (false, whole a b)
+  | _ -> None
+
 (* positions where ref RESTATES one operand into the other's unit — the
    additive join, the comparison, the write boundary — multiply by an
    exact conversion factor (a hunted silent split: 1 m plus 50 cm
@@ -2861,6 +2896,23 @@ let units_identical_ok ~what (l : measure_unit option) (r : measure_unit option)
         what
   | _ -> ()
 
+(* The comparison of two convertible reciprocals restates by an exact factor
+   p/q that the integer encoding can carry here, unlike at an additive join: a
+   comparison multiplies both sides, x·p against y·q, and divides nothing
+   (ch. 2.6; 1/dg against 1/wk: x·7 against y). (p, q) for such a pair, (1, 1)
+   for every other pair that passes the fence, and every other pair of
+   non-identical units keeps the fence. *)
+let comparison_factors ctx (l : expr) (r : expr) : int * int =
+  match (eff_unit ctx l, eff_unit ctx r) with
+  | Some a, Some b
+    when Ir_v0.Checks.is_reciprocal a && Ir_v0.Checks.is_reciprocal b
+         && Normalise.restates_into a b ->
+      let k = Uchar_ref.Arith.conv_factor a b in
+      (Z.to_int (Q.num k), Z.to_int (Q.den k))
+  | ul, ur ->
+      units_identical_ok ~what:"a comparison" ul ur;
+      (1, 1)
+
 (* PROVABLY unit-free: distinguishes a genuinely unitless expression from one
    eff_unit merely cannot analyse (a Let, a field/dimension access, a division,
    a declaration that resolves nowhere), mirroring eff_unit's resolved forms but
@@ -2881,6 +2933,9 @@ let rec provably_unitless ctx (e : expr) : bool =
           true
       | _ -> false)
   | Literal { typ = Some (Number { measure_unit = None; _ }); _ } -> true
+  | Binary { op = Times; left_side = Some l; right_side = Some r; _ }
+    when reciprocal_factor ctx l r <> None ->
+      true
   | Binary { op = Plus | Min | Reduced_by | Times; left_side = Some l; right_side = Some r; _ } ->
       (* a sum/difference/product is unit-free only when BOTH operands are *)
       provably_unitless ctx l && provably_unitless ctx r
@@ -2960,6 +3015,7 @@ let mul_units_ok ctx ~what (l : expr option) (r : expr option) =
       what
   in
   match (ul, ur) with
+  | Some a, Some b when reciprocal_cancels a b || reciprocal_cancels b a -> ()
   | Some _, Some _ ->
       fault
         "a product of two unit-carrying operands under %s is not translated (ref's unit \
@@ -2968,6 +3024,21 @@ let mul_units_ok ctx ~what (l : expr option) (r : expr option) =
   | Some _, None when not (proven_free r) -> hidden ()
   | None, Some _ when not (proven_free l) -> hidden ()
   | _ -> ()
+
+(* a quotient's operands: unit-free, or a provably unitless dividend over a
+   unit-carrying divisor, whose reciprocal unit changes nothing in the value
+   (eenheidloos ÷ E is E⁻¹, ch. 2.6) *)
+let quotient_units_ok ctx left_side right_side =
+  let admitted =
+    provably_unitless ctx left_side
+    && match eff_unit ctx right_side with
+       | Some u -> Ir_v0.Checks.reciprocal_unit u <> None
+       | None -> false
+  in
+  if not admitted then begin
+    unit_free_ok ctx (Some left_side);
+    unit_free_ok ctx (Some right_side)
+  end
 
 (* the viol/2 range fence on emitted arithmetic: fires when an operand
    could push the term past clingo's silently-wrapping integer range;
@@ -2982,6 +3053,20 @@ let range_guard ctx ~subject ~body terms_with_bounds =
         (String.concat ", " body)
         t bound)
     terms_with_bounds
+
+(* both compared operands times their factors from [comparison_factors]. Each
+   fence stands on the bare term: past max_int31 / k the product itself would
+   wrap. *)
+let compared_with_factors ctx ~subject ~subject_ot (kl, kr) ((bl, _, _) as l) ((br, _, _) as r) =
+  let body = (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard) @ bl @ br in
+  let times k ((b, t, s) as operand) =
+    if k = 1 then operand
+    else begin
+      range_guard ctx ~subject ~body [ (t, max_int31 / k) ];
+      (b, Printf.sprintf "(%s*%d)" t k, s)
+    end
+  in
+  (times kl l, times kr r)
 
 (* the split money × rate cent encoding (§5/S18(c)), shared verbatim by the
    rule-level Rounding{money×rate} and the closed-body money multiplication (one
@@ -5986,6 +6071,24 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       range_guard ctx ~subject
         ~body:((base :: ctx.rule_guard) @ bl @ br)
         [ (tl, 46340); (tr, 46340) ];
+      (* the plain operand of E⁻¹ × E' restated into E; the fence above holds
+         the bare term, this one the restated term *)
+      let restated t k =
+        if k = 1 then t
+        else begin
+          range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ bl @ br) [ (t, 46340 / k) ];
+          Printf.sprintf "(%s*%d)" t k
+        end
+      in
+      let tl, tr =
+        match (op, left_side, right_side) with
+        | Times, Some le, Some re -> (
+            match reciprocal_factor ctx le re with
+            | Some (true, k) -> (tl, restated tr k)
+            | Some (false, k) -> (restated tl k, tr)
+            | None -> (tl, tr))
+        | _ -> (tl, tr)
+      in
       let term = Printf.sprintf "(%s*%s)" tl tr in
       ctx.signs <- (term, Product (tl, tr)) :: ctx.signs;
       (bl @ br, term, sl * sr * (if op = Percentage_of then 100 else 1))
@@ -6741,8 +6844,7 @@ and translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding
   let left_side = req "Binary.left" left_side and right_side = req "Binary.right" right_side in
   numeric_ok ctx (Some left_side);
   numeric_ok ctx (Some right_side);
-  unit_free_ok ctx (Some left_side);
-  unit_free_ok ctx (Some right_side);
+  quotient_units_ok ctx left_side right_side;
   let bl, tl, sl = expr_term ctx ~subject ~subject_ot left_side in
   let br, tr, sr = expr_term ctx ~subject ~subject_ot right_side in
   (* the numeric_ok ctx pair reads the wire `type`; both scales become gcd
@@ -7760,11 +7862,10 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
          free). Date-typed ongelijk-aan STAYS here: the complement's
          cells (exactly-one-empty waar, both-empty onwaar) are the date
          row's own. *)
-      units_identical_ok ~what:"a comparison"
-        (Option.bind left_side (eff_unit ctx))
-        (Option.bind right_side (eff_unit ctx));
+      let kl, kr = comparison_factors ctx (req "left" left_side) (req "right" right_side) in
       let l = expr_term ctx ~subject ~subject_ot (req "left" left_side) in
       let r = expr_term ctx ~subject ~subject_ot (req "right" right_side) in
+      let l, r = compared_with_factors ctx ~subject ~subject_ot (kl, kr) l r in
       let b1, t1, s1 = l and b2, t2, s2 = r in
       (* the sum/struct/symbolic arms above route by the wire `type`; the scale
          is the declaration's, so it catches what an absent or lying annotation
@@ -7799,11 +7900,10 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
   | Comparison { op; left_side; right_side; time_period = None; _ } ->
       (* the orderings, plus date-typed gelijk-aan (routed here by the
          when-guard above): bare positive joins, any empty operand false *)
-      units_identical_ok ~what:"a comparison"
-        (Option.bind left_side (eff_unit ctx))
-        (Option.bind right_side (eff_unit ctx));
+      let kl, kr = comparison_factors ctx (req "left" left_side) (req "right" right_side) in
       let l = expr_term ctx ~subject ~subject_ot (req "left" left_side) in
       let r = expr_term ctx ~subject ~subject_ot (req "right" right_side) in
+      let l, r = compared_with_factors ctx ~subject ~subject_ot (kl, kr) l r in
       let b1, t1, s1 = l and b2, t2, s2 = r in
       (* an ORDERING over a ground constructor term has no meaning: clingo's
          term order would answer where ref faults the unordered comparison.
