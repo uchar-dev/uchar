@@ -13,7 +13,6 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Granularity;
 
 import org.junit.jupiter.api.Test;
 
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -162,13 +161,13 @@ class TypeSystemRefusalWitnessTest {
         ((ObjectNode) bound.at(UNIT)).set("factorToCanonical",
                 JSON.readTree("{\"num\":4611686018427387903,\"den\":1}"));
         Unit large = ((Datatype.Numeric) IrLoader.load(bound).parameters.get("penningbedrag").datatype()).unit();
-        assertEquals("4611686018427387903", large.factorToCanonical().toPlainString());
+        assertEquals(Unit.Fraction.of(4611686018427387903L, 1), large.factorToCanonical());
 
         // not in lowest terms is WF-092 (c), the verifier's: the loader reads the value
         ObjectNode ir = golden(PENNINGJAAR);
         ((ObjectNode) ir.at(UNIT)).set("factorToCanonical", JSON.readTree("{\"num\":2,\"den\":4}"));
         Unit half = ((Datatype.Numeric) IrLoader.load(ir).parameters.get("penningbedrag").datatype()).unit();
-        assertEquals("0.5", half.factorToCanonical().toPlainString());
+        assertEquals(Unit.Fraction.of(1, 2), half.factorToCanonical());
     }
 
     /** The two negative witnesses of a day kind over a unit, refused at load in the verifier's sentence at its pointer:
@@ -185,9 +184,7 @@ class TypeSystemRefusalWitnessTest {
         }
     }
 
-    @Test void a_rational_becomes_the_decimal_factor_of_the_record_and_stays_in_the_system() throws Exception {
-        // the record's decimal is the fraction rounded to 16 significant digits, a whole number exactly; the unit
-        // system keeps the fraction itself
+    @Test void a_rational_is_the_factor_of_the_unit_as_written() throws Exception {
         ObjectNode ir = golden(PENNINGJAAR);
         ArrayNode units = (ArrayNode) ir.at(SYSTEM + "/units");
         units.add(JSON.readTree("{\"node\":\"Unit\",\"abbreviation\":\"ct\",\"system\":\"Munt\",\"canonical\":\"EUR\","
@@ -197,13 +194,10 @@ class TypeSystemRefusalWitnessTest {
         units.add(JSON.readTree("{\"node\":\"Unit\",\"abbreviation\":\"daalder\",\"system\":\"Munt\","
                 + "\"canonical\":\"EUR\",\"factorToCanonical\":{\"num\":12,\"den\":1}}"));
         UnitSystem unitSystem = IrLoader.load(ir).unitSystems.get("Munt");
-        assertEquals("0.01", unitSystem.units.get("ct").factorToCanonical().toPlainString());
-        assertEquals("0.04166666666666667", unitSystem.units.get("kwartje").factorToCanonical().toPlainString());
-        assertEquals("12", unitSystem.units.get("daalder").factorToCanonical().toPlainString());
-        assertEquals("1", unitSystem.units.get("EUR").factorToCanonical().toPlainString());
-        assertEquals(new UnitSystem.Factor(BigInteger.ONE, BigInteger.valueOf(24)), unitSystem.exactFactors.get("kwartje"));
-        assertEquals(new UnitSystem.Factor(BigInteger.valueOf(12), BigInteger.ONE), unitSystem.exactFactors.get("daalder"));
-        assertEquals(UnitSystem.Factor.EEN, unitSystem.exactFactors.get("EUR"));
+        assertEquals(Unit.Fraction.of(1, 100), unitSystem.units.get("ct").factorToCanonical());
+        assertEquals(Unit.Fraction.of(1, 24), unitSystem.units.get("kwartje").factorToCanonical());
+        assertEquals(Unit.Fraction.of(12, 1), unitSystem.units.get("daalder").factorToCanonical());
+        assertEquals(Unit.Fraction.ONE, unitSystem.units.get("EUR").factorToCanonical());
     }
 
     // ---------------- the sign and the presentation tag ----------------

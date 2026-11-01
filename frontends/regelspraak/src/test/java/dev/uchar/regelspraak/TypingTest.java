@@ -89,7 +89,7 @@ class TypingTest {
     // declared "jr = 12 mnd"; sharing only a stelsel is not enough (p44), so the fixtures carry that link.
     static Datatype num(String abbr, String system, String canonical, long factor) {
         return new Datatype.Numeric(false, 0, Sign.ONBEPAALD,
-                new Unit(abbr, system, canonical, java.math.BigDecimal.valueOf(factor)));
+                new Unit(abbr, system, canonical, Unit.Fraction.of(factor, 1)));
     }
     @Test void plus_convertible_units_ok() {
         assertTrue(Typing.compute(BinOp.PLUS, num("jr", "Tijd", "mnd", 12), num("mnd", "Tijd", "mnd", 1)).ok());
@@ -269,16 +269,14 @@ class TypingTest {
     }
 
     @Test void a_reciprocal_converts_by_its_denominator_inverted() {
-        Unit dg = new Unit("dg", "Tijd", "dg", java.math.BigDecimal.ONE);
-        Unit wk = new Unit("wk", "Tijd", "dg", new java.math.BigDecimal("7"));
+        Unit dg = new Unit("dg", "Tijd", "dg", Unit.Fraction.ONE);
+        Unit wk = new Unit("wk", "Tijd", "dg", Unit.Fraction.of(7, 1));
         Unit perDay = Unit.divide(null, dg), perWeek = Unit.divide(null, wk);
         assertTrue(perDay.convertibleTo(perWeek));
         assertFalse(perDay.convertibleTo(dg), "E⁻¹ is geen E");
         assertFalse(perDay.convertibleTo(Unit.divide(EUR, dg)), "1/dg is geen €/dg");
-        java.math.BigDecimal[] f = perWeek.exactRestateFactors(perDay);
-        assertEquals(0, f[0].multiply(new java.math.BigDecimal("7")).compareTo(f[1]), "1/wk naar 1/dg is de factor 1/7");
-        java.math.BigDecimal[] back = perDay.exactRestateFactors(perWeek);
-        assertEquals(0, back[0].compareTo(new java.math.BigDecimal("7").multiply(back[1])), "1/dg naar 1/wk is de factor 7");
+        assertEquals(Unit.Fraction.of(1, 7), perWeek.exactRestateFactors(perDay), "1/wk naar 1/dg is de factor 1/7");
+        assertEquals(Unit.Fraction.of(7, 1), perDay.exactRestateFactors(perWeek), "1/dg naar 1/wk is de factor 7");
     }
 
     /** A date step in a unit that is no time unit names that whole unit, not the numerator of it. */
@@ -309,14 +307,14 @@ class TypingTest {
 
     /** The units of the table of RUNTIME-SEMANTICS ch. 2.6; the values are the executors'. */
     @Test void the_table_of_the_algebra_types_every_row() {
-        Unit cm = new Unit("cm", "Lengte", "m", new java.math.BigDecimal("0.01"));
-        Unit m = new Unit("m", "Lengte", "m", java.math.BigDecimal.ONE);
+        Unit cm = new Unit("cm", "Lengte", "m", Unit.Fraction.of(1, 100));
+        Unit m = new Unit("m", "Lengte", "m", Unit.Fraction.ONE);
         Unit s = new Unit("s", "Tijd");
         Unit n = new Unit("n", "Stuk");
-        Unit dg = new Unit("dg", "Tijd", "dg", java.math.BigDecimal.ONE);
-        Unit wk = new Unit("wk", "Tijd", "dg", new java.math.BigDecimal("7"));
-        Unit mnd = new Unit("mnd", "Tijd", "mnd", java.math.BigDecimal.ONE);
-        Unit jaar = new Unit("jr", "Tijd", "mnd", new java.math.BigDecimal("12"));
+        Unit dg = new Unit("dg", "Tijd", "dg", Unit.Fraction.ONE);
+        Unit wk = new Unit("wk", "Tijd", "dg", Unit.Fraction.of(7, 1));
+        Unit mnd = new Unit("mnd", "Tijd", "mnd", Unit.Fraction.ONE);
+        Unit jaar = new Unit("jr", "Tijd", "mnd", Unit.Fraction.of(12, 1));
         Unit euro = new Unit("€", "Munt"), kg = new Unit("kg", "Massa");
         java.util.function.BiFunction<Unit, Unit, Unit> times = Unit::times, over = Unit::divide;
         Unit m2 = times.apply(m, m);

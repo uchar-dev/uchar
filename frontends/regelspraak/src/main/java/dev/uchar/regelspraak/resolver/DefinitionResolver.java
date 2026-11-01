@@ -809,10 +809,9 @@ public final class DefinitionResolver {
     }
 
     // ---------------- §13.3.5 unit systems ----------------
-    /** A unit's raw declaration before its conversion factor is resolved: the factor as the decimal the unit record
-     *  carries and as the exact fraction the wire writes, both read from the one written number. */
+    /** A unit's raw declaration before its conversion factor is resolved. */
     private record RawUnit(java.util.List<String> abbreviations, String word, String plural,
-                              java.math.BigDecimal conversionFactor, UnitSystem.Factor conversionFactorExact, String conversionTarget) {}
+                              Unit.Fraction conversionFactor, String conversionTarget) {}
 
     private void unitSystem(EenheidsysteemDefinitionContext ctx) {
         UnitSystem system = new UnitSystem(src(ctx.eenheidsysteemNaam()));
@@ -829,24 +828,21 @@ public final class DefinitionResolver {
             // of an abbreviation would replace the first in the maps below without a word, so it is refused by name
             // and the first declaration stands
             if (refuseRepeatedAbbreviation(system.name, abbr.isEmpty() ? List.of(primary) : abbr, written, u)) continue;
-            java.math.BigDecimal n = null; UnitSystem.Factor exact = null; String to = null;
+            Unit.Fraction n = null; String to = null;
             // a conversion ANTLR's recovery left without its number has none: the syntax error is reported, and reading
             // the missing token crashed the resolution before it was
             if (u.omrekenSpecificatie() != null && u.omrekenSpecificatie().NUMBER() != null) {  // "= 12 mnd" or "= 1/1000 m"
-                String number = u.omrekenSpecificatie().NUMBER().getText();
-                n = rational(number, primary);
-                if (n != null) exact = exactFactor(number);
+                n = rational(u.omrekenSpecificatie().NUMBER().getText(), primary);
                 to = src(u.omrekenSpecificatie().eenheidAfkorting());
             }
             raw.put(primary, new RawUnit(abbr, u.eenheidWoord() != null ? src(u.eenheidWoord()) : null,
-                    u.meervoudsvorm() != null ? src(u.meervoudsvorm()) : null, n, exact, to));
+                    u.meervoudsvorm() != null ? src(u.meervoudsvorm()) : null, n, to));
             rules.put(primary, u.getStart().getLine());
         }
         // pass 2: resolve each unit's canonical + factor, then register every spelling
-        java.util.Map<String, Unit> resolvedUnits = new java.util.HashMap<>();
+        java.util.Map<String, Unit> resolvedUnits = new java.util.LinkedHashMap<>();
         for (String primary : raw.keySet()) {
-            Unit e = resolveFactor(primary, raw, system.name, resolvedUnits, new java.util.HashSet<>(),
-                    system.exactFactors);
+            Unit e = resolveFactor(primary, raw, system.name, resolvedUnits, new java.util.HashSet<>());
             RawUnit r = raw.get(primary);
             for (String a : r.abbreviations()) system.units.put(a, e);
             if (r.word() != null) system.spellings.put(RegelSpraakModel.normaliseTimeUnit(r.word()), e);
@@ -857,8 +853,8 @@ public final class DefinitionResolver {
         // or negative factor, and one its chain of declarations grows past that bound, have no document; each is
         // refused in the loader's sentence.
         java.math.BigInteger limit = java.math.BigInteger.TWO.pow(62).subtract(java.math.BigInteger.ONE);
-        for (var entry : system.exactFactors.entrySet()) {
-            UnitSystem.Factor f = entry.getValue();
+        for (var entry : resolvedUnits.entrySet()) {
+            Unit.Fraction f = entry.getValue().factorToCanonical();
             if (f.num().signum() > 0 && f.num().compareTo(limit) <= 0 && f.den().compareTo(limit) <= 0) continue;
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                     "RGS-015", params("unit", entry.getKey(), "unitSystem", system.name, "num", f.num(), "den", f.den(),
@@ -890,15 +886,18 @@ public final class DefinitionResolver {
     }
 
     /** Parse an omrekenfactor, which the lexer hands over as a single rational NUMBER
-     *  token: a whole number ("12"), a decimal ("1,5"), or the §13.3.5.2 "1/N" form
-     *  ("1/1000"). A malformed factor is reported, not silently swallowed. */
-    private java.math.BigDecimal rational(String text, String unit) {
+     *  token, into the exact fraction: a whole number ("12" is 12/1), a decimal ("1,5" is 3/2), or the §13.3.5.2 "1/N"
+     *  form ("1/1000"). A malformed factor is reported, not silently swallowed. */
+    private Unit.Fraction rational(String text, String unit) {
         try {
             int slash = text.indexOf('/');
             if (slash >= 0)
-                return new java.math.BigDecimal(text.substring(0, slash))
-                        .divide(new java.math.BigDecimal(text.substring(slash + 1)), java.math.MathContext.DECIMAL64);
-            return new java.math.BigDecimal(text.replace(',', '.'));
+                return new Unit.Fraction(new java.math.BigInteger(text.substring(0, slash)),
+                        new java.math.BigInteger(text.substring(slash + 1)));
+            java.math.BigDecimal d = new java.math.BigDecimal(text.replace(',', '.'));
+            return d.scale() <= 0
+                    ? new Unit.Fraction(d.toBigIntegerExact(), java.math.BigInteger.ONE)
+                    : new Unit.Fraction(d.unscaledValue(), java.math.BigInteger.TEN.pow(d.scale()));
         } catch (RuntimeException e) {
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                     "RGS-017", params("value", text, "unit", unit), 0));
@@ -908,39 +907,21 @@ public final class DefinitionResolver {
 
     /** Reduce a unit to its system canonical and the factor to reach it: a base unit
      *  is its own canonical (factor 1); "<u> = N <v>" inherits v's canonical with
-     *  factor N·factor(v). Memoised; a cycle or external target stops at a base.
-     *  {@code exact} receives the same factor as an exact fraction, step for step, so the two agree on every
-     *  unit, the cycle's included. */
+     *  factor N·factor(v). Memoised; a cycle or external target stops at a base. */
     private Unit resolveFactor(String abbrev, java.util.Map<String, RawUnit> raw, String system,
-                                  java.util.Map<String, Unit> memo, java.util.Set<String> busy,
-                                  java.util.Map<String, UnitSystem.Factor> exact) {
+                                  java.util.Map<String, Unit> memo, java.util.Set<String> busy) {
         if (memo.containsKey(abbrev)) return memo.get(abbrev);
         RawUnit r = raw.get(abbrev);
         Unit e;
         if (r == null || r.conversionTarget() == null || r.conversionFactor() == null || !busy.add(abbrev)) {
-            e = new Unit(abbrev, system, abbrev, java.math.BigDecimal.ONE);
-            exact.put(abbrev, UnitSystem.Factor.EEN);
+            e = new Unit(abbrev, system, abbrev, Unit.Fraction.ONE);
         } else {
-            Unit base = resolveFactor(r.conversionTarget(), raw, system, memo, busy, exact);
+            Unit base = resolveFactor(r.conversionTarget(), raw, system, memo, busy);
             busy.remove(abbrev);
-            e = new Unit(abbrev, system, base.canonical(), r.conversionFactor().multiply(base.factorToCanonical()));
-            exact.put(abbrev, r.conversionFactorExact().times(exact.get(base.abbreviation())));
+            e = new Unit(abbrev, system, base.canonical(), r.conversionFactor().times(base.factorToCanonical()));
         }
         memo.put(abbrev, e);
         return e;
-    }
-
-    /** The omrekenfactor as an exact fraction, from the same NUMBER text {@link #rational} reads and failing on the
-     *  same texts (the caller asks only after that reading succeeded): "12" is 12/1, "1,5" is 3/2, "1/24" is 1/24. */
-    private static UnitSystem.Factor exactFactor(String text) {
-        int slash = text.indexOf('/');
-        if (slash >= 0)
-            return new UnitSystem.Factor(new java.math.BigInteger(text.substring(0, slash)),
-                    new java.math.BigInteger(text.substring(slash + 1)));
-        java.math.BigDecimal d = new java.math.BigDecimal(text.replace(',', '.'));
-        return d.scale() <= 0
-                ? new UnitSystem.Factor(d.toBigIntegerExact(), java.math.BigInteger.ONE)
-                : new UnitSystem.Factor(d.unscaledValue(), java.math.BigInteger.TEN.pow(d.scale()));
     }
 
     // ---------------- §13.3.8 parameters ----------------

@@ -4,7 +4,7 @@ import dev.uchar.regelspraak.core.TimeCalculation;
 import dev.uchar.regelspraak.model.Unit;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       contract so the breakage cannot happen quietly.</li>
  * </ul>
  *
- * <p>Mutation-measured: with {@code return BigDecimal.ONE} put back at the three throw sites, EIGHT
+ * <p>Mutation-measured: with {@code return Unit.Fraction.ONE} put back at the three throw sites, EIGHT
  * of the twelve go red — the six refusals, the wire shape and the absent target — while the three
  * preserved factors and the predicate stay green. No OTHER test in the suite moves, which is the
  * same zero the call-site probe measured: nothing else covered this branch.
@@ -44,14 +44,14 @@ class UnitFactorTest {
     // what fails is the PAIRING — two declared units need not inter-convert.
     private static final Unit EUR = new Unit("EUR", "Valuta");
     private static final Unit KG = new Unit("kg", "Gewicht");
-    private static final Unit TON = new Unit("t", "Gewicht", "kg", new BigDecimal("1000"));
+    private static final Unit TON = new Unit("t", "Gewicht", "kg", Unit.Fraction.of(1000, 1));
     /** The case-lie of the measured divergence: a copy repeating kg/Gewicht/kg in a different case. */
-    private static final Unit CASE = new Unit("KG", "GEWICHT", "KG", BigDecimal.ONE);
-    private static final Unit JR = new Unit("jr", "Tijd", "mnd", new BigDecimal("12"));
-    private static final Unit MND = new Unit("mnd", "Tijd", "mnd", BigDecimal.ONE);
+    private static final Unit CASE = new Unit("KG", "GEWICHT", "KG", Unit.Fraction.ONE);
+    private static final Unit JR = new Unit("jr", "Tijd", "mnd", Unit.Fraction.of(12, 1));
+    private static final Unit MND = new Unit("mnd", "Tijd", "mnd", Unit.Fraction.ONE);
     /** Same system as jr/mnd, a DIFFERENT canonical — the appel-vs-peer pair numeratorConvertible names. */
-    private static final Unit DG = new Unit("dg", "Tijd", "dg", BigDecimal.ONE);
-    private static final Unit M = new Unit("m", "Lengte", "m", BigDecimal.ONE);
+    private static final Unit DG = new Unit("dg", "Tijd", "dg", Unit.Fraction.ONE);
+    private static final Unit M = new Unit("m", "Lengte", "m", Unit.Fraction.ONE);
     /** §4.4's product of a unit with itself: m^2, another dimension than m. */
     private static final Unit M_TIMES_M = Unit.times(M, M);
     /** The bare corpus shape (WF-038 tijdsduurparameter): no system, no canonical, no factor. */
@@ -146,9 +146,7 @@ class UnitFactorTest {
 
     /** mnd -> jr is the non-terminating inverse: a numerator and a denominator, no quotient. */
     @Test void month_to_year_stays_a_twelfth() {
-        BigDecimal[] exact = MND.exactRestateFactors(JR);
-        assertEquals(0, exact[0].compareTo(BigDecimal.ONE), "exacte teller");
-        assertEquals(0, exact[1].compareTo(new BigDecimal("12")), "exacte noemer");
+        fraction("1/12", MND.exactRestateFactors(JR));
     }
 
     /** The denominator INVERTS: EUR/mnd -> EUR/jr is 12, because the jr that replaces the mnd is
@@ -162,14 +160,15 @@ class UnitFactorTest {
     /** A factor just above 1 is a factor: the answer comes from numerator and denominator, not from a ratio that
      *  rounds to 1. The same holds for a factor just below 1, and for two units whose factors differ past the rounding. */
     @Test void a_factor_that_rounds_to_one_requires_a_conversion() {
-        Unit base = new Unit("c", "Stelsel", "c", BigDecimal.ONE);
-        Unit above = new Unit("a", "Stelsel", "c", new BigDecimal("1.00000000000000000001"));
-        Unit below = new Unit("b", "Stelsel", "c", new BigDecimal("0.99999999999999999999"));
+        Unit base = new Unit("c", "Stelsel", "c", Unit.Fraction.ONE);
+        Unit.Fraction justAbove = new Unit.Fraction(new BigInteger("100000000000000000001"), BigInteger.TEN.pow(20));
+        Unit above = new Unit("a", "Stelsel", "c", justAbove);
+        Unit below = new Unit("b", "Stelsel", "c", new Unit.Fraction(new BigInteger("99999999999999999999"), BigInteger.TEN.pow(20)));
         assertTrue(above.requiredConversion(base));
         assertTrue(base.requiredConversion(above));
         assertTrue(below.requiredConversion(base));
         assertTrue(above.requiredConversion(below));
-        assertFalse(above.requiredConversion(new Unit("a2", "Stelsel", "c", new BigDecimal("1.00000000000000000001"))),
+        assertFalse(above.requiredConversion(new Unit("a2", "Stelsel", "c", justAbove)),
                 "twee namen met één factor vragen geen omrekening");
     }
 
@@ -179,7 +178,7 @@ class UnitFactorTest {
         assertEquals("kg", TON.canonical());
         assertEquals("t", TON.abbreviation());
         assertEquals("Gewicht", TON.system());
-        assertEquals(0, TON.factorToCanonical().compareTo(new BigDecimal("1000")));
+        assertEquals(Unit.Fraction.of(1000, 1), TON.factorToCanonical());
         for (Unit other : List.of(EUR_PER_JR, M_TIMES_M, Unit.divide(null, JR), Unit.times(EUR, M))) {
             for (java.util.function.Function<Unit, Object> field : List.<java.util.function.Function<Unit, Object>>of(
                     Unit::abbreviation, Unit::system, Unit::canonical, Unit::factorToCanonical)) {
@@ -217,16 +216,16 @@ class UnitFactorTest {
         assertEquals("kg", TON.dimensionRendering());
         assertEquals("EUR/mnd", EUR_PER_JR.dimensionRendering());
         assertEquals("m^2", Unit.times(M, CM).dimensionRendering());
-        assertEquals("1", Unit.ofParts(List.of(new Unit("km", "Lengte", "m", new BigDecimal("1000")), M.toThePower(-1))).dimensionRendering(),
+        assertEquals("1", Unit.ofParts(List.of(new Unit("km", "Lengte", "m", Unit.Fraction.of(1000, 1)), M.toThePower(-1))).dimensionRendering(),
                 "km/m is twee factoren en geen klasse");
     }
 
     /** IR-SPEC ch. 2.5, point 5: the spelling of a unit comes from its factors. */
     @Test void a_unit_is_spelled_from_its_factors() {
-        Unit.Factor m2 = new Unit.Factor("m", "Lengte", "m", BigDecimal.ONE, 2);
-        Unit.Factor s = new Unit.Factor("s", "Tijd", "s", BigDecimal.ONE, -1);
-        Unit.Factor u = new Unit.Factor("u", "Tijd", "s", new BigDecimal("3600"), -1);
-        Unit.Factor eur = new Unit.Factor("€", "Geld", "€", BigDecimal.ONE, 1);
+        Unit.Factor m2 = new Unit.Factor("m", "Lengte", "m", Unit.Fraction.ONE, 2);
+        Unit.Factor s = new Unit.Factor("s", "Tijd", "s", Unit.Fraction.ONE, -1);
+        Unit.Factor u = new Unit.Factor("u", "Tijd", "s", Unit.Fraction.of(3600, 1), -1);
+        Unit.Factor eur = new Unit.Factor("€", "Geld", "€", Unit.Fraction.ONE, 1);
         assertEquals("m", M.rendering());
         assertEquals("mnd", MND.rendering());
         assertEquals("€/s", new Unit(List.of(eur, s)).rendering());
@@ -234,7 +233,7 @@ class UnitFactorTest {
         assertEquals("m^2", new Unit(List.of(m2)).rendering());
         assertEquals("m^2/s", new Unit(List.of(m2, s)).rendering());
         assertEquals("€/s/u", new Unit(List.of(eur, s, u)).rendering());
-        assertEquals("1/m^2", new Unit(List.of(new Unit.Factor("m", "Lengte", "m", BigDecimal.ONE, -2))).rendering());
+        assertEquals("1/m^2", new Unit(List.of(new Unit.Factor("m", "Lengte", "m", Unit.Fraction.ONE, -2))).rendering());
     }
 
     /** WF-124 (d): the canonical order is one of code points, which is not the order of {@code String.compareTo} on a
@@ -250,25 +249,39 @@ class UnitFactorTest {
     /** An atom named twice in a product is one factor with its exponents added, and it keeps its conversion pair. */
     @Test void a_self_product_is_one_factor_with_exponent_two() {
         Unit square = Unit.times(M, M);
-        assertEquals(List.of(new Unit.Factor("m", "Lengte", "m", BigDecimal.ONE, 2)), square.factors());
+        assertEquals(List.of(new Unit.Factor("m", "Lengte", "m", Unit.Fraction.ONE, 2)), square.factors());
         assertEquals("m^2", square.rendering());
         assertFalse(square.convertibleTo(M));
         assertTrue(square.convertibleTo(square));
         assertFalse(square.requiredConversion(square));
     }
 
-    private static final Unit CM = new Unit("cm", "Lengte", "m", new BigDecimal("0.01"));
+    private static final Unit CM = new Unit("cm", "Lengte", "m", Unit.Fraction.of(1, 100));
 
-    private static void fraction(String expected, BigDecimal[] f) {
-        assertEquals(expected, f[0].stripTrailingZeros().toPlainString() + "/" + f[1].stripTrailingZeros().toPlainString());
+    private static void fraction(String expected, Unit.Fraction f) {
+        assertEquals(expected, f.num() + "/" + f.den());
+    }
+
+    /** A factor without a finite decimal stays that fraction through a restatement, a power and a product (ch. 2.1). */
+    @Test void a_factor_without_a_finite_decimal_stays_exact() {
+        Unit dn = new Unit("dn", "Rooster", "dn", Unit.Fraction.ONE);
+        Unit wa = new Unit("wa", "Rooster", "dn", Unit.Fraction.of(1, 3));
+        assertEquals(Unit.Fraction.of(1, 3), wa.factorToCanonical());
+        fraction("1/3", wa.exactRestateFactors(dn));
+        fraction("3/1", dn.exactRestateFactors(wa));
+        fraction("1/9", wa.toThePower(2).exactRestateFactors(dn.toThePower(2)));
+        fraction("1/3", dn.toThePower(-1).exactRestateFactors(wa.toThePower(-1)));
+        fraction("1/3", Unit.timesFactors(dn, wa));
+        fraction("3/1", Unit.divideFactors(dn, wa));
+        fraction("1/1", wa.exactRestateFactors(new Unit("wb", "Rooster", "dn", Unit.Fraction.of(2, 6))));
     }
 
     /** RUNTIME-SEMANTICS ch. 2.6, rule 1: a restatement is the product of the powers of the declared factors, exact. */
     @Test void a_power_restates_by_the_power_of_its_factor() {
         Unit square = Unit.times(M, M), cmSquare = Unit.times(CM, CM);
         assertTrue(square.convertibleTo(cmSquare));
-        fraction("1/0.0001", square.exactRestateFactors(cmSquare));
-        fraction("0.0001/1", cmSquare.exactRestateFactors(square));
+        fraction("10000/1", square.exactRestateFactors(cmSquare));
+        fraction("1/10000", cmSquare.exactRestateFactors(square));
         assertTrue(Unit.times(CM, M).convertibleTo(square), "cm·m heeft de dimensie van m^2, in welke spelling ook");
     }
 
@@ -282,9 +295,9 @@ class UnitFactorTest {
     /** Rule 2: a right factor of the class of a left one is restated into it first, on the value too. */
     @Test void a_product_takes_its_unit_from_the_left_and_its_factor_from_the_right() {
         assertEquals("cm^2", Unit.times(CM, M).rendering());
-        fraction("1/0.01", Unit.timesFactors(CM, M));
+        fraction("100/1", Unit.timesFactors(CM, M));
         assertEquals("m^2", Unit.times(M, CM).rendering());
-        fraction("0.01/1", Unit.timesFactors(M, CM));
+        fraction("1/100", Unit.timesFactors(M, CM));
         fraction("1/12", Unit.timesFactors(EUR_PER_JR, MND));
         assertEquals("EUR", Unit.times(EUR_PER_JR, MND).rendering());
         fraction("1/1", Unit.timesFactors(M, M));
@@ -294,9 +307,9 @@ class UnitFactorTest {
     /** Rule 3: the quotient is the product with the inverse. */
     @Test void a_quotient_is_the_product_with_the_inverse() {
         assertEquals("m", Unit.divide(Unit.times(M, M), CM).rendering());
-        fraction("0.01/1", new BigDecimal[]{Unit.divideFactors(Unit.times(M, M), CM)[1], Unit.divideFactors(Unit.times(M, M), CM)[0]});
-        assertNull(Unit.divide(DG, new Unit("wk", "Tijd", "dg", new BigDecimal("7"))));
-        fraction("1/7", Unit.divideFactors(DG, new Unit("wk", "Tijd", "dg", new BigDecimal("7"))));
+        fraction("1/100", Unit.divideFactors(Unit.times(M, M), CM).inverted());
+        assertNull(Unit.divide(DG, new Unit("wk", "Tijd", "dg", Unit.Fraction.of(7, 1))));
+        fraction("1/7", Unit.divideFactors(DG, new Unit("wk", "Tijd", "dg", Unit.Fraction.of(7, 1))));
         assertEquals("1/m^2", Unit.divide(null, Unit.times(M, M)).rendering());
     }
 

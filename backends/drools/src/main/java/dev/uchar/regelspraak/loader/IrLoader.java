@@ -40,9 +40,7 @@ import dev.uchar.regelspraak.core.FixedStartPoint;
 import dev.uchar.regelspraak.transpiler.core.EffectiveUnit;
 import dev.uchar.regelspraak.transpiler.core.Namen;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -94,16 +92,8 @@ import java.util.Map;
  * records keep their own shape and this loader lays the wire back onto them one to one: a {@code Number} whose unit
  * is '%' is a {@link Datatype.Percentage} (its presentation tag, legal only at a declaration, carries no meaning
  * here), any other a {@link Datatype.Numeric}; {@code day} is {@link Datatype.DateInDays} and {@code millisecond}
- * {@link Datatype.DateTime}. The exact factor becomes the record's decimal {@code factorToCanonical} — a whole
- * number exactly, any other fraction rounded to 16 significant digits ({@link MathContext#DECIMAL64}), the rounding
- * the frontend gives a declared "1/N" — and the unit system keeps the fraction itself beside it
- * ({@link UnitSystem#exactFactors}). From there this backend restates between units with the ratio of those
- * decimals, where {@code ref} reckons with the fraction: a tracked delta of the Drools backend (CONSTRUCTS row 26). The
- * corpus does not see it, since every factor there is a whole number, but a verifier-clean document the frontend
- * emits does: with a unit declared "= 1/3" of another, 1.00 of the one plus 3.00 of the other reads 1.9999999999999999
- * in a 2-decimal attribute, and rounded down to 0 decimals it is 1 where 2 is due ({@code ref}: 2.00 and 2). The
- * backend's {@code PreRoundedFactorWitnessTest} pins that answer, and the like one for 1/24, in both branches.
- * Closing the delta means restating through the fraction the unit system keeps; this loader does not. A type-system
+ * {@link Datatype.DateTime}. The exact factor goes into the {@link Unit.Fraction} of the unit's factor as written, so
+ * a declared "1/3" is 1/3 up to the collapse point, as in {@code ref} ({@code ExactFactorWitnessTest}). A type-system
  * node of the L2 shape, or one of its fields, is unknown by name.
  *
  * <p><b>The rule and expression layers (L4 of the v1 wire migration).</b> A named form — {@code Rule},
@@ -1156,12 +1146,12 @@ public final class IrLoader {
 
     /** IR-SPEC ch. 2.5: a unit system and its units, one Unit per abbreviation under the name identity of ch. 2.1
      *  (WF-009, the identity its canonical lookup resolves under). The model keeps every unit under its abbreviation,
-     *  its further spellings in the alias map, and its exact factor beside the record's decimal one. */
+     *  its further spellings in the alias map. */
     private UnitSystem unitSystem(String path, JsonNode n) {
         fields(n, path, "UnitSystem", List.of("node", "name", "units"), List.of());
         UnitSystem es = new UnitSystem(name(n, path, "name"));
         list(n, path, "units", (up, u) -> {
-            Unit e = unit(u, up, es);
+            Unit e = unit(u, up, true);
             if (collision(es.units.keySet(), e.abbreviation()) != null)
                 throw new DocumentError(up + "/abbreviation", "the unit '" + e.abbreviation() + "' is declared twice in"
                         + " the unit system '" + es.name + "': one Unit per abbreviation");
@@ -1182,7 +1172,7 @@ public final class IrLoader {
         for (int i = 0; i < n.size(); i++) {
             String p = path + "/" + i;
             JsonNode f = n.get(i);
-            Unit single = unit(f, p, null);
+            Unit single = unit(f, p, false);
             int exponent = f.has("exponent") ? whole(f, p, "exponent", "Unit.exponent") : 1;
             if (exponent == 0) throw new DocumentError(p + "/exponent", "a factor with exponent 0");
             Unit.Factor atom = single.factors().get(0);
@@ -1191,23 +1181,21 @@ public final class IrLoader {
         return new Unit(factors);
     }
 
-    /** One unit record, with {@code system} the unit system it is declared in, or null where it is a factor of a unit
-     *  that occurs. A declared unit may carry its further spellings, at least one; its exact factor lands in the system. */
-    private Unit unit(JsonNode n, String path, UnitSystem system) {
+    /** One unit record, {@code declared} in a unit system, or else a factor of a unit that occurs. A declared unit may
+     *  carry its further spellings, at least one. */
+    private Unit unit(JsonNode n, String path, boolean declared) {
         // a factor written null is a factor in no form, refused in the factor's own sentence
         if (n.isObject() && n.has("factorToCanonical") && n.get("factorToCanonical").isNull())
             throw new DocumentError(path + "/factorToCanonical", FACTOR_FORM + "null");
-        fields(n, path, "Unit", List.of("node", "abbreviation"), system == null
-                ? List.of("system", "canonical", "factorToCanonical", "exponent")
-                : List.of("system", "canonical", "factorToCanonical", "spellings"));
+        fields(n, path, "Unit", List.of("node", "abbreviation"), declared
+                ? List.of("system", "canonical", "factorToCanonical", "spellings")
+                : List.of("system", "canonical", "factorToCanonical", "exponent"));
         String abbreviation = textAt(n, path, "abbreviation");
-        UnitSystem.Factor factor = n.has("factorToCanonical")
+        Unit.Fraction factor = n.has("factorToCanonical")
                 ? factor(n.get("factorToCanonical"), path + "/factorToCanonical") : null;
-        if (system != null && n.has("spellings") && textList(n, path, "spellings").isEmpty())
+        if (declared && n.has("spellings") && textList(n, path, "spellings").isEmpty())
             throw new DocumentError(path + "/spellings", SPELLINGS_EMPTY);
-        if (system != null && factor != null) system.exactFactors.put(abbreviation, factor);
-        return new Unit(abbreviation, optText(n, path, "system"), optText(n, path, "canonical"),
-                factor == null ? null : decimal(factor));
+        return new Unit(abbreviation, optText(n, path, "system"), optText(n, path, "canonical"), factor);
     }
 
     /** The shared loader's sentence for an empty list of spellings. */
@@ -1218,10 +1206,10 @@ public final class IrLoader {
      *  — a JSON number, a string, a missing or unknown key, a value below 1 or above the bound — is refused in the
      *  shared loader's one sentence. That the fraction is in lowest terms is the verifier's WF-092, not a load
      *  question, so {2, 4} is read as 1/2, as the shared loader reads it for {@code ref} and the ASP backend. */
-    private static UnitSystem.Factor factor(JsonNode n, String path) {
+    private static Unit.Fraction factor(JsonNode n, String path) {
         if (n.isObject() && n.size() == 2 && n.has("num") && n.has("den")) {
             BigInteger num = wholeFromOne(n.get("num")), den = wholeFromOne(n.get("den"));
-            if (num != null && den != null) return new UnitSystem.Factor(num, den);
+            if (num != null && den != null) return new Unit.Fraction(num, den);
         }
         throw new DocumentError(path, FACTOR_FORM + n);
     }
@@ -1234,13 +1222,6 @@ public final class IrLoader {
         if (!c.isIntegralNumber()) return null;
         BigInteger v = c.bigIntegerValue();
         return v.signum() > 0 && v.bitLength() <= 62 ? v : null;
-    }
-
-    /** The record's decimal factor of an exact fraction: a whole number exactly, any other fraction rounded to 16
-     *  significant digits, as the frontend rounds a declared "1/N" (see the class comment). */
-    private static BigDecimal decimal(UnitSystem.Factor f) {
-        return f.den().equals(BigInteger.ONE) ? new BigDecimal(f.num())
-                : new BigDecimal(f.num()).divide(new BigDecimal(f.den()), MathContext.DECIMAL64);
     }
 
     /** IR-SPEC ch. 2.9: a day kind and the plural it takes as a duration unit. The model keeps the names, and a

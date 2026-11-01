@@ -837,11 +837,8 @@ final class ExpressionBuilder {
     private static Rational conversion(Expr sub, Unit target) {
         Unit van = sub.type() == null ? null : sub.type().unitOf();
         if (van == null || target == null || !van.convertibleTo(target)) return null;
-        java.math.BigDecimal[] f = van.exactRestateFactors(target);
-        if (f[0].remainder(f[1]).signum() == 0) return null;
-        // a literal's count is known, so its restatement is too: 12 mnd is exactly 1 jr
-        java.math.BigDecimal[] r = sub instanceof Expr.Literal l ? dev.uchar.regelspraak.model.RationalParser.of(l.valueText()) : null;
-        if (r != null && r[0].multiply(f[0]).remainder(r[1].multiply(f[1])).signum() == 0) return null;
+        Unit.Fraction f = van.exactRestateFactors(target);
+        if (f.isWhole() || wholeCount(sub, f)) return null;
         return new Rational(sub, Msg.frontend("PART.fraction-conversion", "target", target.rendering(), "from", van.rendering()));
     }
 
@@ -852,16 +849,22 @@ final class ExpressionBuilder {
         Unit el = b.left().type() == null ? null : b.left().type().unitOf();
         Unit rightUnit = b.right().type() == null ? null : b.right().type().unitOf();
         if (el == null || rightUnit == null) return null;
-        java.math.BigDecimal[] f = Unit.timesFactors(el, rightUnit);
-        if (f[0].remainder(f[1]).signum() == 0) return null;
+        Unit.Fraction f = Unit.timesFactors(el, rightUnit);
+        if (f.isWhole()) return null;
         boolean quantityLeft = rightUnit.denominator() != null && el.denominator() == null;
         Expr sub = quantityLeft ? b.left() : b.right();
         Unit rate = quantityLeft ? rightUnit : el, quantity = quantityLeft ? el : rightUnit;
-        // a literal's count is known, so its restatement is too: 7 dg is exactly 1 wk
-        java.math.BigDecimal[] r = sub instanceof Expr.Literal l ? dev.uchar.regelspraak.model.RationalParser.of(l.valueText()) : null;
-        if (r != null && r[0].multiply(f[0]).remainder(r[1].multiply(f[1])).signum() == 0) return null;
+        if (wholeCount(sub, f)) return null;
         Unit target = rate.denominator() != null ? rate.denominator() : rate;
         return new Rational(sub, Msg.frontend("PART.fraction-conversion", "target", target.rendering(), "from", quantity.rendering()));
+    }
+
+    /** A literal's count is known, so its restatement is too: 12 mnd is exactly 1 jr, 7 dg is exactly 1 wk. */
+    private static boolean wholeCount(Expr sub, Unit.Fraction f) {
+        if (!(sub instanceof Expr.Literal l)) return false;
+        java.math.BigDecimal[] r = dev.uchar.regelspraak.model.RationalParser.of(l.valueText());
+        return r != null && r[0].multiply(new java.math.BigDecimal(f.num()))
+                .remainder(r[1].multiply(new java.math.BigDecimal(f.den()))).signum() == 0;
     }
 
     /** The next smaller calendar unit the author can step the rest in, spelled as the language reads it ("min"

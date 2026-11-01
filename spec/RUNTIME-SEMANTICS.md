@@ -490,10 +490,8 @@ van nul* are sign-symmetric.
 
 - **plus/min/verminderd met** require compatible units (`IR-SPEC.md`
   ch. 2.5); the right operand is restated into the left operand's unit
-  with the exact num/den factors — under the exact model this needs no
-  rounding at all until a collapse point (v0 carries the division leg at
-  16 significant digits as a documented residual). Result carries the
-  left unit.
+  with the exact num/den factors, which needs no rounding at all until a
+  collapse point. Result carries the left unit.
 - **Comparison across units** restates *both* sides by their exact
   canonical factors: `24 mnd = 2 jr` compares 24 = 2·12 — exact, never a
   truncated ratio.

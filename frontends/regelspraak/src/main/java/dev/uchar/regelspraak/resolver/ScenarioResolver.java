@@ -1378,46 +1378,11 @@ public final class ScenarioResolver {
         if (!assignable(target, raw, line, what)) return null;
         Unit targetUnit = target == null ? null : target.unitOf();
         if (sourceUnit != null && targetUnit != null && sourceUnit.convertibleTo(targetUnit) && sourceUnit.requiredConversion(targetUnit)) {
-            BigInteger[] fb = exactRescaling(sourceUnit, targetUnit);
-            // the typing admits two units with one canonical only, and every declared unit has its exact factor
-            if (fb == null)
-                throw new IllegalStateException("ScenarioResolver: tussen de eenheden '" + sourceUnit.rendering() + "' en '"
-                        + targetUnit.rendering() + "' is geen exacte factor, terwijl de typering ze omwisselbaar noemt");
-            return ScenarioValue.fromNumber(lexemeText(rational[0].multiply(fb[0]), rational[1].multiply(fb[1])));
+            Unit.Fraction f = sourceUnit.exactRestateFactors(targetUnit);
+            return ScenarioValue.fromNumber(lexemeText(rational[0].multiply(f.num()), rational[1].multiply(f.den())));
         }
         // no restatement: the written number in the emitter's lexeme, so a case file and an IR document agree
         return ScenarioValue.fromNumber(dev.uchar.regelspraak.emit.IrEmitter.numberLexeme(text));
-    }
-
-    /** The exact factor {num, den} that restates a quantity in {@code van} as one in {@code naar}: the factor of each
-     *  atom to the shared canonical as its system declares it, to the power of its exponent, those of {@code naar}
-     *  inverted. The unit records carry those factors rounded to 16 digits, and a restatement through them is a rounding:
-     *  "2 gtd" with "gtd = 1/3 etm" would become 0.6666666666666666 etm where the wire and every executor read 2/3. Null
-     *  where a unit has no exact factor. */
-    private BigInteger[] exactRescaling(Unit van, Unit to) {
-        BigInteger num = BigInteger.ONE, den = BigInteger.ONE;
-        for (int side = 0; side < 2; side++)
-            for (Unit.Factor f : (side == 0 ? van : to).factors()) {
-                BigInteger[] x = exactFactor(f);
-                if (x == null) return null;
-                int exponent = side == 0 ? f.exponent() : -f.exponent();
-                int power = Math.abs(exponent);
-                num = num.multiply((exponent > 0 ? x[0] : x[1]).pow(power));
-                den = den.multiply((exponent > 0 ? x[1] : x[0]).pow(power));
-            }
-        return new BigInteger[]{num, den};
-    }
-
-    /** The exact factor of {@code e} to its canonical: the fraction its system declares, else a whole decimal factor
-     *  (a unit that is its own canonical, a built-in unit), else null — as the emitter writes it on the wire. */
-    private BigInteger[] exactFactor(Unit.Factor e) {
-        BigDecimal f = e.factorToCanonical();
-        if (f == null) return null;
-        RegelSpraakModel.UnitSystem es = e.system() == null ? null : model.unitSystems.get(e.system());
-        RegelSpraakModel.UnitSystem.Factor x = es == null ? null : es.exactFactors.get(e.abbreviation());
-        if (x != null) return new BigInteger[]{x.num(), x.den()};
-        return f.signum() > 0 && f.stripTrailingZeros().scale() <= 0 ? new BigInteger[]{f.toBigIntegerExact(), BigInteger.ONE}
-                : null;
     }
 
     /** {@code a / b} as a reduced fraction of integers, the denominator positive. */

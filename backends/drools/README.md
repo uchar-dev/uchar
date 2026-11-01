@@ -451,7 +451,7 @@ such place reports to it where it runs; a condition deposits through a rule of t
 de voorwaarde`, with the same left-hand side and a probe in its test, so a member of a composite that its verdict no
 longer reads deposits nothing (ch. 5.10). Witness `TmsDepositWitnessTest`. Rounding,
 clamp, the builtins outside the folds, a text composition of texts, percentages and `percentageOf`, a power with a
-whole exponent, the restatement of units at every operand boundary (ch. 2.6), a dimension cell and the eleven and
+whole exponent, the exact restatement of units at every operand boundary (ch. 2.6), a dimension cell and the eleven and
 exact-digit tests compute through the runtime's helpers from bound values; the last three and the sub-day extractors,
 dateWith and dateTimeWith, the reference interpreter declines (ch. 5.11), so only this backend computes them. The
 evaluation date is the fact `EvaluationDate`, put in working memory once per session from the global `evaluationDate` the case

@@ -1,6 +1,6 @@
 package dev.uchar.regelspraak.model;
 
-import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -16,14 +16,15 @@ import java.util.Objects;
  *
  * <p>A factor names its abbreviation ("jr", "km", "mnd", "€"), the unit system that declares it, and — when the system
  * declares conversions (§13.3.5.2, "het jaar jr = 12 mnd") — the system's canonical unit it reduces to plus the factor
- * that expresses one of this unit in that canonical unit.
+ * that expresses one of this unit in that canonical unit, an exact {@link Fraction} ("1/3" stays 1/3).
  *
  * <p>The algebra is that of a product of factors (RUNTIME-SEMANTICS ch. 2.6). {@link #times} adds the exponents of two
  * units and {@link #divide} subtracts them, a right factor restated into the left factor of its class on the way. Two
  * units are inter-convertible when they have one dimension: the same canonical classes with the same exponents.
  * {@link #exactRestateFactors} gives the multiplier to restate a quantity in this unit as a quantity in a convertible
  * target, the product of the powers of the declared factors, so arithmetic and comparison across units (jr vs mnd, €/jr
- * vs €/mnd, m^2 vs cm^2) are scaled rather than computed on raw magnitudes.
+ * vs €/mnd, m^2 vs cm^2) are scaled rather than computed on raw magnitudes, and no factor is rounded on the way to a
+ * collapse point (RUNTIME-SEMANTICS ch. 2.1).
  *
  * <p>{@link #abbreviation}, {@link #system}, {@link #canonical} and {@link #factorToCanonical} are the fields of a
  * declared unit, one factor with exponent 1 ({@link #isAtom}), and refuse any other unit: a spelling comes from
@@ -32,8 +33,37 @@ import java.util.Objects;
  */
 public record Unit(List<Factor> factors) {
 
+    /** An exact fraction in lowest terms, its sign on the numerator. A declared factor may be zero or negative; the
+     *  resolver reports those, because the wire writes a factor as a positive fraction. */
+    public record Fraction(BigInteger num, BigInteger den) {
+        public static final Fraction ONE = new Fraction(BigInteger.ONE, BigInteger.ONE);
+
+        public Fraction {
+            if (den.signum() == 0) throw new IllegalArgumentException("een breuk met noemer 0");
+            if (den.signum() < 0) { num = num.negate(); den = den.negate(); }
+            BigInteger g = num.gcd(den);
+            num = num.divide(g);
+            den = den.divide(g);
+        }
+
+        public static Fraction of(long num, long den) { return new Fraction(BigInteger.valueOf(num), BigInteger.valueOf(den)); }
+
+        public Fraction times(Fraction o) { return new Fraction(num.multiply(o.num), den.multiply(o.den)); }
+
+        public Fraction inverted() { return new Fraction(den, num); }
+
+        public boolean isWhole() { return den.equals(BigInteger.ONE); }
+
+        Fraction toThePower(int e) {
+            int size = Math.abs(e);
+            return e >= 0 ? new Fraction(num.pow(size), den.pow(size)) : new Fraction(den.pow(size), num.pow(size));
+        }
+
+        @Override public String toString() { return isWhole() ? num.toString() : num + "/" + den; }
+    }
+
     /** One factor of a unit: a declared unit and its whole exponent, never 0. */
-    public record Factor(String abbreviation, String system, String canonical, BigDecimal factorToCanonical, int exponent) {
+    public record Factor(String abbreviation, String system, String canonical, Fraction factorToCanonical, int exponent) {
 
         Factor inverted() { return withExponent(-exponent); }
 
@@ -46,9 +76,7 @@ public record Unit(List<Factor> factors) {
 
         boolean sameAtom(Factor o) {
             return Objects.equals(abbreviation, o.abbreviation) && Objects.equals(system, o.system)
-                    && Objects.equals(canonical, o.canonical)
-                    && (factorToCanonical == null ? o.factorToCanonical == null
-                            : o.factorToCanonical != null && factorToCanonical.compareTo(o.factorToCanonical) == 0);
+                    && Objects.equals(canonical, o.canonical) && Objects.equals(factorToCanonical, o.factorToCanonical);
         }
 
         /** Both fields of the conversion pair, or neither (a bare unit, factor 1). Half a pair has no factor. */
@@ -80,10 +108,10 @@ public record Unit(List<Factor> factors) {
     }
 
     /** A simple unit with no declared conversion: it is its own canonical (factor 1). */
-    public Unit(String abbreviation, String system) { this(abbreviation, system, abbreviation, BigDecimal.ONE); }
+    public Unit(String abbreviation, String system) { this(abbreviation, system, abbreviation, Fraction.ONE); }
 
     /** A simple unit with a declared canonical + factor. */
-    public Unit(String abbreviation, String system, String canonical, BigDecimal factorToCanonical) {
+    public Unit(String abbreviation, String system, String canonical, Fraction factorToCanonical) {
         this(List.of(new Factor(abbreviation, system, canonical, factorToCanonical, 1)));
     }
 
@@ -162,33 +190,28 @@ public record Unit(List<Factor> factors) {
         return a == null ? reciprocal(b) : multiply(a, reciprocal(b)).unit();
     }
 
-    /** The exact factor {num, den} the value of {@code a} times {@code b} takes beside the two values: 100/1 for cm
-     *  times m, 7/1 for €/dg times wk, 1/1 where no factor of {@code b} is restated. */
-    public static BigDecimal[] timesFactors(Unit a, Unit b) {
-        return a == null || b == null ? new BigDecimal[]{BigDecimal.ONE, BigDecimal.ONE} : fraction(multiply(a, b).powers());
+    /** The exact factor the value of {@code a} times {@code b} takes beside the two values: 100/1 for cm times m, 7/1 for
+     *  €/dg times wk, 1/1 where no factor of {@code b} is restated. */
+    public static Fraction timesFactors(Unit a, Unit b) {
+        return a == null || b == null ? Fraction.ONE : fraction(multiply(a, b).powers());
     }
 
     /** As {@link #timesFactors}, for {@code a} divided by {@code b}. */
-    public static BigDecimal[] divideFactors(Unit a, Unit b) {
-        return a == null || b == null ? new BigDecimal[]{BigDecimal.ONE, BigDecimal.ONE}
-                : fraction(multiply(a, reciprocal(b)).powers());
+    public static Fraction divideFactors(Unit a, Unit b) {
+        return a == null || b == null ? Fraction.ONE : fraction(multiply(a, reciprocal(b)).powers());
     }
 
-    /** ∏ f^e of {@code powers} as {num, den}, exactly: powers of the declared factors, each as a {@code BigDecimal}
-     *  power, which rounds nothing. A bare unit has factor 1.
+    /** ∏ f^e of {@code powers}, exactly. A bare unit has factor 1.
      *  @throws IllegalStateException on half a conversion pair, which has no factor. */
-    private static BigDecimal[] fraction(List<Factor> powers) {
-        BigDecimal num = BigDecimal.ONE, den = BigDecimal.ONE;
+    private static Fraction fraction(List<Factor> powers) {
+        Fraction product = Fraction.ONE;
         for (Factor f : powers) {
             if (!f.hasFactor())
                 throw new IllegalStateException("onbekende omrekenfactor van '" + f.abbreviation() + "' ("
                         + f.factorToCanonical() + "): canoniek '" + f.canonical() + "' zonder gedeclareerde factorNaarCanoniek");
-            if (f.factorToCanonical() == null) continue;
-            BigDecimal power = f.factorToCanonical().pow(Math.abs(f.exponent()));
-            if (f.exponent() > 0) num = num.multiply(power);
-            else den = den.multiply(power);
+            if (f.factorToCanonical() != null) product = product.times(f.factorToCanonical().toThePower(f.exponent()));
         }
-        return new BigDecimal[]{num, den};
+        return product;
     }
 
     /** One factor with exponent 1: the only unit a calendar table or a canonical table can name. */
@@ -248,7 +271,7 @@ public record Unit(List<Factor> factors) {
     public String canonical() { return atom().canonical(); }
 
     /** The factor into the canonical unit; see {@link #abbreviation}. */
-    public BigDecimal factorToCanonical() { return atom().factorToCanonical(); }
+    public Fraction factorToCanonical() { return atom().factorToCanonical(); }
 
     /** The factors with a negative exponent, inverted, as a unit; null where there are none. */
     public Unit denominator() {
@@ -269,7 +292,7 @@ public record Unit(List<Factor> factors) {
     /** The spelling of {@link #dimension}: "€/mnd" for "€/jr" with "jr = 12 mnd", "1" where no class is left. */
     public String dimensionRendering() {
         List<Factor> classes = new ArrayList<>();
-        dimension().forEach((c, e) -> classes.add(new Factor(c, null, c, BigDecimal.ONE, e)));
+        dimension().forEach((c, e) -> classes.add(new Factor(c, null, c, Fraction.ONE, e)));
         return classes.isEmpty() ? ONE_ABBREVIATION : sorted(classes).rendering();
     }
 
@@ -303,10 +326,9 @@ public record Unit(List<Factor> factors) {
         return powers;
     }
 
-    /** The factors {num, den} to restate a quantity in THIS unit as one in {@code target}: multiply by num, then divide
-     *  by den, with one rounding at the end. They are the products of the powers of the factors the units carry: jr→mnd
-     *  is 12/1, €/jr→€/mnd is 1/12, m^2→cm^2 is 10000/1. A factor that the system declares as a fraction without a finite
-     *  decimal ("1/3") is carried here rounded (CONSTRUCTS row 26).
+    /** The exact factor to restate a quantity in THIS unit as one in {@code target}: multiply by its numerator, then
+     *  divide by its denominator, with one rounding at the end. It is the product of the powers of the factors the units
+     *  carry: jr→mnd is 12/1, €/jr→€/mnd is 1/12, m^2→cm^2 is 10000/1.
      *
      *  <p>Between two units that do not inter-convert there is NO factor, and answering 1 turns a name mismatch into a
      *  wrong magnitude instead of a fault. Measured: a reference-type copy that lied only in CASE ("KG" against the
@@ -317,16 +339,15 @@ public record Unit(List<Factor> factors) {
      *  @throws IllegalStateException when {@code target} is absent or not inter-convertible with this unit, and ALSO on
      *  the one shape {@link #convertibleTo} admits: half a conversion pair (a canonical without a declared
      *  factorToCanonical, the wire form), which has no factor to give either way. */
-    public BigDecimal[] exactRestateFactors(Unit target) {
+    public Fraction exactRestateFactors(Unit target) {
         if (!convertibleTo(target))
             throw new IllegalStateException("geen omrekenfactor van eenheid '" + rendering() + "' naar '"
                     + (target == null ? "(geen eenheid)" : target.rendering()) + "': niet inwisselbaar");
         return fraction(powersTo(target));
     }
 
-    /** True when restating this unit in {@code target} is not the identity (factor ≠ 1), by numerator and denominator
-     *  and so without a rounding that reads a factor next to 1 as 1. €/jr→€/mnd (factor 1/12) requires conversion even
-     *  though the numerators share an abbreviation.
+    /** True when restating this unit in {@code target} is not the identity (factor ≠ 1). €/jr→€/mnd (factor 1/12)
+     *  requires conversion even though the numerators share an abbreviation.
      *
      *  <p>Two units that do NOT inter-convert answer false, explicitly rather than through an invented factor of 1. This
      *  is the one legitimate caller of the unguarded question: the transpilers ask it as "is this a cross-unit site?" on
@@ -335,8 +356,6 @@ public record Unit(List<Factor> factors) {
      *  @throws IllegalStateException on the wire form: convertible, but a canonical carries no declared
      *  factorToCanonical. A caller that must tell "same unit" from "no common unit" apart asks {@link #convertibleTo}. */
     public boolean requiredConversion(Unit target) {
-        if (!convertibleTo(target)) return false;
-        BigDecimal[] f = exactRestateFactors(target);
-        return f[0].compareTo(f[1]) != 0;
+        return convertibleTo(target) && !exactRestateFactors(target).equals(Fraction.ONE);
     }
 }

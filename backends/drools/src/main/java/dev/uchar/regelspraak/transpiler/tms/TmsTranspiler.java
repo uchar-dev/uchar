@@ -4410,15 +4410,18 @@ public final class TmsTranspiler {
     /** The right operand {@code t} of a product times the factor the product takes (ch. 2.6, rule 2): 3 wk times 1/dg
      *  counts 1/dg at 7 the value, and 1/wk times 3 dg at 1/7. Exact, as every restatement here. Unchanged where the
      *  factor is 1. */
-    private static Term timesFactor(Term t, Unit from, Unit destination, BigDecimal[] factor) {
-        return factor[0].compareTo(factor[1]) == 0 ? t
-                : new Term.Restate(t, from, destination, factor[0], factor[1], t.source());
+    private static Term timesFactor(Term t, Unit from, Unit destination, Unit.Fraction factor) {
+        return factor.equals(Unit.Fraction.ONE) ? t : restate(t, from, destination, factor);
+    }
+
+    private static Term restate(Term t, Unit from, Unit destination, Unit.Fraction factor) {
+        return new Term.Restate(t, from, destination, new BigDecimal(factor.num()), new BigDecimal(factor.den()), t.source());
     }
 
     /** The divisor {@code t} of a quotient with the factor the quotient takes (ch. 2.6, rule 3): dividing by the divisor
      *  times den/num is dividing by the divisor and multiplying by num/den. */
-    private static Term divisorFactor(Term t, Unit from, Unit destination, BigDecimal[] factor) {
-        return timesFactor(t, from, destination, new BigDecimal[]{factor[1], factor[0]});
+    private static Term divisorFactor(Term t, Unit from, Unit destination, Unit.Fraction factor) {
+        return timesFactor(t, from, destination, factor.inverted());
     }
 
     /** A power with a whole exponent of at least 0 written as a literal, exact (RUNTIME-SEMANTICS ch. 2.2), a leeg base
@@ -4562,8 +4565,7 @@ public final class TmsTranspiler {
     private static Term restated(Term t, Unit van, Unit destination, String site) {
         UnitConflict.requireRescalable(van, destination, site);
         if (van == null || destination == null || !van.requiredConversion(destination)) return t;
-        BigDecimal[] factors = van.exactRestateFactors(destination);
-        return new Term.Restate(t, van, destination, factors[0], factors[1], t.source());
+        return restate(t, van, destination, van.exactRestateFactors(destination));
     }
 
     // ---------------- the forms of a value beside the arithmetic ----------------
@@ -5479,13 +5481,13 @@ public final class TmsTranspiler {
      * reference interpreter's reason, that the document declares none or several.
      */
     private String gridUnit(RegelSpraakModel.Granularity g, String grid) {
-        record Chain(String canonical, RegelSpraakModel.UnitSystem.Factor factor) {}
+        record Chain(String canonical, Unit.Fraction factor) {}
         Set<Chain> chains = new LinkedHashSet<>();
         for (RegelSpraakModel.UnitSystem s : model.unitSystems.values())
             for (Map.Entry<String, Unit> u : s.units.entrySet())
                 if (u.getValue().denominator() == null && grid.equals(TimeCalculation.chronoUnit(u.getValue())))
                     chains.add(new Chain(u.getValue().canonical() == null ? null : Namen.norm(u.getValue().canonical()),
-                            s.exactFactors.get(u.getKey())));
+                            u.getValue().factorToCanonical()));
         if (chains.size() == 1) return null;
         // the grid's unit in the spelling the reference interpreter's sentence gives it
         String spelling = switch (g) {

@@ -636,48 +636,23 @@ public final class IrEmitter {
         w.endArray();
     }
 
-    /** The fields of a Unit in the schema's order; an absent field is left out. The factor is the exact fraction
-     *  (see {@link #exactFactor}). */
+    /** The fields of a Unit in the schema's order; an absent field is left out. The wire writes a factor as an exact
+     *  positive fraction, so one that is not positive is refused (the resolver reports it first, RGS-015). */
     private void unitFields(Unit.Factor e) {
         w.key("node").value("Unit");
         w.key("abbreviation").value(e.abbreviation());
         if (e.system() != null) w.key("system").value(e.system());
         if (e.canonical() != null) w.key("canonical").value(e.canonical());
-        UnitSystem.Factor f = exactFactor(e);
+        Unit.Fraction f = e.factorToCanonical();
         if (f != null) {
+            if (f.num().signum() <= 0)
+                throw new IllegalStateException("IrEmitter: eenheid '" + e.abbreviation() + "' heeft de gedeclareerde factor "
+                        + f + "; de wire schrijft de factor als exacte positieve breuk");
             w.key("factorToCanonical").beginObject();
             w.key("num").value(f.num());
             w.key("den").value(f.den());
             w.endObject();
         }
-    }
-
-    /** The factor of a unit as the wire writes it: an exact positive fraction in lowest terms, or null when the unit
-     *  carries none (a product of units). A unit its system declares takes the fraction that declaration wrote
-     *  ({@link UnitSystem#exactFactors}) — its record's decimal factor is that fraction rounded per
-     *  declaration step, and the two must agree to that rounding. A unit outside every system — the built-in '%', a
-     *  bare calendar unit — is its own canonical with factor 1, a whole number, written over 1. Any other factor has
-     *  no exact spelling here and is refused, as is a factor that is not positive. */
-    private UnitSystem.Factor exactFactor(Unit.Factor e) {
-        BigDecimal f = e.factorToCanonical();
-        if (f == null) return null;
-        UnitSystem es = e.system() == null ? null : m.unitSystems.get(e.system());
-        UnitSystem.Factor x = es == null ? null : es.exactFactors.get(e.abbreviation());
-        if (x == null) {
-            if (f.signum() <= 0 || f.stripTrailingZeros().scale() > 0)
-                throw new IllegalStateException("IrEmitter: eenheid '" + e.abbreviation() + "' draagt de factor "
-                        + f.toPlainString() + ", en geen eenheidstelsel declareert haar als breuk; de wire schrijft de "
-                        + "factor als exacte positieve breuk");
-            return new UnitSystem.Factor(f.toBigIntegerExact(), java.math.BigInteger.ONE);
-        }
-        if (x.num().signum() <= 0)
-            throw new IllegalStateException("IrEmitter: eenheid '" + e.abbreviation() + "' heeft de gedeclareerde factor "
-                    + x.num() + "/" + x.den() + "; de wire schrijft de factor als exacte positieve breuk");
-        BigDecimal rational = new BigDecimal(x.num()).divide(new BigDecimal(x.den()), java.math.MathContext.DECIMAL128);
-        if (f.subtract(rational).abs().compareTo(rational.movePointLeft(12)) > 0)
-            throw new IllegalStateException("IrEmitter: eenheid '" + e.abbreviation() + "' draagt de factor "
-                    + f.toPlainString() + ", maar haar stelsel declareert " + x.num() + "/" + x.den());
-        return x;
     }
 
     private void factType(FactType ft) {

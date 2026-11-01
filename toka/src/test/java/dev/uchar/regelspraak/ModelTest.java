@@ -442,11 +442,9 @@ class ModelTest {
         var km = m.resolveUnit("km");
         assertNotNull(km, "km ontbreekt");
         assertEquals("m", km.canonical(), "canonieke eenheid");
-        assertEquals(0, new java.math.BigDecimal(1000).compareTo(km.factorToCanonical()),
-                () -> "factorNaarCanoniek: " + km.factorToCanonical());
+        assertEquals(dev.uchar.regelspraak.model.Unit.Fraction.of(1000, 1), km.factorToCanonical(), "factorNaarCanoniek");
         var meter = m.resolveUnit("m");
-        assertEquals(0, java.math.BigDecimal.ONE.compareTo(meter.factorToCanonical()),
-                () -> "de basiseenheid heeft factor 1: " + meter.factorToCanonical());
+        assertEquals(dev.uchar.regelspraak.model.Unit.Fraction.ONE, meter.factorToCanonical(), "de basiseenheid heeft factor 1");
     }
 
     @Test void header_line_parses_without_errors() {

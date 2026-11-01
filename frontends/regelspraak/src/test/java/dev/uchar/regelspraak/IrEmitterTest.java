@@ -281,7 +281,7 @@ class IrEmitterTest {
                         + "twice in the unit system 'Gewicht': one Unit per abbreviation"),
                 duplicates.errors().stream().map(Diagnostic::message).toList());
         assertEquals(4, duplicates.errors().get(0).line(), "de melding staat op de tweede declaratie");
-        assertEquals(new java.math.BigDecimal("1000"),
+        assertEquals(dev.uchar.regelspraak.model.Unit.Fraction.of(1000, 1),
                 duplicates.unitSystems.get("Gewicht").units.get("t").factorToCanonical(), "de eerste declaratie staat");
 
         RegelSpraakModel caseCollision = Resolver.resolve("""

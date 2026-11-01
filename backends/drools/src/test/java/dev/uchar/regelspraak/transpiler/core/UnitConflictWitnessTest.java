@@ -17,7 +17,6 @@ import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
 
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -72,10 +71,10 @@ class UnitConflictWitnessTest {
 
     // ---------------- the guard itself: what it refuses and what it lets through ----------------
 
-    private static final Unit KG = new Unit("kg", "Gewicht", "kg", BigDecimal.ONE);
-    private static final Unit TON = new Unit("t", "Gewicht", "kg", new BigDecimal("1000"));
-    private static final Unit EUR = new Unit("EUR", "Geld", "EUR", BigDecimal.ONE);
-    private static final Unit JR = new Unit("jr", "Tijd", "mnd", new BigDecimal("12"));
+    private static final Unit KG = new Unit("kg", "Gewicht", "kg", Unit.Fraction.ONE);
+    private static final Unit TON = new Unit("t", "Gewicht", "kg", Unit.Fraction.of(1000, 1));
+    private static final Unit EUR = new Unit("EUR", "Geld", "EUR", Unit.Fraction.ONE);
+    private static final Unit JR = new Unit("jr", "Tijd", "mnd", Unit.Fraction.of(12, 1));
 
     @Test void two_concrete_units_without_shared_canonical_are_a_fault() {
         UnitConflict f = assertThrows(UnitConflict.class,
@@ -148,7 +147,7 @@ class UnitConflictWitnessTest {
 
     @Test void two_different_products_are_a_fault() {
         Unit eurKg = derivedProduct();
-        Unit eurM = derivedProduct(new Unit("m", "Lengte", "m", BigDecimal.ONE));
+        Unit eurM = derivedProduct(new Unit("m", "Lengte", "m", Unit.Fraction.ONE));
         assertNotEquals(eurKg, eurM);
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(eurKg, eurM, "witness"));
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(eurM, eurKg, "witness"));
@@ -168,9 +167,9 @@ class UnitConflictWitnessTest {
 
     @Test void a_product_into_its_declared_square_plays() {
         // m × m in a declared m^2: identical, no factor due. cm × m in the same: the dimension holds and a factor exists.
-        Unit m = new Unit("m", "Lengte", "m", BigDecimal.ONE);
-        Unit cm = new Unit("cm", "Lengte", "m", new BigDecimal("0.01"));
-        Unit square = new Unit(List.of(new Unit.Factor("m", "Lengte", "m", BigDecimal.ONE, 2)));
+        Unit m = new Unit("m", "Lengte", "m", Unit.Fraction.ONE);
+        Unit cm = new Unit("cm", "Lengte", "m", Unit.Fraction.of(1, 100));
+        Unit square = new Unit(List.of(new Unit.Factor("m", "Lengte", "m", Unit.Fraction.ONE, 2)));
         Unit product = derivedProduct(m, m);
         assertEquals(square, product);
         UnitConflict.requireRescalable(product, square, "witness");

@@ -10,7 +10,6 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.Parameter;
 
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,11 +37,11 @@ class EffectiveUnitWitnessTest {
     // "Gewicht": kg is canonical (factor 1); t reduces to kg with factor 1000 — inter-convertible, so a
     // consumer that trusts a lying annotation restates by 1000 instead of refusing (the measured
     // 3,75 -> 3.750,00 shape).
-    private static final Unit KG = new Unit("kg", "Gewicht", "kg", BigDecimal.ONE);
-    private static final Unit TON = new Unit("t", "Gewicht", "kg", new BigDecimal("1000"));
+    private static final Unit KG = new Unit("kg", "Gewicht", "kg", Unit.Fraction.ONE);
+    private static final Unit TON = new Unit("t", "Gewicht", "kg", Unit.Fraction.of(1000, 1));
     // "Geld" and "Tijd", for the §4.4 product rules: € per jaar is a RATE (a numerator over a denominator).
-    private static final Unit EUR = new Unit("EUR", "Geld", "EUR", BigDecimal.ONE);
-    private static final Unit JR = new Unit("jr", "Tijd", "mnd", new BigDecimal("12"));
+    private static final Unit EUR = new Unit("EUR", "Geld", "EUR", Unit.Fraction.ONE);
+    private static final Unit JR = new Unit("jr", "Tijd", "mnd", Unit.Fraction.of(12, 1));
     private static final Unit EUR_PER_JR = Unit.divide(EUR, JR);
 
     private static Datatype num(Unit e) {
@@ -342,7 +341,7 @@ class EffectiveUnitWitnessTest {
     @Test void a_duration_keeps_its_own_unit() {
         // ch. 2.10 exception 3 (WF-038): "de tijdsduur van A tot B in jaren" — the unit is the OPERATOR's
         // parameter. Deriving it from operand 0 (a date) would erase the operator's own statement.
-        Unit year = new Unit("jr", "Tijd", "mnd", new BigDecimal("12"));
+        Unit year = new Unit("jr", "Tijd", "mnd", Unit.Fraction.of(12, 1));
         Expr.Literal date = new Expr.Literal("2026-01-01", new Datatype.DateInDays(), source());
         for (Expr.FunctionKind kind : List.of(Expr.FunctionKind.TIJDSDUUR, Expr.FunctionKind.ABSOLUTE_TIJDSDUUR)) {
             Expr.FunctionCall f = new Expr.FunctionCall(kind, List.of(date, date), null, null, null, num(year), source());
