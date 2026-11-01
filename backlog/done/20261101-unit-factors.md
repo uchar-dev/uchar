@@ -725,10 +725,12 @@ Mutaties, niet gecommit, op een kopie (`werk/unit-factors/mutate.py`, `stap3-pro
 - Sleutels van WF-124: `empty-unit`, `exponent-zero`, `exponent-one-written`, `duplicate-factor`, `factors-unsorted`, `declared-exponent`.
 - `conv_factor` op een niet-omrekenbaar paar is een fout met `incompatible units`. `convertible` met een factor zonder klasse geeft waar, zoals de oude functie; `Normalise.unit_named` blijft de grens. Een grote `exponent` kent geen bovengrens.
 
+**Gates bij de landing.** `make gates` op `463ddd0b4`: alle 17 groen, `red=0`, 305 s. Daarna veranderden alleen de kaart, `spec/CONSTRUCTS.md` en `spec/PLAN.md`.
+
 **Open punten.**
 
 - De niet-gehele factor in clingo (§6.11): `1/wk × dg`, `m × cm`, `€/jr` over maanden en een additieve join of schrijfgrens met factor ≠ 1 blijven een weigering met naam, ook een gehele factor op een deler.
-- Een waarde zonder eindig decimaal die een doel met gedeclareerde decimalen bereikt, in Drools: `0.00 dn plus 1.00 wa` in een 2-decimaal doel is in ref EF-006 en in Drools `PLAYED`, op 16 cijfers (`Breuk.naarDecimal`, `stap5-probe/case-breuk.json`). Dat komt niet van de factor: het is de ontbrekende schrijfwacht van §6.1.2, die elke quotiënt treft en in gate 8 met naam op de `NOFAULT`-lijst staat (`decimal-nonterminating` en zes andere). Ik heb hem niet gebouwd; hij raakt elke schrijfgrens en is een eigen kaart. Tot die tijd geeft Drools hier zonder melding een waarde waar ref een fout geeft.
+- Een waarde zonder eindig decimaal die een doel met gedeclareerde decimalen bereikt, in Drools: `0.00 dn plus 1.00 wa` in een 2-decimaal doel is in ref EF-006 en in Drools `PLAYED`, op 16 cijfers (`Breuk.naarDecimal`, `stap5-probe/case-breuk.json`). Dat komt niet van de factor: het is de ontbrekende schrijfwacht van §6.1.2, die elke quotiënt treft en in gate 8 met naam op de `NOFAULT`-lijst staat (`decimal-nonterminating` en zes andere). Ik heb hem niet gebouwd; hij raakt elke schrijfgrens en is de bestaande kaart `20261009-drools-schrijfgrens`. Tot die tijd geeft Drools hier zonder melding een waarde waar ref een fout geeft.
 - Een grens zonder eindig decimaal bij `gedurende het gehele jaar`: `ComputeHelpers` leest hem als `BigDecimal` voor `rsGeheelPeriode` (`runtime/`), dus op 16 cijfers, voor elke grens en niet alleen een omgerekende. Gelezen, niet gemeten: het verschil is alleen zichtbaar bij een waarde van de tijdlijn binnen 10^-16 van de grens. Een grens die eindigt, zoals `3.00 wa` tegen een tijdlijn in `dn`, is nu exact 1.
 - Buiten de kaart: de pin-bump van de toolchain.
 

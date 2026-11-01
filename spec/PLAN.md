@@ -806,6 +806,8 @@ landing. With L5 the wire `uchar-ir-v1` is complete and phase 2 of the wire
 migration is closed; the one toolchain pin bump (phase 3) is now due, in the
 new toolchain under uchar; the `toka/` zone stays until the public flip.
 
+**L6 landed (2026-11-01, card `backlog/done/20261101-unit-factors.md`):** a unit on the wire is a list of factors with a whole exponent, the algebra of a product of factors holds in ref, clingo and both Drools branches, and every result of the algebra can be written, in `met eenheid` and as a value. Recorded as a provisional decision on Fable advice; the distribution follows with its pin bump.
+
 **Before the pin bump (2026-09-25, `54afea05`):** the six cards that touch spec
 or goldens landed as one union ahead of phase 3, so the bump carries them —
 WF-079 read through the type chain per concrete type
