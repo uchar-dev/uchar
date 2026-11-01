@@ -33,10 +33,29 @@ type instance = {
    once, beside the identity: the channel read does not look at them *)
 type error_fact = { rule : string; subject : string; codes : string list }
 
+(* an evaluation fault as data: the fields of Value.Fault *)
+type fault = { fault_code : string option; fault_params : (string * string) list; fault_text : string }
+
+(* What the last evaluation of one form on one subject came to
+   (RUNTIME-SEMANTICS ch. 5.7): the §9.5 deposits it made, as (rule, subject,
+   code), or the fault that ended it. [at] is the subject's label, "" for a
+   form that evaluates over its whole population at once. The next evaluation
+   of that form on that subject replaces it, so at a fixpoint the outcomes are
+   those of the world that stands, whichever states the session passed. *)
+type outcome = {
+  form : string; (* the wire pointer of the form *)
+  at : string;
+  deposits : (string * string * string option) list;
+  fault : fault option;
+}
+
 type t = {
   instances : instance SMap.t; (* by label *)
   order : string list; (* case declaration order, for determinism *)
-  channel : error_fact list; (* §9.5: idempotent inserts, insertion order *)
+  channel : error_fact list; (* §9.5: the deposits of [outcomes], one fact per rule × subject *)
+  outcomes : outcome list; (* only those with a deposit or a fault, in order of first arrival *)
+  evaluating : (string * string * string option) list;
+      (* the deposits of the evaluation under way, newest first; [close_evaluation] ends it *)
   init_written : (string * string) list;
       (* (label, norm attribute) whose current value an initialisation wrote
          and no other writer has changed since (RUNTIME-SEMANTICS ch. 5.4):
@@ -50,7 +69,8 @@ type t = {
          input instance has no entry; its depth is 0 in every stratum *)
 }
 
-let empty = { instances = SMap.empty; order = []; channel = []; init_written = []; mints = SMap.empty }
+let empty =
+  { instances = SMap.empty; order = []; channel = []; outcomes = []; evaluating = []; init_written = []; mints = SMap.empty }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
@@ -194,20 +214,58 @@ let add_link w ~label ~keys ~many ~target =
       (String.concat ", " existing)
   else (update w { i with left_side = SMap.add (norm key) (existing @ [ target ]) i.left_side }, true)
 
+(* a §9.5 deposit of the evaluation under way *)
+let insert_error w ~rule ~subject ~code = { w with evaluating = (rule, subject, code) :: w.evaluating }
+
 (* §9.5: one error fact per rule × subject, however often re-evaluated; a
    deposit of another kind for the same pair adds its code to that fact *)
-let insert_error w ~rule ~subject ~code =
-  let same f = String.equal f.rule rule && String.equal f.subject subject in
-  let with_code codes =
-    match code with
-    | Some c when not (List.mem c codes) -> List.sort compare (c :: codes)
-    | _ -> codes
+let channel_of outcomes =
+  List.fold_left
+    (fun channel (rule, subject, code) ->
+      let same f = String.equal f.rule rule && String.equal f.subject subject in
+      let with_code codes =
+        match code with
+        | Some c when not (List.mem c codes) -> List.sort compare (c :: codes)
+        | _ -> codes
+      in
+      if List.exists same channel then
+        List.map (fun f -> if same f then { f with codes = with_code f.codes } else f) channel
+      else channel @ [ { rule; subject; codes = with_code [] } ])
+    []
+    (List.concat_map (fun o -> o.deposits) outcomes)
+
+(* the evaluation of [form] on [at] came to [deposits] or [fault]: this replaces
+   its earlier outcome *)
+let set_outcome w ~form ~at ~deposits ~fault =
+  let mine o = String.equal o.form form && String.equal o.at at in
+  let standing = List.find_opt mine w.outcomes in
+  let unchanged =
+    match standing with
+    | None -> deposits = [] && fault = None
+    | Some o -> o.deposits = deposits && o.fault = fault
   in
-  match List.find_opt same w.channel with
-  | None -> { w with channel = w.channel @ [ { rule; subject; codes = with_code [] } ] }
-  | Some f when with_code f.codes = f.codes -> w
-  | Some _ ->
-      { w with channel = List.map (fun f -> if same f then { f with codes = with_code f.codes } else f) w.channel }
+  if unchanged then w
+  else
+    let entry = { form; at; deposits; fault } in
+    let outcomes =
+      match (standing, deposits, fault) with
+      | Some _, [], None -> List.filter (fun o -> not (mine o)) w.outcomes
+      | Some _, _, _ -> List.map (fun o -> if mine o then entry else o) w.outcomes
+      | None, _, _ -> w.outcomes @ [ entry ]
+    in
+    { w with outcomes; channel = channel_of outcomes }
+
+(* the evaluation under way ended without a fault *)
+let close_evaluation w ~form ~at =
+  set_outcome { w with evaluating = [] } ~form ~at ~deposits:(List.rev w.evaluating) ~fault:None
+
+(* the evaluation ended in [fault]; [w] is the world before it, so what it wrote
+   and deposited is gone *)
+let fault_evaluation w ~form ~at fault = set_outcome w ~form ~at ~deposits:[] ~fault:(Some fault)
+
+(* the faults that stand, in an order the order of the rules does not move *)
+let standing_faults w =
+  List.sort_uniq compare (List.filter_map (fun o -> o.fault) w.outcomes)
 
 let channel_has w ~rule =
   let r = norm rule in

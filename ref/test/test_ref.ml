@@ -10128,6 +10128,144 @@ let () =
           check tag (Case.check c (evaluate c) = [])))
     [ ([ 0; 1; 2 ], false); ([ 2; 1; 0 ], false); ([ 1; 2; 0 ], true); ([ 2; 0; 1 ], true) ]
 
+(* WV-5.7-fixpoint (ch. 5.7, "Faults and deposits are read at the fixpoint"): a
+   fault and a deposit are outcomes of one form's evaluation on one subject, the
+   next evaluation replaces them, and a form that does not decide is not
+   evaluated. Each document runs in every order of its rules, which walks the
+   session through every state a pass can leave. The flanks show that what
+   stands at the fixpoint is reported. *)
+let () =
+  let attribute name = Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} name number_json in
+  let characteristic name = Printf.sprintf {|{"node": "Characteristic", "name": "%s", "kind": "adjectival"}|} name in
+  let own name =
+    Printf.sprintf {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "Vondst", "source": {"snippet": "zijn %s"}}|}
+      name name
+  in
+  let number i =
+    Printf.sprintf {|{"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}|} i number_json i
+  in
+  let divided left_side right_side =
+    Printf.sprintf
+      {|{"node": "Binary", "op": "dividedBy", "left": %s, "right": %s, "type": {"node": "Number", "whole": false, "decimals": 0, "sign": "unspecified"}, "source": {"snippet": "gedeeld door"}}|}
+      left_side right_side
+  in
+  let rule ~name ~attribute:target ~value ?condition ?(init = false) ?presentation () =
+    ( name,
+      Printf.sprintf
+        {|{"node": "Rule", "name": "%s", "versions": [{"validity": {"node": "Validity"}, "target": %s, "value": %s%s, "initialisation": %b%s}]}|}
+        name (own target) value
+        (match condition with None -> "" | Some c -> Printf.sprintf {|, "condition": %s|} c)
+        init
+        (match presentation with None -> "" | Some p -> Printf.sprintf {|, "presentation": "%s"|} p) )
+  in
+  let check_of name =
+    Printf.sprintf {|{"node": "CharacteristicCheck", "characteristic": "%s", "negated": false, "source": {"snippet": "hij %s is"}}|}
+      name name
+  in
+  let recognition =
+    ( "erkenning",
+      Printf.sprintf
+        {|{"node": "Rule", "name": "erkenning", "versions": [{"validity": {"node": "Validity"}, "target": %s, "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}, "source": {"snippet": "waar"}}, "condition": %s, "initialisation": false}]}|}
+        (Printf.sprintf {|{"node": "AttributeReference", "attribute": "erkend", "subjectType": "Vondst", "source": {"snippet": "erkend"}}|})
+        (check_of "gemeld") )
+  in
+  let wage = rule ~name:"bergloon" ~attribute:"bergloon" ~value:(own "taxatie") ~condition:(check_of "erkend") ~presentation:"equation" () in
+  let default_wage value = rule ~name:"standaardbergloon" ~attribute:"bergloon" ~value ~init:true () in
+  let share = rule ~name:"aandeel" ~attribute:"aandeel" ~value:(divided (own "opbrengst") (own "bergloon")) ~presentation:"calculation" () in
+  let doc rule_defs =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten", "attributes": [%s], "characteristics": [%s]}], "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+      (String.concat ", " (List.map attribute [ "taxatie"; "opbrengst"; "aantal deelnemers"; "bergloon"; "aandeel"; "toeslag" ]))
+      (String.concat ", " (List.map characteristic [ "gemeld"; "erkend" ]))
+      (String.concat ", " (List.map snd rule_defs))
+  in
+  let case_of ~attrs ~chars expected =
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "V1", "objectType": "Vondst", "attributes": {%s}, "roles": {}, "characteristics": [%s]}], "parameters": {}}, %s}|}
+      (String.concat ", " (List.map (fun (a, v) -> Printf.sprintf {|"%s": {"number": "%d"}|} a v) attrs))
+      (String.concat ", " (List.map (Printf.sprintf {|"%s"|}) chars))
+      expected
+  in
+  let value a v = Printf.sprintf {|{"kind": "attributeValue", "label": "V1", "attribute": "%s", "value": {"number": "%d"}}|} a v in
+  let empty a = Printf.sprintf {|{"kind": "attributeEmpty", "label": "V1", "attribute": "%s"}|} a in
+  let on_channel r c = Printf.sprintf {|{"kind": "inconsistent", "rule": "%s", "label": "V1", "code": "%s"}|} r c in
+  let expected items = Printf.sprintf {|"expected": [%s]|} (String.concat ", " items) in
+  let consistent = {|{"kind": "consistent"}|} in
+  let in_every_order ident rule_defs case_data =
+    List.iter
+      (fun order ->
+        plays
+          ~ident:(Printf.sprintf "%s [%s]" ident (String.concat ", " (List.map fst order)))
+          ~ir:(doc order) ~case_data (fun _ -> ()))
+      (orders rule_defs)
+  in
+  (* document A: the rule bergloon decides, so the initialisation is not evaluated *)
+  let a = [ recognition; wage; default_wage (divided (own "opbrengst") (own "aantal deelnemers")) ] in
+  in_every_order "WV-5.7-fixpoint-a" a
+    (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 100); ("aantal deelnemers", 0) ] ~chars:[ "gemeld" ]
+       (expected [ value "bergloon" 30; consistent ]));
+  in_every_order "WV-5.7-fixpoint-a-nonexact" a
+    (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 100); ("aantal deelnemers", 3) ] ~chars:[ "gemeld" ]
+       (expected [ value "bergloon" 30; consistent ]));
+  (* its flank: the initialisation decides, and its deposit stands *)
+  in_every_order "WV-5.7-fixpoint-a-flank" a
+    (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 100); ("aantal deelnemers", 0) ] ~chars:[]
+       (expected [ empty "bergloon"; on_channel "standaardbergloon" "EF-005" ]));
+  (* document B: aandeel reads the 0 of the initialisation only on a state between *)
+  let b = [ recognition; wage; default_wage (number 0); share ] in
+  in_every_order "WV-5.7-fixpoint-b" b
+    (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 90) ] ~chars:[ "gemeld" ]
+       (expected [ value "bergloon" 30; value "aandeel" 3; consistent ]));
+  in_every_order "WV-5.7-fixpoint-b-flank" b
+    (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 90) ] ~chars:[]
+       (expected [ value "bergloon" 0; empty "aandeel"; on_channel "aandeel" "EF-005" ]));
+  (* a fault replaced as a deposit is: 90 by 7 does not fit, 90 by 30 does *)
+  let c7 = [ recognition; wage; default_wage (number 7); share ] in
+  in_every_order "WV-5.7-fixpoint-fault-between" c7
+    (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 90) ] ~chars:[ "gemeld" ]
+       (expected [ value "bergloon" 30; value "aandeel" 3; consistent ]));
+  (* its flank: 90 by 7 at the fixpoint is the fault, in every order *)
+  List.iter
+    (fun order ->
+      with_files ~ir:(doc order)
+        ~case_data:
+          (case_of ~attrs:[ ("taxatie", 7); ("opbrengst", 90) ] ~chars:[ "gemeld" ]
+             {|"expectedFault": {"code": "EF-006", "params": {}}|})
+        (fun _ _ evaluate ->
+          expect_fault_msg
+            (Printf.sprintf "WV-5.7-fixpoint-fault-stands [%s]" (String.concat ", " (List.map fst order)))
+            evaluate "does not fit the declared 0 decimals"))
+    (orders c7);
+  (* documents C and D: an input blocks the initialisation before its condition
+     is evaluated, which faults or deposits only where the target is empty *)
+  let surcharge condition =
+    [ recognition; rule ~name:"standaardtoeslag" ~attribute:"toeslag" ~value:(number 5) ~condition ~init:true () ]
+  in
+  let c =
+    surcharge
+      (Printf.sprintf
+         {|{"node": "Comparison", "op": "greater", "left": %s, "right": %s, "source": {"snippet": "groter dan 10"}}|}
+         (divided (own "opbrengst") (own "aantal deelnemers"))
+         (number 10))
+  in
+  in_every_order "WV-5.7-fixpoint-c" c
+    (case_of ~attrs:[ ("opbrengst", 100); ("aantal deelnemers", 0); ("toeslag", 7) ] ~chars:[ "gemeld" ]
+       (expected [ value "toeslag" 7; consistent ]));
+  in_every_order "WV-5.7-fixpoint-c-flank" c
+    (case_of ~attrs:[ ("opbrengst", 100); ("aantal deelnemers", 0) ] ~chars:[ "gemeld" ]
+       (expected [ empty "toeslag"; on_channel "standaardtoeslag" "EF-005" ]));
+  let d =
+    surcharge
+      (Printf.sprintf
+         {|{"node": "Predicate", "kind": "empty", "operand": %s, "negated": false, "digits": 0, "source": {"snippet": "leeg"}}|}
+         (divided (number 5) (own "aantal deelnemers")))
+  in
+  in_every_order "WV-5.7-fixpoint-d" d
+    (case_of ~attrs:[ ("toeslag", 9) ] ~chars:[] (expected [ value "toeslag" 9; consistent ]));
+  in_every_order "WV-5.7-fixpoint-d-flank" d
+    (case_of ~attrs:[] ~chars:[]
+       (expected [ value "toeslag" 5; on_channel "standaardtoeslag" "EF-031" ]))
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

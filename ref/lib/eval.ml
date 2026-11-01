@@ -2770,14 +2770,18 @@ let rule_name (r : resolved_rule) = Option.value r.rr_name ~default:"<naamloos>"
 
 (* run one form over its subjects; [body] gets the fresh instance and an
    error collector, returns (world, changed); collected §9.5 reasons land
-   as channel facts for (rule × subject). Given [read], the subjects and
+   as channel facts for (rule × subject). Each evaluation on a subject has one
+   outcome, its deposits or the fault that ended it, which replaces the outcome
+   of the evaluation before (RUNTIME-SEMANTICS ch. 5.7): a fault leaves the
+   world as it was and the session reads it at the fixpoint of the stratum
+   ([raise_standing_fault]). Given [read], the subjects and
    the instance [body] gets come from that world while the writes and the
    channel facts land on [world]: a creation reads the settled world of
    the generation before its own, not what its own generation makes or
    links (ch. 5.5). Given [only], the subjects it refuses are left out: the
    forms of an instance-ordered cycle run on the objects whose turn it is
    (ch. 6.2) *)
-let over_subjects ?(exact = false) ?(except = []) ?read ?(only = fun _ -> true) env world ~otype ~rule body =
+let over_subjects ?(exact = false) ?(except = []) ?read ?(only = fun _ -> true) env world ~form ~otype ~rule body =
   let isa a b =
     (if exact then norm a = norm b else isa env a b)
     (* the ch. 7.10 absorption: on these concrete types the rule IS a
@@ -2790,13 +2794,18 @@ let over_subjects ?(exact = false) ?(except = []) ?read ?(only = fun _ -> true) 
       let self = match read with Some _ -> snapshot | None -> World.get w snapshot.label in
       let pending = ref [] in
       let err reason = pending := reason :: !pending in
-      let w, ch = body w self err in
-      let w =
-        List.fold_left
-          (fun w (d : Value.deposit) -> World.insert_error w ~rule ~subject:self.label ~code:d.code)
-          w !pending
-      in
-      (w, changed || ch))
+      match body w self err with
+      | w', ch ->
+          let w' =
+            List.fold_left
+              (fun w (d : Value.deposit) -> World.insert_error w ~rule ~subject:self.label ~code:d.code)
+              w' !pending
+          in
+          (World.close_evaluation w' ~form ~at:self.label, changed || ch)
+      | exception Value.Fault { code; params; text } ->
+          ( World.fault_evaluation w ~form ~at:self.label
+              { World.fault_code = code; fault_params = params; fault_text = text },
+            changed ))
     (world, false)
     (List.filter only (World.of_type ~isa (Option.value read ~default:world) otype))
 
@@ -3090,8 +3099,16 @@ let run_rule ?only env world (r : resolved_rule) =
           | Some Characteristic_attribution -> []
           | _ -> Ir_v0.Desugar.absorbed_on env.doc ~otype:ot ~attr
         in
-        over_subjects ~except ?only env world ~otype:ot ~rule:(rule_name r) (fun w self err ->
+        over_subjects ~except ?only env world ~form:r.rr_pointer ~otype:ot ~rule:(rule_name r) (fun w self err ->
+            (* an initialisation whose guard blocks it does not decide, so neither
+               its condition nor its value is evaluated (ch. 5.4, 7.1, 7.3) *)
+            let blocked =
+              r.rr_presentation = Some Initialisation
+              && not (World.init_may_write w ~label:self.label ~attr)
+            in
             let fire =
+              (not blocked)
+              &&
               match (clip, r.rr_condition) with
               | Some _, _ -> true
               | None, Some c -> eval_cond env w self ~err c
@@ -3125,19 +3142,17 @@ let run_rule ?only env world (r : resolved_rule) =
                     World.write_attr w ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr) v
               | Some Initialisation ->
                   (* writes only where the target is empty (ch. 5.4) — apart
-                     from its own write. A case input and a value another
-                     writer placed switch the guard off, so the computed value
-                     wins whichever fires first; the initialisation's own
-                     earlier write does not, so its value is re-evaluated
-                     under freshness like any attribute write. Read off the
-                     running world alone, the guard kept the value the
-                     initialisation computed against a read that another rule
-                     had not yet written: the document order decided *)
-                  if not (World.init_may_write w ~label:self.label ~attr) then (w, false)
-                  else
-                    let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
-                    World.write_attr_init w ~label:self.label ~attr
-                      ~decl:(attr_decl env ~otype:ot ~attr) v
+                     from its own write ([blocked] above). A case input and a
+                     value another writer placed switch the guard off, so the
+                     computed value wins whichever fires first; the
+                     initialisation's own earlier write does not, so its value
+                     is re-evaluated under freshness like any attribute write.
+                     Read off the running world alone, the guard kept the value
+                     the initialisation computed against a read that another
+                     rule had not yet written: the document order decided *)
+                  let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
+                  World.write_attr_init w ~label:self.label ~attr
+                    ~decl:(attr_decl env ~otype:ot ~attr) v
               | None -> Value.fault "rule %S has no kind" (rule_name r))
     | _ -> Value.faultc ~params:[ ("rule", (rule_name r)) ] "REF-012" "rule %S: unsupported target shape" (rule_name r)
 
@@ -3151,7 +3166,7 @@ let run_allocation env world (v : resolved_allocation) =
     let source_attr = req "AllocationVersion.sourceAttribute" v.source_attribute in
     let target_attr = req "AllocationVersion.targetAttribute" v.target_attribute in
     let method_name = req "AllocationVersion.method" v.vd_method in
-    over_subjects env world ~otype:source_type ~rule:name (fun w src cond_err ->
+    over_subjects env world ~form:v.vd_pointer ~otype:source_type ~rule:name (fun w src cond_err ->
         let cond_ok =
           match v.vd_condition with
           | Some c -> eval_cond env w src ~err:cond_err c
@@ -3249,7 +3264,7 @@ let run_fact_creation env ~read world (fc : resolved_fact_creation) =
        anker, which short-circuits the chain exactly as before. *)
     let target_guard = if guard_on_target env.doc fc then fc.fc_condition else None in
     let anchor_guard = if target_guard = None then fc.fc_condition else None in
-    over_subjects ~read env world ~otype:(req "FactCreationVersion.anchor" fc.anchor_point) ~rule:name
+    over_subjects ~read env world ~form:fc.fc_pointer ~otype:(req "FactCreationVersion.anchor" fc.anchor_point) ~rule:name
       (fun w self err ->
         let fire =
           match anchor_guard with Some c -> eval_cond env read self ~err c | None -> true
@@ -3355,7 +3370,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
     let subject = req "ObjectCreationVersion.subject" oc.oc_subject in
     let env = { env with subj = Some subject } in
     let pair = creation_pair env oc in
-    over_subjects ~read env world ~otype:subject ~rule:name (fun w self err ->
+    over_subjects ~read env world ~form:oc.oc_pointer ~otype:subject ~rule:name (fun w self err ->
         (* A subject that a higher stratum minted cannot occur: a creation
            reads its subject's population strictly (ch. 6.1), so it sits at
            or above every creation that makes its subjects. Counting a depth
@@ -3524,7 +3539,9 @@ let run_defaults_group ?only env world ~world0 ~owner
       Value.fault
         "temporal characteristic %S as a defaults target: temporal writes are not implemented" k
   | _ -> ());
-  over_subjects ~exact:true ?only env world ~otype:owner ~rule:target_form (fun w self cond_err ->
+  (* an attribute and a characteristic can share a name, and then a target form *)
+  let form = owner ^ (if l0.pd_characteristic <> None then " characteristic " else " attribute ") ^ target_form in
+  over_subjects ~exact:true ?only env world ~form ~otype:owner ~rule:target_form (fun w self cond_err ->
       let speculate f =
         let buf = ref [] in
         let r = f (fun m -> buf := m :: !buf) in
@@ -3680,7 +3697,7 @@ let run_consistency env world (c : resolved_consistency) =
     let name = Option.value c.cons_name ~default:"<consistentie>" in
     let env = { env with subj = c.cons_subject } in
     let world, _ =
-      over_subjects env world ~otype:(req "ConsistencyVersion.subject" c.cons_subject) ~rule:name
+      over_subjects env world ~form:c.cons_pointer ~otype:(req "ConsistencyVersion.subject" c.cons_subject) ~rule:name
         (fun w self err ->
           if eval_cond env w self ~err (req "ConsistencyVersion.assertion" c.assertion) then (w, false)
           else (World.insert_error w ~rule:name ~subject:self.label ~code:(Some "EF-025"), false))
@@ -3788,10 +3805,11 @@ let run_uniqueness env world (u : resolved_uniqueness) =
         (World.of_type ~isa:(isa env) world subject)
     in
     let dup k = List.length (List.filter (fun (k', _) -> String.equal k k') keyed) > 1 in
-    List.fold_left
-      (fun w (k, label) ->
-        if dup k then World.insert_error w ~rule:name ~subject:label ~code:(Some "EF-026") else w)
-      world keyed
+    World.close_evaluation ~form:u.uni_pointer ~at:""
+      (List.fold_left
+         (fun w (k, label) ->
+           if dup k then World.insert_error w ~rule:name ~subject:label ~code:(Some "EF-026") else w)
+         world keyed)
   end
 
 (* ch. 5.9, the uniqueness union: the key tuples of ALL sources form one
@@ -3824,10 +3842,11 @@ let run_uniqueness_union env world (u : resolved_uniqueness_union) =
         u.source_list
     in
     let dup k = List.length (List.filter (fun (k', _) -> String.equal k k') keyed) > 1 in
-    List.fold_left
-      (fun w (k, label) ->
-        if dup k then World.insert_error w ~rule:name ~subject:label ~code:(Some "EF-026") else w)
-      world keyed
+    World.close_evaluation ~form:u.uu_pointer ~at:""
+      (List.fold_left
+         (fun w (k, label) ->
+           if dup k then World.insert_error w ~rule:name ~subject:label ~code:(Some "EF-026") else w)
+         world keyed)
   end
 
 (* --- the session (ch. 5.7) --------------------------------------------- *)
@@ -3949,6 +3968,22 @@ let parameter_set_check env =
                    evaluation date %s — ch. 8.4"
                   p d))
     (vintage_read_params env.doc)
+
+(* The session reports the faults that stand at the fixpoint of a stratum
+   (ch. 5.7). Several can stand: the report names them all, with the code and
+   the parameters of the first. *)
+let raise_standing_fault world =
+  match World.standing_faults world with
+  | [] -> ()
+  | first :: rest ->
+      let text =
+        String.concat "; "
+          (first.World.fault_text
+          :: List.map
+               (fun (f : World.fault) -> Value.report ~code:f.fault_code f.fault_text)
+               rest)
+      in
+      raise (Value.Fault { code = first.fault_code; params = first.fault_params; text })
 
 (* the fixpoint of the forms that make nothing: [step] is one pass, and a
    pass [budget] + 1 that still changes something is the fault. [cause]
@@ -4551,6 +4586,7 @@ let evaluate env world =
       | w, [] -> w
       | w, _ -> next (settle w)
     in
-    world := checks k (next (settle !world))
+    world := checks k (next (settle !world));
+    raise_standing_fault !world
   done;
   !world
