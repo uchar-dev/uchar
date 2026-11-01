@@ -1,0 +1,295 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstental": {
+            "number": "10"
+          },
+          "zoekduur": {
+            "number": "4"
+          },
+          "seizoensduur": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstental": {
+            "number": "4"
+          },
+          "zoekduur": {
+            "number": "2"
+          },
+          "seizoensduur": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstental": {
+            "number": "3"
+          },
+          "zoekduur": {
+            "number": "6"
+          },
+          "seizoensduur": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstental": {
+            "number": "15"
+          },
+          "zoekduur": {
+            "number": "3"
+          },
+          "seizoensduur": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstental": {
+            "number": "1"
+          },
+          "zoekduur": {
+            "number": "3"
+          },
+          "seizoensduur": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "meldingsdrempel": {
+        "number": "14.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vondsttempo",
+      "value": {
+        "number": "2.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "teruggerekende vondsten",
+      "value": {
+        "number": "10.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "seizoensoogst",
+      "value": {
+        "number": "52.50"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "ijverig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "drempelhoudend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "onvermoeibaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "vondsttempo",
+      "value": {
+        "number": "2.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "teruggerekende vondsten",
+      "value": {
+        "number": "4.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "seizoensoogst",
+      "value": {
+        "number": "14.00"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J2",
+      "characteristic": "ijverig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "drempelhoudend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J2",
+      "characteristic": "onvermoeibaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "vondsttempo",
+      "value": {
+        "number": "0.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "teruggerekende vondsten",
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "seizoensoogst",
+      "value": {
+        "number": "7.00"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J3",
+      "characteristic": "ijverig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J3",
+      "characteristic": "drempelhoudend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J3",
+      "characteristic": "onvermoeibaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "vondsttempo",
+      "value": {
+        "number": "5.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "teruggerekende vondsten",
+      "value": {
+        "number": "15.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "seizoensoogst",
+      "value": {
+        "number": "35.00"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J4",
+      "characteristic": "ijverig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J4",
+      "characteristic": "drempelhoudend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J4",
+      "characteristic": "onvermoeibaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "vondsttempo",
+      "value": {
+        "number": "0.33"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "teruggerekende vondsten",
+      "value": {
+        "number": "0.99"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "seizoensoogst",
+      "value": {
+        "number": "2.31"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J5",
+      "characteristic": "ijverig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J5",
+      "characteristic": "drempelhoudend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J5",
+      "characteristic": "onvermoeibaar"
+    }
+  ]
+}

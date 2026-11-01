@@ -522,7 +522,14 @@ any conversion factor* (ch. 2.6):
   product with no downstream unit to fence it, so it stays loud. A
   product of TWO unit-carrying operands (a rate cancellation `€/jr × jr`,
   an opaque product unit `€ × m`) composes units / applies factors the
-  integer encoding does not carry, so it stays loud.
+  integer encoding does not carry, so it stays loud. One such product is
+  admitted: a reciprocal (`IR-SPEC.md` ch. 2.5, point 5) times a plain unit
+  convertible to its denominator, with no unit left. Its factor multiplies the
+  plain operand where it is a whole number (`1/dg × wk`: ×7); a factor that is
+  not (`1/wk × dg`: 1/7) faults by name.
+- **gedeeld-door** admits a provably unit-free dividend over a unit-carrying
+  divisor: the quotient has the divisor's inverse as its unit (`eff_unit`), with
+  the value unchanged. Every other unit-carrying operand stays refused.
 - **percentage-van** admits a **provably pure-%** left operand
   (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3 / Q10). `pct_of` computes `(l/100)·r` and discards the left unit
   entirely (the result carries the RIGHT unit), so a `%` on the left is
@@ -549,7 +556,10 @@ any conversion factor* (ch. 2.6):
   reduced to one by the finest-canonical normalisation pre-step (below);
   everything the pass does not reduce — including every CONDITION and
   comparison position, which the pass never descends — keeps the loud
-  fence outright (the hunted 1 m + 50 cm = 51 of ch. 6c).
+  fence outright (the hunted 1 m + 50 cm = 51 of ch. 6c). One comparison
+  crosses it: two convertible reciprocals, whose exact factor p/q needs no
+  division there (`x·p` against `y·q`; `1/dg` against `1/wk`: `x·7` against `y`),
+  each operand fenced at max_int31 / its multiplier.
 
 The unit is derived recursively from declarations (`eff_unit`), never
 read from a node's static annotation. Golden `jutterswet-sleeprest`

@@ -1,0 +1,127 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstental": {
+            "number": "1"
+          },
+          "zoekduur": {
+            "number": "1"
+          },
+          "seizoensduur": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstental": {
+            "number": "1"
+          },
+          "zoekduur": {
+            "number": "7"
+          },
+          "seizoensduur": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "meldingsdrempel": {
+        "number": "1.00"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vondsttempo",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "teruggerekende vondsten",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "seizoensoogst",
+      "value": {
+        "number": "7.00"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "ijverig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "drempelhoudend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "onvermoeibaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "vondsttempo",
+      "value": {
+        "number": "0.14"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "teruggerekende vondsten",
+      "value": {
+        "number": "0.98"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "seizoensoogst",
+      "value": {
+        "number": "0.98"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J2",
+      "characteristic": "ijverig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J2",
+      "characteristic": "drempelhoudend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J2",
+      "characteristic": "onvermoeibaar"
+    }
+  ]
+}

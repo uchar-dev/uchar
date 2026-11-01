@@ -497,16 +497,43 @@ van nul* are sign-symmetric.
 - **Comparison across units** restates *both* sides by their exact
   canonical factors: `24 mnd = 2 jr` compares 24 = 2·12 — exact, never a
   truncated ratio.
-- **maal**: a rate times its denominator unit cancels (`€/jr × jr = €`);
-  two plain units form an opaque product unit (`€ × m = €·m`); a unitless
-  *literal* times a unit-bearing value carries the unit through.
+- **maal**: a rate times its denominator unit cancels (`€/jr × jr = €`), a
+  quantity in a convertible unit restated into the denominator first; a
+  reciprocal (`IR-SPEC.md` ch. 2.5, point 5) times its unit leaves no unit
+  (`1/dg × dg` is a number), and times another plain unit is the rate
+  (`1/dg × € = €/dg`); two plain units form an opaque product unit
+  (`€ × m = €·m`); a unitless *literal* times a unit-bearing value carries the
+  unit through.
 - **gedeeld door**: convertible units cancel to dimensionless (`€ ÷ € =
-  getal`); two plain units form a rate (`€ ÷ jr = €/jr`).
+  getal`); two plain units form a rate (`€ ÷ jr = €/jr`); a unitless dividend
+  gives the inverse of the divisor's unit (`1 ÷ dg` has the unit `1/dg`,
+  `1 ÷ 1/dg` the unit `dg`, `1 ÷ €/dg` the unit `dg/€`), and the inverse of a
+  product has no normal form.
 - **percentage van** carries the right operand's unit (a percentage of a
   `€` value is a `€` value).
-- Deliberately not modelled in v0, mirrored as scope limits: multi-level
-  composite units, unit exponents (`m²`), re-decomposition of product
-  units. OPEN as v1 scope questions on `CONSTRUCTS.md` row 26.
+- Deliberately not modelled, as scope limits: a second factor with a negative
+  exponent (`€/u/s`, `dg⁻²`), re-decomposition of product units. OPEN as v1
+  scope questions on `CONSTRUCTS.md` row 26.
+
+Worked examples, with `wk = 7 dg` (`ref/` tests `WV-2.6-*`, exact):
+
+| Expression | Value | Unit |
+|---|---|---|
+| 14 ÷ 7 dg | 2 | `1/dg` |
+| 2 `1/dg` × 7 dg | 14 | none |
+| 2 `1/dg` × 3 wk | 42 | none |
+| 3 wk × 2 `1/dg` | 42 | none |
+| 7 `1/wk` × 3 dg | 3 | none |
+| 2 `1/dg` plus 7 `1/wk` | 3 | `1/dg` |
+| 1 `1/dg` × 3 € | 3 | `€/dg` |
+| 3 € × 1 `1/dg` | 3 | `€/dg` |
+| 1 ÷ 2 `1/dg` | 1/2 | `dg` |
+| 1 ÷ 2 `€/dg` | 1/2 | `dg/€` |
+| 2 m × 3 m, in a declared `m^2` | 6 | `m·m` |
+
+2 `1/dg` = 14 `1/wk` holds; 5/2 `1/dg` > 14 `1/wk` holds, compared as
+17,5 against 14 — where the bare numbers would answer the other way.
+`1/dg` against `dg` and against `€/dg` is a unit mismatch.
 
 ### 2.7 Clamping (begrensd)
 
@@ -625,7 +652,9 @@ unit, the soort and the precision it computes with:
    ch. 2.6 unit rules, never the node's own annotation. An additive result
    carries the left operand's unit and a unitless side adopts the other; a
    product of two unit-bearing operands *cancels* against a rate's
-   denominator ("€/jr maal jr = €") or is the **opaque product** ("€ maal
+   denominator ("€/jr maal jr = €", and to no unit for a reciprocal), is the
+   rate where one is a reciprocal ("1/dg maal € = €/dg"), or is the **opaque
+   product** ("€ maal
    kg = €·kg", ch. 2.5: no canonical, convertible only to an identical
    product — what stops a restatement instead of scaling by a wrong
    factor), and in a **fourth** shape it is neither: an *unspellable rate
@@ -646,7 +675,10 @@ unit, the soort and the precision it computes with:
    and the value simply stands in the unit it was computed in. It is
    therefore a silent divergence from the other three on a shape the
    corpus does not carry and no frontend can emit; a `Let` carries its
-   body's, and a binder read carries
+   body's; a quotient carries what ch. 2.6 derives from its operands
+   ("1 ÷ dg" the reciprocal, "€ ÷ jr" the rate, "€ ÷ €" no unit), and where
+   the quotient has no normal form the annotation stands, on a document no
+   frontend writes; and a binder read carries
    what its binding derived, unit-bearing **or unitless** — bound to a
    unitless value is not the same fact as unbound (until L2 only the
    second fell back to the binder reference's own annotation; since L2 a
@@ -677,7 +709,7 @@ that is why gate 13 leaves both positions untwisted for a reason it already
 carried.
 
 **A fourth class, and it says something weaker.** A *position* whose result
-unit v0 does not *derive* at all — a division (`dividedBy`), a power
+unit v0 does not *derive* at all — a power
 (`power`), a percentage-of (`percentageOf`), an absolute value, a
 root, the date/time extractors — keeps its own annotation, because clause 2
 has nothing to put in its place. That is not the annotation being the
@@ -687,11 +719,11 @@ returns `None` at those positions and its fences (`unit_free_ok`,
 `units_identical_ok`) then *fault* rather than compute with a unit it could
 not derive, whereas the Drools backend has no such fence and computes with
 the annotation — the behaviour it had before this clause, deliberately
-unchanged. Measured 2026-09-04: **zero** unit-bearing annotations in the
+unchanged. **Zero** unit-bearing annotations in the
 corpus sit at such a position, so the class is empty today and the
 difference between the two answers is unobservable. The clamp that reports
 the first witness is step 6 of `scripts/check-reftype-derivation.sh`. Note
-that this class is a set of *positions*, not of node kinds: `dividedBy`
+that this class is a set of *positions*, not of node kinds: `power`
 and `plus` are the same node kind (`Binary`), and only one of them derives.
 The clamp therefore keys on **(node, op)** for a `Binary` and on
 **(node, kind)** for an `Aggregation` or a `BuiltinCall` (one `Functie` until L4), and it separates the two arrivals it can
@@ -745,7 +777,7 @@ the stated ch. 2.3 formula only in prose (crossing it costs eleven
 documents across three producers with three precision policies). The
 fourth class — **positions** whose result unit v0 does not derive —
 stays uncrossed and named; positions, not node kinds, for the reason
-that class already gives above (`dividedBy` and `plus` are one node
+that class already gives above (`power` and `plus` are one node
 kind and only one of them derives, which is why the enforcing clamp
 keys on **(node, op)**), and WF-091's honesty note 4 is now a coverage
 note rather than a deferral. The element-passing aggregation keeps its

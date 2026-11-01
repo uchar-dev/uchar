@@ -1459,7 +1459,9 @@ EXPECTED_CHANNEL=(
 # jutterswet-voorwaarde-onder-invoer, jutterswet-deponering-onder-invoer, jutterswet-fout-op-tussenstand,
 # jutterswet-deling-in-afwijking and jutterswet-lege-initialisatie-naast-regel. A division in a default and one in an initialisation beside another writer play: what
 # they fault or deposit on a state between is logical and goes (DROOLS-120 and DROOLS-165 are retired).
-EXPECTED_PLAYED=295
+# 296 since the card omgekeerde-eenheid (2026-11-01): the golden jutterswet-vondsttempo, a reciprocal unit divided,
+# compared across a conversion and cancelled against a duration. It plays on both with PLAYED 2.
+EXPECTED_PLAYED=296
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

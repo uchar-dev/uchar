@@ -1,0 +1,40 @@
+Eenheidsysteem Tijd
+    de dag (mv: dagen) dg
+    de week (mv: weken) wk = 7 dg
+
+Parameter de meldingsdrempel : Numeriek (getal met 2 decimalen) met eenheid 1/wk
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het vondstental Numeriek (geheel getal);
+    de zoekduur Numeriek (geheel getal) met eenheid dg;
+    het vondsttempo Numeriek (getal met 2 decimalen) met eenheid 1/dg;
+    de seizoensduur Numeriek (geheel getal) met eenheid wk;
+    de teruggerekende vondsten Numeriek (getal met 2 decimalen);
+    de seizoensoogst Numeriek (getal met 2 decimalen);
+    is ijverig kenmerk (bijvoeglijk);
+    is drempelhoudend kenmerk (bijvoeglijk);
+    is onvermoeibaar kenmerk (bijvoeglijk);
+
+Regel vondsttempo
+    geldig altijd
+        Het vondsttempo van een Jutter moet berekend worden als zijn vondstental gedeeld door zijn zoekduur naar beneden afgerond op 2 decimalen.
+
+Regel teruggerekende vondsten
+    geldig altijd
+        De teruggerekende vondsten van een Jutter moet berekend worden als zijn vondsttempo maal zijn zoekduur.
+
+Regel seizoensoogst
+    geldig altijd
+        De seizoensoogst van een Jutter moet berekend worden als zijn vondsttempo maal zijn seizoensduur.
+
+Regel ijverig
+    geldig altijd
+        Een Jutter is ijverig indien zijn vondsttempo groter is dan de meldingsdrempel.
+
+Regel drempelhoudend
+    geldig altijd
+        Een Jutter is drempelhoudend indien zijn vondsttempo gelijk is aan de meldingsdrempel.
+
+Regel onvermoeibaar
+    geldig altijd
+        Een Jutter is onvermoeibaar indien zijn vondsttempo groter is dan 30 1/wk.
