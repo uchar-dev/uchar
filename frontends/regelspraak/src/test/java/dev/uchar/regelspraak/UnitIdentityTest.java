@@ -41,8 +41,8 @@ class UnitIdentityTest {
         assertTrue(c.contains("\"op\":\"times\","), () -> "het times-product ontbreekt:\n" + c);
         assertTrue(c.contains(
                 "\"type\":{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\","
-                + "\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"EUR\",\"system\":\"Munt\",\"canonical\":\"EUR\","
-                + "\"factorToCanonical\":{\"num\":1,\"den\":1}}},"
+                + "\"unit\":[{\"node\":\"Unit\",\"abbreviation\":\"EUR\",\"system\":\"Munt\",\"canonical\":\"EUR\","
+                + "\"factorToCanonical\":{\"num\":1,\"den\":1}}]},"
                 + "\"source\":{\"snippet\":\"hetstuktalvandeVerkoopmaaldestukprijsvandeVerkoop\"}"),
                 () -> "het product moet het echte EUR-type (2 decimalen) dragen:\n" + c);
     }
@@ -86,9 +86,9 @@ class UnitIdentityTest {
         RegelSpraakModel m = Resolver.resolve(src);
         assertClean(m);
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
-        assertTrue(c.contains("\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"1\",\"denominator\":{\"node\":\"Unit\","
+        assertTrue(c.contains("\"unit\":[{\"node\":\"Unit\","
                 + "\"abbreviation\":\"mnd\",\"system\":\"Tijdsduur\",\"canonical\":\"mnd\","
-                + "\"factorToCanonical\":{\"num\":1,\"den\":1}}}"),
+                + "\"factorToCanonical\":{\"num\":1,\"den\":1},\"exponent\":-1}]"),
                 () -> "de breuk draagt de eenheid 1/mnd op de wire:\n" + c);
     }
 
@@ -161,7 +161,7 @@ class UnitIdentityTest {
         RegelSpraakModel m = withAttributes(attributes,
                 "Het tempo van een Verkoop moet berekend worden als het stuktal van de Verkoop gedeeld door de looptijd van de Verkoop.");
         assertClean(m);
-        assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains("\"abbreviation\":\"1\",\"denominator\""));
+        assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains("\"exponent\":-1"));
     }
 
     /** m^2 is read and refused, and it does not degrade to m: no golden can carry the product through the executors. */

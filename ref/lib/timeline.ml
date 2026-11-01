@@ -551,16 +551,16 @@ let grid_unit (doc : Ir_v0.Ast.document) (g : Ir_v0.Ast.grain) :
       (fun (_, (es : Ir_v0.Ast.unit_system)) ->
         List.map (fun (d : Ir_v0.Ast.declared_unit) -> d.ge_unit) es.unit_list)
       doc.unit_systems
-    |> List.filter (fun (e : Ir_v0.Ast.measure_unit) ->
-           e.denominator = None && Ir_v0.Checks.time_unit_of_unit e = Some because)
+    |> List.filter (fun (e : Ir_v0.Ast.unit_factor) ->
+           Ir_v0.Checks.time_unit_of_unit (Ir_v0.Units.of_declared e) = Some because)
   in
   (* the factor as the rational it is, so two spellings of one value are
      one grid *)
-  let key (e : Ir_v0.Ast.measure_unit) =
+  let key (e : Ir_v0.Ast.unit_factor) =
     (Option.map Ir_v0.Checks.norm e.canonical_form, Option.map Arith.rational e.factor_to_canonical)
   in
   match (candidates, List.sort_uniq compare (List.map key candidates)) with
-  | e :: _, [ _ ] -> Ok e
+  | e :: _, [ _ ] -> Ok (Ir_v0.Units.of_declared e)
   | _, [] ->
       Error
         (Printf.sprintf
@@ -588,7 +588,8 @@ let duration ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result option) units
     =
   let plain = Num (Q.of_int units, Unitless) in
   match v with
-  | Num (_, Unit ({ denominator = Some denominator; _ } as u)) -> (
+  | Num (_, Unit u) when Ir_v0.Units.denominator u <> None -> (
+      let denominator = Option.get (Ir_v0.Units.denominator u) in
       match grid_unit with
       | None ->
           fault "the temporal total of a %s value reached the collapse without a grid unit (ch. 3.6)"
@@ -607,9 +608,9 @@ let duration ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result option) units
      denominator-free units, so it never carries a denominator either —
      the guard below is the fail-fast for a representation change that
      would silently drop one. *)
-  | Num (_, Unit { denominator = None; _ }) | Num (_, Unitless) -> plain
+  | Num (_, Unit _) | Num (_, Unitless) -> plain
   | Num (_, Product (a, b)) ->
-      if a.denominator <> None || b.denominator <> None then
+      if Ir_v0.Units.denominator a <> None || Ir_v0.Units.denominator b <> None then
         fault "the temporal total of a %s value: a unit product with a denominator has no \
                integration rule (ch. 3.6)"
           (Arith.show_unit (Product (a, b)));

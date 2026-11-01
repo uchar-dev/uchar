@@ -16,16 +16,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 },
-                "denominator": {
+                {
                   "node": "Unit",
                   "abbreviation": "mnd",
                   "system": "Bewaartijd",
@@ -33,9 +35,10 @@
                   "factorToCanonical": {
                     "num": 1,
                     "den": 1
-                  }
+                  },
+                  "exponent": -1
                 }
-              }
+              ]
             }
           },
           {
@@ -46,16 +49,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 },
-                "denominator": {
+                {
                   "node": "Unit",
                   "abbreviation": "mnd",
                   "system": "Bewaartijd",
@@ -63,9 +68,10 @@
                   "factorToCanonical": {
                     "num": 1,
                     "den": 1
-                  }
+                  },
+                  "exponent": -1
                 }
-              }
+              ]
             }
           },
           {
@@ -76,16 +82,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 },
-                "denominator": {
+                {
                   "node": "Unit",
                   "abbreviation": "mnd",
                   "system": "Bewaartijd",
@@ -93,9 +101,10 @@
                   "factorToCanonical": {
                     "num": 1,
                     "den": 1
-                  }
+                  },
+                  "exponent": -1
                 }
-              }
+              ]
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -111,16 +120,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -131,16 +142,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -151,16 +164,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           }
         ],
@@ -180,16 +195,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 },
-                "denominator": {
+                {
                   "node": "Unit",
                   "abbreviation": "mnd",
                   "system": "Bewaartijd",
@@ -197,9 +214,10 @@
                   "factorToCanonical": {
                     "num": 1,
                     "den": 1
-                  }
+                  },
+                  "exponent": -1
                 }
-              }
+              ]
             },
             "plural": "bewaartarieven"
           }
@@ -319,16 +337,18 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "EUR",
-                  "system": "Munt",
-                  "canonical": "EUR",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "het totaal van het kistgeld van alle vondsten van de Jutter"

@@ -106,14 +106,16 @@
                       "whole": true,
                       "decimals": 0,
                       "sign": "nonNegative",
-                      "unit": {
-                        "node": "Unit",
-                        "abbreviation": "st",
-                        "factorToCanonical": {
-                          "num": 1,
-                          "den": 1
+                      "unit": [
+                        {
+                          "node": "Unit",
+                          "abbreviation": "st",
+                          "factorToCanonical": {
+                            "num": 1,
+                            "den": 1
+                          }
                         }
-                      }
+                      ]
                     }
                   }
                 ],

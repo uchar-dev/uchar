@@ -16,16 +16,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -36,16 +38,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           }
         ],
@@ -85,16 +89,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             },
             "plural": "bergingsaandelen"
           }
@@ -237,16 +243,18 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "EUR",
-                  "system": "Munt",
-                  "canonical": "EUR",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "9 \u20ac"
@@ -274,16 +282,18 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "EUR",
-                  "system": "Munt",
-                  "canonical": "EUR",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "7 \u20ac"

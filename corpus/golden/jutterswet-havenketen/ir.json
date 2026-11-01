@@ -405,16 +405,18 @@
                     "whole": true,
                     "decimals": 0,
                     "sign": "unspecified",
-                    "unit": {
-                      "node": "Unit",
-                      "abbreviation": "mnd",
-                      "system": "Tijd",
-                      "canonical": "mnd",
-                      "factorToCanonical": {
-                        "num": 1,
-                        "den": 1
+                    "unit": [
+                      {
+                        "node": "Unit",
+                        "abbreviation": "mnd",
+                        "system": "Tijd",
+                        "canonical": "mnd",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        }
                       }
-                    }
+                    ]
                   },
                   "source": {
                     "snippet": "6 mnd"

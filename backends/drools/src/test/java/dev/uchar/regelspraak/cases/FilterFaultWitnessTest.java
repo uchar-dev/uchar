@@ -944,9 +944,9 @@ class FilterFaultWitnessTest {
 
     /** A whole number in the unit {@code unit}. */
     private static String inUnit(String unit) {
-        return "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":{\"node\":\"Unit\","
+        return "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":[{\"node\":\"Unit\","
                 + "\"abbreviation\":\"" + unit + "\",\"canonical\":\"" + unit + "\",\"factorToCanonical\":{\"num\":1,"
-                + "\"den\":1}}}";
+                + "\"den\":1}}]}";
     }
 
     /** A Jutter with a vondsttal; a Vondst with a gewicht, deelnemers, a vinddatum, a wachttijd in nooitdagen, a termijn

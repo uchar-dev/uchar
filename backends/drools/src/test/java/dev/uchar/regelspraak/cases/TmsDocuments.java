@@ -553,7 +553,7 @@ final class TmsDocuments {
     /** A number type, whole or with {@code decimals} decimals, with the unit {@code unit} (a Unit node, or null). */
     static String numberType(boolean whole, int decimals, String unit) {
         return "{\"node\":\"Number\",\"whole\":" + whole + ",\"decimals\":" + decimals + ",\"sign\":\"unspecified\""
-                + (unit == null ? "" : ",\"unit\":" + unit) + "}";
+                + (unit == null ? "" : ",\"unit\":[" + unit + "]") + "}";
     }
 
     /** A Unit of system {@code system}, {@code num}/{@code den} of the canonical unit {@code canonical}. */

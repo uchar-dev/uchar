@@ -350,6 +350,13 @@ stays honest about where it no longer proves toolchain agreement.
   **out** of the re-emission rather than re-pinned, because uchar's unit typing
   rejects the fragment as written. Divergence by holdout and divergence by
   re-pin are both recorded; a silent divergence is not on offer.
+- **2026-11-01 — the zone is in the L6 shape of `uchar-ir-v1`.** Executed by the
+  card `20261101-unit-factors.md` in `backlog/`. A unit on a number is a list of
+  factors (IR-SPEC ch. 2.5): 460 unit positions in `casus/ir.json` and the 29
+  `cases/` slices were wrapped in a list by `spec/proposals/v1-migratie/m6.py`, and
+  the 420 declarations did not move. The zone carries no rate and no product, so no
+  other change was due; nothing was refused. `casus/ir.json` was then re-emitted by
+  uchar's frontend, which reproduced the migrated file byte for byte: no divergence.
 
 ## Lifecycle
 

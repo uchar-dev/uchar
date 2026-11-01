@@ -10,7 +10,7 @@ reaches the match arm that adds the payload to a unitless amount, and WF-035
 reports `additive operands have incompatible units` beside the two WF-092
 lines (measured).
 
-    WF-092 FAIL /model/domains/1/datatype/constructors/0/payload/unit: unit 'm'
+    WF-092 FAIL /model/domains/1/datatype/constructors/0/payload/unit/0: unit 'm'
     carries conversion factor 1 but names no canonical unit to convert into: a
     half-filled conversion pair is not a unit (both fields, or neither)
 

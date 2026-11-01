@@ -573,7 +573,7 @@ public final class IrEmitter {
                 throw new IllegalStateException("IrEmitter: eenheidstelsel '" + es.name + "' draagt een spelling van '"
                         + e.abbreviation() + "' tweemaal, als afkorting en als alias: " + sp);
             w.beginObject();
-            unitFields(e);
+            unitFields(e.factors().get(0));
             if (!sp.isEmpty()) { w.key("spellings"); stringList(sp); }
             w.endObject();
         }
@@ -623,17 +623,22 @@ public final class IrEmitter {
         return e;
     }
 
-    /** A unit where it occurs — on a number, as the denominator of a rate: its fields, never its spellings (those
-     *  belong to the declaration in its unit system). */
+    /** A unit where it occurs, on a number: the list of its factors, each with its fields and its exponent where that
+     *  is not 1, never its spellings (those belong to the declaration in its unit system). */
     private void unit(Unit e) {
-        w.beginObject();
-        unitFields(e);
-        w.endObject();
+        w.beginArray();
+        for (Unit.Factor f : e.factors()) {
+            w.beginObject();
+            unitFields(f);
+            if (f.exponent() != 1) w.key("exponent").value(f.exponent());
+            w.endObject();
+        }
+        w.endArray();
     }
 
     /** The fields of a Unit in the schema's order; an absent field is left out. The factor is the exact fraction
      *  (see {@link #exactFactor}). */
-    private void unitFields(Unit e) {
+    private void unitFields(Unit.Factor e) {
         w.key("node").value("Unit");
         w.key("abbreviation").value(e.abbreviation());
         if (e.system() != null) w.key("system").value(e.system());
@@ -645,7 +650,6 @@ public final class IrEmitter {
             w.key("den").value(f.den());
             w.endObject();
         }
-        if (e.denominator() != null) { w.key("denominator"); unit(e.denominator()); }
     }
 
     /** The factor of a unit as the wire writes it: an exact positive fraction in lowest terms, or null when the unit
@@ -654,24 +658,24 @@ public final class IrEmitter {
      *  declaration step, and the two must agree to that rounding. A unit outside every system — the built-in '%', a
      *  bare calendar unit — is its own canonical with factor 1, a whole number, written over 1. Any other factor has
      *  no exact spelling here and is refused, as is a factor that is not positive. */
-    private UnitSystem.Factor exactFactor(Unit e) {
+    private UnitSystem.Factor exactFactor(Unit.Factor e) {
         BigDecimal f = e.factorToCanonical();
         if (f == null) return null;
         UnitSystem es = e.system() == null ? null : m.unitSystems.get(e.system());
         UnitSystem.Factor x = es == null ? null : es.exactFactors.get(e.abbreviation());
         if (x == null) {
             if (f.signum() <= 0 || f.stripTrailingZeros().scale() > 0)
-                throw new IllegalStateException("IrEmitter: eenheid '" + e.rendering() + "' draagt de factor "
+                throw new IllegalStateException("IrEmitter: eenheid '" + e.abbreviation() + "' draagt de factor "
                         + f.toPlainString() + ", en geen eenheidstelsel declareert haar als breuk; de wire schrijft de "
                         + "factor als exacte positieve breuk");
             return new UnitSystem.Factor(f.toBigIntegerExact(), java.math.BigInteger.ONE);
         }
         if (x.num().signum() <= 0)
-            throw new IllegalStateException("IrEmitter: eenheid '" + e.rendering() + "' heeft de gedeclareerde factor "
+            throw new IllegalStateException("IrEmitter: eenheid '" + e.abbreviation() + "' heeft de gedeclareerde factor "
                     + x.num() + "/" + x.den() + "; de wire schrijft de factor als exacte positieve breuk");
         BigDecimal rational = new BigDecimal(x.num()).divide(new BigDecimal(x.den()), java.math.MathContext.DECIMAL128);
         if (f.subtract(rational).abs().compareTo(rational.movePointLeft(12)) > 0)
-            throw new IllegalStateException("IrEmitter: eenheid '" + e.rendering() + "' draagt de factor "
+            throw new IllegalStateException("IrEmitter: eenheid '" + e.abbreviation() + "' draagt de factor "
                     + f.toPlainString() + ", maar haar stelsel declareert " + x.num() + "/" + x.den());
         return x;
     }

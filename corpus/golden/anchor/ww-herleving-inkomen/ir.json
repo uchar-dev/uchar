@@ -80,10 +80,12 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "dag"
-              }
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dag"
+                }
+              ]
             }
           },
           {
@@ -242,10 +244,12 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "dag"
-                }
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dag"
+                  }
+                ]
               },
               "source": {
                 "snippet": "de tijdsduur van zijn eindigingsdatum tot zijn vervaldatum in hele dagen"

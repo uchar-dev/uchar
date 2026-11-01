@@ -356,7 +356,7 @@ class ObjectCreationFoldWitnessTest {
 
     /** A whole number in {@code unit}. */
     private static String numberIn(String unit) {
-        return "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":" + unit + "}";
+        return "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":[" + unit + "]}";
     }
 
     private static String attribute(String name, String datatype) {

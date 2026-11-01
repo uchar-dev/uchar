@@ -114,7 +114,7 @@ import re
 import sys
 
 HERKOMST = {"v0name", "vermelding", "uitlijning", "identiteit", "vervalt", "gat"}
-GELAND = re.compile(r"M[1-8]")
+GELAND = re.compile(r"M[1-9]")
 KLASSE = {"nl", "en", "neutraal"}
 BRONNEN = {"schema": "spec/schema/uchar-ir-v1.schema.json", "spec": "spec/IR-SPEC.md"}
 
@@ -509,7 +509,7 @@ def main():
         for r in tabel[soort]:
             for w in [r.get("geland")] + [g.get("geland") for g in r.get("doel", [])]:
                 if w is not None and not (isinstance(w, str) and GELAND.fullmatch(w)):
-                    fout("%s `%s`: `geland` is %r, verwacht een M-stap (M1..M8)" % (soort, r["v0"], w))
+                    fout("%s `%s`: `geland` is %r, verwacht een M-stap (M1..M9)" % (soort, r["v0"], w))
             if r.get("geland") and any(g.get("geland") for g in r.get("doel", [])):
                 fout("%s `%s`: `geland` staat op de rij en op een groep; kies een van de twee" % (soort, r["v0"]))
             for g in r.get("doel", []):

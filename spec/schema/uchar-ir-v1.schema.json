@@ -211,7 +211,11 @@
           ]
         },
         "unit": {
-          "$ref": "#/$defs/Unit"
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/Unit"
+          }
         },
         "presentation": {
           "const": "percentage"
@@ -508,7 +512,7 @@
       }
     },
     "Unit": {
-      "description": "A unit where it occurs (IR-SPEC ch. 2.5): on a Number, and as the denominator of a rate. 'abbreviation' is its primary spelling. 'system' names the declaring UnitSystem (WF-034 (r)); it is absent for the built-in '%' and for the bare calendar units. 'canonical' and 'factorToCanonical' are the conversion pair, both present or both absent (WF-092). The factor is an exact positive rational, how many canonical units equal one of this unit, written {num, den} without a node discriminator (delta B17 (i) of spec/proposals/V1-WIREMIGRATIE.md, CONSTRUCTS row 26); that it is in lowest terms is a verifier check (WF-092), because a schema cannot state a greatest common divisor. 'denominator' is the denominator unit of a rate or of a reciprocal: a reciprocal, E⁻¹, is the abbreviation '1' over the denominator E, without a system or a conversion pair (WF-123). No field is ever null: absent is the one spelling of a field not given. A unit's further spellings belong to its declaration (DeclaredUnit), so an occurrence cannot carry them. Key order is this 'properties' order.",
+      "description": "One factor of a unit where it occurs (IR-SPEC ch. 2.5): Number.unit is a non-empty list of these. 'abbreviation' is its primary spelling. 'system' names the declaring UnitSystem (WF-034 (r)); it is absent for the built-in '%' and for the bare calendar units. 'canonical' and 'factorToCanonical' are the conversion pair, both present or both absent (WF-092). The factor is an exact positive rational, how many canonical units equal one of this unit, written {num, den} without a node discriminator (delta B17 (i) of spec/proposals/V1-WIREMIGRATIE.md, CONSTRUCTS row 26); that it is in lowest terms is a verifier check (WF-092), because a schema cannot state a greatest common divisor. 'exponent' is the whole exponent of the factor, absent where it is 1: never 0, never a written 1. That one atom stands once and that the factors stand in the canonical order is a verifier check (WF-124), because a schema cannot state either. No field is ever null: absent is the one spelling of a field not given. A unit's further spellings belong to its declaration (DeclaredUnit), so an occurrence cannot carry them. Key order is this 'properties' order.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -548,8 +552,14 @@
             }
           }
         },
-        "denominator": {
-          "$ref": "#/$defs/Unit"
+        "exponent": {
+          "type": "integer",
+          "not": {
+            "enum": [
+              0,
+              1
+            ]
+          }
         }
       }
     },
@@ -576,9 +586,6 @@
         },
         "factorToCanonical": {
           "$ref": "#/$defs/Unit/properties/factorToCanonical"
-        },
-        "denominator": {
-          "$ref": "#/$defs/Unit/properties/denominator"
         },
         "spellings": {
           "type": "array",

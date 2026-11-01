@@ -16,16 +16,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -36,16 +38,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -56,16 +60,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -76,16 +82,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           }
         ],
@@ -173,16 +181,18 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "t",
-                    "system": "Gewicht",
-                    "canonical": "kg",
-                    "factorToCanonical": {
-                      "num": 1000,
-                      "den": 1
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "t",
+                      "system": "Gewicht",
+                      "canonical": "kg",
+                      "factorToCanonical": {
+                        "num": 1000,
+                        "den": 1
+                      }
                     }
-                  }
+                  ]
                 },
                 "source": {
                   "snippet": "1 t"
@@ -193,16 +203,18 @@
                 "whole": false,
                 "decimals": 2,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "kg",
-                  "system": "Gewicht",
-                  "canonical": "kg",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "het ruwgewicht van de Vangst, met een minimum van 1 t"
@@ -249,16 +261,18 @@
                   "whole": false,
                   "decimals": 1,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "t",
-                    "system": "Gewicht",
-                    "canonical": "kg",
-                    "factorToCanonical": {
-                      "num": 1000,
-                      "den": 1
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "t",
+                      "system": "Gewicht",
+                      "canonical": "kg",
+                      "factorToCanonical": {
+                        "num": 1000,
+                        "den": 1
+                      }
                     }
-                  }
+                  ]
                 },
                 "source": {
                   "snippet": "2,50 t"
@@ -269,16 +283,18 @@
                 "whole": false,
                 "decimals": 2,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "kg",
-                  "system": "Gewicht",
-                  "canonical": "kg",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "het ruwgewicht van de Vangst, met een maximum van 2,50 t"
@@ -325,16 +341,18 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "t",
-                    "system": "Gewicht",
-                    "canonical": "kg",
-                    "factorToCanonical": {
-                      "num": 1000,
-                      "den": 1
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "t",
+                      "system": "Gewicht",
+                      "canonical": "kg",
+                      "factorToCanonical": {
+                        "num": 1000,
+                        "den": 1
+                      }
                     }
-                  }
+                  ]
                 },
                 "source": {
                   "snippet": "1 t"
@@ -350,16 +368,18 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "kg",
-                    "system": "Gewicht",
-                    "canonical": "kg",
-                    "factorToCanonical": {
-                      "num": 1,
-                      "den": 1
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "kg",
+                      "system": "Gewicht",
+                      "canonical": "kg",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
                     }
-                  }
+                  ]
                 },
                 "source": {
                   "snippet": "2500 kg"
@@ -370,16 +390,18 @@
                 "whole": false,
                 "decimals": 2,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "kg",
-                  "system": "Gewicht",
-                  "canonical": "kg",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "het ruwgewicht van de Vangst, met een minimum van 1 t en een maximum van 2500 kg"

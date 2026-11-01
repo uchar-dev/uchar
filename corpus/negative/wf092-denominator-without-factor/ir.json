@@ -16,22 +16,25 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 },
-                "denominator": {
+                {
                   "node": "Unit",
                   "abbreviation": "mnd",
                   "system": "Bewaartijd",
-                  "canonical": "mnd"
+                  "canonical": "mnd",
+                  "exponent": -1
                 }
-              }
+              ]
             }
           },
           {
@@ -42,22 +45,25 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 },
-                "denominator": {
+                {
                   "node": "Unit",
                   "abbreviation": "mnd",
                   "system": "Bewaartijd",
-                  "canonical": "mnd"
+                  "canonical": "mnd",
+                  "exponent": -1
                 }
-              }
+              ]
             }
           },
           {
@@ -68,22 +74,25 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 },
-                "denominator": {
+                {
                   "node": "Unit",
                   "abbreviation": "mnd",
                   "system": "Bewaartijd",
-                  "canonical": "mnd"
+                  "canonical": "mnd",
+                  "exponent": -1
                 }
-              }
+              ]
             },
             "timeline": {
               "node": "TimelineFacet",
@@ -99,16 +108,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           }
         ],
@@ -128,22 +139,25 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 },
-                "denominator": {
+                {
                   "node": "Unit",
                   "abbreviation": "mnd",
                   "system": "Bewaartijd",
-                  "canonical": "mnd"
+                  "canonical": "mnd",
+                  "exponent": -1
                 }
-              }
+              ]
             },
             "plural": "bewaartarieven"
           }
@@ -263,22 +277,25 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "EUR",
-                  "system": "Munt",
-                  "canonical": "EUR",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   },
-                  "denominator": {
+                  {
                     "node": "Unit",
                     "abbreviation": "mnd",
                     "system": "Bewaartijd",
-                    "canonical": "mnd"
+                    "canonical": "mnd",
+                    "exponent": -1
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "het totaal van het bewaartarief van alle vondsten van de Jutter"
@@ -329,22 +346,25 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "EUR",
-                  "system": "Munt",
-                  "canonical": "EUR",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   },
-                  "denominator": {
+                  {
                     "node": "Unit",
                     "abbreviation": "mnd",
                     "system": "Bewaartijd",
-                    "canonical": "mnd"
+                    "canonical": "mnd",
+                    "exponent": -1
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "de som van het bewaartarief van alle vondsten van de Jutter"
@@ -390,16 +410,18 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "EUR",
-                  "system": "Munt",
-                  "canonical": "EUR",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "het totaal van zijn bewaarvergoeding per maand"

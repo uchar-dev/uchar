@@ -121,11 +121,13 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "nonNegative",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "km",
-                  "canonical": "m"
-                }
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "km",
+                    "canonical": "m"
+                  }
+                ]
               }
             }
           ]

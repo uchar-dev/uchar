@@ -232,8 +232,8 @@ class DateFoldOverRoleWitnessTest {
     // ---------------- documents ----------------
 
     private static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
-    private static final String DAGEN = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":"
-            + "{\"node\":\"Unit\",\"abbreviation\":\"dag\",\"canonical\":\"dag\",\"factorToCanonical\":{\"num\":1,\"den\":1}}}";
+    private static final String DAGEN = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":["
+            + "{\"node\":\"Unit\",\"abbreviation\":\"dag\",\"canonical\":\"dag\",\"factorToCanonical\":{\"num\":1,\"den\":1}}]}";
     private static final String DATE = "{\"node\":\"Date\",\"precision\":\"day\"}";
     private static final String TIJDSTIP = "{\"node\":\"Date\",\"precision\":\"millisecond\"}";
     private static final String CHARACTERISTIC_CHECK_ZWAAR = "{\"node\":\"CharacteristicCheck\",\"characteristic\":\"zwaar\",\"negated\":false}";

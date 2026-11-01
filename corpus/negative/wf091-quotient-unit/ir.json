@@ -26,16 +26,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "dg",
-                "system": "Tijd",
-                "canonical": "dg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -46,10 +48,8 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "1",
-                "denominator": {
+              "unit": [
+                {
                   "node": "Unit",
                   "abbreviation": "dg",
                   "system": "Tijd",
@@ -57,9 +57,10 @@
                   "factorToCanonical": {
                     "num": 1,
                     "den": 1
-                  }
+                  },
+                  "exponent": -1
                 }
-              }
+              ]
             }
           },
           {
@@ -70,16 +71,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "wk",
-                "system": "Tijd",
-                "canonical": "dg",
-                "factorToCanonical": {
-                  "num": 7,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "wk",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 7,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -132,10 +135,8 @@
           "whole": false,
           "decimals": 2,
           "sign": "unspecified",
-          "unit": {
-            "node": "Unit",
-            "abbreviation": "1",
-            "denominator": {
+          "unit": [
+            {
               "node": "Unit",
               "abbreviation": "wk",
               "system": "Tijd",
@@ -143,9 +144,10 @@
               "factorToCanonical": {
                 "num": 7,
                 "den": 1
-              }
+              },
+              "exponent": -1
             }
-          }
+          ]
         }
       }
     ],
@@ -232,10 +234,8 @@
                   "whole": false,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "1",
-                    "denominator": {
+                  "unit": [
+                    {
                       "node": "Unit",
                       "abbreviation": "wk",
                       "system": "Tijd",
@@ -243,9 +243,10 @@
                       "factorToCanonical": {
                         "num": 7,
                         "den": 1
-                      }
+                      },
+                      "exponent": -1
                     }
-                  }
+                  ]
                 },
                 "source": {
                   "snippet": "zijn vondstental gedeeld door zijn zoekduur"
@@ -258,10 +259,8 @@
                 "whole": false,
                 "decimals": 2,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "1",
-                  "denominator": {
+                "unit": [
+                  {
                     "node": "Unit",
                     "abbreviation": "dg",
                     "system": "Tijd",
@@ -269,9 +268,10 @@
                     "factorToCanonical": {
                       "num": 1,
                       "den": 1
-                    }
+                    },
+                    "exponent": -1
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "zijn vondstental gedeeld door zijn zoekduur naar beneden afgerond op 2 decimalen"
@@ -539,10 +539,8 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "1",
-                    "denominator": {
+                  "unit": [
+                    {
                       "node": "Unit",
                       "abbreviation": "wk",
                       "system": "Tijd",
@@ -550,9 +548,10 @@
                       "factorToCanonical": {
                         "num": 7,
                         "den": 1
-                      }
+                      },
+                      "exponent": -1
                     }
-                  }
+                  ]
                 },
                 "source": {
                   "snippet": "30 1/wk"

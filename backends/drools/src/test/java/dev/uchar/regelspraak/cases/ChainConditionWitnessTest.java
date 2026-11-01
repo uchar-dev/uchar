@@ -201,7 +201,7 @@ class ChainConditionWitnessTest {
             + factType("KustwachtBewaaktHaven", "kustwacht", "Kustwacht", "bewaakte haven", "bewaakte havens", "Haven") + ","
             + factType("Werving", "werver", "Kustwacht", "geworven jutter", "geworven jutters", "Jutter")
             + "],\"parameters\":[{\"node\":\"Parameter\",\"name\":\"wachttijd\",\"datatype\":{\"node\":\"Number\",\"whole\":true,"
-            + "\"decimals\":0,\"sign\":\"unspecified\",\"unit\":" + MND + "}}],\"domains\":[],\"unitSystems\":[{\"node\":\"UnitSystem\","
+            + "\"decimals\":0,\"sign\":\"unspecified\",\"unit\":[" + MND + "]}}],\"domains\":[],\"unitSystems\":[{\"node\":\"UnitSystem\","
             + "\"name\":\"Tijd\",\"units\":[{\"node\":\"Unit\",\"abbreviation\":\"dg\",\"system\":\"Tijd\",\"canonical\":\"dg\","
             + "\"factorToCanonical\":{\"num\":1,\"den\":1},\"spellings\":[\"dag\"]},{\"node\":\"Unit\",\"abbreviation\":\"mnd\","
             + "\"system\":\"Tijd\",\"canonical\":\"mnd\",\"factorToCanonical\":{\"num\":1,\"den\":1},\"spellings\":[\"maand\"]}]}],"
@@ -247,7 +247,7 @@ class ChainConditionWitnessTest {
     private static String months(String op, String date, String n, String snippet) {
         return "{\"node\":\"Binary\",\"op\":\"" + op + "\",\"left\":" + date + ",\"right\":{\"node\":\"Literal\",\"value\":"
                 + "{\"number\":\"" + n + "\"},\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\","
-                + "\"unit\":" + MND + "},\"source\":{\"snippet\":\"" + n + " mnd\"}},\"type\":" + DATE
+                + "\"unit\":[" + MND + "]},\"source\":{\"snippet\":\"" + n + " mnd\"}},\"type\":" + DATE
                 + ",\"source\":{\"snippet\":\"" + snippet + "\"}}";
     }
 

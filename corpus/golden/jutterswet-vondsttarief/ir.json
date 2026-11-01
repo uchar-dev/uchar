@@ -16,15 +16,17 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "%",
-                "canonical": "%",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "%",
+                  "canonical": "%",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              },
+              ],
               "presentation": "percentage"
             }
           },
@@ -36,15 +38,17 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "%",
-                "canonical": "%",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "%",
+                  "canonical": "%",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              },
+              ],
               "presentation": "percentage"
             }
           }
@@ -94,15 +98,17 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "%",
-                  "canonical": "%",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "%",
+                    "canonical": "%",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "21%"
@@ -162,15 +168,17 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "%",
-                    "canonical": "%",
-                    "factorToCanonical": {
-                      "num": 1,
-                      "den": 1
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "%",
+                      "canonical": "%",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
                     }
-                  }
+                  ]
                 },
                 "source": {
                   "snippet": "21%"

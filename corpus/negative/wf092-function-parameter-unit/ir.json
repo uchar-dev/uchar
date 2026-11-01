@@ -137,11 +137,13 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "canonical": "g"
-              }
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "canonical": "g"
+                }
+              ]
             }
           }
         ],

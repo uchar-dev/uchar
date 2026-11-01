@@ -182,21 +182,33 @@ let unit_of = function
   | _ -> None
 
 (* Convertibility at dump level: same shape (plain vs rate), canonical names
-   equal within the same system, rates recursively convertible (IR-SPEC
-   ch. 2.5). Conservative: unknown structure counts as compatible, so this
-   check under-reports rather than mis-fires. *)
-let rec units_convertible (a : measure_unit) (b : measure_unit) =
-  let canon (u : measure_unit) =
-    match u.canonical_form with Some c -> Some (norm c)
-    | None -> Option.map norm u.abbr_text
+   equal within the same system, rates side by side (IR-SPEC ch. 2.5). A side of
+   one factor is that factor's canonical name, or its abbreviation; a side of
+   more is a product, opaque, and matches only the product of the same names; an
+   empty numerator is the name "1". Conservative: unknown structure counts as
+   compatible, so this check under-reports rather than mis-fires. *)
+let units_convertible (a : measure_unit) (b : measure_unit) =
+  let side (fs : measure_unit) =
+    match fs with
+    | [] -> Some "1"
+    | [ f ] when Units.exponent f = 1 -> (
+        match f.canonical_form with Some c -> Some (norm c) | None -> Option.map norm f.abbr_text)
+    | fs ->
+        Some
+          (norm
+             (String.concat "·"
+                (List.concat_map
+                   (fun (f : unit_factor) ->
+                     List.init (abs (Units.exponent f)) (fun _ -> Units.name f))
+                   fs)))
   in
-  (match canon a, canon b with
-   | Some x, Some y -> x = y
-   | _ -> true)
-  && (match a.denominator, b.denominator with
-      | None, None -> true
-      | Some x, Some y -> units_convertible x y
-      | _ -> false)
+  let same x y = match (side x, side y) with Some p, Some q -> p = q | _ -> true in
+  same (Units.positives a) (Units.positives b)
+  &&
+  match (Units.denominator a, Units.denominator b) with
+  | None, None -> true
+  | Some x, Some y -> same x y
+  | _ -> false
 
 let units_compatible a b =
   match a, b with
@@ -204,46 +216,24 @@ let units_compatible a b =
   | Some x, Some y -> units_convertible x y
   | _ -> false
 
-(* A unit in its normal form (IR-SPEC ch. 2.5): the factors with a positive
-   exponent as the numerator, the one factor with exponent -1 as the
-   denominator. A numerator without a factor is spelled "1", so "1/dg" is dg⁻¹. *)
-let reciprocal_numerator = "1"
+(* A unit whose numerator holds no factor: "1/dg" is dg⁻¹. *)
+let is_reciprocal (u : measure_unit) = u <> [] && Units.positives u = []
 
-let is_reciprocal (u : measure_unit) =
-  u.denominator <> None && u.abbr_text = Some reciprocal_numerator
-
-(* the atomic factors of a product's name, ch. 2.5: "€·m" *)
-let product_factors (name : string) =
-  let separator = "·" in
-  let width = String.length separator and n = String.length name in
-  let rec go start i acc =
-    if i + width > n then List.rev (String.sub name start (n - start) :: acc)
-    else if String.sub name i width = separator then
-      go (i + width) (i + width) (String.sub name start (i - start) :: acc)
-    else go start (i + 1) acc
-  in
-  go 0 0 []
-
+(* A numerator of more than one atom: "€·m", and m with exponent 2. *)
 let is_product (u : measure_unit) =
-  match u.abbr_text with Some a -> List.length (product_factors a) > 1 | None -> false
+  List.fold_left (fun n f -> n + Units.exponent f) 0 (Units.positives u) > 1
 
 (* what is left of a rate when its denominator cancels: its numerator, and no
    unit at all for a reciprocal (E⁻¹ × E) *)
-let numerator_unit (u : measure_unit) =
-  if is_reciprocal u then None else Some { u with denominator = None }
+let numerator_unit (u : measure_unit) = Units.numerator u
 
 (* E⁻¹, the unit of a unitless number divided by E: None where E has a product
-   in it, whose inverse would need two factors with a negative exponent *)
+   in it *)
 let reciprocal_unit (u : measure_unit) =
-  match u.denominator with
+  match Units.denominator u with
   | _ when is_product u -> None
   | Some n when is_product n -> None
-  | None ->
-      Some
-        { abbr_text = Some reciprocal_numerator; system = None; canonical_form = None;
-          factor_to_canonical = None; denominator = Some u }
-  | Some n when is_reciprocal u -> Some n
-  | Some n -> Some { n with denominator = Some { u with denominator = None } }
+  | _ -> Some (Units.canonical_order (Units.inverted u))
 
 (* WF-035/036 mirrored convenience (IR-SPEC ch. 4.6): a unitless numeric
    literal adopts its sibling's unit before any unit-compatibility check. *)
@@ -255,11 +245,7 @@ let is_unitless_numeric_literal = function
 (* A unit in a message as an author wrote it, a rate with its denominator, and
    "geen" where a position has none: the unit is what a mismatch is about. *)
 let unit_spelling (u : measure_unit option) =
-  let rec spell (u : measure_unit) =
-    let numerator = Option.value u.abbr_text ~default:"?" in
-    match u.denominator with Some n -> numerator ^ "/" ^ spell n | None -> numerator
-  in
-  match u with Some u -> spell u | None -> "geen"
+  match u with Some u -> Units.render u | None -> "geen"
 
 let units_compatible_adopting lexpr rexpr a b =
   is_unitless_numeric_literal lexpr
@@ -290,8 +276,7 @@ let time_unit_of_spelling s =
   | "milliseconde" | "ms" | "milliseconden" | "millisecondes" -> Some Tu_millisecond
   | _ -> None
 
-let time_unit_of_unit (e : measure_unit) =
-  match e.abbr_text with Some a -> time_unit_of_spelling a | None -> None
+let time_unit_of_unit (e : measure_unit) = time_unit_of_spelling (Units.numerator_text e)
 
 (* sub-day units demand millisecond-precision operands *)
 let time_unit_sub_day = function
@@ -1088,11 +1073,9 @@ let day_kind_names ctx = List.map (fun (d : day_kind) -> d.dk_name) ctx.doc.day_
    time units in date arithmetic and tijdsduur (WF-035/WF-038) — the
    executors stay loud on those forms *)
 let day_kind_unit ctx (u : measure_unit) =
-  match u.abbr_text with
-  | Some a ->
-      List.exists (fun d -> List.exists (fun s -> norm s = norm a) (day_kind_spellings d))
-        ctx.doc.day_kinds
-  | None -> false
+  let a = Units.numerator_text u in
+  List.exists (fun d -> List.exists (fun s -> norm s = norm a) (day_kind_spellings d))
+    ctx.doc.day_kinds
 
 (* The position of a version pointer in its wire list, form index first:
    the order the wire writes the versions in. *)
@@ -1397,13 +1380,13 @@ let rec ggd a b = if b = 0 then a else ggd b (a mod b)
    This function also carries WF-034's arm on the unit's `system`
    (maintainer decision 2026-09-05, sixth wave; IR-SPEC ch. 4.6 (r)), for the
    same reason WF-092 lives here: [check_unit_form] is the ONE walk that
-   reaches every unit record in a document, denominators included, and the
+   reaches every unit record in a document, every factor included, and the
    `system` is a reference like any other — it names the declared unit system
    whose conversion table gives the unit its meaning. [systems] is the
    declared-system name list, threaded from the context; it is a required
    argument rather than an optional one so a new call site cannot silently opt
    out of the cross. *)
-let rec check_unit_form ~systems at (u : measure_unit) =
+let check_unit_form ~systems at (u : unit_factor) =
   let named =
     match u.abbr_text with Some a -> "'" ^ a ^ "'" | None -> "an unnamed unit"
   in
@@ -1438,36 +1421,71 @@ let rec check_unit_form ~systems at (u : measure_unit) =
                 factor has one spelling, here %s"
                named num den (rational_render { num = num / g; den = den / g })) ]
     | _ -> [])
-  @ (if u.abbr_text <> Some reciprocal_numerator then []
-     else if u.denominator = None then
-       [ v "WF-123.one-without-denominator" at
-           "the unit '1' stands without a denominator: it is the numerator of a reciprocal, and a \
-            number without a unit carries no unit at all" ]
-     else
-       (if u.system <> None || u.canonical_form <> None || u.factor_to_canonical <> None then
-          [ v "WF-123.one-with-conversion" at
-              "the numerator '1' of a reciprocal carries a system or a conversion pair: it is no unit \
-               and converts into nothing" ]
-        else [])
-       @ (match u.denominator with
-         | Some { denominator = Some _; _ } ->
-             [ v "WF-123.reciprocal-of-rate" (at ^ "/denominator")
-                 "the denominator of a reciprocal is itself a rate: the inverse of a rate is one unit \
-                  over the other, in the normal form of IR-SPEC ch. 2.5" ]
-         | Some n when is_product n ->
-             [ v "WF-123.reciprocal-of-product" (at ^ "/denominator")
-                 "the denominator of a reciprocal is a product: its inverse would need two factors with a \
-                  negative exponent, and the normal form of IR-SPEC ch. 2.5 has one" ]
-         | _ -> []))
-  @ (match u.denominator with Some n -> check_unit_form ~systems (at ^ "/denominator") n | None -> [])
 
-(* every unit a datatype carries, denominators and composite element/field/
+(* WF-124: the form of a unit as a list. One list has one spelling, so a unit
+   that reads the same is the same list: it holds a factor at all, an exponent is
+   never 0 and never a written 1, an atom stands once, and the factors stand in
+   the canonical order. *)
+let check_unit_list at (u : measure_unit) =
+  let named (f : unit_factor) = Units.name f in
+  (if u = [] then
+     [ v "WF-124.empty-unit" at
+         "a unit without a factor: a number without a unit carries no unit field" ]
+   else [])
+  @ List.concat
+      (List.mapi
+         (fun i (f : unit_factor) ->
+           let here = Printf.sprintf "%s/%d/exponent" at i in
+           match f.exponent with
+           | Some 0 ->
+               [ v ~params:[ ("unit", named f) ] "WF-124.exponent-zero" here
+                   (Printf.sprintf
+                      "the factor '%s' has exponent 0: a factor with exponent 0 is no factor"
+                      (named f)) ]
+           | Some 1 ->
+               [ v ~params:[ ("unit", named f) ] "WF-124.exponent-one-written" here
+                   (Printf.sprintf
+                      "the factor '%s' writes the exponent 1: exponent 1 is written by leaving \
+                       the field out"
+                      (named f)) ]
+           | _ -> [])
+         u)
+  @ (let atom (f : unit_factor) = (f.abbr_text, f.system) in
+     let rec seen acc i = function
+       | [] -> []
+       | (f : unit_factor) :: rest ->
+           (if List.mem (atom f) acc then
+              [ v ~params:[ ("unit", named f) ] "WF-124.duplicate-factor"
+                  (Printf.sprintf "%s/%d" at i)
+                  (Printf.sprintf
+                     "the factor '%s' stands twice in one unit: an atom is one factor, with its \
+                      exponents added"
+                     (named f)) ]
+            else [])
+           @ seen (atom f :: acc) (i + 1) rest
+     in
+     seen [] 0 u)
+  @
+  if Units.canonical_order u = u then []
+  else
+    [ v ~params:[ ("spelling", Units.render (Units.canonical_order u)) ] "WF-124.factors-unsorted" at
+        (Printf.sprintf
+           "the factors of this unit are not in the canonical order (positive exponents first, \
+            then by abbreviation and system): here %s"
+           (Units.render (Units.canonical_order u))) ]
+
+let check_measure_unit ~systems at (u : measure_unit) =
+  check_unit_list at u
+  @ List.concat
+      (List.mapi (fun i f -> check_unit_form ~systems (Printf.sprintf "%s/%d" at i) f) u)
+
+(* every unit a datatype carries, its factors and composite element/field/
    payload datatypes included — WF-092 reaches strictly further into a
    datatype than [check_number_form] does, so the form law holds at unit
    positions WF-007's row records as out of its own reach. *)
 let rec check_datatype_units ~systems at = function
   | Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ } ->
-      check_unit_form ~systems (at ^ "/unit") u
+      check_measure_unit ~systems (at ^ "/unit") u
   | List_type { element } -> check_datatype_units ~systems (at ^ "/element") element
   | Struct_type { field_list; _ } ->
       List.concat
@@ -1499,12 +1517,14 @@ let wf092 ctx =
         (List.mapi
            (fun j (d : declared_unit) ->
              let at = Printf.sprintf "/eenheidstelsels/%s/units/%d" sn j in
-             (if d.ge_unit.abbr_text = Some reciprocal_numerator then
-                [ v ~params:[ ("unitSystem", sn) ] "WF-123.declared-one" at
+             (if d.ge_unit.exponent <> None then
+                [ v ~params:[ ("unit", Units.name d.ge_unit); ("unitSystem", sn) ]
+                    "WF-124.declared-exponent" (at ^ "/exponent")
                     (Printf.sprintf
-                       "the unit system '%s' declares the unit '1': it is the numerator of a \
-                        reciprocal, and it needs no declaration"
-                       sn) ]
+                       "the unit system '%s' declares the unit '%s' with an exponent: a \
+                        declaration is one unit, and an exponent belongs to a factor where a unit \
+                        occurs"
+                       sn (Units.name d.ge_unit)) ]
               else [])
              @ check_unit_form ~systems at d.ge_unit)
            es.unit_list))
@@ -2585,7 +2605,8 @@ let duration_sub_day_on_day_dates kind =
    and a list shows its element. *)
 (* The facets of a number-like datatype that [datatype_detail] leaves out by
    default: its wholeness, its sign, and the parts of its unit beside the
-   spelling — system, canonical unit, factor, denominator. *)
+   spelling — system, canonical unit, factor, denominator. The first three are
+   those of the first factor of the numerator. *)
 type detail_facet =
   | Wholeness
   | Sign
@@ -2594,13 +2615,17 @@ type detail_facet =
   | Unit_factor
   | Unit_denominator
 
+let first_numerator_factor (u : measure_unit) =
+  match Units.positives u with f :: _ -> Some f | [] -> None
+
 let rec datatype_detail ?(facets = []) dt =
   let has f = List.mem f facets in
   let unit_label (e : measure_unit) =
     match e with
-    | { abbr_text = Some a; _ } -> a
-    | { canonical_form = Some c; _ } -> c
-    | _ -> "unit"
+    | [] -> "unit"
+    | [ { abbr_text = None; canonical_form = Some c; _ } ] -> c
+    | [ { abbr_text = None; _ } ] -> "unit"
+    | _ -> Units.numerator_text e
   in
   let dec_unit whole_part decimal_places sign_char measure_unit =
     let u = match measure_unit with None -> "" | Some e -> ", " ^ unit_label e in
@@ -2617,21 +2642,28 @@ let rec datatype_detail ?(facets = []) dt =
     in
     let sys =
       of_unit Unit_system (fun e ->
-          match e.system with Some st -> ", system " ^ st | None -> ", no system")
+          match first_numerator_factor e with
+          | Some { system = Some st; _ } -> ", system " ^ st
+          | _ -> ", no system")
     in
     let can =
       of_unit Unit_canonical (fun e ->
-          match e.canonical_form with Some c -> ", canonical " ^ c | None -> ", no canonical unit")
+          match first_numerator_factor e with
+          | Some { canonical_form = Some c; _ } -> ", canonical " ^ c
+          | _ -> ", no canonical unit")
     in
     let fac =
       of_unit Unit_factor (fun e ->
-          match e.factor_to_canonical with
-          | Some { num; den } -> Printf.sprintf ", factor %d/%d" num den
-          | None -> ", no factor")
+          match first_numerator_factor e with
+          | Some { factor_to_canonical = Some { num; den }; _ } ->
+              Printf.sprintf ", factor %d/%d" num den
+          | _ -> ", no factor")
     in
     let per =
       of_unit Unit_denominator (fun e ->
-          match e.denominator with Some n -> ", per " ^ unit_label n | None -> ", no denominator")
+          match Units.denominator e with
+          | Some n -> ", per " ^ unit_label n
+          | None -> ", no denominator")
     in
     Printf.sprintf "(%d decimals%s%s%s%s%s%s%s)" decimal_places u w s sys can fac per
   in
@@ -2662,10 +2694,18 @@ let rec differing_facets a b =
           @ when_ (t1 <> t2) Sign
           @ (match (e1, e2) with
             | Some u1, Some u2 ->
-                when_ (u1.system <> u2.system) Unit_system
-                @ when_ (u1.canonical_form <> u2.canonical_form) Unit_canonical
-                @ when_ (u1.factor_to_canonical <> u2.factor_to_canonical) Unit_factor
-                @ when_ (u1.denominator <> u2.denominator) Unit_denominator
+                let part : 'a. (unit_factor -> 'a option) -> measure_unit -> 'a option =
+                 fun read u -> Option.bind (first_numerator_factor u) read
+                in
+                when_ (part (fun f -> f.system) u1 <> part (fun f -> f.system) u2) Unit_system
+                @ when_
+                    (part (fun f -> f.canonical_form) u1 <> part (fun f -> f.canonical_form) u2)
+                    Unit_canonical
+                @ when_
+                    (part (fun f -> f.factor_to_canonical) u1
+                    <> part (fun f -> f.factor_to_canonical) u2)
+                    Unit_factor
+                @ when_ (Units.denominator u1 <> Units.denominator u2) Unit_denominator
             | _ -> [])
       | _ -> [])
 
@@ -2860,24 +2900,30 @@ let use_site_domain ?(source = "the declaration it reads from") at ~what ~decl ~
    do not match, so a `KG`/`GEWICHT`/`KG` copy of a `kg`/`Gewicht`/`kg`
    declaration answers 3750.00 where ref and clingo answer 3.75. The factor
    and the denominator shape stay exact as well: those are not names. *)
-let rec unit_identical (a : measure_unit) (b : measure_unit) =
-  a.abbr_text = b.abbr_text && a.system = b.system && a.canonical_form = b.canonical_form
-  && a.factor_to_canonical = b.factor_to_canonical
-  &&
-  match (a.denominator, b.denominator) with
-  | None, None -> true
-  | Some x, Some y -> unit_identical x y
-  | _ -> false
+let unit_identical (a : measure_unit) (b : measure_unit) =
+  let exact (x : unit_factor) (y : unit_factor) =
+    x.abbr_text = y.abbr_text && x.system = y.system && x.canonical_form = y.canonical_form
+    && x.factor_to_canonical = y.factor_to_canonical
+    && Units.exponent x = Units.exponent y
+  in
+  List.length a = List.length b && List.for_all2 exact a b
 
-let rec render_unit (u : measure_unit) =
+let render_factor (u : unit_factor) =
   (match u.abbr_text with Some a -> "'" ^ a ^ "'" | None -> "an unnamed unit")
+  ^ (match abs (Units.exponent u) with 1 -> "" | n -> "^" ^ string_of_int n)
   ^ (match u.system with Some s -> " of system '" ^ s ^ "'" | None -> "")
-  ^ (match (u.factor_to_canonical, u.canonical_form) with
-    | Some f, Some c -> Printf.sprintf " (factor %s to '%s')" (rational_render f) c
-    | Some f, None -> Printf.sprintf " (factor %s)" (rational_render f)
-    | None, Some c -> Printf.sprintf " (canonical '%s')" c
-    | None, None -> "")
-  ^ match u.denominator with Some n -> " per " ^ render_unit n | None -> ""
+  ^
+  match (u.factor_to_canonical, u.canonical_form) with
+  | Some f, Some c -> Printf.sprintf " (factor %s to '%s')" (rational_render f) c
+  | Some f, None -> Printf.sprintf " (factor %s)" (rational_render f)
+  | None, Some c -> Printf.sprintf " (canonical '%s')" c
+  | None, None -> ""
+
+let render_unit (u : measure_unit) =
+  (match Units.positives u with
+   | [] -> "'1'"
+   | fs -> String.concat " times " (List.map render_factor fs))
+  ^ String.concat "" (List.map (fun f -> " per " ^ render_factor f) (Units.negatives u))
 
 let unit_render = function None -> "no unit" | Some u -> render_unit u
 
@@ -3044,7 +3090,7 @@ let dt_whole = function Number { whole_part; _ } | Percentage { whole_part; _ } 
    reducedBy over two percentage attributes). *)
 let derived_number ~whole_part ~decimal_places (measure_unit : measure_unit option) =
   match measure_unit with
-  | Some { abbr_text = Some "%"; _ } -> Percentage { whole_part; decimal_places; measure_unit }
+  | Some u when Units.is_percentage u -> Percentage { whole_part; decimal_places; measure_unit }
   | _ -> Number { whole_part; decimal_places; sign_char = Some Unspecified; measure_unit }
 
 (* The ch. 2.6 times join, in the three shapes the IR fixes: a unitless operand
@@ -3063,11 +3109,11 @@ let times_unit (a : measure_unit option) (b : measure_unit option) : measure_uni
   | None, x | x, None -> Some x
   | Some x, Some y ->
       let cancel (rate : measure_unit) (plain : measure_unit) =
-        match rate.denominator with
-        | Some n when plain.denominator = None && units_convertible plain n ->
-            Some (numerator_unit rate)
-        | Some n when plain.denominator = None && is_reciprocal rate && not (is_product plain) ->
-            Some (Some { plain with denominator = Some n })
+        let is_plain = Units.denominator plain = None in
+        match Units.denominator rate with
+        | Some n when is_plain && units_convertible plain n -> Some (numerator_unit rate)
+        | Some n when is_plain && is_reciprocal rate && not (is_product plain) ->
+            Some (Some (Units.over plain n))
         | _ -> None
       in
       (match cancel x y with Some u -> Some u | None -> cancel y x)
@@ -3081,8 +3127,8 @@ let quotient_unit (a : measure_unit option) (b : measure_unit option) : measure_
   | x, None -> Some x
   | None, Some y -> Option.map Option.some (reciprocal_unit y)
   | Some x, Some y when units_convertible x y -> Some None
-  | Some x, Some y when x.denominator = None && y.denominator = None ->
-      Some (Some { x with denominator = Some y })
+  | Some x, Some y when Units.denominator x = None && Units.denominator y = None ->
+      Some (Some (Units.over x y))
   | _ -> None
 
 (* The RegelSpraak frontend's set reading (`ExpressionBuilder`), mirrored — the
@@ -3329,10 +3375,10 @@ let composite_expectation ctx ~binders (e : expr) :
                      second arm, WF-091 refused the unit of that total) *)
                   let d =
                     match t0 with
-                    | Number ({ measure_unit = Some ({ denominator = Some _; _ } as u); _ } as n) ->
+                    | Number ({ measure_unit = Some u; _ } as n) when Units.denominator u <> None ->
                         Number { n with measure_unit = numerator_unit u }
-                    | Percentage ({ measure_unit = Some ({ denominator = Some _; _ } as u); _ } as p) ->
-                        Percentage { p with measure_unit = Some { u with denominator = None } }
+                    | Percentage ({ measure_unit = Some u; _ } as p) when Units.denominator u <> None ->
+                        Percentage { p with measure_unit = numerator_unit u }
                     | other -> other
                   in
                   Some (what, "the type derived from its first operand", d, []))
@@ -5000,8 +5046,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    | None ->
                        if day_kind_unit ctx u then []
                        else
-                         [ v ~params:[("unit", Option.value u.abbr_text ~default:"?")] "WF-035.duration-unknown-unit" (sub side)
-                             (date_duration_unknown_unit (Option.value u.abbr_text ~default:"?")) ]))
+                         [ v ~params:[("unit", Units.numerator_text u)] "WF-035.duration-unknown-unit" (sub side)
+                             (date_duration_unknown_unit (Units.numerator_text u)) ]))
          in
          match op, lt, rt with
          | (Plus | Min), Some l, Some r when is_date l && is_date r ->
@@ -5319,9 +5365,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                         | None ->
                             if day_kind_unit ctx u then []
                             else
-                              [ v ~params:[("function", Spelling.encode Spelling.builtin_kind f.kind); ("unit", Option.value u.abbr_text ~default:"?")] "WF-038.duration-unknown-unit" at
+                              [ v ~params:[("function", Spelling.encode Spelling.builtin_kind f.kind); ("unit", Units.numerator_text u)] "WF-038.duration-unknown-unit" at
                                   (duration_unknown_unit f.kind
-                                     (Option.value u.abbr_text ~default:"?")) ])))
+                                     (Units.numerator_text u)) ])))
          | _ -> [])
       (* WF-038, the ordering-fold operand clause (IR-SPEC ch. 4.6,
          semantics `RUNTIME-SEMANTICS.md` ch. 1.2): first/last/

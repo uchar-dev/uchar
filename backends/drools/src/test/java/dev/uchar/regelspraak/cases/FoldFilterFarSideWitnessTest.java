@@ -427,8 +427,8 @@ class FoldFilterFarSideWitnessTest {
     /** "&lt;datum&gt; min &lt;n&gt; dg". */
     private static String dateMinus(String date, int days) {
         return "{\"node\":\"Binary\",\"op\":\"minus\",\"left\":" + date + ",\"right\":{\"node\":\"Literal\",\"value\":{\"number\":\""
-                + days + "\"},\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":" + DAG
-                + "},\"source\":{\"snippet\":\"" + days + " dg\"}},\"type\":" + DATE + ",\"source\":{\"snippet\":\"min " + days + " dg\"}}";
+                + days + "\"},\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":[" + DAG
+                + "]},\"source\":{\"snippet\":\"" + days + " dg\"}},\"type\":" + DATE + ",\"source\":{\"snippet\":\"min " + days + " dg\"}}";
     }
 
     private static String comparison(String op, String left, String right) {

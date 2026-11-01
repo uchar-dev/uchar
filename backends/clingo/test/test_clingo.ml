@@ -138,7 +138,7 @@ let doc_json left_unit =
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": %s
+              "unit": [%s]
             },
             "source": { "snippet": "20%%" }
           },
@@ -275,11 +275,11 @@ let () =
 (* --- the unit-normalisation lowering pass (Normalise; PRIORITIZED-DEFAULTS-EVOLUTIE §8) --- *)
 
 let eenh ~system ~canonical_form afk factor : Ir_v0.Ast.measure_unit =
-  { abbr_text = Some afk; system = Some system; canonical_form = Some canonical_form;
-    factor_to_canonical = Option.map (fun (num, den) -> { Ir_v0.Ast.num; den }) factor; denominator = None }
+  [ { abbr_text = Some afk; system = Some system; canonical_form = Some canonical_form;
+      factor_to_canonical = Option.map (fun (num, den) -> { Ir_v0.Ast.num; den }) factor; exponent = None } ]
 
 let system ~ident units : Ir_v0.Ast.unit_system =
-  { es_name = Some ident; unit_list = List.map (fun u -> { Ir_v0.Ast.ge_unit = u; ge_spellings = [] }) units }
+  { es_name = Some ident; unit_list = List.map (fun u -> { Ir_v0.Ast.ge_unit = List.hd u; ge_spellings = [] }) units }
 
 (* FINEST-UNIT DERIVATION picks the smallest-factor unit, and every declared
    unit restates INTO it by an exact positive INTEGER — the multiply-only
@@ -293,7 +293,7 @@ let () =
   in
   (match Normalise.(finest_of_units ~where:"unit system \"Afstand\"" (plain_units afstand)) with
   | finest, to_finest ->
-      check "finest(Afstand) = m" (finest.Ir_v0.Ast.abbr_text = Some "m");
+      check "finest(Afstand) = m" (Ir_v0.Units.numerator_text finest = "m");
       let km = eenh ~system:"Afstand" ~canonical_form:"m" "km" (Some (1000, 1)) in
       let m = eenh ~system:"Afstand" ~canonical_form:"m" "m" (Some (1, 1)) in
       let rkm = to_finest km and rm = to_finest m in
@@ -309,7 +309,7 @@ let () =
   in
   match Normalise.(finest_of_units ~where:"unit system \"Termijn\"" (plain_units deadline)) with
   | finest, to_finest ->
-      check "finest(Termijn) = month" (finest.Ir_v0.Ast.abbr_text = Some "maand");
+      check "finest(Termijn) = month" (Ir_v0.Units.numerator_text finest = "maand");
       let year = eenh ~system:"Termijn" ~canonical_form:"maand" "jaar" (Some (12, 1)) in
       check "year -> month is x12 (non-power-of-ten multiply-only integer)"
         (Q.equal (to_finest year) (Q.of_int 12))
@@ -338,7 +338,7 @@ let () =
   let exact = system ~ident:"Exact" [ base; eenh ~system:"Exact" ~canonical_form:"base" "third" (Some (1, 3)) ] in
   match Normalise.(finest_of_units ~where:"unit system \"Exact\"" (plain_units exact)) with
   | finest, to_finest ->
-      check "an exact 1/3 factor: the finest is third" (finest.Ir_v0.Ast.abbr_text = Some "third");
+      check "an exact 1/3 factor: the finest is third" (Ir_v0.Units.numerator_text finest = "third");
       check "an exact 1/3 factor: base restates into third by exactly 3"
         (Q.equal (to_finest base) (Q.of_int 3))
   | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("an exact 1/3 factor faulted: " ^ m) false
@@ -360,16 +360,16 @@ let duration_doc =
             "node": "Attribute", "name": "basisduur",
             "datatype": {
               "node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative",
-              "unit": { "node": "Unit", "abbreviation": "maand", "system": "Termijn",
-                "canonical": "maand", "factorToCanonical": { "num": 1, "den": 1 } }
+              "unit": [{ "node": "Unit", "abbreviation": "maand", "system": "Termijn",
+                "canonical": "maand", "factorToCanonical": { "num": 1, "den": 1 } }]
             }
           },
           {
             "node": "Attribute", "name": "looptijd",
             "datatype": {
               "node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative",
-              "unit": { "node": "Unit", "abbreviation": "maand", "system": "Termijn",
-                "canonical": "maand", "factorToCanonical": { "num": 1, "den": 1 } }
+              "unit": [{ "node": "Unit", "abbreviation": "maand", "system": "Termijn",
+                "canonical": "maand", "factorToCanonical": { "num": 1, "den": 1 } }]
             }
           }
         ],
@@ -404,8 +404,8 @@ let duration_doc =
           "left": {
             "node": "Literal", "value": { "number": "2" },
             "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified",
-              "unit": { "node": "Unit", "abbreviation": "jaar", "system": "Termijn",
-                "canonical": "maand", "factorToCanonical": { "num": 12, "den": 1 } } },
+              "unit": [{ "node": "Unit", "abbreviation": "jaar", "system": "Termijn",
+                "canonical": "maand", "factorToCanonical": { "num": 12, "den": 1 } }] },
             "source": { "snippet": "2 jaar" }
           },
           "right": {
@@ -413,8 +413,8 @@ let duration_doc =
             "source": { "snippet": "de basisduur van de Bergingsvergunning" }
           },
           "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified",
-            "unit": { "node": "Unit", "abbreviation": "jaar", "system": "Termijn",
-              "canonical": "maand", "factorToCanonical": { "num": 12, "den": 1 } } },
+            "unit": [{ "node": "Unit", "abbreviation": "jaar", "system": "Termijn",
+              "canonical": "maand", "factorToCanonical": { "num": 12, "den": 1 } }] },
           "source": { "snippet": "2 jaar plus de basisduur van de Bergingsvergunning" }
         },
         "validity": { "node": "Validity" } } ]
@@ -529,8 +529,8 @@ let () =
      opaque product) compatible with everything; reading that as a licence to
      relabel would be a silent lie, so the naming demand refuses it. *)
   let opaque : Ir_v0.Ast.measure_unit =
-    { abbr_text = None; system = Some "Massa"; canonical_form = None;
-      factor_to_canonical = None; denominator = None }
+    [ { abbr_text = None; system = Some "Massa"; canonical_form = None;
+        factor_to_canonical = None; exponent = None } ]
   in
   check "an unnamed (opaque) unit is never proven one quantity with a named one"
     (not (Normalise.same_quantity kg_weight opaque));
@@ -543,7 +543,7 @@ let () =
   let where = "the canonical-kg conversion table (unit systems Gewicht, Massa)" in
   (match Normalise.finest_of_units ~where [ kg_weight; kg_mass; ton_mass ] with
   | finest, to_finest ->
-      check "cross-system finest is a factor-1 kg" (Q.equal (Uchar_ref.Arith.factor finest) Q.one);
+      check "cross-system finest is a factor-1 kg" (Q.equal (Uchar_ref.Arith.total_factor finest) Q.one);
       check "t@Massa -> kg@Gewicht is x1000 across the system boundary"
         (Q.equal (to_finest ton_mass) (Q.of_int 1000));
       check "kg@Massa -> kg@Gewicht is x1 (the factorless crossing)"
@@ -584,7 +584,7 @@ let cross_doc ~mcanon ~tonf =
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
+              "unit": [{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}]
             }
           },
           {
@@ -595,7 +595,7 @@ let cross_doc ~mcanon ~tonf =
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
+              "unit": [{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}]
             }
           },
           {
@@ -606,7 +606,7 @@ let cross_doc ~mcanon ~tonf =
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {"node": "Unit", "abbreviation": "kg", "system": "Massa", "canonical": "@MCANON@", "factorToCanonical": {"num": 1, "den": 1}}
+              "unit": [{"node": "Unit", "abbreviation": "kg", "system": "Massa", "canonical": "@MCANON@", "factorToCanonical": {"num": 1, "den": 1}}]
             }
           },
           {
@@ -617,7 +617,7 @@ let cross_doc ~mcanon ~tonf =
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
+              "unit": [{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}]
             }
           },
           {
@@ -628,7 +628,7 @@ let cross_doc ~mcanon ~tonf =
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
+              "unit": [{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}]
             }
           }
         ],
@@ -687,7 +687,7 @@ let cross_doc ~mcanon ~tonf =
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {"node": "Unit", "abbreviation": "t", "system": "Massa", "canonical": "@MCANON@", "factorToCanonical": {"num": @TONF@, "den": 1}}
+              "unit": [{"node": "Unit", "abbreviation": "t", "system": "Massa", "canonical": "@MCANON@", "factorToCanonical": {"num": @TONF@, "den": 1}}]
             },
             "source": { "snippet": "1 t" }
           },
@@ -696,7 +696,7 @@ let cross_doc ~mcanon ~tonf =
             "whole": false,
             "decimals": 2,
             "sign": "unspecified",
-            "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
+            "unit": [{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}]
           },
           "source": { "snippet": "het ruwgewicht van de Weging, met een minimum van 1 t" }
         },
@@ -754,7 +754,7 @@ let cross_doc ~mcanon ~tonf =
             "whole": false,
             "decimals": 2,
             "sign": "unspecified",
-            "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
+            "unit": [{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}]
           },
           "source": { "snippet": "het ruwgewicht van de Weging plus het spiegelgewicht van de Weging" }
         },
@@ -795,7 +795,7 @@ let cross_doc ~mcanon ~tonf =
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}
+              "unit": [{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}]
             },
             "source": { "snippet": "1000 kg" }
           },
@@ -1769,17 +1769,18 @@ let jr_unit =
   {|{ "node": "Unit", "abbreviation": "jr", "system": "Bewaartijd", "canonical": "mnd",
       "factorToCanonical": { "num": 12, "den": 1 } }|}
 
-(* [denominator] and [measure_unit] are a unit's JSON or "null", which the wire writes
-   by leaving the field out *)
+(* [denominator] is a factor's JSON or "null", and [measure_unit] the JSON of the
+   factors of a unit or "null", which the wire writes by leaving the field out *)
 let eur denominator =
   {|{ "node": "Unit", "abbreviation": "EUR", "system": "Munt", "canonical": "EUR",
-      "factorToCanonical": { "num": 1, "den": 1 }|}
-  ^ (if denominator = "null" then "" else {|, "denominator": |} ^ denominator)
-  ^ {| }|}
+      "factorToCanonical": { "num": 1, "den": 1 } }|}
+  ^
+  if denominator = "null" then ""
+  else ", " ^ String.sub denominator 0 (String.rindex denominator '}') ^ {|, "exponent": -1 }|}
 
 let euro_num measure_unit =
   {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"|}
-  ^ (if measure_unit = "null" then "" else {|, "unit": |} ^ measure_unit)
+  ^ (if measure_unit = "null" then "" else {|, "unit": [ |} ^ measure_unit ^ {| ]|})
   ^ {| }|}
 
 (* [operand_ot] is the operand's subjectType ANNOTATION: "Vondst" (the
@@ -6813,7 +6814,7 @@ let dk_doc ?(day_kinds = {|{ "node": "DayKind", "name": "nevelsdag", "plural": "
         "attributes": [
           { "node": "Attribute", "name": "peildatum", "datatype": %s },
           { "node": "Attribute", "name": "termijn",
-            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": %s } },
+            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [%s] } },
           { "node": "Attribute", "name": "uitkomst", "datatype": %s } ],
         "characteristics": [] }
     ],
@@ -7001,13 +7002,13 @@ let () =
       (dk_doc ~date_type:{|{ "node": "Date", "precision": "millisecond" }|}
          ~objective_type_name:
            {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified",
-               "unit": { "node": "Unit", "abbreviation": "nevelsdagen", "canonical": "nevelsdagen", "factorToCanonical": { "num": 1, "den": 1 } } }|}
+               "unit": [{ "node": "Unit", "abbreviation": "nevelsdagen", "canonical": "nevelsdagen", "factorToCanonical": { "num": 1, "den": 1 } }] }|}
          ~precondition:(part_equal "dayOf" "1")
          ~value_node:
            (Printf.sprintf
               {|{ "node": "BuiltinCall", "kind": "duration",
                   "arguments": [ %s, %s ], "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified",
-                            "unit": { "node": "Unit", "abbreviation": "nevelsdagen", "canonical": "nevelsdagen", "factorToCanonical": { "num": 1, "den": 1 } } },
+                            "unit": [{ "node": "Unit", "abbreviation": "nevelsdagen", "canonical": "nevelsdagen", "factorToCanonical": { "num": 1, "den": 1 } }] },
                   "source": { "snippet": "de tijdsduur" } }|}
               (as_of_date ())
               (as_of_date ()))
@@ -7413,8 +7414,8 @@ let gemiddelde_kg_doc =
         "attributes": [
           { "node": "Attribute", "name": "gewicht",
             "datatype": { "node": "Number", "whole": false, "decimals": 2,
-                "sign": "unspecified", "unit": { "node": "Unit", "abbreviation": "kg",
-                  "system": "Gewicht", "canonical": "kg", "factorToCanonical": { "num": 1, "den": 1 } } } } ],
+                "sign": "unspecified", "unit": [{ "node": "Unit", "abbreviation": "kg",
+                  "system": "Gewicht", "canonical": "kg", "factorToCanonical": { "num": 1, "den": 1 } }] } } ],
         "characteristics": [] } ],
     "factTypes": [
       { "node": "FactType", "name": "vondstaanmelding",
@@ -8987,8 +8988,8 @@ let () =
 (* the temporal positions *)
 let () =
   let day_count =
-    {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": { "node": "Unit",
-      "abbreviation": "dagen" } }|}
+    {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [{ "node": "Unit",
+      "abbreviation": "dagen" }] }|}
   in
   (* datum plus a duration parameter: 10 januari plus 14 dagen *)
   let date_doc =
@@ -9646,7 +9647,7 @@ let () =
    plays. Unbound, the read happens in translation, so it refuses there, in
    the shared sentence. *)
 let () =
-  let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"keurlast","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}}}}],"characteristics":[]},{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"keurtarief","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1},"denominator":{"node":"Unit","abbreviation":"mnd","system":"Keurtijd","canonical":"mnd","factorToCanonical":{"num":1,"den":1}}}},"plural":"keurtarieven","timeline":{"node":"TimelineFacet","granularity":"month","count":1}},{"node":"Attribute","name":"gewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"gekeurd","kind":"adjectival"}]}],"factTypes":[{"node":"FactType","name":"keuring","reciprocal":false,"roles":[{"node":"Role","name":"keurende jutter","objectType":"Jutter","many":false},{"node":"Role","name":"vondst","objectType":"Vondst","plural":"vondsten","many":true}]}],"parameters":[{"node":"Parameter","name":"minimumgewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"domains":[],"unitSystems":[{"node":"UnitSystem","name":"Munt","units":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1},"spellings":["€","euro","euros"]}]},{"node":"UnitSystem","name":"Keurtijd","units":[{"node":"Unit","abbreviation":"mnd","system":"Keurtijd","canonical":"mnd","factorToCanonical":{"num":1,"den":1},"spellings":["maand"]}]}],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"keurlast van een jutter","versions": [ { "initialisation": false, "presentation": "calculation","target":{"node":"AttributeReference","attribute":"keurlast","subjectType":"Jutter","source":{"snippet":"De keurlast van een Jutter"}},"value":{"node":"Aggregation","kind":"total","arguments":[{"node":"AttributeReference","attribute":"keurtarief","subjectType":"Vondst","source":{"snippet":"het keurtarief van alle vondsten van de Jutter die gekeurd zijn"}}],"elementType":"Vondst","filter":{"node":"Comparison","op":"greater","left":{"node":"AttributeReference","attribute":"gewicht","subjectType":"Vondst","source":{"snippet":"gewicht"}},"right":{"node":"ParameterReference","parameter":"minimumgewicht","source":{"snippet":"het minimumgewicht"}},"source":{"snippet":"zwaarder dan het minimumgewicht"}},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}}},"source":{"snippet":"het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn"},"sourceRole":{"node":"RoleBinding","factType":"keuring","role":"vondst"}},"validity":{"node":"Validity"} } ]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
+  let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"keurlast","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}}]}}],"characteristics":[]},{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"keurtarief","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}},{"node":"Unit","abbreviation":"mnd","system":"Keurtijd","canonical":"mnd","factorToCanonical":{"num":1,"den":1},"exponent":-1}]},"plural":"keurtarieven","timeline":{"node":"TimelineFacet","granularity":"month","count":1}},{"node":"Attribute","name":"gewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"gekeurd","kind":"adjectival"}]}],"factTypes":[{"node":"FactType","name":"keuring","reciprocal":false,"roles":[{"node":"Role","name":"keurende jutter","objectType":"Jutter","many":false},{"node":"Role","name":"vondst","objectType":"Vondst","plural":"vondsten","many":true}]}],"parameters":[{"node":"Parameter","name":"minimumgewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"domains":[],"unitSystems":[{"node":"UnitSystem","name":"Munt","units":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1},"spellings":["€","euro","euros"]}]},{"node":"UnitSystem","name":"Keurtijd","units":[{"node":"Unit","abbreviation":"mnd","system":"Keurtijd","canonical":"mnd","factorToCanonical":{"num":1,"den":1},"spellings":["maand"]}]}],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"keurlast van een jutter","versions": [ { "initialisation": false, "presentation": "calculation","target":{"node":"AttributeReference","attribute":"keurlast","subjectType":"Jutter","source":{"snippet":"De keurlast van een Jutter"}},"value":{"node":"Aggregation","kind":"total","arguments":[{"node":"AttributeReference","attribute":"keurtarief","subjectType":"Vondst","source":{"snippet":"het keurtarief van alle vondsten van de Jutter die gekeurd zijn"}}],"elementType":"Vondst","filter":{"node":"Comparison","op":"greater","left":{"node":"AttributeReference","attribute":"gewicht","subjectType":"Vondst","source":{"snippet":"gewicht"}},"right":{"node":"ParameterReference","parameter":"minimumgewicht","source":{"snippet":"het minimumgewicht"}},"source":{"snippet":"zwaarder dan het minimumgewicht"}},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}}]},"source":{"snippet":"het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn"},"sourceRole":{"node":"RoleBinding","factType":"keuring","role":"vondst"}},"validity":{"node":"Validity"} } ]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
   let case_text params rows =
     Printf.sprintf
       {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15", "input": { "instances": [
@@ -11656,8 +11657,8 @@ let keurtermijn_doc ~creation =
           { "node": "Attribute", "name": "keurdatum", "datatype": { "node": "Date", "precision": "day" } },
           { "node": "Attribute", "name": "keurtermijn",
             "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified",
-              "unit": { "node": "Unit", "abbreviation": "keurdagen", "canonical": "keurdagen",
-                "factorToCanonical": { "num": 1, "den": 1 } } } } ],
+              "unit": [{ "node": "Unit", "abbreviation": "keurdagen", "canonical": "keurdagen",
+                "factorToCanonical": { "num": 1, "den": 1 } }] } } ],
         "characteristics": [ { "node": "Characteristic", "name": "gekeurd", "kind": "adjectival" } ] }@RAPPORT@ ],
     "factTypes": [
       { "node": "FactType", "name": "ploegindeling", "reciprocal": false, "roles": [
@@ -11996,7 +11997,7 @@ let () =
 let () =
   let dg = {|{ "node": "Unit", "abbreviation": "dg", "system": "Tijdsduur", "canonical": "dg", "factorToCanonical": { "num": 1, "den": 1 } }|} in
   let hour = {|{ "node": "Unit", "abbreviation": "uur", "system": "Tijdsduur", "canonical": "dg", "factorToCanonical": { "num": 1, "den": 24 } }|} in
-  let number_value unit = Printf.sprintf {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": %s }|} unit in
+  let number_value unit = Printf.sprintf {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [%s] }|} unit in
   let ir =
     Printf.sprintf
       {|{ "format": "uchar-ir-v1",
@@ -12043,7 +12044,7 @@ let () =
   let hour_u = eenh ~system:"Tijdsduur" ~canonical_form:"dg" "uur" (Some (1, 24)) in
   match Normalise.finest_of_units ~where:"unit system \"Tijdsduur\"" [ dg_u; hour_u ] with
   | finest, to_finest ->
-      check "the factor {1, 24}: the finest unit is uur" (finest.Ir_v0.Ast.abbr_text = Some "uur");
+      check "the factor {1, 24}: the finest unit is uur" (Ir_v0.Units.numerator_text finest = "uur");
       check "the factor {1, 24}: 1 dg is exactly 24 uur" (Q.equal (to_finest dg_u) (Q.of_int 24))
   | exception Uchar_ref.Value.Fault { text = m; _ } -> check ("the factor {1, 24}: unexpected fault: " ^ m) false
 
@@ -12066,10 +12067,10 @@ let () =
         "attributes": [
           { "node": "Attribute", "name": "aandeel",
             "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified",
-              "unit": { "node": "Unit", "abbreviation": "%%", "canonical": "%%", "factorToCanonical": { "num": 1, "den": 1 } },
+              "unit": [{ "node": "Unit", "abbreviation": "%%", "canonical": "%%", "factorToCanonical": { "num": 1, "den": 1 } }],
               "presentation": "percentage" } },
           { "node": "Attribute", "name": "afstand",
-            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "nonNegative", "unit": %s } },
+            "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "nonNegative", "unit": [%s] } },
           { "node": "Attribute", "name": "melddatum", "datatype": { "node": "Date", "precision": "day" } },
           { "node": "Attribute", "name": "meldmoment", "datatype": { "node": "Date", "precision": "millisecond" } } ],
         "characteristics": [] } ],
@@ -12090,7 +12091,7 @@ let () =
     "rules": [
       { "node": "Rule", "name": "afstand van een jutter", "versions": [ { "initialisation": false, "presentation": "calculation",
         "target": { "node": "AttributeReference", "attribute": "afstand", "subjectType": "Jutter", "source": { "snippet": "De afstand van een Jutter" } },
-        "value": { "node": "Literal", "value": { "number": "3" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": %s }, "source": { "snippet": "3 km" } },
+        "value": { "node": "Literal", "value": { "number": "3" }, "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [%s] }, "source": { "snippet": "3 km" } },
         "validity": { "node": "Validity" } } ] } ],
     "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
     "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [] },
@@ -12110,11 +12111,11 @@ let () =
       check "L3-load-table: the base document loads" true;
       check "L3-load-table: Number with % and the label is a percentage"
         (match List.assoc "aandeel" jutter.attributes with
-         | Some (Percentage { decimal_places = 2; measure_unit = Some { abbr_text = Some "%"; _ }; _ }) -> true
+         | Some (Percentage { decimal_places = 2; measure_unit = Some [ { abbr_text = Some "%"; _ } ]; _ }) -> true
          | _ -> false);
       check "L3-load-table: the factor is the rational {1000, 1}"
         (match List.assoc "afstand" jutter.attributes with
-         | Some (Number { sign_char = Some Non_negative; measure_unit = Some { factor_to_canonical = Some { num = 1000; den = 1 }; _ }; _ }) -> true
+         | Some (Number { sign_char = Some Non_negative; measure_unit = Some [ { factor_to_canonical = Some { num = 1000; den = 1 }; _ } ]; _ }) -> true
          | _ -> false);
       check "L3-load-table: the two precisions"
         (List.assoc "melddatum" jutter.attributes = Some Date_in_days
@@ -12145,7 +12146,7 @@ let () =
         {|unknown datatype node "Numeriek"|} );
       ( "Percentage als knoop",
         ({|{ "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified",
-              "unit": { "node": "Unit", "abbreviation": "%", "canonical": "%", "factorToCanonical": { "num": 1, "den": 1 } },
+              "unit": [{ "node": "Unit", "abbreviation": "%", "canonical": "%", "factorToCanonical": { "num": 1, "den": 1 } }],
               "presentation": "percentage" }|},
          {|{ "node": "Percentage", "geheel": false, "decimalen": 2, "eenheid": null }|}),
         {|unknown datatype node "Percentage"|} );
@@ -12153,7 +12154,7 @@ let () =
         {|unknown datatype node "DatumInDagen"|} );
       ( "DatumTijd als knoop", ({|{ "node": "Date", "precision": "millisecond" }|}, {|{ "node": "DatumTijd" }|}),
         {|unknown datatype node "DatumTijd"|} );
-      ( "Eenheid als knoop", ({|"unit": { "node": "Unit",|}, {|"unit": { "node": "Eenheid",|}),
+      ( "Eenheid als knoop", ({|"unit": [{ "node": "Unit",|}, {|"unit": [{ "node": "Eenheid",|}),
         {|expected "Unit", got "Eenheid"|} );
       ( "Eenheidstelsel als knoop", ({|{ "node": "UnitSystem",|}, {|{ "node": "Eenheidstelsel",|}),
         {|expected "UnitSystem", got "Eenheidstelsel"|} );
@@ -12167,6 +12168,7 @@ let () =
       ( "Unit.factorNaarCanoniek", appended {|"abbreviation": "km",|} {|"factorNaarCanoniek": 1000,|},
         "unknown field 'factorNaarCanoniek'" );
       ("Unit.noemer", appended {|"abbreviation": "km",|} {|"noemer": null,|}, "unknown field 'noemer'");
+      ("Unit.denominator", appended {|"abbreviation": "km",|} {|"denominator": null,|}, "unknown field 'denominator'");
       ( "Parameter.granulariteit", appended {|"name": "tarief",|} {|"granulariteit": "MAAND",|},
         "unknown field 'granulariteit'" );
       ("Parameter.naam", ({|"name": "tarief",|}, {|"naam": "tarief",|}), "unknown field 'naam'");
@@ -12200,8 +12202,8 @@ let () =
       ( "een percentage met een teken", ({|"decimals": 2, "sign": "unspecified"|}, {|"decimals": 2, "sign": "positive"|}),
         "a percentage carries no sign restriction: a number whose unit is '%' has the sign unspecified" );
       ( "spellingen op een voorkomen",
-        ({|"sign": "nonNegative", "unit": { "node": "Unit", "abbreviation": "km",|},
-         {|"sign": "nonNegative", "unit": { "node": "Unit", "abbreviation": "km", "spellings": [ "kilometer" ],|}),
+        ({|"sign": "nonNegative", "unit": [{ "node": "Unit", "abbreviation": "km",|},
+         {|"sign": "nonNegative", "unit": [{ "node": "Unit", "abbreviation": "km", "spellings": [ "kilometer" ],|}),
         "unknown field 'spellings'" );
       ( "een lege spellingenlijst", ({|"spellings": [ "kilometer" ]|}, {|"spellings": []|}),
         "a unit's spellings are at least one spelling, or the field is absent" ) ]
@@ -12216,10 +12218,10 @@ let () =
      sentence before they evaluate or translate anything *)
   let ir =
     substitute base
-      ~truth:({|"type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": |} ^ km)
+      ~truth:({|"type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [|} ^ km ^ "]")
       ~via:
         {|"type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified",
-          "unit": { "node": "Unit", "abbreviation": "%", "canonical": "%", "factorToCanonical": { "num": 1, "den": 1 } },
+          "unit": [{ "node": "Unit", "abbreviation": "%", "canonical": "%", "factorToCanonical": { "num": 1, "den": 1 } }],
           "presentation": "percentage"|}
   in
   let case_text =
@@ -14594,7 +14596,7 @@ let () =
    wf038-absolute-duration-unknown-unit) *)
 let () =
   let vadem =
-    {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": { "node": "Unit", "abbreviation": "vadem" } }|}
+    {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [{ "node": "Unit", "abbreviation": "vadem" }] }|}
   in
   let ir kind =
     pf_doc
@@ -14631,7 +14633,7 @@ let () =
     | None -> pf_n0
     | Some a ->
         Printf.sprintf
-          {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": { "node": "Unit", "abbreviation": "%s" } }|}
+          {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [{ "node": "Unit", "abbreviation": "%s" }] }|}
           a
   in
   let extent ?(kind = "duration") ?typ a b =
@@ -14693,7 +14695,7 @@ let () =
          | None -> pf_n0
          | Some a ->
              Printf.sprintf
-               {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": { "node": "Unit", "abbreviation": "%s" } }|}
+               {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [{ "node": "Unit", "abbreviation": "%s" }] }|}
                a)
       n
   in
@@ -16111,12 +16113,12 @@ let reciprocal_doc ~target_unit ~value =
       abbreviation factor
   in
   let dg = unit_of "dg" 1 and wk = unit_of "wk" 7 in
-  let reciprocal u = Printf.sprintf {|{ "node": "Unit", "abbreviation": "1", "denominator": %s }|} u in
+  let reciprocal u = String.sub u 0 (String.rindex u '}') ^ {|, "exponent": -1 }|} in
   let attribute name unit_json =
     Printf.sprintf
       {|{ "node": "Attribute", "name": "%s", "datatype": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"%s } }|}
       name
-      (match unit_json with Some u -> {|, "unit": |} ^ u | None -> "")
+      (match unit_json with Some u -> {|, "unit": [ |} ^ u ^ " ]" | None -> "")
   in
   let unit_named = function
     | "per_dg" -> Some (reciprocal dg)

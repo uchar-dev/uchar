@@ -32,16 +32,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "dg",
-                "system": "Tijd",
-                "canonical": "dg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           }
         ],
@@ -83,16 +85,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "dg",
-                "system": "Tijd",
-                "canonical": "dg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             },
             "plural": "overschotten"
           }
@@ -219,16 +223,18 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "dg",
-                  "system": "Tijd",
-                  "canonical": "dg",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "de tijdsduur van de verlengde einddag van zijn houder tot zijn einddag in hele dagen"
@@ -383,16 +389,18 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "dg",
-                  "system": "Tijd",
-                  "canonical": "dg",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "de som van de overschotten van alle termijnen van de Vergunning die aan de volgende voorwaarde voldoen: zijn begindag is eerder dan de verlengde einddag van de Vergunning"
@@ -530,16 +538,18 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "dg",
-                    "system": "Tijd",
-                    "canonical": "dg",
-                    "factorToCanonical": {
-                      "num": 1,
-                      "den": 1
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "dg",
+                      "system": "Tijd",
+                      "canonical": "dg",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
                     }
-                  }
+                  ]
                 },
                 "source": {
                   "snippet": "de som van de overschotten van alle termijnen van de vorige vergunning van de Vergunning"

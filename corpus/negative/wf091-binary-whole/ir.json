@@ -16,16 +16,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -36,16 +38,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -96,16 +100,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 },
-                "denominator": {
+                {
                   "node": "Unit",
                   "abbreviation": "jr",
                   "system": "Tijd",
@@ -113,9 +119,10 @@
                   "factorToCanonical": {
                     "num": 1,
                     "den": 1
-                  }
+                  },
+                  "exponent": -1
                 }
-              }
+              ]
             }
           },
           {
@@ -126,16 +133,18 @@
               "whole": false,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "jr",
-                "system": "Tijd",
-                "canonical": "jr",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "jr",
+                  "system": "Tijd",
+                  "canonical": "jr",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -146,16 +155,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -166,15 +177,17 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "%",
-                "canonical": "%",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "%",
+                  "canonical": "%",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              },
+              ],
               "presentation": "percentage"
             }
           },
@@ -216,16 +229,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 },
-                "denominator": {
+                {
                   "node": "Unit",
                   "abbreviation": "jr",
                   "system": "Tijd",
@@ -233,9 +248,10 @@
                   "factorToCanonical": {
                     "num": 1,
                     "den": 1
-                  }
+                  },
+                  "exponent": -1
                 }
-              }
+              ]
             }
           }
         ],

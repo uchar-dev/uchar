@@ -16,16 +16,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -46,16 +48,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -66,16 +70,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "EUR",
-                "system": "Munt",
-                "canonical": "EUR",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           }
         ],
@@ -165,16 +171,18 @@
                   "whole": false,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "EUR",
-                    "system": "Munt",
-                    "canonical": "EUR",
-                    "factorToCanonical": {
-                      "num": 1,
-                      "den": 1
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
                     }
-                  }
+                  ]
                 },
                 "source": {
                   "snippet": "het stuktal van de Vondst maal de stukprijs van de Vondst"
@@ -185,16 +193,18 @@
                 "whole": false,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "EUR",
-                  "system": "Munt",
-                  "canonical": "EUR",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "het basisbedrag van de Vondst plus het stuktal van de Vondst maal de stukprijs van de Vondst"

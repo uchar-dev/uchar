@@ -427,14 +427,16 @@ let () =
 
 (* --- ch. 2.6: unit algebra ---------------------------------------------- *)
 
-let unit_ ?denominator ?(factor = (1, 1)) ~canonical_form afk : Ir_v0.Ast.measure_unit =
-  {
-    abbr_text = Some afk;
-    system = Some "test";
-    canonical_form = Some canonical_form;
-    factor_to_canonical = Some { num = fst factor; den = snd factor };
-    denominator;
-  }
+let unit_ ?(factor = (1, 1)) ~canonical_form afk : Ir_v0.Ast.measure_unit =
+  [
+    {
+      abbr_text = Some afk;
+      system = Some "test";
+      canonical_form = Some canonical_form;
+      factor_to_canonical = Some { num = fst factor; den = snd factor };
+      exponent = None;
+    };
+  ]
 
 let mnd = unit_ ~canonical_form:"mnd" "mnd"
 let jr = unit_ ~canonical_form:"mnd" ~factor:(12, 1) "jr"
@@ -452,14 +454,14 @@ let kg = unit_ ~canonical_form:"kg" "kg"
 let eur = unit_ ~canonical_form:"EUR" "€"
 let cent = unit_ ~canonical_form:"EUR" ~factor:(1, 100) "ct"
 let meter = unit_ ~canonical_form:"m" "m"
-let eur_per_jr = { eur with denominator = Some jr }
+let eur_per_jr = Ir_v0.Units.over eur jr
 let num_with_unit u s = Value.Num (Value.q_of_lexeme s, Value.Unit u)
 
 let () =
   check "WV-2.6-a" (Arith.compare_op Equal (num_with_unit mnd "24") (num_with_unit jr "2") = true);
   (match Arith.mul (num_with_unit eur_per_jr "100") (num_with_unit jr "2") with
   | Value.Num (v, Value.Unit u) ->
-      check "WV-2.6-b" (Q.equal v (q "200") && u.denominator = None && u.abbr_text = Some "€")
+      check "WV-2.6-b" (Q.equal v (q "200") && u = eur)
   | _ -> check "WV-2.6-b" false);
   (match Arith.mul (num_with_unit eur "3") (num_with_unit meter "2") with
   | Value.Num (v, Value.Product _) -> check "WV-2.6-c" (Q.equal v (q "6"))
@@ -469,11 +471,11 @@ let () =
   | _ -> check "WV-2.6-d" false);
   (match Arith.div_ ~err:no_err (num_with_unit eur "600") (num_with_unit jr "2") with
   | Value.Num (v, Value.Unit u) ->
-      check "WV-2.6-e" (Q.equal v (q "300") && u.abbr_text = Some "€" && u.denominator = Some jr)
+      check "WV-2.6-e" (Q.equal v (q "300") && u = (Ir_v0.Units.over eur jr))
   | _ -> check "WV-2.6-e" false);
   (* plus restates the right operand into the left unit: 2 jr + 12 mnd = 3 jr *)
   (match Arith.add (num_with_unit jr "2") (num_with_unit mnd "12") with
-  | Value.Num (v, Value.Unit u) -> check "ch2.6-add-restate" (Q.equal v (q "3") && u.abbr_text = Some "jr")
+  | Value.Num (v, Value.Unit u) -> check "ch2.6-add-restate" (Q.equal v (q "3") && u = jr)
   | _ -> check "ch2.6-add-restate" false);
   (* a unit fault must NAME the two units apart: a rate and its numerator
      both printed as the numerator's abbreviation, so every mismatch
@@ -495,7 +497,7 @@ let () =
   check "WV-2.5-18mnd-is-3/2jr" (Q.equal (restate ~into:jr "18" mnd) (q "3/2"));
   check "WV-2.5-factor-mnd-jr-1/12" (Q.equal (Arith.conv_factor mnd jr) (q "1/12"));
   check "WV-2.5-100eur/mnd-is-1200eur/jr"
-    (Q.equal (restate ~into:eur_per_jr "100" { eur with denominator = Some mnd }) (q "1200"))
+    (Q.equal (restate ~into:eur_per_jr "100" (Ir_v0.Units.over eur mnd)) (q "1200"))
 
 (* RUNTIME-SEMANTICS ch. 2.6, the reciprocal's worked examples verbatim: E⁻¹ is
    the unit of a unitless number divided by E, in the normal form of IR-SPEC
@@ -514,7 +516,7 @@ let () =
     | Value.Num (got, Value.Unitless) -> check name (Q.equal got (q value))
     | _ -> check name false
   in
-  check "WV-2.6-1/dg-spelling" (per_dg.abbr_text = Some "1" && per_dg.denominator = Some dg);
+  check "WV-2.6-1/dg-spelling" (Ir_v0.Units.render per_dg = "1/dg" && Ir_v0.Units.denominator per_dg = Some dg);
   unit_is "WV-2.6-14/7dg-is-2-per-dg" (Arith.div_ ~err:no_err (n "14") (num_with_unit dg "7")) "2" per_dg;
   unitless_is "WV-2.6-2-per-dg-times-7dg-is-14" (Arith.mul (num_with_unit per_dg "2") (num_with_unit dg "7")) "14";
   unitless_is "WV-2.6-2-per-dg-times-3wk-is-42" (Arith.mul (num_with_unit per_dg "2") (num_with_unit wk "3")) "42";
@@ -528,18 +530,19 @@ let () =
   unit_is "WV-2.6-2-per-dg-plus-7-per-wk-is-3-per-dg"
     (Arith.add (num_with_unit per_dg "2") (num_with_unit per_wk "7")) "3" per_dg;
   unit_is "WV-2.6-1-per-dg-times-3eur-is-3eur-per-dg"
-    (Arith.mul (num_with_unit per_dg "1") (num_with_unit eur "3")) "3" { eur with denominator = Some dg };
+    (Arith.mul (num_with_unit per_dg "1") (num_with_unit eur "3")) "3" (Ir_v0.Units.over eur dg);
   unit_is "WV-2.6-3eur-times-1-per-dg-is-3eur-per-dg"
-    (Arith.mul (num_with_unit eur "3") (num_with_unit per_dg "1")) "3" { eur with denominator = Some dg };
+    (Arith.mul (num_with_unit eur "3") (num_with_unit per_dg "1")) "3" (Ir_v0.Units.over eur dg);
   unit_is "WV-2.6-1/(1-per-dg)-is-dg" (Arith.div_ ~err:no_err (n "1") (num_with_unit per_dg "2")) "1/2" dg;
   unit_is "WV-2.6-1/(eur-per-dg)-is-dg-per-eur"
-    (Arith.div_ ~err:no_err (n "1") (num_with_unit { eur with denominator = Some dg } "2")) "1/2"
-    { dg with denominator = Some eur };
+    (Arith.div_ ~err:no_err (n "1") (num_with_unit (Ir_v0.Units.over eur dg) "2")) "1/2"
+    (Ir_v0.Units.over dg eur);
   check "WV-2.6-1-per-dg-against-dg-is-no-unit-pair" (not (Arith.convertible per_dg dg));
   check "WV-2.6-1-per-dg-against-eur-per-dg-is-no-unit-pair"
-    (not (Arith.convertible per_dg { eur with denominator = Some dg }));
+    (not (Arith.convertible per_dg (Ir_v0.Units.over eur dg)));
   let m_squared : Ir_v0.Ast.measure_unit =
-    { (unit_ ~canonical_form:"m" "m·m") with canonical_form = None; factor_to_canonical = None }
+    [ { abbr_text = Some "m"; system = Some "test"; canonical_form = None;
+        factor_to_canonical = None; exponent = Some 2 } ]
   in
   check "WV-2.6-the-unit-m^2-has-no-inverse" (Ir_v0.Checks.reciprocal_unit m_squared = None);
   (* a product is opaque (IR-SPEC ch. 2.5, point 4): its value stands, and it restates into nothing *)
@@ -550,6 +553,31 @@ let () =
         (fun () -> Arith.restate_into (Value.Unit m_squared) v product)
         "incompatible units"
   | _ -> check "WV-2.6-2m-times-3m-is-6" false)
+
+(* IR-SPEC ch. 2.5, point 5: a unit is one list of factors, in the canonical
+   order, and its spelling comes from that list *)
+let () =
+  let to_power (u : Ir_v0.Ast.measure_unit) e = List.map (fun f -> Ir_v0.Units.with_exponent f e) u in
+  let spells name u text = check ("WV-2.5-spelling-" ^ name) (Ir_v0.Units.render u = text) in
+  let uur = unit_ ~canonical_form:"s" "u" and sec = unit_ ~canonical_form:"s" "s" in
+  let per_uur_per_s = Ir_v0.Units.over eur (uur @ sec) in
+  spells "m" meter "m";
+  spells "eur/jr" eur_per_jr "€/jr";
+  spells "1/dg" (to_power dg (-1)) "1/dg";
+  spells "m^2" (to_power meter 2) "m^2";
+  spells "1/m^2" (to_power meter (-2)) "1/m^2";
+  spells "m^2/s" (Ir_v0.Units.over (to_power meter 2) sec) "m^2/s";
+  spells "eur/dg^2" (Ir_v0.Units.over eur (to_power dg 2)) "€/dg^2";
+  spells "eur/s/u" per_uur_per_s "€/s/u";
+  spells "eur.m/jr" (Ir_v0.Units.over (Ir_v0.Units.canonical_order (eur @ meter)) jr) "m·€/jr";
+  check "WV-2.5-order-is-one-list"
+    (Ir_v0.Units.canonical_order (sec @ eur) = Ir_v0.Units.canonical_order (eur @ sec));
+  check "WV-2.5-order-sign-first"
+    (Ir_v0.Units.canonical_order (to_power meter (-1) @ eur) = eur @ to_power meter (-1));
+  check "WV-2.5-total-factor-a-power"
+    (Q.equal (Arith.total_factor (to_power (unit_ ~canonical_form:"m" ~factor:(1000, 1) "km") 2)) (q "1000000"));
+  check "WV-2.5-total-factor-a-negative-power"
+    (Q.equal (Arith.total_factor (to_power (unit_ ~canonical_form:"dg" ~factor:(7, 1) "wk") (-2))) (q "1/49"))
 
 (* ...and the factor that is not a whole number, the case the exact rational
    exists for: an hour declared as {1, 24} of a day. 36 uur restated in dg is
@@ -588,18 +616,18 @@ let () =
    third executor computed 302.5 — nothing refused. Both now fault by name,
    so no executor computes quietly on a shape the verifier rejects. *)
 let mnd_bare : Ir_v0.Ast.measure_unit =
-  { abbr_text = Some "mnd"; system = Some "test"; canonical_form = None;
-    factor_to_canonical = None; denominator = None }
+  [ { abbr_text = Some "mnd"; system = Some "test"; canonical_form = None;
+      factor_to_canonical = None; exponent = None } ]
 
-let jr_half : Ir_v0.Ast.measure_unit = { jr with factor_to_canonical = None }
-let mnd_half_b : Ir_v0.Ast.measure_unit = { mnd with canonical_form = None }
+let jr_half : Ir_v0.Ast.measure_unit = List.map (fun f -> { f with Ir_v0.Ast.factor_to_canonical = None }) jr
+let mnd_half_b : Ir_v0.Ast.measure_unit = List.map (fun f -> { f with Ir_v0.Ast.canonical_form = None }) mnd
 
 let () =
   (* the bare form: unchanged, factor 1 *)
-  check "verify-wf092-bare-is-factor-1" (Q.equal (Arith.factor mnd_bare) Q.one);
+  check "verify-wf092-bare-is-factor-1" (Q.equal (Arith.total_factor mnd_bare) Q.one);
   (match Arith.add (num_with_unit mnd_bare "2") (num_with_unit mnd_bare "12") with
   | Value.Num (v, Value.Unit u) ->
-      check "verify-wf092-bare-adds-up" (Q.equal v (q "14") && u.abbr_text = Some "mnd")
+      check "verify-wf092-bare-adds-up" (Q.equal v (q "14") && Ir_v0.Units.numerator_text u = "mnd")
   | _ -> check "verify-wf092-bare-adds-up" false);
   (* …and it is a canonical TARGET, not an island: `jr` declares canonical
      "mnd", the bare unit spells "mnd" as its abbreviation, so they are
@@ -607,10 +635,10 @@ let () =
   (match Arith.add (num_with_unit mnd_bare "3") (num_with_unit jr "2") with
   | Value.Num (v, Value.Unit u) ->
       check "verify-wf092-bare-is-canonical-target"
-        (Q.equal v (q "27") && u.abbr_text = Some "mnd")
+        (Q.equal v (q "27") && Ir_v0.Units.numerator_text u = "mnd")
   | _ -> check "verify-wf092-bare-is-canonical-target" false);
   (* half-filled (a): a loud fault naming the unit and its target *)
-  (match Arith.factor jr_half with
+  (match Arith.total_factor jr_half with
   | exception Value.Fault { text = m; _ } ->
       check "verify-wf092-half-form-fails-loudly"
         (m = "unit jr names canonical unit \"mnd\" but carries no conversion factor into it")
@@ -623,7 +651,7 @@ let () =
      Symmetric to (a) and equally loud — the arm that used to answer the
      factor question with the stray factor itself, unasked what it converts
      into *)
-  (match Arith.factor mnd_half_b with
+  (match Arith.total_factor mnd_half_b with
   | exception Value.Fault { text = m; _ } ->
       check "verify-wf092-half-form-b-fails-loudly"
         (m
@@ -811,9 +839,9 @@ let () =
   check "verify-lexeme-neg-dec" (Q.equal (Value.q_of_lexeme "-0.5") (q "-1/2"));
   (* a unit factor reads as the exact rational the wire writes, never
      through a double: {1, 100} is 1/100 exactly and {1000, 1} is 1000 *)
-  check "verify-wire-factor-cent" (Q.equal (Arith.factor cent) (q "1/100"));
+  check "verify-wire-factor-cent" (Q.equal (Arith.total_factor cent) (q "1/100"));
   check "verify-wire-factor-int"
-    (Q.equal (Arith.factor (unit_ ~canonical_form:"g" ~factor:(1000, 1) "kg")) (q "1000"));
+    (Q.equal (Arith.total_factor (unit_ ~canonical_form:"g" ~factor:(1000, 1) "kg")) (q "1000"));
   (* an astronomic exponent faults instead of escaping as Z.Overflow *)
   expect_fault "verify-pow-overflow" (fun () ->
       Arith.pow_ (n "2") (Value.Num (Q.of_string "100000000000000000000", Value.Unitless)))
@@ -2533,13 +2561,13 @@ let () =
   check "WV-3.5-c-empty-set" (Timeline.summed ~fallback:(n "0") [] = []);
   (* cross-unit: €/mnd contributors into a €/jr target — restated before
      the fold: 50×12 + 10×12 = 720 *)
-  let eur_mnd = { eur with denominator = Some mnd } in
-  let eur_jr = { eur with denominator = Some jr } in
+  let eur_mnd = Ir_v0.Units.over eur mnd in
+  let eur_jr = Ir_v0.Units.over eur jr in
   let q1 = [ seg "2024-01-01" "2024-02-01" (num_with_unit eur_mnd "50") ] in
   let q2 = [ seg "2024-01-01" "2024-02-01" (num_with_unit eur_mnd "10") ] in
   (match Timeline.summed ~target_unit:(Value.Unit eur_jr) [ q1; q2 ] with
   | [ { s_value = Value.Num (v, Value.Unit u); _ } ] ->
-      check "WV-3.5-d-720" (Q.equal v (q "720") && u.denominator = Some jr)
+      check "WV-3.5-d-720" (Q.equal v (q "720") && Ir_v0.Units.denominator u = Some jr)
   | _ -> check "WV-3.5-d-720" false)
 
 (* WV-3.6: the temporal total *)
@@ -2572,19 +2600,19 @@ let () =
   expect_num "WV-3.6-f" (Timeline.grand_total month (Timeline.clip vals tp)) "500";
   (* the explicit rate operand: 10 €/mnd across 2024 integrates to 120 €,
      denominator cancelled against the grid's own unit *)
-  let eur_per_mnd = { eur with denominator = Some mnd } in
+  let eur_per_mnd = Ir_v0.Units.over eur mnd in
   let year_2024 v = [ seg "2024-01-01" "2025-01-01" v ] in
   let grid u = Ok u in
   (match Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit eur_per_mnd "10")) with
   | Value.Num (v, Value.Unit u) ->
-      check "WV-3.6-g" (Q.equal v (q "120") && u.abbr_text = Some "€" && u.denominator = None)
+      check "WV-3.6-g" (Q.equal v (q "120") && u = eur)
   | other -> check ("WV-3.6-g (got " ^ Value.to_string other ^ ")") false);
   (* a plain € value on the same per-month timeline keeps the plain rule:
      the same 120, and no denominator to cancel *)
   (match Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit eur "10")) with
   | Value.Num (v, Value.Unit u) ->
       check "WV-3.6-g-plain-unit"
-        (Q.equal v (q "120") && u.abbr_text = Some "€" && u.denominator = None)
+        (Q.equal v (q "120") && u = eur)
   | other -> check ("WV-3.6-g-plain-unit (got " ^ Value.to_string other ^ ")") false);
   (* the three readings of the SAME grid: unitless, plain €, and the €/mnd
      rate. The plain rule and the €/mnd integration agree on the NUMBER
@@ -2603,12 +2631,12 @@ let () =
   (match Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit eur_per_jr "10")) with
   | Value.Num (v, Value.Unit u) ->
       check "WV-3.6-g-jaarnoemer-exact"
-        (Q.equal v (q "10") && u.abbr_text = Some "€" && u.denominator = None)
+        (Q.equal v (q "10") && u = eur)
   | other -> check ("WV-3.6-g-jaarnoemer-exact (got " ^ Value.to_string other ^ ")") false);
   (* a month-sized denominator that is NOT a calendar spelling (factor 1 to
      the same canonical month): the declared factor carries it, the
      spelling table never enters *)
-  let eur_per_bm = { eur with denominator = Some bm } in
+  let eur_per_bm = Ir_v0.Units.over eur bm in
   expect_num "WV-3.6-g-bm-jaar"
     (Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit eur_per_bm "10")))
     "120";
@@ -2622,12 +2650,12 @@ let () =
   (match Timeline.grand_total ~grid_unit:(grid kw) Quarter (year_2024 (num_with_unit eur_per_mnd "10")) with
   | Value.Num (v, Value.Unit u) ->
       check "WV-3.6-g-kwartaalrooster"
-        (Q.equal v (q "120") && u.abbr_text = Some "€" && u.denominator = None)
+        (Q.equal v (q "120") && u = eur)
   | other -> check ("WV-3.6-g-kwartaalrooster (got " ^ Value.to_string other ^ ")") false);
   (* a denominator the declarations connect to nothing month-sized is
      refused loudly, and the refusal NAMES BOTH units — the value's and
      the grid's *)
-  let eur_per_dg = { eur with denominator = Some dg } in
+  let eur_per_dg = Ir_v0.Units.over eur dg in
   (match Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit eur_per_dg "10")) with
   | exception Value.Fault { text = m; _ } ->
       check "WV-3.6-g-vreemde-noemer"
@@ -2638,7 +2666,7 @@ let () =
   | _ -> check "WV-3.6-g-vreemde-noemer" false);
   (* a denominator that names no time unit at all is refused the same way *)
   expect_fault "WV-3.6-g-noemer-zonder-tijdseenheid" (fun () ->
-      Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit { eur with denominator = Some kg } "10")));
+      Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit (Ir_v0.Units.over eur kg) "10")));
   (* no grid unit to integrate against: the refusal carries the lookup's
      own reason, and it bites the RATE operand only — the plain and
      unitless readings above total in a document that declares no unit *)
@@ -2655,7 +2683,7 @@ let () =
      and a foreign one is refused loudly; only the unitless side adopts
      silently. The case loader attaches the declaration's ONE unit to
      every segment, so no case can reach these shapes. *)
-  let ct_per_mnd = { cent with denominator = Some mnd } in
+  let ct_per_mnd = Ir_v0.Units.over cent mnd in
   expect_num "WV-3.6-g-segmentmenging-convertibel"
     (Timeline.grand_total ~grid_unit:(grid mnd) month
        [ seg "2024-01-01" "2025-01-01" (num_with_unit eur_per_mnd "10");
@@ -2678,14 +2706,14 @@ let () =
   let system name unit_list : string * Ir_v0.Ast.unit_system =
     ( name,
       { es_name = Some name;
-        unit_list = List.map (fun e -> { Ir_v0.Ast.ge_unit = e; ge_spellings = [] }) unit_list } )
+        unit_list = List.map (fun e -> { Ir_v0.Ast.ge_unit = List.hd e; ge_spellings = [] }) unit_list } )
   in
   let doc_of systems = { empty_doc with unit_systems = systems } in
   (match Timeline.grid_unit (doc_of [ system "Munt" [ eur ]; system "Tijd" [ mnd; jr ] ]) Month with
-  | Ok u -> check "WV-3.6-rooster-lookup" (u.abbr_text = Some "mnd")
+  | Ok u -> check "WV-3.6-rooster-lookup" (Ir_v0.Units.numerator_text u = "mnd")
   | Error _ -> check "WV-3.6-rooster-lookup" false);
   (match Timeline.grid_unit (doc_of [ system "Munt" [ eur ]; system "Tijd" [ mnd; jr ] ]) Year with
-  | Ok u -> check "WV-3.6-rooster-lookup-jaar" (u.abbr_text = Some "jr")
+  | Ok u -> check "WV-3.6-rooster-lookup-jaar" (Ir_v0.Units.numerator_text u = "jr")
   | Error _ -> check "WV-3.6-rooster-lookup-jaar" false);
   (match Timeline.grid_unit (doc_of [ system "Munt" [ eur ] ]) Month with
   | Error _ -> check "WV-3.6-rooster-ongedeclareerd" true
@@ -2705,7 +2733,7 @@ let () =
    refused, and so is a member that brings no horizon of its own
    (maintainer decision 2026-09-04, the convention of this fold). *)
 let () =
-  let eur_per_mnd = { eur with denominator = Some mnd } in
+  let eur_per_mnd = Ir_v0.Units.over eur mnd in
   let num_eur_mnd : Ir_v0.Ast.datatype =
     Number { whole_part = true; decimal_places = 0; sign_char = None; measure_unit = Some eur_per_mnd }
   in
@@ -2724,8 +2752,8 @@ let () =
     (nm, { o with attribute_granularity = [ ("bewaartarief", Some Ir_v0.Ast.Year) ] })
   in
   let systems : (string * Ir_v0.Ast.unit_system) list =
-    [ ("Munt", { es_name = Some "Munt"; unit_list = [ { ge_unit = eur; ge_spellings = [] } ] });
-      ("Tijd", { es_name = Some "Tijd"; unit_list = [ { ge_unit = mnd; ge_spellings = [] } ] }) ]
+    [ ("Munt", { es_name = Some "Munt"; unit_list = [ { ge_unit = List.hd eur; ge_spellings = [] } ] });
+      ("Tijd", { es_name = Some "Tijd"; unit_list = [ { ge_unit = List.hd mnd; ge_spellings = [] } ] }) ]
   in
   let doc =
     {
@@ -2773,12 +2801,12 @@ let () =
   let run w kind = Eval.eval_expr env w (World.get w "j1") ~err:no_err (fold kind) in
   (match run w Total with
   | Value.Num (v, Value.Unit u) ->
-      check "WV-3.6-h" (Q.equal v (q "150") && u.abbr_text = Some "€" && u.denominator = None)
+      check "WV-3.6-h" (Q.equal v (q "150") && u = eur)
   | other -> check ("WV-3.6-h (got " ^ Value.to_string other ^ ")") false);
   (* de som van over the same shape folds identically inside *)
   (match run w Sum_function with
   | Value.Num (v, Value.Unit u) ->
-      check "WV-3.6-h-som" (Q.equal v (q "150") && u.abbr_text = Some "€" && u.denominator = None)
+      check "WV-3.6-h-som" (Q.equal v (q "150") && u = eur)
   | other -> check ("WV-3.6-h-som (got " ^ Value.to_string other ^ ")") false);
   (* every ranking or counting fold over the same shape is refused: there
      is no defined moment of the timeline to rank or count at *)
@@ -4638,8 +4666,8 @@ let () =
     Number
       { whole_part = false; decimal_places = 2; sign_char = None;
         measure_unit =
-          Some { abbr_text = Some "kg"; system = Some "Gewicht"; canonical_form = Some "kg";
-                 factor_to_canonical = Some { num = 1; den = 1 }; denominator = None } }
+          Some [ { abbr_text = Some "kg"; system = Some "Gewicht"; canonical_form = Some "kg";
+                   factor_to_canonical = Some { num = 1; den = 1 }; exponent = None } ] }
   in
   let kustvak : Ir_v0.Ast.datatype =
     Enumeration { domain_spec = Some "kustvakken"; label_list = [ Some "noord"; Some "zuid" ] }
@@ -5029,8 +5057,8 @@ let () =
     Number
       { whole_part = false; decimal_places = 2; sign_char = None;
         measure_unit =
-          Some { abbr_text = Some "kg"; system = Some "Gewicht"; canonical_form = Some "kg";
-                 factor_to_canonical = Some { num = 1; den = 1 }; denominator = None } }
+          Some [ { abbr_text = Some "kg"; system = Some "Gewicht"; canonical_form = Some "kg";
+                   factor_to_canonical = Some { num = 1; den = 1 }; exponent = None } ] }
   in
   let doc =
     { empty_doc with
@@ -9025,8 +9053,8 @@ let () =
     Number
       { whole_part = true; decimal_places = 0; sign_char = None;
         measure_unit =
-          Some { abbr_text = Some "vadem"; system = None; canonical_form = None; factor_to_canonical = None;
-                 denominator = None } }
+          Some [ { abbr_text = Some "vadem"; system = None; canonical_form = None; factor_to_canonical = None;
+                   exponent = None } ] }
   in
   let extent kind : Ir_v0.Ast.expr =
     Function_call
@@ -9062,7 +9090,7 @@ let () =
    same rows. *)
 let () =
   let unit_ a : Ir_v0.Ast.measure_unit =
-    { abbr_text = Some a; system = None; canonical_form = None; factor_to_canonical = None; denominator = None }
+    [ { abbr_text = Some a; system = None; canonical_form = None; factor_to_canonical = None; exponent = None } ]
   in
   let counted ?u () : Ir_v0.Ast.datatype =
     Number { whole_part = true; decimal_places = 0; sign_char = None; measure_unit = Option.map unit_ u }
@@ -9115,7 +9143,7 @@ let () =
    rows, so the two executors and the verifier speak one sentence per form. *)
 let () =
   let unit_ a : Ir_v0.Ast.measure_unit =
-    { abbr_text = Some a; system = None; canonical_form = None; factor_to_canonical = None; denominator = None }
+    [ { abbr_text = Some a; system = None; canonical_form = None; factor_to_canonical = None; exponent = None } ]
   in
   let extent ?u n =
     litv n (Number { whole_part = true; decimal_places = 0; sign_char = None; measure_unit = Option.map unit_ u })
@@ -9809,8 +9837,8 @@ let wv64_r1 =
 "datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"basiseinddag",
 "datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"einddag",
 "datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"restant",
-"datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit",
-"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}}],
+"datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}]}}],
 "characteristics":[]}],"factTypes":[{"node":"FactType","name":"vorige vergunning",
 "reciprocal":false,"roles":[{"node":"Role","name":"vergunning","objectType":"Vergunning",
 "many":false},{"node":"Role","name":"vorige vergunning","objectType":"Vergunning","many":false}]}],
@@ -9822,8 +9850,8 @@ let wv64_r1 =
 "attribute":"restant","subjectType":"Vergunning"},"value":{"node":"BuiltinCall","kind":"duration",
 "arguments":[{"node":"AttributeReference","attribute":"stopdag","subjectType":"Vergunning"},
 {"node":"AttributeReference","attribute":"einddag","subjectType":"Vergunning"}],
-"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit",
-"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}},
+"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}]}},
 "condition":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"Predicate",
 "kind":"filled","operand":{"node":"AttributeReference","attribute":"stopdag",
 "subjectType":"Vergunning"},"negated":false,"digits":0},{"node":"Predicate","kind":"filled",
@@ -9918,8 +9946,8 @@ let wv64_kenmerk =
 "datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"basiseinddag",
 "datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"einddag",
 "datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"restant",
-"datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit",
-"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}}],
+"datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}]}}],
 "characteristics":[{"node":"Characteristic","name":"zonder verlenging","kind":"adjectival"}]}],
 "factTypes":[{"node":"FactType","name":"vorige vergunning","reciprocal":false,
 "roles":[{"node":"Role","name":"vergunning","objectType":"Vergunning","many":false},{"node":"Role",
@@ -9952,8 +9980,8 @@ let wv64_kenmerk =
 "attribute":"restant","subjectType":"Vergunning"},"value":{"node":"BuiltinCall","kind":"duration",
 "arguments":[{"node":"AttributeReference","attribute":"stopdag","subjectType":"Vergunning"},
 {"node":"AttributeReference","attribute":"einddag","subjectType":"Vergunning"}],
-"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit",
-"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}},
+"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}]}},
 "condition":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"Predicate",
 "kind":"filled","operand":{"node":"AttributeReference","attribute":"stopdag",
 "subjectType":"Vergunning"},"negated":false,"digits":0},{"node":"Predicate","kind":"filled",
@@ -10027,8 +10055,8 @@ let wv64_opgave =
 "name":"berekende einddag","datatype":{"node":"Date","precision":"day"},
 "origin":{"form":"inputAboveComputation","from":{"kind":"attribute","owner":"Vergunning",
 "name":"einddag"}}},{"node":"Attribute","name":"restant","datatype":{"node":"Number","whole":true,
-"decimals":0,"sign":"unspecified","unit":{"node":"Unit","abbreviation":"dg","system":"Tijd",
-"canonical":"dg","factorToCanonical":{"num":1,"den":1}}}}],
+"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"dg","system":"Tijd",
+"canonical":"dg","factorToCanonical":{"num":1,"den":1}}]}}],
 "characteristics":[{"node":"Characteristic","name":"afwijkende opgave einddag","kind":"possessive",
 "origin":{"form":"inputAboveComputation","from":{"kind":"attribute","owner":"Vergunning",
 "name":"einddag"}}}]}],"factTypes":[{"node":"FactType","name":"vorige vergunning",
@@ -10042,8 +10070,8 @@ let wv64_opgave =
 "attribute":"restant","subjectType":"Vergunning"},"value":{"node":"BuiltinCall","kind":"duration",
 "arguments":[{"node":"AttributeReference","attribute":"stopdag","subjectType":"Vergunning"},
 {"node":"AttributeReference","attribute":"einddag","subjectType":"Vergunning"}],
-"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit",
-"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}},
+"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}]}},
 "condition":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"Predicate",
 "kind":"filled","operand":{"node":"AttributeReference","attribute":"stopdag",
 "subjectType":"Vergunning"},"negated":false,"digits":0},{"node":"Predicate","kind":"filled",
@@ -10115,13 +10143,13 @@ let wv64_household =
 "animate":false,"plural":"Vergunningen","attributes":[{"node":"Attribute","name":"basiseinddag",
 "datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"verlengde einddag",
 "datatype":{"node":"Date","precision":"day"}},{"node":"Attribute","name":"restant",
-"datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit",
-"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}}],
+"datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}]}}],
 "characteristics":[]},{"node":"ObjectType","name":"Termijn","animate":false,"plural":"Termijnen",
 "attributes":[{"node":"Attribute","name":"einddag","datatype":{"node":"Date","precision":"day"}},
 {"node":"Attribute","name":"overschot","datatype":{"node":"Number","whole":true,"decimals":0,
-"sign":"unspecified","unit":{"node":"Unit","abbreviation":"dg","system":"Tijd","canonical":"dg",
-"factorToCanonical":{"num":1,"den":1}}},"plural":"overschotten"}],"characteristics":[]}],
+"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"dg","system":"Tijd","canonical":"dg",
+"factorToCanonical":{"num":1,"den":1}}]},"plural":"overschotten"}],"characteristics":[]}],
 "factTypes":[{"node":"FactType","name":"vorige vergunning","reciprocal":false,
 "roles":[{"node":"Role","name":"vergunning","objectType":"Vergunning","many":false},{"node":"Role",
 "name":"vorige vergunning","objectType":"Vergunning","many":false}]},{"node":"FactType",
@@ -10136,8 +10164,8 @@ let wv64_household =
 "arguments":[{"node":"AttributeReference","attribute":"verlengde einddag","subjectType":"Vergunning",
 "path":[{"node":"RoleBinding","factType":"vergunningstermijn","role":"houder"}]},
 {"node":"AttributeReference","attribute":"einddag","subjectType":"Termijn"}],"type":{"node":"Number",
-"whole":true,"decimals":0,"sign":"unspecified","unit":{"node":"Unit","abbreviation":"dg",
-"system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}}},
+"whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"dg",
+"system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}]}},
 "condition":{"node":"Comparison","op":"earlier","left":{"node":"AttributeReference",
 "attribute":"verlengde einddag","subjectType":"Vergunning","path":[{"node":"RoleBinding",
 "factType":"vergunningstermijn","role":"houder"}]},"right":{"node":"AttributeReference",
@@ -10148,8 +10176,8 @@ let wv64_household =
 "arguments":[{"node":"AttributeReference","attribute":"overschot","subjectType":"Termijn"}],
 "elementType":"Termijn","sourceRole":{"node":"RoleBinding","factType":"vergunningstermijn",
 "role":"termijn"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified",
-"unit":{"node":"Unit","abbreviation":"dg","system":"Tijd","canonical":"dg",
-"factorToCanonical":{"num":1,"den":1}}}},"initialisation":false,"presentation":"calculation"}]},
+"unit":[{"node":"Unit","abbreviation":"dg","system":"Tijd","canonical":"dg",
+"factorToCanonical":{"num":1,"den":1}}]}},"initialisation":false,"presentation":"calculation"}]},
 {"node":"Rule","name":"verlengde einddag","versions":[{"validity":{"node":"Validity"},
 "target":{"node":"AttributeReference","attribute":"verlengde einddag","subjectType":"Vergunning"},
 "value":{"node":"Binary","op":"plus","left":{"node":"AttributeReference","attribute":"basiseinddag",

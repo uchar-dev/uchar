@@ -68,8 +68,8 @@ let enum (fam : 'a Spelling.family) (c : 'a) : json = s (Spelling.encode fam c)
 
 (* the built-in '%' of a percentage that names no unit of its own *)
 let builtin_percent : measure_unit =
-  { abbr_text = Some "%"; system = None; canonical_form = Some "%";
-    factor_to_canonical = Some { num = 1; den = 1 }; denominator = None }
+  [ { abbr_text = Some "%"; system = None; canonical_form = Some "%";
+      factor_to_canonical = Some { num = 1; den = 1 }; exponent = None } ]
 
 (* The type system in its L5 shape: a Number always carries its sign (a sign
    the in-memory form leaves open is unspecified) and its unit only when it has
@@ -115,7 +115,9 @@ let rec datatype ?(decl = true) (d : datatype) : json =
 
 (* a Unit where it occurs: absent is the one spelling of a field not given,
    and the factor is the exact rational {num, den} *)
-and unit_j (e : measure_unit) : json =
+and unit_j (u : measure_unit) : json = `List (List.map factor_j u)
+
+and factor_j (e : unit_factor) : json =
   let abbreviation =
     match e.abbr_text with Some a -> a | None -> failwith "Emit: a unit without an abbreviation"
   in
@@ -126,7 +128,7 @@ and unit_j (e : measure_unit) : json =
     @ (match e.factor_to_canonical with
       | Some { num; den } -> [ ("factorToCanonical", `Assoc [ ("num", i num); ("den", i den) ]) ]
       | None -> [])
-    @ match e.denominator with Some n -> [ ("denominator", unit_j n) ] | None -> [])
+    @ match e.exponent with Some x -> [ ("exponent", i x) ] | None -> [])
 
 (* an expression's own type: never a declaration position *)
 let annotation (d : datatype) : json = datatype ~decl:false d

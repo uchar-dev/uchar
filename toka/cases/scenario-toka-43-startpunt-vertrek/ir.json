@@ -54,16 +54,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "jr",
-                "system": "Tijd",
-                "canonical": "mnd",
-                "factorToCanonical": {
-                  "num": 12,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "jr",
+                  "system": "Tijd",
+                  "canonical": "mnd",
+                  "factorToCanonical": {
+                    "num": 12,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -240,16 +242,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "km",
-                "system": "afstand",
-                "canonical": "m",
-                "factorToCanonical": {
-                  "num": 1000,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "km",
+                  "system": "afstand",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1000,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -274,16 +278,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "minuut",
-                "system": "Tijd",
-                "canonical": "dg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1440
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "minuut",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1440
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -314,16 +320,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "jr",
-                "system": "Tijd",
-                "canonical": "mnd",
-                "factorToCanonical": {
-                  "num": 12,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "jr",
+                  "system": "Tijd",
+                  "canonical": "mnd",
+                  "factorToCanonical": {
+                    "num": 12,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -380,16 +388,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "minuut",
-                "system": "Tijd",
-                "canonical": "dg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1440
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "minuut",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1440
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -615,16 +625,18 @@
           "whole": true,
           "decimals": 0,
           "sign": "nonNegative",
-          "unit": {
-            "node": "Unit",
-            "abbreviation": "jr",
-            "system": "Tijd",
-            "canonical": "mnd",
-            "factorToCanonical": {
-              "num": 12,
-              "den": 1
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "jr",
+              "system": "Tijd",
+              "canonical": "mnd",
+              "factorToCanonical": {
+                "num": 12,
+                "den": 1
+              }
             }
-          }
+          ]
         }
       },
       {
@@ -671,16 +683,18 @@
           "whole": true,
           "decimals": 0,
           "sign": "unspecified",
-          "unit": {
-            "node": "Unit",
-            "abbreviation": "jr",
-            "system": "Tijd",
-            "canonical": "mnd",
-            "factorToCanonical": {
-              "num": 12,
-              "den": 1
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "jr",
+              "system": "Tijd",
+              "canonical": "mnd",
+              "factorToCanonical": {
+                "num": 12,
+                "den": 1
+              }
             }
-          }
+          ]
         }
       },
       {
@@ -691,16 +705,18 @@
           "whole": true,
           "decimals": 0,
           "sign": "unspecified",
-          "unit": {
-            "node": "Unit",
-            "abbreviation": "km",
-            "system": "afstand",
-            "canonical": "m",
-            "factorToCanonical": {
-              "num": 1000,
-              "den": 1
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "km",
+              "system": "afstand",
+              "canonical": "m",
+              "factorToCanonical": {
+                "num": 1000,
+                "den": 1
+              }
             }
-          }
+          ]
         }
       },
       {
@@ -721,16 +737,18 @@
           "whole": true,
           "decimals": 0,
           "sign": "unspecified",
-          "unit": {
-            "node": "Unit",
-            "abbreviation": "km",
-            "system": "afstand",
-            "canonical": "m",
-            "factorToCanonical": {
-              "num": 1000,
-              "den": 1
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "km",
+              "system": "afstand",
+              "canonical": "m",
+              "factorToCanonical": {
+                "num": 1000,
+                "den": 1
+              }
             }
-          }
+          ]
         }
       },
       {
@@ -761,15 +779,17 @@
           "whole": true,
           "decimals": 0,
           "sign": "unspecified",
-          "unit": {
-            "node": "Unit",
-            "abbreviation": "%",
-            "canonical": "%",
-            "factorToCanonical": {
-              "num": 1,
-              "den": 1
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "%",
+              "canonical": "%",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
-          },
+          ],
           "presentation": "percentage"
         }
       },
@@ -781,15 +801,17 @@
           "whole": true,
           "decimals": 0,
           "sign": "unspecified",
-          "unit": {
-            "node": "Unit",
-            "abbreviation": "%",
-            "canonical": "%",
-            "factorToCanonical": {
-              "num": 1,
-              "den": 1
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "%",
+              "canonical": "%",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
-          },
+          ],
           "presentation": "percentage"
         }
       },
@@ -801,15 +823,17 @@
           "whole": true,
           "decimals": 0,
           "sign": "unspecified",
-          "unit": {
-            "node": "Unit",
-            "abbreviation": "%",
-            "canonical": "%",
-            "factorToCanonical": {
-              "num": 1,
-              "den": 1
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "%",
+              "canonical": "%",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
-          },
+          ],
           "presentation": "percentage"
         }
       },
@@ -821,16 +845,18 @@
           "whole": true,
           "decimals": 0,
           "sign": "unspecified",
-          "unit": {
-            "node": "Unit",
-            "abbreviation": "minuut",
-            "system": "Tijd",
-            "canonical": "dg",
-            "factorToCanonical": {
-              "num": 1,
-              "den": 1440
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "minuut",
+              "system": "Tijd",
+              "canonical": "dg",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1440
+              }
             }
-          }
+          ]
         }
       },
       {
@@ -841,16 +867,18 @@
           "whole": true,
           "decimals": 0,
           "sign": "unspecified",
-          "unit": {
-            "node": "Unit",
-            "abbreviation": "minuut",
-            "system": "Tijd",
-            "canonical": "dg",
-            "factorToCanonical": {
-              "num": 1,
-              "den": 1440
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "minuut",
+              "system": "Tijd",
+              "canonical": "dg",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1440
+              }
             }
-          }
+          ]
         }
       },
       {
@@ -861,16 +889,18 @@
           "whole": true,
           "decimals": 0,
           "sign": "unspecified",
-          "unit": {
-            "node": "Unit",
-            "abbreviation": "mnd",
-            "system": "Tijd",
-            "canonical": "mnd",
-            "factorToCanonical": {
-              "num": 1,
-              "den": 1
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "mnd",
+              "system": "Tijd",
+              "canonical": "mnd",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
             }
-          }
+          ]
         }
       }
     ],

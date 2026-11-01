@@ -64,12 +64,12 @@ class UnitConflictWitnessTest {
     /** A concrete unit from no system the corpus knows: a canonical of its own, so it inter-converts with
      *  nothing a golden declares, and a factor, so it is not the WF-092 factorless form. */
     private static final String FOREIGN = """
-            {"node":"Unit","abbreviation":"uchar-vreemd",
-             "canonical":"uchar-vreemd-canoniek","factorToCanonical":{"num":3600,"den":1}}""";
+            [{"node":"Unit","abbreviation":"uchar-vreemd",
+             "canonical":"uchar-vreemd-canoniek","factorToCanonical":{"num":3600,"den":1}}]""";
 
     /** A plain denominator, to turn a declared unit into a RATE with the very same numerator. */
     private static final String DENOMINATOR = """
-            {"node":"Unit","abbreviation":"mnd","canonical":"mnd","factorToCanonical":{"num":1,"den":1}}""";
+            {"node":"Unit","abbreviation":"mnd","canonical":"mnd","factorToCanonical":{"num":1,"den":1},"exponent":-1}""";
 
     // ---------------- the guard itself: what it refuses and what it lets through ----------------
 
@@ -116,12 +116,12 @@ class UnitConflictWitnessTest {
     }
 
     @Test void a_namesake_declared_on_the_wire_not_gets_the_vrijstelling() {
-        // The hole a name test leaves: a wire-declared unit can carry exactly the four fields Unit.product
-        // produces — no canonical, no factor, no denominator, a "·" in the abbreviation — without ever having
+        // The hole a name test leaves: a wire-declared unit can carry exactly the factors Unit.product
+        // produces — no canonical, no factor, no denominator — without ever having
         // been derived. ref faults on such a document; so must this. Value-equal to the derived one, and still
         // treated differently, which is the whole point: provenance is not a property of the value.
         Unit derived = derivedProduct();
-        Unit namesake = new Unit(derived.abbreviation(), derived.system(), null, null, null);
+        Unit namesake = new Unit(derived.factors());
         assertEquals(derived, namesake, "de twee zijn waarde-gelijk — alleen hun herkomst verschilt");
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(namesake, EUR, "witness"));
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(EUR, namesake, "witness"));
@@ -425,14 +425,20 @@ class UnitConflictWitnessTest {
         JsonNode p = findMember(ir.path("model").path("parameters"), "name", name);
         if (p == null) return null;
         JsonNode e = p.path("datatype").path("unit");
-        return e.isObject() && !e.has("denominator") ? name : null;
+        return plainUnit(e) ? name : null;
+    }
+
+    /** A unit on the wire whose factors all stand in the numerator. */
+    private static boolean plainUnit(JsonNode e) {
+        if (!e.isArray()) return false;
+        for (JsonNode f : e) if (f.path("exponent").asInt(1) < 0) return false;
+        return true;
     }
 
     /** Give {@code holder}'s unit a "mnd" denominator; null when there is no plain unit to give one to. */
     private static JsonNode withDenominator(JsonNode copy, ObjectNode holder) throws Exception {
-        if (holder == null || !(holder.get("unit") instanceof ObjectNode e)) return null;
-        if (e.has("denominator")) return null;    // already a rate
-        e.set("denominator", JSON.readTree(DENOMINATOR));
+        if (holder == null || !plainUnit(holder.path("unit"))) return null;
+        ((com.fasterxml.jackson.databind.node.ArrayNode) holder.get("unit")).add(JSON.readTree(DENOMINATOR));
         return copy;
     }
 

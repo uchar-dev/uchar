@@ -16,16 +16,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "maand",
-                "system": "Termijn",
-                "canonical": "maand",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "maand",
+                  "system": "Termijn",
+                  "canonical": "maand",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -36,16 +38,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "maand",
-                "system": "Termijn",
-                "canonical": "maand",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "maand",
+                  "system": "Termijn",
+                  "canonical": "maand",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           }
         ],
@@ -118,16 +122,18 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "jaar",
-                    "system": "Termijn",
-                    "canonical": "maand",
-                    "factorToCanonical": {
-                      "num": 12,
-                      "den": 1
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "jaar",
+                      "system": "Termijn",
+                      "canonical": "maand",
+                      "factorToCanonical": {
+                        "num": 12,
+                        "den": 1
+                      }
                     }
-                  }
+                  ]
                 },
                 "source": {
                   "snippet": "2 jaar"
@@ -146,16 +152,18 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "jaar",
-                  "system": "Termijn",
-                  "canonical": "maand",
-                  "factorToCanonical": {
-                    "num": 12,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "jaar",
+                    "system": "Termijn",
+                    "canonical": "maand",
+                    "factorToCanonical": {
+                      "num": 12,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "2 jaar plus de basisduur van de Bergingsvergunning"

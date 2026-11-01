@@ -10,7 +10,7 @@ passes a unitless argument, and WF-068 reports `argument type number(0
 decimals) does not match the parameter datatype number(0 decimals, kg)`
 (measured).
 
-    WF-092 FAIL /model/functionDefs/1/parameters/0/datatype/unit: unit 'kg'
+    WF-092 FAIL /model/functionDefs/1/parameters/0/datatype/unit/0: unit 'kg'
     names canonical unit 'g' but carries no conversion factor into it: a
     half-filled conversion pair is not a unit (both fields, or neither)
 

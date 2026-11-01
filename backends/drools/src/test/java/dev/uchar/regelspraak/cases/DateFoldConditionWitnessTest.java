@@ -196,8 +196,8 @@ class DateFoldConditionWitnessTest {
     private static final String DATE = "{\"node\":\"Date\",\"precision\":\"day\"}";
     private static final String DG = "{\"node\":\"Unit\",\"abbreviation\":\"dg\",\"system\":\"Tijd\",\"canonical\":\"dg\","
             + "\"factorToCanonical\":{\"num\":1,\"den\":1}}";
-    private static final String DAGEN = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":"
-            + DG + "}";
+    private static final String DAGEN = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":["
+            + DG + "]}";
     private static final String WAAR = "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Boolean\"}}";
     private static final String DAY_ONE = "{\"node\":\"Literal\",\"value\":{\"date\":\"2026-01-01\"},\"type\":" + DATE + "}";
 

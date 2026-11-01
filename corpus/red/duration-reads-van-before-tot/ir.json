@@ -24,10 +24,12 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "dagen"
-              }
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dagen"
+                }
+              ]
             }
           }
         ],
@@ -67,10 +69,12 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "dagen"
-                }
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dagen"
+                  }
+                ]
               },
               "binder": "vertrekdatum",
               "value": {
@@ -109,10 +113,12 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "dagen"
-                  }
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "dagen"
+                    }
+                  ]
                 },
                 "source": {
                   "snippet": "de tijdsduur van de rekendatum tot de vertrekdatum in hele dagen"

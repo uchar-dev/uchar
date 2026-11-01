@@ -128,7 +128,7 @@ class InputAmountTest {
         assertEquals(dataTypes.get("waarde"), dataTypes.get("berekende waarde"));
         // the initialisation default's consequence is the amount with its unit
         assertTrue(ir.replaceAll("\\s+", "").contains("{\"node\":\"Literal\",\"value\":{\"number\":\"25.00\"},\"type\":"
-                + "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":{\"node\":\"Unit\","
+                + "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":[{\"node\":\"Unit\","
                 + "\"abbreviation\":\"EUR\""), () -> "de initialisatiedefault draagt het bedrag niet:\n" + ir);
     }
 

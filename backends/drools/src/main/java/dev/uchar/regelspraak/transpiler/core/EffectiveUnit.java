@@ -375,9 +375,9 @@ public final class EffectiveUnit {
      * The identity table of every opaque product THIS derivation built — the provenance mark
      * {@link UnitConflict} keys its exemption on.
      *
-     * <p><b>Why identity and not the value.</b> {@link Unit#product} builds "€·kg" as a plain
-     * {@code Unit} with no canonical, no factor and no denominator, and the wire can declare a unit with
-     * exactly those four fields and a "·" in its name. The two are therefore value-indistinguishable, and a
+     * <p><b>Why identity and not the value.</b> {@link Unit#product} builds "€·kg" as a {@code Unit} of two factors
+     * with no canonical and no factor, and the wire can write a unit with exactly those factors. The two are
+     * therefore value-indistinguishable, and a
      * test on the ABBREVIATION hands a wire-declared "appel·peer" the exemption meant for a derived product —
      * measured 2026-09-09: {@code ref} faults on such a document, this backend replayed it. Only WHERE the unit
      * came from separates them, and provenance is identity.

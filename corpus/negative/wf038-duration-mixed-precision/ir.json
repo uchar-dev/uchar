@@ -32,10 +32,12 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "jr"
-              }
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "jr"
+                }
+              ]
             }
           }
         ],
@@ -94,10 +96,12 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "jr"
-                }
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "jr"
+                  }
+                ]
               },
               "source": {
                 "snippet": "de tijdsduur van zijn geboortedatum tot zijn stempelmoment in hele jaren"

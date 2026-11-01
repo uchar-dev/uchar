@@ -1172,28 +1172,42 @@ public final class IrLoader {
         return es;
     }
 
-    /** A unit where it occurs — on a number, as a rate's denominator: IR-SPEC ch. 2.5's fields and nothing else, so
-     *  a spelling there is an unknown field (spellings belong to the declaration). */
-    private Unit unit(JsonNode n, String path) { return unit(n, path, null); }
+    /** A unit where it occurs, on a number: a list of factors, each with IR-SPEC ch. 2.5's fields and nothing else, so
+     *  a spelling there is an unknown field (spellings belong to the declaration). What the list must look like beyond
+     *  that is the verifier's WF-124; a list with no factor and an exponent 0 name no unit at all and stop here. */
+    private Unit unit(JsonNode n, String path) {
+        if (!n.isArray()) throw new DocumentError(path, "expected an array, got " + shortQuote(n));
+        if (n.isEmpty()) throw new DocumentError(path, "a unit without a factor");
+        List<Unit.Factor> factors = new ArrayList<>();
+        for (int i = 0; i < n.size(); i++) {
+            String p = path + "/" + i;
+            JsonNode f = n.get(i);
+            Unit single = unit(f, p, null);
+            int exponent = f.has("exponent") ? whole(f, p, "exponent", "Unit.exponent") : 1;
+            if (exponent == 0) throw new DocumentError(p + "/exponent", "a factor with exponent 0");
+            Unit.Factor atom = single.factors().get(0);
+            factors.add(new Unit.Factor(atom.abbreviation(), atom.system(), atom.canonical(), atom.factorToCanonical(), exponent));
+        }
+        return new Unit(factors);
+    }
 
-    /** A unit, with {@code system} the unit system it is declared in, or null where it occurs. A declared unit may
-     *  carry its further spellings, at least one; its exact factor lands in the system. */
+    /** One unit record, with {@code system} the unit system it is declared in, or null where it is a factor of a unit
+     *  that occurs. A declared unit may carry its further spellings, at least one; its exact factor lands in the system. */
     private Unit unit(JsonNode n, String path, UnitSystem system) {
         // a factor written null is a factor in no form, refused in the factor's own sentence
         if (n.isObject() && n.has("factorToCanonical") && n.get("factorToCanonical").isNull())
             throw new DocumentError(path + "/factorToCanonical", FACTOR_FORM + "null");
         fields(n, path, "Unit", List.of("node", "abbreviation"), system == null
-                ? List.of("system", "canonical", "factorToCanonical", "denominator")
-                : List.of("system", "canonical", "factorToCanonical", "denominator", "spellings"));
+                ? List.of("system", "canonical", "factorToCanonical", "exponent")
+                : List.of("system", "canonical", "factorToCanonical", "spellings"));
         String abbreviation = textAt(n, path, "abbreviation");
         UnitSystem.Factor factor = n.has("factorToCanonical")
                 ? factor(n.get("factorToCanonical"), path + "/factorToCanonical") : null;
-        Unit denominator = n.has("denominator") ? unit(n.get("denominator"), path + "/denominator") : null;
         if (system != null && n.has("spellings") && textList(n, path, "spellings").isEmpty())
             throw new DocumentError(path + "/spellings", SPELLINGS_EMPTY);
         if (system != null && factor != null) system.exactFactors.put(abbreviation, factor);
         return new Unit(abbreviation, optText(n, path, "system"), optText(n, path, "canonical"),
-                factor == null ? null : decimal(factor), denominator);
+                factor == null ? null : decimal(factor));
     }
 
     /** The shared loader's sentence for an empty list of spellings. */

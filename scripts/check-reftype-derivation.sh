@@ -412,27 +412,28 @@ def rational(f):
     return Fraction(int(f["num"].raw), int(f["den"].raw))
 
 
-def sister(e, exp):
-    """A convertible SISTER of unit e: same canonical, distinct abbreviation, factor x 10^exp —
-       the rational written {num, den} in lowest terms, as the wire writes every factor."""
-    if not isinstance(e, dict):
+def sister(unit, exp):
+    """A convertible SISTER of the unit: the first factor with a conversion pair gets the same
+       canonical, a distinct abbreviation and its factor x 10^exp, the rational written {num, den}
+       in lowest terms, as the wire writes every factor. Its exponent e moves the factor of the
+       whole unit by 10^(exp*e), which is never 1."""
+    if not isinstance(unit, list):
         return None
-    if e.get("abbreviation") == "1":
-        # a reciprocal's numerator is no unit, so the sister is the one of its denominator
-        inner = sister(e.get("denominator"), exp)
-        if inner is None:
+    for i, e in enumerate(unit):
+        if not isinstance(e, dict):
             return None
+        a, c, f = e.get("abbreviation"), e.get("canonical"), rational(e.get("factorToCanonical"))
+        if a is None or c is None or f is None:
+            continue
+        if SUFFIX in a:
+            return None
+        z = f * (10 ** exp)
         out = dict(e)
-        out["denominator"] = inner
-        return out
-    a, c, f = e.get("abbreviation"), e.get("canonical"), rational(e.get("factorToCanonical"))
-    if a is None or c is None or f is None or SUFFIX in a:
-        return None
-    z = f * (10 ** exp)
-    out = dict(e)
-    out["abbreviation"] = a + SUFFIX + str(exp)
-    out["factorToCanonical"] = {"num": RawNum(str(z.numerator)), "den": RawNum(str(z.denominator))}
-    return out
+        out["abbreviation"] = a + SUFFIX + str(exp)
+        out["factorToCanonical"] = {"num": RawNum(str(z.numerator)),
+                                    "den": RawNum(str(z.denominator))}
+        return unit[:i] + [out] + unit[i + 1:]
+    return None
 
 
 def twist(dt, exp):
@@ -443,7 +444,8 @@ def twist(dt, exp):
         return dt, None
     out = dict(dt)
     out["unit"] = u
-    return out, "%s %s->%s" % (dt.get("node"), dt["unit"].get("abbreviation"), u["abbreviation"])
+    return out, "%s %s->%s" % (dt.get("node"), dt["unit"][0].get("abbreviation"),
+                               u[0]["abbreviation"])
 
 
 # A reference writes no type since L2 (B13): whether an operand is a DATE is read off the

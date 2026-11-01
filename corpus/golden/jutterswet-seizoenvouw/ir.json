@@ -16,16 +16,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             },
             "dimensions": [
               "seizoen"
@@ -39,16 +41,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -59,16 +63,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -79,16 +85,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -99,16 +107,18 @@
               "whole": false,
               "decimals": 2,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kg",
-                "system": "Gewicht",
-                "canonical": "kg",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           }
         ],
@@ -204,16 +214,18 @@
                 "whole": false,
                 "decimals": 2,
                 "sign": "nonNegative",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "kg",
-                  "system": "Gewicht",
-                  "canonical": "kg",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "de som van zijn vondstgewicht over alle seizoenen"
@@ -269,16 +281,18 @@
                 "whole": false,
                 "decimals": 2,
                 "sign": "nonNegative",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "kg",
-                  "system": "Gewicht",
-                  "canonical": "kg",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "de som van zijn vondstgewicht vanaf voorjaar t/m zomer"
@@ -335,16 +349,18 @@
                 "whole": false,
                 "decimals": 2,
                 "sign": "nonNegative",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "kg",
-                  "system": "Gewicht",
-                  "canonical": "kg",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "de maximale waarde van zijn vondstgewicht over de seizoenen in {voorjaar, zomer en najaar}"
@@ -400,16 +416,18 @@
                 "whole": false,
                 "decimals": 2,
                 "sign": "nonNegative",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "kg",
-                  "system": "Gewicht",
-                  "canonical": "kg",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "de minimale waarde van zijn vondstgewicht over de seizoenen vanaf zomer t/m najaar"

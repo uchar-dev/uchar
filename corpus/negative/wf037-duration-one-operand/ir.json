@@ -32,10 +32,12 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "uur"
-              }
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "uur"
+                }
+              ]
             }
           },
           {
@@ -46,10 +48,12 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "dagen"
-              }
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dagen"
+                }
+              ]
             }
           },
           {
@@ -116,10 +120,12 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "uur"
-                }
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "uur"
+                  }
+                ]
               },
               "source": {
                 "snippet": "de tijdsduur van zijn aankomst tot zijn vertrek in hele uren"
@@ -172,10 +178,12 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "dagen"
-                }
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dagen"
+                  }
+                ]
               },
               "source": {
                 "snippet": "de tijdsduur van zijn aankomst tot zijn vertrek in hele dagen"
@@ -223,10 +231,12 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "uur"
-                  }
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "uur"
+                    }
+                  ]
                 },
                 "source": {
                   "snippet": "26 uur"
@@ -282,10 +292,12 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "maand"
-                  }
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "maand"
+                    }
+                  ]
                 },
                 "source": {
                   "snippet": "1 maand"

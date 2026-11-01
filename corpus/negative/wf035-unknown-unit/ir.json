@@ -75,10 +75,12 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "vadem"
-                  }
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "vadem"
+                    }
+                  ]
                 },
                 "source": {
                   "snippet": "3 vadem"

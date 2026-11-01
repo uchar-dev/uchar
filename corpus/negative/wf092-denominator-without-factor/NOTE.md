@@ -5,16 +5,16 @@ denominator `mnd` names its canonical unit `mnd` while carrying no
 denominator record occupies. Everything else is the temporal-total golden
 unchanged.
 
-    WF-092 FAIL /model/objectTypes/0/attributes/0/datatype/unit/denominator:
+    WF-092 FAIL /model/objectTypes/0/attributes/0/datatype/unit/1:
     unit 'mnd' names canonical unit 'mnd' but carries no conversion factor
     into it: a half-filled conversion pair is not a unit (both fields, or
     neither)
-    WF-092 FAIL /model/objectTypes/0/attributes/1/datatype/unit/denominator: …
-    WF-092 FAIL /model/objectTypes/0/attributes/2/datatype/unit/denominator: …
-    WF-092 FAIL /model/objectTypes/1/attributes/0/datatype/unit/denominator: …
-    WF-092 FAIL /rules/rules/0/versions/0/value/type/unit/denominator:
+    WF-092 FAIL /model/objectTypes/0/attributes/1/datatype/unit/1: …
+    WF-092 FAIL /model/objectTypes/0/attributes/2/datatype/unit/1: …
+    WF-092 FAIL /model/objectTypes/1/attributes/0/datatype/unit/1: …
+    WF-092 FAIL /rules/rules/0/versions/0/value/type/unit/1:
     …
-    WF-092 FAIL /rules/rules/1/versions/0/value/type/unit/denominator:
+    WF-092 FAIL /rules/rules/1/versions/0/value/type/unit/1:
     …
 
 Reading convention (house-wide): a citation path is the verifier's LOGICAL
@@ -73,3 +73,7 @@ translation of `spec/proposals/v1-migratie/m3.py`: a unit's denominator is
 spelled `denominator`, and the factor the witness leaves out is absent where
 it was null (delta B17 (i) of `spec/proposals/V1-WIREMIGRATIE.md`). The report
 is unchanged but for its paths. `expect.txt` pins the arm.
+
+**Migrated at L6 (2026-11-01).** The denominator is the factor of `mnd` with
+exponent -1, the second of its list (`spec/proposals/v1-migratie/m6.py`), so the
+report's paths end in `/unit/1`. The report is unchanged but for those paths.

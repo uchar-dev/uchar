@@ -12,13 +12,9 @@ open Value
 
 (* --- units (ch. 2.6) --------------------------------------------------- *)
 
-let unit_name (e : Ir_v0.Ast.measure_unit) =
-  match e.abbr_text with Some a -> a | None -> "?"
-
 (* a rate prints its denominator: without it "€/mnd" and "€" both read
    "EUR", and every unit fault between them reads "EUR vs EUR" *)
-let rec display_unit (e : Ir_v0.Ast.measure_unit) =
-  match e.denominator with Some n -> unit_name e ^ "/" ^ display_unit n | None -> unit_name e
+let display_unit (e : Ir_v0.Ast.measure_unit) = Ir_v0.Units.render e
 
 let show_unit = function
   | Unitless -> "(unitless)"
@@ -60,26 +56,37 @@ let rational ({ num; den } : Ir_v0.Ast.rational) = Q.make (Z.of_int num) (Z.of_i
    fault here, by name. This is the second line of defence behind the
    verifier, not a dead letter: an executor must never compute quietly on
    a shape the verifier rejects. *)
-let factor (e : Ir_v0.Ast.measure_unit) =
+let factor ?shown (e : Ir_v0.Ast.unit_factor) =
+  let shown = Option.value shown ~default:(Ir_v0.Units.name e) in
   match (e.factor_to_canonical, e.canonical_form) with
   | Some f, Some _ -> rational f
   | Some f, None ->
       fault "unit %s carries conversion factor %s but names no canonical unit to convert into"
-        (display_unit e) (Ir_v0.Checks.rational_render f)
+        shown (Ir_v0.Checks.rational_render f)
   | None, None -> Q.one
   | None, Some c ->
-      fault "unit %s names canonical unit %S but carries no conversion factor into it"
-        (display_unit e) c
+      fault "unit %s names canonical unit %S but carries no conversion factor into it" shown c
 
 let convertible a b = Ir_v0.Checks.units_convertible a b
 
+(* the product of the factors of a unit, each to the power of its exponent; a
+   half-filled pair in the numerator is reported under the whole unit, one in the
+   denominator under its own name *)
+let total_factor (u : Ir_v0.Ast.measure_unit) =
+  List.fold_left
+    (fun acc f ->
+      let e = Ir_v0.Units.exponent f in
+      let shown = if e > 0 then Some (display_unit u) else None in
+      let x = factor ?shown f in
+      let power = Q.make (Z.pow (Q.num x) (abs e)) (Z.pow (Q.den x) (abs e)) in
+      if e < 0 then Q.div acc power else Q.mul acc power)
+    Q.one u
+
 (* multiplicative factor taking a quantity in unit [a] to unit [b];
-   both must be convertible (same canonical chain, rates recursively) *)
-let rec conv_factor (a : Ir_v0.Ast.measure_unit) (b : Ir_v0.Ast.measure_unit) =
-  let base = Q.div (factor a) (factor b) in
-  match (a.denominator, b.denominator) with
-  | None, None -> base
-  | Some denominator_a, Some nb -> Q.mul base (conv_factor nb denominator_a)
+   both must be convertible (same canonical chain, a rate side by side) *)
+let conv_factor (a : Ir_v0.Ast.measure_unit) (b : Ir_v0.Ast.measure_unit) =
+  match (Ir_v0.Units.denominator a, Ir_v0.Units.denominator b) with
+  | None, None | Some _, Some _ -> Q.div (total_factor a) (total_factor b)
   | _ -> fault "rate/plain unit mismatch: %s vs %s" (display_unit a) (display_unit b)
 
 (* restate a number in unit [ub] into unit [ua] (ch. 2.6: the right operand
@@ -136,7 +143,7 @@ let mul l r =
       let without_denominator rate =
         match Ir_v0.Checks.numerator_unit rate with Some u -> Unit u | None -> Unitless
       in
-      match (a.denominator, b.denominator) with
+      match (Ir_v0.Units.denominator a, Ir_v0.Units.denominator b) with
       | Some n, None when convertible n b ->
           (* a rate times its denominator unit cancels: €/jr × jr = €, and E⁻¹ × E is unitless *)
           Num (Q.mul lq (Q.mul rq (conv_factor b n)), without_denominator a)
@@ -144,9 +151,9 @@ let mul l r =
           Num (Q.mul rq (Q.mul lq (conv_factor a n)), without_denominator b)
       (* a reciprocal times another plain unit is the rate: 1/dg × € = €/dg *)
       | Some n, None when Ir_v0.Checks.is_reciprocal a && not (Ir_v0.Checks.is_product b) ->
-          Num (Q.mul lq rq, Unit { b with denominator = Some n })
+          Num (Q.mul lq rq, Unit (Ir_v0.Units.over b n))
       | None, Some n when Ir_v0.Checks.is_reciprocal b && not (Ir_v0.Checks.is_product a) ->
-          Num (Q.mul lq rq, Unit { a with denominator = Some n })
+          Num (Q.mul lq rq, Unit (Ir_v0.Units.over a n))
       | None, None -> Num (Q.mul lq rq, Product (a, b))
       | _ -> fault "unit product not modelled: %s * %s" (show_unit lu) (show_unit ru))
   | _ -> fault "unit product not modelled: %s * %s" (show_unit lu) (show_unit ru)
@@ -181,8 +188,9 @@ let div_gen ~err ~collapse l r =
               | u, Unitless -> (Q.div lq rq, u)
               | Unit a, Unit b when convertible a b ->
                   (Q.div lq (Q.mul rq (conv_factor b a)), Unitless)
-              | Unit a, Unit b when a.denominator = None && b.denominator = None ->
-                  (Q.div lq rq, Unit { a with denominator = Some b })
+              | Unit a, Unit b
+                when Ir_v0.Units.denominator a = None && Ir_v0.Units.denominator b = None ->
+                  (Q.div lq rq, Unit (Ir_v0.Units.over a b))
               | Unitless, Unit b when Ir_v0.Checks.reciprocal_unit b <> None ->
                   (* eenheidloos ÷ E is E⁻¹ *)
                   (Q.div lq rq, Unit (Option.get (Ir_v0.Checks.reciprocal_unit b)))

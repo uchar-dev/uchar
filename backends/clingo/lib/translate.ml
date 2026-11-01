@@ -973,8 +973,8 @@ let attr_temporal_decl ctx ~otype ~attr =
 (* E⁻¹ against a plain unit E' convertible to E: the pair whose product has no
    unit (ch. 2.6). *)
 let reciprocal_cancels (reciprocal : measure_unit) (plain : measure_unit) =
-  Ir_v0.Checks.is_reciprocal reciprocal && plain.denominator = None
-  && match reciprocal.denominator with
+  Ir_v0.Checks.is_reciprocal reciprocal && Ir_v0.Units.denominator plain = None
+  && match Ir_v0.Units.denominator reciprocal with
      | Some n -> Normalise.restates_into n plain
      | None -> false
 
@@ -2430,7 +2430,8 @@ let as_of_bucket_units ctx ~otype ~attr =
    [what] names the fold site. *)
 let grid_strip_ok ctx ~what ~(gran : grain) (u : measure_unit option) =
   match u with
-  | Some ({ denominator = Some n; _ } as rate) -> (
+  | Some rate when Ir_v0.Units.denominator rate <> None -> (
+      let n = Option.get (Ir_v0.Units.denominator rate) in
       match Uchar_ref.Timeline.grid_unit ctx.doc gran with
       | Error why -> fault "the noemer strip of %s: %s" what why
       | Ok gu ->
@@ -2519,16 +2520,14 @@ let dk_tables :
 (* the day kind a unit SPELLING names — its name or its plural (IR-SPEC
    ch. 2.9: the lookup is trimmed and case-insensitive) — or None *)
 let day_kind_spells (doc : document) (u : measure_unit) : string option =
-  match u.abbr_text with
-  | None -> None
-  | Some a ->
-      List.find_map
-        (fun (d : day_kind) ->
-          if String.trim d.dk_name <> ""
-             && List.exists (fun s -> norm s = norm a) (Ir_v0.Checks.day_kind_spellings d)
-          then Some d.dk_name
-          else None)
-        doc.day_kinds
+  let a = Ir_v0.Units.numerator_text u in
+  List.find_map
+    (fun (d : day_kind) ->
+      if String.trim d.dk_name <> ""
+         && List.exists (fun s -> norm s = norm a) (Ir_v0.Checks.day_kind_spellings d)
+      then Some d.dk_name
+      else None)
+    doc.day_kinds
 
 (* is this unit SPELLING a day kind's? The document-level form, for the
    refusal sites that run before the translation context exists. *)
@@ -2592,7 +2591,7 @@ let duration_form ~doc ~kind (typ : datatype option) (ta : datatype option)
       | None ->
           if not (day_kind_of_unit_doc doc u) then
             fault "%s"
-              (Ir_v0.Checks.duration_unknown_unit kind (Option.value u.abbr_text ~default:"?")))
+              (Ir_v0.Checks.duration_unknown_unit kind (Ir_v0.Units.numerator_text u)))
   | Some _ -> fault "%s" (Ir_v0.Checks.duration_without_time_unit kind)
 
 (* The unit of a date ± duration step (WF-035), for the forms whose sentence
@@ -2609,7 +2608,7 @@ let date_step_unit ~datetime (t : datatype option) =
       | Some _ -> ()
       | None ->
           fault "%s"
-            (Ir_v0.Checks.date_duration_unknown_unit (Option.value u.abbr_text ~default:"?")))
+            (Ir_v0.Checks.date_duration_unknown_unit (Ir_v0.Units.numerator_text u)))
   | Some d when not (Ir_v0.Checks.is_number_like d) ->
       fault "%s" (Ir_v0.Checks.date_duration_operand_refusal d)
   | _ -> fault "%s" Ir_v0.Checks.date_duration_without_time_unit
@@ -2856,7 +2855,7 @@ let unit_free_ok ctx e =
    name. None for any other pair. *)
 let reciprocal_factor ctx (l : expr) (r : expr) : (bool * int) option =
   let whole (plain : measure_unit) (rate : measure_unit) =
-    let k = Uchar_ref.Arith.conv_factor plain (Option.get rate.denominator) in
+    let k = Uchar_ref.Arith.conv_factor plain (Option.get (Ir_v0.Units.denominator rate)) in
     if not (Z.equal (Q.den k) Z.one) then
       fault
         "a product of %s and %s is not translated: the factor %s from the quantity into the \
@@ -2950,8 +2949,11 @@ let rec provably_unitless ctx (e : expr) : bool =
    (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3). A hidden or unknown unit is never
    this; a rate (%/jr) or a factor≠1 spelling is not pure-% either. *)
 let is_pure_pct (u : measure_unit) : bool =
-  u.abbr_text = Some "%" && u.canonical_form = Some "%" && u.denominator = None
-  && match u.factor_to_canonical with Some { num; den } -> num = den | None -> false
+  match u with
+  | [ { abbr_text = Some "%"; canonical_form = Some "%"; factor_to_canonical = Some { num; den };
+        exponent = None; _ } ] ->
+      num = den
+  | _ -> false
 
 (* PROVABLY pure-%: the effective unit is decidably the singleton %-unit.
    Mirrors provably_unitless's resolved leaf and unit-preserving forms but

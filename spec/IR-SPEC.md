@@ -734,7 +734,7 @@ A closed sum. v1 variants:
 
 | Variant | Fields | Notes |
 |---|---|---|
-| `Number` | `whole: boolean`, `decimals: int`, `sign`, `unit: Unit?`, `presentation: "percentage"?` | see precision forms below; a percentage is a `Number` whose unit is `%`, and `presentation` is its tag, at a declaration only (the deltas below, WF-007) |
+| `Number` | `whole: boolean`, `decimals: int`, `sign`, `unit: [Unit]?`, `presentation: "percentage"?` | see precision forms below; a percentage is a `Number` whose unit is `%`, and `presentation` is its tag, at a declaration only (the deltas below, WF-007) |
 | `Text` | — | equality only; not orderable |
 | `Boolean` | — | equality only |
 | `Date` | `precision: day \| millisecond` | orderable; `precision` is deliberately not called granularity — that term is reserved for the five-value timeline set |
@@ -1302,24 +1302,26 @@ A **UnitSystem** declares units with their spellings and conversions:
 | `name` | string | declared name |
 | `units` | list of Unit | declaration order |
 
-A **Unit**:
+A **Unit** is a declared unit, or one factor of a unit where it occurs. The `unit`
+of a `Number` is a non-empty list of them, its factors (point 5 below); absent is
+a number without a unit.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `abbreviation` | string | primary spelling (`jr`, `km`, `€`, `%`) |
 | `system` | string? | declaring system; absent for the built-in `%` and the bare calendar units |
-| `canonical` | string? | the system unit this reduces to, by its `abbreviation`; absent for opaque products and bare units |
+| `canonical` | string? | the system unit this reduces to, by its `abbreviation`; absent for bare units and the factors of an opaque product |
 | `factorToCanonical` | `{num, den}`? | how many canonical units equal one of this unit: an exact rational, two integers of at least 1 and at most 2^62 − 1 in lowest terms (WF-092) |
-| `denominator` | Unit? | present for rate units (`€/jr`, `%/jaar`) and for a reciprocal (`1/dg`) |
+| `exponent` | integer? | on a factor where a unit occurs: the whole exponent of the factor, never 0, absent where it is 1 (WF-124). `€/jr` is `€` and `jr` with exponent −1 |
 | `spellings` | list of string? | the further spellings that resolve to this unit (word and plural aliases): on its declaration in `units` only, at least one when present; the migration and the emitters write none equal to the `abbreviation` |
 
 v0 name: `Eenheid`/`Eenheidstelsel`. **Landed L3 (2026-09-24).** No field is
 ever `null`: absent is the one spelling of a field not given. The unit system
 is the list `units`, one `Unit` per abbreviation — a second declaration of an
 abbreviation in one system is ill-formed (WF-009) — and a unit carries its
-further spellings on its own declaration; an occurrence of the unit — on a
-`Number`, as a `denominator` — is the same node without `spellings`, and every
-reader refuses the field there. *(History until L3.)* The v0 unit system was a
+further spellings on its own declaration; a factor of a unit that occurs on a
+`Number` is the same node without `spellings`, and every reader refuses the field
+there. *(History until L3.)* The v0 unit system was a
 map from a key to a unit beside a second map from an alias to a unit, so one
 unit could be written several times over. The migration wrote the map as the
 list in map order, made every alias a spelling of the unit with the same
@@ -1338,12 +1340,13 @@ with the first reader: a frontend or executor that resolves a unit by its
 spelling needs spellings unique within their system and disjoint from its
 abbreviations, compared under the ch. 2.1 identity.
 
-**The wire form of a unit.** A unit writes the four scalar fields
-`abbreviation`, `system`, `canonical` and `factorToCanonical`, plus a nested
-`denominator` (until L3 the v0 spelling `afkorting`, `stelsel`, `canoniek`,
-`factorNaarCanoniek` and `noemer`); the three NAMES, the factor — its `num` and
-its `den` — **and the `denominator` recursively** are exactly what WF-091
-(ch. 4.1) compares BYTE for byte when it crosses one unit against another,
+**The wire form of a unit.** A unit is a list of factors, and a factor writes the
+four scalar fields `abbreviation`, `system`, `canonical` and `factorToCanonical`,
+plus its `exponent` where that is not 1 (until L3 the v0 spelling `afkorting`,
+`stelsel`, `canoniek` and `factorNaarCanoniek`; until L6 a nested `denominator`
+beside them, v0 `noemer`, and a numerator `"1"`). The three NAMES, the factor —
+its `num` and its `den` — **and the exponent of every factor, in the order of the
+list,** are exactly what WF-091 (ch. 4.1) compares BYTE for byte when it crosses one unit against another,
 which makes their spelling load-bearing rather than decorative. That rule
 compares two units and can say nothing about ONE: it passes the moment both
 sides carry the same spelling, however meaningless. The form law that holds of
@@ -1386,8 +1389,8 @@ therefore correct, and is the only reading that keeps that arithmetic exact.
    canonical unit of its system, with a positive rational factor; a
    self-canonical unit has factor 1. Two units are **convertible** iff both
    are plain or both are rates, their numerators reduce to the same
-   canonical, and (for rates) their denominators are recursively
-   convertible. Sharing a system is not sufficient: two independent base
+   canonical, and (for rates) their denominators reduce to the same
+   canonical. Sharing a system is not sufficient: two independent base
    units in one system are not convertible.
 2. *Restatement.* Restating a quantity from unit *u* to convertible unit
    *v* multiplies by `factor(u)/factor(v)` — carried as an exact rational
@@ -1424,23 +1427,22 @@ therefore correct, and is the only reading that keeps that arithmetic exact.
    associative). Product units are deliberately opaque — no canonical, no
    factor, no cancellation — so any comparison or assignment against a
    concrete unit is a unit mismatch rather than a silent pass.
-5. *The normal form.* A unit is a product of factors with a whole exponent,
-   and the wire writes it in one form: the factors with a positive exponent as
-   the numerator (`abbreviation`, a product of point 4 from two factors on, so
-   `m × m` is `m·m`), the one factor with exponent −1 as the `denominator`. So
-   `€/dg` and `€ · dg⁻¹` are one unit. No factor at all is no unit: a number
-   without a unit carries no `unit`. A numerator without a factor is the
-   **reciprocal** `1/E`, E⁻¹: `abbreviation` `"1"`, with no `system`, no
-   `canonical` and no `factorToCanonical`, and `denominator` E (WF-123). It
-   needs no new field, and a document without one reads as before. A reciprocal
-   converts as point 3 says, its numerator being the same on both sides and of
-   factor 1: `1/dg` is convertible to `1/wk`, and not to `dg` or to `€/dg`.
-   The inverse of `1/E` is E and the inverse of the rate `a/b` is `b/a`. What
-   the form cannot write — a second factor with a negative exponent (`€/u/s`,
-   `dg⁻²`) — has no wire type: a producer refuses it by name. A declared
-   product (`m²`, written `m·m`) has a wire form, but a producer refuses that
-   spelling by name as well: a value in a derived product does not reach it
-   (RUNTIME-SEMANTICS ch. 2.6), so no golden can carry it.
+5. *The factor list.* A unit is a product of factors with a whole exponent, and
+   the wire writes it as one list. `€` is `[{€}]`, `€/jr` is
+   `[{€}, {jr, exponent: -1}]`, `1/dg` is `[{dg, exponent: -1}]`, `m^2` is
+   `[{m, exponent: 2}]`, `€/u/s` is `[{€}, {s, exponent: -1}, {u, exponent: -1}]`
+   and `%` is `[{%}]`. So `€/dg` and `€ · dg⁻¹` are one unit, and the factors with
+   a positive exponent are its numerator, a product of point 4 from two atoms on
+   (`m × m` is `m` with exponent 2). No factor at all is no unit: a number without
+   a unit carries no `unit`. A numerator without a factor makes the **reciprocal**
+   `1/E`, E⁻¹. A reciprocal converts as point 3 says, its numerator being the same
+   on both sides and of factor 1: `1/dg` is convertible to `1/wk`, and not to `dg`
+   or to `€/dg`. The inverse of `1/E` is E and the inverse of the rate `a/b` is
+   `b/a`. A unit in a message is spelled from the list: the positive factors in
+   list order joined by `·`, `1` if there is none, then `/` and each negative
+   factor, with `^n` where the size of the exponent is not 1 (`€/jr`, `1/dg`,
+   `m^2`, `€/s/u`, `m·€/jr`). A producer that cannot read a spelling refuses it by
+   name (RUNTIME-SEMANTICS ch. 2.6).
 
 Worked examples (expected values exact):
 
@@ -1494,8 +1496,7 @@ Worked examples (expected values exact):
   reference; specified with that layer — **OPEN**).
 - **WF-092** A unit MUST spell its conversion pair whole: `canonical` and
   `factorToCanonical` (v0 `canoniek`, `factorNaarCanoniek`) are present
-  together or absent together, on the numerator and, recursively, on the
-  `denominator` of a rate. The bare form (both absent) is admissible and
+  together or absent together, on every factor of a unit. The bare form (both absent) is admissible and
   unchanged; either HALF is ill-formed — (a) a canonical target with no
   factor states a conversion it cannot perform, and (b) a factor with no
   canonical target names no conversion at all. (c) Since L3 (2026-09-24,
@@ -1505,8 +1506,8 @@ Worked examples (expected values exact):
   difference between two units that convert identically; a schema cannot
   state a greatest common divisor, so the verifier does. That both integers
   are at least 1 and at most 2^62 − 1 is the wire form (WF-009). Witnesses: (a)
-  `wf092-canonical-without-factor` and `wf092-denominator-without-factor` (the
-  recursion), (b) `wf092-factor-without-canonical`, (c)
+  `wf092-canonical-without-factor` and `wf092-denominator-without-factor` (a
+  factor with a negative exponent), (b) `wf092-factor-without-canonical`, (c)
   `wf092-factor-not-in-lowest-terms`. This is a SHAPE law on every unit in
   the document, not a cross between two of them, so it holds at every
   position a unit can occupy — the declared systems, the model-layer
@@ -1537,20 +1538,27 @@ Worked examples (expected values exact):
   mirror half still computes silently in that model, through the ungated
   predicate callers that read convertibility off the canonical name alone.
   **Delta (promotion).**
-- **WF-123** The abbreviation `"1"` MUST stand only as the numerator of a
-  reciprocal (point 5 above): (a) with a `denominator`, because a number without
-  a unit carries no `unit` and a second spelling of it would make `E⁻¹ × E` two
-  different answers; (b) without `system`, `canonical` or `factorToCanonical`,
-  because it is no unit and converts into nothing; (c) over a plain denominator,
-  because the inverse of a rate `a/b` is written `b/a` and one unit has one
-  form, and the inverse of a product needs two factors with a negative
-  exponent; (d) on an occurrence only: a unit system MUST NOT declare it, or a
-  declared unit would read as the numerator of a reciprocal. A shape law on one
-  unit, so it holds at every position WF-092 reaches. Witnesses:
-  `wf123-one-without-denominator`, `wf123-one-with-conversion`,
-  `wf123-reciprocal-of-rate`, `wf123-reciprocal-of-product`,
-  `wf123-declared-one`; passing:
-  `jutterswet-vondsttempo`. **Delta (tracked, `CONSTRUCTS.md` row 26).**
+- **WF-123** *Retired at L6 (history).* The abbreviation `"1"` stood only as the
+  numerator of a reciprocal, under four arms. The factor list has no numerator
+  `"1"`: a reciprocal is a list without a positive factor, a rate of a rate and the
+  inverse of a product are lists like any other, and a declaration carries no
+  denominator. The witnesses left with the rule (`corpus/negative/README.md`).
+- **WF-124** One unit MUST have one list (point 5 above): (a) the list holds at
+  least one factor, because a number without a unit carries no `unit`; (b) an
+  `exponent` is never 0, which names no factor, and never 1, whose one spelling is
+  the absent field; (c) no two factors share their `abbreviation` and their
+  `system`, because one atom is one factor with its exponents added; (d) the
+  factors stand in the canonical order: first those with a positive exponent, then
+  those with a negative one, within a sign by `abbreviation` in ascending Unicode
+  code point order, at an equal abbreviation by `system` with an absent system
+  first; (e) a declaration in `units` carries no `exponent`: it declares one unit,
+  and an exponent belongs to a factor where a unit occurs. WF-091 compares lists
+  element by element, so this rule is what makes `m·s` and `s·m` one unit. A shape
+  law on one unit, so it holds at every position WF-092 reaches. Witnesses:
+  `wf124-empty-unit`, `wf124-exponent-zero`, `wf124-exponent-one-written`,
+  `wf124-duplicate-factor`, `wf124-factors-unsorted`, `wf124-declared-exponent`;
+  passing: every golden with a unit, among them `jutterswet-vondsttempo`.
+  **Delta (tracked, `CONSTRUCTS.md` row 26).**
 
 ### 2.6 FactType and Role
 
@@ -3418,9 +3426,9 @@ still is.
   ran it; the facet was removed with the reference arm (see above).
 
 **Unit identity is structural, never convertible.** Two units are the
-same unit iff their abbreviation, declaring system, canonical unit,
-conversion factor and — recursively — the denominator of a composite rate
-all agree. Since L3 (2026-09-24, B17 (i)) the factor is the exact rational
+same unit iff their lists have the same length and, factor by factor in list
+order, the abbreviation, declaring system, canonical unit, conversion factor
+and exponent all agree. Since L3 (2026-09-24, B17 (i)) the factor is the exact rational
 `{num, den}` and is compared on both integers; WF-092 (c) holds it in lowest
 terms, so one value has one spelling and this comparison cannot tell two
 spellings of one factor apart from two factors. The three NAMES are compared
@@ -10023,7 +10031,8 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-120 | a redundant designation — in a vocabulary that is not the default, spelling its declaration's canonical name byte for byte — is admitted with a warning: some diagnostic's `message` contains it verbatim (ch. 2.12), the accounting of WF-113 (b) and its weakness | gate 3 | `jutterswet-vocabulaires` (the `handboek` designation `naam` of the attribute `naam`, and the frontend's warning that quotes it) | `wf120-redundant-designation-without-warning` |
 | WF-121 | every origin (ch. 2.13): **(a)** its `form` is one of the five forms and its `from.kind` one of the ten kinds, byte for byte (an executor refuses either outside its set at load, in this sentence without its number); **(b)** its `from` carries `owner` exactly for an attribute, a characteristic, a role or an enumeration value, and, unless its kind is `decisionTable`, names a declaration of that kind in the document (ci): an attribute or a characteristic declared by the object type `owner` itself, a role of the fact type `owner`, a value of the enumeration domain `owner`, a named form in WF-020's namespace, an object type, fact type, parameter or rule group of that name; **(c)** its `from` does not name its own declaration, and following `from` through the declarations that carry an origin never comes back; **(d)** the kind of its `from` is the one its form names: `attribute` under `inputAboveComputation` and `stepsAfterSet`, `namedForm` under `exceptionForSubtype` and `startPoint`, `decisionTable` under `decisionTableRow`. Which declarations a form makes is the dialect's and is not checked | gate 3 | `jutterswet-opgave-vormen` (`inputAboveComputation` on three attributes, and two rows of a decision table, `decisionTableRow` from a `decisionTable`), `jutterswet-meldtermijn-strandjutter` (`exceptionForSubtype` from a `namedForm`), `jutterswet-zwaarste-weging` (`stepsAfterSet`, three members and their rules); `inputAboveComputation` also in `jutterswet-opgave-bedrag`, `-opgave-boven-berekening`, `-opgave-datum`, `-opgave-subtype` and `jutterswet-sluitdag-gemeld`, `decisionTableRow` in `jutterswet-rubriektabel-rgs`. No golden carries `startPoint`: no golden source writes a start-point determination; the frontend suite carries it (`OriginOnTheWireTest`) | `wf121-origin-form-unknown` (a) + `wf121-origin-source-unknown` (b) + `wf121-origin-itself` (c, its own declaration) + `wf121-origin-cycle` (c, a cycle of two) + `wf121-origin-kind-fits-negated` (d) |
 | WF-122 | the FORM ANCHOR (ch. 4.1a, ch. 4.6; card `subselection-reads-subject`, 2026-10-23): **(a)** `anchor: "form"` on an `AttributeReference`, a `CharacteristicCheck`, an `Aggregation` or a `QuantifierFold` stands only inside the `filter` of an instance fold with a range or the `filter` or the `test` of a quantifier fold, at any depth, of a form with a subject — not in the form's own condition or value, a gedurende clip, a closed body, a day-kind definition, the filter of a union selection or a rule's target (`WF-122.anchor-outside-context`, `node`, `position`) — and never on the source of an instance fold (`WF-122.fold-source-anchored`, `function`); **(b)** an anchored `CharacteristicCheck` carries no `host` (`WF-122.anchored-check-host`, `characteristic`, `host`); **(c)** an `IdentityCheck` stands only where (a) admits an anchor (`WF-122.identity-outside-context`, `position`). WF-053, WF-047, WF-102, WF-108 (c), WF-083 (c), WF-100 and WF-109 judge an anchored node against the form subject, under their own numbers | gate 3 | `jutterswet-registervoorrang` (the anchor and the identity check in a value fold and in a quantifier fold over a hub whose member has the form subject's type); `anchor-forms` (the anchored characteristic check, navigated read with a `path` and quantifier fold, the identity check without negation and between types that share no instance), `anchor-depth-two`, `anchor-once-per-member` and `anchor-hub-own-hops` | `wf122-anchor-in-form-condition`, `wf122-anchor-in-closed-body` (beside WF-067), `wf122-anchor-in-gedurende-clip`, `wf122-anchor-in-union-selection`, `wf122-anchor-in-day-kind-definition` (beside WF-031), `wf122-anchor-on-rule-target` (a, `anchor-outside-context`), `wf122-anchor-on-fold-source` (a, `fold-source-anchored`), `wf122-anchored-check-with-host` (b), `wf122-identity-check-outside-filter` (c) |
-| WF-123 | the numerator `"1"` of a reciprocal (ch. 2.5, point 5): (a) only with a `denominator`, (b) without `system`, `canonical` or `factorToCanonical`, (c) over a plain denominator, (d) never declared in a unit system. Check: gate 3, in the walk of WF-092. Golden: `jutterswet-vondsttempo`. Negative: `wf123-one-without-denominator` (a), `wf123-one-with-conversion` (b), `wf123-reciprocal-of-rate` (c), `wf123-reciprocal-of-product` (c), `wf123-declared-one` (d). |
+| WF-123 | *Retired at L6 (history):* the numerator `"1"` of a reciprocal. The factor list has no such numerator, so the rule lost its object and its five witnesses left the corpus with a reason (`corpus/negative/README.md`). |
+| WF-124 | one unit, one list (ch. 2.5, point 5): (a) at least one factor, (b) an `exponent` is never 0 and never 1, (c) one factor per `abbreviation` and `system`, (d) the factors in the canonical order, (e) a declaration carries no `exponent`. Check: gate 3, in the walk of WF-092. Golden: `jutterswet-vondsttempo`. Negative: `wf124-empty-unit` (a), `wf124-exponent-zero` (b), `wf124-exponent-one-written` (b), `wf124-duplicate-factor` (c), `wf124-factors-unsorted` (d), `wf124-declared-exponent` (e). |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

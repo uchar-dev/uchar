@@ -24,10 +24,12 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "dagen"
-              }
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dagen"
+                }
+              ]
             }
           },
           {
@@ -129,10 +131,12 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "wk"
-                  }
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "wk"
+                    }
+                  ]
                 },
                 "source": {
                   "snippet": "2 weken"
@@ -188,10 +192,12 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "maand"
-                  }
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "maand"
+                    }
+                  ]
                 },
                 "source": {
                   "snippet": "1 maand"
@@ -247,10 +253,12 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "week"
-                  }
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "week"
+                    }
+                  ]
                 },
                 "source": {
                   "snippet": "1 week"
@@ -354,10 +362,12 @@
                   "whole": false,
                   "decimals": 1,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "mnd"
-                  }
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "mnd"
+                    }
+                  ]
                 },
                 "source": {
                   "snippet": "1,9 maanden"
@@ -413,10 +423,12 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "kw"
-                  }
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "kw"
+                    }
+                  ]
                 },
                 "source": {
                   "snippet": "1 kwartaal"

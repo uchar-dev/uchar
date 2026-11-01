@@ -162,7 +162,7 @@ class TemporalSetFoldRangeWitnessTest {
         e.putObject("factorToCanonical").put("num", 1).put("den", 1);
         ObjectNode n = JSON.createObjectNode().put("node", "Number").put("whole", true)
                 .put("decimals", 0).put("sign", "unspecified");
-        n.set("unit", e);
+        n.set("unit", JSON.createArrayNode().add(e));
         return n;
     }
 

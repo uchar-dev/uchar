@@ -224,8 +224,8 @@ class IrEmitterTest {
         // the emitter JSON-escapes non-ASCII, so the compacted € is the six-char escape \\u20ac
         assertTrue(c.contains(
                 "{\"node\":\"Literal\",\"value\":{\"number\":\"5\"},\"type\":{\"node\":\"Number\",\"whole\":true,"
-                + "\"decimals\":0,\"sign\":\"unspecified\",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"EUR\","
-                + "\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":{\"num\":1,\"den\":1}}},"
+                + "\"decimals\":0,\"sign\":\"unspecified\",\"unit\":[{\"node\":\"Unit\",\"abbreviation\":\"EUR\","
+                + "\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":{\"num\":1,\"den\":1}}]},"
                 + "\"source\":{\"snippet\":\"5\\u20ac\"}}"),
                 () -> "de unit-literal moet een kaal lexeme dragen met de eenheid in het type:\n" + c);
         assertFalse(c.contains("\"number\":\"5\\u20ac\""),
@@ -259,7 +259,7 @@ class IrEmitterTest {
                 + "\"spellings\":[\"baal\"]}]}"),
                 () -> "het stelsel draagt de gedeclareerde breuken en de spellingen op de declaratie:\n" + c);
         assertTrue(c.contains("\"datatype\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\","
-                + "\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"kr\"," + system + "{\"num\":1,\"den\":1440}}}"),
+                + "\"unit\":[{\"node\":\"Unit\",\"abbreviation\":\"kr\"," + system + "{\"num\":1,\"den\":1440}}]}"),
                 () -> "het voorkomen draagt dezelfde breuk en geen spellingen:\n" + c);
         assertEquals(4, c.split("\"spellings\"", -1).length - 1, () -> "spellingen alleen in het stelsel:\n" + c);
     }
@@ -346,12 +346,12 @@ class IrEmitterTest {
             """;
         String c = emitCompact(src);
         assertTrue(c.contains("{\"node\":\"Literal\",\"value\":{\"number\":\"21\"},\"type\":{\"node\":\"Number\",\"whole\":true,"
-                + "\"decimals\":0,\"sign\":\"unspecified\",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"%\","
-                + "\"canonical\":\"%\",\"factorToCanonical\":{\"num\":1,\"den\":1}}},\"source\":{\"snippet\":\"21%\"}}"),
+                + "\"decimals\":0,\"sign\":\"unspecified\",\"unit\":[{\"node\":\"Unit\",\"abbreviation\":\"%\","
+                + "\"canonical\":\"%\",\"factorToCanonical\":{\"num\":1,\"den\":1}}]},\"source\":{\"snippet\":\"21%\"}}"),
                 () -> "de percentage-literal moet een kaal lexeme dragen, als getal met de eenheid %, zonder tag:\n" + c);
         assertTrue(c.contains("{\"node\":\"Attribute\",\"name\":\"heffingspercentage\",\"datatype\":{\"node\":"
-                + "\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":{\"node\":\"Unit\","
-                + "\"abbreviation\":\"%\",\"canonical\":\"%\",\"factorToCanonical\":{\"num\":1,\"den\":1}},"
+                + "\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":[{\"node\":\"Unit\","
+                + "\"abbreviation\":\"%\",\"canonical\":\"%\",\"factorToCanonical\":{\"num\":1,\"den\":1}}],"
                 + "\"presentation\":\"percentage\"}}"),
                 () -> "de declaratie draagt de presentatietag:\n" + c);
         // the rule version's own presentation is the dialect tag equation, a field of another node

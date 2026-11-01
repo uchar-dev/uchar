@@ -76,8 +76,8 @@ class ValueTermWitnessTest {
                 "sleeplengte van een sleepbaan 0 Restate source '2,5 km plus de aanloop van de Sleepbaan'",
                 "sleeplengte van een sleepbaan 0.0 Call source '2,5 km plus de aanloop van de Sleepbaan'",
                 "sleeplengte van een sleepbaan 0.0.0 Const BigDecimal type Numeric[wholeNumber=false, decimals=1, "
-                        + "sign=ONBEPAALD, unit=Unit[abbreviation=km, system=Afstand, canonical=m, "
-                        + "factorToCanonical=1000, denominator=null]] source '2,5 km'",
+                        + "sign=ONBEPAALD, unit=Unit[factors=[Factor[abbreviation=km, system=Afstand, canonical=m, "
+                        + "factorToCanonical=1000, exponent=1]]]] source '2,5 km'",
                 "sleeplengte van een sleepbaan 0.0.1 Restate source 'de aanloop van de Sleepbaan'",
                 "sleeplengte van een sleepbaan 0.0.1.0 SlotValue source 'de aanloop van de Sleepbaan'"), fields(plans));
     }

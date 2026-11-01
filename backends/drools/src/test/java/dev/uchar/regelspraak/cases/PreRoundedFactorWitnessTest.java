@@ -132,7 +132,7 @@ class PreRoundedFactorWitnessTest {
     }
 
     private static String number(boolean whole, int decimals, String unit) {
-        return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"unspecified\",\"unit\":%s}"
+        return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"unspecified\",\"unit\":[%s]}"
                 .formatted(whole, decimals, unit);
     }
 

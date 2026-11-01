@@ -237,20 +237,27 @@ let rational path j : rational =
    [extra] is the one further field a declaration in a unit system admits,
    its spellings: an occurrence admits none, so a spelling written there is
    an unknown field, refused by name rather than read and dropped. *)
-let rec unit_fields ~extra path kvs : measure_unit =
+let unit_fields ~extra path kvs : unit_factor =
   expect_node path kvs "Unit";
   check_keys path kvs
-    ~ext:([ "system"; "canonical"; "factorToCanonical"; "denominator" ] @ extra)
+    ~ext:([ "system"; "canonical"; "factorToCanonical"; "exponent" ] @ extra)
     [ "node"; "abbreviation" ];
   {
     abbr_text = Some (str (path / "abbreviation") (field path kvs "abbreviation"));
     system = ext_field path kvs "system" str;
     canonical_form = ext_field path kvs "canonical" str;
     factor_to_canonical = ext_field path kvs "factorToCanonical" rational;
-    denominator = ext_field path kvs "denominator" measure_unit;
+    exponent = ext_field path kvs "exponent" int_;
   }
 
-and measure_unit path j : measure_unit = unit_fields ~extra:[] path (obj path j)
+(* A unit where it occurs. An empty list and a written exponent 1 load: they are
+   WF-124's, which names them where a load error could only refuse the document. *)
+let measure_unit path j : measure_unit =
+  List.mapi
+    (fun i x ->
+      let p = path / string_of_int i in
+      unit_fields ~extra:[] p (obj p x))
+    (list_ path j)
 
 (* A unit as its unit system declares it, with its further spellings. The
    list is written whole or not at all: absent is no spelling, and an empty
@@ -282,7 +289,7 @@ let rec datatype path j : datatype =
       and unit_ = ext_field path kvs "unit" measure_unit
       and tag = ext_field path kvs "presentation" presentation in
       (match unit_ with
-       | Some ({ abbr_text = Some "%"; _ } as u) ->
+       | Some u when Units.is_percentage u ->
            if sign <> Unspecified then
              fail (path / "sign")
                "a percentage carries no sign restriction: a number whose unit is '%' has the \

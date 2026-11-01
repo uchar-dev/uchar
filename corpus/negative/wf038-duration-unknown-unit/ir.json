@@ -32,10 +32,12 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "vadem"
-              }
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "vadem"
+                }
+              ]
             }
           },
           {
@@ -46,10 +48,12 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "kw"
-              }
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kw"
+                }
+              ]
             }
           },
           {
@@ -60,10 +64,12 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "mnd"
-              }
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "mnd"
+                }
+              ]
             }
           }
         ],
@@ -122,10 +128,12 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "vadem"
-                }
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "vadem"
+                  }
+                ]
               },
               "source": {
                 "snippet": "de tijdsduur van zijn geboortedatum tot zijn peildatum in hele jaren"
@@ -178,10 +186,12 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "kw"
-                }
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kw"
+                  }
+                ]
               },
               "source": {
                 "snippet": "de tijdsduur van zijn geboortedatum tot zijn peildatum in hele kwartalen"
@@ -234,10 +244,12 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "mnd"
-                }
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "mnd"
+                  }
+                ]
               },
               "source": {
                 "snippet": "de absolute tijdsduur van zijn geboortedatum tot zijn peildatum in hele maanden"

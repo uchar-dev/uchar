@@ -16,16 +16,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "m",
-                "system": "Lengte",
-                "canonical": "m",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "m",
+                  "system": "Lengte",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -36,16 +38,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "m",
-                "system": "Lengte",
-                "canonical": "m",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "m",
+                  "system": "Lengte",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -56,11 +60,14 @@
               "whole": true,
               "decimals": 0,
               "sign": "unspecified",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "m·m",
-                "system": "Lengte",
-                "denominator": {
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "m",
+                  "system": "Lengte",
+                  "exponent": 2
+                },
+                {
                   "node": "Unit",
                   "abbreviation": "s",
                   "system": "Tijd",
@@ -68,9 +75,10 @@
                   "factorToCanonical": {
                     "num": 1,
                     "den": 1
-                  }
+                  },
+                  "exponent": -1
                 }
-              }
+              ]
             }
           }
         ],
@@ -178,11 +186,14 @@
                 "whole": false,
                 "decimals": 0,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "m·m",
-                  "system": "Lengte",
-                  "denominator": {
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "m",
+                    "system": "Lengte",
+                    "exponent": 2
+                  },
+                  {
                     "node": "Unit",
                     "abbreviation": "s",
                     "system": "Tijd",
@@ -190,9 +201,10 @@
                     "factorToCanonical": {
                       "num": 1,
                       "den": 1
-                    }
+                    },
+                    "exponent": -1
                   }
-                }
+                ]
               },
               "source": {
                 "snippet": "zijn lengte maal zijn breedte"
@@ -266,11 +278,14 @@
                   "whole": false,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "m·m",
-                    "system": "Lengte",
-                    "denominator": {
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "m",
+                      "system": "Lengte",
+                      "exponent": 2
+                    },
+                    {
                       "node": "Unit",
                       "abbreviation": "s",
                       "system": "Tijd",
@@ -278,9 +293,10 @@
                       "factorToCanonical": {
                         "num": 1,
                         "den": 1
-                      }
+                      },
+                      "exponent": -1
                     }
-                  }
+                  ]
                 },
                 "source": {
                   "snippet": "zijn lengte maal zijn breedte"

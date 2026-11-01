@@ -266,7 +266,7 @@ class LetCarrierWalkWitnessTest {
 
     private static String num(int dec, boolean whole, String sign, String unit) {
         return "{\"node\":\"Number\",\"whole\":%b,\"decimals\":%d,\"sign\":\"%s\"%s}"
-                .formatted(whole, dec, sign, unit == null ? "" : ",\"unit\":" + unit);
+                .formatted(whole, dec, sign, unit == null ? "" : ",\"unit\":[" + unit + "]");
     }
     private static String num(int dec) { return num(dec, false, "unspecified", null); }
     private static String pos(int dec) { return num(dec, false, "nonNegative", null); }

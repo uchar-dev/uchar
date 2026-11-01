@@ -16,16 +16,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "m",
-                "system": "Afstand",
-                "canonical": "m",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "m",
+                  "system": "Afstand",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           },
           {
@@ -36,16 +38,18 @@
               "whole": true,
               "decimals": 0,
               "sign": "nonNegative",
-              "unit": {
-                "node": "Unit",
-                "abbreviation": "m",
-                "system": "Afstand",
-                "canonical": "m",
-                "factorToCanonical": {
-                  "num": 1,
-                  "den": 1
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "m",
+                  "system": "Afstand",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
                 }
-              }
+              ]
             }
           }
         ],
@@ -114,12 +118,14 @@
                   "whole": false,
                   "decimals": 1,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "km",
-                    "system": "Afstand",
-                    "canonical": "m"
-                  }
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "km",
+                      "system": "Afstand",
+                      "canonical": "m"
+                    }
+                  ]
                 },
                 "source": {
                   "snippet": "2,5 km"
@@ -138,12 +144,14 @@
                 "whole": false,
                 "decimals": 1,
                 "sign": "unspecified",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "km",
-                  "system": "Afstand",
-                  "canonical": "m"
-                }
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "km",
+                    "system": "Afstand",
+                    "canonical": "m"
+                  }
+                ]
               },
               "source": {
                 "snippet": "2,5 km plus de aanloop van de Sleepbaan"

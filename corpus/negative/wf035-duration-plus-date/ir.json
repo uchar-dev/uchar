@@ -67,10 +67,12 @@
                   "whole": true,
                   "decimals": 0,
                   "sign": "unspecified",
-                  "unit": {
-                    "node": "Unit",
-                    "abbreviation": "wk"
-                  }
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "wk"
+                    }
+                  ]
                 },
                 "source": {
                   "snippet": "2 weken"

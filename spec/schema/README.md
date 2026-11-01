@@ -234,8 +234,12 @@ L3 moves the datatypes and the units to their v1 nodes and changes no meaning
   annotation (WF-007). The tag has no meaning for evaluation.
 - `Date` (`precision`: `day` | `millisecond`, B15). The precision is always
   written: the two share no order (WF-036).
-- `Unit` (`abbreviation`, `system`?, `canonical`?, `factorToCanonical`?,
-  `denominator`?). No field is ever null. The factor is the exact rational
+- `Number.unit` is a non-empty list of `Unit` factors; absent is a number
+  without a unit. `Unit` (`abbreviation`, `system`?, `canonical`?,
+  `factorToCanonical`?, `exponent`?). `exponent` is a whole number, never 0 and
+  never a written 1: absent is exponent 1. That one atom stands once and that
+  the factors stand in the canonical order is WF-124's, because a schema cannot
+  state either. No field is ever null. The factor is the exact rational
   `{"num": n, "den": d}`, two integers of at least 1, without a node
   discriminator (B17 (i)); that it is in lowest terms is WF-092's, because a
   schema cannot state a greatest common divisor. Both integers are also at

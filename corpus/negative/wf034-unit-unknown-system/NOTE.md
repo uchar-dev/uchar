@@ -1,7 +1,7 @@
 Violates WF-034 (`spec/IR-SPEC.md` ch. 4.6 (r)): a **unit** whose `system` —
 the unit system it belongs to — names a system *no declaration carries*.
 
-    WF-034 FAIL /model/objectTypes/0/attributes/0/datatype/unit/system: unit
+    WF-034 FAIL /model/objectTypes/0/attributes/0/datatype/unit/0/system: unit
     'm' declares unit system 'Afstandt', which no declaration carries: the unit
     resolves against no conversion table
 
@@ -64,7 +64,7 @@ denominator units of composite rates twice — once in their own right and once
 under the enclosing record — and 2369 + 73 = 2442, 2236 + 73 = 2309. The count
 above is the corrected total over the four zones as they stood then. A
 denominator is a unit record and is walked as one; anything that counts unit
-records must descend into `denominator` exactly once.)
+records must count every factor of a unit exactly once.)
 
 A hand-broken variant of `corpus/golden/jutterswet-sleepbaan/ir.json` — the
 system name misspelt at every use OUTSIDE the declaration, a six-line diff;

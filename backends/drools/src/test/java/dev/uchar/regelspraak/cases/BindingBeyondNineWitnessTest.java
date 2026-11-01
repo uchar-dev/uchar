@@ -130,7 +130,7 @@ class BindingBeyondNineWitnessTest {
     private static final String MND = "{\"node\":\"Unit\",\"abbreviation\":\"mnd\",\"system\":\"Tijd\",\"canonical\":\"mnd\","
             + "\"factorToCanonical\":{\"num\":1,\"den\":1}}";
     private static final String MAANDEN = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\","
-            + "\"unit\":" + MND + "}";
+            + "\"unit\":[" + MND + "]}";
     /** "1 mnd". */
     private static final String MAAND = "{\"node\":\"Literal\",\"value\":{\"number\":\"1\"},\"type\":" + MAANDEN + "}";
     private static final String VONDSTROL = "{\"node\":\"RoleBinding\",\"factType\":\"JutterHeeftVondst\",\"role\":\"vondst\"}";

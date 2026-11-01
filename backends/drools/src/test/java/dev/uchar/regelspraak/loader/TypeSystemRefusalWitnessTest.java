@@ -60,7 +60,7 @@ class TypeSystemRefusalWitnessTest {
 
     private static final String PARAMETER = "/model/parameters/0";
     private static final String GETAL = PARAMETER + "/datatype";
-    private static final String UNIT = "/model/parameters/1/datatype/unit";
+    private static final String UNIT = "/model/parameters/1/datatype/unit/0";
     private static final String FACTOR = UNIT + "/factorToCanonical";
     private static final String SYSTEM = "/model/unitSystems/0";
     private static final String RATE = "/model/objectTypes/0/attributes/0/datatype";
@@ -98,13 +98,32 @@ class TypeSystemRefusalWitnessTest {
         assertTrue(refuses(ir, SYSTEM + "/node").getMessage().contains("expected \"UnitSystem\", got \"Eenheidstelsel\""));
     }
 
+    /** IR-SPEC ch. 2.5: a unit is a list of factors. An exponent is read beside the fields of the factor, one Unit
+     *  outside a list is no unit, and a list with no factor and an exponent 0 name no unit at all. */
+    @Test void a_unit_is_a_list_of_factors() throws Exception {
+        String list = UNIT.substring(0, UNIT.lastIndexOf('/'));
+        String number = list.substring(0, list.lastIndexOf('/'));
+        ObjectNode ir = golden(PENNINGJAAR);
+        ((ObjectNode) ir.at(number)).set("unit", ir.at(UNIT).deepCopy());
+        assertTrue(refuses(ir, list).getMessage().contains("expected an array"));
+        ir = golden(PENNINGJAAR);
+        ((ObjectNode) ir.at(number)).putArray("unit");
+        assertTrue(refuses(ir, list).getMessage().contains("a unit without a factor"));
+        ir = golden(PENNINGJAAR);
+        ((ObjectNode) ir.at(UNIT)).put("exponent", 0);
+        assertTrue(refuses(ir, UNIT + "/exponent").getMessage().contains("a factor with exponent 0"));
+        ir = golden(PENNINGJAAR);
+        ((ObjectNode) ir.at(UNIT)).put("exponent", "2");
+        assertTrue(refuses(ir, UNIT + "/exponent").getMessage().contains("expected an integer"));
+    }
+
     @Test void the_fields_of_the_l2_form_are_unknown_fields() throws Exception {
         for (String field : List.of("geheel", "decimalen", "teken", "eenheid")) {
             ObjectNode ir = golden(PENNINGJAAR);
             ((ObjectNode) ir.at(GETAL)).put(field, "x");
             unknownField(ir, GETAL + "/" + field, "Number");
         }
-        for (String field : List.of("afkorting", "stelsel", "canoniek", "factorNaarCanoniek", "noemer")) {
+        for (String field : List.of("afkorting", "stelsel", "canoniek", "factorNaarCanoniek", "noemer", "denominator")) {
             ObjectNode ir = golden(PENNINGJAAR);
             ((ObjectNode) ir.at(UNIT)).put(field, "x");
             unknownField(ir, UNIT + "/" + field, "Unit");

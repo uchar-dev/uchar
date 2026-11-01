@@ -4,9 +4,11 @@ import dev.uchar.regelspraak.model.Unit;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,7 +45,7 @@ class UnitFactorTest {
     private static final Unit KG = new Unit("kg", "Gewicht");
     private static final Unit TON = new Unit("t", "Gewicht", "kg", new BigDecimal("1000"));
     /** The case-lie of the measured divergence: a copy repeating kg/Gewicht/kg in a different case. */
-    private static final Unit CASE = new Unit("KG", "GEWICHT", "KG", BigDecimal.ONE, null);
+    private static final Unit CASE = new Unit("KG", "GEWICHT", "KG", BigDecimal.ONE);
     private static final Unit JR = new Unit("jr", "Tijd", "mnd", new BigDecimal("12"));
     private static final Unit MND = new Unit("mnd", "Tijd", "mnd", BigDecimal.ONE);
     /** Same system as jr/mnd, a DIFFERENT canonical — the appel-vs-peer pair numeratorConvertible names. */
@@ -52,13 +54,13 @@ class UnitFactorTest {
     /** §4.4's opaque product: no canonical, so convertible only to an identical product. */
     private static final Unit M_TIMES_M = Unit.product(M, M);
     /** The bare corpus shape (WF-038 tijdsduurparameter): no system, no canonical, no factor. */
-    private static final Unit BARE_CORPUS_FORM = new Unit("jaar", null, null, null, null);
+    private static final Unit BARE_CORPUS_FORM = new Unit("jaar", null, null, null);
     private static final Unit EUR_PER_JR = Unit.compound(EUR, JR);
     private static final Unit EUR_PER_MND = Unit.compound(EUR, MND);
     private static final Unit EUR_PER_KG = Unit.compound(EUR, KG);
     /** The wire shape: a canonical WITHOUT the factor that reaches it. Both fields are nullable in
      *  the schema and no WF rule forbids the combination, so this survives verification. */
-    private static final Unit CANONICAL_WITHOUT_FACTOR = new Unit("x", "Lengte", "m", null, null);
+    private static final Unit CANONICAL_WITHOUT_FACTOR = new Unit("x", "Lengte", "m", null);
 
     /** Every refusal must name BOTH units: a fault that says only "not convertible" leaves the
      *  reader to guess which of the two declarations is the offending one. */
@@ -160,6 +162,44 @@ class UnitFactorTest {
         assertEquals(0, EUR_PER_MND.conversionFactorTo(EUR_PER_JR).compareTo(new BigDecimal("12")),
                 () -> "EUR/mnd -> EUR/jr moet 12 blijven, kreeg " + EUR_PER_MND.conversionFactorTo(EUR_PER_JR));
         assertTrue(EUR_PER_MND.requiredConversion(EUR_PER_JR), "EUR/mnd -> EUR/jr is een echte omrekening");
+    }
+
+    /** IR-SPEC ch. 2.5, point 5: the spelling of a unit comes from its factors. */
+    @Test void a_unit_is_spelled_from_its_factors() {
+        Unit.Factor m2 = new Unit.Factor("m", "Lengte", "m", BigDecimal.ONE, 2);
+        Unit.Factor s = new Unit.Factor("s", "Tijd", "s", BigDecimal.ONE, -1);
+        Unit.Factor u = new Unit.Factor("u", "Tijd", "s", new BigDecimal("3600"), -1);
+        Unit.Factor eur = new Unit.Factor("€", "Geld", "€", BigDecimal.ONE, 1);
+        assertEquals("m", M.rendering());
+        assertEquals("mnd", MND.rendering());
+        assertEquals("€/s", new Unit(List.of(eur, s)).rendering());
+        assertEquals("1/s", new Unit(List.of(s)).rendering());
+        assertEquals("m^2", new Unit(List.of(m2)).rendering());
+        assertEquals("m^2/s", new Unit(List.of(m2, s)).rendering());
+        assertEquals("€/s/u", new Unit(List.of(eur, s, u)).rendering());
+        assertEquals("1/m^2", new Unit(List.of(new Unit.Factor("m", "Lengte", "m", BigDecimal.ONE, -2))).rendering());
+    }
+
+    /** WF-124 (d): the canonical order is one of code points, which is not the order of {@code String.compareTo} on a
+     *  supplementary character: U+FB00 lies below U+1D11E, while its UTF-16 unit lies above the lead surrogate. */
+    @Test void the_factors_of_a_product_stand_in_code_point_order() {
+        String low = "\uFB00", high = "\uD834\uDD1E";
+        assertTrue(high.compareTo(low) < 0, "the two orders differ on this pair");
+        Unit product = Unit.product(new Unit(high, "X"), new Unit(low, "X"));
+        assertEquals(low, product.factors().get(0).abbreviation());
+        assertEquals(product, Unit.product(new Unit(low, "X"), new Unit(high, "X")));
+    }
+
+    /** An atom named twice in a product is one factor with its exponents added, and it stays a product. */
+    @Test void a_self_product_is_one_factor_with_exponent_two() {
+        Unit square = Unit.product(M, M);
+        assertEquals(1, square.factors().size());
+        assertEquals(2, square.factors().get(0).exponent());
+        assertEquals("m·m", square.abbreviation());
+        assertEquals("m^2", square.rendering());
+        assertTrue(square.isProduct());
+        assertNull(square.canonical());
+        assertFalse(square.convertibleTo(M));
     }
 
     // ---- wat ongemoeid blijft: het predikaat ----------------------------------------------------

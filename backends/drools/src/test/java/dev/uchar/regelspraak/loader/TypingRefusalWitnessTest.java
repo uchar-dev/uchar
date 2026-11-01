@@ -148,8 +148,8 @@ class TypingRefusalWitnessTest {
                 .endsWith(": duration without a recognised time unit on its node type"));
 
         ir = golden(JUTLEEFTIJD);
-        ((ObjectNode) ir.at(VALUE + "/type/unit")).put("abbreviation", "uur");
-        ((ObjectNode) ir.at("/model/objectTypes/0/attributes/2/datatype/unit")).put("abbreviation", "uur");
+        ((ObjectNode) ir.at(VALUE + "/type/unit/0")).put("abbreviation", "uur");
+        ((ObjectNode) ir.at("/model/objectTypes/0/attributes/2/datatype/unit/0")).put("abbreviation", "uur");
         assertTrue(refuses(ir, VALUE).getMessage().endsWith(": sub-day duration unit on day-precision operands"
                 + " (millisecond precision required)"));
     }
@@ -158,13 +158,13 @@ class TypingRefusalWitnessTest {
      *  kind. */
     @Test void an_unknown_count_unit_names_the_own_kind() throws Exception {
         ObjectNode ir = golden(JUTLEEFTIJD);
-        ((ObjectNode) ir.at(VALUE + "/type/unit")).put("abbreviation", "vadem");
-        ((ObjectNode) ir.at("/model/objectTypes/0/attributes/2/datatype/unit")).put("abbreviation", "vadem");
+        ((ObjectNode) ir.at(VALUE + "/type/unit/0")).put("abbreviation", "vadem");
+        ((ObjectNode) ir.at("/model/objectTypes/0/attributes/2/datatype/unit/0")).put("abbreviation", "vadem");
         assertTrue(refuses(ir, VALUE).getMessage().endsWith(": duration: the counted unit 'vadem' is neither a"
                 + " recognised time unit nor a declared day kind"));
         ir = golden(JUTLEEFTIJD);
-        ((ObjectNode) ir.at(ABS_VALUE + "/type/unit")).put("abbreviation", "vadem");
-        ((ObjectNode) ir.at("/model/objectTypes/0/attributes/4/datatype/unit")).put("abbreviation", "vadem");
+        ((ObjectNode) ir.at(ABS_VALUE + "/type/unit/0")).put("abbreviation", "vadem");
+        ((ObjectNode) ir.at("/model/objectTypes/0/attributes/4/datatype/unit/0")).put("abbreviation", "vadem");
         assertTrue(refuses(ir, ABS_VALUE).getMessage().endsWith(": absoluteDuration: the counted unit 'vadem' is"
                 + " neither a recognised time unit nor a declared day kind"));
     }
@@ -173,7 +173,7 @@ class TypingRefusalWitnessTest {
 
     private static String numberType(String unit) {
         return "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\""
-                + (unit == null ? "" : ",\"unit\":{\"node\":\"Unit\",\"abbreviation\":\"" + unit + "\"}") + "}";
+                + (unit == null ? "" : ",\"unit\":[{\"node\":\"Unit\",\"abbreviation\":\"" + unit + "\"}]") + "}";
     }
 
     private static String number(String lexeme, String unit) {

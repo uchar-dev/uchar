@@ -10,7 +10,7 @@ struct instead (the domain and the two attribute copies), the rules' struct
 literal and field accesses, which do not carry the unit, are reported under
 WF-072, WF-073 and WF-074 (measured).
 
-    WF-092 FAIL /model/domains/1/datatype/fields/0/datatype/unit: unit 'km'
+    WF-092 FAIL /model/domains/1/datatype/fields/0/datatype/unit/0: unit 'km'
     names canonical unit 'm' but carries no conversion factor into it: a
     half-filled conversion pair is not a unit (both fields, or neither)
 

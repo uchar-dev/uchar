@@ -93,14 +93,16 @@
                 "whole": true,
                 "decimals": 0,
                 "sign": "nonNegative",
-                "unit": {
-                  "node": "Unit",
-                  "abbreviation": "m",
-                  "factorToCanonical": {
-                    "num": 1,
-                    "den": 1
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "m",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
                   }
-                }
+                ]
               }
             },
             {

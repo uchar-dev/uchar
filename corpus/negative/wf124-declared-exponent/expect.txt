@@ -1,0 +1,3 @@
+WF-124.declared-exponent
+unit=maand
+unitSystem=Termijn

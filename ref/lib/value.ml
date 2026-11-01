@@ -14,7 +14,7 @@
 type unit_ =
   | Unitless
   | Unit of Ir_v0.Ast.measure_unit
-      (* a declared unit, possibly a rate (noemer set) *)
+      (* a unit, possibly a rate: its factors, some with a negative exponent *)
   | Product of Ir_v0.Ast.measure_unit * Ir_v0.Ast.measure_unit
       (* opaque product unit, ch. 2.6 *)
 

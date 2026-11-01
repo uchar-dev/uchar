@@ -11,8 +11,8 @@
      be null, mapped to [option]. The exceptions are the fields the wire
      writes whole or not at all (the role bindings, the source record of
      every node, `Unresolved.type`, the optional fields of the nodes L3 and
-     L4 rewrote — a number's unit, a unit's system, canonical unit, factor
-     and denominator, a parameter's timeline, a day kind's plural; a
+     L4 rewrote — a number's unit, a unit's system, canonical unit and
+     factor, a parameter's timeline, a day kind's plural; a
      version's condition, a rule version's presentation, an allocation's
      optional attribute fields and rounding, an aggregation's and a
      builtin's optional fields — and the fields L5 made optional: the
@@ -122,13 +122,19 @@ type method_name = Equal_shares | Proportional | Ordered
    loader's. *)
 type rational = { num : int; den : int }
 
-type measure_unit = {
+(* One factor of a unit: a declared unit and its whole exponent, [None] where
+   the wire writes none, which is exponent 1. *)
+type unit_factor = {
   abbr_text : string option;
   system : string option;
   canonical_form : string option;
   factor_to_canonical : rational option;
-  denominator : measure_unit option;
+  exponent : int option;
 }
+
+(* A unit at the place it occurs: its factors in the wire's order (IR-SPEC
+   ch. 2.5). What the order and the exponents must be is WF-124's question. *)
+type measure_unit = unit_factor list
 
 type datatype =
   | Number of {
@@ -525,7 +531,7 @@ type parameter = {
 (* A unit as its unit system declares it: the unit itself and the further
    spellings that resolve to it. Only the declaration carries spellings; an
    occurrence of the unit elsewhere is a bare [measure_unit]. *)
-type declared_unit = { ge_unit : measure_unit; ge_spellings : string list }
+type declared_unit = { ge_unit : unit_factor; ge_spellings : string list }
 
 type unit_system = {
   es_name : string option;

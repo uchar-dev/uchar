@@ -6,7 +6,7 @@ fold in `premie van een jutter` is a number in the unit `st` that carries
 
     WF-070 FAIL /rules/rules/0/versions/0/value/function: lambda parameter 'x'
     is number(0 decimals, st), expected number(0 decimals)
-    WF-092 FAIL /rules/rules/0/versions/0/value/function/parameters/1/datatype/unit:
+    WF-092 FAIL /rules/rules/0/versions/0/value/function/parameters/1/datatype/unit/0:
     unit 'st' carries conversion factor 1 but names no canonical unit to
     convert into: a half-filled conversion pair is not a unit (both fields, or
     neither)

@@ -366,15 +366,17 @@ class TmsTimelineRefusalWitnessTest {
     static final String JR = "{\"node\":\"Unit\",\"abbreviation\":\"jr\",\"system\":\"Tijd\",\"canonical\":\"mnd\","
             + "\"factorToCanonical\":{\"num\":12,\"den\":1},\"spellings\":[\"jaar\"]}";
     /** EUR per jr, a rate whose denominator the document declares as twelve of the month grid's unit. */
-    static final String EUR_PER_JR = EUR.substring(0, EUR.length() - 1) + ",\"denominator\":"
-            + TmsDocuments.unit("jr", "Tijd", "mnd", 12, 1) + "}";
+    static final String EUR_PER_JR = EUR + "," + denominator(TmsDocuments.unit("jr", "Tijd", "mnd", 12, 1));
 
     /** EUR per mnd, the month grid's own unit as the system Tijd declares it. */
-    static final String EUR_PER_MND = EUR.substring(0, EUR.length() - 1) + ",\"denominator\":"
-            + TmsDocuments.unit("mnd", "Tijd", "mnd", 1, 1) + "}";
+    static final String EUR_PER_MND = EUR + "," + denominator(TmsDocuments.unit("mnd", "Tijd", "mnd", 1, 1));
     /** EUR per mnd with the denominator written by its abbreviation alone, as a calendar unit may be. */
-    static final String EUR_PER_BARE_MND = EUR.substring(0, EUR.length() - 1) + ",\"denominator\":"
-            + TmsDocuments.unit("mnd") + "}";
+    static final String EUR_PER_BARE_MND = EUR + "," + denominator(TmsDocuments.unit("mnd"));
+
+    /** A Unit node as the factor of a denominator. */
+    private static String denominator(String unit) {
+        return unit.substring(0, unit.length() - 1) + ",\"exponent\":-1}";
+    }
 
     static final String MODEL_RATE = rateModel(EUR_PER_JR, List.of(TmsDocuments.unitSystem("Munt",
             List.of(EUR)), TmsDocuments.unitSystem("Tijd", List.of(MND, JR))));

@@ -355,9 +355,9 @@ class ReaderUnderWriterWitnessTest {
     private static final String WHOLE = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
     private static final String COUNT_NUMBER = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"nonNegative\"}";
     private static final String TWO_DECIMALS = "{\"node\":\"Number\",\"whole\":false,\"decimals\":2,\"sign\":\"unspecified\"}";
-    private static final String EURO = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":"
+    private static final String EURO = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\",\"unit\":["
             + "{\"node\":\"Unit\",\"abbreviation\":\"EUR\",\"system\":\"Munt\",\"canonical\":\"EUR\",\"factorToCanonical\":"
-            + "{\"num\":1,\"den\":1}}}";
+            + "{\"num\":1,\"den\":1}}]}";
 
     private static String attribute(String name, String datatype) {
         return "{\"node\":\"Attribute\",\"name\":\"" + name + "\",\"datatype\":" + datatype + "}";

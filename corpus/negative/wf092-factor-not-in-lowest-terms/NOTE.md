@@ -10,8 +10,8 @@ both of its occurrences in rule 0.
     carries conversion factor 24/2, which is not in lowest terms: an exact
     factor has one spelling, here 12
 
-The same line follows for `/rules/rules/0/versions/0/value/type/unit` and
-`/rules/rules/0/versions/0/value/left/type/unit`.
+The same line follows for `/rules/rules/0/versions/0/value/type/unit/0/factorToCanonical` and
+`/rules/rules/0/versions/0/value/left/type/unit/0/factorToCanonical`.
 
 Why the arm exists. Since L3 a factor is an exact rational `{num, den}` of two
 integers of at least 1 (delta B17 (i) of `spec/proposals/V1-WIREMIGRATIE.md`,

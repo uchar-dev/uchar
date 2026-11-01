@@ -81,26 +81,28 @@ open Ir_v0.Ast
 
 let fault = Value.fault
 
-let unit_abbr (u : measure_unit) = Option.value u.abbr_text ~default:"?"
+let unit_abbr (u : measure_unit) = Ir_v0.Units.numerator_text u
 
-(* the plain (non-rate) declared units of a unit system — each declared unit
-   once, its spellings being names of that one unit; a rate (denominator set)
-   never enters normalisation (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3: its
+(* the declared units of a unit system, each a plain unit — each declared unit
+   once, its spellings being names of that one unit; a rate never enters
+   normalisation (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3: its
    numerator/denominator normalise per their own systems, out of scope here and
    left to the existing refusal). *)
 let plain_units (s : unit_system) : measure_unit list =
-  List.map (fun d -> d.ge_unit) s.unit_list |> List.filter (fun (u : measure_unit) -> u.denominator = None)
+  List.map (fun d -> Ir_v0.Units.of_declared d.ge_unit) s.unit_list
 
 (* proof obligation 3: a unit that NAMES the canonical it converts into, with a
    complete WF-092 conversion pair (so [Arith.factor] reads it rather than
-   faulting). Recursive through a rate's denominator, like convertibility
-   itself. *)
-let rec unit_named (u : measure_unit) =
-  (u.canonical_form <> None || u.abbr_text <> None)
-  && (match (u.canonical_form, u.factor_to_canonical) with
-     | Some _, Some _ | None, None -> true
-     | _ -> false)
-  && match u.denominator with Some n -> unit_named n | None -> true
+   faulting), for every factor, like convertibility itself. *)
+let unit_named (u : measure_unit) =
+  List.for_all
+    (fun (f : unit_factor) ->
+      (f.canonical_form <> None || f.abbr_text <> None)
+      &&
+      match (f.canonical_form, f.factor_to_canonical) with
+      | Some _, Some _ | None, None -> true
+      | _ -> false)
+    u
 
 (* [u] restates into [tu] by an exact declared factor: the shared
    convertibility predicate — the ONE the verifier and ref/ both read — crossed
@@ -132,11 +134,11 @@ let finest_of_units ~(where : string) (units : measure_unit list) : measure_unit
          maand=1 < jaar=12). factor(u) is recovered exactly (proof obligation 1). *)
       let finest =
         List.fold_left
-          (fun acc u -> if Q.lt (Arith.factor u) (Arith.factor acc) then u else acc)
+          (fun acc u -> if Q.lt (Arith.total_factor u) (Arith.total_factor acc) then u else acc)
           first rest
       in
-      let ffin = Arith.factor finest in
-      let to_finest (u : measure_unit) : Q.t = Q.div (Arith.factor u) ffin in
+      let ffin = Arith.total_factor finest in
+      let to_finest (u : measure_unit) : Q.t = Q.div (Arith.total_factor u) ffin in
       (* proof obligation 2: multiply-only INTO the finest, exact integer *)
       List.iter
         (fun u ->
@@ -163,7 +165,9 @@ let table_for_target (doc : document) (tu : measure_unit) : string * measure_uni
     tu :: (List.concat_map (fun (_, s) -> plain_units s) doc.unit_systems
            |> List.filter (restates_into tu))
   in
-  let canon = match tu.canonical_form with Some c -> c | None -> unit_abbr tu in
+  let canon =
+    match tu with { canonical_form = Some c; _ } :: _ -> c | _ -> unit_abbr tu
+  in
   ( Printf.sprintf "the canonical-%s conversion table (unit system%s %s)" canon
       (if List.length systems = 1 then "" else "s")
       (String.concat ", " systems),
@@ -201,7 +205,7 @@ let decimals_of_lexeme lex =
 let restate_lit ~tu ~to_finest (e : expr) : expr =
   match e with
   | Literal ({ variant = Lv_number lex; typ = Some (Number n); _ } as lit)
-    when (match n.measure_unit with Some u -> u.denominator = None && restates_into tu u | None -> false) ->
+    when (match n.measure_unit with Some u -> Ir_v0.Units.denominator u = None && restates_into tu u | None -> false) ->
       let u = Option.get n.measure_unit in
       let r = to_finest u in
       if Q.equal r Q.one then
@@ -233,7 +237,7 @@ let rec has_restatable ~tu (e : expr) : bool =
   let opt = function Some x -> has_restatable ~tu x | None -> false in
   match e with
   | Literal { typ = Some (Number { measure_unit = Some u; _ }); _ } ->
-      u.denominator = None && restates_into tu u && u <> tu
+      Ir_v0.Units.denominator u = None && restates_into tu u && u <> tu
   | Binary { op = Plus | Min | Reduced_by; left_side; right_side; _ } -> opt left_side || opt right_side
   | Rounding { base_expr; _ } -> opt base_expr
   | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr || opt minimum || opt maximum
@@ -280,10 +284,10 @@ let normalise_rule (doc : document) (r : resolved_rule) : resolved_rule =
       Some value_node ) -> (
       match target_unit doc ~ot ~attr:a with
       | Some tu
-        when tu.denominator = None
-             && (match tu.system with
-                | Some s -> Checks.find_ci doc.unit_systems s <> None
-                | None -> false)
+        when Ir_v0.Units.denominator tu = None
+             && (match tu with
+                | { system = Some s; _ } :: _ -> Checks.find_ci doc.unit_systems s <> None
+                | _ -> false)
              (* the identity gate: no restatable literal ⇒ leave the rule
                 untouched and NEVER read the table's factors (so a table the
                 pass does not exercise never faults, whatever its factors). *)
@@ -293,7 +297,7 @@ let normalise_rule (doc : document) (r : resolved_rule) : resolved_rule =
           (* only when the target IS the finest can the restated (finer) value be
              written without a divide-down the encoding cannot hold; a coarser
              target keeps the existing loud refusal. *)
-          if Q.equal (Arith.factor tu) (Arith.factor finest) then
+          if Q.equal (Arith.total_factor tu) (Arith.total_factor finest) then
             { r with value_node = Some (norm_expr ~tu ~to_finest value_node) }
           else r
       | _ -> r)

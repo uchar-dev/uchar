@@ -2,6 +2,7 @@ package dev.uchar.regelspraak.transpiler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.loader.IrLoader;
@@ -129,7 +130,7 @@ class DrlUnitSiteWitnessTest {
                 || ("BuiltinCall".equals(node) && DURATION_CALL_KINDS.contains(o.path("kind").asText("")));
         int n = 0;
         if (!exempt && derived(o) && o.get("type") instanceof ObjectNode t) {
-            ObjectNode sister = sister(t.get("unit"), CLASS.get(node));
+            ArrayNode sister = sister(t.get("unit"), CLASS.get(node));
             if (sister != null) { t.set("unit", sister); n++; }
         }
         // the binder a Let opens is in scope of its body, with the declaration of its binding
@@ -157,19 +158,25 @@ class DrlUnitSiteWitnessTest {
         return CLASS.containsKey(node);
     }
 
-    /** A CONVERTIBLE sister of a unit: same canonical, distinct abbreviation, factor x 10^exp — the exact fraction
-     *  with its numerator scaled, in lowest terms as the wire writes every factor. */
-    private static ObjectNode sister(JsonNode e, int exp) {
-        if (!(e instanceof ObjectNode u)) return null;
-        JsonNode a = u.get("abbreviation"), c = u.get("canonical"), f = u.get("factorToCanonical");
-        if (a == null || c == null || f == null) return null;
-        BigInteger num = f.get("num").bigIntegerValue().multiply(BigInteger.TEN.pow(exp));
-        BigInteger den = f.get("den").bigIntegerValue();
-        BigInteger gcd = num.gcd(den);
-        ObjectNode out = u.deepCopy();
-        out.put("abbreviation", a.asText() + "-verdraaid" + exp);
-        out.putObject("factorToCanonical").put("num", num.divide(gcd)).put("den", den.divide(gcd));
-        return out;
+    /** A CONVERTIBLE sister of a unit: its first factor with a conversion pair gets the same canonical, a distinct
+     *  abbreviation and factor x 10^exp — the exact fraction with its numerator scaled, in lowest terms as the wire
+     *  writes every factor. */
+    private static ArrayNode sister(JsonNode e, int exp) {
+        if (!(e instanceof ArrayNode list)) return null;
+        for (int i = 0; i < list.size(); i++) {
+            if (!(list.get(i) instanceof ObjectNode u)) return null;
+            JsonNode a = u.get("abbreviation"), c = u.get("canonical"), f = u.get("factorToCanonical");
+            if (a == null || c == null || f == null) continue;
+            BigInteger num = f.get("num").bigIntegerValue().multiply(BigInteger.TEN.pow(exp));
+            BigInteger den = f.get("den").bigIntegerValue();
+            BigInteger gcd = num.gcd(den);
+            ArrayNode out = list.deepCopy();
+            ObjectNode twisted = (ObjectNode) out.get(i);
+            twisted.put("abbreviation", a.asText() + "-verdraaid" + exp);
+            twisted.putObject("factorToCanonical").put("num", num.divide(gcd)).put("den", den.divide(gcd));
+            return out;
+        }
+        return null;
     }
 
     private static boolean dateTyped(JsonNode e, Declarations d, Map<String, JsonNode> scope) {

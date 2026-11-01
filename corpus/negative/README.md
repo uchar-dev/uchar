@@ -874,3 +874,24 @@ alone, and the old witness's document (a rule on `Vondst` hosted on
 | `wf109-narrowing-host-navigated` | WF-109 | D5 | toegevoegd | `WF-109.only-some-objects`, `host=Wrakrecht` | broken from `jutterswet-ploegblokkade`: a navigated check ("zijn logboek vol is") with the host `Wrakrecht` below its subject `Strandrecht` |
 | `wf109-narrowing-host-period` | WF-109 | D5 | toegevoegd | `WF-109.only-some-objects`, `host=Wrakrecht` | broken from `jutterswet-ploegblokkade`: a check under the whole-period qualifier with the host `Wrakrecht` below its subject `Strandrecht` |
 | `wf034-characteristic-of-subtype-without-host` | WF-034 | D8 | toegevoegd | `WF-034.characteristic-undeclared`, `characteristic=vaartijd`, `objectType=Strandrecht` | broken from `jutterswet-ploegblokkade`: the check of `vaartijd`, declared on `Wrakrecht`, without its host |
+
+### `unit-factors` (2026-11-01)
+
+The card (`backlog/doing/20261101-unit-factors.md`, §1.4 and §6.7) writes a unit
+as a list of factors with a whole exponent (L6, `spec/proposals/v1-migratie/m6.py`),
+so the numerator `"1"` and the field `denominator` leave the wire and WF-123 loses
+its object: the rule is retired, and its witnesses go with it. Gate 3 at `e92fcb1f8`,
+before the card, held each of the five documents to the arm of its row. Measured
+2026-11-01: `m6.py` refuses four of them, in the sentence of the row; the fifth has
+a well-formed list form.
+
+| directory | rule | card | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf123-one-without-denominator` | WF-123 | §1.4 | verwijderd-met-reden | `WF-123.one-without-denominator` | a `"1"` without a denominator has no list form: m6.py refuses it ("it names no factor, and the L6 shape has no empty unit"); the empty list is the witness `wf124-empty-unit` |
+| `wf123-one-with-conversion` | WF-123 | §1.4 | verwijderd-met-reden | `WF-123.one-with-conversion` | a numerator `"1"` with a conversion pair has no list form: m6.py refuses it ("it names no factor, so the fields have no place to go") |
+| `wf123-reciprocal-of-rate` | WF-123 | §1.4 | verwijderd-met-reden | `WF-123.reciprocal-of-rate` | `1/(wk/wk)`: the exponents of `wk` add up to zero, and m6.py refuses to decide what the unit then is; a rate of a rate is one list like any other |
+| `wf123-reciprocal-of-product` | WF-123 | §1.4 | verwijderd-met-reden | `WF-123.reciprocal-of-product` | `1/(dg·wk)` is the well-formed list `[{dg, -1}, {wk, -1}]`: the normal form with one negative factor is gone, so the defect is |
+| `wf123-declared-one` | WF-123 | §1.4 | verwijderd-met-reden | `WF-123.declared-one` | the unit system declares the unit `"1"` with a denominator, which a declaration in the L6 shape cannot carry: m6.py refuses it ("a denominator on a declaration"); a unit named `"1"` means nothing special any more |
+
+The six witnesses `wf124-*` are new; they are written in the target shape and
+broken from `corpus/golden/jutterswet-vergunningsduur`.

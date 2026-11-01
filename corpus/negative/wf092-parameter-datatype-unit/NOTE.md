@@ -6,7 +6,7 @@ field; the declaration in the unit system `Munt` keeps `{"num": "1", "den":
 "1"}`. No rule reads the parameter, so no other position compares its unit
 with that declaration; the report is this one line (measured).
 
-    WF-092 FAIL /model/parameters/1/datatype/unit/factorToCanonical: unit 'EUR'
+    WF-092 FAIL /model/parameters/1/datatype/unit/0/factorToCanonical: unit 'EUR'
     carries conversion factor 2/2, which is not in lowest terms: an exact
     factor has one spelling, here 1
 
