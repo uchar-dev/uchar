@@ -460,10 +460,14 @@ final class PatternDslRendering {
     }
 
     /** The decision of {@link Consequence.Decision}: its value from the bound values, with its fault where the plan names
-     *  one; nothing where the value is null; else the facts of the decision, in order. */
+     *  one; nothing where the value is null; else its deposit where the probe heard one, and the facts of the decision, in
+     *  order. */
     private RuleItemBuilder<?> decisionOf(Consequence.Decision g) {
         ValueFunction value = ClosureRendering.valueFunction(g.value());
+        Consequence.Deposit deposit = g.deposit();
         return consequenceItem(g.subject(), g.slots(), g.size(), (drools, subject, w) -> {
+            Object s = deposit == null ? null : ComputeHelpers.depositFlag();
+            if (s != null) w[deposit.depositFlag()] = s;
             Object v;
             try {
                 v = value.of(w);
@@ -475,6 +479,9 @@ final class PatternDslRendering {
                 return;
             }
             if (v == null) return;
+            if (ComputeHelpers.reported(s))
+                insert(drools, g.insertion(), ComputeHelpers.inconsistency(deposit.form(), subject,
+                        ComputeHelpers.depositCodes(s)));
             for (Consequence.StackFact f : g.facts()) insert(drools, g.insertion(), stackFact(f, subject, v));
         });
     }

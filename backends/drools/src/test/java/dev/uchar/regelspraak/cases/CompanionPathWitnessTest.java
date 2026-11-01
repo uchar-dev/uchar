@@ -242,18 +242,12 @@ class CompanionPathWitnessTest {
 
     // ---------------- (g) the defaults consequence keeps its fence ----------------
 
-    @Test void the_defaults_division_fence_stays_standing_for_a_division_in_a_letbody() throws Exception {
-        // A ch. 7 default whose consequence is "Let d = deler in inkomen gedeeld door tweede". ref on this
-        // model+case (tweede absent, kindertal 3): toeslag 0.0000, CONSISTENT — the faulting default falls
-        // through and ch. 7.1 discards its speculative channel deposit. That value this backend deliberately
-        // does not produce: the division fence refuses the group, and the path-carrying companions of this
-        // card are RULE machinery that must not start playing a defaults consequence. The honest outcome is
-        // still the refusal, naming the fence.
-        CaseRunner.Excluded refusal = assertThrows(CaseRunner.Excluded.class,
-                () -> play(defaultsModel(let("d", attr("deler"), DIVISION, num(4))), jutter(INKOMEN + ", " + n("kindertal", "3"),
-                        valueJson("toeslag", "0.0000") + ", " + consistent())));
-        assertTrue(refusal.getMessage().contains("deling"),
-                "de weigering noemt het delingshek: " + refusal.getMessage());
+    @Test void a_division_in_a_let_body_in_a_default_falls_through() throws Exception {
+        // A ch. 7 default whose consequence is "Let d = deler in inkomen gedeeld door tweede". ref on this model+case
+        // (tweede absent, kindertal 3): toeslag 0.0000, CONSISTENT: the default falls through and ch. 7.1 discards its
+        // speculative channel deposit.
+        assertNull(play(defaultsModel(let("d", attr("deler"), DIVISION, num(4))), jutter(
+                INKOMEN + ", " + n("kindertal", "3"), valueJson("toeslag", "0.0000") + ", " + consistent())));
     }
 
     // ---------------- (a') the §6.5 predicate's edges under a carrier: the ABS variant, the leeg dividend ----------------

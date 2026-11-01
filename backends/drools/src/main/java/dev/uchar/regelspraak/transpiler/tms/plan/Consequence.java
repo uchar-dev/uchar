@@ -501,10 +501,12 @@ public sealed interface Consequence {
      * says. Where the evaluation raises an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), it inserts that fault under
      * {@code fault} on the object in place of the decision; {@code fault} is null where the value is a constant or a bound
      * decision, which cannot fault, and such a fault would be a broken contract. Where the value is null, a leeg
-     * consequence, the default decides nothing and inserts nothing, so the lower defaults decide (ch. 7.1).
+     * consequence, the default decides nothing and inserts nothing, so the lower defaults decide and what the evaluation
+     * deposited does not persist (ch. 7.1). Where it decides, {@code deposit}, the probe of a consequence that can
+     * deposit, null otherwise, puts the §9.5 inconsistency beside the facts.
      */
     record Decision(String subject, Term value, List<Integer> slots, int size, boolean collapse, FaultName fault,
-                  List<StackFact> facts, Insertion insertion) implements Consequence {
+                  Deposit deposit, List<StackFact> facts, Insertion insertion) implements Consequence {
         public Decision {
             slots = List.copyOf(slots);
             facts = List.copyOf(facts);
@@ -512,6 +514,12 @@ public sealed interface Consequence {
             for (StackFact f : facts)
                 if (f instanceof StackFact.Inconsistency || f instanceof StackFact.Outcome u && u.kind() != Kind.DECIDED)
                     throw new IllegalArgumentException("een besluit voegt geen conflict in: " + f);
+        }
+
+        /** A decision whose consequence cannot deposit. */
+        public Decision(String subject, Term value, List<Integer> slots, int size, boolean collapse, FaultName fault,
+                        List<StackFact> facts, Insertion insertion) {
+            this(subject, value, slots, size, collapse, fault, null, facts, insertion);
         }
     }
 

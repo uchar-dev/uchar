@@ -910,21 +910,16 @@ class FilterFaultWitnessTest {
 
     /** The lower default "2 indien hij aan alle volgende voorwaarden voldoet: - {@link #fold()} is groter dan 0", and
      *  the lower default "{@link #fold()} indien hij druk is": the reference interpreter reads a lower default only where
-     *  no higher one decides (RUNTIME-SEMANTICS ch. 7.1), the exec-model branch computes a default as soon as what
-     *  it reads stands, one a higher default displaces among them. Where the fold's subselection divides, the branch
-     *  refuses the group by name: a division by zero there is a fault on an intermediate state, and whether it counts
-     *  waits on the norm decision of card {@code 20261008-fout-op-tussenstand} (until card
-     *  drl-teksttak-op-truth-maintenance the DRL-text branch refused every defaults group). */
-    @Test void a_defaults_group_with_a_fold_that_can_fail_is_refused() throws Exception {
+     *  no higher one decides (RUNTIME-SEMANTICS ch. 7.1). The exec-model branch computes a default as soon as what it
+     *  reads stands, one a higher default displaces among them; what the fold's subselection faults or deposits there
+     *  goes when the higher default decides (ch. 5.7). J1 is actief: 1, consistent. */
+    @Test void a_defaults_group_with_a_fold_that_can_fail_plays_the_higher_default() throws Exception {
         JsonNode caseDocument = TmsDocuments.caseDocument(j1(true), List.of(value("J1", "zwaarte", "1"), consistent()));
         for (String lower : List.of(
                 TmsDocuments.defaultEntry(compound("all", 0, List.of(comparison("greater", fold(), number("0")))),
                         number("2")),
-                TmsDocuments.defaultEntry(check("druk", false), fold()))) {
-            String tms = TmsFaultWitnessTest.play(defaultsGroup(lower), caseDocument, EXEC);
-            assertTrue(tms.startsWith("Excluded: ") && tms.contains("defaults: defaults A:Jutter.zwaarte — een deling in"
-                    + " een default ('zijn gewicht gedeeld door zijn deelnemers'): "), tms);
-        }
+                TmsDocuments.defaultEntry(check("druk", false), fold())))
+            assertEquals("gespeeld", TmsFaultWitnessTest.play(defaultsGroup(lower), caseDocument, EXEC));
     }
 
     /** The control: the lower default "2 indien … het aantal vondsten van de Jutter die aan de volgende voorwaarde

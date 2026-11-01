@@ -73,6 +73,7 @@ class DepositFlagSlotWitnessTest {
                 if (s.isEmpty()) continue;
                 Integer fills = switch (p.consequence()) {
                     case Consequence.Value w when w.deposit() != null -> w.deposit().depositFlag();
+                    case Consequence.Decision d when d.deposit() != null -> d.deposit().depositFlag();
                     case Consequence.Contribution bd when bd.input() instanceof Consequence.Input.MemberTest l && l.depositFlag() >= 0 ->
                             l.depositFlag();
                     case Consequence.ConditionDeposit c -> c.depositFlag();

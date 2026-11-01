@@ -196,10 +196,6 @@ class TmsCreationInputWitnessTest {
         List<String> withSupertype = new ArrayList<>(SISTERS);
         withSupertype.add(computingRule("doel van een vondst", "GELIJKSTELLING", "Vondst", "doel", number("9"),
                 TmsDocuments.comparison("greater", ownRead("a", "Vondst"), number("100"))));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
-                TmsDocuments.document(SISTER_MODEL, withSupertype), DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(e.getMessage().startsWith("transpiler SKIP: regel: doel van drijfgoed — een deling in een"
-                + " initialisatie waarvan het doel nog een schrijver heeft ('dividedBy'; 'doel' van Vondst wordt ook"
-                + " geschreven door \"doel van een vondst\"): "), e.getMessage());
+        assertEquals("gespeeld", TmsFaultWitnessTest.playBoth(TmsDocuments.document(SISTER_MODEL, withSupertype), caseDocument));
     }
 }

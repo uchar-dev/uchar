@@ -327,55 +327,37 @@ class TmsInitialisationWitnessTest {
             computingRule("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon",
                     binary("dividedBy", ownRead("opbrengst", "Vondst"), ownRead("deelnemers", "Vondst")), "null"));
 
-    private static final String DIVISION_REFUSAL = "transpiler SKIP: regel: standaardbergloon — een deling in een"
-            + " initialisatie waarvan het doel nog een schrijver heeft ('dividedBy'; 'bergloon' van Vondst wordt ook"
-            + " geschreven door \"bergloon\"): naast een andere schrijver is een initialisatie de laagste default"
-            + " (RUNTIME-SEMANTICS ch. 5.4, 7.7), en deze tak rekent haar uit zodra wat zij leest staat, ook waar de"
-            + " andere schrijver haar later verdringt; een deling door nul daar is een fout op een tussenstand, die deze"
-            + " tak intrekt zodra de andere schrijver beslist, waar de referentie afhankelijk van de volgorde van de"
-            + " regels een fout of de waarde geeft: of zo'n fout telt, wacht op een normbesluit (ch. 5.2, 7.1)";
-
     /**
      * "Een Vondst is erkend indien hij gemeld is", "Het bergloon van een Vondst moet gesteld worden op zijn taxatie,
      * indien hij erkend is" and "Het bergloon van een Vondst moet geïnitialiseerd worden op zijn opbrengst gedeeld door
      * zijn deelnemers". Beside the computation the initialisation is the lowest default (RUNTIME-SEMANTICS ch. 7.7), and
      * only the deciding default is evaluated (ch. 7.1 and 7.5): V1 (gemeld, taxatie 30, opbrengst 100, deelnemers 0) ends
-     * at 30, consistent, and the division by zero is never reached. This branch evaluates the initialisation as soon as
-     * what it reads stands, before the computation's condition holds through the derived {@code erkend}, so it refuses
-     * the division there, in every order of the document. An initialisation with a division and no other writer is not
-     * speculative and stays carried ({@link #a_division_by_empty_deposits_only_where_the_initialisation_applies}).
-     *
-     * <p><b>Red before the refusal</b> (measured 2026-10-08, the division carried): every order of the document played
-     * into the fault, the first "[erkenning, bergloon, standaardbergloon] DelingDoorNul: deling door nul in de regel
-     * "standaardbergloon": 100 gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS
-     * ch. 1.4, punt 4)", and the other five the same.
-     *
-     * <p>Since the evaluation fault is a fact that counts at the fixpoint ({@link TmsFaultWitnessTest}), the fault there is
-     * withdrawn when the computation displaces the initialisation, and with the refusal switched off every order played
-     * bergloon 30 (measured 2026-10-08, not committed). The reference interpreter gives that value in one order of the
-     * rules and the fault in the other, so whether a fault on an intermediate state counts waits on a decision of the
-     * norm, and the refusal stays until then; its reason says so.
+     * at 30, consistent, in every order of the document. This branch evaluates the initialisation as soon as what it reads
+     * stands, before the computation's condition holds through the derived {@code erkend}; what it deposits then goes when
+     * the computation displaces it, so what stands is the outcome at the fixpoint (ch. 5.7). Without the computation's
+     * condition holding the initialisation decides, and its deposit stands: V2.
      */
-    @Test void a_division_in_an_initialisation_beside_another_writer_is_refused() throws Exception {
-        JsonNode caseDocument = TmsDocuments.caseDocument(
+    @Test void a_division_in_an_initialisation_beside_another_writer_counts_at_the_fixpoint() throws Exception {
+        JsonNode displaced = TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("taxatie", "30", "opbrengst", "100", "deelnemers", "0"),
                         List.of("gemeld"), Map.of())),
                 List.of(value("V1", "bergloon", "30"), consistent()));
-        List<String> expected = new ArrayList<>(), outcomes = new ArrayList<>();
+        JsonNode deciding = TmsDocuments.caseDocument(
+                List.of(instance("V2", "Vondst", Map.of("taxatie", "30", "opbrengst", "100", "deelnemers", "0"),
+                        List.of(), Map.of())),
+                List.of("{\"kind\":\"attributeEmpty\",\"label\":\"V2\",\"attribute\":\"bergloon\"}",
+                        "{\"kind\":\"inconsistent\",\"rule\":\"standaardbergloon\",\"label\":\"V2\",\"code\":\"EF-005\"}"));
+        int orders = 0;
         for (List<String> order : TmsDocuments.permutations(DIVISION)) {
+            orders++;
             List<String> names = TmsDocuments.ruleNames(order);
-            String outcome;
-            try {
-                outcome = "gespeeld: " + CaseRunner.playCase(TmsDocuments.document(DIVISION_MODEL, order), caseDocument,
-                        DroolsBackend.Branch.EXEC_MODEL);
-            } catch (RuntimeException e) {
-                outcome = e.getClass().getSimpleName() + ": " + e.getMessage();
+            for (DroolsBackend.Branch branch : List.of(DroolsBackend.Branch.EXEC_MODEL, DroolsBackend.Branch.DRL_TEXT)) {
+                Path document = TmsDocuments.document(DIVISION_MODEL, order);
+                assertNull(CaseRunner.playCase(document, displaced, branch), names + " " + branch);
+                assertNull(CaseRunner.playCase(document, deciding, branch), names + " " + branch);
             }
-            expected.add(names + " Excluded: " + DIVISION_REFUSAL);
-            outcomes.add(names + " " + outcome);
         }
-        assertEquals(6, outcomes.size());
-        assertEquals(expected, outcomes);
+        assertEquals(6, orders);
     }
 
     // ---------------- helpers ----------------

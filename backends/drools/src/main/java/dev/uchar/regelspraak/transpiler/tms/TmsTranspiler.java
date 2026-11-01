@@ -125,8 +125,8 @@ import java.util.function.Supplier;
  * {@code connectingRole} binding or else over the relation its type pair derives, and a fact creation, each over a
  * relation of two roles. Each always valid or gated on the
  * evaluation date by its validity window (RUNTIME-SEMANTICS ch. 8.2), with the §6.5 deposit of a division by leeg and
- * the one of a square root of a negative number where the evaluation reaches them (a default carries no division and no
- * root at all), whose condition, assertion or justification is built from characteristic checks (own or over a path,
+ * the one of a square root of a negative number where the evaluation reaches them (a default carries no root and
+ * deposits a division where it decides), whose condition, assertion or justification is built from characteristic checks (own or over a path,
  * negated or not), comparisons, leeg, gevuld, eleven and exact-digit tests, time windows, role checks
  * ({@link #roleCheck}), quantifier folds over a linked set ({@link #quantifierFold}), tests of the channel of a
  * consistency, a uniqueness or a rule that deposits, and {@code Compound}s of those under any quantifier, and whose
@@ -651,9 +651,10 @@ public final class TmsTranspiler {
             /** The rule that inserts the fault of a condition that can fault: a form's condition or assertion, a
              *  default's justification. */
             CONDITION_FAULT("condition-fault", Kind.FORM, Kind.DEFAULT),
-            /** The rule that deposits the §9.5 inconsistency where the evaluation of a form's condition divides a filled
-             *  dividend by a leeg divisor or takes the root of a negative number (ch. 1.2); a default holds neither. */
-            CONDITION_DEPOSIT("condition-deposit", Kind.FORM),
+            /** The rule that deposits the §9.5 inconsistency where the evaluation of a form's condition, or of the
+             *  justification of a default that decides, divides a filled dividend by a leeg divisor or takes the root of
+             *  a negative number (ch. 1.2, 7.1). */
+            CONDITION_DEPOSIT("condition-deposit", Kind.FORM, Kind.DEFAULT),
             /** The rule that faults a session without an evaluation date: beside a form with a bounded validity, and
              *  for a stack where a group of it has a dated validity (ch. 8.1). */
             NO_EVALUATION_DATE("no-evaluation-date", Kind.FORM, Kind.STACK),
@@ -1796,8 +1797,8 @@ public final class TmsTranspiler {
      * the rule holds there by construction; a deposit in the condition itself is the {@link #depositRule}'s.
      *
      * <p>That deposit is a logical fact like the value: it stands while the activation that made it stands, and goes when
-     * a read it rested on changes. The reference interpreter keeps a deposit made on a transient value (RUNTIME-SEMANTICS
-     * ch. 6.1, "Recorded residuals"), this branch withdraws it; recorded as an observation.
+     * a read it rested on changes, so what stands at the fixpoint is the outcome of the evaluation there
+     * (RUNTIME-SEMANTICS ch. 5.7).
      *
      * <p>A member an object creation sets is the input of the object it makes ({@link #objectCreation}), so a rule on it
      * displaces that value as it displaces case input, and outside the standing domain a computed leeg erases it, as in
@@ -2009,15 +2010,10 @@ public final class TmsTranspiler {
      * WF-079 reads it: two initialisations on one type, or on a type and its ancestor, write one instance, and two on
      * sister subtypes never do (ch. 7.10).
      *
-     * <p>Beside another writer of its target on an instance it writes ({@link #otherWriters}: per concrete type, so
-     * not a writer on a sister subtype) an initialisation is the lowest default (ch. 7.7), and only the default
-     * that decides is evaluated (ch. 7.1). This rule is evaluated as soon as what it reads stands, also where the other
-     * writer displaces it later. A division by zero there is a fault on an intermediate state: this branch inserts it as
-     * a {@link Fault}, which goes when the other writer displaces the initialisation, and answers the other writer's
-     * value, where the reference interpreter faults or answers the value depending on the order of the rules. Whether
-     * such a fault counts waits on a decision of the norm, so a division in the condition or the value of an
-     * initialisation beside another writer stays refused, with the predicate of a division in a default
-     * ({@code TmsInitialisationWitnessTest}). Without another writer nothing displaces it and the division stays carried.
+     * <p>Beside another writer of its target an initialisation is the lowest default (ch. 7.7), and only the default that
+     * decides is evaluated (ch. 7.1). This rule is evaluated as soon as what it reads stands, also where the other writer
+     * displaces it later. What it faulted or deposited then is logical and goes when the other writer's value matches the
+     * guard, so only an initialisation that decides at the fixpoint reports it (ch. 5.7).
      */
     private List<RulePlan> initialisationRule(ResolvedRule r, Expr.AttributeReference target) {
         Member time = declared(target.objectType(), target.attribute(), false);
@@ -2033,10 +2029,6 @@ public final class TmsTranspiler {
         // a computing rule outside the standing domain writes a computed leeg, which empties the target for the guard
         boolean emptyBeside = computeRules.getOrDefault(key, List.of()).stream().anyMatch(x ->
                 !standingTargets.standingScalar(x) && related(((Expr.AttributeReference) x.target()).objectType(), target.objectType()));
-        List<String> others = otherWriters(r, target.objectType(), key);
-        String division = division(r.condition(), r.value());
-        if (division != null && !others.isEmpty())
-            throw new Refusal(DroolsCode.INITIALISATION_DIVISION_SHARED_TARGET.reason("division", division, "attribute", member.name(), "declarant", member.declarant().name, "writers", String.join(", ", others.stream().map(x -> "\"" + x + "\"").toList())));
         String name = r.name();
         Alpha.FieldTest ofTarget = new Alpha.FieldTest("attribute", Alpha.Comparator.GELIJK, key);
         Alpha.FieldTest ofOther = new Alpha.FieldTest("writer", Alpha.Comparator.NOT_EQUAL, name);
@@ -3297,8 +3289,8 @@ public final class TmsTranspiler {
      *
      * <p>Refused by name: a characteristic target that shares its name with
      * an attribute, a group with a dated validity, an initialisation default on a characteristic, a deciding default
-     * without a justification; a target on a timeline or with dimensions through {@link #member}. Refused besides: a
-     * division anywhere in a default ({@link #division(Conditie, Expr)}).
+     * without a justification; a target on a timeline or with dimensions through {@link #member}; a root anywhere in a
+     * default ({@link #verifyDefault}).
      */
     private List<RulePlan> stackRules(Stacks.Stack st) {
         PrioritizedDefaults l0 = st.members().get(0);
@@ -3410,27 +3402,14 @@ public final class TmsTranspiler {
         if (!d.initialisation() && d.condition() == null && d.hasOwnContent())
             throw new Refusal(DroolsCode.DEFAULT_WITHOUT_JUSTIFICATION.reason("source", d.source() != null ? d.source() : DroolsCode.DEFAULT_WITHOUT_JUSTIFICATION.part("without-source"),
                     "attribute", b.member.name()));
-        String division = division(d.condition(), d.consequence());
-        if (division != null)
-            throw new Refusal(DroolsCode.DEFAULT_DIVISION_INTERMEDIATE.reason("division", division));
         String squareRoot = squareRoot(d.condition(), d.consequence());
         if (squareRoot != null)
             throw new Refusal(DroolsCode.DEFAULT_SQUARE_ROOT.reason("squareRoot", squareRoot));
     }
 
-    /** The snippet of the first division in {@code conditionTerm} or {@code value}, or null: in the justification or the
-     *  consequence of a default, and in the condition or the value of an initialisation beside another writer, which
-     *  ch. 7.7 reads as the lowest default ({@link #initialisationRule}). The evaluation of a default is speculative,
-     *  as a default is evaluated whenever its reads stand. A division by zero in a default another one displaces is a fault
-     *  on an intermediate state, which this branch would withdraw ({@link Fault}); whether such a fault counts waits on
-     *  a decision of the norm, so every division is refused until then. Since none passes, the rules of a default raise
-     *  no division fault ({@link #ownRule}). The walk enters every expression and condition the forms carry, a
-     *  {@code Let}'s value and body, both branches of an {@code IfThenElse} and its condition, a rounding, a clamp's
-     *  bounds and a fold's argument, fallback and filter among them, so a division under one of them is found too. */
-    private static String division(Condition conditionTerm, Expr value) {
-        return earliest(conditionTerm, value, TmsTranspiler::isDivision);
-    }
-
+    /** The snippet of the first division in {@code e}, or null. The walk enters every expression and condition the forms
+     *  carry, a {@code Let}'s value and body, both branches of an {@code IfThenElse} and its condition, a rounding, a
+     *  clamp's bounds and a fold's argument, fallback and filter among them, so a division under one of them is found too. */
     private static String division(Expr e) {
         return earliest(null, e, TmsTranspiler::isDivision);
     }
@@ -3708,14 +3687,17 @@ public final class TmsTranspiler {
      * value computed from what the rule bound, and nothing where that value is leeg (ch. 7.1). The validity of the group
      * at the root of the default's chain gates the rule on the evaluation date ({@link Reads#valid}).
      *
-     * <p>A default carries no division and no square root ({@link #verifyDefault}), but its justification or its
-     * consequence can still fault, a date step out of range or a context value without an evaluation date
-     * ({@link ComputeFault}). Such a fault is a {@link Fault} under the stack's name, as in a rule: the consequence inserts
-     * it in place of the decision, and where the justification can fault, a fault rule with the rule's own left-hand
-     * side, its control-fact patterns included, inserts it ({@link #conditionFaultRule}). A default a higher one
-     * displaces loses its match, and so does every default of an exception group below it ({@link #chainRules}), and
-     * the fault it raised goes with it, so a fault counts only where its default is evaluated at the fixpoint (PLAN §9,
-     * 2026-10-09).
+     * <p>A default's justification or consequence can fault, a date step out of range or a context value without an
+     * evaluation date ({@link ComputeFault}). Such a fault is a {@link Fault} under the stack's name, as in a rule: the
+     * consequence inserts it in place of the decision, and where the justification can fault, a fault rule with the rule's
+     * own left-hand side, its control-fact patterns included, inserts it ({@link #conditionFaultRule}). A default a higher
+     * one displaces loses its match, and so does every default of an exception group below it ({@link #chainRules}), and
+     * the fault it raised goes with it, so a fault counts only where its default is evaluated at the fixpoint
+     * (RUNTIME-SEMANTICS ch. 5.7).
+     *
+     * <p>A division in a default deposits only where the default decides (ch. 7.1): over its consequence the consequence
+     * of the rule, which deposits nothing where the value is leeg and the default falls through, and over its
+     * justification a deposit rule that holds while the decision of this default stands ({@link #decidedBy}).
      */
     private List<RulePlan> ownRule(StackBuild b, Node k, RuleOrigin.Role role, String ruleName,
                                    Supplier<List<LhsItem>> guard, List<Consequence.StackFact> facts) {
@@ -3771,7 +3753,9 @@ public final class TmsTranspiler {
             control = guard.get();
             items = reads.plan(conditionRole(canFail), testTerm, read, control);
             decision = new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), true,
-                    new Consequence.FaultName(name, name), facts, Consequence.Insertion.LOGICAL);
+                    new Consequence.FaultName(name, name),
+                    deposits(d.consequence()) ? new Consequence.Deposit(reads.depositFlagSlot(), b.targetForm) : null,
+                    facts, Consequence.Insertion.LOGICAL);
         }
         b.readings.add(reads);
         b.defaultOf.put(reads, d);
@@ -3794,7 +3778,38 @@ public final class TmsTranspiler {
                     value, unconditional ? null : d.condition(), b.characteristic ? null : d.consequence(), noted,
                     k.validity(), !control.isEmpty() || d.initialisation());
         if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, d.condition(), l -> guard.get()));
+        RulePlan deposit = depositRule(b.targetForm, ruleName, fresh, d.condition(), l -> {
+            List<LhsItem> decided = new ArrayList<>(guard.get());
+            decided.add(decidedBy(facts));
+            return decided;
+        });
+        if (deposit != null) out.add(deposit);
         return out;
+    }
+
+    /** That the decision whose facts are {@code facts} stands on the subject: its {@link Decides} in the simple form, its
+     *  {@link Outcome} in the general form. */
+    private LhsItem decidedBy(List<Consequence.StackFact> facts) {
+        for (Consequence.StackFact f : facts) {
+            FactPattern pattern = switch (f) {
+                case Consequence.StackFact.Decides x -> new FactPattern(Decides.class, "$beslist_" + idSeq,
+                        List.of(new Alpha(id("eigen-besluit"), List.of(
+                                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, x.stack()),
+                                new Alpha.FieldTest("index", Alpha.Comparator.GELIJK, x.index())))),
+                        List.of(new Join(id("eigen-besluit-onderwerp"), "subject", SUBJECT)), List.of());
+                case Consequence.StackFact.Outcome x -> new FactPattern(Outcome.class, "$uitkomst_" + idSeq,
+                        List.of(new Alpha(id("eigen-besluit"), List.of(
+                                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, x.stack()),
+                                new Alpha.FieldTest("chain", Alpha.Comparator.GELIJK, x.chain()),
+                                new Alpha.FieldTest("position", Alpha.Comparator.GELIJK, x.position()),
+                                new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, x.kind())))),
+                        List.of(new Join(id("eigen-besluit-onderwerp"), "subject", SUBJECT)), List.of());
+                default -> null;
+            };
+            if (pattern != null)
+                return new Exists(List.of(pattern), Exists.declared(List.of(pattern)), Exists.read(List.of(pattern)));
+        }
+        throw new IllegalStateException("een besluit zonder het feit dat het besluit noemt: " + facts);
     }
 
     // ---------------- the readings of a build with readings ----------------
@@ -7370,8 +7385,8 @@ public final class TmsTranspiler {
     /**
      * {@code g} with the probe of its terms at -1 where it places none. Every place that deposits compiles with the
      * probe slot of its rule ({@link Reads#depositFlag}), whatever the role of the rule, but only three positions put a
-     * probe in that slot: a test of deposits ({@link TestItem.Role#DEPOSIT}), the value of a rule with a deposit
-     * ({@link Consequence.Value#deposit}) and the test of a member with a probe in a quantifier fold
+     * probe in that slot: a test of deposits ({@link TestItem.Role#DEPOSIT}), the value of a rule or a decision with a
+     * deposit ({@link Consequence.Value#deposit}, {@link Consequence.Decision#deposit}) and the test of a member with a probe in a quantifier fold
      * ({@link Consequence.Input.MemberTest}). Elsewhere, as in the rule of a condition's fault or a filter's fault, the
      * places would report to a slot nobody fills, which reads as nothing; the plan says so itself, so that a rendering
      * needs no rule of its own for such a slot. The slot stays in the table, and the value array keeps its size.
@@ -7414,7 +7429,7 @@ public final class TmsTranspiler {
                 return !changed ? c : new Consequence.Creation(c.subject(), c.creation(), c.depth(), inits, c.fault(),
                         c.faultInsertion(), c.construction(), c.phase(), c.insertions(), c.slots(), c.size());
             }
-            case Consequence.Decision a -> {
+            case Consequence.Decision a when a.deposit() == null -> {
                 Term z = withoutDepositFlag(a.value());
                 return z == a.value() ? a : new Consequence.Decision(a.subject(), z, a.slots(), a.size(), a.collapse(),
                         a.fault(), a.facts(), a.insertion());

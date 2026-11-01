@@ -1480,10 +1480,13 @@ final class DrlRendering {
          *  so, and gives an evaluation fault as its outcome where the plan names a fault, a computed decision; any other
          *  exception leaves the fire, a broken contract, as in the executable model. The fault in place of the
          *  decision; nothing where the value is null, so that the lower defaults decide (RUNTIME-SEMANTICS ch. 7.1);
-         *  else the facts of the decision in the order of the plan. A value that computes nothing
-         *  ({@link #computesNothing}) has no function and no fault: the consequence carries its expression
+         *  else the deposit where the probe heard one and the facts of the decision in the order of the plan. A value that
+         *  computes nothing ({@link #computesNothing}) has no function and no fault: the consequence carries its expression
          *  ({@link #carried}). */
         private void decisionOf(Consequence.Decision x, StringBuilder b) {
+            Consequence.Deposit d = x.deposit();
+            if (d != null && computesNothing(x.value()))
+                throw new IllegalStateException("een besluit dat niets uitrekent, deponeert niet");
             if (computesNothing(x.value())) {
                 carried(x.value(), x.collapse(), x.slots(), b);
                 b.append("    if (v != null) {\n");
@@ -1491,9 +1494,10 @@ final class DrlRendering {
                 b.append("    }\n");
                 return;
             }
+            if (d != null) b.append("    Object ").append(DEPOSIT_FLAG).append(" = ").append(route(Route.FRESH_DEPOSIT_FLAG)).append("();\n");
             int place = reserveer();
             String name = name("afloop", place);
-            Context c = context(x.slots(), -1, null, x.value());
+            Context c = context(x.slots(), d == null ? -1 : d.depositFlag(), d == null ? null : DEPOSIT_FLAG, x.value());
             Expr e = value(x.value(), c);
             String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
             fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")", x.fault() == null
@@ -1507,6 +1511,12 @@ final class DrlRendering {
                 b.append("    } else if (v != null) {\n");
             } else {
                 b.append("    if (v != null) {\n");
+            }
+            if (d != null) {
+                b.append("        if (").append(route(Route.REPORTED)).append("(").append(DEPOSIT_FLAG).append(")) {\n");
+                insert(b, "            ", x.insertion(), route(Route.INCONSISTENCY) + "(" + str(d.form()) + ", "
+                        + x.subject() + ", " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + "))");
+                b.append("        }\n");
             }
             for (Consequence.StackFact f : x.facts()) insert(b, "        ", x.insertion(), stackFact(f, x.subject()));
             b.append("    }\n");

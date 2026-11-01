@@ -236,12 +236,12 @@ class StackCompositionWitnessTest {
     }
 
     @Test void a_refused_stack_has_no_composition_and_a_name_of_no_stack_no_entry() throws Exception {
-        // a division in a default is refused (DROOLS: the division of a default), so the stack lays no knots; the
-        // analysis built here, without the backend, which refuses such a document whole
+        // a root in a default is refused, so the stack lays no knots; the analysis built here, without the backend,
+        // which refuses such a document whole
         String model = TmsDocuments.model(List.of(objectType("Jutter", List.of(attribute("heffing", WHOLE)),
                 List.of("zwaar"))), List.of());
         Path ir = TmsDocuments.document(model, List.of(), List.of(), List.of(attributeGroup("heffing", "Jutter", "heffing",
-                List.of(defaultEntry(check("zwaar", false), binary("dividedBy", number("10"), number("2")))))));
+                List.of(defaultEntry(check("zwaar", false), TmsDocuments.root(number("9"), "de wortel van 9"))))));
         IrLoader.Positioned positioned = IrLoader.loadWithPositions(TmsDocuments.JSON.readTree(ir.toFile()));
         ClassLoader cl = dev.uchar.regelspraak.engine.BeanCompiler.compile(
                 dev.uchar.regelspraak.schema.FactModelGenerator.generate(positioned.loaded().model()));

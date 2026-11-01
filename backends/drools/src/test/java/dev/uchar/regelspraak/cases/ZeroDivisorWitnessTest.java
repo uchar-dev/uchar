@@ -38,16 +38,14 @@ class ZeroDivisorWitnessTest {
     }
 
     @Test void a_zero_divisor_in_the_consequence_of_a_default() throws Exception {
-        // "Afwijking van verhouding: gewogen" under the base 1,00, the division where the gewogen gewicht is gevuld. The
-        // destructive exec-model branch carried the group as one rule, named by its target on its owner type, and gave
-        // the division by zero that name. The exec-model branch with truth maintenance refuses a division in a default
-        // by name: it computes a default as soon as what it reads stands, so a division by zero there is a fault on an
-        // intermediate state, and whether it counts waits on the norm decision of card 20261008-fout-op-tussenstand.
+        // "Afwijking van verhouding: gewogen" under the base 1,00, the division where the gewogen gewicht is gevuld. Over
+        // the zero the consequence is leeg, so the default falls through to 1,00, and its deposit does not persist
+        // (RUNTIME-SEMANTICS ch. 7.1): V3 1,00, V1 0,75, consistent; ref and clingo the same.
         Path ir = document("", group(defaultEntry(filled("gewogen gewicht"), division("dividedBy")), defaultEntry(ALTIJD, EEN)));
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.playCase(ir,
-                JSON.readTree(ZERO_AND_ORDINARY), DroolsBackend.Branch.EXEC_MODEL));
-        org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains("defaults: defaults A:Vondst.verhouding — een"
-                + " deling in een default ('zijn gewogen gewicht gedeeld door zijn geschatte gewicht'): "), e.getMessage());
+        String caseDocument = caseDocument(vondst("V1", "320.00", "240.00") + "," + vondst("V3", "0.00", "240.00"),
+                ratio("V1", "0.75") + "," + ratio("V3", "1.00") + ",{\"kind\":\"consistent\"}");
+        assertNull(play(ir, false, caseDocument), "de nuldeler in een default");
+        assertNull(play(ir, true, caseDocument), "de nuldeler in een default op de DRL-teksttak");
     }
 
     @Test void a_zero_divisor_in_the_absolute_division() throws Exception {

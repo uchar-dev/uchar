@@ -72,20 +72,13 @@ class LetCarrierWalkWitnessTest {
                 valueJson("B1", "uit", "2.00") + ", " + consistent())), "de herrekende vergelijking kiest de ANDERS-tak");
     }
 
-    @Test void the_defaults_division_fence_fires_through_a_let() throws Exception {
-        // The ch. 7 defaults lowering refuses a consequence that can DEPOSIT in the §6.5 fout channel, because
-        // a default that is evaluated and then discarded would leave the Inconsistency behind. The division
-        // here sits behind a Let ("Let d = deler in inkomen gedeeld door d"), so a bevatDeling that does not take
-        // letKinderen would let the group through and the fence would be a dead letter on every such default.
-        // ref on this model+case: toeslag = 5.0000 (kindertal 3, inkomen 10.00, deler 2.00) — a value this
-        // backend deliberately does NOT produce; the honest outcome here is the refusal, and it names the fence.
-        CaseRunner.Excluded refusal = assertThrows(CaseRunner.Excluded.class,
-                () -> play(defaultsDivisionModel(), caseOf(inst("J1", "Jutter",
-                        "\"kindertal\": { \"number\": \"3\" }, \"inkomen\": { \"number\": \"10.00\" }, "
-                                + "\"deler\": { \"number\": \"2.00\" }", ""),
-                        valueJson("J1", "toeslag", "5.0000") + ", " + consistent())));
-        assertTrue(refusal.getMessage().contains("deling"),
-                "de weigering noemt het delingshek: " + refusal.getMessage());
+    @Test void a_division_behind_a_let_in_a_default_plays() throws Exception {
+        // A default's consequence "Let d = deler in inkomen gedeeld door d": the probe of the deposit has to see the
+        // division through the Let. ref on this model+case: toeslag = 5.0000 (kindertal 3, inkomen 10.00, deler 2.00).
+        assertNull(play(defaultsDivisionModel(), caseOf(inst("J1", "Jutter",
+                "\"kindertal\": { \"number\": \"3\" }, \"inkomen\": { \"number\": \"10.00\" }, "
+                        + "\"deler\": { \"number\": \"2.00\" }", ""),
+                valueJson("J1", "toeslag", "5.0000") + ", " + consistent())));
     }
 
     // ---------------- 2. the walks that must descend into a ch. 4.10 node ----------------
