@@ -1454,6 +1454,10 @@ let rec check_unit_form ~systems at (u : measure_unit) =
              [ v "WF-123.reciprocal-of-rate" (at ^ "/denominator")
                  "the denominator of a reciprocal is itself a rate: the inverse of a rate is one unit \
                   over the other, in the normal form of IR-SPEC ch. 2.5" ]
+         | Some n when is_product n ->
+             [ v "WF-123.reciprocal-of-product" (at ^ "/denominator")
+                 "the denominator of a reciprocal is a product: its inverse would need two factors with a \
+                  negative exponent, and the normal form of IR-SPEC ch. 2.5 has one" ]
          | _ -> []))
   @ (match u.denominator with Some n -> check_unit_form ~systems (at ^ "/denominator") n | None -> [])
 
