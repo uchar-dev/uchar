@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "30"
+          },
+          "opbrengst": {
+            "number": "100"
+          },
+          "aantal deelnemers": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V5",
+      "attribute": "bergloon"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "standaardbergloon",
+      "label": "V5",
+      "code": "EF-005"
+    }
+  ]
+}

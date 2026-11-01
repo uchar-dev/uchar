@@ -1,0 +1,32 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "heffing",
+      "value": {
+        "number": "7.00"
+      }
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "heffing van een jutter",
+      "label": "J2",
+      "code": "EF-031"
+    }
+  ]
+}

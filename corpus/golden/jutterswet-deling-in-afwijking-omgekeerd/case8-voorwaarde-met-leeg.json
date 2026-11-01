@@ -1,0 +1,65 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V8",
+        "objectType": "Vondst",
+        "attributes": {
+          "kortinggrond": {
+            "number": "60.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V8",
+      "attribute": "verhouding",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V8",
+      "attribute": "toeslag",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V8",
+      "attribute": "korting",
+      "value": {
+        "number": "7.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V8",
+      "attribute": "premie",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V8",
+      "attribute": "verlaging"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "Vondst.korting",
+      "label": "V8",
+      "code": "EF-031"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "opbrengst": {
+            "number": "100"
+          },
+          "aantal deelnemers": {
+            "number": "3"
+          },
+          "toeslag": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemeld"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "toeslag",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V4",
+      "characteristic": "erkend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

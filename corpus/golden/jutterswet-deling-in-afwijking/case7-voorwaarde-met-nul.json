@@ -1,0 +1,68 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V7",
+        "objectType": "Vondst",
+        "attributes": {
+          "geschatte gewicht": {
+            "number": "0.00"
+          },
+          "kortinggrond": {
+            "number": "60.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V7",
+      "attribute": "verhouding",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V7",
+      "attribute": "toeslag",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V7",
+      "attribute": "korting",
+      "value": {
+        "number": "7.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V7",
+      "attribute": "premie",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V7",
+      "attribute": "verlaging"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "Vondst.korting",
+      "label": "V7",
+      "code": "EF-005"
+    }
+  ]
+}

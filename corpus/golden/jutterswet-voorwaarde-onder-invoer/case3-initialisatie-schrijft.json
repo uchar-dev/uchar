@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "opbrengst": {
+            "number": "100"
+          },
+          "aantal deelnemers": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V5",
+      "attribute": "toeslag",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

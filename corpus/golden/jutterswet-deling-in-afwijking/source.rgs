@@ -1,0 +1,56 @@
+Objecttype de Vondst (mv: Vondsten)
+    het geschatte gewicht Numeriek (getal met 2 decimalen);
+    het gewogen gewicht Numeriek (getal met 2 decimalen);
+    de toeslaggrond Numeriek (getal met 2 decimalen);
+    de kortinggrond Numeriek (getal met 2 decimalen);
+    de premiegrond Numeriek (getal met 2 decimalen);
+    de verhouding Numeriek (getal met 2 decimalen);
+    de toeslag Numeriek (getal met 2 decimalen);
+    de korting Numeriek (getal met 2 decimalen);
+    de verlaging Numeriek (getal met 2 decimalen);
+    de premie Numeriek (getal met 2 decimalen);
+    is gemerkt kenmerk (bijvoeglijk);
+
+Regel verhouding
+    geldig altijd
+        De verhouding van een Vondst moet gesteld worden op 1,00.
+
+Afwijking van verhouding: gewogen verhouding
+    geldig altijd
+        De verhouding van een Vondst moet berekend worden als zijn gewogen gewicht gedeeld door zijn geschatte gewicht indien zijn gewogen gewicht gevuld is.
+
+Regel toeslag
+    geldig altijd
+        De toeslag van een Vondst moet gesteld worden op 1,00.
+
+Afwijking van toeslag: gewogen toeslag
+    geldig altijd
+        De toeslag van een Vondst moet berekend worden als (zijn toeslaggrond gedeeld door zijn geschatte gewicht) plus 5,00 indien zijn toeslaggrond gevuld is.
+
+Uitzondering op gewogen toeslag: gemerkte toeslag
+    geldig altijd
+        De toeslag van een Vondst moet gesteld worden op 2,00 indien hij gemerkt is.
+
+Regel korting
+    geldig altijd
+        De korting van een Vondst moet gesteld worden op 1,00.
+
+Afwijking van korting: ongeschatte korting
+    geldig altijd
+        De korting van een Vondst moet gesteld worden op 7,00 indien zijn kortinggrond gedeeld door zijn geschatte gewicht leeg is.
+
+Regel verlaging
+    geldig altijd
+        De verlaging van een Vondst moet gesteld worden op 3,00 indien zijn toeslaggrond gedeeld door zijn geschatte gewicht leeg is.
+
+Afwijking van verlaging: gemerkte verlaging
+    geldig altijd
+        De verlaging van een Vondst moet gesteld worden op 4,00 indien hij gemerkt is.
+
+Regel premie
+    geldig altijd
+        De premie van een Vondst moet gesteld worden op 1,00.
+
+Afwijking van premie: hoge premie
+    geldig altijd
+        De premie van een Vondst moet gesteld worden op 9,00 indien zijn premiegrond gedeeld door zijn geschatte gewicht groter is dan 1.

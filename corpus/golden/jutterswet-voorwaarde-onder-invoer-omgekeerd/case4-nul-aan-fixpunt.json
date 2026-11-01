@@ -1,0 +1,38 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "opbrengst": {
+            "number": "100"
+          },
+          "aantal deelnemers": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemeld"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "toeslag"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "standaardtoeslag",
+      "label": "V3",
+      "code": "EF-005"
+    }
+  ]
+}

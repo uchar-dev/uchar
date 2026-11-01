@@ -1,0 +1,24 @@
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+    de opbrengst Numeriek (geheel getal);
+    het aantal deelnemers Numeriek (geheel getal);
+    het bergloon Numeriek (geheel getal);
+    het aandeel Numeriek (geheel getal);
+    is gemeld kenmerk (bijvoeglijk);
+    is erkend kenmerk (bijvoeglijk);
+
+Regel aandeel
+    geldig altijd
+        Het aandeel van een Vondst moet berekend worden als zijn opbrengst gedeeld door zijn bergloon.
+
+Regel standaardbergloon
+    geldig altijd
+        Het bergloon van een Vondst moet geïnitialiseerd worden op 0.
+
+Regel bergloon
+    geldig altijd
+        Het bergloon van een Vondst moet gesteld worden op zijn taxatie indien hij erkend is.
+
+Regel erkenning
+    geldig altijd
+        Een Vondst is erkend indien hij gemeld is.

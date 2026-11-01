@@ -1,0 +1,472 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "geschatte gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewogen gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslaggrond",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verhouding",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslag",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "korting",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gemerkt",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "korting",
+        "subject": "Vondst",
+        "attribute": "korting",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "ongeschatte korting",
+            "justification": {
+              "node": "Predicate",
+              "kind": "empty",
+              "operand": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewogen gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn gewogen gewicht"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "geschatte gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn geschatte gewicht"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn gewogen gewicht gedeeld door zijn geschatte gewicht"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn gewogen gewicht gedeeld door zijn geschatte gewicht leeg is"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "7.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "7,00"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "name": "korting",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "1.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "1,00"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "toeslag",
+        "subject": "Vondst",
+        "attribute": "toeslag",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "gewogen toeslag",
+            "justification": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "toeslaggrond",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn toeslaggrond"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn toeslaggrond gevuld is"
+              }
+            },
+            "consequence": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "toeslaggrond",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn toeslaggrond"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "geschatte gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn geschatte gewicht"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn toeslaggrond gedeeld door zijn geschatte gewicht"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5,00"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "(zijn toeslaggrond gedeeld door zijn geschatte gewicht) plus 5,00"
+              }
+            },
+            "exceptions": {
+              "unordered": false,
+              "members": [
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "name": "gemerkte toeslag",
+                      "justification": {
+                        "node": "Compound",
+                        "quantifier": "all",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Predicate",
+                            "kind": "filled",
+                            "operand": {
+                              "node": "AttributeReference",
+                              "attribute": "toeslaggrond",
+                              "subjectType": "Vondst",
+                              "source": {
+                                "snippet": "zijn toeslaggrond"
+                              }
+                            },
+                            "negated": false,
+                            "digits": 0,
+                            "source": {
+                              "snippet": "zijn toeslaggrond gevuld is"
+                            }
+                          },
+                          {
+                            "node": "CharacteristicCheck",
+                            "characteristic": "gemerkt",
+                            "negated": false,
+                            "source": {
+                              "snippet": "hij gemerkt is"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "zijn toeslaggrond gevuld is en hij gemerkt is"
+                        }
+                      },
+                      "consequence": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "2.00"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "2,00"
+                        }
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "Uitzondering op gewogen toeslag"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Default",
+            "name": "toeslag",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "1.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "1,00"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "verhouding",
+        "subject": "Vondst",
+        "attribute": "verhouding",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "gewogen verhouding",
+            "justification": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "gewogen gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn gewogen gewicht"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn gewogen gewicht gevuld is"
+              }
+            },
+            "consequence": {
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewogen gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn gewogen gewicht"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "geschatte gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn geschatte gewicht"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn gewogen gewicht gedeeld door zijn geschatte gewicht"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "name": "verhouding",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "1.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "1,00"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

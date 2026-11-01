@@ -1,0 +1,46 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "opbrengst": {
+            "number": "100"
+          },
+          "aantal deelnemers": {
+            "number": "0"
+          },
+          "bergloon": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemeld"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "bergloon",
+      "value": {
+        "number": "40"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V3",
+      "characteristic": "erkend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

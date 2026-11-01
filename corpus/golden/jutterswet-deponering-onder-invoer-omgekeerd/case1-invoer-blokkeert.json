@@ -1,0 +1,41 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "heffing": {
+            "number": "9.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "heffing",
+      "value": {
+        "number": "9.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "grondslag",
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

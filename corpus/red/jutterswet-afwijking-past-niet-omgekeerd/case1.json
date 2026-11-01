@@ -1,0 +1,27 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {
+          "geschatte gewicht": {
+            "number": "30.00"
+          },
+          "toeslaggrond": {
+            "number": "100.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-006",
+    "params": {}
+  }
+}

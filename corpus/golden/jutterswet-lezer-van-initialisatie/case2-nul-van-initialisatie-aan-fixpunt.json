@@ -1,0 +1,44 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "30"
+          },
+          "opbrengst": {
+            "number": "90"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "bergloon",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "aandeel"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "aandeel",
+      "label": "V2",
+      "code": "EF-005"
+    }
+  ]
+}

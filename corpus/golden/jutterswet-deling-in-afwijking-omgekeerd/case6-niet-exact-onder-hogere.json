@@ -1,0 +1,70 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {
+          "geschatte gewicht": {
+            "number": "30.00"
+          },
+          "toeslaggrond": {
+            "number": "100.00"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemerkt"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V6",
+      "attribute": "verhouding",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V6",
+      "attribute": "toeslag",
+      "value": {
+        "number": "2.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V6",
+      "attribute": "korting",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V6",
+      "attribute": "premie",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V6",
+      "attribute": "verlaging",
+      "value": {
+        "number": "4.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

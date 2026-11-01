@@ -1,0 +1,12 @@
+Objecttype de Jutter (mv: Jutters)
+    de b Numeriek (getal met 2 decimalen);
+    de heffing Numeriek (getal met 2 decimalen);
+    de grondslag Numeriek (getal met 2 decimalen);
+
+Regel heffing van een jutter
+    geldig altijd
+        De heffing van een Jutter moet geïnitialiseerd worden op 7 indien 5 gedeeld door zijn b leeg is.
+
+Regel grondslag van een jutter
+    geldig altijd
+        De grondslag van een Jutter moet gesteld worden op 3.
