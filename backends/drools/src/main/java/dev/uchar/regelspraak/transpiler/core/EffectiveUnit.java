@@ -228,17 +228,17 @@ public final class EffectiveUnit {
         if (e instanceof Expr.Rounding roundingNode) return unit(roundingNode.base(), environment, depth + 1);
         if (e instanceof Expr.Clamp bg) return unit(bg.base(), environment, depth + 1);
         if (e instanceof Expr.Binary b) {
-            // §4 / ch. 2.6: an additive result carries the left unit and a unitless side adopts the other.
+            // §4 / ch. 2.6: an additive result carries the left unit and a unitless side adopts the other; a product
+            // and a quotient are the algebra of the frontend's model, which has one author for both.
             // Every other operator (power, percentage-of) has no v0 join rule here — annotation.
             return switch (b.op()) {
                 case PLUS, MIN, VERMINDERD_MET -> {
                     Unit l = unit(b.left(), environment, depth + 1);
                     yield l != null ? l : unit(b.right(), environment, depth + 1);
                 }
-                case MAAL -> timesUnit(unit(b.left(), environment, depth + 1),
-                                         unit(b.right(), environment, depth + 1));
-                case GEDEELD_DOOR, GEDEELD_DOOR_ABS -> quotientUnit(unit(b.left(), environment, depth + 1),
-                                                                    unit(b.right(), environment, depth + 1), annotation);
+                case MAAL -> Unit.times(unit(b.left(), environment, depth + 1), unit(b.right(), environment, depth + 1));
+                case GEDEELD_DOOR, GEDEELD_DOOR_ABS -> Unit.divide(unit(b.left(), environment, depth + 1),
+                                                                   unit(b.right(), environment, depth + 1));
                 default -> annotation;
             };
         }
@@ -264,8 +264,9 @@ public final class EffectiveUnit {
      * <p>Such a fold runs in two steps, and the first is what this rule is about: each element's own timeline
      * collapses at that attribute's declared granularity, every segment contributing <i>value × the whole grid
      * units of its span</i> (§4.20 Tabel 30). A RATE operand is therefore multiplied by a COUNT of its
-     * denominator's grid units, and what survives is the rate's NUMERATOR — "€/mnd getotaliseerd over maanden
-     * is €". Only then does a set fold (when there is one) sum those per-element scalars.
+     * denominator's grid units, and the negative factor rises one power (ch. 2.6, rule 8) — "€/mnd getotaliseerd over
+     * maanden is €", and €/dg^2 over days is €/dg. Only then does a set fold (when there is one) sum those per-element
+     * scalars.
      *
      * <p>Deriving operand 0's unit unchanged here (the plain §4.6 <i>Eenheid1</i> rule) would answer €/mnd for a
      * result that is €, and every restatement downstream would then be handed a pair with no conversion factor.
@@ -292,8 +293,9 @@ public final class EffectiveUnit {
      * <p>What this does NOT check, deliberately: that the denominator is the grid's own unit ("€/kg" on a MAAND
      * timeline). {@code ref} does check it; doing so here would need a granularity→unit mapping this class has no
      * honest source for, and guessing one from abbreviations is the kind of name test this backend has already
-     * been bitten by. The shape is absent from the corpus (all four rate cases are €/mnd on MAAND), and it is a
-     * question about the FOLD's value, which the verifier and ref own, not about a restatement.
+     * been bitten by. So it takes the one negative factor, and a unit with more than one stands unchanged, where the
+     * write boundary refuses it. The shape is absent from the corpus (all four rate cases are €/mnd on MAAND), and it is
+     * a question about the FOLD's value, which the verifier and ref own, not about a restatement.
      */
     /** The fold kinds that carry the §7.1 per-element timeline fold — the same two both consumers admit. */
     private static boolean foldsTimeline(Expr.FunctionKind kind) {
@@ -303,123 +305,7 @@ public final class EffectiveUnit {
     private static Unit afterTimeFolding(Expr operand, Unit u) {
         if (u == null || u.denominator() == null) return u;
         if (!(operand instanceof Expr.AttributeReference a) || a.objectType() == null) return u;
-        return Namen.containsName(a.objectType().granularityMembers(), a.attribute()) ? u.numerator() : u;
-    }
-
-    /**
-     * §4.4 / ch. 2.6, the MAAL join — the Java twin of the frontend's {@code Typing.compoundUnit}, which
-     * is where this rule is authored. One unit-bearing operand hands its unit through (the factor-free product).
-     * TWO of them do NOT: a rate times its (convertible) denominator unit CANCELS to the numerator ("€/jr maal jr
-     * = €"), and to no unit for a reciprocal ("1/dg maal dg"); a reciprocal times another plain unit is the rate
-     * ("1/dg maal € = €/dg"), and anything else is the OPAQUE product ("€ maal kg = €·kg") — a unit with no canonical,
-     * convertible only to an identical product.
-     *
-     * <p>That opacity is load-bearing here, not cosmetic: it is what stands between a two-unit product and a
-     * restatement by a live factor. Handing back the left operand's unit would scale €·kg into a € target.
-     * But what an opaque product buys downstream is NOT uniformly an honest marker, and the two shapes must
-     * not be conflated (measured 2026-09-04 on {@code Unit}: for m·m against m, {@code convertibleTo} is
-     * false, {@code requiredConversion} is false, {@code conversionFactorTo} FAULTS rather than answering 1 —
-     * the fail-fast card of the same day, and the reason the no-op below is each site's OWN identity, taken
-     * before it ever asks, and never an invented factor — and {@code exactRestateFactors} is null):
-     * <ul>
-     *   <li>a site that REFUSES on {@code convertibleTo} gets a false and turns the whole construct into an
-     *       honest marker/skip;</li>
-     *   <li>a site that merely COMPUTES a factor — the scalar §4 write boundary, the additive operand
-     *       boundary, the §5.1 Tabel 32 comparison restatement — gets the IDENTITY and the restatement becomes
-     *       a NO-OP. {@code TmsTranspiler.rescaled} returns the value unchanged. No marker.</li>
-     * </ul>
-     *
-     * <p>So on a scalar restatement the value simply stands UNRESTATED, in whatever unit it was computed in.
-     * That is conservative in the sense that matters — no lie-driven magnitude, because no factor was invented
-     * — but it is a SILENT ref/Drools divergence, not a loud one, and this class must not claim otherwise.
-     * Its blast radius is bounded by who else accepts the form: the frontend's
-     * {@code Typing.compoundUnit} flags the unit mismatch, {@code ref} faults, and the ASP
-     * translator refuses ahead of translation, so no corpus golden carries it and the divergence is
-     * unobservable in every gate. {@code CaseRunner} builds both branches, which render one analysis, so the form
-     * takes the same course on both.
-     *
-     * <p>The unspellable case (a rate factor, "€·m/jr") reaches a consumer only on a document the frontend
-     * never wrote — {@code Typing} makes it a loud error rather than a type. This join answers it with a
-     * DENOMINATOR-LESS opaque product ({@link Unit#product} keeps the numerator factors and drops the
-     * noemer, so "€/jr maal kg" and "€/jr maal kg/jr" both yield €·kg): again the conservative,
-     * non-restatable outcome rather than an invented factor. RUNTIME-SEMANTICS ch. 2.10 records it as the
-     * fourth MAAL outcome and names the three consumers that refuse it.
-     */
-    private static Unit timesUnit(Unit el, Unit rightUnit) {
-        if (el == null) return rightUnit;
-        if (rightUnit == null) return el;
-        if (el.denominator() != null && rightUnit.denominator() == null && rightUnit.convertibleTo(el.denominator())) return el.numerator();
-        if (rightUnit.denominator() != null && el.denominator() == null && el.convertibleTo(rightUnit.denominator())) return rightUnit.numerator();
-        if (el.isReciprocal() && rightUnit.denominator() == null && !rightUnit.isProduct()) return Unit.compound(rightUnit, el.denominator());
-        if (rightUnit.isReciprocal() && el.denominator() == null && !el.isProduct()) return Unit.compound(el, rightUnit.denominator());
-        return opaqueProduct(el, rightUnit);
-    }
-
-    /**
-     * ch. 2.6, the quotient join, the twin of the same arm in {@code Typing}: a unitless divisor hands the dividend's
-     * unit through, a unitless dividend gives the reciprocal, convertible units cancel and two plain units form a rate.
-     * A shape with no normal form reaches a consumer only on a document the frontend never wrote, and the annotation
-     * stands there as at the fourth class.
-     */
-    private static Unit quotientUnit(Unit el, Unit rightUnit, Unit annotation) {
-        if (rightUnit == null) return el;
-        if (el == null) {
-            Unit inverse = Unit.reciprocal(rightUnit);
-            return inverse != null ? inverse : annotation;
-        }
-        if (el.convertibleTo(rightUnit)) return null;
-        return el.denominator() == null && rightUnit.denominator() == null ? Unit.compound(el, rightUnit) : annotation;
-    }
-
-    /**
-     * The identity table of every opaque product THIS derivation built — the provenance mark
-     * {@link UnitConflict} keys its exemption on.
-     *
-     * <p><b>Why identity and not the value.</b> {@link Unit#product} builds "€·kg" as a {@code Unit} of two factors
-     * with no canonical and no factor, and the wire can write a unit with exactly those factors. The two are
-     * therefore value-indistinguishable, and a
-     * test on the ABBREVIATION hands a wire-declared "appel·peer" the exemption meant for a derived product —
-     * measured 2026-09-09: {@code ref} faults on such a document, this backend replayed it. Only WHERE the unit
-     * came from separates them, and provenance is identity.
-     *
-     * <p>A marker field on {@code Unit} itself would be the smaller encoding, but that record lives in the
-     * frontend module and is outside this card's reach; this table is the same statement made from the one place
-     * in the backend that builds such a product.
-     *
-     * <p><b>Its growth, measured rather than assumed.</b> One entry per {@link #timesUnit} EVALUATION — not
-     * per node and not per model: {@link Unit#product} allocates a fresh instance every time, so transpiling
-     * one document three times in a JVM adds three sets of entries (measured 0 → 2 → 4 → 6 on a document with
-     * two such nodes). The table is monotone for the lifetime of the JVM and is never cleared, so it is a
-     * STRONG-REFERENCE LEAK, stated plainly. Two things bound the damage and neither is a correctness argument
-     * about the leak: the corpus produces ZERO entries (no golden carries a two-unit MAAL), and each entry is
-     * one small record.
-     *
-     * <p>Correctness is unaffected by the growth: a stale entry can never mark a NEW unit, because
-     * {@link Unit#product} never returns an existing instance, so no aliasing is possible however long the
-     * table lives. Clearing it per transpilation is rejected: it would need a guarantee that no other derivation
-     * instance is live, and nothing in the build route provides one — the analysis and the IR loader each
-     * construct their own {@code EffectiveUnit}, and a clear on construction would silently unmark a product the
-     * other is still holding. That turns a bounded leak into a wrong
-     * answer, which is the wrong trade. Bounding it properly wants a weak IDENTITY set, which the JDK has no
-     * form of; it is carded rather than improvised here.
-     */
-    private static final java.util.Set<Unit> DERIVED_PRODUCTS =
-            java.util.Collections.synchronizedSet(java.util.Collections.newSetFromMap(new IdentityHashMap<>()));
-
-    private static Unit opaqueProduct(Unit a, Unit b) {
-        Unit p = Unit.product(a, b);
-        DERIVED_PRODUCTS.add(p);
-        return p;
-    }
-
-    /** Whether {@code e} is an opaque product THIS derivation built (identity, never the name). */
-    static boolean isDerivedProduct(Unit e) {
-        return e != null && DERIVED_PRODUCTS.contains(e);
-    }
-
-    /** The table's current size — so the growth law above is a CHECKED claim rather than a comment. */
-    static int countDerivedProducts() {
-        return DERIVED_PRODUCTS.size();
+        return Namen.containsName(a.objectType().granularityMembers(), a.attribute()) ? u.afterTimeFold() : u;
     }
 
     private Unit letUnit(Expr e, Map<String, Unit> environment, int depth, Unit annotation) {

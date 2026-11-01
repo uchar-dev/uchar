@@ -219,9 +219,9 @@ class UnitIdentityTest {
         assertClean(withAttributes(attributes, "Een Verkoop is snel indien zijn tempo groter is dan 30 1/wk."));
     }
 
-    /** (c) A rate factor (€/jr maal m = €·m/jr) is a product unit with a denominator the model cannot
-     *  spell — besluit 17c makes it a LOUD error instead of the old Onbekend. */
-    @Test void unspellable_rate_factor_is_refused_loudly() {
+    /** (c) A rate factor (EUR/jr maal m = EUR·m/jr) is a unit, and it has another dimension than the target €: the sentence
+     *  of WF-023, with the unit written out. */
+    @Test void a_rate_factor_into_another_dimension_is_refused_by_its_unit() {
         String src = """
             Eenheidsysteem Munt
                 de euro (mv: euros) EUR €
@@ -239,7 +239,8 @@ class UnitIdentityTest {
                     Het resultaat van een Verkoop moet berekend worden als (het bedrag van de Verkoop gedeeld door de looptijd van de Verkoop) maal de afstand van de Verkoop.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        assertTrue(m.errors().stream().anyMatch(d -> d.message().contains("niet uitdrukken")),
-                () -> "verwachtte een luide onspelbare-samengestelde-eenheid-fout, kreeg: " + m.errors());
+        assertTrue(refused(m, "RGS-335"), () -> "verwachtte de zin van WF-023, kreeg: " + m.errors());
+        String message = m.errors().stream().filter(d -> "RGS-335".equals(d.code())).findFirst().orElseThrow().message();
+        assertTrue(message.contains("value unit 'EUR·m/jr', target unit 'EUR'"), message);
     }
 }

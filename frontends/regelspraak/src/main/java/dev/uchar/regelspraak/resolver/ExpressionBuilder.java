@@ -845,14 +845,23 @@ final class ExpressionBuilder {
         return new Rational(sub, Msg.frontend("PART.fraction-conversion", "target", target.rendering(), "from", van.rendering()));
     }
 
-    /** A rate times a quantity restates the quantity into the rate's denominator (Typing's product arm). */
+    /** A product restates a right factor into the left factor of its class (ch. 2.6, rule 2), which is the quantity
+     *  restated into the rate's denominator where the operands are a rate and a quantity. The fraction is that of the
+     *  product; the operand it is read against is the quantity. */
     private static Rational denominatorConversion(Expr.Binary b) {
         Unit el = b.left().type() == null ? null : b.left().type().unitOf();
         Unit rightUnit = b.right().type() == null ? null : b.right().type().unitOf();
         if (el == null || rightUnit == null) return null;
-        if (el.denominator() != null && rightUnit.denominator() == null) return conversion(b.right(), el.denominator());
-        if (rightUnit.denominator() != null && el.denominator() == null) return conversion(b.left(), rightUnit.denominator());
-        return null;
+        java.math.BigDecimal[] f = Unit.timesFactors(el, rightUnit);
+        if (f[0].remainder(f[1]).signum() == 0) return null;
+        boolean quantityLeft = rightUnit.denominator() != null && el.denominator() == null;
+        Expr sub = quantityLeft ? b.left() : b.right();
+        Unit rate = quantityLeft ? rightUnit : el, quantity = quantityLeft ? el : rightUnit;
+        // a literal's count is known, so its restatement is too: 7 dg is exactly 1 wk
+        java.math.BigDecimal[] r = sub instanceof Expr.Literal l ? dev.uchar.regelspraak.model.RationalParser.of(l.valueText()) : null;
+        if (r != null && r[0].multiply(f[0]).remainder(r[1].multiply(f[1])).signum() == 0) return null;
+        Unit target = rate.denominator() != null ? rate.denominator() : rate;
+        return new Rational(sub, Msg.frontend("PART.fraction-conversion", "target", target.rendering(), "from", quantity.rendering()));
     }
 
     /** The next smaller calendar unit the author can step the rest in, spelled as the language reads it ("min"
@@ -2769,7 +2778,7 @@ final class ExpressionBuilder {
         if (f != null) return f;
         for (Expr arg : arguments) {
             Unit e = arg.type().unitOf();
-            if (e == null || TimeCalculation.chronoUnit(e.denominator()) != null) continue;
+            if (e == null || TimeCalculation.chronoUnit(e.negativeAtom()) != null) continue;
             boolean temporal = arg instanceof Expr.AttributeReference a && a.objectType() != null
                     && a.objectType().granularityOf(a.attribute()) != null;
             if (!temporal)
@@ -2952,7 +2961,7 @@ final class ExpressionBuilder {
             // One predicate, no other behaviour moves.
             case TOTAAL -> setRead(args) ? first
                     : first instanceof Datatype.Numeric n && n.unit() != null && n.unit().denominator() != null
-                    ? new Datatype.Numeric(n.wholeNumber(), n.decimals(), n.sign(), n.unit().numerator())
+                    ? new Datatype.Numeric(n.wholeNumber(), n.decimals(), n.sign(), n.unit().afterTimeFold())
                     : first;
             // §4.12/§4.13: a multi-operand min/max result is the SMALLEST/LARGEST VALUE, whose
             // precision is value-dependent and not statically known. A single-operand min/max over a

@@ -194,8 +194,8 @@ class TypingTest {
         assertTrue(res.ok());
         assertNull(res.type().unitOf(), "een quotiënt van gelijke eenheden is eenheidloos");
     }
-    @Test void times_two_separate_units_gives_an_opaque_product_unit() {
-        // §4.4: € maal m = €·m — an opaque PRODUCT unit (no canonical), commutative, not Unknown.
+    @Test void times_two_separate_units_gives_their_product() {
+        // §4.4: € maal m = €·m — a unit of two factors, commutative, not Unknown.
         Unit m = new Unit("m", "Lengte");
         var res = Typing.compute(BinOp.MAAL, numUnit(EUR), numUnit(m));
         assertTrue(res.ok());
@@ -217,8 +217,7 @@ class TypingTest {
     }
 
     @Test void product_unit_assigned_to_a_single_unit_is_a_unit_error() {
-        // §4.4 / §6.1: €·m is convertible only to an identical product, so assigning it to a € target flags a
-        // unit mismatch — where the prior Onbekend silently passed.
+        // §4.4 / §6.1: €·m has another dimension than €, so assigning it to a € target flags a unit mismatch.
         Datatype productEm = Typing.compute(BinOp.MAAL, numUnit(EUR), numUnit(new Unit("m", "Lengte"))).type();
         assertNotNull(Typing.assignment(numUnit(EUR), productEm), "€·m toegekend aan € moet een eenheidfout zijn");
         assertNull(Typing.assignment(productEm, productEm), "€·m toegekend aan €·m is correct");
@@ -240,11 +239,11 @@ class TypingTest {
         assertEquals("1/mnd", part.type().unitOf().rendering());
     }
 
-    @Test void the_inverse_of_a_product_is_a_loud_error() {
-        Unit product = Unit.product(EUR, new Unit("m", "Lengte"));
+    @Test void the_inverse_of_a_product_is_a_unit() {
+        Unit product = Unit.times(EUR, new Unit("m", "Lengte"));
         var res = Typing.compute(BinOp.GEDEELD_DOOR, num(), numUnit(product));
-        assertFalse(res.ok(), () -> "de inverse van een product moet luid falen, kreeg: " + res.type());
-        assertTrue(res.error().contains("niet uitdrukken"), res::error);
+        assertTrue(res.ok(), res::error);
+        assertEquals("1/EUR/m", res.type().unitOf().rendering());
     }
 
     @Test void a_reciprocal_times_its_unit_has_no_unit_and_times_another_unit_is_the_rate() {
@@ -281,19 +280,53 @@ class TypingTest {
         assertEquals(0, perDay.conversionFactorTo(perWeek).compareTo(new java.math.BigDecimal("7")));
     }
 
-    @Test void times_unspellable_rate_factor_is_a_loud_error() {   // besluit 17c
-        // €/jr maal m: een tarief maal een niet-cancelende eenheid geeft een producteenheid MET een noemer (€·m/jr)
-        // die het Eenheid-model niet kan spellen -> luide fout (was Onbekend "samengestelde eenheid").
+    @Test void times_a_rate_and_another_unit_is_their_product() {
+        // €/jr maal m: de eenheid is de lijst van beide, met de noemer erin (ch. 2.6, regel 2).
         Unit m = new Unit("m", "Lengte");
         var res = Typing.compute(BinOp.MAAL, numUnit(Unit.compound(EUR, JR)), numUnit(m));
-        assertFalse(res.ok(), () -> "een onspelbare ratefactor-product moet luid falen, kreeg: " + res.type());
-        assertTrue(res.error().contains("niet uitdrukken"), res::error);
+        assertTrue(res.ok(), res::error);
+        assertEquals("EUR·m/jr", res.type().unitOf().rendering());
     }
 
-    @Test void divided_by_a_rate_is_a_loud_error() {   // besluit 17c
-        // € gedeeld door €/jr heeft een omgekeerde noemer (1/jr) -> onspelbaar -> luide fout (was Onbekend).
+    @Test void divided_by_a_rate_cancels_what_the_two_share() {
+        // € gedeeld door €/jr is jr: de € valt weg en de noemer keert om (ch. 2.6, regel 3).
         var res = Typing.compute(BinOp.GEDEELD_DOOR, numUnit(EUR), numUnit(Unit.compound(EUR, JR)));
-        assertFalse(res.ok(), () -> "een gedeeld-door-tarief moet luid falen, kreeg: " + res.type());
-        assertTrue(res.error().contains("niet uitdrukken"), res::error);
+        assertTrue(res.ok(), res::error);
+        assertEquals("jr", res.type().unitOf().rendering());
+    }
+
+    /** The units of the table of RUNTIME-SEMANTICS ch. 2.6; the values are the executors'. */
+    @Test void the_table_of_the_algebra_types_every_row() {
+        Unit cm = new Unit("cm", "Lengte", "m", new java.math.BigDecimal("0.01"));
+        Unit m = new Unit("m", "Lengte", "m", java.math.BigDecimal.ONE);
+        Unit s = new Unit("s", "Tijd");
+        Unit n = new Unit("n", "Stuk");
+        Unit dg = new Unit("dg", "Tijd", "dg", java.math.BigDecimal.ONE);
+        Unit wk = new Unit("wk", "Tijd", "dg", new java.math.BigDecimal("7"));
+        Unit mnd = new Unit("mnd", "Tijd", "mnd", java.math.BigDecimal.ONE);
+        Unit jaar = new Unit("jr", "Tijd", "mnd", new java.math.BigDecimal("12"));
+        Unit euro = new Unit("€", "Munt"), kg = new Unit("kg", "Massa");
+        java.util.function.BiFunction<Unit, Unit, Unit> times = Unit::times, over = Unit::divide;
+        Unit m2 = times.apply(m, m);
+        assertEquals("m^2", m2.rendering());
+        assertEquals("m^2/s", over.apply(m2, s).rendering());
+        assertFalse(m2.convertibleTo(over.apply(m2, s)), "m^2 tegen m^2/s");
+        assertEquals("cm^2", times.apply(cm, m).rendering());
+        assertTrue(times.apply(cm, m).convertibleTo(m2));
+        assertEquals("m", over.apply(m2, m).rendering());
+        assertEquals("m", over.apply(m2, cm).rendering());
+        assertEquals("1/m^2", over.apply(null, m2).rendering());
+        assertEquals("€", times.apply(Unit.compound(euro, jaar), mnd).rendering());
+        assertEquals("€", times.apply(Unit.compound(euro, dg), wk).rendering());
+        assertNull(times.apply(Unit.reciprocal(dg), wk));
+        assertNull(times.apply(Unit.reciprocal(wk), dg));
+        assertNull(over.apply(dg, wk));
+        Unit perDayPerMetre = over.apply(Unit.compound(euro, dg), m);
+        assertEquals("€/dg/m", perDayPerMetre.rendering());
+        assertEquals("€", times.apply(times.apply(perDayPerMetre, dg), m).rendering());
+        assertEquals("kg·€/jr^2", times.apply(Unit.compound(euro, jaar), Unit.compound(kg, jaar)).rendering());
+        assertEquals("m·€/jr", times.apply(Unit.compound(euro, jaar), m).rendering());
+        assertEquals("n·€", over.apply(euro, Unit.reciprocal(n)).rendering());
+        assertEquals("dg/€", over.apply(null, Unit.compound(euro, dg)).rendering());
     }
 }

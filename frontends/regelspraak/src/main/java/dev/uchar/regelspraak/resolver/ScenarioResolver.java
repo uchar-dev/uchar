@@ -1389,31 +1389,28 @@ public final class ScenarioResolver {
         return ScenarioValue.fromNumber(dev.uchar.regelspraak.emit.IrEmitter.numberLexeme(text));
     }
 
-    /** The exact factor {num, den} that restates a quantity in {@code van} as one in {@code naar}: each unit's
-     *  factor to the shared canonical as its system declares it, a rate's denominators inverted. The unit records
-     *  carry those factors rounded to 16 digits, and a restatement through them is a rounding: "2 gtd" with
-     *  "gtd = 1/3 etm" would become 0.6666666666666666 etm where the wire and every executor read 2/3. Null where a unit
-     *  has no exact factor. */
+    /** The exact factor {num, den} that restates a quantity in {@code van} as one in {@code naar}: the factor of each
+     *  atom to the shared canonical as its system declares it, to the power of its exponent, those of {@code naar}
+     *  inverted. The unit records carry those factors rounded to 16 digits, and a restatement through them is a rounding:
+     *  "2 gtd" with "gtd = 1/3 etm" would become 0.6666666666666666 etm where the wire and every executor read 2/3. Null
+     *  where a unit has no exact factor. */
     private BigInteger[] exactRescaling(Unit van, Unit to) {
-        // the numerator of a reciprocal is no unit: factor 1
-        BigInteger[] a = van.isReciprocal() ? UNIT_FACTOR : exactFactor(van.numerator());
-        BigInteger[] b = to.isReciprocal() ? UNIT_FACTOR : exactFactor(to.numerator());
-        if (a == null || b == null) return null;
-        BigInteger num = a[0].multiply(b[1]), den = a[1].multiply(b[0]);
-        if (van.denominator() != null && to.denominator() != null) {
-            BigInteger[] c = exactFactor(van.denominator()), d = exactFactor(to.denominator());
-            if (c == null || d == null) return null;
-            num = num.multiply(d[0]).multiply(c[1]);
-            den = den.multiply(d[1]).multiply(c[0]);
-        }
+        BigInteger num = BigInteger.ONE, den = BigInteger.ONE;
+        for (int side = 0; side < 2; side++)
+            for (Unit.Factor f : (side == 0 ? van : to).factors()) {
+                BigInteger[] x = exactFactor(f);
+                if (x == null) return null;
+                int exponent = side == 0 ? f.exponent() : -f.exponent();
+                int power = Math.abs(exponent);
+                num = num.multiply((exponent > 0 ? x[0] : x[1]).pow(power));
+                den = den.multiply((exponent > 0 ? x[1] : x[0]).pow(power));
+            }
         return new BigInteger[]{num, den};
     }
 
-    private static final BigInteger[] UNIT_FACTOR = {BigInteger.ONE, BigInteger.ONE};
-
     /** The exact factor of {@code e} to its canonical: the fraction its system declares, else a whole decimal factor
      *  (a unit that is its own canonical, a built-in unit), else null — as the emitter writes it on the wire. */
-    private BigInteger[] exactFactor(Unit e) {
+    private BigInteger[] exactFactor(Unit.Factor e) {
         BigDecimal f = e.factorToCanonical();
         if (f == null) return null;
         RegelSpraakModel.UnitSystem es = e.system() == null ? null : model.unitSystems.get(e.system());

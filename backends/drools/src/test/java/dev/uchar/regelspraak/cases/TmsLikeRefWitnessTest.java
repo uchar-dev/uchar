@@ -63,7 +63,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * destructive branch refused it.
  * <li>{@code rate-times-converted-quantity} and {@code quotient-of-convertible-units}: "dagloon (€/dg) maal werkduur (wk)"
  * with 10,00 and 3 is 210,00, and "zoekduur (dg) gedeeld door seizoensduur (wk)" with 14 and 4 is 0,50: the operand
- * restated into the unit of the other (ch. 2.6). Clingo declines both.
+ * restated into the unit of the other (ch. 2.6). Clingo declines the quotient.
+ * <li>{@code product-into-square} and {@code product-restated-into-left-factor}: "lengte (m) maal breedte (m)" in an
+ * attribute in m^2 is 6,00, and "lengte (cm) maal breedte (m)" in an attribute in cm^2 with 2 and 3 is 600,00: the right
+ * factor restated into the left factor of its class (ch. 2.6, rule 2).
  * </ul>
  *
  * <p><b>Measured</b> 2026-10-10 with the verifier, the reference interpreter, the ASP runner, the jar of the claim of
@@ -77,7 +80,7 @@ class TmsLikeRefWitnessTest {
     private static final Path MAP = Path.of("src", "test", "resources", "like-ref");
 
     /** The number of documents under {@link #MAP}: a document that disappears must say so here. */
-    private static final int COUNT = 28;
+    private static final int COUNT = 30;
 
     @Test void each_document_plays_like_ref() throws Exception {
         List<String> deviating = new ArrayList<>();

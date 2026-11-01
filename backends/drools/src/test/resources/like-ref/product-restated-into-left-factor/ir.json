@@ -1,0 +1,199 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "lengte",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "cm",
+                  "system": "Lengte",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 100
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "breedte",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "m",
+                  "system": "Lengte",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "oppervlakte",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "cm",
+                  "system": "Lengte",
+                  "canonical": "m",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 100
+                  },
+                  "exponent": 2
+                }
+              ]
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Lengte",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "m",
+            "system": "Lengte",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "meter"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "cm",
+            "system": "Lengte",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 100
+            },
+            "spellings": [
+              "centimeter"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "oppervlakte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "oppervlakte",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De oppervlakte van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "lengte",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn lengte"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "breedte",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn breedte"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 4,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "cm",
+                    "system": "Lengte",
+                    "canonical": "m",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 100
+                    },
+                    "exponent": 2
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "zijn lengte maal zijn breedte"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

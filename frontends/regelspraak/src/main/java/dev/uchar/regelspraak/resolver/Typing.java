@@ -107,9 +107,8 @@ public final class Typing {
             case VERMINDERD_MET -> numericBinary(l, r, "verminderd met", lLit, rLit);
             // §4.4/4.5: Numeriek only (Tabel 11/14 list no Percentage row). Units form a group whose IDENTITY is
             // "geen eenheid" (the dimensionless "1"): 1 × E = E, so a unitless operand ABSORBS under multiplication
-            // and the product carries the other operand's unit (besluit 16Y). Two units multiply/divide into a
-            // composite the Unit model can spell (a rate "€/jr", a reciprocal "1/dg", an opaque product "€·m") or,
-            // when it cannot (a rate factor), a LOUD error — a unit it cannot name is never a wire type (besluit 17c).
+            // and the product carries the other operand's unit (besluit 16Y). Two units multiply and divide by their
+            // factors (RUNTIME-SEMANTICS ch. 2.6), and every outcome is a unit or no unit.
             case MAAL, GEDEELD_DOOR -> {
                 if (!l.isNumber() || !r.isNumber()) {
                     // WF-035 per operand that is no number; a percentage is a number to the verifier, which
@@ -126,26 +125,11 @@ public final class Typing {
                 // fraction (no decimal precision of its own); maxDec under-reports it, but that errs
                 // safe (a false negative, never a false positive) and is carded separately.
                 int dec = op == BinOp.MAAL ? decimalsOf(l) + decimalsOf(r) : maxDec(l, r);
-                Unit el = l.unitOf(), rightUnit = r.unitOf();
-                if (el == null && rightUnit == null)                                       // Tabel 11/14 rij 5: (none) ⋆ (none) -> (none)
-                    yield Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, null));
-                if (rightUnit == null)                                                     // Tabel 11 rij 3 / Tabel 14 rij 3: E ⋆ (none) -> E
-                    yield Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, el));
-                if (el != null)   // both operands carry a unit -> the representable composite, or a loud error
-                    yield compoundUnit(op, dec, el, rightUnit);
-                // el == null, er != null: a unitless left, a unit-bearing right.
-                if (op == BinOp.MAAL)
-                    // §4.4 Tabel 11 rij 4 + Tabel 13: (none) maal Eenheid1 -> Eenheid1, decimalen = som. Unconditional:
-                    // the dimensionless "1" absorbs (1 × E = E) whether the left is a LITERAL or an ATTRIBUTE — the old
-                    // literal/attribute split retires (besluit 16Y).
-                    yield Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, rightUnit));
                 // §4.5 GEDEELD: Tabel 14 rij 4 says (none) gedeeld door Eenheid1 -> Eenheid1, but that cell is
                 // dimensionally UNSOUND — a unitless numerator over a unit denominator is the reciprocal 1/E, NOT E.
-                // Besluit 17b KNOWINGLY diverges from the arbiter here. The inverse of a product has no normal form
-                // (Unit): a LOUD error, never a wire type.
-                Unit inverse = Unit.reciprocal(rightUnit);
-                yield inverse != null ? Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, inverse))
-                        : Result.error(new Coded("RGS-282", params("unit", rightUnit.rendering())));
+                // Besluit 17b KNOWINGLY diverges from the arbiter here.
+                Unit unit = op == BinOp.MAAL ? Unit.times(l.unitOf(), r.unitOf()) : Unit.divide(l.unitOf(), r.unitOf());
+                yield Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, unit));
             }
             // §4.7 tot de macht: Numeriek without a unit on either side; result without a unit.
             case TOT_DE_MACHT -> {
@@ -428,43 +412,6 @@ public final class Typing {
     }
 
     // -------- helpers --------
-
-    /** §4.4/4.5 result datatype for a maal/gedeeld of two unit-bearing operands, in the cases the Unit
-     *  model can represent (a numerator over one simple denominator, or an opaque product); the rest are a LOUD
-     *  error (besluit 17c: a unit the model cannot spell is never a wire type, and never degrades to Onbekend).
-     *  MAAL: a rate times its (convertible) denominator-unit cancels to the numerator ("€/jr maal jr = €"), and to
-     *  no unit when that rate is a reciprocal ("1/dg maal dg = een getal"); a reciprocal times another plain unit is
-     *  a rate ("1/dg maal € = €/dg"); two plain numerators are the opaque product "€ maal m = €·m"; a rate factor
-     *  ("€·m/jr") is unspellable.
-     *  GEDEELD: two plain units divide to a rate ("€ gedeeld door jr = €/jr"), or to a dimensionless number when
-     *  the units are convertible ("€ gedeeld door € = een getal"); a rate divisor (a second denominator) is
-     *  unspellable. */
-    private static Result compoundUnit(BinOp op, int dec, Unit el, Unit rightUnit) {
-        if (op == BinOp.MAAL) {
-            if (el.denominator() != null && rightUnit.denominator() == null && rightUnit.convertibleTo(el.denominator()))
-                return Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, el.numerator()));
-            if (rightUnit.denominator() != null && el.denominator() == null && el.convertibleTo(rightUnit.denominator()))
-                return Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, rightUnit.numerator()));
-            if (el.isReciprocal() && rightUnit.denominator() == null && !rightUnit.isProduct())
-                return Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, Unit.compound(rightUnit, el.denominator())));
-            if (rightUnit.isReciprocal() && el.denominator() == null && !el.isProduct())
-                return Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, Unit.compound(el, rightUnit.denominator())));
-            // §4.4: two plain units multiply to a PRODUCT unit ("€ maal m = €·m") the model CAN spell — an opaque
-            // composite (no canonical, IR-SPEC ch. 2.5), convertible only to an identical product, so a €·m result
-            // assigned to a € target flags a unit mismatch (degraded to Onbekend it would pass silently).
-            if (el.denominator() == null && rightUnit.denominator() == null)
-                return Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, Unit.product(el, rightUnit)));
-            // a rate factor (a second denominator / "€·m/jr") is UNSPELLABLE — besluit 17c: a loud error, not Unknown.
-            return Result.error(new Coded("RGS-293",
-                    params("left", el.rendering(), "right", rightUnit.rendering())));
-        }
-        if (el.denominator() == null && rightUnit.denominator() == null)   // GEDEELD: only two plain units are representable
-            return el.convertibleTo(rightUnit)
-                    ? Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, null))                        // €/€ -> getal
-                    : Result.ok(new Datatype.Numeric(false, dec, Datatype.Sign.ONBEPAALD, Unit.compound(el, rightUnit))); // €/jr
-        // a rate divisor (its result needs a second denominator / "1/jr") is UNSPELLABLE — besluit 17c: a loud error.
-        return Result.error(new Coded("RGS-294", params("left", el.rendering(), "right", rightUnit.rendering())));
-    }
 
     /** Same datatype family for gelijk/ongelijk/toekenning. Numeriek and Percentage are
      *  distinct here (the §5.3/5.6 and §6 tables list them as separate rows); the two date

@@ -37,26 +37,9 @@ import dev.uchar.regelspraak.model.Unit;
  * is preferred only because the message arrives unwrapped and names the site. Each fence therefore carries its
  * OWN {@code site} text, so the report says which of them fired rather than three of them sharing one line.
  *
- * <p><b>The two exemptions</b>, each because there is genuinely nothing to reconcile:
- * <ul>
- *   <li>a UNITLESS side ({@code null}): ch. 2.6 lets it adopt the other unit, value unchanged — ref does the
- *       same, and no factor is due;</li>
- *   <li>an OPAQUE PRODUCT unit ("€·kg", what {@link Unit#product} builds for a two-unit MAAL): it carries no
- *       canonical by construction, so no factor is invented and the value simply stands in the unit it was
- *       computed in. RUNTIME-SEMANTICS ch. 2.10 records that stance for this backend explicitly — a silent
- *       divergence on a shape the corpus does not carry and no frontend can emit — and faulting on it here
- *       would make that recorded sentence false. The exemption keys on PROVENANCE (identity), not on the
- *       abbreviation: a wire-declared unit that merely LOOKS like a product ("appel·peer", no canonical, no
- *       factor) is not one, {@code ref} faults on it, and so does this fence.
- *       <p>It is one side that carries the exemption, so it also covers TWO DIFFERENT derived products meeting
- *       each other — "€·kg" against "€·m" passes, not only a product against a concrete unit. That is the same
- *       ch. 2.10 stance and not a wider one: neither side has a canonical, so there is no factor to invent
- *       either way, and the value stands in the unit it was computed in. What it costs is a diagnosis — two
- *       products that could never be reconciled are not reported as such — and that limit is named here rather
- *       than left to be discovered. Reaching it needs a document carrying two distinct two-unit MAAL results at
- *       one restatement site, which no frontend emits and the corpus does not hold.
- *       <p>The exemption stops at a rate: a derived product against "m·m/s" or "€/jr" faults, as {@code ref} does.</li>
- * </ul>
+ * <p><b>The one exemption</b>, because there is genuinely nothing to reconcile: a UNITLESS side ({@code null}).
+ * ch. 2.6 lets it adopt the other unit, value unchanged — ref does the same, and no factor is due. A product is a unit
+ * like any other: it restates where its dimension allows and faults where it does not.
  *
  * <p><b>What is NOT exempt.</b> A rate against a plain unit with convertible numerators ("€/mnd" against "€"). An
  * exemption would be place-blind: it would apply at all eight fence positions, so an additive join, a write boundary
@@ -92,16 +75,7 @@ public final class UnitConflict extends RuntimeException {
     public static void requireRescalable(Unit from, Unit destination, String site) {
         if (from == null || destination == null) return;              // a unitless side adopts the other (ch. 2.6)
         if (from.convertibleTo(destination)) return;                // a factor exists (or the two are the same unit)
-        // ch. 2.10's recorded conservative no-op; a rate has a denominator that a value left standing cannot supply
-        if ((opaqueProduct(from) && destination.denominator() == null)
-                || (opaqueProduct(destination) && from.denominator() == null)) return;
         throw new UnitConflict(from, destination, site);
-    }
-
-    /** An opaque product THIS backend's derivation built — provenance, by identity, never the abbreviation.
-     *  See {@link EffectiveUnit#isDerivedProduct} for why the name cannot carry this. */
-    private static boolean opaqueProduct(Unit e) {
-        return EffectiveUnit.isDerivedProduct(e);
     }
 
     public Unit from() { return from; }

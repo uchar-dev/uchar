@@ -280,7 +280,6 @@ RGS-278	scenario-value-not-read	ERROR	value,what
 RGS-279	scenario-text-value-carries-expression	ERROR	what
 RGS-280	sub-day-unit-on-day-date	ERROR	operation
 RGS-281	numeric-operator-needs-numeric-operands	ERROR	left,operator,right
-RGS-282	division-unitless-by-unit	ERROR	unit
 RGS-283	power-operands-not-unitless	ERROR	-
 RGS-284	numeric-binary-needs-numeric-operands	ERROR	left,operator,right
 RGS-285	equality-across-families	ERROR	left,right
@@ -291,8 +290,6 @@ RGS-289	equality-across-enumeration-domains	ERROR	-
 RGS-290	eleven-test-operand-wrong-kind	ERROR	kind
 RGS-291	exact-digits-operand-not-text	ERROR	kind
 RGS-292	day-kind-operand-not-date	ERROR	kind
-RGS-293	product-unit-with-denominator-not-spellable	ERROR	left,right
-RGS-294	quotient-unit-not-spellable	ERROR	left,right
 RGS-295	date-with-date-ill-formed	ERROR	operation
 RGS-296	duration-minus-date-ill-formed	ERROR	-
 RGS-297	duration-plus-date-ill-formed	ERROR	-

@@ -497,45 +497,92 @@ van nul* are sign-symmetric.
 - **Comparison across units** restates *both* sides by their exact
   canonical factors: `24 mnd = 2 jr` compares 24 = 2·12 — exact, never a
   truncated ratio.
-- **maal**: a rate times its denominator unit cancels (`€/jr × jr = €`), a
-  quantity in a convertible unit restated into the denominator first; a
-  reciprocal (`IR-SPEC.md` ch. 2.5, point 5) times its unit leaves no unit
-  (`1/dg × dg` is a number), and times another plain unit is the rate
-  (`1/dg × € = €/dg`); two plain units form an opaque product unit
-  (`€ × m = €·m`); a unitless *literal* times a unit-bearing value carries the
-  unit through.
-- **gedeeld door**: convertible units cancel to dimensionless (`€ ÷ € =
-  getal`); two plain units form a rate (`€ ÷ jr = €/jr`); a unitless dividend
-  gives the inverse of the divisor's unit (`1 ÷ dg` has the unit `1/dg`,
-  `1 ÷ 1/dg` the unit `dg`, `1 ÷ €/dg` the unit `dg/€`), and the inverse of a
-  product has no normal form.
+- **maal, gedeeld door and the rest** follow from the factor list of a unit
+  (`IR-SPEC.md` ch. 2.5, point 5), below.
 - **percentage van** carries the right operand's unit (a percentage of a
   `€` value is a `€` value).
-- Deliberately not modelled, as scope limits: a second factor with a negative
-  exponent (`€/u/s`, `dg⁻²`), re-decomposition of product units. OPEN as v1
-  scope questions on `CONSTRUCTS.md` row 26.
 
-Worked examples, with `wk = 7 dg` (`ref/` tests `WV-2.6-*`, exact):
+**The algebra.** A unit U is a finite, non-empty mapping from atoms to whole
+exponents other than 0, written as the sorted list of ch. 2.5. An atom is the
+record (`abbreviation`, `system`, `canonical`, `factorToCanonical`). The **class**
+of an atom is its `canonical` under the ch. 2.1 identity, or its `abbreviation`
+where it is bare (ch. 2.5, a bare unit is the canonical target of every unit that
+names it). The **factor** f(a) is its `factorToCanonical` as a rational, 1 where it
+is bare; half a conversion pair is WF-092 and a fault in an executor. The
+**dimension** D(U) maps each class to the sum of its exponents, without zeros. The
+**total factor** is F(U) = ∏ f(a)^e(a).
+
+1. **Convertible.** U ~ V iff D(U) = D(V). The factor from U to V is F(U)/F(V),
+   exact. Two units that are not convertible are a fault (WF-010, `incompatible
+   units`).
+2. **Times.** U × V, value v_U·v_V: begin with U, and for each factor (b, e) of V:
+   where b is an atom of U, add e to its exponent; else, where an atom a of U has
+   the class of b, restate into a, value × (f(b)/f(a))^e, and add e to the exponent
+   of a; else add (b, e). An exponent 0 leaves the list, and a list that ends up
+   empty is no unit. A unitless operand times U is U, value unchanged.
+3. **Divided by.** U ÷ V is U × V⁻¹, all exponents of V negated. A unitless operand
+   ÷ U is U⁻¹, and U ÷ a unitless operand is U.
+4. **Plus, min, verminderd met.** U ~ V is required; the right operand is restated
+   into the left unit, and the result carries the left unit.
+5. **Comparison.** U ~ V is required; both sides are restated, exactly.
+6. **Writing.** The unit of the value ~ the declared unit, restated into it; else a
+   fault.
+7. **Rounding, clamping.** The unit of the base. **Percentage van**: the right unit.
+   **Power**: both operands unitless (WF-035). **Decimals**: Tabel 13.
+8. **Fold over a timeline** (§4.20, ch. 3.6). The integration over the grid
+   multiplies by the grid unit (rule 2), so `€/mnd` over months is `€` and `€/dg^2`
+   over days is `€/dg`. `ref` holds the test that a negative factor of the value has
+   the class of the grid unit. Where a consumer does not hold the grid, it takes the
+   one negative factor, and a unit with none or with more than one stands unchanged,
+   which its write boundary then refuses.
+
+The order of the list (WF-124 (d)) makes `m·s` and `s·m` one list, and the rule
+that the right operand restates into the left makes the spelling of a result depend
+only on what "left" already prescribes for an additive result. The value of a
+product with a unit of the same class does not depend on the order of the operands;
+its unit does (`2 cm × 3 m` is `600 cm^2`, `3 m × 2 cm` is `3/50 m^2`), and the two
+are one quantity.
+
+Worked examples, with `wk = 7 dg`, `cm = 1/100 m` and `jr = 12 mnd` (`ref/` tests
+`WV-2.6-*`, exact):
 
 | Expression | Value | Unit |
 |---|---|---|
+| 2 m × 3 m | 6 | `m^2` |
+| 6 `m^2` in an `m^2` attribute | 6 | `m^2` |
+| 6 `m^2` in an `m^2/s` attribute | fault | `incompatible units: m^2 vs m^2/s` |
+| 2 cm × 3 m | 600 | `cm^2` (3 m = 300 cm, rule 2) |
+| 600 `cm^2` in an `m^2` attribute | 3/50 | `m^2` (factor 1/10000) |
+| 6 `m^2` ÷ 2 m | 3 | `m` |
+| 6 `m^2` ÷ 2 cm | 300 | `m` (1/cm = 100/m) |
+| 1 ÷ 4 `m^2` | 1/4 | `1/m^2` |
+| 100 `€/jr` × 6 mnd | 50 | `€` (6 mnd = 1/2 jr) |
+| 30 `€/dg` × 1 wk | 210 | `€` |
+| 2 `1/dg` × 3 wk | 42 | none |
+| 7 `1/wk` × 3 dg | 3 | none |
+| 3 dg ÷ 1 wk | 3/7 | none |
+| 5 `€/dg/m` × 2 dg × 3 m | 30 | `€` |
+| 1 `€/jr` × 1 `kg/jr` | 1 | `kg·€/jr^2` |
+| 1 `€/jr` × 1 m | 1 | `m·€/jr` |
+| 6 € ÷ 2 `1/n` | 3 | `n·€` |
+| 1 ÷ 2 `€/dg` | 1/2 | `dg/€` |
+| 2 `m^2` = 20000 `cm^2` | true | — |
 | 14 ÷ 7 dg | 2 | `1/dg` |
 | 2 `1/dg` × 7 dg | 14 | none |
-| 2 `1/dg` × 3 wk | 42 | none |
 | 3 wk × 2 `1/dg` | 42 | none |
-| 7 `1/wk` × 3 dg | 3 | none |
 | 2 `1/dg` plus 7 `1/wk` | 3 | `1/dg` |
 | 1 `1/dg` × 3 € | 3 | `€/dg` |
 | 3 € × 1 `1/dg` | 3 | `€/dg` |
 | 1 ÷ 2 `1/dg` | 1/2 | `dg` |
-| 1 ÷ 2 `€/dg` | 1/2 | `dg/€` |
-| 2 m × 3 m | 6 | `m·m` |
+| 10 `€/mnd^2` totalled over twelve months | 120 | `€/mnd` |
+
+A write crosses the unit of the value into the declared one, so `ref` names them in
+that order: the third row, written by a rule, reports `m^2/s vs m^2`.
 
 2 `1/dg` = 14 `1/wk` holds; 5/2 `1/dg` > 14 `1/wk` holds, compared as
 17,5 against 14 — where the bare numbers would answer the other way.
 `1/dg` against `dg` and against `€/dg` is a unit mismatch, and so is
-2 m × 3 m against a declared `m·m` or `m·m/s`: `ref` faults on it, a product
-being opaque (`IR-SPEC.md` ch. 2.5, point 4).
+`m^2` against `m` or `m^2/s`.
 
 ### 2.7 Clamping (begrensd)
 
@@ -653,35 +700,9 @@ unit, the soort and the precision it computes with:
    from those declarations through the ch. 2.3 precision table and the
    ch. 2.6 unit rules, never the node's own annotation. An additive result
    carries the left operand's unit and a unitless side adopts the other; a
-   product of two unit-bearing operands *cancels* against a rate's
-   denominator ("€/jr maal jr = €", and to no unit for a reciprocal), is the
-   rate where one is a reciprocal ("1/dg maal € = €/dg"), or is the **opaque
-   product** ("€ maal
-   kg = €·kg", ch. 2.5: no canonical, convertible only to an identical
-   product — what stops a restatement instead of scaling by a wrong
-   factor), and in a **fourth** shape it is neither: an *unspellable rate
-   factor* ("€/jr maal kg/jr" — a product whose honest unit would need a
-   denominator). The producing frontend and two of the three consumers
-   refuse that shape outright, each loudly (all three measured
-   2026-09-04): the RegelSpraak frontend's `Typering` makes it a **type
-   error** rather than a type ("een producteenheid met een noemer kan het
-   Eenheid-model niet uitdrukken"), so no frontend ever writes the
-   document; `ref` faults
-   (`unit product not modelled: EUR * kg`); and clingo's unit fence
-   refuses ahead of translation. The Drools backend, having no such fence,
-   answers a **denominator-less opaque product**: its `Eenheid.product`
-   keeps the numerator factors and drops the noemer, so "€/jr maal kg" and
-   "€/jr maal kg/jr" both yield €·kg. That is the *conservative*
-   outcome, not a claim that the product is spellable — €·kg carries no
-   canonical, so no restatement site will scale it by an invented factor,
-   and the value simply stands in the unit it was computed in, except
-   against a rate, where the backend faults as `ref` does. It is
-   therefore a silent divergence from the other three on a shape the
-   corpus does not carry and no frontend can emit; a `Let` carries its
-   body's; a quotient carries what ch. 2.6 derives from its operands
-   ("1 ÷ dg" the reciprocal, "€ ÷ jr" the rate, "€ ÷ €" no unit), and where
-   the quotient has no normal form the annotation stands, on a document no
-   frontend writes; and a binder read carries
+   product and a quotient of two units carry what rules 2 and 3 of ch. 2.6 derive
+   ("€/jr maal jr = €", "€ maal kg = kg·€", "1 ÷ dg" the reciprocal, "€ ÷ €" no
+   unit); a `Let` carries its body's; and a binder read carries
    what its binding derived, unit-bearing **or unitless** — bound to a
    unitless value is not the same fact as unbound (until L2 only the
    second fell back to the binder reference's own annotation; since L2 a

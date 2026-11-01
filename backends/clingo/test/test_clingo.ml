@@ -525,9 +525,9 @@ let () =
     (not (Normalise.same_quantity kg_weight ton_mass));
   check "a different canonical name is never one quantity, whatever the system"
     (not (Normalise.same_quantity kg_weight (eenh ~system:"Massa" ~canonical_form:"EUR" "EUR" (Some (1, 1)))));
-  (* proof obligation 3: units_convertible calls an UNNAMED unit (ch. 2.5's
-     opaque product) compatible with everything; reading that as a licence to
-     relabel would be a silent lie, so the naming demand refuses it. *)
+  (* proof obligation 3: Units.convertible calls an UNNAMED unit compatible with
+     everything; reading that as a licence to relabel would be a silent lie, so the
+     naming demand refuses it. *)
   let opaque : Ir_v0.Ast.measure_unit =
     [ { abbr_text = None; system = Some "Massa"; canonical_form = None;
         factor_to_canonical = None; exponent = None } ]

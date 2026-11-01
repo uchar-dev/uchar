@@ -354,8 +354,8 @@ from fractions import Fraction
 EXPONENT = {"Binary": 5, "Let": 6, "Aggregation": 7, "Rounding": 8, "Clamp": 9}
 # ch. 2.10 clause 2 splits Binary by OPERATOR and an Aggregation by KIND, not by node: only these
 # branches DERIVE a result unit (an additive result carries the left unit / a unitless side adopts
-# the other; a times cancels or forms the opaque product; a quotient cancels, forms the rate or the
-# reciprocal; §4.6 Eenheid1 hands a value aggregation
+# the other; a times and a quotient add and subtract the exponents of their factors; §4.6 Eenheid1
+# hands a value aggregation
 # its first operand's). Every OTHER op/kind of those two node kinds is ch. 2.10's FOURTH class — v0
 # derives nothing there, so it is neither twistable nor exempt, and the clamp reports it.
 DERIVED_OP = {"plus", "minus", "reducedBy", "times", "dividedBy", "dividedByAbs"}

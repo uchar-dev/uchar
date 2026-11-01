@@ -686,9 +686,7 @@ public final class DefinitionResolver {
     /** §13.3.3.2: a unit expression, read into the normal form of {@link Unit}. A power with exponent 1 is its unit,
      *  exponent -1 and "1/dg" the reciprocal, and one denominator over one numerator a rate (€/jr). What has no normal
      *  form is an error by name and no unit: a second denominator (€/u/s), exponent 0 or below -1, a power beside a
-     *  denominator (m^2/s), a number other than 1 over a unit, an exponent that is not whole. So is m^2: the wire can
-     *  spell it as the opaque product m·m, but ref faults on the write of m maal m into it and clingo refuses every
-     *  product, so no golden can carry the form through the executors.
+     *  denominator (m^2/s), a number other than 1 over a unit, an exponent that is not whole, and m^2.
      *  Package-static so the attribute-datatype path (here) and the §13.2.17 numeric LITERAL path
      *  ({@link ExpressionBuilder}) resolve a composite (rate) unit IDENTICALLY — a literal "120 EUR/jr"
      *  must carry the same {@code Unit.compound(EUR, jr)} an attribute "met eenheid EUR/jr"

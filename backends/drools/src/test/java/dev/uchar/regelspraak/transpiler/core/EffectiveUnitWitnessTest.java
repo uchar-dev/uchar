@@ -127,7 +127,7 @@ class EffectiveUnitWitnessTest {
     }
 
     @Test void a_times_with_two_units_falls_away_against_its_denominator() {
-        // §4.4 / ch. 2.6, the cancel clause the frontend's Typing.compoundUnit spells: a RATE times its
+        // §4.4 / ch. 2.6, rule 2: a RATE times its
         // (convertible) denominator unit is the numerator — "€/jr maal jr = €". Reading left-then-right here (the
         // additive rule) would answer €/jr, a unit the result does NOT have.
         ObjectType ot = vracht();
@@ -138,20 +138,17 @@ class EffectiveUnitWitnessTest {
                 "de cancel-clausule is symmetrisch (jr maal €/jr = €)");
     }
 
-    @Test void a_times_of_two_separate_units_gives_the_opaque_product() {
-        // §4.4: two plain units multiply to an OPAQUE product ("€·kg") — no canonical, so it restates against an
-        // IDENTICAL product and nothing else. That opacity is this backend's only protection against a two-unit
-        // product silently rescaling into a €-target (DrlTranspiler's four "an OPAQUE product unit stays an honest
-        // marker" sites); handing back the LEFT unit would hand that protection away.
+    @Test void a_times_of_two_separate_units_gives_their_product() {
+        // §4.4: two plain units multiply to a unit of two factors ("€·kg"). It has another dimension than either, which
+        // is what stands between a two-unit product and a € target; handing back the LEFT unit would write it there.
         ObjectType ot = vracht();
         Unit out = bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL,
                 lyingRef(ot, "prijs"), lyingRef(ot, "gewicht"), num(TON), source()));
-        assertEquals(Unit.product(EUR, KG), out);
-        assertNull(out.canonical(), "een opaak product draagt geen canoniek");
-        assertNull(out.exactRestateFactors(EUR), "en dus geen exacte herschaalfactoren naar een concrete eenheid");
+        assertEquals(Unit.times(EUR, KG), out);
+        assertNull(out.exactRestateFactors(EUR), "geen factor naar een andere dimensie");
         assertFalse(out.convertibleTo(EUR), "€·kg herschaalt niet naar €");
         assertFalse(out.convertibleTo(KG), "en niet naar kg");
-        assertTrue(out.convertibleTo(Unit.product(KG, EUR)), "alleen een identiek product is converteerbaar");
+        assertTrue(out.convertibleTo(Unit.times(KG, EUR)), "dezelfde factoren zijn één eenheid");
     }
 
     @Test void a_quotient_derives_its_unit_and_does_not_read_its_annotation() {

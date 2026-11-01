@@ -504,9 +504,10 @@ case5 the largest translatable powers, so the guards provably do not
 fire early. The clamp is witnessed by `jutterswet-grensbedrag` (the
 three positions and the empty-base propagation).
 
-**Units — the factor-1 admission (narrowed 2026-08-28).** The
-translation admits exactly the cases ref computes *without applying
-any conversion factor* (ch. 2.6):
+**Units — the algebra in the integer encoding.** The translation admits the
+cases of ch. 2.6 that take factor 1 or a whole multiplication, and adds no
+division: `eff_unit` derives the unit of rules 2 and 3, and `Units.times` and
+`Units.divide` hand over the factor the value takes:
 
 - **maal** admits a unitless operand times a unit-carrying operand:
   the product adopts the unit with the numeric value unchanged
@@ -520,16 +521,18 @@ any conversion factor* (ch. 2.6):
   cannot resolve: a unit hidden behind an unanalysable node (a `Let`, a
   field access, a division) would otherwise become a silent unit×unit
   product with no downstream unit to fence it, so it stays loud. A
-  product of TWO unit-carrying operands (a rate cancellation `€/jr × jr`,
-  an opaque product unit `€ × m`) composes units / applies factors the
-  integer encoding does not carry, so it stays loud. One such product is
-  admitted: a reciprocal (`IR-SPEC.md` ch. 2.5, point 5) times a plain unit
-  convertible to its denominator, with no unit left. Its factor multiplies the
-  plain operand where it is a whole number (`1/dg × wk`: ×7); a factor that is
-  not (`1/wk × dg`: 1/7) faults by name.
-- **gedeeld-door** admits a provably unit-free dividend over a unit-carrying
-  divisor: the quotient has the divisor's inverse as its unit (`eff_unit`), with
-  the value unchanged. Every other unit-carrying operand stays refused.
+  product of TWO unit-carrying operands has the unit of rule 2. With factor 1 the
+  integer product already is the value, and only the unit changes (`m × m` is
+  `m^2`, `€/dg/m × dg × m` is `€`, `€ × m` is `m·€`). A whole factor k multiplies
+  the term of the right operand (`product_factor`; `€/dg × wk`: ×7, `1/dg × wk`:
+  ×7, `cm × m`: ×100, each fenced at 46340 / k). A factor that is no whole number
+  would need a division and faults by name (`1/wk × dg`: 1/7, `m × cm`: 1/100).
+- **gedeeld-door** admits a quotient that takes factor 1: a provably unit-free
+  dividend over a unit-carrying divisor (the quotient has the divisor's inverse as
+  its unit, `eff_unit`, with the value unchanged), a unit-carrying dividend over a
+  provably unit-free divisor, and two unit-carrying operands that need no
+  restatement (`€ ÷ jr`, `€ ÷ €`, `m^2 ÷ m`). A whole factor on the divisor could
+  be encoded and is not needed: `dg ÷ wk` stays refused (S19).
 - **percentage-van** admits a **provably pure-%** left operand
   (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3 / Q10). `pct_of` computes `(l/100)·r` and discards the left unit
   entirely (the result carries the RIGHT unit), so a `%` on the left is
@@ -554,12 +557,13 @@ any conversion factor* (ch. 2.6):
   `restate_into`, `Unitless, Unit _ -> q`) or identical units. In a write
   rule's VALUE expression, two different declared units may first be
   reduced to one by the finest-canonical normalisation pre-step (below);
-  everything the pass does not reduce — including every CONDITION and
-  comparison position, which the pass never descends — keeps the loud
-  fence outright (the hunted 1 m + 50 cm = 51 of ch. 6c). One comparison
-  crosses it: two convertible reciprocals, whose exact factor p/q needs no
-  division there (`x·p` against `y·q`; `1/dg` against `1/wk`: `x·7` against `y`),
-  each operand fenced at max_int31 / its multiplier.
+  everything else the pass does not reduce keeps the loud fence outright (the
+  hunted 1 m + 50 cm = 51 of ch. 6c). A CONDITION or comparison position, which the
+  pass never descends, crosses it for every convertible pair: the exact factor p/q needs no division there
+  (`x·p` against `y·q`; `1/dg` against `1/wk`: `x·7` against `y`; `m^2` against
+  `cm^2`: `x·10000` against `y`), each operand fenced at max_int31 / its
+  multiplier. An additive join and a write with a factor other than 1 keep the
+  fence: `cm × m` in `m^2` is refused at the write.
 
 The unit is derived recursively from declarations (`eff_unit`), never
 read from a node's static annotation. Golden `jutterswet-sleeprest`
@@ -587,8 +591,8 @@ clingo leg:
   `jutterswet-sleepbaan`, `jutterswet-vergunningsduur`); the descent also
   covers clamp bounds and ordering folds — code-covered and fault-safe but
   corpus-unwitnessed as yet, a registered hunt-wave witness. Conditions and
-  comparison positions are NEVER descended: a mixed-unit comparison keeps the
-  loud refusal. The write boundary writes the finest unit into a finest
+  comparison positions are NEVER descended: a mixed-unit comparison multiplies
+  both sides instead. The write boundary writes the finest unit into a finest
   target.
 - **Proof obligations, fault-loud.** Each declared factor is the exact
   rational the wire writes (`Arith.factor` reads `{num, den}` as that rational,
@@ -602,11 +606,11 @@ clingo leg:
   (the restated finer value has no divide-down write-back the encoding can
   hold); a coarser operand carried by an attribute/parameter rather than a
   literal (its value rides the unit-blind case and is read in source units by
-  ref — restating it in clingo alone would split the executors); a rate unit
-  (noemer set — its numerator/denominator normalise per their own stelsels,
-  PRIORITIZED-DEFAULTS-EVOLUTIE §8.3, not built); the multiplicative positions
-  (they demand a unit-FREE operand, or pure-% for percentage-van, which restating cannot
-  satisfy); and cross-stelsel or opaque product units. Each keeps its existing
+  ref — restating it in clingo alone would split the executors); a unit that is not
+  one factor with exponent 1 (a rate, a power, a product — its factors normalise per
+  their own stelsels, PRIORITIZED-DEFAULTS-EVOLUTIE §8.3, not built); the
+  multiplicative positions (they take the algebra above, or pure-% for
+  percentage-van, which restating cannot satisfy). Each keeps its existing
   `units_identical_ok` / `unit_free_ok` fault.
 - **The differential is the proof — no new harness.** Gate 6 already demands
   clingo-over-(normalised)-wire hit the SAME absolute expectations gate 5 pins
@@ -2515,13 +2519,13 @@ asymmetry before it); runtime, negative and fractional
 power exponents (the runtime-exponent empty corner 4^leeg = leeg is
 thereby ref-only behaviour); ref's unit-conversion algebra where a
 REAL factor survives the finest-canonical normalisation pre-step (S6,
-`Normalise`, PRIORITIZED-DEFAULTS-EVOLUTIE §8, Q9): a product of TWO
-unit-carrying operands (a rate cancellation, an opaque product unit), division/rate
-units, and a restating position (additive join, clamp bound, comparison,
+`Normalise`, PRIORITIZED-DEFAULTS-EVOLUTIE §8, Q9): a product whose factor is
+no whole number (`1/wk × dg`, `m × cm`), a quotient that takes a factor (`dg ÷ wk`,
+a whole factor on the divisor, which the encoding could carry and no form needs),
+and a restating position other than the comparison (additive join, clamp bound,
 ordering fold, write boundary) over two DIFFERENT units the pass could
 NOT reduce to one — a target not in its stelsel's finest unit, a coarser
-operand carried by an attribute/parameter rather than a literal, a
-condition/comparison position (never descended by the pass), or a
+operand carried by an attribute/parameter rather than a literal, or a
 cross-stelsel pair. The finest-canonical restatements now translate — the
 pass multiplies each coarser literal into the finest base unit by an exact
 integer (2,5 km ⇒ 2500 m, 2 jaar ⇒ 24 maand; goldens

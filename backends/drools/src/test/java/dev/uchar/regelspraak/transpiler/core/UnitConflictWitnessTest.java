@@ -26,10 +26,9 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -105,43 +104,34 @@ class UnitConflictWitnessTest {
         UnitConflict.requireRescalable(null, null, "witness");
     }
 
-    @Test void a_DERIVED_opaque_product_stays_the_conservative_no_op() {
-        // RUNTIME-SEMANTICS ch. 2.10 records this backend's stance on "€·kg": no canonical, so no factor is
-        // invented and the value stands in the unit it was computed in. Faulting here would make that recorded
-        // sentence false. The unit must come from the DERIVATION — that is where the provenance mark is set.
-        Unit opaque = derivedProduct();
-        assertNull(opaque.canonical(), "een opaak product draagt per constructie geen canoniek");
-        UnitConflict.requireRescalable(opaque, EUR, "witness");
-        UnitConflict.requireRescalable(EUR, opaque, "witness");
+    @Test void a_product_against_another_dimension_is_a_fault() {
+        // A product is a unit like any other: €·kg against € has no factor, in either direction.
+        Unit product = derivedProduct();
+        assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(product, EUR, "witness"));
+        assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(EUR, product, "witness"));
     }
 
-    @Test void a_namesake_declared_on_the_wire_not_gets_the_vrijstelling() {
-        // The hole a name test leaves: a wire-declared unit can carry exactly the factors Unit.product
-        // produces — no canonical, no factor, no denominator — without ever having
-        // been derived. ref faults on such a document; so must this. Value-equal to the derived one, and still
-        // treated differently, which is the whole point: provenance is not a property of the value.
+    @Test void a_product_declared_on_the_wire_is_the_same_unit_as_a_derived_one() {
+        // Where a unit came from says nothing about it: a value-equal copy answers the same.
         Unit derived = derivedProduct();
         Unit namesake = new Unit(derived.factors());
-        assertEquals(derived, namesake, "de twee zijn waarde-gelijk — alleen hun herkomst verschilt");
+        assertEquals(derived, namesake);
+        UnitConflict.requireRescalable(derived, namesake, "witness");
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(namesake, EUR, "witness"));
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(EUR, namesake, "witness"));
     }
 
-    @Test void two_different_derived_products_also_set_each_other_free() {
-        // The exemption is carried by ONE side, so €·kg against €·m passes too — not only a product against a
-        // concrete unit. Same ch. 2.10 stance (neither side has a canonical, so no factor is invented either
-        // way), and the cost is a diagnosis rather than a wrong number. Pinned so the breadth is a statement.
+    @Test void two_different_products_are_a_fault() {
         Unit eurKg = derivedProduct();
         Unit eurM = derivedProduct(new Unit("m", "Lengte", "m", BigDecimal.ONE));
-        assertNotEquals(eurKg, eurM, "twee verschillende producten, allebei zonder canoniek");
-        UnitConflict.requireRescalable(eurKg, eurM, "witness");
-        UnitConflict.requireRescalable(eurM, eurKg, "witness");
+        assertNotEquals(eurKg, eurM);
+        assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(eurKg, eurM, "witness"));
+        assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(eurM, eurKg, "witness"));
     }
 
     @Test void a_derived_product_against_a_rate_is_a_fault() {
-        // A rate has a denominator, which a value standing in the unit it was computed in cannot supply. Measured on a
-        // document writing m × m into an attribute in m·m/s: ref faults and this backend played it. The same numerator
-        // does not let the pair through.
+        // A rate has another dimension. Measured on a document writing m × m into an attribute in m^2/s: ref faults and
+        // this backend does. The same numerator does not let the pair through.
         Unit product = derivedProduct();
         Unit sameNumerator = Unit.compound(product, JR);
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(product, sameNumerator, "witness"));
@@ -151,17 +141,19 @@ class UnitConflictWitnessTest {
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(otherRate, product, "witness"));
     }
 
-    @Test void the_origin_table_grows_per_derivation_not_per_document() {
-        // The growth law the class doc states, as a checked claim: Unit.product allocates a fresh instance
-        // every time, so deriving the SAME product twice adds TWO entries. The table is monotone for the JVM's
-        // lifetime and never cleared — a bounded strong-reference leak, recorded rather than glossed.
-        int before = EffectiveUnit.countDerivedProducts();
-        Unit one = derivedProduct();
-        Unit two = derivedProduct();
-        assertEquals(before + 2, EffectiveUnit.countDerivedProducts(),
-                "elke maalEenheid-evaluatie voegt een eigen entry toe");
-        assertEquals(one, two, "de twee zijn waarde-gelijk");
-        assertNotSame(one, two, "en toch verschillende instanties — daarom groeit de tabel");
+    @Test void a_product_into_its_declared_square_plays() {
+        // m × m in a declared m^2: identical, no factor due. cm × m in the same: the dimension holds and a factor exists.
+        Unit m = new Unit("m", "Lengte", "m", BigDecimal.ONE);
+        Unit cm = new Unit("cm", "Lengte", "m", new BigDecimal("0.01"));
+        Unit square = new Unit(List.of(new Unit.Factor("m", "Lengte", "m", BigDecimal.ONE, 2)));
+        Unit product = derivedProduct(m, m);
+        assertEquals(square, product);
+        UnitConflict.requireRescalable(product, square, "witness");
+        assertFalse(product.requiredConversion(square));
+        Unit cmSquare = derivedProduct(cm, m);
+        assertEquals("cm^2", cmSquare.rendering());
+        UnitConflict.requireRescalable(cmSquare, square, "witness");
+        assertTrue(cmSquare.requiredConversion(square));
     }
 
     @Test void a_rate_against_its_own_numerator_is_a_fault() {
@@ -240,20 +232,20 @@ class UnitConflictWitnessTest {
         return new Expr.FunctionCall(Expr.FunctionKind.TOTAAL, List.of(ref), ot, null, null, t, source());
     }
 
-    /** An opaque product carrying this backend's own provenance mark: obtained through the DERIVATION (a §4.4
-     *  MAAL of two unit-bearing reads), never by calling the constructor, because the mark is set where the
-     *  product is built and a value-equal copy does not carry it. */
+    /** A product obtained through the DERIVATION: a §4.4 MAAL of two unit-bearing reads. */
     private static Unit derivedProduct() { return derivedProduct(KG); }
 
     /** As above, with the second factor chosen — so two DISTINCT derived products can be put side by side. */
-    private static Unit derivedProduct(Unit second) {
+    private static Unit derivedProduct(Unit second) { return derivedProduct(EUR, second); }
+
+    private static Unit derivedProduct(Unit first, Unit second) {
         ObjectType ot = new ObjectType("Vracht");
-        ot.attributes.put("prijs", num(EUR));
+        ot.attributes.put("prijs", num(first));
         ot.attributes.put("factor", num(second));
-        Expr.AttributeReference prijs = new Expr.AttributeReference("prijs", ot, "een vracht", null, num(EUR), source());
+        Expr.AttributeReference prijs = new Expr.AttributeReference("prijs", ot, "een vracht", null, num(first), source());
         Expr.AttributeReference other = new Expr.AttributeReference("factor", ot, "een vracht", null, num(second), source());
-        Unit out = bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL, prijs, other, num(EUR), source()));
-        assertEquals(Unit.product(EUR, second), out, "de afleiding levert het §4.4 opake product");
+        Unit out = bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL, prijs, other, num(first), source()));
+        assertEquals(Unit.times(first, second), out, "de afleiding is de algebra van het model");
         return out;
     }
 

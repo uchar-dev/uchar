@@ -4372,9 +4372,8 @@ public final class TmsTranspiler {
     /** The arithmetic operators on numbers, a percentage being a number in the unit % (RUNTIME-SEMANTICS ch. 2.2, 2.6),
      *  through the runtime's exact helpers and with their leeg tables (ch. 1.2); a date plus or minus a duration through
      *  {@link #dateCalculation}, a power through {@link #power}. A sum or a difference restates its right operand into the
-     *  left one's unit, a product of a rate and a quantity restates the quantity into the rate's denominator, and a quotient
-     *  of two convertible units restates its right operand into the left one's unit (ch. 2.6); a percentage of a value
-     *  does not. A division faults on a numeric
+     *  left one's unit, and a product and a quotient restate a factor of the right operand into the left factor of its
+     *  class (ch. 2.6, rules 2 and 3); a percentage of a value does not. A division faults on a numeric
      *  zero (ch. 1.4, point 4), and one of a filled dividend by a leeg divisor deposits where the evaluation reaches it and
      *  its operands qualify ({@link #depositSite}, {@link DepositFlag}). The operands are evaluated left before right
      *  (ch. 5.11). */
@@ -4388,11 +4387,11 @@ public final class TmsTranspiler {
         if (division) reads.markFail();
         Term left = value(b.left(), reads), right = value(b.right(), reads);
         Unit lu = eff.unitOf(b.left()), ru = eff.unitOf(b.right());
-        Term l = op == Expr.BinOp.MAAL ? intoDenominator(left, lu, ru) : left;
+        Term l = left;
         Term r = op == Expr.BinOp.PLUS || op == Expr.BinOp.MIN || op == Expr.BinOp.VERMINDERD_MET
                 ? restated(right, ru, lu, "een additieve operandgrens")
-                : op == Expr.BinOp.MAAL ? intoDenominator(right, ru, lu)
-                : division && lu != null && lu.convertibleTo(ru) ? restated(right, ru, lu, "een quotiënt")
+                : op == Expr.BinOp.MAAL ? timesFactor(right, ru, lu, Unit.timesFactors(lu, ru))
+                : division ? divisorFactor(right, ru, lu, Unit.divideFactors(lu, ru))
                 : right;
         int depositFlag = division && depositSite(b) ? reads.depositFlag() : -1;
         String source = source(b.source());
@@ -4408,12 +4407,18 @@ public final class TmsTranspiler {
         };
     }
 
-    /** The operand {@code t} of a product restated into the denominator of its other operand, where that is a rate
-     *  whose denominator {@code unit} converts to: 3 wk times 1/dg counts 21 dg (ch. 2.6). */
-    private static Term intoDenominator(Term t, Unit unit, Unit other) {
-        return unit != null && unit.denominator() == null && other != null && other.denominator() != null
-                && unit.convertibleTo(other.denominator())
-                ? restated(t, unit, other.denominator(), "de noemer van een rate") : t;
+    /** The right operand {@code t} of a product times the factor the product takes (ch. 2.6, rule 2): 3 wk times 1/dg
+     *  counts 1/dg at 7 the value, and 1/wk times 3 dg at 1/7. Exact, as every restatement here. Unchanged where the
+     *  factor is 1. */
+    private static Term timesFactor(Term t, Unit from, Unit destination, BigDecimal[] factor) {
+        return factor[0].compareTo(factor[1]) == 0 ? t
+                : new Term.Restate(StaticFunction.RESTATE_EXACT, t, from, destination, factor[0], factor[1], t.source());
+    }
+
+    /** The divisor {@code t} of a quotient with the factor the quotient takes (ch. 2.6, rule 3): dividing by the divisor
+     *  times den/num is dividing by the divisor and multiplying by num/den. */
+    private static Term divisorFactor(Term t, Unit from, Unit destination, BigDecimal[] factor) {
+        return timesFactor(t, from, destination, new BigDecimal[]{factor[1], factor[0]});
     }
 
     /** A power with a whole exponent of at least 0 written as a literal, exact (RUNTIME-SEMANTICS ch. 2.2), a leeg base
@@ -5468,7 +5473,7 @@ public final class TmsTranspiler {
         String withoutGridUnit = gridUnit(member.time(), grid);
         if (withoutGridUnit != null)
             throw new Refusal(DroolsCode.TEMPORAL_TOTAL_RATE_UNIT.reason("description", description, "member", member.name(), "unit", e.rendering(), "reason", withoutGridUnit));
-        if (!grid.equals(TimeCalculation.chronoUnit(e.denominator())))
+        if (!grid.equals(TimeCalculation.chronoUnit(e.negativeAtom())))
             throw new Refusal(DroolsCode.RATE_DENOMINATOR_NOT_GRID.reason("description", description, "member", member.name(), "rate", e.rendering(), "grid", member.time()));
         return member;
     }

@@ -576,7 +576,6 @@ RGS-278	{what}: the value '{value}' was not read
 RGS-279	{what}: the text value carries an «expression», and a value in a scenario is literal
 RGS-280	{operation}: sub-day time unit on a day-precision date (millisecond precision required)
 RGS-281	{operator} requires numeric operands, got {left} and {right}
-RGS-282	divided by: a unitless numerator divided by the composite unit '{unit}' gives an inverse unit with more than one factor in the denominator, which the unit model cannot express
 RGS-283	to the power: power operands must be unitless
 RGS-284	operator '{operator}' requires numeric operands, got {left} and {right}
 RGS-285	gelijk: equality across families: {left} vs {right}
@@ -587,8 +586,6 @@ RGS-289	gelijk: equality across different enumeration domains
 RGS-290	elfproef: elevenTest operand is {kind}, must be text or a whole unitless number
 RGS-291	numeriek met exact: exactDigits operand is {kind}, must be text
 RGS-292	dagsoort: day-kind predicate operand is {kind}, must be a date
-RGS-293	times: the compound unit of '{left}' and '{right}' (a product unit with a denominator) cannot be expressed by the unit model
-RGS-294	divided by: the quotient of '{left}' and '{right}' (a unit with an inverted denominator) cannot be expressed by the unit model
 RGS-295	date ± date is ill-formed (date arithmetic takes a date and a duration)
 RGS-296	duration − date is ill-formed (subtraction admits the date on the left only)
 RGS-297	duration + date is ill-formed (the date stands on the left; date arithmetic does not commute)

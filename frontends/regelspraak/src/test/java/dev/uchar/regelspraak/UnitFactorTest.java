@@ -51,8 +51,8 @@ class UnitFactorTest {
     /** Same system as jr/mnd, a DIFFERENT canonical — the appel-vs-peer pair numeratorConvertible names. */
     private static final Unit DG = new Unit("dg", "Tijd", "dg", BigDecimal.ONE);
     private static final Unit M = new Unit("m", "Lengte", "m", BigDecimal.ONE);
-    /** §4.4's opaque product: no canonical, so convertible only to an identical product. */
-    private static final Unit M_TIMES_M = Unit.product(M, M);
+    /** §4.4's product of a unit with itself: m^2, another dimension than m. */
+    private static final Unit M_TIMES_M = Unit.times(M, M);
     /** The bare corpus shape (WF-038 tijdsduurparameter): no system, no canonical, no factor. */
     private static final Unit BARE_CORPUS_FORM = new Unit("jaar", null, null, null);
     private static final Unit EUR_PER_JR = Unit.compound(EUR, JR);
@@ -97,10 +97,9 @@ class UnitFactorTest {
         refusesWithBothNames(EUR, EUR_PER_JR);
     }
 
-    /** (5) The opaque product against one of its own factors — no canonical on either side of the
-     *  question. The bare corpus shape (canoniek null, 28 occurrences on the wire) refuses through
+    /** (5) A product against one of its own factors: another dimension. The bare corpus shape (canoniek null, 28 occurrences on the wire) refuses through
      *  the same branch, so it is pinned here too rather than in a witness of its own. */
-    @Test void opaque_product_refuses_the_factor_question() {
+    @Test void a_product_refuses_the_factor_question_into_its_own_factor() {
         refusesWithBothNames(M_TIMES_M, M);
         refusesWithBothNames(BARE_CORPUS_FORM, MND);
     }
@@ -185,21 +184,91 @@ class UnitFactorTest {
     @Test void the_factors_of_a_product_stand_in_code_point_order() {
         String low = "\uFB00", high = "\uD834\uDD1E";
         assertTrue(high.compareTo(low) < 0, "the two orders differ on this pair");
-        Unit product = Unit.product(new Unit(high, "X"), new Unit(low, "X"));
+        Unit product = Unit.times(new Unit(high, "X"), new Unit(low, "X"));
         assertEquals(low, product.factors().get(0).abbreviation());
-        assertEquals(product, Unit.product(new Unit(low, "X"), new Unit(high, "X")));
+        assertEquals(product, Unit.times(new Unit(low, "X"), new Unit(high, "X")));
     }
 
-    /** An atom named twice in a product is one factor with its exponents added, and it stays a product. */
+    /** An atom named twice in a product is one factor with its exponents added, and it keeps its conversion pair. */
     @Test void a_self_product_is_one_factor_with_exponent_two() {
-        Unit square = Unit.product(M, M);
-        assertEquals(1, square.factors().size());
-        assertEquals(2, square.factors().get(0).exponent());
-        assertEquals("m·m", square.abbreviation());
+        Unit square = Unit.times(M, M);
+        assertEquals(List.of(new Unit.Factor("m", "Lengte", "m", BigDecimal.ONE, 2)), square.factors());
         assertEquals("m^2", square.rendering());
-        assertTrue(square.isProduct());
-        assertNull(square.canonical());
         assertFalse(square.convertibleTo(M));
+        assertTrue(square.convertibleTo(square));
+        assertFalse(square.requiredConversion(square));
+    }
+
+    private static final Unit CM = new Unit("cm", "Lengte", "m", new BigDecimal("0.01"));
+
+    private static void fraction(String expected, BigDecimal[] f) {
+        assertEquals(expected, f[0].stripTrailingZeros().toPlainString() + "/" + f[1].stripTrailingZeros().toPlainString());
+    }
+
+    /** RUNTIME-SEMANTICS ch. 2.6, rule 1: a restatement is the product of the powers of the declared factors, exact. */
+    @Test void a_power_restates_by_the_power_of_its_factor() {
+        Unit square = Unit.times(M, M), cmSquare = Unit.times(CM, CM);
+        assertTrue(square.convertibleTo(cmSquare));
+        fraction("1/0.0001", square.exactRestateFactors(cmSquare));
+        fraction("0.0001/1", cmSquare.exactRestateFactors(square));
+        assertEquals(0, square.conversionFactorTo(cmSquare).compareTo(new BigDecimal("10000")));
+        assertTrue(Unit.times(CM, M).convertibleTo(square), "cm·m heeft de dimensie van m^2, in welke spelling ook");
+    }
+
+    /** Rule 1 is about the dimension: m/s is not s/m, and m^2/s is not m^2. */
+    @Test void a_dimension_is_a_class_with_its_exponent() {
+        Unit perSecond = Unit.compound(M, new Unit("s", "Tijd"));
+        assertFalse(perSecond.convertibleTo(Unit.reciprocal(perSecond)));
+        assertFalse(Unit.divide(Unit.times(M, M), new Unit("s", "Tijd")).convertibleTo(Unit.times(M, M)));
+    }
+
+    /** Rule 2: a right factor of the class of a left one is restated into it first, on the value too. */
+    @Test void a_product_takes_its_unit_from_the_left_and_its_factor_from_the_right() {
+        assertEquals("cm^2", Unit.times(CM, M).rendering());
+        fraction("1/0.01", Unit.timesFactors(CM, M));
+        assertEquals("m^2", Unit.times(M, CM).rendering());
+        fraction("0.01/1", Unit.timesFactors(M, CM));
+        fraction("1/12", Unit.timesFactors(EUR_PER_JR, MND));
+        assertEquals("EUR", Unit.times(EUR_PER_JR, MND).rendering());
+        fraction("1/1", Unit.timesFactors(M, M));
+        fraction("1/1", Unit.timesFactors(null, M));
+    }
+
+    /** Rule 3: the quotient is the product with the inverse. */
+    @Test void a_quotient_is_the_product_with_the_inverse() {
+        assertEquals("m", Unit.divide(Unit.times(M, M), CM).rendering());
+        fraction("0.01/1", new BigDecimal[]{Unit.divideFactors(Unit.times(M, M), CM)[1], Unit.divideFactors(Unit.times(M, M), CM)[0]});
+        assertNull(Unit.divide(DG, new Unit("wk", "Tijd", "dg", new BigDecimal("7"))));
+        fraction("1/7", Unit.divideFactors(DG, new Unit("wk", "Tijd", "dg", new BigDecimal("7"))));
+        assertEquals("1/m^2", Unit.divide(null, Unit.times(M, M)).rendering());
+    }
+
+    /** Half a conversion pair has no factor, in a product as in a restatement. */
+    @Test void a_product_over_half_a_pair_refuses_the_factor() {
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> Unit.timesFactors(M, CANONICAL_WITHOUT_FACTOR));
+        assertTrue(ex.getMessage().contains("zonder gedeclareerde factorNaarCanoniek"), ex.getMessage());
+    }
+
+    /** Rule 8: a fold over a timeline raises the one negative factor one power. */
+    @Test void a_time_fold_raises_the_one_negative_factor() {
+        assertEquals("EUR", EUR_PER_JR.afterTimeFold().rendering());
+        assertNull(Unit.reciprocal(JR).afterTimeFold());
+        Unit perDaySquared = Unit.divide(Unit.compound(EUR, DG), DG);
+        assertEquals("EUR/dg^2", perDaySquared.rendering());
+        assertEquals("EUR/dg", perDaySquared.afterTimeFold().rendering());
+        assertEquals("EUR", EUR.afterTimeFold().rendering());
+        Unit twoBelow = Unit.divide(Unit.compound(EUR, DG), M);
+        assertEquals(twoBelow, twoBelow.afterTimeFold(), "welke factor stijgt, zegt alleen het rooster");
+        assertEquals("dg", Unit.compound(EUR, DG).negativeAtom().rendering());
+        assertNull(twoBelow.negativeAtom());
+    }
+
+    /** A calendar table names one factor with exponent 1. */
+    @Test void a_calendar_unit_is_one_factor() {
+        Unit dag = new Unit("dg", "Tijd");
+        assertEquals("DAYS", dev.uchar.regelspraak.core.TimeCalculation.chronoUnit(dag));
+        assertNull(dev.uchar.regelspraak.core.TimeCalculation.chronoUnit(Unit.times(dag, dag)));
+        assertNull(dev.uchar.regelspraak.core.TimeCalculation.chronoUnit(Unit.compound(dag, M)));
     }
 
     // ---- wat ongemoeid blijft: het predikaat ----------------------------------------------------

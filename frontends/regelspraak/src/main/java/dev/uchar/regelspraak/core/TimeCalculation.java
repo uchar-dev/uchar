@@ -26,7 +26,7 @@ public final class TimeCalculation {
 
     /** As {@link #chronoUnit(Datatype)}, keyed directly on an {@link Unit} ({@code null}-safe). */
     public static String chronoUnit(Unit e) {
-        return e == null ? null : spellingChronoUnit(e.abbreviation());
+        return e == null || !e.isAtom() ? null : spellingChronoUnit(e.abbreviation());
     }
 
     /** Whether {@code spelling} stands in the NORMATIVE calendar table (uchar's RUNTIME-SEMANTICS ch. 3.8,
