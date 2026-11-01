@@ -2267,7 +2267,8 @@ and `plural` — **trimmed and case-insensitive**; one day kind carries it
 its single `DayKindDefinition` (case-insensitive again; WF-031 keeps the
 definition unique, so there is nothing to disambiguate). A spelling the
 calendar table does not know and no day kind carries is ill-formed
-(WF-035/WF-038). The definition's `validity` is **not consulted**: it
+(WF-035/WF-038), and so is a unit of more than one factor or with an exponent:
+only a declared unit has a spelling to look up. The definition's `validity` is **not consulted**: it
 MUST be always, neither bound written (WF-031), so there is no window to read.
 
 **Evaluation — the predicate of one day.** `P_k(d)` is the definition's

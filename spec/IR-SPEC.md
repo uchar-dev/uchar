@@ -1887,7 +1887,9 @@ and as a duration unit.
 | `plural` | string? | the further duration-unit spelling (`5 werkdagen`) |
 
 Both spellings name the day kind as a duration unit (`1 werkdag`, `5
-werkdagen`); they are every spelling a day kind has on the wire. v0 name: the
+werkdagen`); they are every spelling a day kind has on the wire. Such a unit is
+one factor with exponent 1: `werkdag/m` names no day kind (WF-035, WF-038;
+witnesses `wf035-day-kind-over-a-unit`, `wf038-day-kind-over-a-unit`). v0 name: the
 `dagsoorten` list (the day-kind's *definition* — a predicate over a date — is a
 rule-layer form, `CONSTRUCTS.md` row 23). Spelling lookup is trimmed and
 case-insensitive. **Landed L3 (2026-09-24).** `model.dayKinds` is a list of
