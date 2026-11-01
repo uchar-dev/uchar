@@ -47,6 +47,28 @@ class UnitIdentityTest {
                 () -> "het product moet het echte EUR-type (2 decimalen) dragen:\n" + c);
     }
 
+    /** Whether a restatement brings a fraction into a duration count is read off the exact factor: with "dg = 1/7 wk" a
+     *  count in wk is a whole count in dg, and a count in dg is not a whole count in wk. */
+    @Test void a_restatement_into_a_whole_count_brings_no_fraction() {
+        String src = """
+            Eenheidsysteem Tijd
+                de week (mv: weken) wk
+                de dag (mv: dagen) dg = 1/7 wk
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de startdag Datum in dagen;
+                de einddag Datum in dagen;
+                de dagen duur Numeriek (geheel getal) met eenheid dg;
+                de weken duur Numeriek (geheel getal) met eenheid wk;
+            Regel einddag
+                geldig altijd
+                    De einddag van een Jutter moet gesteld worden op de startdag van de Jutter plus (%s van de Jutter plus %s van de Jutter).
+            """;
+        RegelSpraakModel whole = Resolver.resolve(src.formatted("de dagen duur", "de weken duur"));
+        assertTrue(whole.errors().isEmpty(), () -> "een wk is 7 dg: " + whole.errors());
+        assertTrue(refused(Resolver.resolve(src.formatted("de weken duur", "de dagen duur")), "RGS-058"),
+                "een dg is een breuk van een wk");
+    }
+
     private static final String TIME = """
             Eenheidsysteem Tijd
                 de dag (mv: dagen) dg
