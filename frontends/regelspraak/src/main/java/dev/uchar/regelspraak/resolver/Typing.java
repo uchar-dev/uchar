@@ -359,7 +359,8 @@ public final class Typing {
             if (!(target.isNumberLike() && value.isNumberLike()))
                 return new Coded("RGS-334", params("value", kindWord(value), "target", kindWord(target)));
             if (verifierRefusesUnits(target, value, false, valueLit))
-                return new Coded("RGS-335", params()).frame("operation", "operation", "toekenning");
+                return new Coded("RGS-335", params("valueUnit", unitSpelling(value), "targetUnit", unitSpelling(target)))
+                        .frame("operation", "operation", "toekenning");
             return new Coded("RGS-336", params("valueType", value.name(), "targetType", target.name()));
         }
         if (otherPrecision(target, value))
@@ -370,12 +371,8 @@ public final class Typing {
                     params("valueDomain", ((Datatype.Enumeration) value).domain(),
                             "targetDomain", ((Datatype.Enumeration) target).domain(), "domainWord", "enumeration domain"));
         if (!target.isNumberLike()) return null;
-        // the verifier's sentence names neither unit, and an author who divided by a duration needs to read which
-        // unit the value took and that the target has none
-        if (target.unitOf() == null && value.unitOf() != null && !valueLit)
-            return new Coded("RGS-359", params("unit", value.unitOf().rendering()));
         Coded unitError = unitsCompatible(target, value, "toekenning", false, valueLit,
-                new VerifierSentence("RGS-335", params()));
+                new VerifierSentence("RGS-335", params("valueUnit", unitSpelling(value), "targetUnit", unitSpelling(target))));
         if (unitError != null) return unitError;
         // §6.1.2: a result may be assigned only when its decimal count does not exceed the
         // attribute's; a higher-precision result must first be explicitly rounded (§6.1.3). The
@@ -627,6 +624,12 @@ public final class Typing {
         Unit el = l.unitOf(), rightUnit = r.unitOf();
         if (el == null && rightUnit == null) return false;
         return el == null || rightUnit == null || !el.convertibleTo(rightUnit);
+    }
+
+    /** A unit in the verifier's WF-023 sentence: an author needs to read which unit the value took and which the
+     *  target has, also where one of them has none. */
+    private static String unitSpelling(Datatype t) {
+        return t.unitOf() == null ? "geen" : t.unitOf().rendering();
     }
 
     /** The kind word the verifier writes for a datatype in a message ({@code datatype_kind} in

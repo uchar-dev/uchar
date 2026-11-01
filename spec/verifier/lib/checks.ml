@@ -252,6 +252,15 @@ let is_unitless_numeric_literal = function
   | Some (Literal { typ = Some (Percentage { measure_unit = None; _ }); _ }) -> true
   | _ -> false
 
+(* A unit in a message as an author wrote it, a rate with its denominator, and
+   "geen" where a position has none: the unit is what a mismatch is about. *)
+let unit_spelling (u : measure_unit option) =
+  let rec spell (u : measure_unit) =
+    let numerator = Option.value u.abbr_text ~default:"?" in
+    match u.denominator with Some n -> numerator ^ "/" ^ spell n | None -> numerator
+  in
+  match u with Some u -> spell u | None -> "geen"
+
 let units_compatible_adopting lexpr rexpr a b =
   is_unitless_numeric_literal lexpr
   || is_unitless_numeric_literal rexpr
@@ -9424,7 +9433,11 @@ let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype)
   @ (if
        is_number_like dt && is_number_like wt
        && not (units_compatible_adopting target value (unit_of dt) (unit_of wt))
-     then [ v "WF-023.incompatible-units" at "assignment across incompatible units" ]
+     then
+       (let value_unit = unit_spelling (unit_of wt) and target_unit = unit_spelling (unit_of dt) in
+        [ v ~params:[("valueUnit", value_unit); ("targetUnit", target_unit)] "WF-023.incompatible-units" at
+            (Printf.sprintf "assignment across incompatible units: value unit '%s', target unit '%s'"
+               value_unit target_unit) ])
      else [])
   @ (if sign_conflict dt wt then
        [ v "WF-023.sign-restriction-conflict" at "the value's sign restriction contradicts the target's" ]

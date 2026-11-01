@@ -641,7 +641,7 @@ RGS-331	{function}: units '{left}' and '{right}' cannot be converted into each o
 RGS-332	{function} requires date expressions, got {type}
 RGS-333	{function}: {fold} orders dates of two precisions (day and millisecond), which share no order
 RGS-334	assignment: a {value} value is assigned to a {target} target
-RGS-335	assignment across incompatible units
+RGS-335	assignment across incompatible units: value unit '{valueUnit}', target unit '{targetUnit}'
 RGS-336	cannot assign a value of type {valueType} to a {targetType}
 RGS-337	assignment: a value of the {domainWord} '{valueDomain}' is assigned to a target of the {domainWord} '{targetDomain}'
 RGS-338	the result to be assigned has more decimals ({valueDecimals}) than the member allows ({targetDecimals}); round the result explicitly first (§6.1.2)
@@ -671,5 +671,4 @@ RGS-355.after-subselection	stands no deeper than the bullet '{outer}', whose sub
 RGS-356	the list mixes the bullet signs '{sign}' and '{other}': the depth counts the signs of one family, '-', '..', '...' or '•', '••', '•••' ('▪' counts as '•'), so between two families no depth is fixed (§13.4.14.7; the section '§13.4.14.6–7 The depth of a bullet' of grammar/DIVERGENCES.md)
 RGS-357	'{form}' reads {node} over [{path}], and that read lies outside the scope of the instance-ordered cycle over the fact type '{factType}' (clause {clause}): a cycle over such a fact type, which links two objects of one type, is admitted only where every read behind an edge inside the cycle lands in the household of the object or of its predecessor (WF-045, IR-SPEC ch. 5.3); write the value read into an own member of the object, so that the read does not close the cycle, or bring the read within that scope
 RGS-358	'{read}' cannot read the rule subject here: {reason}
-RGS-359	assignment: the value has the unit '{unit}', which does not fit an attribute without a unit
 RGS-360	the unit model cannot express the unit '{spelling}': it has one unit, the exponent -1, and one unit (or 1) over one denominator with exponent 1

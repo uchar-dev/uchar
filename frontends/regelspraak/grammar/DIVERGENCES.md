@@ -3814,7 +3814,7 @@ The grammar accepts more than a normal form can write, and the resolver reads it
 carry that form: `ref` faults on the write of `m maal m` into it and clingo refuses every product.
 
 A number divided by a unit has the reciprocal of that unit, where the arbiter gives the unit itself (Tabel 14, row 4):
-a dimensional divergence. A reciprocal assigned to a target without a unit is RGS-359, which names the unit.
+a dimensional divergence. A reciprocal assigned to a target without a unit is RGS-335, the sentence of WF-023, which names both units (`geen` where one has none).
 
 ## Semantic tokens — a kind and a position per piece of source text, beside the IR
 

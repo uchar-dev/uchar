@@ -2624,7 +2624,8 @@ literal `{"boolean": true}` since L4.)
   `PrioritizedDefaults` **consequence**, a nested exception group's
   included (it inherits the root target, ch. 7.9): the value's type MUST
   be assignable to the target's **declared** type — same family,
-  compatible units, sign constraint respected, **the same keuzetype**
+  compatible units (the refusal names both, `valueUnit` and `targetUnit`,
+  `geen` where one is absent), sign constraint respected, **the same keuzetype**
   wherever either side names one (an `Enumeration` or `SumType` domain,
   looked up *through* a `ListType` element — the same variant and the same
   domain name, compared ci), and the precision gate of

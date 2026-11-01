@@ -48,7 +48,17 @@
               "sign": "unspecified",
               "unit": {
                 "node": "Unit",
-                "abbreviation": "1"
+                "abbreviation": "1",
+                "denominator": {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
               }
             }
           },
@@ -124,17 +134,7 @@
           "sign": "unspecified",
           "unit": {
             "node": "Unit",
-            "abbreviation": "1",
-            "denominator": {
-              "node": "Unit",
-              "abbreviation": "wk",
-              "system": "Tijd",
-              "canonical": "dg",
-              "factorToCanonical": {
-                "num": 7,
-                "den": 1
-              }
-            }
+            "abbreviation": "1"
           }
         }
       }

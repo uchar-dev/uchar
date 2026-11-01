@@ -164,7 +164,7 @@ class TypingSentenceTest {
         assertEquals(error("voorwaarde: gelijk: equality across families: text vs number"),
                 meldingen("Een Jutter is waardevol indien zijn naam gelijk is aan zijn telling."));
         // a percentage is a number with the unit '%' to the verifier: across a unitless number it refuses the units
-        assertEquals(error("gelijkstelling: toekenning: assignment across incompatible units"),
+        assertEquals(error("gelijkstelling: toekenning: assignment across incompatible units: value unit 'geen', target unit '%'"),
                 meldingen("Het aandeel van een Jutter moet gesteld worden op zijn telling."));
         assertEquals(error("voorwaarde: gelijk: equality operands have incompatible units"),
                 meldingen("Een Jutter is waardevol indien zijn aandeel gelijk is aan zijn telling."));

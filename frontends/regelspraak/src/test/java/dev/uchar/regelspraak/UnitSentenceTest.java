@@ -64,9 +64,10 @@ class UnitSentenceTest {
     }
 
     @Test void assign_gets_the_sentence_of_wf_023() {
-        String sentence = "gelijkstelling: toekenning: assignment across incompatible units";
-        assertEquals(error(sentence), meldingen(" met eenheid €", "De uitkomst van een Jutter moet gesteld worden op zijn telling."));
-        assertEquals(error(sentence), meldingen(" met eenheid €", "De uitkomst van een Jutter moet gesteld worden op zijn ruilwaarde."));
+        String sentence = "gelijkstelling: toekenning: assignment across incompatible units: value unit '%s', target unit '%s'";
+        assertEquals(error(sentence.formatted("geen", "EUR")), meldingen(" met eenheid €", "De uitkomst van een Jutter moet gesteld worden op zijn telling."));
+        assertEquals(error(sentence.formatted("kg", "EUR")), meldingen(" met eenheid €", "De uitkomst van een Jutter moet gesteld worden op zijn ruilwaarde."));
+        assertEquals(error(sentence.formatted("EUR", "geen")), meldingen("", "De uitkomst van een Jutter moet gesteld worden op zijn vondstwaarde."));
     }
 
     @Test void a_unitless_literal_beside_a_unit_keeps_its_own_sentence_of_regelspraak() {

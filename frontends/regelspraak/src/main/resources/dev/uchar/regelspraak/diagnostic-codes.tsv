@@ -332,7 +332,7 @@ RGS-331	number-aggregation-units-not-convertible	ERROR	function,left,right
 RGS-332	date-aggregation-operand-not-date	ERROR	function,type
 RGS-333	date-aggregation-two-precisions	ERROR	fold,function
 RGS-334	assignment-across-families	ERROR	target,value
-RGS-335	assignment-across-incompatible-units	ERROR	-
+RGS-335	assignment-across-incompatible-units	ERROR	targetUnit,valueUnit
 RGS-336	assignment-value-type-mismatch	ERROR	targetType,valueType
 RGS-337	assignment-across-enumeration-domains	ERROR	domainWord,targetDomain,valueDomain
 RGS-338	assignment-exceeds-decimals	ERROR	targetDecimals,valueDecimals
@@ -354,5 +354,4 @@ RGS-355	bullet-returns-to-no-open-level	ERROR	bullet,reason
 RGS-356	two-bullet-sign-families	ERROR	other,sign
 RGS-357	instance-read-outside	ERROR	clause,factType,form,node,path
 RGS-358	rule-subject-not-addressable	ERROR	read,reason
-RGS-359	value-unit-on-target-without-unit	ERROR	unit
 RGS-360	unit-expression-without-normal-form	ERROR	spelling

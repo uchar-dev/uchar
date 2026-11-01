@@ -641,7 +641,7 @@ RGS-331	{function}: eenheden '{left}' en '{right}' zijn niet in elkaar om te rek
 RGS-332	{function} vereist datumexpressies, kreeg {type}
 RGS-333	{function}: {fold} orders dates of two precisions (day and millisecond), which share no order
 RGS-334	toekenning: a {value} value is assigned to a {target} target
-RGS-335	assignment across incompatible units
+RGS-335	assignment across incompatible units: value unit '{valueUnit}', target unit '{targetUnit}'
 RGS-336	kan een waarde van type {valueType} niet toekennen aan een {targetType}
 RGS-337	toekenning: a value of the {domainWord} '{valueDomain}' is assigned to a target of the {domainWord} '{targetDomain}'
 RGS-338	het toe te kennen resultaat heeft meer decimalen ({valueDecimals}) dan het attribuut toelaat ({targetDecimals}); rond het resultaat eerst expliciet af (§6.1.2)
@@ -671,5 +671,4 @@ RGS-355.after-subselection	staat niet dieper dan de bullet '{outer}', waarvan de
 RGS-356	de lijst mengt de bullettekens '{sign}' en '{other}': de diepte telt de tekens van één familie, '-', '..', '...' of '•', '••', '•••' ('▪' telt als '•'), dus tussen twee families ligt geen diepte vast (§13.4.14.7; de sectie '§13.4.14.6–7 The depth of a bullet' van grammar/DIVERGENCES.md)
 RGS-357	'{form}' leest {node} over [{path}], en die lezing valt buiten de afbakening van de per object geordende kring over het feittype '{factType}' (clausule {clause}): een kring over zo'n feittype, dat twee objecten van één type verbindt, is alleen toegelaten als elke lezing achter een rand binnen de kring in het huishouden van het object of van zijn voorganger landt (WF-045, IR-SPEC ch. 5.3); schrijf de gelezen waarde in een eigen lid van het object, zodat de lezing de kring niet sluit, of breng de lezing binnen die afbakening
 RGS-358	'{read}' kan het regelonderwerp hier niet lezen: {reason}
-RGS-359	toekenning: de waarde heeft de eenheid '{unit}', en die past niet op een attribuut zonder eenheid
 RGS-360	de eenheid '{spelling}' kan het Eenheid-model niet uitdrukken: het kent één eenheid, de exponent -1, en één eenheid (of 1) over één noemer met exponent 1

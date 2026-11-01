@@ -106,9 +106,9 @@ class UnitIdentityTest {
                     Het dagbedrag van een Jutter moet berekend worden als zijn penningbedrag gedeeld door zijn borgdagen.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        assertTrue(refused(m, "RGS-359"), () -> "verwachtte de melding over het doel, kreeg: " + m.errors());
-        String message = m.errors().stream().filter(d -> "RGS-359".equals(d.code())).findFirst().orElseThrow().message();
-        assertTrue(message.contains("1/dg") && message.contains("attribuut zonder eenheid"), message);
+        assertTrue(refused(m, "RGS-335"), () -> "verwachtte de zin van WF-023, kreeg: " + m.errors());
+        String message = m.errors().stream().filter(d -> "RGS-335".equals(d.code())).findFirst().orElseThrow().message();
+        assertTrue(message.contains("value unit '1/dg', target unit 'geen'"), message);
         assertFalse(m.errors().stream().anyMatch(d -> d.message().contains("niet uitdrukken")),
                 () -> "de eenheid is uitdrukbaar, en de melding mag niet anders zeggen: " + m.errors());
     }
