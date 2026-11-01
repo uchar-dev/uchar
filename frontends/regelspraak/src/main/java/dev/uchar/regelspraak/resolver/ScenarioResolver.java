@@ -1372,7 +1372,7 @@ public final class ScenarioResolver {
         Unit sourceUnit = null;
         if (g.PERCENT_SIGN() != null) raw = new Datatype.Percentage(wholeNumber, dec);
         else {
-            sourceUnit = g.eenheidExpressie() != null ? DefinitionResolver.unitOf(model, g.eenheidExpressie()) : null;
+            sourceUnit = DefinitionResolver.unitOf(model, g);
             raw = new Datatype.Numeric(wholeNumber, dec, Datatype.Sign.ONBEPAALD, sourceUnit);
         }
         if (!assignable(target, raw, line, what)) return null;

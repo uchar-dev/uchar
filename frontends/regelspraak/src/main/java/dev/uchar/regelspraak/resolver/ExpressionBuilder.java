@@ -1008,20 +1008,18 @@ final class ExpressionBuilder {
         Source source = source(p);
         if (p.getalWaarde() != null) {
             GetalWaardeContext g = p.getalWaarde();
-            int dec = literalDecimals(source.snippet());    // §6.1.2: the literal's real precision, not 0
+            int dec = literalDecimals(g.NUMBER().getText());    // §6.1.2: the literal's real precision, not 0
             boolean wholeNumber = dec == 0;
             // uchar WF-081 (IR-SPEC ch. 4.1): the literal's waarde is the BARE number lexeme —
             // a '%' or unit suffix belongs in the datatype's eenheid, never in the value string.
             // The NUMBER token is that lexeme; bron keeps the full source snippet ("5 €").
             String lexeme = g.NUMBER().getText();
             if (g.PERCENT_SIGN() != null) return new Expr.Literal(lexeme, new Datatype.Percentage(wholeNumber, dec), source);
-            if (g.eenheidExpressie() != null) {
-                // §13.2.17: the literal-with-unit surface admits a composite (rate) denominator
-                // ("120 EUR/jr"). Resolve it through the SAME composite-aware helper the attribute
-                // datatype uses, so the denominator survives and the literal carries a full
-                // Unit.compound — otherwise a rate literal is typed by its numerator alone and
-                // both §4 unit checking and the exacte cross-unit restatement operate on the wrong unit.
-                Unit e = DefinitionResolver.unitOf(model, g.eenheidExpressie());
+            if (g.eenheidExpressie() != null || g.perEenheid() != null) {
+                // §13.2.17: the literal-with-unit surface admits every factor list ("120 EUR/jr", "2/dg"). Resolve it
+                // through the SAME helper the attribute datatype uses, so a rate literal is not typed by its numerator
+                // alone, where both §4 unit checking and the exacte cross-unit restatement would operate on the wrong unit.
+                Unit e = DefinitionResolver.unitOf(model, g);
                 return new Expr.Literal(lexeme, new Datatype.Numeric(wholeNumber, dec, Datatype.Sign.ONBEPAALD, e), source);
             }
             return new Expr.Literal(source.snippet(), new Datatype.Numeric(wholeNumber, dec, Datatype.Sign.ONBEPAALD, null), source);

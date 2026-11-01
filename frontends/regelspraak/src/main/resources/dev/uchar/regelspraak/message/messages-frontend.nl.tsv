@@ -668,4 +668,9 @@ RGS-355.after-subselection	staat niet dieper dan de bullet '{outer}', waarvan de
 RGS-356	de lijst mengt de bullettekens '{sign}' en '{other}': de diepte telt de tekens van één familie, '-', '..', '...' of '•', '••', '•••' ('▪' telt als '•'), dus tussen twee families ligt geen diepte vast (§13.4.14.7; de sectie '§13.4.14.6–7 The depth of a bullet' van grammar/DIVERGENCES.md)
 RGS-357	'{form}' leest {node} over [{path}], en die lezing valt buiten de afbakening van de per object geordende kring over het feittype '{factType}' (clausule {clause}): een kring over zo'n feittype, dat twee objecten van één type verbindt, is alleen toegelaten als elke lezing achter een rand binnen de kring in het huishouden van het object of van zijn voorganger landt (WF-045, IR-SPEC ch. 5.3); schrijf de gelezen waarde in een eigen lid van het object, zodat de lezing de kring niet sluit, of breng de lezing binnen die afbakening
 RGS-358	'{read}' kan het regelonderwerp hier niet lezen: {reason}
-RGS-360	de eenheid '{spelling}' kan het Eenheid-model niet uitdrukken: het kent één eenheid, de exponent -1, en één eenheid (of 1) over één noemer met exponent 1
+RGS-361	de spelling '{spelling}' noemt geen eenheid: '{part}'
+RGS-361.exponent-not-whole	de spelling '{spelling}' noemt geen eenheid: de exponent in '{part}' is geen geheel getal
+RGS-361.exponent-zero	de spelling '{spelling}' noemt geen eenheid: '{part}' heeft exponent 0, en dat is geen factor; een attribuut zonder eenheid schrijft geen 'met eenheid'
+RGS-361.factors-cancel	de spelling '{spelling}' noemt geen eenheid: haar factoren heffen elkaar op; een attribuut zonder eenheid schrijft geen 'met eenheid'
+RGS-361.numerator-not-one	de spelling '{spelling}' noemt geen eenheid: de teller {part} is een getal; schrijf 'met eenheid {inverse}' en zet de {part} in de waarde
+RGS-362	de waarde '{spelling}': '{name}' is geen eenheid, want geen eenheidstelsel declareert haar; een deling schrijft 'gedeeld door'

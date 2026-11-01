@@ -3796,24 +3796,65 @@ for the wire `OriginOnTheWireTest` (frontend), `OriginWitnessTest`
 
 ## An inverse unit — `1/dg`, and what a unit expression reads
 
-Additive extension: `eenheidExpressie` takes the number `1` over one unit, `met eenheid 1/dg`. The arbiter writes
-the inverse of a unit with a negative exponent only (`dg^-1`, which this grammar reads as well, and which is the same
-unit); its `1` stands alone. Both spell the normal form of IR-SPEC ch. 2.5, point 5, and an official document carries
-no number before a slash in this position, so the extension is inert on it.
+Additive extension: `eenheidExpressie` takes the number `1` over one or more units, `met eenheid 1/dg`, and more than one
+slash, `€/u/s`. The arbiter writes the inverse of a unit with a negative exponent only (`dg^-1`, which this grammar reads
+as well, and which is the same unit), allows one slash, and has its `1` stand alone. All of them spell a list of factors
+(IR-SPEC ch. 2.5, point 5), and an official document carries no number before a slash in this position, so the extension
+is inert on it.
 
-The grammar accepts more than a normal form can write, and the resolver reads it all:
+The resolver reads every spelling that names factors into that list, in the order of WF-124 (d):
 
-| Spelling | Unit |
+| Spelling | Factors |
 |---|---|
 | `m`, `m^1` | `m` |
-| `dg^-1`, `1/dg` | the reciprocal `1/dg` |
-| `€/dg` | the rate `€/dg` |
-| `€/u/s`, `1/dg/m`, `m^0`, `m^-2`, `m^2`, `€/dg^2`, `m^2/s`, `2/dg`, `m^1/2` | RGS-360, an error by name, and no unit |
+| `m^2`, `m^-2` | `m` with exponent 2, -2 |
+| `dg^-1`, `1/dg` | `dg` with exponent -1 |
+| `€/dg` | `€`, `dg` with exponent -1 |
+| `€/u/s`, `€/s/u` | `€`, `s` and `u` with exponent -1 |
+| `1/dg/m` | `dg` and `m` with exponent -1 |
+| `€/dg^2`, `m^2/s` | `€`, `dg` with exponent -2; `m` with exponent 2, `s` with exponent -1 |
+| `m/m^2` | `m` with exponent -1: one factor per atom |
 
-`m^2` is valid in the arbiter's grammar and has a wire form, `[{m, exponent: 2}]`, which the executors carry. This reader does not read the spelling.
+What names no factor is RGS-361, an error by name, and no unit:
 
-A number divided by a unit has the reciprocal of that unit, where the arbiter gives the unit itself (Tabel 14, row 4):
-a dimensional divergence. A reciprocal assigned to a target without a unit is RGS-335, the sentence of WF-023, which names both units (`geen` where one has none).
+| Spelling | Reason |
+|---|---|
+| `m^0` | an exponent 0 names no factor, and a second spelling of "no unit" is not wanted |
+| `m^1/2`, `m^1,5` | the arbiter's exponent is a whole number; the NUMBER token also lexes a fraction and a decimal |
+| `2/dg`, `1/2/dg` | the numerator of a unit is 1; the sentence points at `met eenheid 1/dg` with the number in the value |
+| `m/m` | the factors cancel, and no factor is no unit |
+
+The arbiter's other spellings are not read: `1` alone stays a syntax error, and there is no spelling of a product of two
+atoms (`€·m`), which exists only as the result of a multiplication. A number divided by a unit has the reciprocal of that
+unit, where the arbiter gives the unit itself (Tabel 14, row 4): a dimensional divergence. A reciprocal assigned to a target
+without a unit is RGS-335, the sentence of WF-023, which names both units (`geen` where one has none).
+
+## A number over a unit — `2/dg` as a value
+
+Additive extension: `getalWaarde` takes a slash and a unit after its number (rule `perEenheid`). `2/dg` is the value 2 in the
+unit `1/dg`, on the wire what `2 1/dg` is but for the source snippet, and so are `2/dg/m` (`2 1/dg/m`), `2/m^2` (`2 1/m^2`)
+and `2,5/dg` (`2,5 1/dg`). It reads wherever a number value reads: in an expression and in a scenario value.
+
+The extension is inert on a document that parsed before: the parser reads a SLASH in no other position after a number than
+inside `eenheidExpressie`, and until this rule `<number>/<name>` as a value was a syntax error (`extraneous input '/'`).
+Measured for the owner's decision of 2026-11-01:
+
+| Text | Before | Now |
+|---|---|---|
+| `1/2` | the number 1/2 | the same: the lexer takes it as one NUMBER token |
+| `1/2 dg` | 1/2 in the unit `dg` | the same |
+| `2/3dg` | 2/3 in the unit `dg` | the same |
+| `2 1/dg` | 2 in the unit `1/dg` | the same |
+| `1/2/dg` | syntax error | 1/2 in the unit `1/dg`, what `1/2 1/dg` is |
+| `2/dg`, `1/dg`, `2,5/dg` | syntax error | 2, 1, 2,5 in the unit `1/dg` |
+| `2/foo` | syntax error | RGS-362, which names `foo` |
+| `2/dg^0`, `2/dg^1/2` | syntax error | RGS-361 |
+| `2/`, `2/0`, `1/2/3`, `2/%`, `2 %/dg` | syntax error | syntax error |
+
+A name after the slash must be a unit: a unit system of the document declares it, or it stands in the calendar table of
+RUNTIME-SEMANTICS ch. 3.8, or it is the sign `€`. `2 foo` and `2 1/foo` keep the older reading of a name no system declares,
+a bare unit; with a slash directly after the number the name would otherwise read as a division that does not happen. In
+`met eenheid 2/dg` the same text is RGS-361: a declaration has no value to carry the 2.
 
 ## Semantic tokens — a kind and a position per piece of source text, beside the IR
 

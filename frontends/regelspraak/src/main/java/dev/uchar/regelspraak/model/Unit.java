@@ -85,6 +85,25 @@ public record Unit(List<Factor> factors) {
         this(List.of(new Factor(abbreviation, system, canonical, factorToCanonical, 1)));
     }
 
+    /** This unit to the power {@code e}: "m" to the power 2 is "m^2", "dg" to the power -1 is "1/dg". */
+    public Unit toThePower(int e) {
+        return new Unit(factors.stream().map(f -> f.withExponent(f.exponent() * e)).toList());
+    }
+
+    /** The unit a spelling names: the product of {@code parts}, one factor per atom in the order of WF-124 (d). Null
+     *  where nothing is left ("m/m"). No factor is restated: "km/m" stays two factors, as written. */
+    public static Unit ofParts(List<Unit> parts) {
+        List<Factor> all = new ArrayList<>();
+        for (Unit part : parts)
+            for (Factor f : part.factors) {
+                int at = indexOf(all, f::sameAtom);
+                if (at < 0) all.add(f);
+                else all.set(at, all.get(at).withExponent(all.get(at).exponent() + f.exponent()));
+            }
+        all.removeIf(f -> f.exponent() == 0);
+        return all.isEmpty() ? null : sorted(all);
+    }
+
     private static Unit sorted(List<Factor> factors) {
         return new Unit(factors.stream().sorted(CANONICAL_ORDER).toList());
     }

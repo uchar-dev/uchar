@@ -595,6 +595,8 @@ public final class SemanticTokens {
             claimFree(range(c), Kind.DOMAIN, lookup(Kind.DOMAIN, null, src(c)));
         else if (t instanceof EenheidExpressieContext c && !(c.getParent() instanceof EenheidDefinitieContext))
             for (EenheidMachtContext m : c.eenheidMacht()) unitReference(range(m.eenheidAfkorting()));
+        else if (t instanceof PerEenheidContext c)
+            for (EenheidMachtContext m : c.eenheidMacht()) unitReference(range(m.eenheidAfkorting()));
         else if (t instanceof PercentageDatatypeContext c && c.eenheidAfkorting() != null)
             unitReference(range(c.eenheidAfkorting()));
         else if (t instanceof EenheidMeervoudContext c) unitReference(range(c));

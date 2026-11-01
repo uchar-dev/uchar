@@ -856,6 +856,12 @@ public final class RegelSpraakModel {
         return new Unit(norm, null); // unknown system; normalised so plural/singular still unify
     }
 
+    /** Whether a unit system of this model declares {@code spelling}, as {@link #resolveUnit} reads it. */
+    public boolean declaresUnit(String spelling) {
+        String norm = normaliseTimeUnit(spelling);
+        return unitSystems.values().stream().anyMatch(s -> s.units.containsKey(spelling) || s.spellings.containsKey(norm));
+    }
+
     /** Singular form of a built-in time unit (the lexer's nine units), else the spelling trimmed and
      *  lower-cased. A fall-through that handed back the ORIGINAL string would make the whole time-unit
      *  table case-sensitive for everything except the nine {@code -en} plurals, the only spellings the

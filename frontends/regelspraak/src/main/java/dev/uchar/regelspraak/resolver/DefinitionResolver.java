@@ -683,47 +683,71 @@ public final class DefinitionResolver {
 
     private Unit unitOf(EenheidExpressieContext e) { return unitOf(model, e); }
 
-    /** §13.3.3.2: a unit expression, read into the normal form of {@link Unit}. A power with exponent 1 is its unit,
-     *  exponent -1 and "1/dg" the reciprocal, and one denominator over one numerator a rate (€/jr). What has no normal
-     *  form is an error by name and no unit: a second denominator (€/u/s), exponent 0 or below -1, a power beside a
-     *  denominator (m^2/s), a number other than 1 over a unit, an exponent that is not whole, and m^2.
+    /** §13.3.3.2: a unit expression, read into its list of factors. The first power is a factor with its exponent,
+     *  every power after a slash one with its exponent negated, and the number 1 over a slash names no factor: "m^2/s",
+     *  "€/u/s", "1/dg/m", "dg^-1". What names no factor is RGS-361 and no unit: an exponent 0 or one that is not whole,
+     *  a number other than 1 over a unit, and factors that cancel to nothing.
      *  Package-static so the attribute-datatype path (here) and the §13.2.17 numeric LITERAL path
-     *  ({@link ExpressionBuilder}) resolve a composite (rate) unit IDENTICALLY — a literal "120 EUR/jr"
-     *  must carry the same {@code Unit.compound(EUR, jr)} an attribute "met eenheid EUR/jr"
-     *  does, so §4 unit checking and the exacte cross-unit restatement apply to both alike. */
+     *  ({@link ExpressionBuilder}) resolve a unit IDENTICALLY — a literal "120 EUR/jr" must carry the same unit an
+     *  attribute "met eenheid EUR/jr" does, so §4 unit checking and the exacte cross-unit restatement apply to both
+     *  alike. */
     static Unit unitOf(RegelSpraakModel model, EenheidExpressieContext e) {
         if (e == null || e.eenheidMacht().isEmpty()) return null;
-        Unit u = normalForm(model, e);
-        if (u == null)
-            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-360",
-                    params("spelling", src(e)), e.getStart().getLine()));
-        return u;
-    }
-
-    /** The unit {@code e} spells, or null where its form has no normal form. */
-    private static Unit normalForm(RegelSpraakModel model, EenheidExpressieContext e) {
         List<EenheidMachtContext> powers = e.eenheidMacht();
-        if (e.NUMBER() != null) {
-            if (!e.NUMBER().getText().equals("1") || powers.size() != 1 || !firstPower(powers.get(0))) return null;
-            return Unit.reciprocal(resolved(model, powers.get(0)));
+        String number = e.NUMBER() == null ? null : e.NUMBER().getText();
+        if (number != null && !number.equals("1")) {
+            refuseSpelling(model, src(e), number, powers, ".numerator-not-one", e);
+            return null;
         }
-        Unit first = resolved(model, powers.get(0));
-        if (powers.size() == 2)
-            return firstPower(powers.get(0)) && firstPower(powers.get(1))
-                    ? Unit.compound(first, resolved(model, powers.get(1))) : null;
-        if (powers.size() > 2) return null;
-        if (firstPower(powers.get(0))) return first;
-        Integer exponent = wholeExponent(powers.get(0));
-        if (exponent == null) return null;
-        return exponent == -1 ? Unit.reciprocal(first) : null;
+        return unitOfPowers(model, src(e), powers, number != null, e);
     }
 
-    private static Unit resolved(RegelSpraakModel model, EenheidMachtContext power) {
-        return model.resolveUnit(src(power.eenheidAfkorting()));
+    /** The unit of a number value: what its unit expression names, or for "2/dg" (grammar/DIVERGENCES.md, "A number over
+     *  a unit") the powers after the slash with their exponents negated. A name there that no unit system declares is
+     *  RGS-362 and no unit: with a number before it, a slash and a word that names nothing would read as a division
+     *  that does not happen. The calendar's time units and the euro sign are units without a declaration, as in
+     *  "5 dagen" and "5 €". Null where the value has no unit. */
+    static Unit unitOf(RegelSpraakModel model, GetalWaardeContext g) {
+        if (g.perEenheid() == null) return unitOf(model, g.eenheidExpressie());
+        List<EenheidMachtContext> powers = g.perEenheid().eenheidMacht();
+        for (EenheidMachtContext power : powers) {
+            EenheidAfkortingContext a = power.eenheidAfkorting();
+            // what the parser's recovery conjured has no name, and the syntax error is already reported
+            if (a == null || a.getChild(0) == null || a.getChild(0) instanceof ErrorNode) return null;
+            String name = src(a);
+            if (a.EURO() == null && !model.declaresUnit(name)
+                    && !TimeCalculation.isCalendarSpelling(RegelSpraakModel.normaliseTimeUnit(name))) {
+                model.diagnostics.add(new Typing.Coded("RGS-362", params("spelling", src(g), "name", name))
+                        .at(RegelSpraakModel.Severity.ERROR, g.getStart().getLine()));
+                return null;
+            }
+        }
+        return unitOfPowers(model, src(g), powers, true, g);
     }
 
-    private static boolean firstPower(EenheidMachtContext power) {
-        return power.exponent() == null || Integer.valueOf(1).equals(wholeExponent(power));
+    private static Unit unitOfPowers(RegelSpraakModel model, String spelling, List<EenheidMachtContext> powers,
+            boolean allBelow, ParserRuleContext at) {
+        List<Unit> parts = new ArrayList<>();
+        for (int i = 0; i < powers.size(); i++) {
+            EenheidMachtContext power = powers.get(i);
+            Integer exponent = power.exponent() == null ? Integer.valueOf(1) : wholeExponent(power);
+            if (exponent == null || exponent == 0) {
+                refuseSpelling(model, spelling, src(power), powers, exponent == null ? ".exponent-not-whole" : ".exponent-zero", at);
+                return null;
+            }
+            parts.add(model.resolveUnit(src(power.eenheidAfkorting())).toThePower(i == 0 && !allBelow ? exponent : -exponent));
+        }
+        Unit unit = Unit.ofParts(parts);
+        if (unit == null) refuseSpelling(model, spelling, spelling, powers, ".factors-cancel", at);
+        return unit;
+    }
+
+    /** RGS-361. {@code inverse} is the unit the powers spell over 1: the place a number over a unit points at. */
+    private static void refuseSpelling(RegelSpraakModel model, String spelling, String part, List<EenheidMachtContext> powers,
+            String variant, ParserRuleContext at) {
+        String inverse = "1/" + String.join("/", powers.stream().map(DefinitionResolver::src).toList());
+        model.diagnostics.add(new Typing.Coded("RGS-361", params("spelling", spelling, "part", part, "inverse", inverse))
+                .variant(variant).at(RegelSpraakModel.Severity.ERROR, at.getStart().getLine()));
     }
 
     /** The written exponent as a whole number, null where it is none (the NUMBER token also lexes "1/2" and "1,5"). */

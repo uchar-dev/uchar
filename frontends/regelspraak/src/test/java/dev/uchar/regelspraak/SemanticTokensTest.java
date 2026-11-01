@@ -173,6 +173,30 @@ class SemanticTokensTest {
                 assertFalse(SemanticTokensCheck.unlinked(s), () -> "a reference without its declaration: " + s);
     }
 
+    /** The units of a number over a unit are references like those of "5 dg": "2/dg" and "2/dg/m" point at the declarations. */
+    @Test void a_number_over_a_unit_points_at_its_units() {
+        String source = """
+                Eenheidsysteem Tijd
+                    de dag (mv: dagen) dg
+                Eenheidsysteem Lengte
+                    de meter m
+                Objecttype de Sleep
+                    het tarief Numeriek (geheel getal) met eenheid 1/dg/m;
+                Regel tarief
+                    geldig altijd
+                        Het tarief van een Sleep moet berekend worden als 2/dg/m.
+                """;
+        SemanticTokens.Document d = Resolver.tokens(List.of(new SemanticTokens.SourceFile("sleep.rgs", source)));
+        for (String[] unit : new String[][]{{"dg", "dg\n"}, {"m", "m\n"}}) {
+            Span s = d.files().get(0).spans().stream()
+                    .filter(x -> x.text().equals(unit[0]) && x.line() == 9).findFirst().orElseThrow();
+            assertEquals(Kind.UNIT, s.kind());
+            assertFalse(s.declaration());
+            assertNotNull(s.declaredAt(), unit[0]);
+            assertEquals(unit[0].equals("dg") ? 2 : 4, s.declaredAt().line());
+        }
+    }
+
     @Test void every_kind_of_name_is_declared_where_it_is_written() {
         SemanticTokens.Document d = document();
         declaration(d, "jutters.rgs", "handboek (taal", "handboek", Kind.VOCABULARY);

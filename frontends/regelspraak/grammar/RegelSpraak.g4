@@ -1175,7 +1175,10 @@ aggregerenOverBereik        : DE dimensieNaamMeervoud IN LBRACE dimensieWaarde (
 // writes "de Rekendatum" / "het Rekenjaar" with an article; the article is optional.
 rekenConstante : ( DE | HET )? ( REKENDATUM | REKENJAAR ) ;
 
-getalWaarde   : NUMBER ( PERCENT_SIGN | eenheidExpressie )? ; // §13.2.17/.18
+getalWaarde   : NUMBER ( PERCENT_SIGN | eenheidExpressie | perEenheid )? ; // §13.2.17/.18
+// 2/dg: the value 2 in the unit 1/dg (grammar/DIVERGENCES.md, "A number over a unit"). No other rule reads a SLASH after
+// a number, and a fraction stays one NUMBER token, so 1/2 is a number and 1/2/dg is 1/2 in the unit 1/dg.
+perEenheid    : SLASH eenheidMacht ( SLASH eenheidMacht )* ;
 // §13.2.15 tekstwaarde + §5.4/§13.4.17.9 tekstenwaardereeks. A plain "…" is STRING_START STRING_TEXT? STRING_END;
 // a "…«expressie»…" interleaves literal chunks with «expressie» escapes (each a full expressie, recursive).
 tekstWaarde     : STRING_START tekstReeksDeel* STRING_END ;
