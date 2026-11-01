@@ -81,11 +81,11 @@ de distributie).
 Result: de eenheid is een product van factoren in één normaalvorm, op de bestaande wire; eenheidloos ÷ E is E⁻¹ op
 alle routes. Vier uitvoerders spelen de golden. De kaart blijft in `doing/`; de hoofdsessie landt.
 
-**Commits.** `c98ccf1a3` claim; `891987a18` frontend; `d93ffa8e5` uitvoerders; `523331016` voorstel (spec, schema,
-WF-123, golden, negatieve gevallen, gate-scripts); `d9eb87f98` `m^n` is RGS-360; `fa366c349` een afgeleid product past niet op
-een eenheid met een noemer (ref, Drools); `699a5e36b` de zin van WF-023 noemt beide eenheden; `f704646bd` WF-123 (c) voor een
-product. De laatste commit op de branch zet dit Result. Beschermde paden in `523331016`, `d93ffa8e5`, `d9eb87f98`, `fa366c349`,
-`699a5e36b` en `f704646bd`: `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`, `spec/schema/`, `spec/verifier/`, `scripts/`;
+**Commits.** `da71b22ad` claim; `506ce0d64` frontend; `6226fc1a7` uitvoerders; `36b3af951` voorstel (spec, schema,
+WF-123, golden, negatieve gevallen, gate-scripts); `4f7860f9d` `m^n` is RGS-360; `f3a480135` een afgeleid product past niet op
+een eenheid met een noemer (ref, Drools); `9f69c79c9` de zin van WF-023 noemt beide eenheden; `1abfe30db` WF-123 (c) voor een
+product. De laatste commit op de branch zet dit Result. Beschermde paden in `36b3af951`, `6226fc1a7`, `4f7860f9d`, `f3a480135`,
+`9f69c79c9` en `1abfe30db`: `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`, `spec/schema/`, `spec/verifier/`, `scripts/`;
 `spec/ASP-TRANSLATION.md` valt onder het CODEOWNERS-net (S6, twee aanvullingen).
 
 **(a) Representatie en wire: afbeelding, geen schemawijziging (voorlopig besluit).** Normaalvorm (IR-SPEC ch. 2.5, punt 5):
@@ -156,7 +156,7 @@ Ref: `oracle: PASS` (30 en 12 verwachtingen); clingo: `PASS` (30 en 12); Drools 
 - clingo: `TRANSLATION FAULT: a unit-carrying multiplicative operand is not translated …`.
 - Drools (beide takken): `FAIL case.json: attribuut seizoensoogst: verwacht 52.50, werkelijk 7.50; … kenmerk drempelhoudend: verwacht
   aanwezig, werkelijk afwezig; …`. `like-ref`: `loon: verwacht 210.00, werkelijk 30.00`; `deel: verwacht 0.50, werkelijk 3.5`.
-- `UnitIdentityTest`: 10 van de nieuwe tests rood (1327 gevonden, 10 gefaald, met de tests van `891987a18`).
+- `UnitIdentityTest`: 10 van de nieuwe tests rood (1327 gevonden, 10 gefaald, met de tests van `506ce0d64`).
 
 **Rood vóór de reparatie, met de nieuwe getuigen.**
 - Ref met de productarm: `FAIL WV-2.6-2m-times-3m-does-not-restate-into-a-declared-m^2 (no fault at all)` en `FAIL
@@ -194,19 +194,16 @@ Ref: `oracle: PASS` (30 en 12 verwachtingen); clingo: `PASS` (30 en 12); Drools 
   attribuut (`expect.txt` ongewijzigd): op een geschreven attribuut gaf hij de WF-023-zin met `target unit '1'`, en gate 3
   normaliseert een parameter die alleen uit cijfers bestaat niet, zodat die sleutel twee sjablonen kreeg.
 - `TypingTest.times_unitless_operand_takes_the_other_unit_over`: het laatste deel (oud: `!ok`, "omgekeerde eenheid"; nieuw: `ok`, `1/mnd`).
-- `scripts/check-drools.sh` `EXPECTED_PLAYED` 281 → 282 (de golden). `TmsLikeRefWitnessTest.COUNT` 26 → 28.
+- `scripts/check-drools.sh` `EXPECTED_PLAYED` +1 (de golden), na de rebase 295 → 296. `TmsLikeRefWitnessTest.COUNT` 26 → 28.
 - `scripts/check-reftype-derivation.sh`: `dividedBy` en `dividedByAbs` naar `DERIVED_OP`, `sister` twist de noemer van een reciprook.
   `RUNTIME-SEMANTICS` ch. 2.10: het quotiënt uit de vierde klasse, en `dividedBy` als voorbeeld daarvan vervangen door `power`.
 - `Datatype.name()` toont `rendering()` (`Numeriek (€/jr)`, was `Numeriek (€)`); geen test las het.
 
 **Geen golden of `toka/`-bestand bewogen** (gates 10, 11 en 16 byte-identiek).
 
-**Gates, elk apart groen in de worktree op de laatste codecommit.** 1, 2, 3, 5, 6, 8, 10, 11, 12, 13, 15, 16, 17 op `f704646bd`, geen vloer veranderd (`EXPECTED_PLAYED` 282, DRL-tekst 282, JUnit backend 1716, frontend 1331, ref 1474 voorbeelden). Gate 9 niet gedraaid: de
-Catala-frontend is niet geraakt. Gates 4, 7 en 14 zijn voor het laatst groen gedraaid op `d2261b3ab`, niet op de laatste codecommit. Volledige set niet gedraaid. Nieuw in `ref/test/`: de `WV-2.6-*`-rijen van ch. 2.6, letterlijk. Na
-rebase op `fout-op-tussenstand`: `EXPECTED_PLAYED` opnieuw zetten. Het nummer WF-123 stond op die branch nog vrij (daar alleen de
-claim op het moment van kijken).
+**Gates.** `make gates` op `c00af04d8`, na de rebase op `fout-op-tussenstand`: alle 17 groen, 354 s, `red=0`, `out/gates/20261101-124422/`. Gate 12 speelt 296 op beide takken. Hashes in dit Result zijn die van na de rebase. Nieuw in `ref/test/`: de `WV-2.6-*`-rijen van ch. 2.6, letterlijk.
 
-**Voorgestelde tekst CONSTRUCTS rij 26**, achter "(rood-eerst: `UnitIdentityTest`)" in de kolom delta:
+**Tekst CONSTRUCTS rij 26**, geplaatst bij de landing, achter "(rood-eerst: `UnitIdentityTest`)" in de kolom delta:
 
 > **Landed (2026-11, card `omgekeerde-eenheid`; supersedes the reciprocal half of besluit 17b, maintainer 2026-10-11):**
 > a unit is a product of factors with a whole exponent in one normal form on the existing wire (IR-SPEC ch. 2.5, point
