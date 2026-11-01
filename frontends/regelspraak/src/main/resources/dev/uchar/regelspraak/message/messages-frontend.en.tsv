@@ -576,7 +576,7 @@ RGS-278	{what}: the value '{value}' was not read
 RGS-279	{what}: the text value carries an «expression», and a value in a scenario is literal
 RGS-280	{operation}: sub-day time unit on a day-precision date (millisecond precision required)
 RGS-281	{operator} requires numeric operands, got {left} and {right}
-RGS-282	divided by: a unitless numerator divided by the unit '{unit}' gives an inverse unit (1/{unit}) that the unit model cannot express
+RGS-282	divided by: a unitless numerator divided by the composite unit '{unit}' gives an inverse unit with more than one factor in the denominator, which the unit model cannot express
 RGS-283	to the power: power operands must be unitless
 RGS-284	operator '{operator}' requires numeric operands, got {left} and {right}
 RGS-285	gelijk: equality across families: {left} vs {right}
@@ -671,3 +671,5 @@ RGS-355.after-subselection	stands no deeper than the bullet '{outer}', whose sub
 RGS-356	the list mixes the bullet signs '{sign}' and '{other}': the depth counts the signs of one family, '-', '..', '...' or '•', '••', '•••' ('▪' counts as '•'), so between two families no depth is fixed (§13.4.14.7; the section '§13.4.14.6–7 The depth of a bullet' of grammar/DIVERGENCES.md)
 RGS-357	'{form}' reads {node} over [{path}], and that read lies outside the scope of the instance-ordered cycle over the fact type '{factType}' (clause {clause}): a cycle over such a fact type, which links two objects of one type, is admitted only where every read behind an edge inside the cycle lands in the household of the object or of its predecessor (WF-045, IR-SPEC ch. 5.3); write the value read into an own member of the object, so that the read does not close the cycle, or bring the read within that scope
 RGS-358	'{read}' cannot read the rule subject here: {reason}
+RGS-359	assignment: the value has the unit '{unit}', which does not fit an attribute without a unit
+RGS-360	the unit model cannot express the unit '{spelling}': it has one unit, a power with a whole number of at least 2, the exponent -1, and one unit (or 1) over one denominator with exponent 1

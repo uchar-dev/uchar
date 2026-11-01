@@ -1395,7 +1395,9 @@ public final class ScenarioResolver {
      *  "gtd = 1/3 etm" would become 0.6666666666666666 etm where the wire and every executor read 2/3. Null where a unit
      *  has no exact factor. */
     private BigInteger[] exactRescaling(Unit van, Unit to) {
-        BigInteger[] a = exactFactor(van.numerator()), b = exactFactor(to.numerator());
+        // the numerator of a reciprocal is no unit: factor 1
+        BigInteger[] a = van.isReciprocal() ? UNIT_FACTOR : exactFactor(van.numerator());
+        BigInteger[] b = to.isReciprocal() ? UNIT_FACTOR : exactFactor(to.numerator());
         if (a == null || b == null) return null;
         BigInteger num = a[0].multiply(b[1]), den = a[1].multiply(b[0]);
         if (van.denominator() != null && to.denominator() != null) {
@@ -1406,6 +1408,8 @@ public final class ScenarioResolver {
         }
         return new BigInteger[]{num, den};
     }
+
+    private static final BigInteger[] UNIT_FACTOR = {BigInteger.ONE, BigInteger.ONE};
 
     /** The exact factor of {@code e} to its canonical: the fraction its system declares, else a whole decimal factor
      *  (a unit that is its own canonical, a built-in unit), else null — as the emitter writes it on the wire. */

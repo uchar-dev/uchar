@@ -3794,6 +3794,26 @@ for the wire `OriginOnTheWireTest` (frontend), `OriginWitnessTest`
 
 ---
 
+## An inverse unit — `1/dg`, and what a unit expression reads
+
+Additive extension: `eenheidExpressie` takes the number `1` over one unit, `met eenheid 1/dg`. The arbiter writes
+the inverse of a unit with a negative exponent only (`dg^-1`, which this grammar reads as well, and which is the same
+unit); its `1` stands alone. Both spell the normal form of IR-SPEC ch. 2.5, point 5, and an official document carries
+no number before a slash in this position, so the extension is inert on it.
+
+The grammar accepts more than a normal form can write, and the resolver reads it all:
+
+| Spelling | Unit |
+|---|---|
+| `m`, `m^1` | `m` |
+| `m^2` | `m·m`, the unit of `m maal m` |
+| `dg^-1`, `1/dg` | the reciprocal `1/dg` |
+| `€/dg` | the rate `€/dg` |
+| `€/u/s`, `1/dg/m`, `m^0`, `m^-2`, `€/dg^2`, `m^2/s`, `2/dg`, `m^1/2` | RGS-360, an error by name, and no unit |
+
+A number divided by a unit has the reciprocal of that unit, where the arbiter gives the unit itself (Tabel 14, row 4):
+a dimensional divergence. A reciprocal assigned to a target without a unit is RGS-359, which names the unit.
+
 ## Semantic tokens — a kind and a position per piece of source text, beside the IR
 
 Not a grammar divergence: an output of the frontend beside the IR, never on the wire (card `semantic-tokens`,

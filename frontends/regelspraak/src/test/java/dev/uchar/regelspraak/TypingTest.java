@@ -233,11 +233,52 @@ class TypingTest {
         var left = Typing.compute(BinOp.MAAL, num("mnd", "Tijd"), num());   // andersom: E × (none) -> E (rij 3)
         assertTrue(left.ok() && left.type().unitOf() != null && "mnd".equals(left.type().unitOf().abbreviation()),
                 () -> "een eenheid × unitloze operand neemt de eenheid (mnd) over, kreeg: " + left.type());
-        // §4.5 GEDEELD: een unitloze teller / eenheid is een omgekeerde eenheid (1/mnd) die het Eenheid-model niet kan
-        // spellen -> besluit 17b: een LUIDE fout (bewuste divergentie van de dimensioneel onsound Tabel-14-rij-4-cel).
+        // §4.5 GEDEELD: een unitloze teller / eenheid is de omgekeerde eenheid 1/mnd (besluit 17b: een bewuste divergentie
+        // van de dimensioneel onsound Tabel-14-rij-4-cel, die E zou geven).
         var part = Typing.compute(BinOp.GEDEELD_DOOR, num(), num("mnd", "Tijd"));
-        assertFalse(part.ok(), () -> "een unitloze teller / eenheid moet luid falen, kreeg: " + part.type());
-        assertTrue(part.error().contains("omgekeerde eenheid"), part::error);
+        assertTrue(part.ok(), part::error);
+        assertEquals("1/mnd", part.type().unitOf().rendering());
+    }
+
+    @Test void the_inverse_of_a_product_is_a_loud_error() {
+        Unit product = Unit.product(EUR, new Unit("m", "Lengte"));
+        var res = Typing.compute(BinOp.GEDEELD_DOOR, num(), numUnit(product));
+        assertFalse(res.ok(), () -> "de inverse van een product moet luid falen, kreeg: " + res.type());
+        assertTrue(res.error().contains("niet uitdrukken"), res::error);
+    }
+
+    @Test void a_reciprocal_times_its_unit_has_no_unit_and_times_another_unit_is_the_rate() {
+        Unit perYear = Unit.reciprocal(JR);
+        var cancelled = Typing.compute(BinOp.MAAL, numUnit(perYear), numUnit(JR));
+        assertTrue(cancelled.ok(), cancelled::error);
+        assertNull(cancelled.type().unitOf());
+        var rate = Typing.compute(BinOp.MAAL, numUnit(EUR), numUnit(perYear));
+        assertTrue(rate.ok(), rate::error);
+        assertEquals(Unit.compound(EUR, JR), rate.type().unitOf(), "€ · jr⁻¹ is €/jr");
+        var flipped = Typing.compute(BinOp.MAAL, numUnit(perYear), numUnit(EUR));
+        assertTrue(flipped.ok(), flipped::error);
+        assertEquals(Unit.compound(EUR, JR), flipped.type().unitOf());
+    }
+
+    @Test void the_inverse_of_an_inverse_and_of_a_rate() {
+        var back = Typing.compute(BinOp.GEDEELD_DOOR, num(), numUnit(Unit.reciprocal(JR)));
+        assertTrue(back.ok(), back::error);
+        assertEquals(JR, back.type().unitOf());
+        var flipped = Typing.compute(BinOp.GEDEELD_DOOR, num(), numUnit(Unit.compound(EUR, JR)));
+        assertTrue(flipped.ok(), flipped::error);
+        assertEquals(Unit.compound(JR, EUR), flipped.type().unitOf());
+    }
+
+    @Test void a_reciprocal_converts_by_its_denominator_inverted() {
+        Unit dg = new Unit("dg", "Tijd", "dg", java.math.BigDecimal.ONE);
+        Unit wk = new Unit("wk", "Tijd", "dg", new java.math.BigDecimal("7"));
+        Unit perDay = Unit.reciprocal(dg), perWeek = Unit.reciprocal(wk);
+        assertTrue(perDay.convertibleTo(perWeek));
+        assertFalse(perDay.convertibleTo(dg), "E⁻¹ is geen E");
+        assertFalse(perDay.convertibleTo(Unit.compound(EUR, dg)), "1/dg is geen €/dg");
+        java.math.BigDecimal[] f = perWeek.exactRestateFactors(perDay);
+        assertEquals(0, f[0].multiply(new java.math.BigDecimal("7")).compareTo(f[1]), "1/wk naar 1/dg is de factor 1/7");
+        assertEquals(0, perDay.conversionFactorTo(perWeek).compareTo(new java.math.BigDecimal("7")));
     }
 
     @Test void times_unspellable_rate_factor_is_a_loud_error() {   // besluit 17c

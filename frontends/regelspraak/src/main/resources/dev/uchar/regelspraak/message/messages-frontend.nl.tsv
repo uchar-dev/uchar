@@ -576,7 +576,7 @@ RGS-278	{what}: de waarde '{value}' is niet gelezen
 RGS-279	{what}: de tekstwaarde draagt een «expressie», en een waarde in een scenario is letterlijk
 RGS-280	{operation}: sub-day time unit on a day-precision date (millisecond precision required)
 RGS-281	{operator} vereist numerieke operanden, kreeg {left} en {right}
-RGS-282	gedeeld door: een eenheidloze teller gedeeld door de eenheid '{unit}' geeft een omgekeerde eenheid (1/{unit}) die het Eenheid-model niet kan uitdrukken
+RGS-282	gedeeld door: een eenheidloze teller gedeeld door de samengestelde eenheid '{unit}' geeft een omgekeerde eenheid met meer dan één factor in de noemer, en die kan het Eenheid-model niet uitdrukken
 RGS-283	tot de macht: power operands must be unitless
 RGS-284	operator '{operator}' vereist numerieke operanden, kreeg {left} en {right}
 RGS-285	gelijk: equality across families: {left} vs {right}
@@ -671,3 +671,5 @@ RGS-355.after-subselection	staat niet dieper dan de bullet '{outer}', waarvan de
 RGS-356	de lijst mengt de bullettekens '{sign}' en '{other}': de diepte telt de tekens van één familie, '-', '..', '...' of '•', '••', '•••' ('▪' telt als '•'), dus tussen twee families ligt geen diepte vast (§13.4.14.7; de sectie '§13.4.14.6–7 The depth of a bullet' van grammar/DIVERGENCES.md)
 RGS-357	'{form}' leest {node} over [{path}], en die lezing valt buiten de afbakening van de per object geordende kring over het feittype '{factType}' (clausule {clause}): een kring over zo'n feittype, dat twee objecten van één type verbindt, is alleen toegelaten als elke lezing achter een rand binnen de kring in het huishouden van het object of van zijn voorganger landt (WF-045, IR-SPEC ch. 5.3); schrijf de gelezen waarde in een eigen lid van het object, zodat de lezing de kring niet sluit, of breng de lezing binnen die afbakening
 RGS-358	'{read}' kan het regelonderwerp hier niet lezen: {reason}
+RGS-359	toekenning: de waarde heeft de eenheid '{unit}', en die past niet op een attribuut zonder eenheid
+RGS-360	de eenheid '{spelling}' kan het Eenheid-model niet uitdrukken: het kent één eenheid, een macht met een geheel getal van minstens 2, de exponent -1, en één eenheid (of 1) over één noemer met exponent 1

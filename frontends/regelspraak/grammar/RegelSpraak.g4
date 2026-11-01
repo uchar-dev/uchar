@@ -515,7 +515,10 @@ eenheidDefinitie
 omrekenSpecificatie // §13.3.5.2 — '1/1000' etc. is a single rational NUMBER token
     : EQUALS NUMBER eenheidAfkorting
     ;
-eenheidExpressie : eenheidMacht ( SLASH eenheidMacht )* ; // §13.3.3.2 composite units (km/u)
+eenheidExpressie                                       // §13.3.3.2 composite units (km/u)
+    : eenheidMacht ( SLASH eenheidMacht )*
+    | NUMBER SLASH eenheidMacht ( SLASH eenheidMacht )*  // 1/dg (grammar/DIVERGENCES.md, "An inverse unit")
+    ;
 eenheidMacht     : eenheidAfkorting ( CARET exponent )? ;  // §13.3.5.5
 exponent         : NUMBER ;                                // §13.3.5.6
 // Unit words / abbreviations may be plain identifiers, the currency glyph, or a

@@ -16,6 +16,11 @@ import java.math.MathContext;
  * numerator AND inverts the denominator: "120 €/jr" is "10 €/mnd" (÷12), so the rate
  * scales by the numerator factor times the inverse of the denominator factor.
  *
+ * <p>A unit is a product of factors with a whole exponent, written in one normal form: the factors with a positive
+ * exponent as the numerator, the one factor with exponent -1 as {@code denominator}. So "€/dg" and "€ · dg⁻¹" are one
+ * unit. A numerator without a factor is {@link #ONE}: "1/dg" is dg⁻¹ ({@link #isReciprocal}). No factor at all is no
+ * unit, never a {@code Unit}. A form outside this normal form (a second denominator, "€/u/s"; dg⁻²) has no record.
+ *
  * <p>Two units are inter-convertible when their numerators reduce to the same canonical
  * unit (or share an abbreviation/system) AND their denominators are likewise convertible
  * (or both absent). {@link #conversionFactorTo} gives the multiplier to restate a quantity
@@ -23,6 +28,12 @@ import java.math.MathContext;
  * across units (jr vs mnd, €/jr vs €/mnd) are scaled rather than computed on raw magnitudes.
  */
 public record Unit(String abbreviation, String system, String canonical, BigDecimal factorToCanonical, Unit denominator) {
+
+    /** The numerator of a reciprocal, the "1" of "1/dg": no system and no conversion pair, and only ever beside a
+     *  denominator (WF-123). */
+    private static final String ONE_ABBREVIATION = "1";
+
+    private static final Unit ONE = new Unit(ONE_ABBREVIATION, null, null, null, null);
 
     /** A simple unit with no declared conversion: it is its own canonical (factor 1). */
     public Unit(String abbreviation, String system) { this(abbreviation, system, abbreviation, BigDecimal.ONE, null); }
@@ -36,6 +47,21 @@ public record Unit(String abbreviation, String system, String canonical, BigDeci
     public static Unit compound(Unit numerator, Unit denominator) {
         return new Unit(numerator.abbreviation, numerator.system, numerator.canonical, numerator.factorToCanonical, denominator);
     }
+
+    /** E⁻¹, the unit of a unitless number divided by E: "dg" gives "1/dg", "1/dg" gives "dg" and "€/dg" gives "dg/€".
+     *  Null for a unit with a product in it: its inverse would need two factors with a negative exponent, and the
+     *  normal form has one. */
+    public static Unit reciprocal(Unit e) {
+        if (e.isProduct() || (e.denominator != null && e.denominator.isProduct())) return null;
+        if (e.denominator == null) return compound(ONE, e);
+        return e.isReciprocal() ? e.denominator : compound(e.denominator, e.numerator());
+    }
+
+    /** Whether this is E⁻¹: a denominator over no factor at all. */
+    public boolean isReciprocal() { return denominator != null && ONE_ABBREVIATION.equals(abbreviation); }
+
+    /** Whether the numerator is a product of units ("€·m"). */
+    public boolean isProduct() { return abbreviation.contains("·"); }
 
     /** §4.4 the PRODUCT of two simple units ("€·m") — an opaque composite carrying NO canonical, so it is
      *  convertible only to an identical product (any assignment/comparison against a concrete unit then flags a
@@ -56,8 +82,10 @@ public record Unit(String abbreviation, String system, String canonical, BigDeci
     /** Human-readable spelling, including the denominator for a composite ("€/jr"). */
     public String rendering() { return denominator == null ? abbreviation : abbreviation + "/" + denominator.abbreviation; }
 
-    /** The rate's NUMERATOR as a stand-alone unit (denominator stripped); this unit itself when plain. */
+    /** The rate's NUMERATOR as a stand-alone unit (denominator stripped); this unit itself when plain; null for a
+     *  reciprocal, whose numerator is no unit: E⁻¹ × E is a number without a unit. */
     public Unit numerator() {
+        if (isReciprocal()) return null;
         return denominator == null ? this : new Unit(abbreviation, system, canonical, factorToCanonical);
     }
 
@@ -116,9 +144,11 @@ public record Unit(String abbreviation, String system, String canonical, BigDeci
      *  (no canonical) — the caller then keeps the single-ratio fallback, which is available only on a CONVERTIBLE
      *  pair: between units with no common unit there is no ratio either, and {@link #conversionFactorTo} says so. */
     public BigDecimal[] exactRestateFactors(Unit target) {
-        if (target == null || !convertibleTo(target)
-                || factorToCanonical == null || target.factorToCanonical == null) return null;
-        BigDecimal num = factorToCanonical, den = target.factorToCanonical;
+        if (target == null || !convertibleTo(target)) return null;
+        // the numerator of a reciprocal is no unit and carries no factor; convertibleTo gave both sides that numerator
+        BigDecimal num = isReciprocal() ? BigDecimal.ONE : factorToCanonical;
+        BigDecimal den = target.isReciprocal() ? BigDecimal.ONE : target.factorToCanonical;
+        if (num == null || den == null) return null;
         if (denominator != null && target.denominator != null) {   // a rate: per-this.denominator -> per-target.denominator inverts
             if (denominator.factorToCanonical == null || target.denominator.factorToCanonical == null) return null;
             num = num.multiply(target.denominator.factorToCanonical);

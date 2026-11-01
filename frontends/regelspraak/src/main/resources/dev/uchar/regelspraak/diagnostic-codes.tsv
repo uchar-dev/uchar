@@ -354,3 +354,5 @@ RGS-355	bullet-returns-to-no-open-level	ERROR	bullet,reason
 RGS-356	two-bullet-sign-families	ERROR	other,sign
 RGS-357	instance-read-outside	ERROR	clause,factType,form,node,path
 RGS-358	rule-subject-not-addressable	ERROR	read,reason
+RGS-359	value-unit-on-target-without-unit	ERROR	unit
+RGS-360	unit-expression-without-normal-form	ERROR	spelling

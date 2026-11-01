@@ -683,19 +683,61 @@ public final class DefinitionResolver {
 
     private Unit unitOf(EenheidExpressieContext e) { return unitOf(model, e); }
 
-    /** §13.3.3.2: {@code <eenheidexpressie> ::= <eenheidmacht> ("/" <eenheidmacht>)*} — the numerator
-     *  is the first power; a single trailing {@code "/<unit>"} is the denominator of a rate unit
-     *  (€/jr). A second denominator (€/u/s) is not yet modelled — keep the numerator only.
+    /** §13.3.3.2: a unit expression, read into the normal form of {@link Unit}. A power with exponent 1 is its unit,
+     *  a higher power the product of that many ("m^2" is "m·m", the unit of m maal m), exponent -1 and "1/dg" the
+     *  reciprocal, and one denominator over one numerator a rate (€/jr). What has no normal form is an error by name
+     *  and no unit: a second denominator (€/u/s), exponent 0 or below -1, a power beside a denominator (m^2/s), a
+     *  number other than 1 over a unit, an exponent that is not whole.
      *  Package-static so the attribute-datatype path (here) and the §13.2.17 numeric LITERAL path
      *  ({@link ExpressionBuilder}) resolve a composite (rate) unit IDENTICALLY — a literal "120 EUR/jr"
      *  must carry the same {@code Unit.compound(EUR, jr)} an attribute "met eenheid EUR/jr"
      *  does, so §4 unit checking and the exacte cross-unit restatement apply to both alike. */
     static Unit unitOf(RegelSpraakModel model, EenheidExpressieContext e) {
         if (e == null || e.eenheidMacht().isEmpty()) return null;
-        Unit numerator = model.resolveUnit(src(e.eenheidMacht(0).eenheidAfkorting()));
-        if (e.eenheidMacht().size() == 2)
-            return Unit.compound(numerator, model.resolveUnit(src(e.eenheidMacht(1).eenheidAfkorting())));
-        return numerator;
+        Unit u = normalForm(model, e);
+        if (u == null)
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-360",
+                    params("spelling", src(e)), e.getStart().getLine()));
+        return u;
+    }
+
+    /** The unit {@code e} spells, or null where its form has no normal form. */
+    private static Unit normalForm(RegelSpraakModel model, EenheidExpressieContext e) {
+        List<EenheidMachtContext> powers = e.eenheidMacht();
+        if (e.NUMBER() != null) {
+            if (!e.NUMBER().getText().equals("1") || powers.size() != 1 || !firstPower(powers.get(0))) return null;
+            return Unit.reciprocal(resolved(model, powers.get(0)));
+        }
+        Unit first = resolved(model, powers.get(0));
+        if (powers.size() == 2)
+            return firstPower(powers.get(0)) && firstPower(powers.get(1))
+                    ? Unit.compound(first, resolved(model, powers.get(1))) : null;
+        if (powers.size() > 2) return null;
+        if (firstPower(powers.get(0))) return first;
+        Integer exponent = wholeExponent(powers.get(0));
+        if (exponent == null) return null;
+        if (exponent == -1) return Unit.reciprocal(first);
+        if (exponent < 2) return null;
+        Unit product = first;
+        for (int i = 1; i < exponent; i++) product = Unit.product(product, first);
+        return product;
+    }
+
+    private static Unit resolved(RegelSpraakModel model, EenheidMachtContext power) {
+        return model.resolveUnit(src(power.eenheidAfkorting()));
+    }
+
+    private static boolean firstPower(EenheidMachtContext power) {
+        return power.exponent() == null || Integer.valueOf(1).equals(wholeExponent(power));
+    }
+
+    /** The written exponent as a whole number, null where it is none (the NUMBER token also lexes "1/2" and "1,5"). */
+    private static Integer wholeExponent(EenheidMachtContext power) {
+        try {
+            return Integer.valueOf(power.exponent().getText());
+        } catch (NumberFormatException notWhole) {
+            return null;
+        }
     }
 
     // ---------------- §13.3.5 unit systems ----------------

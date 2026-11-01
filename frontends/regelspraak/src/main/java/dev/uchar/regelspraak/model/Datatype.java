@@ -79,7 +79,7 @@ public sealed interface Datatype
     /** A short, human-readable name for diagnostics. */
     default String name() {
         return switch (this) {
-            case Numeric n   -> "Numeriek" + (n.hasUnit() ? " (" + n.unit().abbreviation() + ")" : "");
+            case Numeric n   -> "Numeriek" + (n.hasUnit() ? " (" + n.unit().rendering() + ")" : "");
             case Percentage p -> "Percentage" + (p.unit() != null && p.unit().denominator() != null
                                                   ? " (" + p.unit().rendering() + ")" : "");
             case Text t      -> "Tekst";
