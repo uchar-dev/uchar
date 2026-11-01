@@ -82,21 +82,23 @@ Result: de eenheid is een product van factoren in één normaalvorm, op de besta
 alle routes. Vier uitvoerders spelen de golden. De kaart blijft in `doing/`; de hoofdsessie landt.
 
 **Commits.** `c98ccf1a3` claim; `891987a18` frontend; `d93ffa8e5` uitvoerders; `523331016` voorstel (spec, schema,
-WF-123, golden, negatieve gevallen, gate-scripts). De laatste commit op de branch zet dit Result. Beschermde paden in
-`523331016` en `d93ffa8e5`: `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`, `spec/schema/`, `spec/verifier/`, `scripts/`;
+WF-123, golden, negatieve gevallen, gate-scripts); `d9eb87f98` `m^n` is RGS-360; `fa366c349` een afgeleid product past niet op
+een eenheid met een noemer (ref, Drools); `699a5e36b` de zin van WF-023 noemt beide eenheden; `f704646bd` WF-123 (c) voor een
+product. De laatste commit op de branch zet dit Result. Beschermde paden in `523331016`, `d93ffa8e5`, `d9eb87f98`, `fa366c349`,
+`699a5e36b` en `f704646bd`: `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`, `spec/schema/`, `spec/verifier/`, `scripts/`;
 `spec/ASP-TRANSLATION.md` valt onder het CODEOWNERS-net (S6, twee aanvullingen).
 
 **(a) Representatie en wire: afbeelding, geen schemawijziging (voorlopig besluit).** Normaalvorm (IR-SPEC ch. 2.5, punt 5):
 de factoren met een positieve exponent zijn de teller (`abbreviation`, vanaf twee factoren het bestaande opake product,
-dus `m²` is `m·m`), de ene factor met exponent -1 is `denominator`. Een teller zonder factor is `"1"`:
+dus `m × m` is `m·m`), de ene factor met exponent -1 is `denominator`. Een teller zonder factor is `"1"`:
 `{"node":"Unit","abbreviation":"1","denominator":{…dg…}}`. Geen factor is geen eenheid: geen `unit`.
 Afweging: een veld met factoren en exponenten is de letterlijke vorm van (a), maar verschuift elke eenheid in alle
 goldens en `toka/`, elke loader en WF-091's bytevergelijking, en loopt vooruit op de canonieke-eenheid-wire die Q9 als
 latere v1-vorm vastlegt. De afbeelding laat geen golden of `toka/`-bestand bewegen en geeft de bestaande rate-regels
 (omrekenen met omgekeerde noemer, ch. 2.5 punt 3) zonder meer aan `1/dg`. De prijs: wat twee negatieve factoren nodig
 heeft (`€/u/s`, `dg⁻²`) heeft geen wire-type en blijft een luide fout. `factorToCanonical` blijft de bron van de
-omrekening; de teller `"1"` draagt er geen en telt als factor 1. WF-123 houdt `"1"` op die ene plaats, met vier armen en
-vier negatieve gevallen.
+omrekening; de teller `"1"` draagt er geen en telt als factor 1. WF-123 houdt `"1"` op die ene plaats, met vijf armen en
+vijf negatieve gevallen; de noemer van een reciprook is geen rate en geen product.
 
 **(b) Typering.** eenheidloos ÷ E → E⁻¹ (ook ÷ `1/n` → n, ÷ `a/n` → `n/a`); E⁻¹ × E' (omrekenbaar) → geen eenheid;
 E⁻¹ × F → `F/E`, zodat `€ ÷ dg`, `€ × 1/dg` en `1/dg × €` hetzelfde record geven; vergelijken en optellen via de bestaande
@@ -106,20 +108,25 @@ E⁻¹ × F → `F/E`, zodat `€ ÷ dg`, `€ × 1/dg` en `1/dg × €` hetzelf
 daar een `<geheelgetal>` en dat token laat een minteken toe, dus `dg^-1` is normatief. `1/E` staat er niet: daar staat `'1'`
 alleen. (d) vraagt `met eenheid 1/dg`, dus die vorm is een uitbreiding, vermeld in `grammar/DIVERGENCES.md` ("An inverse
 unit"), en de twee spellen één eenheid. Tweede degradatie: de grammatica van de spec kent één slash, de onze `*`. Lezing:
-`m`, `m^1`; `m^n` (n ≥ 2) is het product, dus `m^2` is de eenheid van `m maal m`; `dg^-1`, `1/dg`; `€/dg`. RGS-360 (fout, geen
-eenheid): `€/u/s`, `1/dg/m`, `m^0`, `m^-2`, `€/dg^2`, `m^2/s`, `2/dg`, `m^1/2`. Voorlopig besluit: `m^2` wordt gedragen omdat de
-wire het al kan spellen, `€/u/s` weigert omdat ref en de typering een product in de noemer niet doorrekenen.
+`m`, `m^1`; `dg^-1`, `1/dg`; `€/dg`. RGS-360 (fout, geen eenheid): `€/u/s`, `1/dg/m`, `m^0`, `m^-2`, `m^n` (n ≥ 2), `€/dg^2`,
+`m^2/s`, `2/dg`, `m^1/2`. `€/u/s` weigert omdat ref en de typering een product in de noemer niet doorrekenen. `m^2` weigert omdat
+geen golden de vorm kan dragen, al kan de wire haar spellen als `m·m`: `lengte maal breedte gelijk is aan oppervlakte`
+(`werk/omgekeerde-eenheid/fable/vierkant.rgs`) is verifier-schoon, Drools speelt het, ref geeft `incompatible units` en clingo
+weigert elk product van twee eenheden.
 
-**(e) Demogeval.** Nieuwe code RGS-359 (`toekenning: de waarde heeft de eenheid '1/dg', en die past niet op een attribuut
-zonder eenheid`). Voorlopig besluit: geldt voor elke waarde met een eenheid op een doel zonder, niet alleen voor een
-reciprook; die zaak gaf de verifierzin RGS-335, die geen eenheid noemt. Getuige
-`a_reciprocal_does_not_fit_a_target_without_a_unit`. Register achteraan: RGS-359 en RGS-360.
+**(e) Demogeval.** RGS-335, de zin van WF-023: `toekenning: assignment across incompatible units: value unit '1/dg', target unit
+'geen'`. De verifier (`WF-023.incompatible-units`) en de frontend dragen `valueUnit` en `targetUnit`, `geen` waar een eenheid
+ontbreekt, voor elk paar: ook `€` naar `kg` en eenheidloos naar `€`. Getuigen: `a_reciprocal_does_not_fit_a_target_without_a_unit`,
+`assign_gets_the_sentence_of_wf_023`, en de `expect.txt` van `wf023-kg-read-in-unitless-target` en
+`wf023-unitless-read-in-kg-target`, die de parameters nu pinnen. Register achteraan: RGS-360, zonder RGS-359 (nummer vrij, gate 10
+vraagt geen aaneengesloten reeks).
 
 **Per uitvoerder.**
 - *Verifier.* `times_unit` geeft `Some None` bij E⁻¹ × E en de rate bij E⁻¹ × F; nieuw `quotient_unit`. Een `dividedBy` kruist nu
   ook zijn eenheid in WF-091 (getuige `wf091-quotient-unit`); er zat in het corpus geen enkel quotiënt met een andere
   annotatie. `dividedByAbs` kruist niets, zoals daarvoor.
-- *Ref.* `Arith.mul`, `div_gen`; `restate_into` kent het product tegen een gedeclareerde `m·m`.
+- *Ref.* `Arith.mul`, `div_gen`. `restate_into` kent geen product: `m × m` tegen een gedeclareerde `m·m` of `m·m/s` is
+  `incompatible units`, ook over een heel document (`ref/test/fixtures/product-into-rate`, verifier-schoon).
 - *Clingo.* Gemeten: de golden faalde op `a unit-carrying multiplicative operand is not translated`, en had daarna de
   vergelijking en het product nodig. Nodig en gebouwd, alleen voor deze vorm: een bewezen eenheidloos deeltal over een
   eenheid (`quotient_units_ok`); E⁻¹ × E' met een hele factor (`reciprocal_factor`, `1/dg × wk`: ×7); twee omrekenbare
@@ -130,7 +137,10 @@ reciprook; die zaak gaf de verifierzin RGS-335, die geen eenheid noemt. Getuige
   J2 faalde. Reden: `exactRestateFactors` gaf null op een teller zonder factor en viel terug op de afgeronde factor, en
   het product herrekende niet. Dat laatste was een bestaand stil verschil met ref, ook bij `€/dg × wk` (30 tegen 210) en `dg ÷ wk`
   (3,5 tegen 0,50): `intoDenominator` en de quotiënt-arm in `TmsTranspiler.binary` lossen het op, met twee getuigen in
-  `like-ref/`. `EffectiveUnit` leidt het quotiënt af. Beide takken gelijk (één analyse).
+  `like-ref/`. `EffectiveUnit` leidt het quotiënt af. Beide takken gelijk (één analyse). `UnitConflict`: de vrijstelling van het
+  afgeleide opake product stopt bij een eenheid met een noemer, zodat `m × m` in een `m·m/s`-attribuut een fout is zoals in ref
+  (RUNTIME-SEMANTICS ch. 2.10). Bestaand verschil met ref: op `7c0220d11` gaf `passend-per-s.ir.json` `PLAYED 1` op beide takken, ref
+  `incompatible units`. Nu: `ERROR UnitConflict: onverenigbare eenheden bij een §4 schrijfgrens naar het doel: 'm·m' … 'm·m/s'` op beide takken. Getuige `a_derived_product_against_a_rate_is_a_fault`.
 
 **(d) De golden `corpus/golden/jutterswet-vondsttempo`** (`source.rgs`, twee cases, handberekening in `NOTE.md`). Met `wk = 7 dg`
 en drempel 14,00 per week:
@@ -146,7 +156,14 @@ Ref: `oracle: PASS` (30 en 12 verwachtingen); clingo: `PASS` (30 en 12); Drools 
 - clingo: `TRANSLATION FAULT: a unit-carrying multiplicative operand is not translated …`.
 - Drools (beide takken): `FAIL case.json: attribuut seizoensoogst: verwacht 52.50, werkelijk 7.50; … kenmerk drempelhoudend: verwacht
   aanwezig, werkelijk afwezig; …`. `like-ref`: `loon: verwacht 210.00, werkelijk 30.00`; `deel: verwacht 0.50, werkelijk 3.5`.
-- `UnitIdentityTest`: 10 van de nieuwe tests rood (1327 gevonden, 10 gefaald).
+- `UnitIdentityTest`: 10 van de nieuwe tests rood (1327 gevonden, 10 gefaald, met de tests van `891987a18`).
+
+**Rood vóór de reparatie, met de nieuwe getuigen.**
+- Ref met de productarm: `FAIL WV-2.6-2m-times-3m-does-not-restate-into-a-declared-m^2 (no fault at all)` en `FAIL
+  WV-2.6-m-times-m-is-not-written-into-a-declared-m^2-per-s (no fault at all)`. Zonder de arm: `all 1474 worked examples pass`.
+- Drools met de brede vrijstelling: `a_derived_product_against_a_rate_is_a_fault`, `Expected … UnitConflict to be thrown, but nothing
+  was thrown`, r. 147.
+- Gate 3 zonder de arm: `negative case corpus/negative/wf123-reciprocal-of-product/ir.json rejected, but not for WF-123`.
 
 **Mutaties** (in een losse worktree, niet gecommit, opgeruimd):
 - Herrekening clingo: `comparison_factors` geeft `(1, 1)`: `MISMATCH: J2 lacks characteristic "drempelhoudend"`, ook J4 `ijverig` en
@@ -154,14 +171,28 @@ Ref: `oracle: PASS` (30 en 12 verwachtingen); clingo: `PASS` (30 en 12); Drools 
 - Herrekening ref: `conv_factor` laat de noemer weg: `MISMATCH: J1 lacks characteristic "ijverig"`, J2, J4.
   `Arith.mul` zonder factor: `MISMATCH: J4.seizoensoogst = 5, expected 35`.
 - Herrekening Drools: `intoDenominator` geeft de term terug: `FAIL … seizoensoogst: verwacht 52.50, werkelijk 7.50`, beide takken.
-- Degradatie `m^2`: de exponent ongelezen (`return first`): 3 rood, `a_power_is_the_product_of_its_unit_and_not_the_unit`,
-  `a_spelling_without_a_normal_form_is_refused_by_name` (`m^0`), `a_negative_exponent_spells_the_reciprocal`.
+- Degradatie `m^2`: de exponent ongelezen (`return first`): 2 rood, `a_power_is_refused_and_is_not_the_unit` (`m^2`, RGS-335 met `value unit 'm·m', target unit 'm'` in plaats van RGS-360) en `a_spelling_without_a_normal_form_is_refused_by_name` (`m^0`).
 - Degradatie `€/u/s`: `powers.size() > 2` geeft de teller terug: 1 rood, `a_spelling_without_a_normal_form_is_refused_by_name` (`€/dg/m`).
 
 **Aangepaste verwachtingen en vloeren** (geen enkele verlaagd):
 - `UnitIdentityTest.unitless_divided_by_unit_is_refused_loudly` (oud: fout met "omgekeerde eenheid") wordt
   `unitless_divided_by_unit_has_the_reciprocal_type` (nieuw: schoon, en op de wire `1` over `mnd`). Het doelattribuut van die test
-  kreeg `met eenheid 1/mnd`: zonder eenheid is het RGS-359.
+  kreeg `met eenheid 1/mnd`: zonder eenheid is het RGS-335.
+- `UnitIdentityTest.a_power_is_the_product_of_its_unit_and_not_the_unit` (oud: `m^2` schoon, `m·m` op de wire, past niet op `m`) wordt
+  `a_power_is_refused_and_is_not_the_unit` (nieuw: `m^2` en `m^3` RGS-360, `m^1` past op `m`). `a_spelling_without_a_normal_form_is_refused_by_name`
+  kreeg `m^2` erbij.
+- `UnitIdentityTest.a_reciprocal_does_not_fit_a_target_without_a_unit` (oud: RGS-359, tekst met `attribuut zonder eenheid`; nieuw:
+  RGS-335, tekst met `value unit '1/dg', target unit 'geen'`).
+- `UnitSentenceTest.assign_gets_the_sentence_of_wf_023` (oud: `gelijkstelling: toekenning: assignment across incompatible units`,
+  twee keer; nieuw: met `value unit 'geen', target unit 'EUR'` en `value unit 'kg', target unit 'EUR'`, en een derde regel
+  `value unit 'EUR', target unit 'geen'`). `TypingSentenceTest.family_on_assigning_and_equality` idem, `value unit 'geen', target unit '%'`.
+  `ScenarioTypeGateTest.incompatible_unit` leest een fragment en bleef ongewijzigd.
+- `ref/test`: `WV-2.6-2m-times-3m-is-6-in-the-declared-m^2` (oud: restatement in `m·m` geeft 6) wordt `WV-2.6-2m-times-3m-is-6` en
+  `WV-2.6-2m-times-3m-does-not-restate-into-a-declared-m^2` (nieuw: fout `incompatible units`). De rij in RUNTIME-SEMANTICS ch. 2.6
+  volgt: `2 m × 3 m` is 6 in `m·m`, en dat tegen een gedeclareerde `m·m` of `m·m/s` is een eenheidsfout.
+- `corpus/negative/wf123-one-without-denominator` staat nu op de parameter `meldingsdrempel` in plaats van op een geschreven
+  attribuut (`expect.txt` ongewijzigd): op een geschreven attribuut gaf hij de WF-023-zin met `target unit '1'`, en gate 3
+  normaliseert een parameter die alleen uit cijfers bestaat niet, zodat die sleutel twee sjablonen kreeg.
 - `TypingTest.times_unitless_operand_takes_the_other_unit_over`: het laatste deel (oud: `!ok`, "omgekeerde eenheid"; nieuw: `ok`, `1/mnd`).
 - `scripts/check-drools.sh` `EXPECTED_PLAYED` 281 → 282 (de golden). `TmsLikeRefWitnessTest.COUNT` 26 → 28.
 - `scripts/check-reftype-derivation.sh`: `dividedBy` en `dividedByAbs` naar `DERIVED_OP`, `sister` twist de noemer van een reciprook.
@@ -170,8 +201,8 @@ Ref: `oracle: PASS` (30 en 12 verwachtingen); clingo: `PASS` (30 en 12); Drools 
 
 **Geen golden of `toka/`-bestand bewogen** (gates 10, 11 en 16 byte-identiek).
 
-**Gates, elk apart groen in de worktree.** 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17. Gate 9 niet gedraaid: de
-Catala-frontend is niet geraakt. Volledige set niet gedraaid. Nieuw in `ref/test/`: de `WV-2.6-*`-rijen van ch. 2.6, letterlijk. Na
+**Gates, elk apart groen in de worktree op de laatste codecommit.** 1, 2, 3, 5, 6, 8, 10, 11, 12, 13, 15, 16, 17 op `f704646bd`, geen vloer veranderd (`EXPECTED_PLAYED` 282, DRL-tekst 282, JUnit backend 1716, frontend 1331, ref 1474 voorbeelden). Gate 9 niet gedraaid: de
+Catala-frontend is niet geraakt. Gates 4, 7 en 14 zijn voor het laatst groen gedraaid op `d2261b3ab`, niet op de laatste codecommit. Volledige set niet gedraaid. Nieuw in `ref/test/`: de `WV-2.6-*`-rijen van ch. 2.6, letterlijk. Na
 rebase op `fout-op-tussenstand`: `EXPECTED_PLAYED` opnieuw zetten. Het nummer WF-123 stond op die branch nog vrij (daar alleen de
 claim op het moment van kijken).
 
@@ -182,16 +213,25 @@ claim op het moment van kijken).
 > 5): the positive factors as the numerator, the one factor with exponent -1 as `denominator`, a numerator without a factor as
 > the abbreviation `"1"` (WF-123), so eenheidloos ÷ E is E⁻¹ rather than a loud error, still diverging from Tabel 14 rij 4,
 > and `€/dg` and `€ · dg⁻¹` are one unit. No schema shape moved and the canonical-unit wire of Q9 stays open. A second negative
-> factor (`€/u/s`, `dg⁻²`) has no normal form and stays a loud error, never a wire type (17c). `dividedBy` derives its unit
+> factor (`€/u/s`, `dg⁻²`) has no normal form and stays a loud error, never a wire type (17c). A power (`m^2`) has a wire form, the
+> opaque product `m·m`, and is refused by name as well until that product has a golden through the square (RGS-360). `dividedBy` derives its unit
 > (ch. 2.6, 2.10), so it left the fourth class and WF-091 crosses it. Clingo carries the reciprocal in a quotient, in a
 > cancelling product with a whole factor and in a comparison (ASP-TRANSLATION S6).
 
 Spoor besluit 17b: "eenheidloos ÷ E is een luide fout, want 1/E is niet te spellen" vervalt; de afwijking van Tabel 14 rij 4 blijft,
 nu met het type E⁻¹ (maintainer 2026-10-11). 17c (`€/jr × m`) blijft staan. In de zin van rij 26 "(the reciprocal 1/E is a unit
 the model cannot spell)" hoort de verwijzing naar deze landing. RUNTIME-SEMANTICS ch. 2.6 "OPEN … row 26" noemt nu alleen nog de
-tweede negatieve factor en het opnieuw ontbinden van een product.
+tweede negatieve factor en het opnieuw ontbinden van een product. Bij `m²` in die rij: de frontend weigert de spelling, de wire
+houdt haar vorm.
 
 **Bleef liggen, met de gemeten stand.**
+- Een document dat de frontend niet schrijft: `passend.ir.json` (`m × m` in een gedeclareerde `m·m`, dus zonder noemer). Verifier schoon,
+  Drools `PLAYED 1` op beide takken (de opgetekende vrijstelling van ch. 2.10), ref `incompatible units`, clingo `non-identical units under
+  the write`. Zo op `7c0220d11` en nu.
+- De verifier kruist de eenheid van een product niet (`times_unit` claimt niets), dus `passend-per-s.ir.json` met `m·m/s` als annotatie op
+  `m × m` blijft verifier-schoon. WF-091 valt buiten deze kaart.
+- Gate 3 normaliseert een parameter die alleen uit cijfers bestaat niet. Een eenheid `1` zonder noemer op een geschreven attribuut raakt
+  dat, en het getuige is daarom verplaatst; het script is niet aangepast.
 - Clingo weigert met naam: `1/wk × dg` (factor 1/7, `no whole number`), `1/dg + 1/wk` en een schrijven van `1/dg` naar `1/wk`
   (`non-identical units`; getuigen in `test_clingo.ml`), `m·m` (`non-identical units under the write`), `€/dg × wk` en `dg ÷ wk`. Een
   deling en een product in een gesloten body (`closed_division`, de closed `Times`) blijven `unit-carrying` weigeren. De route via een
@@ -201,3 +241,9 @@ tweede negatieve factor en het opnieuw ontbinden van een product.
 - Een benoemde afgeleide eenheid en de toolchain: buiten de kaart. De toolchain roept `numerator()` niet aan (grep), dus de nieuwe
   null voor een reciprook raakt haar niet.
 - De ANTLR- en JUnit-jars haalde de Makefile van de frontend online op in de gitignored `lib/` van de verse worktree (geen Maven).
+
+**Voorlopige besluiten.** Besluit 2 en 3 zijn voorlopige besluiten na Fable-advies (2026-11-01, `werk/omgekeerde-eenheid/fable/advies.md`).
+Besluit 2: `m^n` (n ≥ 2) is RGS-360 tot het opake product een golden door het vierkant heeft, omdat de uitvoerders de vorm nu verschillend
+beantwoorden en geen golden haar kan dragen. Besluit 3: geen eigen code RGS-359 maar `valueUnit` en `targetUnit` op
+`WF-023.incompatible-units` en RGS-335, omdat een mismatch die de verifier ook weigert diens zin draagt en elke auteur van een
+eenheidsfout die namen nodig heeft. Besluit 1 (wire-afbeelding) en 4 (clingo vermenigvuldigt beide kanten) blijven staan.
