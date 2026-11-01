@@ -10207,6 +10207,17 @@ let () =
   in_every_order "WV-5.7-fixpoint-a-nonexact" a
     (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 100); ("aantal deelnemers", 3) ] ~chars:[ "gemeld" ]
        (expected [ value "bergloon" 30; consistent ]));
+  (* the initialisation and the rule come to one value: the rule decides all the same *)
+  let plus left_side right_side =
+    Printf.sprintf
+      {|{"node": "Binary", "op": "plus", "left": %s, "right": %s, "type": {"node": "Number", "whole": false, "decimals": 0, "sign": "unspecified"}, "source": {"snippet": "plus"}}|}
+      left_side right_side
+  in
+  in_every_order "WV-5.7-fixpoint-a-equal"
+    [ recognition; wage;
+      default_wage (plus (divided (own "opbrengst") (own "aantal deelnemers")) (own "taxatie")) ]
+    (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 100); ("aantal deelnemers", 0) ] ~chars:[ "gemeld" ]
+       (expected [ value "bergloon" 30; consistent ]));
   (* its flank: the initialisation decides, and its deposit stands *)
   in_every_order "WV-5.7-fixpoint-a-flank" a
     (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 100); ("aantal deelnemers", 0) ] ~chars:[]

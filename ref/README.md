@@ -73,6 +73,14 @@ faults with file/position context — never a silent fallback.
   and the verifier cannot drift); negated characteristic reads and
   channel reads sit strictly above their producers. A dependency cycle
   reaching ref/ is a fault, never divergence.
+- **Faults and deposits are read at the fixpoint** (ch. 5.7). Every
+  evaluation of a form on a subject has one outcome in the world
+  (`World.outcome`): the §9.5 deposits it made, or the fault that ended it,
+  which leaves the world as it was. The next evaluation replaces it, the
+  channel is the deposits of the outcomes that stand, and at the end of a
+  stratum, after its generations and checks, a fault that still stands is
+  raised, with the others in its text. An initialisation tests its guard
+  before its condition and its value, so a blocked one has no outcome.
 - **Creation runs in generations** (ch. 5.5). Within stratum k,
   generation 0 brings the forms that make nothing (rules,
   allocations, defaults groups) to rest; generation G+1 is every
@@ -94,8 +102,8 @@ faults with file/position context — never a silent fallback.
   the consistency and uniqueness forms of stratum k fire. They wait
   for that: a consistency reads a positive characteristic
   non-strictly (ch. 6.1), so it can share a stratum with a cycle that
-  still makes the characteristic grow, and a channel fact is never
-  withdrawn. On W1 → W2 → W3, where a recursive fact creation makes an
+  still makes the characteristic grow, and what they report is what
+  holds at rest. On W1 → W2 → W3, where a recursive fact creation makes an
   ervaren Wachter the maatgever of its opvolger and a Wachter with a
   maatgever is ervaren, the consistency "elke wachter ervaren" finds
   every Wachter ervaren and the channel stays empty

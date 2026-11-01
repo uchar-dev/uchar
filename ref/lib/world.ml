@@ -129,16 +129,24 @@ let collapse ~at (decl : Ir_v0.Ast.datatype option) (v : Value.t) =
 let update w inst = { w with instances = SMap.add inst.label inst w.instances }
 
 (* returns (world, changed); empty-over-empty is a no-op,
-   empty-over-value is a change (ch. 1.2g). A change by any writer but an
-   initialisation takes the target out of [init_written]. *)
-let write_attr w ~label ~attr:name ~decl v =
+   empty-over-value is a change (ch. 1.2g) *)
+let store_attr w ~label ~attr:name ~decl v =
   let i = get w label in
   let v = collapse ~at:(label ^ "." ^ name) decl v in
-  let old = attr i name in
-  if Arith.equal old v then (w, false)
-  else
-    let w = update w { i with attrs = SMap.add (norm name) v i.attrs } in
-    ({ w with init_written = List.filter (( <> ) (label, norm name)) w.init_written }, true)
+  if Arith.equal (attr i name) v then (w, false)
+  else (update w { i with attrs = SMap.add (norm name) v i.attrs }, true)
+
+(* A write by any writer but an initialisation takes the target out of
+   [init_written], also where it writes the value that stands: the value is that
+   writer's then, whichever fired first, and the initialisation does not decide
+   (ch. 5.4). That counts as a change: the guard of the initialisation reads it,
+   so its evaluation is not current until it has run again. *)
+let write_attr w ~label ~attr:name ~decl v =
+  let key = (label, norm name) in
+  let was_initialisation = List.mem key w.init_written in
+  let w = { w with init_written = List.filter (( <> ) key) w.init_written } in
+  let w, changed = store_attr w ~label ~attr:name ~decl v in
+  (w, changed || was_initialisation)
 
 (* The attribute values [after] holds and [before] did not, as (label, norm
    attribute, value) in case declaration order; an instance [before] lacks
@@ -164,7 +172,7 @@ let init_may_write w ~label ~attr:name =
 (* The write of an initialisation: as [write_attr], and the target stays its
    own until another writer changes it. *)
 let write_attr_init w ~label ~attr:name ~decl v =
-  let w, changed = write_attr w ~label ~attr:name ~decl v in
+  let w, changed = store_attr w ~label ~attr:name ~decl v in
   let key = (label, norm name) in
   ((if List.mem key w.init_written then w else { w with init_written = key :: w.init_written }),
    changed)

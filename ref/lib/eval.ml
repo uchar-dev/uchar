@@ -4499,17 +4499,15 @@ let evaluate env world =
      stratum k makes. What they read there is at rest: stratum j or a lower
      one writes it, whose forms no longer change it on an instance that
      exists and have computed it on a new instance before the check fires.
-     Their channel facts are idempotent (ch. 5.6) and instances only come,
-     never go, so firing again adds a fact only for a new instance or for a
-     key a new instance duplicates. In the loop of their own stratum they
+     Firing again replaces their outcomes (ch. 5.7) and instances only come,
+     never go, so that adds a fact only for a new instance or for a key a new
+     instance duplicates. In the loop of their own stratum they
      wait for its last generation. A consistency reads a positive
      characteristic non-strictly (ch. 6.1), so it can share a stratum with a
-     cycle that still makes that characteristic grow, and a fact it
-     deposited on an earlier generation's world would never be withdrawn: on
-     W1 → W2 → W3, where a recursive fact creation makes an ervaren Wachter
+     cycle that still makes that characteristic grow, and what it reports is
+     what holds at rest: on W1 → W2 → W3, where a recursive fact creation makes an ervaren Wachter
      the maatgever of its opvolger and a Wachter with a maatgever is ervaren,
-     "elke wachter ervaren" fired in generation 0 would leave a fact on W2
-     and one on W3. A uniqueness reads its keys strictly and sits above every
+     "elke wachter ervaren" fired in generation 0 reads W2 and W3 as not ervaren. A uniqueness reads its keys strictly and sits above every
      writer of a key. Fired once, at the fixpoint of their own stratum, a
      consistency of stratum 1 on Posts ("the a of a Post is kleiner dan 5")
      would never see the Post a creation of stratum 2 makes with a = 5, and
