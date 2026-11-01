@@ -9325,9 +9325,16 @@ let readings_of ?(evaluate = true) irf casef =
   Reading.lines env ~world:final
     (Reading.readings (Yojson.Safe.from_file irf) env ~world0:c.world ~world:final)
 
-(* WV-2.6: a product restates into nothing, over a whole document as well. The verifier admits the document, whose
-   rule writes m × m into an attribute in m·m/s. *)
+(* WV-2.6: m × m is m^2, and it does not restate into another dimension, over a whole document as well. The rule
+   writes m × m into an attribute in m^2/s, under an annotation that says so; the verifier crosses the annotation
+   against the product (WF-091). *)
 let () =
+  check "WV-2.6-the-verifier-derives-the-product-against-the-annotation"
+    (List.exists
+       (fun (x : Ir_v0.Checks.violation) -> x.wf = "WF-091")
+       (Ir_v0.Checks.all
+          (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier
+             (corpus_file "ref/test/fixtures/product-into-rate/ir.json"))));
   let d = Ir_v0.Loader.load_file (corpus_file "ref/test/fixtures/product-into-rate/ir.json") in
   let c = Case.load_file d (corpus_file "ref/test/fixtures/product-into-rate/case.json") in
   expect_fault_msg "WV-2.6-m-times-m-is-not-written-into-a-declared-m^2-per-s"
