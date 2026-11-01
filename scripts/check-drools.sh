@@ -1453,13 +1453,13 @@ EXPECTED_CHANNEL=(
 # on every object of the subject's type outside the host (TmsTranspiler.outsideStateRule), so such an object reads
 # onwaar instead of leaving the rule. It plays on both with PLAYED 3.
 #
-# 293 since the card fout-op-tussenstand (2026-11-01): the twelve goldens of RUNTIME-SEMANTICS ch. 5.7, "Faults and
-# deposits are read at the fixpoint", six documents in both orders of their rules, written in RegelSpraak with
+# 295 since the card fout-op-tussenstand (2026-11-01): the fourteen goldens of RUNTIME-SEMANTICS ch. 5.7, "Faults and
+# deposits are read at the fixpoint", seven documents in both orders of their rules, written in RegelSpraak with
 # hand-computed cases: jutterswet-initialisatie-naast-regel, jutterswet-lezer-van-initialisatie,
-# jutterswet-voorwaarde-onder-invoer, jutterswet-deponering-onder-invoer, jutterswet-fout-op-tussenstand and
-# jutterswet-deling-in-afwijking. A division in a default and one in an initialisation beside another writer play: what
+# jutterswet-voorwaarde-onder-invoer, jutterswet-deponering-onder-invoer, jutterswet-fout-op-tussenstand,
+# jutterswet-deling-in-afwijking and jutterswet-lege-initialisatie-naast-regel. A division in a default and one in an initialisation beside another writer play: what
 # they fault or deposit on a state between is logical and goes (DROOLS-120 and DROOLS-165 are retired).
-EXPECTED_PLAYED=293
+EXPECTED_PLAYED=295
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

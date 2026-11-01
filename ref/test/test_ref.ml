@@ -10130,8 +10130,8 @@ let () =
 
 (* WV-5.7-fixpoint (ch. 5.7, "Faults and deposits are read at the fixpoint"): a
    fault and a deposit are outcomes of one form's evaluation on one subject, the
-   next evaluation replaces them, and a form that does not decide is not
-   evaluated. Each document runs in every order of its rules, which walks the
+   next evaluation replaces them, and a displaced default or an initialisation
+   its guard blocks is not evaluated. Each document runs in every order of its rules, which walks the
    session through every state a pass can leave. The flanks show that what
    stands at the fixpoint is reported. *)
 let () =
@@ -10218,10 +10218,16 @@ let () =
       default_wage (plus (divided (own "opbrengst") (own "aantal deelnemers")) (own "taxatie")) ]
     (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 100); ("aantal deelnemers", 0) ] ~chars:[ "gemeld" ]
        (expected [ value "bergloon" 30; consistent ]));
-  (* its flank: the initialisation decides, and its deposit stands *)
+  (* its flank: the initialisation is evaluated, and its deposit stands *)
   in_every_order "WV-5.7-fixpoint-a-flank" a
     (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 100); ("aantal deelnemers", 0) ] ~chars:[]
        (expected [ empty "bergloon"; on_channel "standaardbergloon" "EF-005" ]));
+  (* an initialisation that stores nothing holds no target, so the computation
+     beside it displaces nothing and no pass reports a change *)
+  in_every_order "WV-5.7-fixpoint-a-empty"
+    [ rule ~name:"standaardbergloon" ~attribute:"bergloon" ~value:(own "taxatie") ~condition:(check_of "gemeld") ~init:true ();
+      rule ~name:"bergloon" ~attribute:"bergloon" ~value:(own "opbrengst") ~presentation:"calculation" () ]
+    (case_of ~attrs:[] ~chars:[ "gemeld" ] (expected [ empty "bergloon"; consistent ]));
   (* document B: aandeel reads the 0 of the initialisation only on a state between *)
   let b = [ recognition; wage; default_wage (number 0); share ] in
   in_every_order "WV-5.7-fixpoint-b" b

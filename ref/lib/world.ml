@@ -169,13 +169,16 @@ let changed_attrs ~before ~after =
 let init_may_write w ~label ~attr:name =
   attr (get w label) name = Value.Empty || List.mem (label, norm name) w.init_written
 
-(* The write of an initialisation: as [write_attr], and the target stays its
-   own until another writer changes it. *)
+(* The write of an initialisation: as [write_attr], and a value it stores stays
+   its own until another writer changes it. Storing nothing holds no target: the
+   guard admits an empty target anyway, and a held empty target would make every
+   other writer's empty write a change, so the session would never settle. *)
 let write_attr_init w ~label ~attr:name ~decl v =
   let w, changed = store_attr w ~label ~attr:name ~decl v in
   let key = (label, norm name) in
-  ((if List.mem key w.init_written then w else { w with init_written = key :: w.init_written }),
-   changed)
+  let others = List.filter (( <> ) key) w.init_written in
+  let holds = attr (get w label) name <> Value.Empty in
+  ({ w with init_written = (if holds then key :: others else others) }, changed)
 
 (* a timeline write (ch. 3.11, the pro-rata target): idempotence
    compares segment lists exactly — same bounds, value-equal payloads.

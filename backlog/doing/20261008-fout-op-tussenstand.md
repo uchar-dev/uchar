@@ -287,7 +287,7 @@ Op de eindstand: elke cel van A, B, C, D en E in beide volgordes en op alle vier
 
 ### Goldens
 
-Twaalf goldens, elk document in beide volgordes (achtervoegsel `-omgekeerd`), met `source.rgs`, `ir.json`, `NOTE.md`:
+Veertien goldens, elk document in beide volgordes (achtervoegsel `-omgekeerd`), met `source.rgs`, `ir.json`, `NOTE.md`:
 
 | golden | cases per volgorde |
 |---|---|
@@ -297,6 +297,7 @@ Twaalf goldens, elk document in beide volgordes (achtervoegsel `-omgekeerd`), me
 | `jutterswet-deponering-onder-invoer` (D) | 4 |
 | `jutterswet-fout-op-tussenstand` (E) | 2 |
 | `jutterswet-deling-in-afwijking` (declared groups, DROOLS-165) | 10 |
+| `jutterswet-lege-initialisatie-naast-regel` (een initialisatie die niets opslaat) | 1 |
 
 Zes rode cases, elk één case: `corpus/red/jutterswet-fout-aan-fixpunt`, `jutterswet-initialisatie-past-niet`, `jutterswet-afwijking-past-niet`, elk met `-omgekeerd`, EF-006.
 
@@ -342,7 +343,7 @@ Twee goldens zijn op de basis dus op geen enkele uitvoerder rood (`lezer-van-ini
 
 ### Aangepaste verwachtingen en getuigen
 
-Geen vloer verlaagd. `EXPECTED_PLAYED` 281 → 293. In `scripts/check-red.sh` zes `NOFAULT`-regels erbij (reden hieronder).
+Geen vloer verlaagd. `EXPECTED_PLAYED` 281 → 295. In `scripts/check-red.sh` zes `NOFAULT`-regels erbij (reden hieronder).
 
 Suite van clingo (`test_clingo.ml`), omdat ref op de tussenstand niet meer faalt:
 - 15 rijen `named_refusal ~ref_plays:false` → `~ref_plays:true`: tr-cr-1, tr-w-1, tr-pm-1, tr-pm2-1, tr-pm2-ctl, tr-kv-1, tr-kv-listed, r6-dmd-1, r6-ebar, r6-alle-fold, r6-pres, tr-of-1, r6-of-alle, r6-agg-comp, r6-nav. Oud: ref faalt op de pass vóór de creatie. Nieuw: ref speelt, clingo weigert nog in de genoemde zin.
@@ -381,13 +382,15 @@ Op de eindstand geven beide cases op ref, clingo, exec en DRL `PASS` of `PLAYED 
 1. **Twee leesregels voor een default.** Een gedeclareerde default deponeert alleen waar hij beslist (ch. 7.1). Een uit v0 ontsuikerde vorm deponeert waar hij wordt uitgerekend, ook bij een lege waarde, onder de regelnaam, want ch. 7.8 en `deling-door-leeg-onder-initialisatie` case 1 eisen dat, en ref en Drools doen het zo. Alternatief: ook de initialisatie speculatief, wat ch. 7.3 letterlijk zou kunnen dragen, maar dat verandert case 1 en de flank van A.
 2. **Meerdere staande fouten.** Ref rapporteert code en parameters van de eerste in sorteervolgorde (onafhankelijk van de documentvolgorde), de teksten van alle in de tekst. `Value.Fault` draagt één code; gate 8 leest één `CODE`-regel van ref. Geen rode case raakt dit.
 3. **Alle fouten uit een evaluatie op een onderwerp zijn uitgesteld**, ook EF-015 en EF-017. Fouten buiten een onderwerp (een geldigheid zonder datum, een statische weigering) blijven meteen vallen; EF-016 ook, want dat is geen uitkomst van één vorm.
-4. **Eigenaarschap telt als verandering.** Schrijft een andere schrijver de waarde die de initialisatie al schreef, dan geeft `write_attr` `changed = true`, omdat de blokkade dat leest. Zonder dat bleef de deponering van de initialisatie staan (M6). Gevonden doordat gate 17 ref's trace (`HOLDS`) tegen Drools (`DISPLACED`) hield op `jutterswet-lezer-van-initialisatie-omgekeerd` case 3.
+4. **Eigenaarschap telt als verandering.** Schrijft een andere schrijver de waarde die de initialisatie al schreef, dan geeft `write_attr` `changed = true`, omdat de blokkade dat leest. Zonder dat bleef de deponering van de initialisatie staan (M6). Gevonden doordat gate 17 ref's trace (`HOLDS`) tegen Drools (`DISPLACED`) hield op `jutterswet-lezer-van-initialisatie-omgekeerd` case 3. Een initialisatie die niets opslaat, neemt geen eigenaarschap: anders meldt `write_attr` elke pas een verandering op leeg-over-leeg en bereikt ref geen fixpunt (`jutterswet-lege-initialisatie-naast-regel`, rood op `4e00dd02d`: `no fixpoint within 100 passes`; `WV-5.7-fixpoint-a-empty`).
 5. **Rode EF-006-flanken staan op Drools als `NOFAULT`.** Die tak kent geen schrijfgrens (de bestaande regel `decimal-nonterminating`). De flank "een fout aan het fixpunt blijft gemeld" is voor Drools gedekt door `TmsFaultWitnessTest` (wortel) en voor de deponeringen door de goldens.
 6. **Golden E en de golden voor gedeclareerde groepen zijn extra** ten opzichte van de kaart, omdat EF-005 geen harde fout meer is en anders niets de harde fout en DROOLS-165 in de corpus vastlegt.
 
+Fable-advies van 2026-11-01 (`/Users/yeb/Developer/uchar-dev/werk/fout-op-tussenstand/fable/advies.md`): besluiten 1, 2 en 3 behouden, 4 met de aanvulling hierboven. De zin in ch. 5.7 zegt daarom "a default a higher default displaces (ch. 7.1), or an initialisation whose guard blocks it (ch. 5.4, 7.3), is not evaluated", in plaats van de voorgestelde zin "a form that does not decide (ch. 7.1, 7.3) is not evaluated" uit het besluit van 2026-10-09: een regel die leeg uitrekent, beslist niet en wordt wel uitgerekend (ch. 7.8). Dat is een voorlopig besluit. Vastgelegde zwakte bij besluit 2: de tekst noemt alle fouten, de machinelijn de eerste (`runner.ml`, één `CODE`-regel); geen rode case raakt dit.
+
 ### Voorstel `spec/CONSTRUCTS.md`
 
-Rij 8, achteraan: "**Faults and deposits at the fixpoint (2026-11-01, card `fout-op-tussenstand`, RUNTIME-SEMANTICS ch. 5.7):** an evaluation fault and a §9.5 deposit are outcomes of one form's evaluation on one subject; re-evaluation replaces them, a form that does not decide is not evaluated, and the session reports what stands at the fixpoint of the form's stratum. Tracked delta against v0's persist-always deposits and immediate faults. A declared default deposits only where it decides; a v0 form the desugaring reads as a default deposits where it is evaluated. Goldens `jutterswet-initialisatie-naast-regel`, `jutterswet-lezer-van-initialisatie`, `jutterswet-voorwaarde-onder-invoer`, `jutterswet-deponering-onder-invoer`, `jutterswet-fout-op-tussenstand`, `jutterswet-deling-in-afwijking`, each in both rule orders."
+Rij 8, achteraan: "**Faults and deposits at the fixpoint (2026-11-01, card `fout-op-tussenstand`, RUNTIME-SEMANTICS ch. 5.7):** an evaluation fault and a §9.5 deposit are outcomes of one form's evaluation on one subject; re-evaluation replaces them, a form that does not decide is not evaluated, and the session reports what stands at the fixpoint of the form's stratum. Tracked delta against v0's persist-always deposits and immediate faults. A declared default deposits only where it decides; a v0 form the desugaring reads as a default deposits where it is evaluated. Goldens `jutterswet-initialisatie-naast-regel`, `jutterswet-lezer-van-initialisatie`, `jutterswet-voorwaarde-onder-invoer`, `jutterswet-deponering-onder-invoer`, `jutterswet-fout-op-tussenstand`, `jutterswet-deling-in-afwijking`, `jutterswet-lege-initialisatie-naast-regel`, each in both rule orders."
 
 ### Voorstel `spec/PLAN.md`
 
@@ -395,7 +398,7 @@ In de alinea "Faults and deposits count at the fixpoint (2026-10-09 …)": "to b
 
 ### Wat bleef liggen
 
-- De geschreven waarde die blijft staan (B2, A, A3 hierboven); een eigen kaart of normvraag.
+- De geschreven waarde die blijft staan (B2, A, A3 hierboven): een bug tegen ch. 5.2, kaart `backlog/new/20261101-written-value-at-fixpoint.md`.
 - Clingo weigert de 15 `named_refusal`-rijen nog in de genoemde zin, ook waar ref nu speelt. De README zegt het; de weigering is te ruim geworden en niet onjuist. Een kaart kan haar versmallen.
 - `IR-SPEC.md` regel 8899 en `RUNTIME-SEMANTICS.md` ch. 6.1 ("channel facts are never retracted") gaan over consistentie en uniciteit, die aan het fixpunt van hun stratum vuren. Ze spreken het besluit niet tegen, maar lezen stug naast ch. 5.7. Ik heb ze niet aangeraakt (IR-SPEC viel buiten de opdracht).
 - Ref's `run_consistency` vuurt nog steeds pas na de laatste generatie; dat hoeft niet meer voor de juistheid, omdat de uitkomst nu vervangt.

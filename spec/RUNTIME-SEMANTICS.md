@@ -4102,7 +4102,8 @@ date; V with both dates on 02-03-2026 gets **02-03-2026**.
 **Faults and deposits are read at the fixpoint.** An evaluation fault
 (ch. 1.4) and a §9.5 deposit are outcomes of one form's evaluation on one
 subject. Re-evaluation under freshness (ch. 5.1) replaces the earlier
-outcome, and a form that does not decide (ch. 7.1, 7.3) is not evaluated;
+outcome, and a default a higher default displaces (ch. 7.1), or an
+initialisation whose guard blocks it (ch. 5.4, 7.3), is not evaluated;
 the session reports the outcomes standing at the fixpoint of the form's
 stratum. A fault stands in place of what the form would write, so a form
 that faults at the fixpoint leaves the session without an answer whichever
@@ -4124,10 +4125,15 @@ gemeld is":
   **bergloon 30, consistent**, in either order: the computation decides, so
   the initialisation does not, and its division is not a fault or a deposit
   of the session; with deelnemers 3 as well, whose 100/3 fits no target
-  (EF-006). V not gemeld, otherwise the same: the initialisation decides,
+  (EF-006). V not gemeld, otherwise the same: the initialisation is evaluated,
   **bergloon leeg**, and the fact (standaardbergloon × V) with EF-005 stands;
   with deelnemers 3, EF-006 faults the session
-  (`corpus/red/jutterswet-initialisatie-past-niet`).
+  (`corpus/red/jutterswet-initialisatie-past-niet`). An initialisation that
+  stores nothing holds no target (`jutterswet-lege-initialisatie-naast-regel`):
+  beside "Het bergloon moet berekend worden als zijn opbrengst", "Het bergloon
+  moet geïnitialiseerd worden op zijn taxatie indien hij gemeld is" gives V
+  gemeld with taxatie and opbrengst leeg **bergloon leeg, consistent**, in
+  either order, and with taxatie 5 and opbrengst 40 **bergloon 40**.
 - **B** (`jutterswet-lezer-van-initialisatie`): "Het bergloon moet gesteld
   worden op zijn taxatie indien hij erkend is", "Het bergloon moet
   geïnitialiseerd worden op 0" and "Het aandeel moet berekend worden als zijn
