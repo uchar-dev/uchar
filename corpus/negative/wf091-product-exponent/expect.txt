@@ -1,0 +1,4 @@
+WF-091.facet-mismatch
+facet=unit
+subject=the times composite
+source=the type derived from its operands

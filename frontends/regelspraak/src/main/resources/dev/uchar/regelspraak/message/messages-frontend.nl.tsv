@@ -672,5 +672,8 @@ RGS-361	de spelling '{spelling}' noemt geen eenheid: '{part}'
 RGS-361.exponent-not-whole	de spelling '{spelling}' noemt geen eenheid: de exponent in '{part}' is geen geheel getal
 RGS-361.exponent-zero	de spelling '{spelling}' noemt geen eenheid: '{part}' heeft exponent 0, en dat is geen factor; een attribuut zonder eenheid schrijft geen 'met eenheid'
 RGS-361.factors-cancel	de spelling '{spelling}' noemt geen eenheid: haar factoren heffen elkaar op; een attribuut zonder eenheid schrijft geen 'met eenheid'
+RGS-361.number-in-a-product	de spelling '{spelling}' noemt geen eenheid: het getal {part} is geen factor; een eenheid schrijft alleen eenheden, en het getal hoort in de waarde
 RGS-361.numerator-not-one	de spelling '{spelling}' noemt geen eenheid: de teller {part} is een getal; schrijf 'met eenheid {inverse}' en zet de {part} in de waarde
+RGS-361.product-after-slash	de spelling '{spelling}' noemt geen eenheid: het product '{part}' staat na een schuine streep en is dubbelzinnig; zet de factoren boven de streep vóór de eerste '/' en schrijf elke factor onder de streep met een eigen '/'
 RGS-362	de waarde '{spelling}': '{name}' is geen eenheid, want geen eenheidstelsel declareert haar; een deling schrijft 'gedeeld door'
+RGS-363	de waarde '{spelling}': een getal is geen factor van een eenheid; schrijf '{written}'

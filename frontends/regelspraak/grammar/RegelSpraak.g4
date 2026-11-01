@@ -515,10 +515,14 @@ eenheidDefinitie
 omrekenSpecificatie // §13.3.5.2 — '1/1000' etc. is a single rational NUMBER token
     : EQUALS NUMBER eenheidAfkorting
     ;
-eenheidExpressie                                       // §13.3.3.2 composite units (km/u)
-    : eenheidMacht ( SLASH eenheidMacht )*
-    | NUMBER SLASH eenheidMacht ( SLASH eenheidMacht )*  // 1/dg (grammar/DIVERGENCES.md, "An inverse unit")
+// §13.3.3.2 composite units (km/u). The operators take every order and the number any number: the resolver names what is
+// no unit (a product after a slash, a number other than 1 over a unit), which a syntax error would not (grammar/DIVERGENCES.md,
+// "An inverse unit").
+eenheidExpressie
+    : eenheidMacht ( eenheidOperator eenheidMacht )*
+    | NUMBER eenheidOperator eenheidMacht ( eenheidOperator eenheidMacht )*  // 1/dg
     ;
+eenheidOperator  : SLASH | PRODUCT_SIGN ;
 eenheidMacht     : eenheidAfkorting ( CARET exponent )? ;  // §13.3.5.5
 exponent         : NUMBER ;                                // §13.3.5.6
 // Unit words / abbreviations may be plain identifiers, the currency glyph, or a
@@ -1177,8 +1181,9 @@ rekenConstante : ( DE | HET )? ( REKENDATUM | REKENJAAR ) ;
 
 getalWaarde   : NUMBER ( PERCENT_SIGN | eenheidExpressie | perEenheid )? ; // §13.2.17/.18
 // 2/dg: the value 2 in the unit 1/dg (grammar/DIVERGENCES.md, "A number over a unit"). No other rule reads a SLASH after
-// a number, and a fraction stays one NUMBER token, so 1/2 is a number and 1/2/dg is 1/2 in the unit 1/dg.
-perEenheid    : SLASH eenheidMacht ( SLASH eenheidMacht )* ;
+// a number, and a fraction stays one NUMBER token, so 1/2 is a number and 1/2/dg is 1/2 in the unit 1/dg. 2·m reads here to
+// be refused by name.
+perEenheid    : eenheidOperator eenheidMacht ( eenheidOperator eenheidMacht )* ;
 // §13.2.15 tekstwaarde + §5.4/§13.4.17.9 tekstenwaardereeks. A plain "…" is STRING_START STRING_TEXT? STRING_END;
 // a "…«expressie»…" interleaves literal chunks with «expressie» escapes (each a full expressie, recursive).
 tekstWaarde     : STRING_START tekstReeksDeel* STRING_END ;

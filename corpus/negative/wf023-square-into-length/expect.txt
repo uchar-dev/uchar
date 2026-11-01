@@ -1,0 +1,3 @@
+WF-023.incompatible-units
+valueUnit=m^2
+targetUnit=m

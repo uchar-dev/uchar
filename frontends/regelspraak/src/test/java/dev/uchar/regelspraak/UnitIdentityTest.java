@@ -219,6 +219,15 @@ class UnitIdentityTest {
         expected.put("m/m^2", "m^-1");
         expected.put("dg/dg/m", "m^-1");
         expected.put("€/dg^-1", "EUR dg");
+        expected.put("€·m", "EUR m");
+        expected.put("m·€", "EUR m");
+        expected.put("m*€", "EUR m");
+        expected.put("€*m", "EUR m");
+        expected.put("€·m/dg", "EUR m dg^-1");
+        expected.put("m·€/dg/s", "EUR m dg^-1 s^-1");
+        expected.put("m·m", "m^2");
+        expected.put("m^2·m", "m^3");
+        expected.put("m·s/s", "m");
         expected.forEach((spelling, wire) -> assertEquals(wire, wireFactors(spelling), spelling));
     }
 
@@ -243,6 +252,51 @@ class UnitIdentityTest {
         assertTrue(refusalOf("2/dg").startsWith("2: "), refusalOf("2/dg"));
         assertTrue(refusalOf("1/2/dg").startsWith("1/2: "), refusalOf("1/2/dg"));
         assertTrue(refusalOf("2,5/dg").startsWith("2,5: "), refusalOf("2,5/dg"));
+        assertTrue(refusalOf("m·m^-1").startsWith("m·m^-1: "), refusalOf("m·m^-1"));
+        assertTrue(refusalOf("2·m").startsWith("2: "), refusalOf("2·m"));
+        assertTrue(refusalOf("1·m").startsWith("1: "), refusalOf("1·m"));
+    }
+
+    /** A product stands before the first slash: after it, one reader takes both factors below the line and another only
+     *  the first. */
+    @Test void a_product_after_a_slash_is_refused_by_name() {
+        for (String[] form : new String[][]{{"€/u·s", "u·s"}, {"€/u*s", "u*s"}, {"1/dg·m", "dg·m"}, {"2/dg·m", "dg·m"},
+                {"€·m/u·s", "u·s"}}) {
+            String refusal = refusalOf(form[0]);
+            assertTrue(refusal.startsWith(form[1] + ": "), refusal);
+            assertTrue(refusal.contains("dubbelzinnig"), refusal);
+        }
+    }
+
+    /** A value writes its number apart from its unit: "2·m" is an error that says so. */
+    @Test void a_number_times_a_unit_as_a_value_is_refused_by_name() {
+        for (String[] form : new String[][]{{"2·m", "2 m"}, {"2*m", "2 m"}, {"2,5·m", "2,5 m"}, {"1/2·m", "1/2 m"},
+                {"2·m/dg", "2 m/dg"}}) {
+            RegelSpraakModel m = literalModel("m", form[0]);
+            var refusal = m.errors().stream().filter(d -> "RGS-363".equals(d.code())).toList();
+            assertEquals(1, refusal.size(), () -> form[0] + ": verwachtte RGS-363, kreeg " + m.errors());
+            assertEquals(form[0], refusal.get(0).params().get("spelling"));
+            assertEquals(form[1], refusal.get(0).params().get("written"));
+            assertTrue(refusal.get(0).message().contains("'" + form[1] + "'"), refusal.get(0).message());
+        }
+    }
+
+    /** A product as the unit of a value: "5 €·m" is "5 m*€", on the wire and against an attribute in that unit. */
+    @Test void a_product_is_the_unit_of_a_value() {
+        assertEquals(literalOnTheWire(literalDocument("€·m", "5 €·m")), literalOnTheWire(literalDocument("m·€", "5 m*€")));
+        assertEquals("EUR m", unitOf(literalDocument("€·m", "5 m*€"), "\"node\":\"Literal\""));
+        assertEquals("EUR m dg^-1", unitOf(literalDocument("€·m/dg", "5 €·m/dg"), "\"node\":\"Literal\""));
+        assertTrue(refused(literalModel("€·m", "5 €·s"), "RGS-335"), "m en s zijn verschillende factoren");
+    }
+
+    /** A product sign only stands between units. */
+    @Test void a_product_sign_outside_a_unit_stays_a_syntax_error() {
+        for (String literal : java.util.List.of("2 * 3", "2·3", "5 m·", "5 ·m"))
+            assertFalse(literalModel("m", literal).errors().isEmpty(), literal);
+        for (String unit : java.util.List.of("m·", "·m", "%·m")) {
+            RegelSpraakModel m = literalModel(unit, "1");
+            assertFalse(m.errors().isEmpty(), unit);
+        }
     }
 
     /** The numerator of a unit is 1: the message says the 2 is a number, and where it goes. */

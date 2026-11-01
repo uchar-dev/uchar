@@ -683,10 +683,11 @@ public final class DefinitionResolver {
 
     private Unit unitOf(EenheidExpressieContext e) { return unitOf(model, e); }
 
-    /** §13.3.3.2: a unit expression, read into its list of factors. The first power is a factor with its exponent,
-     *  every power after a slash one with its exponent negated, and the number 1 over a slash names no factor: "m^2/s",
-     *  "€/u/s", "1/dg/m", "dg^-1". What names no factor is RGS-361 and no unit: an exponent 0 or one that is not whole,
-     *  a number other than 1 over a unit, and factors that cancel to nothing.
+    /** §13.3.3.2: a unit expression, read into its list of factors. The powers before the first slash are factors with
+     *  their exponents, every power after it one with its exponent negated, and the number 1 over a slash names no
+     *  factor: "m^2/s", "€·m/jr", "€/u/s", "1/dg/m", "dg^-1". What names no factor is RGS-361 and no unit: an exponent 0 or
+     *  one that is not whole, a number other than 1 over a unit, a number in a product, factors that cancel to nothing,
+     *  and a product after a slash, which one reader takes as both factors below the line and another as the first alone.
      *  Package-static so the attribute-datatype path (here) and the §13.2.17 numeric LITERAL path
      *  ({@link ExpressionBuilder}) resolve a unit IDENTICALLY — a literal "120 EUR/jr" must carry the same unit an
      *  attribute "met eenheid EUR/jr" does, so §4 unit checking and the exacte cross-unit restatement apply to both
@@ -694,26 +695,44 @@ public final class DefinitionResolver {
     static Unit unitOf(RegelSpraakModel model, EenheidExpressieContext e) {
         if (e == null || e.eenheidMacht().isEmpty()) return null;
         List<EenheidMachtContext> powers = e.eenheidMacht();
-        String number = e.NUMBER() == null ? null : e.NUMBER().getText();
-        if (number != null && !number.equals("1")) {
+        List<EenheidOperatorContext> operators = e.eenheidOperator();
+        if (e.NUMBER() == null) return unitOfPowers(model, src(e), powers, operators, 1, e);
+        String number = e.NUMBER().getText();
+        if (operators.isEmpty()) return null;   // "1" alone: what the parser's recovery left, the syntax error stands
+        if (isProduct(operators.get(0))) {
+            refuseSpelling(model, src(e), number, powers, ".number-in-a-product", e);
+            return null;
+        }
+        if (!number.equals("1") && !productAfterSlash(operators, 0)) {
             refuseSpelling(model, src(e), number, powers, ".numerator-not-one", e);
             return null;
         }
-        return unitOfPowers(model, src(e), powers, number != null, e);
+        return unitOfPowers(model, src(e), powers, operators, 0, e);
     }
 
     /** The unit of a number value: what its unit expression names, or for "2/dg" (grammar/DIVERGENCES.md, "A number over
-     *  a unit") the powers after the slash with their exponents negated. A name there that no unit system declares is
-     *  RGS-362 and no unit: with a number before it, a slash and a word that names nothing would read as a division
-     *  that does not happen. The calendar's time units and the euro sign are units without a declaration, as in
-     *  "5 dagen" and "5 €". Null where the value has no unit. */
+     *  a unit") the powers after the slash with their exponents negated. A number in a product ("2·m") is RGS-363, which
+     *  says how to write the value. A name after the slash that no unit system declares is RGS-362 and no unit: with a
+     *  number before it, a slash and a word that names nothing would read as a division that does not happen. The
+     *  calendar's time units and the euro sign are units without a declaration, as in "5 dagen" and "5 €". Null where the
+     *  value has no unit. */
     static Unit unitOf(RegelSpraakModel model, GetalWaardeContext g) {
         if (g.perEenheid() == null) return unitOf(model, g.eenheidExpressie());
         List<EenheidMachtContext> powers = g.perEenheid().eenheidMacht();
+        List<EenheidOperatorContext> operators = g.perEenheid().eenheidOperator();
+        // what the parser's recovery conjured has no name, and the syntax error is already reported
         for (EenheidMachtContext power : powers) {
             EenheidAfkortingContext a = power.eenheidAfkorting();
-            // what the parser's recovery conjured has no name, and the syntax error is already reported
             if (a == null || a.getChild(0) == null || a.getChild(0) instanceof ErrorNode) return null;
+        }
+        if (isProduct(operators.get(0))) {
+            model.diagnostics.add(new Typing.Coded("RGS-363", params("spelling", src(g),
+                            "written", g.NUMBER().getText() + " " + spelledFrom(powers, operators)))
+                    .at(RegelSpraakModel.Severity.ERROR, g.getStart().getLine()));
+            return null;
+        }
+        for (EenheidMachtContext power : powers) {
+            EenheidAfkortingContext a = power.eenheidAfkorting();
             String name = src(a);
             if (a.EURO() == null && !model.declaresUnit(name)
                     && !TimeCalculation.isCalendarSpelling(RegelSpraakModel.normaliseTimeUnit(name))) {
@@ -722,20 +741,50 @@ public final class DefinitionResolver {
                 return null;
             }
         }
-        return unitOfPowers(model, src(g), powers, true, g);
+        return unitOfPowers(model, src(g), powers, operators, 0, g);
     }
 
+    private static boolean isProduct(EenheidOperatorContext operator) { return operator.PRODUCT_SIGN() != null; }
+
+    /** Whether a product sign follows a slash in {@code operators}, from the operator at {@code from}. */
+    private static boolean productAfterSlash(List<EenheidOperatorContext> operators, int from) {
+        boolean below = false;
+        for (EenheidOperatorContext operator : operators.subList(from, operators.size())) {
+            if (below && isProduct(operator)) return true;
+            below |= !isProduct(operator);
+        }
+        return false;
+    }
+
+    /** The powers with the operators between them, as written: "m/dg" of "2·m/dg". {@code operators} holds one before
+     *  each power. */
+    private static String spelledFrom(List<EenheidMachtContext> powers, List<EenheidOperatorContext> operators) {
+        StringBuilder b = new StringBuilder(src(powers.get(0)));
+        for (int i = 1; i < powers.size(); i++) b.append(src(operators.get(i))).append(src(powers.get(i)));
+        return b.toString();
+    }
+
+    /** The unit of {@code powers}, with {@code operators.get(i - shift)} before power {@code i} and nothing before power 0
+     *  where {@code shift} is 1. A missing operator or power is what the parser's recovery left: the syntax error stands. */
     private static Unit unitOfPowers(RegelSpraakModel model, String spelling, List<EenheidMachtContext> powers,
-            boolean allBelow, ParserRuleContext at) {
+            List<EenheidOperatorContext> operators, int shift, ParserRuleContext at) {
+        if (operators.size() != powers.size() - shift) return null;
         List<Unit> parts = new ArrayList<>();
+        boolean below = false;
         for (int i = 0; i < powers.size(); i++) {
             EenheidMachtContext power = powers.get(i);
+            EenheidOperatorContext before = i - shift < 0 ? null : operators.get(i - shift);
+            if (before != null && isProduct(before) && below) {
+                refuseSpelling(model, spelling, src(powers.get(i - 1)) + src(before) + src(power), powers, ".product-after-slash", at);
+                return null;
+            }
+            below |= before != null && !isProduct(before);
             Integer exponent = power.exponent() == null ? Integer.valueOf(1) : wholeExponent(power);
             if (exponent == null || exponent == 0) {
                 refuseSpelling(model, spelling, src(power), powers, exponent == null ? ".exponent-not-whole" : ".exponent-zero", at);
                 return null;
             }
-            parts.add(model.resolveUnit(src(power.eenheidAfkorting())).toThePower(i == 0 && !allBelow ? exponent : -exponent));
+            parts.add(model.resolveUnit(src(power.eenheidAfkorting())).toThePower(below ? -exponent : exponent));
         }
         Unit unit = Unit.ofParts(parts);
         if (unit == null) refuseSpelling(model, spelling, spelling, powers, ".factors-cancel", at);

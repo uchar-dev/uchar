@@ -1461,9 +1461,10 @@ EXPECTED_CHANNEL=(
 # they fault or deposit on a state between is logical and goes (DROOLS-120 and DROOLS-165 are retired).
 # 296 since the card omgekeerde-eenheid (2026-11-01): the golden jutterswet-vondsttempo, a reciprocal unit divided,
 # compared across a conversion and cancelled against a duration. It plays on both with PLAYED 2.
-# 297 since the card unit-factors: the golden jutterswet-kadetarief, a fold over months of a unit with two negative
-# factors (ch. 2.6, rule 8). It plays on both with PLAYED 1.
-EXPECTED_PLAYED=297
+# 299 since the card unit-factors: the goldens jutterswet-oppervlak (m^2), jutterswet-sleeptarief (€/dg/m, €/dg^2, €·m and
+# the value 2/dg) and jutterswet-kadetarief (a fold over months of a unit with two negative factors, ch. 2.6, rule 8).
+# They play on both with PLAYED 3, 2 and 1.
+EXPECTED_PLAYED=299
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

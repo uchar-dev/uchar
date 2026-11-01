@@ -465,6 +465,7 @@ SLASH      : '/'   ;
 EQUALS     : '='   ;
 PERCENT_SIGN : '%' ;
 CARET      : '^'   ;
+PRODUCT_SIGN : [·*] ; // between the units of a product, nowhere else (grammar/DIVERGENCES.md, "An inverse unit")
 EURO       : '€' ; // unit abbreviation
 APOSTROPHE : '\''  ;
 

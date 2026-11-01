@@ -672,5 +672,8 @@ RGS-361	the spelling '{spelling}' names no unit: '{part}'
 RGS-361.exponent-not-whole	the spelling '{spelling}' names no unit: the exponent in '{part}' is not a whole number
 RGS-361.exponent-zero	the spelling '{spelling}' names no unit: '{part}' has exponent 0, which is no factor; an attribute without a unit writes no 'met eenheid'
 RGS-361.factors-cancel	the spelling '{spelling}' names no unit: its factors cancel; an attribute without a unit writes no 'met eenheid'
+RGS-361.number-in-a-product	the spelling '{spelling}' names no unit: the number {part} is no factor; a unit writes units only, and the number belongs in the value
 RGS-361.numerator-not-one	the spelling '{spelling}' names no unit: the numerator {part} is a number; write 'met eenheid {inverse}' and put the {part} in the value
+RGS-361.product-after-slash	the spelling '{spelling}' names no unit: the product '{part}' stands after a slash and is ambiguous; put the factors above the line before the first '/' and write each factor below the line with its own '/'
 RGS-362	the value '{spelling}': '{name}' is no unit, since no unit system declares it; a division writes 'gedeeld door'
+RGS-363	the value '{spelling}': a number is no factor of a unit; write '{written}'

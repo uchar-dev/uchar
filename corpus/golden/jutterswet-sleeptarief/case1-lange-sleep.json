@@ -1,0 +1,84 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S",
+        "objectType": "Sleep",
+        "attributes": {
+          "sleeptarief": {
+            "number": "5"
+          },
+          "sleepdagen": {
+            "number": "2"
+          },
+          "sleeplengte": {
+            "number": "3"
+          },
+          "opgegeven tempo": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "sleepkosten",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "daggeld",
+      "value": {
+        "number": "15"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "daggeldstijging",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "normtempo",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S",
+      "characteristic": "vlot"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "lengtegeld",
+      "value": {
+        "number": "90"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S",
+      "characteristic": "zwaar"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

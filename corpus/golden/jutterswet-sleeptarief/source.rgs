@@ -1,0 +1,49 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Eenheidsysteem Sleeptijd
+    de dag (mv: dagen) dg
+
+Eenheidsysteem Sleepmaat
+    de meter (mv: meters) m
+
+Objecttype de Sleep (mv: Slepen)
+    het sleeptarief Numeriek (geheel getal) met eenheid €/dg/m;
+    de sleepdagen Numeriek (geheel getal) met eenheid dg;
+    de sleeplengte Numeriek (geheel getal) met eenheid m;
+    de sleepkosten Numeriek (geheel getal) met eenheid €;
+    het daggeld Numeriek (geheel getal) met eenheid €/dg;
+    de daggeldstijging Numeriek (geheel getal) met eenheid €/dg^2;
+    het normtempo Numeriek (geheel getal) met eenheid 1/dg;
+    het opgegeven tempo Numeriek (geheel getal) met eenheid 1/dg;
+    het lengtegeld Numeriek (geheel getal) met eenheid €·m;
+    is vlot kenmerk (bijvoeglijk);
+    is zwaar kenmerk (bijvoeglijk);
+
+Regel sleepkosten
+    geldig altijd
+        De sleepkosten van een Sleep moet berekend worden als zijn sleeptarief maal zijn sleepdagen maal zijn sleeplengte.
+
+Regel daggeld
+    geldig altijd
+        Het daggeld van een Sleep moet berekend worden als zijn sleeptarief maal zijn sleeplengte.
+
+Regel daggeldstijging
+    geldig altijd
+        De daggeldstijging van een Sleep moet berekend worden als zijn daggeld gedeeld door zijn sleepdagen naar beneden afgerond op 0 decimalen.
+
+Regel normtempo
+    geldig altijd
+        Het normtempo van een Sleep moet berekend worden als 2/dg.
+
+Regel vlot
+    geldig altijd
+        Een Sleep is vlot indien zijn opgegeven tempo groter is dan 2/dg.
+
+Regel lengtegeld
+    geldig altijd
+        Het lengtegeld van een Sleep moet berekend worden als zijn sleepkosten maal zijn sleeplengte.
+
+Regel zwaar
+    geldig altijd
+        Een Sleep is zwaar indien zijn lengtegeld groter is dan 200 m*€.

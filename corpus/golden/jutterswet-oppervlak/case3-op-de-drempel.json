@@ -1,0 +1,49 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S",
+        "objectType": "Strandvak",
+        "attributes": {
+          "lengte": {
+            "number": "25"
+          },
+          "breedte": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "oppervlakte",
+      "value": {
+        "number": "100"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S",
+      "attribute": "teruggerekende breedte",
+      "value": {
+        "number": "4"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S",
+      "characteristic": "ruim"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

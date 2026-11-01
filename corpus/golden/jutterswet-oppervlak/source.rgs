@@ -1,0 +1,21 @@
+Eenheidsysteem Kustmaat
+    de meter (mv: meters) m
+
+Objecttype de Strandvak (mv: Strandvakken)
+    de lengte Numeriek (geheel getal) met eenheid m;
+    de breedte Numeriek (geheel getal) met eenheid m;
+    de oppervlakte Numeriek (geheel getal) met eenheid m^2;
+    de teruggerekende breedte Numeriek (geheel getal) met eenheid m;
+    is ruim kenmerk (bijvoeglijk);
+
+Regel oppervlakte
+    geldig altijd
+        De oppervlakte van een Strandvak moet berekend worden als zijn lengte maal zijn breedte.
+
+Regel teruggerekende breedte
+    geldig altijd
+        De teruggerekende breedte van een Strandvak moet berekend worden als zijn oppervlakte gedeeld door zijn lengte naar beneden afgerond op 0 decimalen.
+
+Regel ruim
+    geldig altijd
+        Een Strandvak is ruim indien zijn oppervlakte groter is dan 100 m^2.

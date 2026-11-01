@@ -1,0 +1,32 @@
+Scenario ruim strandvak
+Gegeven is de volgende situatie:
+een Strandvak S
+- de lengte is 20 m
+- de breedte is 8 m
+Met als verwacht resultaat:
+- de oppervlakte van S is 160 m^2
+- de teruggerekende breedte van S is 8 m
+- S is ruim
+- de gegevens zijn consistent
+
+Scenario krap strandvak
+Gegeven is de volgende situatie:
+een Strandvak S
+- de lengte is 5 m
+- de breedte is 6 m
+Met als verwacht resultaat:
+- de oppervlakte van S is 30 m^2
+- de teruggerekende breedte van S is 6 m
+- S is niet ruim
+- de gegevens zijn consistent
+
+Scenario op de drempel
+Gegeven is de volgende situatie:
+een Strandvak S
+- de lengte is 25 m
+- de breedte is 4 m
+Met als verwacht resultaat:
+- de oppervlakte van S is 100 m^2
+- de teruggerekende breedte van S is 4 m
+- S is niet ruim
+- de gegevens zijn consistent

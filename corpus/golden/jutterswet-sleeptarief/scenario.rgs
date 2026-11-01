@@ -1,0 +1,33 @@
+Scenario lange sleep
+Gegeven is de volgende situatie:
+een Sleep S
+- het sleeptarief is 5 €/dg/m
+- de sleepdagen is 2 dg
+- de sleeplengte is 3 m
+- het opgegeven tempo is 3/dg
+Met als verwacht resultaat:
+- de sleepkosten van S is 30 €
+- het daggeld van S is 15 €/dg
+- de daggeldstijging van S is 7 €/dg^2
+- het normtempo van S is 2 1/dg
+- S is vlot
+- het lengtegeld van S is 90 €·m
+- S is niet zwaar
+- de gegevens zijn consistent
+
+Scenario sleep op de norm
+Gegeven is de volgende situatie:
+een Sleep S
+- het sleeptarief is 4 €/dg/m
+- de sleepdagen is 5 dg
+- de sleeplengte is 5 m
+- het opgegeven tempo is 2 1/dg
+Met als verwacht resultaat:
+- de sleepkosten van S is 100 €
+- het daggeld van S is 20 €/dg
+- de daggeldstijging van S is 4 €/dg^2
+- het normtempo van S is 2/dg
+- S is niet vlot
+- het lengtegeld van S is 500 m*€
+- S is zwaar
+- de gegevens zijn consistent
