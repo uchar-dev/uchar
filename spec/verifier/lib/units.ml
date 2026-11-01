@@ -45,12 +45,13 @@ let inverted (u : measure_unit) : measure_unit =
 let denominator (u : measure_unit) =
   match negatives u with [] -> None | fs -> Some (inverted fs)
 
-let over (num : measure_unit) (den : measure_unit) : measure_unit =
-  canonical_order (num @ inverted den)
-
 (* One factor with exponent 1: the only unit a calendar table, a canonical table
    or a '%' reading can name. *)
 let is_atom (u : measure_unit) = match u with [ f ] -> exponent f = 1 | _ -> false
+
+(* The name of a declared unit, [None] for any other unit: a time-unit or day-kind
+   reading looks a unit up under this name, and a part of a unit is not the unit. *)
+let atom_name (u : measure_unit) = match u with [ f ] when exponent f = 1 -> f.abbr_text | _ -> None
 
 (* --- the algebra (RUNTIME-SEMANTICS ch. 2.6) ----------------------------- *)
 
@@ -87,6 +88,26 @@ let factor (a : measure_unit) (b : measure_unit) : measure_unit = a @ inverted b
 let same_atom (x : unit_factor) (f : unit_factor) =
   x.abbr_text = f.abbr_text && x.system = f.system && x.canonical_form = f.canonical_form
   && x.factor_to_canonical = f.factor_to_canonical
+
+(* Structural identity of a unit (ch. 2.5): abbreviation, declaring system,
+   canonical unit, conversion factor and exponent of every factor. EXACT, never
+   converting, which is the whole point: `kg` and `t` share a canonical unit and a
+   dimension, so [convertible] (what WF-035 and WF-023 cross) calls them compatible,
+   and a lie inside the convertible class is compatible by construction. Only
+   identity sees it.
+
+   The three NAMES are compared BYTE for BYTE, where every other declared name folds
+   to its WF-001 form. Name RESOLUTION is case-insensitive, that is WF-001's domain,
+   but this is about COPY FIDELITY, a different question: a consumer that reads these
+   three names literally to pick its conversion diverges silently on a copy that lies
+   in case alone. Measured: the Drools unit logic compares abbreviation and canonical
+   name case-sensitively and falls back to factor one where they do not match, so a
+   `KG`/`GEWICHT`/`KG` copy of a `kg`/`Gewicht`/`kg` declaration answers 3750.00 where
+   ref and clingo answer 3.75. The factor and the exponents stay exact as well: those
+   are not names. *)
+let identical (a : measure_unit) (b : measure_unit) =
+  List.length a = List.length b
+  && List.for_all2 (fun x y -> same_atom x y && exponent x = exponent y) a b
 
 (* Rule 2 with its unitless case: a factor of the right unit that is an atom of
    the left adds its exponent, one of the same class is restated into that atom
@@ -155,6 +176,14 @@ let is_percentage (u : measure_unit) =
   | [ { abbr_text = Some "%"; _ } as f ] -> exponent f = 1
   | _ -> false
 
+(* The singleton %-unit: abbreviation % and canonical %, factor exactly 1, nothing
+   beside it. A rate (%/jr) is a percentage, and this is not it. *)
+let is_pure_percentage (u : measure_unit) =
+  match u with
+  | [ { abbr_text = Some "%"; canonical_form = Some "%"; factor_to_canonical = Some { num; den }; _ } as f ] ->
+      exponent f = 1 && num = den
+  | _ -> false
+
 let name (f : unit_factor) = Option.value f.abbr_text ~default:"?"
 
 let power text e = if e = 1 then text else text ^ "^" ^ string_of_int e
@@ -165,8 +194,8 @@ let side_text ~fallback (fs : measure_unit) =
   | [] -> fallback
   | _ -> String.concat "·" (List.map (fun f -> power (name f) (abs (exponent f))) fs)
 
-(* The spelling of the numerator alone: "1" for a unit without a positive
-   factor. A time-unit or day-kind reading looks a unit up under this name. *)
+(* The spelling of the numerator alone: "1" for a unit without a positive factor,
+   for a sentence that names the denominator apart ([Checks.datatype_detail]). *)
 let numerator_text (u : measure_unit) = side_text ~fallback:"1" (positives u)
 
 (* The spelling of a unit in a message (IR-SPEC ch. 2.5): the positive factors

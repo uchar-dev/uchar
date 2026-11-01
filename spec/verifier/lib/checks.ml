@@ -224,7 +224,7 @@ let time_unit_of_spelling s =
   | _ -> None
 
 let time_unit_of_unit (e : measure_unit) =
-  if Units.is_atom e then time_unit_of_spelling (Units.numerator_text e) else None
+  Option.bind (Units.atom_name e) time_unit_of_spelling
 
 (* the time unit the granularity's grid counts in (ch. 3.2 job 1) *)
 let granularity_time_unit : grain -> time_unit = function
@@ -1031,13 +1031,24 @@ let day_kind_spellings (d : day_kind) = d.dk_name :: Option.to_list d.dk_plural
 
 let day_kind_names ctx = List.map (fun (d : day_kind) -> d.dk_name) ctx.doc.day_kinds
 
+(* the day kind a declared unit names by its name or its plural, trimmed and
+   case-insensitive (IR-SPEC ch. 2.9), or None: then it is a calendar unit or
+   ill-formed, as any unit of more than that one factor is *)
+let day_kind_of_unit (doc : document) (u : measure_unit) =
+  match Units.atom_name u with
+  | None -> None
+  | Some a ->
+      List.find_map
+        (fun (d : day_kind) ->
+          if String.trim d.dk_name <> "" && List.exists (fun s -> norm s = norm a) (day_kind_spellings d)
+          then Some d.dk_name
+          else None)
+        doc.day_kinds
+
 (* a unit spelling that names a declared day kind: admitted beside the nine
    time units in date arithmetic and tijdsduur (WF-035/WF-038) — the
    executors stay loud on those forms *)
-let day_kind_unit ctx (u : measure_unit) =
-  let a = Units.numerator_text u in
-  List.exists (fun d -> List.exists (fun s -> norm s = norm a) (day_kind_spellings d))
-    ctx.doc.day_kinds
+let day_kind_unit ctx (u : measure_unit) = day_kind_of_unit ctx.doc u <> None
 
 (* The position of a version pointer in its wire list, form index first:
    the order the wire writes the versions in. *)
@@ -2845,31 +2856,6 @@ let use_site_domain ?(source = "the declaration it reads from") at ~what ~decl ~
 
 (* --- the facet engine (WF-091 and the numbers it defers to) ------------- *)
 
-(* Structural identity of a unit (ch. 2.5): abbreviation, declaring system,
-   canonical unit, conversion factor and — recursively — the denominator of a
-   composite rate. EXACT, never converting, which is the whole point: `kg`
-   and `t` share a canonical unit and a dimension, so [Units.convertible] (what
-   WF-035 and WF-023 cross) calls them compatible, and a lie inside the
-   convertible class is compatible by construction. Only identity sees it.
-
-   The three NAMES are compared BYTE for BYTE, where every other declared
-   name in this file folds to its WF-001 form. Name RESOLUTION is
-   case-insensitive — that is WF-001's domain — but this rule is about COPY
-   FIDELITY, a different question: a consumer that reads these three names
-   literally to pick its conversion diverges silently on a copy that lies in
-   case alone. Measured: the Drools unit logic compares abbreviation and
-   canonical name case-sensitively and falls back to factor one where they
-   do not match, so a `KG`/`GEWICHT`/`KG` copy of a `kg`/`Gewicht`/`kg`
-   declaration answers 3750.00 where ref and clingo answer 3.75. The factor
-   and the denominator shape stay exact as well: those are not names. *)
-let unit_identical (a : measure_unit) (b : measure_unit) =
-  let exact (x : unit_factor) (y : unit_factor) =
-    x.abbr_text = y.abbr_text && x.system = y.system && x.canonical_form = y.canonical_form
-    && x.factor_to_canonical = y.factor_to_canonical
-    && Units.exponent x = Units.exponent y
-  in
-  List.length a = List.length b && List.for_all2 exact a b
-
 let render_factor (u : unit_factor) =
   (match u.abbr_text with Some a -> "'" ^ a ^ "'" | None -> "an unnamed unit")
   ^ (match abs (Units.exponent u) with 1 -> "" | n -> "^" ^ string_of_int n)
@@ -2970,7 +2956,7 @@ let use_site_identity ?(source = "the declaration it reads from") ?(skip = []) a
           when not
                  (match (ft.nf_unit, fd.nf_unit) with
                  | None, None -> true
-                 | Some a, Some b -> unit_identical a b
+                 | Some a, Some b -> Units.identical a b
                  | _ -> false) ->
             mismatch "unit" (unit_render ft.nf_unit) (unit_render fd.nf_unit)
         | _ -> []
@@ -4978,8 +4964,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                    | None ->
                        if day_kind_unit ctx u then []
                        else
-                         [ v ~params:[("unit", Units.numerator_text u)] "WF-035.duration-unknown-unit" (sub side)
-                             (date_duration_unknown_unit (Units.numerator_text u)) ]))
+                         [ v ~params:[("unit", Units.render u)] "WF-035.duration-unknown-unit" (sub side)
+                             (date_duration_unknown_unit (Units.render u)) ]))
          in
          match op, lt, rt with
          | (Plus | Min), Some l, Some r when is_date l && is_date r ->
@@ -5297,9 +5283,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                         | None ->
                             if day_kind_unit ctx u then []
                             else
-                              [ v ~params:[("function", Spelling.encode Spelling.builtin_kind f.kind); ("unit", Units.numerator_text u)] "WF-038.duration-unknown-unit" at
+                              [ v ~params:[("function", Spelling.encode Spelling.builtin_kind f.kind); ("unit", Units.render u)] "WF-038.duration-unknown-unit" at
                                   (duration_unknown_unit f.kind
-                                     (Units.numerator_text u)) ])))
+                                     (Units.render u)) ])))
          | _ -> [])
       (* WF-038, the ordering-fold operand clause (IR-SPEC ch. 4.6,
          semantics `RUNTIME-SEMANTICS.md` ch. 1.2): first/last/

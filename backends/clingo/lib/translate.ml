@@ -2517,17 +2517,7 @@ let dk_tables :
     (string, string * string * string * string * (int * int)) Hashtbl.t =
   Hashtbl.create 4
 
-(* the day kind a unit SPELLING names — its name or its plural (IR-SPEC
-   ch. 2.9: the lookup is trimmed and case-insensitive) — or None *)
-let day_kind_spells (doc : document) (u : measure_unit) : string option =
-  let a = Ir_v0.Units.numerator_text u in
-  List.find_map
-    (fun (d : day_kind) ->
-      if String.trim d.dk_name <> ""
-         && List.exists (fun s -> norm s = norm a) (Ir_v0.Checks.day_kind_spellings d)
-      then Some d.dk_name
-      else None)
-    doc.day_kinds
+let day_kind_spells = Ir_v0.Checks.day_kind_of_unit
 
 (* is this unit SPELLING a day kind's? The document-level form, for the
    refusal sites that run before the translation context exists. *)
@@ -2591,7 +2581,7 @@ let duration_form ~doc ~kind (typ : datatype option) (ta : datatype option)
       | None ->
           if not (day_kind_of_unit_doc doc u) then
             fault "%s"
-              (Ir_v0.Checks.duration_unknown_unit kind (Ir_v0.Units.numerator_text u)))
+              (Ir_v0.Checks.duration_unknown_unit kind (Ir_v0.Units.render u)))
   | Some _ -> fault "%s" (Ir_v0.Checks.duration_without_time_unit kind)
 
 (* The unit of a date ± duration step (WF-035), for the forms whose sentence
@@ -2608,7 +2598,7 @@ let date_step_unit ~datetime (t : datatype option) =
       | Some _ -> ()
       | None ->
           fault "%s"
-            (Ir_v0.Checks.date_duration_unknown_unit (Ir_v0.Units.numerator_text u)))
+            (Ir_v0.Checks.date_duration_unknown_unit (Ir_v0.Units.render u)))
   | Some d when not (Ir_v0.Checks.is_number_like d) ->
       fault "%s" (Ir_v0.Checks.date_duration_operand_refusal d)
   | _ -> fault "%s" Ir_v0.Checks.date_duration_without_time_unit
@@ -2885,7 +2875,7 @@ let product_factor ctx (l : expr) (r : expr) : int option =
    record. *)
 let units_identical_ok ~what (l : measure_unit option) (r : measure_unit option) =
   match (l, r) with
-  | Some a, Some b when a <> b && not (Normalise.same_quantity a b) ->
+  | Some a, Some b when (not (Ir_v0.Units.identical a b)) && not (Normalise.same_quantity a b) ->
       fault
         "non-identical units under %s are not translated (ref restates with an exact \
          conversion factor this integer encoding does not carry)"
@@ -2899,7 +2889,7 @@ let units_identical_ok ~what (l : measure_unit option) (r : measure_unit option)
    such a pair; every other pair of non-identical units keeps the fence. *)
 let comparison_factors ctx (l : expr) (r : expr) : int * int =
   match (eff_unit ctx l, eff_unit ctx r) with
-  | Some a, Some b when a <> b && Normalise.restates_into a b ->
+  | Some a, Some b when (not (Ir_v0.Units.identical a b)) && Normalise.restates_into a b ->
       let k = Uchar_ref.Arith.conv_factor a b in
       (Z.to_int (Q.num k), Z.to_int (Q.den k))
   | ul, ur ->
@@ -2939,16 +2929,10 @@ let rec provably_unitless ctx (e : expr) : bool =
       provably_unitless ctx arg
   | _ -> false
 
-(* the singleton %-unit: abbreviation % / canonical %, factor exactly 1, no
-   denominator — the one convertibility class %-space ever inhabits
+(* the one convertibility class %-space ever inhabits
    (PRIORITIZED-DEFAULTS-EVOLUTIE §8.3). A hidden or unknown unit is never
    this; a rate (%/jr) or a factor≠1 spelling is not pure-% either. *)
-let is_pure_pct (u : measure_unit) : bool =
-  match u with
-  | [ { abbr_text = Some "%"; canonical_form = Some "%"; factor_to_canonical = Some { num; den };
-        exponent = None; _ } ] ->
-      num = den
-  | _ -> false
+let is_pure_pct = Ir_v0.Units.is_pure_percentage
 
 (* PROVABLY pure-%: the effective unit is decidably the singleton %-unit.
    Mirrors provably_unitless's resolved leaf and unit-preserving forms but

@@ -80,7 +80,7 @@ open Ir_v0.Ast
 
 let fault = Value.fault
 
-let unit_abbr (u : measure_unit) = Ir_v0.Units.numerator_text u
+let unit_abbr = Ir_v0.Units.render
 
 (* the declared units of a unit system, each a unit of one factor with exponent 1
    — each declared unit once, its spellings being names of that one unit; a unit
@@ -236,7 +236,7 @@ let rec has_restatable ~tu (e : expr) : bool =
   let opt = function Some x -> has_restatable ~tu x | None -> false in
   match e with
   | Literal { typ = Some (Number { measure_unit = Some u; _ }); _ } ->
-      Ir_v0.Units.is_atom u && restates_into tu u && u <> tu
+      Ir_v0.Units.is_atom u && restates_into tu u && not (Ir_v0.Units.identical u tu)
   | Binary { op = Plus | Min | Reduced_by; left_side; right_side; _ } -> opt left_side || opt right_side
   | Rounding { base_expr; _ } -> opt base_expr
   | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr || opt minimum || opt maximum

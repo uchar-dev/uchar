@@ -1109,7 +1109,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
                 | Some k -> `Day_kind k
                 | None ->
                     Value.fault "%s"
-                      (Ir_v0.Checks.date_duration_unknown_unit (Ir_v0.Units.numerator_text u))))
+                      (Ir_v0.Checks.date_duration_unknown_unit (Ir_v0.Units.render u))))
         | Some d when not (Ir_v0.Checks.is_number_like d) ->
             Value.fault "%s" (Ir_v0.Checks.date_duration_operand_refusal d)
         | _ -> Value.fault "%s" Ir_v0.Checks.date_duration_without_time_unit
@@ -1193,7 +1193,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
                     | Some k -> `Day_kind k
                     | None ->
                         Value.fault "%s"
-                          (Ir_v0.Checks.duration_unknown_unit kind (Ir_v0.Units.numerator_text u))))
+                          (Ir_v0.Checks.duration_unknown_unit kind (Ir_v0.Units.render u))))
             | Some _ -> Value.fault "%s" (Ir_v0.Checks.duration_without_time_unit kind)
           in
           (* ch. 5.11, wire order: "van" (argument 0) before "tot"
@@ -2744,18 +2744,7 @@ and day_kind_matches env world self ~err (name : string) (day : int) : bool =
       in
       eval_cond env world self ~err c)
 
-(* the day kind a duration UNIT spelling names — its name or its plural,
-   trimmed and case-insensitive (IR-SPEC ch. 2.9) — or None when no day kind
-   is spelled so (then it is a calendar unit, or ill-formed) *)
-and day_kind_of_unit env (u : measure_unit) : string option =
-  let a = Ir_v0.Units.numerator_text u in
-  List.find_map
-    (fun (d : day_kind) ->
-      if String.trim d.dk_name <> ""
-         && List.exists (fun s -> norm s = norm a) (Ir_v0.Checks.day_kind_spellings d)
-      then Some d.dk_name
-      else None)
-    env.doc.day_kinds
+and day_kind_of_unit env (u : measure_unit) : string option = Ir_v0.Checks.day_kind_of_unit env.doc u
 
 and day_kind_pred env world self ~err (name : string) : int -> bool =
   fun day -> day_kind_matches env world self ~err name day

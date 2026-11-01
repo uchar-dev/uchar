@@ -454,7 +454,12 @@ let kg = unit_ ~canonical_form:"kg" "kg"
 let eur = unit_ ~canonical_form:"EUR" "€"
 let cent = unit_ ~canonical_form:"EUR" ~factor:(1, 100) "ct"
 let meter = unit_ ~canonical_form:"m" "m"
-let eur_per_jr = Ir_v0.Units.over eur jr
+
+(* a list with these factors, as a document writes it: no factor is restated, as [Units.divide] would *)
+let over (num : Ir_v0.Ast.measure_unit) (den : Ir_v0.Ast.measure_unit) : Ir_v0.Ast.measure_unit =
+  Ir_v0.Units.canonical_order (num @ Ir_v0.Units.inverted den)
+
+let eur_per_jr = over eur jr
 let num_with_unit u s = Value.Num (Value.q_of_lexeme s, Value.Unit u)
 
 let () =
@@ -471,7 +476,7 @@ let () =
   | _ -> check "WV-2.6-d" false);
   (match Arith.div_ ~err:no_err (num_with_unit eur "600") (num_with_unit jr "2") with
   | Value.Num (v, Value.Unit u) ->
-      check "WV-2.6-e" (Q.equal v (q "300") && u = (Ir_v0.Units.over eur jr))
+      check "WV-2.6-e" (Q.equal v (q "300") && u = (over eur jr))
   | _ -> check "WV-2.6-e" false);
   (* plus restates the right operand into the left unit: 2 jr + 12 mnd = 3 jr *)
   (match Arith.add (num_with_unit jr "2") (num_with_unit mnd "12") with
@@ -497,7 +502,7 @@ let () =
   check "WV-2.5-18mnd-is-3/2jr" (Q.equal (restate ~into:jr "18" mnd) (q "3/2"));
   check "WV-2.5-factor-mnd-jr-1/12" (Q.equal (Arith.conv_factor mnd jr) (q "1/12"));
   check "WV-2.5-100eur/mnd-is-1200eur/jr"
-    (Q.equal (restate ~into:eur_per_jr "100" (Ir_v0.Units.over eur mnd)) (q "1200"))
+    (Q.equal (restate ~into:eur_per_jr "100" (over eur mnd)) (q "1200"))
 
 (* RUNTIME-SEMANTICS ch. 2.6, the reciprocal's worked examples verbatim: E⁻¹ is
    the unit of a unitless number divided by E, in the normal form of IR-SPEC
@@ -530,16 +535,16 @@ let () =
   unit_is "WV-2.6-2-per-dg-plus-7-per-wk-is-3-per-dg"
     (Arith.add (num_with_unit per_dg "2") (num_with_unit per_wk "7")) "3" per_dg;
   unit_is "WV-2.6-1-per-dg-times-3eur-is-3eur-per-dg"
-    (Arith.mul (num_with_unit per_dg "1") (num_with_unit eur "3")) "3" (Ir_v0.Units.over eur dg);
+    (Arith.mul (num_with_unit per_dg "1") (num_with_unit eur "3")) "3" (over eur dg);
   unit_is "WV-2.6-3eur-times-1-per-dg-is-3eur-per-dg"
-    (Arith.mul (num_with_unit eur "3") (num_with_unit per_dg "1")) "3" (Ir_v0.Units.over eur dg);
+    (Arith.mul (num_with_unit eur "3") (num_with_unit per_dg "1")) "3" (over eur dg);
   unit_is "WV-2.6-1/(1-per-dg)-is-dg" (Arith.div_ ~err:no_err (n "1") (num_with_unit per_dg "2")) "1/2" dg;
   unit_is "WV-2.6-1/(eur-per-dg)-is-dg-per-eur"
-    (Arith.div_ ~err:no_err (n "1") (num_with_unit (Ir_v0.Units.over eur dg) "2")) "1/2"
-    (Ir_v0.Units.over dg eur);
+    (Arith.div_ ~err:no_err (n "1") (num_with_unit (over eur dg) "2")) "1/2"
+    (over dg eur);
   check "WV-2.6-1-per-dg-against-dg-is-no-unit-pair" (not (Arith.convertible per_dg dg));
   check "WV-2.6-1-per-dg-against-eur-per-dg-is-no-unit-pair"
-    (not (Arith.convertible per_dg (Ir_v0.Units.over eur dg)));
+    (not (Arith.convertible per_dg (over eur dg)));
   let m_squared : Ir_v0.Ast.measure_unit =
     [ { abbr_text = Some "m"; system = Some "test"; canonical_form = None;
         factor_to_canonical = None; exponent = Some 2 } ]
@@ -562,7 +567,6 @@ let corpus_file rel = if Sys.file_exists rel then rel else Filename.concat "../.
    no unit. *)
 let () =
   let power (u : Ir_v0.Ast.measure_unit) e = List.map (fun f -> Ir_v0.Units.with_exponent f e) u in
-  let over = Ir_v0.Units.over in
   let wk = unit_ ~canonical_form:"dg" ~factor:(7, 1) "wk" in
   let cm = unit_ ~canonical_form:"m" ~factor:(1, 100) "cm" in
   let sec = unit_ ~canonical_form:"s" "s" in
@@ -660,20 +664,35 @@ let () =
   let to_power (u : Ir_v0.Ast.measure_unit) e = List.map (fun f -> Ir_v0.Units.with_exponent f e) u in
   let spells name u text = check ("WV-2.5-spelling-" ^ name) (Ir_v0.Units.render u = text) in
   let uur = unit_ ~canonical_form:"s" "u" and sec = unit_ ~canonical_form:"s" "s" in
-  let per_uur_per_s = Ir_v0.Units.over eur (uur @ sec) in
+  let per_uur_per_s = over eur (uur @ sec) in
   spells "m" meter "m";
   spells "eur/jr" eur_per_jr "€/jr";
   spells "1/dg" (to_power dg (-1)) "1/dg";
   spells "m^2" (to_power meter 2) "m^2";
   spells "1/m^2" (to_power meter (-2)) "1/m^2";
-  spells "m^2/s" (Ir_v0.Units.over (to_power meter 2) sec) "m^2/s";
-  spells "eur/dg^2" (Ir_v0.Units.over eur (to_power dg 2)) "€/dg^2";
+  spells "m^2/s" (over (to_power meter 2) sec) "m^2/s";
+  spells "eur/dg^2" (over eur (to_power dg 2)) "€/dg^2";
   spells "eur/s/u" per_uur_per_s "€/s/u";
-  spells "eur.m/jr" (Ir_v0.Units.over (Ir_v0.Units.canonical_order (eur @ meter)) jr) "m·€/jr";
+  spells "eur.m/jr" (over (Ir_v0.Units.canonical_order (eur @ meter)) jr) "m·€/jr";
   check "WV-2.5-order-is-one-list"
     (Ir_v0.Units.canonical_order (sec @ eur) = Ir_v0.Units.canonical_order (eur @ sec));
   check "WV-2.5-order-sign-first"
     (Ir_v0.Units.canonical_order (to_power meter (-1) @ eur) = eur @ to_power meter (-1));
+  check "WV-2.5-a-name-is-of-a-declared-unit"
+    (Ir_v0.Units.atom_name meter = Some "m"
+    && List.for_all (fun u -> Ir_v0.Units.atom_name u = None)
+         [ eur_per_jr; to_power meter 2; to_power meter (-1); eur @ meter ]);
+  check "WV-2.5-identical-is-exact"
+    (Ir_v0.Units.identical eur_per_jr (over eur jr)
+    && (not (Ir_v0.Units.identical eur_per_jr (over eur mnd)))
+    && (not (Ir_v0.Units.identical eur eur_per_jr))
+    && (not (Ir_v0.Units.identical meter (to_power meter 2)))
+    && not (Ir_v0.Units.identical kg (unit_ ~canonical_form:"KG" "kg")));
+  let pct = unit_ ~canonical_form:"%" "%" and pct_two = unit_ ~canonical_form:"%" ~factor:(2, 1) "%" in
+  check "WV-2.5-pure-percentage"
+    (Ir_v0.Units.is_pure_percentage pct
+    && List.for_all (fun u -> not (Ir_v0.Units.is_pure_percentage u))
+         [ over pct jr; to_power pct 2; pct_two; eur ]);
   check "WV-2.5-total-factor-a-power"
     (Q.equal (Arith.total_factor (to_power (unit_ ~canonical_form:"m" ~factor:(1000, 1) "km") 2)) (q "1000000"));
   check "WV-2.5-total-factor-a-negative-power"
@@ -2661,8 +2680,8 @@ let () =
   check "WV-3.5-c-empty-set" (Timeline.summed ~fallback:(n "0") [] = []);
   (* cross-unit: €/mnd contributors into a €/jr target — restated before
      the fold: 50×12 + 10×12 = 720 *)
-  let eur_mnd = Ir_v0.Units.over eur mnd in
-  let eur_jr = Ir_v0.Units.over eur jr in
+  let eur_mnd = over eur mnd in
+  let eur_jr = over eur jr in
   let q1 = [ seg "2024-01-01" "2024-02-01" (num_with_unit eur_mnd "50") ] in
   let q2 = [ seg "2024-01-01" "2024-02-01" (num_with_unit eur_mnd "10") ] in
   (match Timeline.summed ~target_unit:(Value.Unit eur_jr) [ q1; q2 ] with
@@ -2700,7 +2719,7 @@ let () =
   expect_num "WV-3.6-f" (Timeline.grand_total month (Timeline.clip vals tp)) "500";
   (* the explicit rate operand: 10 €/mnd across 2024 integrates to 120 €,
      denominator cancelled against the grid's own unit *)
-  let eur_per_mnd = Ir_v0.Units.over eur mnd in
+  let eur_per_mnd = over eur mnd in
   let year_2024 v = [ seg "2024-01-01" "2025-01-01" v ] in
   let grid u = Ok u in
   (match Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit eur_per_mnd "10")) with
@@ -2736,7 +2755,7 @@ let () =
   (* a month-sized denominator that is NOT a calendar spelling (factor 1 to
      the same canonical month): the declared factor carries it, the
      spelling table never enters *)
-  let eur_per_bm = Ir_v0.Units.over eur bm in
+  let eur_per_bm = over eur bm in
   expect_num "WV-3.6-g-bm-jaar"
     (Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit eur_per_bm "10")))
     "120";
@@ -2755,7 +2774,7 @@ let () =
   (* a denominator the declarations connect to nothing month-sized is
      refused loudly, and the refusal NAMES BOTH units — the value's and
      the grid's *)
-  let eur_per_dg = Ir_v0.Units.over eur dg in
+  let eur_per_dg = over eur dg in
   (match Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit eur_per_dg "10")) with
   | exception Value.Fault { text = m; _ } ->
       check "WV-3.6-g-vreemde-noemer"
@@ -2766,7 +2785,7 @@ let () =
   | _ -> check "WV-3.6-g-vreemde-noemer" false);
   (* a denominator that names no time unit at all is refused the same way *)
   expect_fault "WV-3.6-g-noemer-zonder-tijdseenheid" (fun () ->
-      Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit (Ir_v0.Units.over eur kg) "10")));
+      Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit (over eur kg) "10")));
   (* no grid unit to integrate against: the refusal carries the lookup's
      own reason, and it bites the RATE operand only — the plain and
      unitless readings above total in a document that declares no unit *)
@@ -2783,7 +2802,7 @@ let () =
      and a foreign one is refused loudly; only the unitless side adopts
      silently. The case loader attaches the declaration's ONE unit to
      every segment, so no case can reach these shapes. *)
-  let ct_per_mnd = Ir_v0.Units.over cent mnd in
+  let ct_per_mnd = over cent mnd in
   expect_num "WV-3.6-g-segmentmenging-convertibel"
     (Timeline.grand_total ~grid_unit:(grid mnd) month
        [ seg "2024-01-01" "2025-01-01" (num_with_unit eur_per_mnd "10");
@@ -2807,10 +2826,10 @@ let () =
     | _ -> check name false
     | exception Value.Fault _ -> check name false
   in
-  let per_mnd_squared = Ir_v0.Units.over eur (List.map (fun f -> Ir_v0.Units.with_exponent f 2) mnd) in
+  let per_mnd_squared = over eur (List.map (fun f -> Ir_v0.Units.with_exponent f 2) mnd) in
   totals_to "WV-2.6-rule-8-eur-per-mnd^2-over-months-is-eur-per-mnd" (num_with_unit per_mnd_squared "10") "120" "€/mnd";
   totals_to "WV-2.6-rule-8-eur-per-m-per-mnd-over-months-is-eur-per-m"
-    (num_with_unit (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ mnd))) "10") "120" "€/m";
+    (num_with_unit (over eur (Ir_v0.Units.canonical_order (meter @ mnd))) "10") "120" "€/m";
   let integrated u =
     match Ir_v0.Units.integrated u with
     | Some (Some left) -> Ir_v0.Units.render left
@@ -2822,10 +2841,10 @@ let () =
   check "WV-2.6-rule-8-a-reciprocal-leaves-no-unit"
     (integrated (List.map (fun f -> Ir_v0.Units.with_exponent f (-1)) mnd) = "geen");
   check "WV-2.6-rule-8-two-negative-factors-are-the-grid's-to-say"
-    (integrated (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ mnd))) = "geen claim");
+    (integrated (over eur (Ir_v0.Units.canonical_order (meter @ mnd))) = "geen claim");
   expect_fault "WV-2.6-rule-8-no-negative-factor-of-the-grid" (fun () ->
-      Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit (Ir_v0.Units.over eur kg) "10")));
-  let eur_per_m_per_mnd = Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ mnd)) in
+      Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit (over eur kg) "10")));
+  let eur_per_m_per_mnd = over eur (Ir_v0.Units.canonical_order (meter @ mnd)) in
   let over_mnd u =
     match Ir_v0.Units.integrated ~grid:(List.hd mnd) u with
     | Some (Some left) -> Ir_v0.Units.render left
@@ -2834,22 +2853,22 @@ let () =
   in
   check "WV-2.6-rule-8-the-factor-of-the-grid-rises" (over_mnd eur_per_m_per_mnd = "€/m");
   check "WV-2.6-rule-8-the-grid-names-the-factor-whatever-its-place"
-    (over_mnd (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (mnd @ kg))) = "€/kg");
+    (over_mnd (over eur (Ir_v0.Units.canonical_order (mnd @ kg))) = "€/kg");
   check "WV-2.6-rule-8-a-factor-of-the-class-rises-where-the-grid's-own-is-absent"
-    (over_mnd (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ jr))) = "€/m");
+    (over_mnd (over eur (Ir_v0.Units.canonical_order (meter @ jr))) = "€/m");
   check "WV-2.6-rule-8-the-grid's-own-factor-goes-before-its-class"
-    (over_mnd (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (jr @ mnd))) = "€/jr");
+    (over_mnd (over eur (Ir_v0.Units.canonical_order (jr @ mnd))) = "€/jr");
   check "WV-2.6-rule-8-two-negative-factors-without-the-grid-claim-nothing"
-    (over_mnd (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ kg))) = "geen claim");
+    (over_mnd (over eur (Ir_v0.Units.canonical_order (meter @ kg))) = "geen claim");
   check "WV-2.6-rule-8-one-negative-factor-without-the-grid-still-rises"
-    (over_mnd (Ir_v0.Units.over eur kg) = "€");
+    (over_mnd (over eur kg) = "€");
   totals_to "WV-2.6-rule-8-eur-per-jr-per-m-over-months-restates-into-eur-per-m"
-    (num_with_unit (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ jr))) "10") "10" "€/m";
+    (num_with_unit (over eur (Ir_v0.Units.canonical_order (meter @ jr))) "10") "10" "€/m";
   totals_to "WV-2.6-rule-8-the-negative-factor-rises-beside-a-positive-one-of-the-grid"
-    (num_with_unit (Ir_v0.Units.over (Ir_v0.Units.canonical_order (mnd @ eur)) jr) "10") "10" "mnd·€";
+    (num_with_unit (over (Ir_v0.Units.canonical_order (mnd @ eur)) jr) "10") "10" "mnd·€";
   expect_fault "WV-2.6-rule-8-two-negative-factors-none-of-the-grid" (fun () ->
       Timeline.grand_total ~grid_unit:(grid mnd) month
-        (year_2024 (num_with_unit (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ kg))) "10")))
+        (year_2024 (num_with_unit (over eur (Ir_v0.Units.canonical_order (meter @ kg))) "10")))
 
 (* the grid unit is looked up in the DOCUMENT's declared unit systems
    (ch. 3.6 / ch. 3.8 spelling table), once per fold: present, absent, and
@@ -2885,7 +2904,7 @@ let () =
    refused, and so is a member that brings no horizon of its own
    (maintainer decision 2026-09-04, the convention of this fold). *)
 let () =
-  let eur_per_mnd = Ir_v0.Units.over eur mnd in
+  let eur_per_mnd = over eur mnd in
   let num_eur_mnd : Ir_v0.Ast.datatype =
     Number { whole_part = true; decimal_places = 0; sign_char = None; measure_unit = Some eur_per_mnd }
   in
