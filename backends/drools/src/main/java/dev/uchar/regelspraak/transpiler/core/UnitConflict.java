@@ -54,7 +54,8 @@ import dev.uchar.regelspraak.model.Unit;
  *       either way, and the value stands in the unit it was computed in. What it costs is a diagnosis — two
  *       products that could never be reconciled are not reported as such — and that limit is named here rather
  *       than left to be discovered. Reaching it needs a document carrying two distinct two-unit MAAL results at
- *       one restatement site, which no frontend emits and the corpus does not hold.</li>
+ *       one restatement site, which no frontend emits and the corpus does not hold.
+ *       <p>The exemption stops at a rate: a derived product against "m·m/s" or "€/jr" faults, as {@code ref} does.</li>
  * </ul>
  *
  * <p><b>What is NOT exempt.</b> A rate against a plain unit with convertible numerators ("€/mnd" against "€"). An
@@ -91,7 +92,9 @@ public final class UnitConflict extends RuntimeException {
     public static void requireRescalable(Unit from, Unit destination, String site) {
         if (from == null || destination == null) return;              // a unitless side adopts the other (ch. 2.6)
         if (from.convertibleTo(destination)) return;                // a factor exists (or the two are the same unit)
-        if (opaqueProduct(from) || opaqueProduct(destination)) return;   // ch. 2.10's recorded conservative no-op
+        // ch. 2.10's recorded conservative no-op; a rate has a denominator that a value left standing cannot supply
+        if ((opaqueProduct(from) && destination.denominator() == null)
+                || (opaqueProduct(destination) && from.denominator() == null)) return;
         throw new UnitConflict(from, destination, site);
     }
 

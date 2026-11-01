@@ -73,11 +73,6 @@ let factor (e : Ir_v0.Ast.measure_unit) =
 
 let convertible a b = Ir_v0.Checks.units_convertible a b
 
-(* the name ch. 2.5 gives a product: its atomic factors, sorted *)
-let product_name (a : Ir_v0.Ast.measure_unit) (b : Ir_v0.Ast.measure_unit) =
-  let factors u = Ir_v0.Checks.product_factors (unit_name u) in
-  String.concat "·" (List.sort String.compare (factors a @ factors b))
-
 (* multiplicative factor taking a quantity in unit [a] to unit [b];
    both must be convertible (same canonical chain, rates recursively) *)
 let rec conv_factor (a : Ir_v0.Ast.measure_unit) (b : Ir_v0.Ast.measure_unit) =
@@ -93,9 +88,6 @@ let restate_into ua q ub =
   match (ua, ub) with
   | Unitless, Unitless -> q
   | Unit a, Unit b when convertible a b -> Q.mul q (conv_factor b a)
-  (* a declared "m^2" is the unit "m·m", and m × m is the same unit by its factors: the opaque product of
-     ch. 2.5 is convertible to an identical product, with nothing to restate *)
-  | Unit a, Product (x, y) when unit_name a = product_name x y -> q
   | Unit _, Unitless | Unitless, Unit _ ->
       (* unitless side adopts the other unit, value unchanged (the
          unitless-literal adoption of IR-SPEC ch. 2.5) *)

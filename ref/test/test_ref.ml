@@ -542,11 +542,14 @@ let () =
     { (unit_ ~canonical_form:"m" "m·m") with canonical_form = None; factor_to_canonical = None }
   in
   check "WV-2.6-the-unit-m^2-has-no-inverse" (Ir_v0.Checks.reciprocal_unit m_squared = None);
+  (* a product is opaque (IR-SPEC ch. 2.5, point 4): its value stands, and it restates into nothing *)
   (match Arith.mul (num_with_unit meter "2") (num_with_unit meter "3") with
   | Value.Num (v, (Value.Product _ as product)) ->
-      check "WV-2.6-2m-times-3m-is-6-in-the-declared-m^2"
-        (Q.equal (Arith.restate_into (Value.Unit m_squared) v product) (q "6"))
-  | _ -> check "WV-2.6-2m-times-3m-is-6-in-the-declared-m^2" false)
+      check "WV-2.6-2m-times-3m-is-6" (Q.equal v (q "6"));
+      expect_fault_msg "WV-2.6-2m-times-3m-does-not-restate-into-a-declared-m^2"
+        (fun () -> Arith.restate_into (Value.Unit m_squared) v product)
+        "incompatible units"
+  | _ -> check "WV-2.6-2m-times-3m-is-6" false)
 
 (* ...and the factor that is not a whole number, the case the exact rational
    exists for: an hour declared as {1, 24} of a day. 36 uur restated in dg is
@@ -9182,6 +9185,19 @@ let readings_of ?(evaluate = true) irf casef =
 (* a file of the corpus, from the workspace root (gate 5 runs the suite there)
    or from the test's own build directory (dune runtest) *)
 let corpus_file rel = if Sys.file_exists rel then rel else Filename.concat "../.." rel
+
+(* WV-2.6: a product restates into nothing, over a whole document as well. The verifier admits the document, whose
+   rule writes m × m into an attribute in m·m/s. *)
+let () =
+  let d = Ir_v0.Loader.load_file (corpus_file "ref/test/fixtures/product-into-rate/ir.json") in
+  let c = Case.load_file d (corpus_file "ref/test/fixtures/product-into-rate/case.json") in
+  expect_fault_msg "WV-2.6-m-times-m-is-not-written-into-a-declared-m^2-per-s"
+    (fun () ->
+      Eval.evaluate
+        { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+          locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
+        c.world)
+    "incompatible units"
 
 (* WV-5.8b-C: the narrowing host, RUNTIME-SEMANTICS ch. 5.8b rule 4 and its
    worked example C verbatim. `Wrakrecht` below `Jutrecht` below `Strandrecht`;

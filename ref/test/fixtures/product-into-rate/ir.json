@@ -1,0 +1,308 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Perceel",
+        "animate": false,
+        "plural": "Percelen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "lengte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "m",
+                "system": "Lengte",
+                "canonical": "m",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "breedte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "m",
+                "system": "Lengte",
+                "canonical": "m",
+                "factorToCanonical": {
+                  "num": 1,
+                  "den": 1
+                }
+              }
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "oppervlakte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": {
+                "node": "Unit",
+                "abbreviation": "m·m",
+                "system": "Lengte",
+                "denominator": {
+                  "node": "Unit",
+                  "abbreviation": "s",
+                  "system": "Tijd",
+                  "canonical": "s",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "vierkant",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "passend",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Lengte",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "m",
+            "system": "Lengte",
+            "canonical": "m",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "meter",
+              "meters"
+            ]
+          }
+        ]
+      },
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "s",
+            "system": "Tijd",
+            "canonical": "s",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "seconde"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "oppervlakte",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "oppervlakte",
+              "subjectType": "Perceel",
+              "source": {
+                "snippet": "De oppervlakte van een Perceel"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "lengte",
+                "subjectType": "Perceel",
+                "source": {
+                  "snippet": "zijn lengte"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "breedte",
+                "subjectType": "Perceel",
+                "source": {
+                  "snippet": "zijn breedte"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": {
+                  "node": "Unit",
+                  "abbreviation": "m·m",
+                  "system": "Lengte",
+                  "denominator": {
+                    "node": "Unit",
+                    "abbreviation": "s",
+                    "system": "Tijd",
+                    "canonical": "s",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                }
+              },
+              "source": {
+                "snippet": "zijn lengte maal zijn breedte"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "passend",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "passend",
+              "subjectType": "Perceel",
+              "source": {
+                "snippet": "Een Perceel is passend"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "oppervlakte",
+                "subjectType": "Perceel",
+                "source": {
+                  "snippet": "zijn oppervlakte"
+                }
+              },
+              "right": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "lengte",
+                  "subjectType": "Perceel",
+                  "source": {
+                    "snippet": "zijn lengte"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "breedte",
+                  "subjectType": "Perceel",
+                  "source": {
+                    "snippet": "zijn breedte"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": {
+                    "node": "Unit",
+                    "abbreviation": "m·m",
+                    "system": "Lengte",
+                    "denominator": {
+                      "node": "Unit",
+                      "abbreviation": "s",
+                      "system": "Tijd",
+                      "canonical": "s",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  }
+                },
+                "source": {
+                  "snippet": "zijn lengte maal zijn breedte"
+                }
+              },
+              "source": {
+                "snippet": "zijn oppervlakte gelijk is aan zijn lengte maal zijn breedte"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

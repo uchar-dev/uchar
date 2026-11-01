@@ -529,11 +529,13 @@ Worked examples, with `wk = 7 dg` (`ref/` tests `WV-2.6-*`, exact):
 | 3 € × 1 `1/dg` | 3 | `€/dg` |
 | 1 ÷ 2 `1/dg` | 1/2 | `dg` |
 | 1 ÷ 2 `€/dg` | 1/2 | `dg/€` |
-| 2 m × 3 m, in a declared `m^2` | 6 | `m·m` |
+| 2 m × 3 m | 6 | `m·m` |
 
 2 `1/dg` = 14 `1/wk` holds; 5/2 `1/dg` > 14 `1/wk` holds, compared as
 17,5 against 14 — where the bare numbers would answer the other way.
-`1/dg` against `dg` and against `€/dg` is a unit mismatch.
+`1/dg` against `dg` and against `€/dg` is a unit mismatch, and so is
+2 m × 3 m against a declared `m·m` or `m·m/s`: `ref` faults on it, a product
+being opaque (`IR-SPEC.md` ch. 2.5, point 4).
 
 ### 2.7 Clamping (begrensd)
 
@@ -672,7 +674,8 @@ unit, the soort and the precision it computes with:
    "€/jr maal kg/jr" both yield €·kg. That is the *conservative*
    outcome, not a claim that the product is spellable — €·kg carries no
    canonical, so no restatement site will scale it by an invented factor,
-   and the value simply stands in the unit it was computed in. It is
+   and the value simply stands in the unit it was computed in, except
+   against a rate, where the backend faults as `ref` does. It is
    therefore a silent divergence from the other three on a shape the
    corpus does not carry and no frontend can emit; a `Let` carries its
    body's; a quotient carries what ch. 2.6 derives from its operands

@@ -138,6 +138,19 @@ class UnitConflictWitnessTest {
         UnitConflict.requireRescalable(eurM, eurKg, "witness");
     }
 
+    @Test void a_derived_product_against_a_rate_is_a_fault() {
+        // A rate has a denominator, which a value standing in the unit it was computed in cannot supply. Measured on a
+        // document writing m × m into an attribute in m·m/s: ref faults and this backend played it. The same numerator
+        // does not let the pair through.
+        Unit product = derivedProduct();
+        Unit sameNumerator = Unit.compound(product, JR);
+        assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(product, sameNumerator, "witness"));
+        assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(sameNumerator, product, "witness"));
+        Unit otherRate = Unit.compound(EUR, JR);
+        assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(product, otherRate, "witness"));
+        assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(otherRate, product, "witness"));
+    }
+
     @Test void the_origin_table_grows_per_derivation_not_per_document() {
         // The growth law the class doc states, as a checked claim: Unit.product allocates a fresh instance
         // every time, so deriving the SAME product twice adds TWO entries. The table is monotone for the JVM's
