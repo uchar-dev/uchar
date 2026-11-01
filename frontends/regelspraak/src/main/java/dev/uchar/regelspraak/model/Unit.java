@@ -246,13 +246,6 @@ public record Unit(List<Factor> factors) {
         return b.toString();
     }
 
-    /** The rate's NUMERATOR as a stand-alone unit (denominator stripped); this unit itself when plain; null for a
-     *  reciprocal, whose numerator is no unit: E⁻¹ × E is a number without a unit. */
-    public Unit numerator() {
-        if (positives().isEmpty()) return null;
-        return negatives().isEmpty() ? this : new Unit(positives());
-    }
-
     /** The dimension of this unit (ch. 2.6): canonical class to the sum of its exponents, without zeros. */
     private Map<String, Integer> dimension() {
         Map<String, Integer> sums = new HashMap<>();

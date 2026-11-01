@@ -2811,6 +2811,18 @@ let () =
   totals_to "WV-2.6-rule-8-eur-per-mnd^2-over-months-is-eur-per-mnd" (num_with_unit per_mnd_squared "10") "120" "€/mnd";
   totals_to "WV-2.6-rule-8-eur-per-m-per-mnd-over-months-is-eur-per-m"
     (num_with_unit (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ mnd))) "10") "120" "€/m";
+  let integrated u =
+    match Ir_v0.Units.integrated u with
+    | Some (Some left) -> Ir_v0.Units.render left
+    | Some None -> "geen"
+    | None -> "geen claim"
+  in
+  check "WV-2.6-rule-8-one-negative-factor-rises-one-power" (integrated per_mnd_squared = "€/mnd");
+  check "WV-2.6-rule-8-a-rate-leaves-its-numerator" (integrated eur_per_mnd = "€");
+  check "WV-2.6-rule-8-a-reciprocal-leaves-no-unit"
+    (integrated (List.map (fun f -> Ir_v0.Units.with_exponent f (-1)) mnd) = "geen");
+  check "WV-2.6-rule-8-two-negative-factors-are-the-grid's-to-say"
+    (integrated (Ir_v0.Units.over eur (Ir_v0.Units.canonical_order (meter @ mnd))) = "geen claim");
   expect_fault "WV-2.6-rule-8-no-negative-factor-of-the-grid" (fun () ->
       Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit (Ir_v0.Units.over eur kg) "10")))
 
@@ -9331,7 +9343,8 @@ let readings_of ?(evaluate = true) irf casef =
 let () =
   check "WV-2.6-the-verifier-derives-the-product-against-the-annotation"
     (List.exists
-       (fun (x : Ir_v0.Checks.violation) -> x.wf = "WF-091")
+       (fun (x : Ir_v0.Checks.violation) ->
+         x.wf = "WF-091" && substring x.reason "but the type derived from its operands is 'm'^2 of system")
        (Ir_v0.Checks.all
           (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier
              (corpus_file "ref/test/fixtures/product-into-rate/ir.json"))));

@@ -41,10 +41,6 @@ let canonical_order (u : measure_unit) : measure_unit =
 let inverted (u : measure_unit) : measure_unit =
   List.map (fun f -> with_exponent f (- exponent f)) u
 
-(* The factors with a positive exponent, [None] where there is none. *)
-let numerator (u : measure_unit) =
-  match positives u with [] -> None | fs -> Some fs
-
 (* The factors with a negative exponent, inverted, [None] where there is none. *)
 let denominator (u : measure_unit) =
   match negatives u with [] -> None | fs -> Some (inverted fs)
