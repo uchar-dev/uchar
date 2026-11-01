@@ -492,3 +492,89 @@ Drools 6 (`IrLoader`, `EffectiveUnit`, `UnitConflict`, `TmsTranspiler`, `Session
 (`test_ref`, `test_clingo`, `UnitIdentityTest`, `TypingTest`, `TmsLikeRefWitnessTest`, `EffectiveUnitWitnessTest`).
 Scripts 3 + 1 nieuw. Spec 4 documenten + schema + naamtabel + README's 2. Totaal ±45 bronbestanden, 1 script, 4
 spec-documenten, 261 gemigreerde datadocumenten.
+
+## Stand
+
+### Stap 1 (C1 en C2), 2026-11-01
+
+Commits op `card/unit-factors`: `756964241` claim, `7d3937601` `L6: de factorlijst op de wire`. De algebra (C3) en de
+spellingen (C4) zijn niet gedaan: elke vorm die RGS-360 weigerde blijft geweigerd, RGS-282/293/294 bestaan nog, en
+`Value.Product`, `Unit.product`, `DERIVED_PRODUCTS` en de `UnitConflict`-vrijstelling staan er nog.
+
+**Gates.** `make gates`: 17 groen, `after-run` groen, `red=0`, 332 s (`werk/unit-factors/logs/stap1-gates-4.log`). `EXPECTED_PLAYED`
+296 op beide takken. Geen `EXPECTED_`-regel in `scripts/` gewijzigd. Gate 3: 548 negatief geweigerd, `expect.txt` 391 (vloer 354).
+Gate 10: 1334 tests, 157 goldens byte-gelijk. Gate 12: JUnit 1718. Gate 6: 2242 checks, 964 cases. Gate 5: 1723 voorbeelden.
+Gate 13: 124 annotaties met eenheid, 50 twistbaar, 74 vrijgesteld, 0 zonder zuster.
+
+**Migratie, gemeten** (`m6.py` over `e92fcb1f8`, per zone, zonder de vier `wf123-*` die het weigert):
+
+| zone | bestanden | posities | noemers | tellers weg | producten | `exponent` geschreven | declaraties |
+|---|---|---|---|---|---|---|---|
+| corpus/golden | 67 van 346 | 264 | 14 | 5 | 0 | 14 | 69 |
+| corpus/negative | 147 van 547 | 654 | 66 | 10 | 1 | 67 | 234 |
+| corpus/red | 12 van 50 | 35 | 0 | 0 | 0 | 0 | 4 |
+| toka | 30 van 30 | 460 | 0 | 0 | 0 | 0 | 420 |
+| ref/test/fixtures | 1 | 5 | 3 | 0 | 3 | 6 | 2 |
+| backends/drools/src/test/resources | 6 van 42 | 14 | 1 | 0 | 0 | 1 | 9 |
+
+Na de verwijdering van de vijf `wf123-*`: 262 gemigreerd, 1425 posities, 79 noemers, 10 tellers, 3 producten, 82 `exponent`-velden.
+`m6.py --check`: 0 van 1017 niet in L6, 0 declaraties bewogen, 727 declaraties vergeleken met `e92fcb1f8` (de 738 uit de tabel min de 11
+van de verwijderde `wf123-*`). Een tweede `--all`: 0 gemigreerd, geen byte. `--check` leest de basis met `git show e92fcb1f8:<pad>`.
+
+**§8, bewaking, gemeten.** Script ≡ emitter: gates 10, 11 en 16 groen op de gemigreerde bestanden. Rapporten: de verifier van
+`e92fcb1f8` op het oude negatief corpus tegen die van deze commit op het nieuwe: alle 543 overblijvende getuigen regel voor regel gelijk,
+na de vertaling `/unit` → `/unit/0` en `/unit/denominator` → `/unit/1` van de pointers. `expect.txt`: −5 `wf123-*`, +6 `wf124-*`, geen andere
+wijziging. Geen `case*.json` in `corpus/` of `toka/` gewijzigd, dus geen `expectedFault.params`. Productdocumenten uit
+`werk/omgekeerde-eenheid/fable` (`vierkant`, `passend`, `passend-per-s`), oude bouwsels op de oude wire tegen nieuwe op de gemigreerde: verifier
+`PASS`, clingo `non-identical units`, Drools `PLAYED 1` op `vierkant` en `passend` en `UnitConflict` op `passend-per-s` op beide takken, zoals §7.1.
+Enige verschil, zie afwijking 3: ref meldt `m^2 vs m*m` waar het `m·m vs m*m` meldde.
+
+**Afwijkingen van het advies.**
+
+1. De advieszone miste `backends/drools/src/test/resources`: zes `ir.json` met eenheden, die `m6.py --all` ook migreert. Daardoor en door de
+   verwijderde getuigen wijken de aantallen af van §1.1 en §7.3 (261/1446/103/35/4). De 103 en 35 van het advies tellen de `wf123-*` mee.
+2. De advieszin "730 declaraties": ik meet 738 over de zones inclusief Drools (9), dus 729 zonder; negatief 234 waar het advies 235 zegt. Niet verder
+   uitgezocht: de toets is byte-gelijkheid per bestand, en die houdt.
+3. De rendering van §1.4 is ingevoerd zoals geschreven, dus een product met een herhaald atoom heet nu `m^2` in meldingen, waar het `m·m` heette.
+   Geen enkel corpusgeval of bestaande test pint die tekst; de bestaande vormen (`€/jr`, `1/dg`, `%`, `m`) zijn byte-gelijk.
+4. Tekstfout in het advies, §1.4 en §2: de canonieke volgorde (codepunten) en "positieve factoren in wire-volgorde" geven `m·€/jr`, `kg·€/jr^2`
+   en `€·n` (`€` is U+20AC, boven elke ASCII-letter), en `€/s/u`, niet `€·m/jr`, `€·kg/jr^2` en `€/u/s`. Ik volg de regel. `m·€/jr` en `€/s/u` staan zo
+   in IR-SPEC ch. 2.5 en in `test_ref`. `€·n` is daarmee `n·€`. Stap 2 moet de tabel van §2 op dit punt lezen.
+5. `DeclaredUnit` in het schema is niet "ongewijzigd": de eigenschap `denominator` ging eruit. Geen enkele declaratie droeg haar buiten `wf123-declared-one`.
+6. `check-reftype-derivation.sh` en `DrlUnitSiteWitnessTest` twisten nu de eerste factor met een omrekenpaar, zoals §4 zegt, en dus ook een reciprook in de
+   Drools-test. Gate 13: 46 annotaties getwist over 26 goldens (vloer 38), geen overlevende.
+7. `spec/proposals/v1-naamtabel-toets.py` is aangeraakt (buiten §11): de M-stap M9 is toegelaten, en de rijen `denominator`, `noemer`, `exponent` en de
+   telling zijn bijgewerkt. De toets is geen gate en stond al rood: 24 bevindingen over `IdentityCheck`, `anchor` en `Default.name`, geen enkele over een eenheid.
+8. Tien `NOTE.md` van `wf092-*`/`wf034-unit-unknown-system` en de `NOTE.md` van `jutterswet-tempototaal` (buiten §11, die alleen `ir.json` noemt): de
+   pointers in de geciteerde rapporten volgen de lijst.
+
+**Voorlopige besluiten** (geen van deze stond open in het advies als normvraag).
+
+- *Interne vorm.* OCaml: `Ast.unit_factor` en `measure_unit = unit_factor list`; `declared_unit.ge_unit` is een `unit_factor`; `exponent : int option`, zodat WF-124
+  een geschreven 1 kan zien. Java: `Unit(List<Factor>)` met `Unit.Factor(abbreviation, system, canonical, factorToCanonical, exponent)`; de lijst staat op volgorde van de wire.
+- *Oude lezing als projectie.* `Units.numerator`/`denominator`/`over` en in Java `abbreviation()`, `system()`, `canonical()`, `factorToCanonical()`, `denominator()`, `numerator()`,
+  `compound`, `reciprocal`, `product` geven de lezing van de oude record, zodat alle aanroepers ongewijzigd blijven: `abbreviation()` is de teller (`1` als die leeg is, atomen met `·`
+  bij een product). Daardoor raakt deze commit in Drools alleen de loader en één javadoc, en in `TmsTranspiler` niets.
+- *Opake producten blijven opaak.* `Checks.units_convertible` en Java `numeratorConvertible` vergelijken een zijde van meer dan één atoom op de samengevoegde naam, niet op dimensie.
+- *Loaders en WF-124.* De OCaml-loader laadt een lege lijst en een geschreven exponent 0 of 1, zodat de verifier de arm noemt. De Drools-loader weigert een lege lijst en exponent 0 met een
+  `DocumentError` (nieuw getuige `a_unit_is_a_list_of_factors`), en leest de rest. Ref en clingo laden via de gedeelde loader en draaien de verifier niet: gemeten op de zes `wf124-*` met de case van `jutterswet-vergunningsduur` spelen beide `PASS`, omdat de getuigen de eenheid op een ongelezen attribuut of een declaratie zetten. Op een gelezen eenheid is `[]` in ref de teller `1` en telt exponent 0 als factor 1; dat is geen nieuwe zwakte (de oude bare `"1"` rekende ook stil door), maar een open punt voor C3: wie `Units.times` bouwt, kan hier een fout zetten.
+- *`m6.py --check` weigert een afkorting `"1"` in een lijst*, als resttoets op de oude vorm; de verifier heeft daar geen regel meer voor. Staat C4 ooit een eenheid `1` toe, dan vervalt die regel in het script.
+- *Sleutels van WF-124*: `empty-unit`, `exponent-zero`, `exponent-one-written`, `duplicate-factor`, `factors-unsorted`, `declared-exponent`; parameters `unit`, bij `declared-exponent` ook `unitSystem`, bij `factors-unsorted` `spelling`.
+
+**Gewijzigde testen, alleen in vorm** (geen verwachte waarde verzwakt).
+
+- Ingebedde wire-documenten in `test_ref`, `test_clingo` en de Java-testen dragen de lijst; `TypeSystemRefusalWitnessTest.UNIT` en de pointers in `TypingRefusalWitnessTest` eindigen op `/unit/0`.
+- `UnitIdentityTest`: de wire-pin `"abbreviation":"1","denominator":{…}` is nu `"unit":[{… mnd …,"exponent":-1}]`, en `"abbreviation":"1","denominator"` is `"exponent":-1`.
+- `ValueTermWitnessTest`: de pin op de `toString` van `Unit` (`Unit[abbreviation=km, …, denominator=null]`) is `Unit[factors=[Factor[abbreviation=km, …, exponent=1]]]`.
+- `UnitConflictWitnessTest.a_namesake…`: de naamgenoot is `new Unit(derived.factors())`, waarde-gelijk en een ander exemplaar; de asserts zijn gelijk.
+- `test_ref`: `WV-2.6-the-unit-m^2-has-no-inverse` bouwt `m` met exponent 2 in plaats van de afkorting `m·m`; `WV-2.6-1/dg-spelling` leest `render` en `Units.denominator`; `u.abbr_text = Some "€" && u.denominator = None` is de sterkere `u = eur`.
+- Nieuw: `WV-2.5-spelling-*`, `WV-2.5-order-*`, `WV-2.5-total-factor-*` in `test_ref`; `a_unit_is_spelled_from_its_factors`, `the_factors_of_a_product_stand_in_code_point_order`, `a_self_product_is_one_factor_with_exponent_two` in `UnitFactorTest`; de rij `Unit.denominator` in `test_clingo`; zes `wf124-*`; in de schema-zelftest van gate 2 acht nieuwe rijen en één vervangen (`Unit.denominator = null` is `a factor carries a denominator`).
+
+**Wat stap 2 moet weten.**
+
+- Ingangen voor C3: `spec/verifier/lib/units.ml` kent alleen vorm en spelling en hangt niet aan `zarith`; `Ir_v0.Units.times`/`divide` met een `Q.t` vragen dus een keuze (het advies noemt `(unit option, Q.t)`; `ir_v0` linkt alleen `yojson`). `Arith.total_factor` is al F(U) = ∏ f^e. `Arith.conv_factor` is al F(a)/F(b), met de test rate/plain ervoor; `Checks.units_convertible` is de plek voor D(U) = D(V).
+- De projecties die C3 weghaalt: `Checks.is_reciprocal`, `is_product`, `numerator_unit`, `reciprocal_unit`, `Units.numerator_text`, en in Java `compound`, `reciprocal`, `product`, `abbreviation()` als tellernaam, `system()`, `canonical()`, `factorToCanonical()`.
+- Een `Number.unit` met twee negatieve factoren of een macht (`€/u/s`, `€/dg^2`) laadt nu in alle loaders en is verifier-schoon, maar geen enkele uitvoerder rekent er dimensie mee; `denominator` geeft dan het opake product van de negatieve factoren. De frontend schrijft deze vormen nog niet.
+- `Unit.exactFactors` blijft per afkorting per stelsel; `IrEmitter.exactFactor` neemt nu een `Unit.Factor`.
+- IR-SPEC: punt 4 (opaak product) en de voorbeeldregel `€·m` staan nog in ch. 2.5, net als RUNTIME-SEMANTICS ch. 2.6/2.10 en ASP-TRANSLATION S6/S19; punt 5 heet nu "The factor list". De zin in `grammar/DIVERGENCES.md` over `m^2` noemt de wirevorm `[{m, exponent: 2}]` en moet in C4 weg.
+- Lange runs: een Bash-aanroep zonder `timeout` of achtergrondvlag stopt na 2 minuten en trekt een `&`-proces mee. Gebruik de achtergrondvlag van het hulpmiddel voor `make gates`. Bewerk geen bron tijdens de run: `after-run` faalt erop.
