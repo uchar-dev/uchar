@@ -5,7 +5,7 @@
 threshold `100 m^2` is compared in the same unit. Every factor is 1, which the integer encoding of the ASP backend needs.
 `scenario.rgs` is the source of the three case files (gate 16).
 
-| scenario | lengte | breedte | oppervlakte (× ) | teruggerekende breedte (÷, naar beneden) | ruim (> 100 m^2) |
+| scenario | lengte | breedte | oppervlakte | teruggerekende breedte, naar beneden | ruim (> 100 m^2) |
 |---|---|---|---|---|---|
 | ruim strandvak | 20 m | 8 m | 160 m^2 | 160 ÷ 20 = 8 m | ja |
 | krap strandvak | 5 m | 6 m | 30 m^2 | 30 ÷ 5 = 6 m | nee |
