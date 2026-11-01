@@ -748,7 +748,7 @@ public final class IrEmitter {
             }
             case Datatype.Percentage p -> {
                 Unit e = p.unit() == null ? Datatype.Percentage.PERCENT : p.unit();
-                if (!"%".equals(e.abbreviation()))
+                if (!e.isPercentage())
                     throw new IllegalStateException("IrEmitter: een percentage met de eenheid '" + e.rendering()
                             + "'; de wire schrijft een percentage als getal met de eenheid '%'");
                 w.key("node").value("Number");

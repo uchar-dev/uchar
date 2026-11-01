@@ -642,7 +642,7 @@ public final class DefinitionResolver {
             // §3.3.5: a Percentage is always "%", optionally specialized to a rate "%/<eenheid>"
             // (grammar: "met eenheid % ( / <eenheidAfkorting> )?"); a bare or absent clause is "%".
             Unit e = pd.SLASH() != null
-                    ? Unit.compound(Datatype.Percentage.PERCENT, model.resolveUnit(src(pd.eenheidAfkorting())))
+                    ? Unit.divide(Datatype.Percentage.PERCENT, model.resolveUnit(src(pd.eenheidAfkorting())))
                     : Datatype.Percentage.PERCENT;
             return new Datatype.Percentage(g.wholeNumber, g.decimals, e);
         }

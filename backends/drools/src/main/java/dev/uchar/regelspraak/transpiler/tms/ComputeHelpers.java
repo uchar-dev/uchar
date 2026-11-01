@@ -118,18 +118,12 @@ public final class ComputeHelpers {
 
     // ---------------- units ----------------
 
-    /** {@code v} restated by the exact canonical factors {@code teller ÷ noemer} as rationals, so a restatement that
+    /** {@code v} restated by the canonical factors {@code counter ÷ denominator} as rationals, so a restatement that
      *  does not terminate stays exact until a collapse point (RUNTIME-SEMANTICS ch. 2.1, 2.6); a leeg value and a value
      *  that is no number pass unchanged. */
     public static Object restateExact(Object v, BigDecimal counter, BigDecimal denominator) {
         return v instanceof BigDecimal || v instanceof Breuk
                 ? RegelSpraakRuntime.rsGedeeld(RegelSpraakRuntime.rsMaal(v, counter), denominator) : v;
-    }
-
-    /** {@code v} restated by the single ratio {@code factor} of two units, a rate whose factors are not both known; a
-     *  leeg value and a value that is no number pass unchanged. */
-    public static Object restate(Object v, BigDecimal factor) {
-        return v instanceof BigDecimal || v instanceof Breuk ? RegelSpraakRuntime.rsMaal(v, factor) : v;
     }
 
     // ---------------- dates ----------------

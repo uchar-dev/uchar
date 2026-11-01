@@ -73,10 +73,7 @@ final class RecordingRendering {
                 yield ClosureRendering.implementation(a.function()).of(x);
             }
             case Term.Restate h -> {
-                Object v = value(h.term(), w);
-                ClosureRendering.Implementation g = ClosureRendering.implementation(h.function());
-                yield h.denominator() != null ? g.of(new Object[]{v, h.counter(), h.denominator()})
-                        : g.of(new Object[]{v, h.counter()});
+                yield ComputeHelpers.restateExact(value(h.term(), w), h.counter(), h.denominator());
             }
             case Term.Division d -> {
                 Object lv = value(d.left(), w), rv = value(d.right(), w);

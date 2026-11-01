@@ -56,9 +56,9 @@ class UnitFactorTest {
     private static final Unit M_TIMES_M = Unit.times(M, M);
     /** The bare corpus shape (WF-038 tijdsduurparameter): no system, no canonical, no factor. */
     private static final Unit BARE_CORPUS_FORM = new Unit("jaar", null, null, null);
-    private static final Unit EUR_PER_JR = Unit.compound(EUR, JR);
-    private static final Unit EUR_PER_MND = Unit.compound(EUR, MND);
-    private static final Unit EUR_PER_KG = Unit.compound(EUR, KG);
+    private static final Unit EUR_PER_JR = Unit.divide(EUR, JR);
+    private static final Unit EUR_PER_MND = Unit.divide(EUR, MND);
+    private static final Unit EUR_PER_KG = Unit.divide(EUR, KG);
     /** The wire shape: a canonical WITHOUT the factor that reaches it. Both fields are nullable in
      *  the schema and no WF rule forbids the combination, so this survives verification. */
     private static final Unit CANONICAL_WITHOUT_FACTOR = new Unit("x", "Lengte", "m", null);
@@ -66,7 +66,7 @@ class UnitFactorTest {
     /** Every refusal must name BOTH units: a fault that says only "not convertible" leaves the
      *  reader to guess which of the two declarations is the offending one. */
     private static void refusesWithBothNames(Unit van, Unit to) {
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> van.conversionFactorTo(to),
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> van.exactRestateFactors(to),
                 () -> "de factorvraag " + van.rendering() + " -> " + to.rendering() + " moet weigeren, niet 1 geven");
         String message = ex.getMessage();
         assertTrue(message.contains("'" + van.rendering() + "'"),
@@ -119,7 +119,7 @@ class UnitFactorTest {
     @Test void canonical_without_factor_clamps_also_via_the_predicate() {
         assertTrue(CANONICAL_WITHOUT_FACTOR.convertibleTo(M), "de buitenste poortwacht laat deze vorm door");
         IllegalStateException direct = assertThrows(IllegalStateException.class,
-                () -> CANONICAL_WITHOUT_FACTOR.conversionFactorTo(M));
+                () -> CANONICAL_WITHOUT_FACTOR.exactRestateFactors(M));
         assertTrue(direct.getMessage().contains("zonder gedeclareerde factorNaarCanoniek"),
                 () -> "de melding moet de ontbrekende factor noemen, niet de inwisselbaarheid: " + direct.getMessage());
         IllegalStateException viaPredicate = assertThrows(IllegalStateException.class,
@@ -131,7 +131,7 @@ class UnitFactorTest {
     /** No target is no factor either. Every caller in the repo passes a non-null target (measured);
      *  the precondition keeps that path dead instead of assuming it is. */
     @Test void missing_target_refuses_the_factor_question() {
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> EUR.conversionFactorTo(null));
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> EUR.exactRestateFactors(null));
         assertTrue(ex.getMessage().contains("'EUR'") && ex.getMessage().contains("(geen eenheid)"),
                 () -> "de melding moet de bron en het ontbrekende doel noemen: " + ex.getMessage());
     }
@@ -140,16 +140,12 @@ class UnitFactorTest {
 
     /** jr -> mnd is 12: the declared factors divide, they do not collapse to the identity. */
     @Test void year_to_month_stays_twelve() {
-        assertEquals(0, JR.conversionFactorTo(MND).compareTo(new BigDecimal("12")),
-                () -> "jr -> mnd moet 12 blijven, kreeg " + JR.conversionFactorTo(MND));
+        fraction("12/1", JR.exactRestateFactors(MND));
         assertTrue(JR.requiredConversion(MND), "jr -> mnd is een echte omrekening");
     }
 
-    /** mnd -> jr is the non-terminating inverse, pre-rounded on DECIMAL64 — the single-ratio path
-     *  the exact {num, den} pair exists to avoid, and it must keep its value. */
+    /** mnd -> jr is the non-terminating inverse: a numerator and a denominator, no quotient. */
     @Test void month_to_year_stays_a_twelfth() {
-        assertEquals("0.08333333333333333", MND.conversionFactorTo(JR).toPlainString(),
-                "mnd -> jr moet 1/12 op DECIMAL64 blijven");
         BigDecimal[] exact = MND.exactRestateFactors(JR);
         assertEquals(0, exact[0].compareTo(BigDecimal.ONE), "exacte teller");
         assertEquals(0, exact[1].compareTo(new BigDecimal("12")), "exacte noemer");
@@ -159,9 +155,70 @@ class UnitFactorTest {
      *  twelve of it. The numerators share an abbreviation, so a numerator-only reading would give 1
      *  here — the shape a careless guard loses first. */
     @Test void denominator_inversion_stays_standing() {
-        assertEquals(0, EUR_PER_MND.conversionFactorTo(EUR_PER_JR).compareTo(new BigDecimal("12")),
-                () -> "EUR/mnd -> EUR/jr moet 12 blijven, kreeg " + EUR_PER_MND.conversionFactorTo(EUR_PER_JR));
+        fraction("12/1", EUR_PER_MND.exactRestateFactors(EUR_PER_JR));
         assertTrue(EUR_PER_MND.requiredConversion(EUR_PER_JR), "EUR/mnd -> EUR/jr is een echte omrekening");
+    }
+
+    /** A factor just above 1 is a factor: the answer comes from numerator and denominator, not from a ratio that
+     *  rounds to 1. The same holds for a factor just below 1, and for two units whose factors differ past the rounding. */
+    @Test void a_factor_that_rounds_to_one_requires_a_conversion() {
+        Unit base = new Unit("c", "Stelsel", "c", BigDecimal.ONE);
+        Unit above = new Unit("a", "Stelsel", "c", new BigDecimal("1.00000000000000000001"));
+        Unit below = new Unit("b", "Stelsel", "c", new BigDecimal("0.99999999999999999999"));
+        assertTrue(above.requiredConversion(base));
+        assertTrue(base.requiredConversion(above));
+        assertTrue(below.requiredConversion(base));
+        assertTrue(above.requiredConversion(below));
+        assertFalse(above.requiredConversion(new Unit("a2", "Stelsel", "c", new BigDecimal("1.00000000000000000001"))),
+                "twee namen met één factor vragen geen omrekening");
+    }
+
+    /** The fields of a declared unit belong to one factor with exponent 1. On any other unit they would read a part as
+     *  the whole ("€" for "€/jr", "1" for "1/dg"), so they refuse, and the spelling comes from {@code rendering}. */
+    @Test void the_fields_of_a_declared_unit_refuse_any_other_unit() {
+        assertEquals("kg", TON.canonical());
+        assertEquals("t", TON.abbreviation());
+        assertEquals("Gewicht", TON.system());
+        assertEquals(0, TON.factorToCanonical().compareTo(new BigDecimal("1000")));
+        for (Unit other : List.of(EUR_PER_JR, M_TIMES_M, Unit.divide(null, JR), Unit.times(EUR, M))) {
+            for (java.util.function.Function<Unit, Object> field : List.<java.util.function.Function<Unit, Object>>of(
+                    Unit::abbreviation, Unit::system, Unit::canonical, Unit::factorToCanonical)) {
+                IllegalStateException ex = assertThrows(IllegalStateException.class, () -> field.apply(other));
+                assertTrue(ex.getMessage().contains("'" + other.rendering() + "'"), ex.getMessage());
+            }
+        }
+    }
+
+    /** A day kind names a declared unit. "werkdag/m" is no day kind, although its numerator spells one. */
+    @Test void a_day_kind_is_read_from_a_declared_unit_only() {
+        dev.uchar.regelspraak.model.RegelSpraakModel model = new dev.uchar.regelspraak.model.RegelSpraakModel();
+        model.dayKindPerUnit.put("werkdag", "werkdag");
+        Unit werkdag = new Unit("werkdag", null, null, null);
+        assertEquals("werkdag", TimeCalculation.dayKindForUnit(model, werkdag));
+        assertNull(TimeCalculation.dayKindForUnit(model, Unit.divide(werkdag, M)));
+        assertNull(TimeCalculation.dayKindForUnit(model, Unit.times(werkdag, M)));
+        assertNull(TimeCalculation.dayKindForUnit(model, werkdag.toThePower(2)));
+    }
+
+    /** The percent reading asks the factors: "%" and "%/jr" are percentages, "%·m", "%^2" and "1/%" are not. */
+    @Test void a_percentage_is_one_percent_factor_over_any_denominator() {
+        Unit percent = new Unit("%", null);
+        assertTrue(percent.isPercentage());
+        assertTrue(Unit.divide(percent, JR).isPercentage());
+        assertTrue(Unit.divide(Unit.divide(percent, JR), M).isPercentage());
+        assertFalse(Unit.times(percent, M).isPercentage());
+        assertFalse(percent.toThePower(2).isPercentage());
+        assertFalse(Unit.divide(null, percent).isPercentage());
+        assertFalse(EUR.isPercentage());
+    }
+
+    /** The dimension in the classes of the factors: what the fault of two irreconcilable units names. */
+    @Test void a_dimension_is_spelled_in_the_classes_of_the_factors() {
+        assertEquals("kg", TON.dimensionRendering());
+        assertEquals("EUR/mnd", EUR_PER_JR.dimensionRendering());
+        assertEquals("m^2", Unit.times(M, CM).dimensionRendering());
+        assertEquals("1", Unit.ofParts(List.of(new Unit("km", "Lengte", "m", new BigDecimal("1000")), M.toThePower(-1))).dimensionRendering(),
+                "km/m is twee factoren en geen klasse");
     }
 
     /** IR-SPEC ch. 2.5, point 5: the spelling of a unit comes from its factors. */
@@ -212,14 +269,13 @@ class UnitFactorTest {
         assertTrue(square.convertibleTo(cmSquare));
         fraction("1/0.0001", square.exactRestateFactors(cmSquare));
         fraction("0.0001/1", cmSquare.exactRestateFactors(square));
-        assertEquals(0, square.conversionFactorTo(cmSquare).compareTo(new BigDecimal("10000")));
         assertTrue(Unit.times(CM, M).convertibleTo(square), "cm·m heeft de dimensie van m^2, in welke spelling ook");
     }
 
     /** Rule 1 is about the dimension: m/s is not s/m, and m^2/s is not m^2. */
     @Test void a_dimension_is_a_class_with_its_exponent() {
-        Unit perSecond = Unit.compound(M, new Unit("s", "Tijd"));
-        assertFalse(perSecond.convertibleTo(Unit.reciprocal(perSecond)));
+        Unit perSecond = Unit.divide(M, new Unit("s", "Tijd"));
+        assertFalse(perSecond.convertibleTo(Unit.divide(null, perSecond)));
         assertFalse(Unit.divide(Unit.times(M, M), new Unit("s", "Tijd")).convertibleTo(Unit.times(M, M)));
     }
 
@@ -253,14 +309,14 @@ class UnitFactorTest {
     /** Rule 8: a fold over a timeline raises the one negative factor one power. */
     @Test void a_time_fold_raises_the_one_negative_factor() {
         assertEquals("EUR", EUR_PER_JR.afterTimeFold().rendering());
-        assertNull(Unit.reciprocal(JR).afterTimeFold());
-        Unit perDaySquared = Unit.divide(Unit.compound(EUR, DG), DG);
+        assertNull(Unit.divide(null, JR).afterTimeFold());
+        Unit perDaySquared = Unit.divide(Unit.divide(EUR, DG), DG);
         assertEquals("EUR/dg^2", perDaySquared.rendering());
         assertEquals("EUR/dg", perDaySquared.afterTimeFold().rendering());
         assertEquals("EUR", EUR.afterTimeFold().rendering());
-        Unit twoBelow = Unit.divide(Unit.compound(EUR, DG), M);
+        Unit twoBelow = Unit.divide(Unit.divide(EUR, DG), M);
         assertEquals(twoBelow, twoBelow.afterTimeFold(), "welke factor stijgt, zegt alleen het rooster");
-        assertEquals("dg", Unit.compound(EUR, DG).negativeAtom().rendering());
+        assertEquals("dg", Unit.divide(EUR, DG).negativeAtom().rendering());
         assertNull(twoBelow.negativeAtom());
     }
 
@@ -269,14 +325,14 @@ class UnitFactorTest {
         var month = dev.uchar.regelspraak.model.RegelSpraakModel.Granularity.MAAND;
         var day = dev.uchar.regelspraak.model.RegelSpraakModel.Granularity.DAG;
         Unit mnd = new Unit("mnd", "Tijd");
-        Unit perMeterPerMonth = Unit.divide(Unit.compound(EUR, M), mnd);
+        Unit perMeterPerMonth = Unit.divide(Unit.divide(EUR, M), mnd);
         assertEquals("EUR/m/mnd", perMeterPerMonth.rendering());
         assertEquals("EUR/m", TimeCalculation.afterTimeFold(perMeterPerMonth, month, null).rendering());
-        Unit perMeterPerDay = Unit.divide(Unit.compound(EUR, DG), M);
+        Unit perMeterPerDay = Unit.divide(Unit.divide(EUR, DG), M);
         assertEquals("EUR/m", TimeCalculation.afterTimeFold(perMeterPerDay, day, null).rendering());
         assertEquals(perMeterPerDay, TimeCalculation.afterTimeFold(perMeterPerDay, month, null),
                 "geen factor van het rooster: de eenheid blijft staan, en de schrijfgrens weigert");
-        assertEquals("EUR", TimeCalculation.afterTimeFold(Unit.compound(EUR, DG), month, null).rendering(),
+        assertEquals("EUR", TimeCalculation.afterTimeFold(Unit.divide(EUR, DG), month, null).rendering(),
                 "één negatieve factor stijgt ook zonder het rooster, zoals altijd");
     }
 
@@ -285,7 +341,7 @@ class UnitFactorTest {
         Unit dag = new Unit("dg", "Tijd");
         assertEquals("DAYS", dev.uchar.regelspraak.core.TimeCalculation.chronoUnit(dag));
         assertNull(dev.uchar.regelspraak.core.TimeCalculation.chronoUnit(Unit.times(dag, dag)));
-        assertNull(dev.uchar.regelspraak.core.TimeCalculation.chronoUnit(Unit.compound(dag, M)));
+        assertNull(dev.uchar.regelspraak.core.TimeCalculation.chronoUnit(Unit.divide(dag, M)));
     }
 
     // ---- wat ongemoeid blijft: het predikaat ----------------------------------------------------

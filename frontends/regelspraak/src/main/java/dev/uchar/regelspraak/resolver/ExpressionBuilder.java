@@ -838,7 +838,7 @@ final class ExpressionBuilder {
         Unit van = sub.type() == null ? null : sub.type().unitOf();
         if (van == null || target == null || !van.convertibleTo(target)) return null;
         java.math.BigDecimal[] f = van.exactRestateFactors(target);
-        if (f == null || f[0].remainder(f[1]).signum() == 0) return null;
+        if (f[0].remainder(f[1]).signum() == 0) return null;
         // a literal's count is known, so its restatement is too: 12 mnd is exactly 1 jr
         java.math.BigDecimal[] r = sub instanceof Expr.Literal l ? dev.uchar.regelspraak.model.RationalParser.of(l.valueText()) : null;
         if (r != null && r[0].multiply(f[0]).remainder(r[1].multiply(f[1])).signum() == 0) return null;
@@ -2828,7 +2828,7 @@ final class ExpressionBuilder {
         String unit = TimeCalculation.chronoUnit(e);
         if (unit == null)
             return TimeCalculation.dayKindForUnit(model, e) != null ? null
-                    : new Typing.Coded("RGS-087", params("category", category, "unit", e.abbreviation()));
+                    : new Typing.Coded("RGS-087", params("category", category, "unit", e.rendering()));
         return Typing.subDayUnit(unit) && arguments.stream().anyMatch(a -> a.type() instanceof Datatype.DateInDays)
                 ? new Typing.Coded("RGS-088", params("category", category)) : null;
     }

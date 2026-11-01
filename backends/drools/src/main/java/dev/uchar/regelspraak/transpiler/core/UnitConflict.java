@@ -47,7 +47,7 @@ import dev.uchar.regelspraak.model.Unit;
  * The two §7.1 goldens that meet the pair rest on a derivation, not an exemption —
  * {@link EffectiveUnit#afterTimeFolding} makes a TOTAAL over a timeline-declared operand yield the numerator, which
  * is what the fold actually produces — so the pair never reaches this fence there, and everywhere else it faults.
- * A unit that declares a canonical but no factor is NOT exempt: {@link Unit#conversionFactorTo} already
+ * A unit that declares a canonical but no factor is NOT exempt: {@link Unit#exactRestateFactors} already
  * faults there (the WF-092 wire form), and it must keep doing so.
  */
 public final class UnitConflict extends RuntimeException {
@@ -57,8 +57,8 @@ public final class UnitConflict extends RuntimeException {
     private final String site;
 
     private UnitConflict(Unit from, Unit destination, String site) {
-        super("onverenigbare eenheden bij " + site + ": '" + from.rendering() + "' (canoniek " + from.canonical()
-                + ") herschaalt niet naar '" + destination.rendering() + "' (canoniek " + destination.canonical()
+        super("onverenigbare eenheden bij " + site + ": '" + from.rendering() + "' (canoniek " + from.dimensionRendering()
+                + ") herschaalt niet naar '" + destination.rendering() + "' (canoniek " + destination.dimensionRendering()
                 + ") — er bestaat geen omrekenfactor");
         this.from = from;
         this.destination = destination;

@@ -99,7 +99,7 @@ public final class Typing {
                     if (l instanceof Datatype.DateInDays && subDayUnit(TimeCalculation.chronoUnit(r)))
                         yield Result.error(new Coded("RGS-280", params("operation", onName)));
                     if (dayKindUnitRight || TimeCalculation.chronoUnit(r) != null) yield Result.ok(l);
-                    yield Result.error(unknownDurationUnit(onName, rn.unitOf().abbreviation()).frame("operation", "operation", onName));
+                    yield Result.error(unknownDurationUnit(onName, rn.unitOf().rendering()).frame("operation", "operation", onName));
                 }
                 yield numericBinary(l, r, onName, lLit, rLit);
             }
@@ -505,7 +505,7 @@ public final class Typing {
         Unit e = r.unitOf();
         if (e == null)
             return new Coded("RGS-299", params("operation", op));
-        return unknownDurationUnit(op, e.abbreviation());
+        return unknownDurationUnit(op, e.rendering());
     }
 
     /** Whether a {@link TimeCalculation#chronoUnit} is shorter than a day (the verifier's {@code time_unit_sub_day}). */

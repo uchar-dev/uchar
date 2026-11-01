@@ -171,6 +171,20 @@ class TypeSystemRefusalWitnessTest {
         assertEquals("0.5", half.factorToCanonical().toPlainString());
     }
 
+    /** The two negative witnesses of a day kind over a unit, refused at load in the verifier's sentence at its pointer:
+     *  a unit that only starts with the spelling of a day kind is no day kind, and the sentence names the whole unit. */
+    @Test void a_day_kind_over_a_unit_is_refused_at_load() throws Exception {
+        Map<String, String[]> witnesses = Map.of(
+                "wf035-day-kind-over-a-unit", new String[]{"/rules/rules/0/versions/0/value/right", "the duration unit 'werkdag/m'"},
+                "wf038-day-kind-over-a-unit", new String[]{"/rules/rules/0/versions/0/value", "'werkdag/m'"});
+        for (var w : witnesses.entrySet()) {
+            JsonNode ir = JSON.readTree(Path.of("..", "..", "corpus", "negative", w.getKey(), "ir.json").toFile());
+            IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.load(ir), w.getKey());
+            assertTrue(e.getMessage().contains("at '" + w.getValue()[0] + "':") && e.getMessage().contains(w.getValue()[1]),
+                    w.getKey() + ": " + e.getMessage());
+        }
+    }
+
     @Test void a_rational_becomes_the_decimal_factor_of_the_record_and_stays_in_the_system() throws Exception {
         // the record's decimal is the fraction rounded to 16 significant digits, a whole number exactly; the unit
         // system keeps the fraction itself

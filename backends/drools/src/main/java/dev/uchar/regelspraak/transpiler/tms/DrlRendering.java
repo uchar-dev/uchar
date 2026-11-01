@@ -997,9 +997,8 @@ final class DrlRendering {
                 case Term.Choice k -> new Expr("(" + bool(k.condition(), c) + " ? (Object) " + value(k.then(), c).text()
                         + " : (Object) " + value(k.otherwise(), c).text() + ")", Object.class);
                 case Term.Call a -> call(a.function(), a.arguments().stream().map(x -> value(x, c)).toList());
-                case Term.Restate h -> call(h.function(), h.denominator() == null
-                        ? List.of(value(h.term(), c), constant(h.counter()))
-                        : List.of(value(h.term(), c), constant(h.counter()), constant(h.denominator())));
+                case Term.Restate h -> call(StaticFunction.RESTATE_EXACT,
+                        List.of(value(h.term(), c), constant(h.counter()), constant(h.denominator())));
                 case Term.Division d -> {
                     Expr left = value(d.left(), c), right = value(d.right(), c);
                     yield call(d.function(), List.of(left, right, depositFlag(d.depositFlag(), c)));

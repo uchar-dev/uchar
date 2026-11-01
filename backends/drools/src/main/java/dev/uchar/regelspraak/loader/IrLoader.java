@@ -1379,7 +1379,7 @@ public final class IrLoader {
         String presentation = optText(n, path, "presentation");
         if (presentation != null && !presentation.equals("percentage"))
             throw new DocumentError(path + "/presentation", unknownValue("presentation", presentation));
-        boolean percent = unit != null && unit.abbreviation().equals("%");
+        boolean percent = unit != null && unit.isPercentage();
         if (percent && sign != Datatype.Sign.ONBEPAALD)
             throw new DocumentError(path + "/sign", PERCENT_WITH_SIGN);
         if (!percent && presentation != null) throw new DocumentError(path + "/presentation", TAG_WITHOUT_PERCENT);
@@ -2975,8 +2975,8 @@ public final class IrLoader {
             if (time != null) {
                 if (SUB_DAY.contains(time) && l instanceof Datatype.DateInDays)
                     throw new DocumentError(p, SUB_DAY_ON_DAY_DATE);
-            } else if (m.dayKindForUnit(u.abbreviation()) == null)
-                throw new DocumentError(p + "/right", dateStepUnknownUnit(abbreviationOf(u)));
+            } else if (TimeCalculation.dayKindForUnit(m, u) == null)
+                throw new DocumentError(p + "/right", dateStepUnknownUnit(u.rendering()));
         } else if (knownType(r) && !r.isNumberLike())
             throw new DocumentError(p + "/right", dateStepOperandRefusal(r));
         else if (knownType(r)) throw new DocumentError(p + "/right", DATE_STEP_WITHOUT_TIME_UNIT);
@@ -3011,8 +3011,8 @@ public final class IrLoader {
         if (time != null) {
             if (SUB_DAY.contains(time) && (ta instanceof Datatype.DateInDays || tb instanceof Datatype.DateInDays))
                 throw new DocumentError(p, durationSubDayOnDayDates(k));
-        } else if (m.dayKindForUnit(u.abbreviation()) == null)
-            throw new DocumentError(p, durationUnknownUnit(k, abbreviationOf(u)));
+        } else if (TimeCalculation.dayKindForUnit(m, u) == null)
+            throw new DocumentError(p, durationUnknownUnit(k, u.rendering()));
     }
 
     /** The calendar units below a day, as {@link TimeCalculation#chronoUnit} names them. */
@@ -3025,10 +3025,6 @@ public final class IrLoader {
     /** Whether the document gives this type: an absent or unknown one defers, as the verifier's does. */
     private static boolean knownType(Datatype t) {
         return t != null && !t.isUnknown();
-    }
-
-    private static String abbreviationOf(Unit u) {
-        return u.abbreviation() == null ? "?" : u.abbreviation();
     }
 
     /** The verifier's name of a datatype in these sentences ({@code datatype_kind}); an unknown type is never named,

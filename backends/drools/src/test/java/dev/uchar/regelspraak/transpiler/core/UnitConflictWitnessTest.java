@@ -104,6 +104,31 @@ class UnitConflictWitnessTest {
         UnitConflict.requireRescalable(null, null, "witness");
     }
 
+    /** Half a conversion pair at a restatement: the two branches fault while the model is built, in the sentence of
+     *  {@link Unit#exactRestateFactors}, and the fault is no {@link UnitConflict}: the two units do convert, and what is
+     *  missing is the factor. */
+    @Test void half_a_conversion_pair_at_a_restatement_faults_in_both_branches() throws Exception {
+        JsonNode honest = JSON.readTree(Files.readString(CORPUS.resolve("jutterswet-sleepbaan").resolve("ir.json")));
+        JsonNode half = honest.deepCopy();
+        int stripped = withoutFactorOf(half, "km");
+        assertTrue(stripped > 0, "het document draagt de eenheid km");
+        assertEquals(null, catchTms(honest), "het eerlijke document lowert");
+        String text = "onbekende omrekenfactor van 'km' (null): canoniek 'm' zonder gedeclareerde factorNaarCanoniek";
+        for (Throwable t : List.of(catchTms(half), catchDrl(half))) {
+            assertEquals(IllegalStateException.class, t.getClass(), describe(t));
+            assertEquals(text, t.getMessage());
+        }
+    }
+
+    /** {@code node} with the factor taken off every unit {@code abbreviation}, the canonical left on; how many it took. */
+    private static int withoutFactorOf(JsonNode node, String abbreviation) {
+        int n = 0;
+        if (node instanceof com.fasterxml.jackson.databind.node.ObjectNode o && abbreviation.equals(o.path("abbreviation").asText())
+                && o.remove("factorToCanonical") != null) n++;
+        for (JsonNode child : node) n += withoutFactorOf(child, abbreviation);
+        return n;
+    }
+
     @Test void a_product_against_another_dimension_is_a_fault() {
         // A product is a unit like any other: €·kg against € has no factor, in either direction.
         Unit product = derivedProduct();
@@ -133,10 +158,10 @@ class UnitConflictWitnessTest {
         // A rate has another dimension. Measured on a document writing m × m into an attribute in m^2/s: ref faults and
         // this backend does. The same numerator does not let the pair through.
         Unit product = derivedProduct();
-        Unit sameNumerator = Unit.compound(product, JR);
+        Unit sameNumerator = Unit.divide(product, JR);
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(product, sameNumerator, "witness"));
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(sameNumerator, product, "witness"));
-        Unit otherRate = Unit.compound(EUR, JR);
+        Unit otherRate = Unit.divide(EUR, JR);
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(product, otherRate, "witness"));
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(otherRate, product, "witness"));
     }
@@ -161,7 +186,7 @@ class UnitConflictWitnessTest {
         // place-blind, so an additive join, a write boundary and a comparison between a rate and its numerator
         // all stayed silent while ref and clingo faulted. The repair is the derivation (see the §7.1 test
         // below), not an exemption, so this pair faults again everywhere. Both directions.
-        Unit rate = Unit.compound(EUR, JR);
+        Unit rate = Unit.divide(EUR, JR);
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(rate, EUR, "witness"));
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(EUR, rate, "witness"));
         assertThrows(UnitConflict.class, () -> UnitConflict.requireRescalable(rate, KG, "witness"));
@@ -174,7 +199,7 @@ class UnitConflictWitnessTest {
         // grid units of its span, so a €/mnd rate is multiplied by a COUNT of months and what survives is €.
         // Without this the fold would answer €/mnd for a result that is €, and every restatement downstream
         // would be handed a pair with no factor — which is exactly what the two corpus goldens did.
-        Unit rate = Unit.compound(EUR, JR);
+        Unit rate = Unit.divide(EUR, JR);
         ObjectType withTimeline = new ObjectType("Vondst");
         withTimeline.attributes.put("tarief", num(rate));
         withTimeline.attributeGranularity.put("tarief", RegelSpraakModel.Granularity.MAAND);
@@ -193,7 +218,7 @@ class UnitConflictWitnessTest {
         // and ref faults on the others in as many words. Restricting the collapse to TOTAAL left SOM answering
         // the rate for an already-folded value: measured 576 for 48 into a €/jr doel (the mnd->jr factor applied
         // twice over), where ref faults. Same declaration, same shape, only the operator differs.
-        Unit rate = Unit.compound(EUR, JR);
+        Unit rate = Unit.divide(EUR, JR);
         ObjectType ot = new ObjectType("Vondst");
         ot.attributes.put("tarief", num(rate));
         ot.attributeGranularity.put("tarief", RegelSpraakModel.Granularity.MAAND);
@@ -206,7 +231,7 @@ class UnitConflictWitnessTest {
         // A selecting fold sums nothing, so no denominator is consumed and none may be dropped. Measured over
         // the corpus: every fold whose operand is timeline-declared is a TOTAAL, so this is the boundary of a
         // rule that was scoped by measurement rather than by guess.
-        Unit rate = Unit.compound(EUR, JR);
+        Unit rate = Unit.divide(EUR, JR);
         ObjectType ot = new ObjectType("Vondst");
         ot.attributes.put("tarief", num(rate));
         ot.attributeGranularity.put("tarief", RegelSpraakModel.Granularity.MAAND);

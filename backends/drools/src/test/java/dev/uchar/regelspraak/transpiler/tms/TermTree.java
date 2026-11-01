@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.model.Unit;
+import dev.uchar.regelspraak.transpiler.tms.plan.StaticFunction;
 import dev.uchar.regelspraak.transpiler.tms.plan.Term;
 
 import java.math.BigDecimal;
@@ -25,8 +26,8 @@ final class TermTree {
                     + "] in [" + tree(l.body()) + "]";
             case Term.Choice k -> "Choice(" + tree(k.condition()) + ", " + tree(k.then()) + ", " + tree(k.otherwise()) + ")";
             case Term.Call a -> a.function() + list(a.arguments());
-            case Term.Restate h -> "Restate " + h.function() + " " + unit(h.from()) + "->" + unit(h.destination())
-                    + " " + h.counter() + (h.denominator() == null ? "" : "/" + h.denominator()) + " (" + tree(h.term()) + ")";
+            case Term.Restate h -> "Restate " + StaticFunction.RESTATE_EXACT + " " + unit(h.from()) + "->" + unit(h.destination())
+                    + " " + h.counter() + "/" + h.denominator() + " (" + tree(h.term()) + ")";
             case Term.Division d -> "Division " + d.function() + " probe " + d.depositFlag() + " (" + tree(d.left()) + ", "
                     + tree(d.right()) + ")";
             case Term.SquareRoot w -> "SquareRoot " + w.function() + " probe " + w.depositFlag() + " (" + tree(w.radicand()) + ")";

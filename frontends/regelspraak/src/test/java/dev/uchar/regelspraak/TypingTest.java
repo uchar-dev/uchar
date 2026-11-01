@@ -149,7 +149,7 @@ class TypingTest {
     // §3.3.5 a Percentage always carries the "%" unit, optionally a rate "%/jr"
     static Datatype pct()        { return new Datatype.Percentage(true, 0); }
     static Datatype pctPerYear() { return new Datatype.Percentage(true, 0,
-            Unit.compound(Datatype.Percentage.PERCENT, new Unit("jr", "Tijd"))); }
+            Unit.divide(Datatype.Percentage.PERCENT, new Unit("jr", "Tijd"))); }
 
     @Test void percentage_always_carries_the_percent_unit() {
         assertEquals("%", pct().unitOf().abbreviation());
@@ -177,7 +177,7 @@ class TypingTest {
 
     @Test void times_rate_time_its_denominator_unit_cancels_to_the_numerator() {
         // €/jr maal jr = € (the denominator cancels) — was Onbekend
-        var res = Typing.compute(BinOp.MAAL, numUnit(Unit.compound(EUR, JR)), numUnit(JR));
+        var res = Typing.compute(BinOp.MAAL, numUnit(Unit.divide(EUR, JR)), numUnit(JR));
         assertTrue(res.ok());
         assertEquals("EUR", res.type().unitOf().abbreviation());
         assertNull(res.type().unitOf().denominator(), "de noemer moet weggevallen zijn");
@@ -199,9 +199,9 @@ class TypingTest {
         Unit m = new Unit("m", "Lengte");
         var res = Typing.compute(BinOp.MAAL, numUnit(EUR), numUnit(m));
         assertTrue(res.ok());
-        assertEquals("EUR·m", res.type().unitOf().abbreviation(), "het productunit (factoren gesorteerd)");
+        assertEquals("EUR·m", res.type().unitOf().rendering(), "het productunit (factoren gesorteerd)");
         var reversed = Typing.compute(BinOp.MAAL, numUnit(m), numUnit(EUR));   // commutatief: m maal € == € maal m
-        assertEquals("EUR·m", reversed.type().unitOf().abbreviation());
+        assertEquals("EUR·m", reversed.type().unitOf().rendering());
     }
     @Test void product_unit_is_commutative_and_associative_for_three_factors() {
         // §4.4 Tabel 11: unit multiplication is commutative AND associative, so (€·m)·km and €·(m·km) must denote
@@ -211,8 +211,8 @@ class TypingTest {
         var abc = Typing.compute(BinOp.MAAL, ab, numUnit(km)).type();            // (€·m) maal km
         var bc  = Typing.compute(BinOp.MAAL, numUnit(m), numUnit(km)).type();    // m maal km = m·km
         var abc2 = Typing.compute(BinOp.MAAL, numUnit(EUR), bc).type();          // € maal (m·km)
-        assertEquals(abc.unitOf().abbreviation(), abc2.unitOf().abbreviation(), "associatief: één canoniek productunit");
-        assertEquals("EUR·km·m", abc.unitOf().abbreviation(), "gesorteerde factor-multiset");
+        assertEquals(abc.unitOf().rendering(), abc2.unitOf().rendering(), "associatief: één canoniek productunit");
+        assertEquals("EUR·km·m", abc.unitOf().rendering(), "gesorteerde factor-multiset");
         assertNull(Typing.assignment(abc, abc2), "dezelfde 3-weg producteenheid toekennen is geen fout");
     }
 
@@ -247,50 +247,62 @@ class TypingTest {
     }
 
     @Test void a_reciprocal_times_its_unit_has_no_unit_and_times_another_unit_is_the_rate() {
-        Unit perYear = Unit.reciprocal(JR);
+        Unit perYear = Unit.divide(null, JR);
         var cancelled = Typing.compute(BinOp.MAAL, numUnit(perYear), numUnit(JR));
         assertTrue(cancelled.ok(), cancelled::error);
         assertNull(cancelled.type().unitOf());
         var rate = Typing.compute(BinOp.MAAL, numUnit(EUR), numUnit(perYear));
         assertTrue(rate.ok(), rate::error);
-        assertEquals(Unit.compound(EUR, JR), rate.type().unitOf(), "€ · jr⁻¹ is €/jr");
+        assertEquals(Unit.divide(EUR, JR), rate.type().unitOf(), "€ · jr⁻¹ is €/jr");
         var flipped = Typing.compute(BinOp.MAAL, numUnit(perYear), numUnit(EUR));
         assertTrue(flipped.ok(), flipped::error);
-        assertEquals(Unit.compound(EUR, JR), flipped.type().unitOf());
+        assertEquals(Unit.divide(EUR, JR), flipped.type().unitOf());
     }
 
     @Test void the_inverse_of_an_inverse_and_of_a_rate() {
-        var back = Typing.compute(BinOp.GEDEELD_DOOR, num(), numUnit(Unit.reciprocal(JR)));
+        var back = Typing.compute(BinOp.GEDEELD_DOOR, num(), numUnit(Unit.divide(null, JR)));
         assertTrue(back.ok(), back::error);
         assertEquals(JR, back.type().unitOf());
-        var flipped = Typing.compute(BinOp.GEDEELD_DOOR, num(), numUnit(Unit.compound(EUR, JR)));
+        var flipped = Typing.compute(BinOp.GEDEELD_DOOR, num(), numUnit(Unit.divide(EUR, JR)));
         assertTrue(flipped.ok(), flipped::error);
-        assertEquals(Unit.compound(JR, EUR), flipped.type().unitOf());
+        assertEquals(Unit.divide(JR, EUR), flipped.type().unitOf());
     }
 
     @Test void a_reciprocal_converts_by_its_denominator_inverted() {
         Unit dg = new Unit("dg", "Tijd", "dg", java.math.BigDecimal.ONE);
         Unit wk = new Unit("wk", "Tijd", "dg", new java.math.BigDecimal("7"));
-        Unit perDay = Unit.reciprocal(dg), perWeek = Unit.reciprocal(wk);
+        Unit perDay = Unit.divide(null, dg), perWeek = Unit.divide(null, wk);
         assertTrue(perDay.convertibleTo(perWeek));
         assertFalse(perDay.convertibleTo(dg), "E⁻¹ is geen E");
-        assertFalse(perDay.convertibleTo(Unit.compound(EUR, dg)), "1/dg is geen €/dg");
+        assertFalse(perDay.convertibleTo(Unit.divide(EUR, dg)), "1/dg is geen €/dg");
         java.math.BigDecimal[] f = perWeek.exactRestateFactors(perDay);
         assertEquals(0, f[0].multiply(new java.math.BigDecimal("7")).compareTo(f[1]), "1/wk naar 1/dg is de factor 1/7");
-        assertEquals(0, perDay.conversionFactorTo(perWeek).compareTo(new java.math.BigDecimal("7")));
+        java.math.BigDecimal[] back = perDay.exactRestateFactors(perWeek);
+        assertEquals(0, back[0].compareTo(new java.math.BigDecimal("7").multiply(back[1])), "1/dg naar 1/wk is de factor 7");
+    }
+
+    /** A date step in a unit that is no time unit names that whole unit, not the numerator of it. */
+    @Test void a_date_step_in_a_rate_names_the_whole_unit() {
+        var r = Typing.compute(BinOp.PLUS, date(), numUnit(Unit.divide(EUR, JR)));
+        assertFalse(r.ok());
+        assertEquals("EUR/jr", r.failure().params().get("unit"), r::error);
+        assertTrue(r.error().contains("'EUR/jr'"), r::error);
+        var perDay = Typing.compute(BinOp.PLUS, date(), numUnit(Unit.divide(null, new Unit("dg", "Tijd"))));
+        assertFalse(perDay.ok());
+        assertEquals("1/dg", perDay.failure().params().get("unit"), perDay::error);
     }
 
     @Test void times_a_rate_and_another_unit_is_their_product() {
         // €/jr maal m: de eenheid is de lijst van beide, met de noemer erin (ch. 2.6, regel 2).
         Unit m = new Unit("m", "Lengte");
-        var res = Typing.compute(BinOp.MAAL, numUnit(Unit.compound(EUR, JR)), numUnit(m));
+        var res = Typing.compute(BinOp.MAAL, numUnit(Unit.divide(EUR, JR)), numUnit(m));
         assertTrue(res.ok(), res::error);
         assertEquals("EUR·m/jr", res.type().unitOf().rendering());
     }
 
     @Test void divided_by_a_rate_cancels_what_the_two_share() {
         // € gedeeld door €/jr is jr: de € valt weg en de noemer keert om (ch. 2.6, regel 3).
-        var res = Typing.compute(BinOp.GEDEELD_DOOR, numUnit(EUR), numUnit(Unit.compound(EUR, JR)));
+        var res = Typing.compute(BinOp.GEDEELD_DOOR, numUnit(EUR), numUnit(Unit.divide(EUR, JR)));
         assertTrue(res.ok(), res::error);
         assertEquals("jr", res.type().unitOf().rendering());
     }
@@ -316,17 +328,17 @@ class TypingTest {
         assertEquals("m", over.apply(m2, m).rendering());
         assertEquals("m", over.apply(m2, cm).rendering());
         assertEquals("1/m^2", over.apply(null, m2).rendering());
-        assertEquals("€", times.apply(Unit.compound(euro, jaar), mnd).rendering());
-        assertEquals("€", times.apply(Unit.compound(euro, dg), wk).rendering());
-        assertNull(times.apply(Unit.reciprocal(dg), wk));
-        assertNull(times.apply(Unit.reciprocal(wk), dg));
+        assertEquals("€", times.apply(Unit.divide(euro, jaar), mnd).rendering());
+        assertEquals("€", times.apply(Unit.divide(euro, dg), wk).rendering());
+        assertNull(times.apply(Unit.divide(null, dg), wk));
+        assertNull(times.apply(Unit.divide(null, wk), dg));
         assertNull(over.apply(dg, wk));
-        Unit perDayPerMetre = over.apply(Unit.compound(euro, dg), m);
+        Unit perDayPerMetre = over.apply(Unit.divide(euro, dg), m);
         assertEquals("€/dg/m", perDayPerMetre.rendering());
         assertEquals("€", times.apply(times.apply(perDayPerMetre, dg), m).rendering());
-        assertEquals("kg·€/jr^2", times.apply(Unit.compound(euro, jaar), Unit.compound(kg, jaar)).rendering());
-        assertEquals("m·€/jr", times.apply(Unit.compound(euro, jaar), m).rendering());
-        assertEquals("n·€", over.apply(euro, Unit.reciprocal(n)).rendering());
-        assertEquals("dg/€", over.apply(null, Unit.compound(euro, dg)).rendering());
+        assertEquals("kg·€/jr^2", times.apply(Unit.divide(euro, jaar), Unit.divide(kg, jaar)).rendering());
+        assertEquals("m·€/jr", times.apply(Unit.divide(euro, jaar), m).rendering());
+        assertEquals("n·€", over.apply(euro, Unit.divide(null, n)).rendering());
+        assertEquals("dg/€", over.apply(null, Unit.divide(euro, dg)).rendering());
     }
 }

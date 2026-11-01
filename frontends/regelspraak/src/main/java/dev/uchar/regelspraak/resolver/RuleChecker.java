@@ -2594,7 +2594,7 @@ final class RuleChecker {
 
     /** One unit: no denominator (a rate such as "€/jr") and no product of units ("€·m"). */
     private static boolean oneUnit(dev.uchar.regelspraak.model.Unit e) {
-        return e != null && e.denominator() == null && !e.abbreviation().contains("·");
+        return e != null && e.isAtom();
     }
 
     /** The rule half, after the defaults lowering: move the computing writers of X to 'berekende X', lift an

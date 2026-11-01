@@ -4412,7 +4412,7 @@ public final class TmsTranspiler {
      *  factor is 1. */
     private static Term timesFactor(Term t, Unit from, Unit destination, BigDecimal[] factor) {
         return factor[0].compareTo(factor[1]) == 0 ? t
-                : new Term.Restate(StaticFunction.RESTATE_EXACT, t, from, destination, factor[0], factor[1], t.source());
+                : new Term.Restate(t, from, destination, factor[0], factor[1], t.source());
     }
 
     /** The divisor {@code t} of a quotient with the factor the quotient takes (ch. 2.6, rule 3): dividing by the divisor
@@ -4554,19 +4554,16 @@ public final class TmsTranspiler {
         else if (c instanceof Condition.Compound s) for (Condition d : s.components()) dayKindTests(d, out);
     }
 
-    /** {@code t} restated from unit {@code van} into unit {@code destination} (RUNTIME-SEMANTICS ch. 2.6): times the exact
-     *  canonical factors {@code num ÷ den} as rationals where both are known, so a restatement that does not terminate
-     *  stays exact until a collapse point (ch. 2.1), as the reference interpreter restates; times the single ratio of the
-     *  two units otherwise, a rate whose factors are not both known; unchanged where no restatement is due, a unitless
+    /** {@code t} restated from unit {@code van} into unit {@code destination} (RUNTIME-SEMANTICS ch. 2.6): times the
+     *  canonical factors {@code num ÷ den} as rationals, so a restatement that does not terminate stays exact until a
+     *  collapse point (ch. 2.1), as the reference interpreter restates; unchanged where no restatement is due, a unitless
      *  side adopting the other's unit. A leeg value stays leeg and a value that is not a number passes through
      *  ({@link Term.Restate}). Two units that do not convert fault while the model is built ({@link UnitConflict}). */
     private static Term restated(Term t, Unit van, Unit destination, String site) {
         UnitConflict.requireRescalable(van, destination, site);
-        if (van == null || destination == null || !van.convertibleTo(destination) || !van.requiredConversion(destination)) return t;
-        BigDecimal[] exact = van.exactRestateFactors(destination);
-        if (exact != null)
-            return new Term.Restate(StaticFunction.RESTATE_EXACT, t, van, destination, exact[0], exact[1], t.source());
-        return new Term.Restate(StaticFunction.RESTATE, t, van, destination, van.conversionFactorTo(destination), null, t.source());
+        if (van == null || destination == null || !van.requiredConversion(destination)) return t;
+        BigDecimal[] factors = van.exactRestateFactors(destination);
+        return new Term.Restate(t, van, destination, factors[0], factors[1], t.source());
     }
 
     // ---------------- the forms of a value beside the arithmetic ----------------
@@ -7501,7 +7498,7 @@ public final class TmsTranspiler {
             case Term.Restate h -> {
                 Term z = withoutDepositFlag(h.term());
                 return z == h.term() ? h
-                        : new Term.Restate(h.function(), z, h.from(), h.destination(), h.counter(), h.denominator(), h.source());
+                        : new Term.Restate(z, h.from(), h.destination(), h.counter(), h.denominator(), h.source());
             }
             case Term.Division d -> {
                 Term l = withoutDepositFlag(d.left()), r = withoutDepositFlag(d.right());

@@ -121,7 +121,7 @@ public final class TimeCalculation {
      *  <p>The four callers keep their own fall-through to {@link #chronoUnit}: a spelling that is neither a day
      *  kind nor a table entry is still an honest marker/skip there. */
     public static String dayKindForUnit(RegelSpraakModel model, Unit e) {
-        if (e == null || chronoUnit(e) != null) return null;
+        if (e == null || !e.isAtom() || chronoUnit(e) != null) return null;
         return model.dayKindForUnit(e.abbreviation());
     }
 

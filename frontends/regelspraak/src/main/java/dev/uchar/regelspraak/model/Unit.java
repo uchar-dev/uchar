@@ -1,7 +1,6 @@
 package dev.uchar.regelspraak.model;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -26,9 +25,10 @@ import java.util.Objects;
  * target, the product of the powers of the declared factors, so arithmetic and comparison across units (jr vs mnd, €/jr
  * vs €/mnd, m^2 vs cm^2) are scaled rather than computed on raw magnitudes.
  *
- * <p>Where a caller speaks of a numerator and a denominator, {@link #abbreviation}, {@link #system}, {@link #canonical}
- * and {@link #factorToCanonical} describe the factors with a positive exponent, and {@link #denominator} the factors
- * with a negative one, or {@code null} where there are none.
+ * <p>{@link #abbreviation}, {@link #system}, {@link #canonical} and {@link #factorToCanonical} are the fields of a
+ * declared unit, one factor with exponent 1 ({@link #isAtom}), and refuse any other unit: a spelling comes from
+ * {@link #rendering}, and every other question about a unit is a method here. {@link #denominator} is the factors with
+ * a negative exponent, or {@code null} where there are none.
  */
 public record Unit(List<Factor> factors) {
 
@@ -72,6 +72,8 @@ public record Unit(List<Factor> factors) {
     /** The spelling of the numerator of a reciprocal, which holds no factor. */
     private static final String ONE_ABBREVIATION = "1";
 
+    private static final String PERCENT_ABBREVIATION = "%";
+
     public Unit {
         if (factors.isEmpty()) throw new IllegalArgumentException("a unit has at least one factor");
         factors = java.util.Collections.unmodifiableList(new ArrayList<>(factors));
@@ -112,16 +114,9 @@ public record Unit(List<Factor> factors) {
 
     private List<Factor> negatives() { return factors.stream().filter(f -> f.exponent() < 0).toList(); }
 
-    /** A composite (rate) unit: the numerator of one unit over another ("€/jr"). */
-    public static Unit compound(Unit numerator, Unit denominator) {
-        List<Factor> all = new ArrayList<>(numerator.positives());
-        for (Factor f : denominator.factors) all.add(f.inverted());
-        return sorted(all);
-    }
-
     /** E⁻¹, the unit of a unitless number divided by E: "dg" gives "1/dg", "1/dg" gives "dg", "€/dg" gives "dg/€" and
      *  "m^2" gives "1/m^2". */
-    public static Unit reciprocal(Unit e) {
+    private static Unit reciprocal(Unit e) {
         return sorted(e.factors.stream().map(Factor::inverted).toList());
     }
 
@@ -199,6 +194,12 @@ public record Unit(List<Factor> factors) {
     /** One factor with exponent 1: the only unit a calendar table or a canonical table can name. */
     public boolean isAtom() { return factors.size() == 1 && factors.get(0).exponent() == 1; }
 
+    /** The one positive factor is "%", with or without a denominator: the reading that makes a number a percentage. */
+    public boolean isPercentage() {
+        List<Factor> numerator = positives();
+        return numerator.size() == 1 && numerator.get(0).exponent() == 1 && PERCENT_ABBREVIATION.equals(numerator.get(0).abbreviation());
+    }
+
     /** The factors with a negative exponent, in the order of the list. */
     public List<Factor> negativeFactors() { return negatives(); }
 
@@ -226,34 +227,28 @@ public record Unit(List<Factor> factors) {
         return all.isEmpty() ? null : new Unit(all);
     }
 
-    /** The spelling of the numerator: the abbreviation of its one factor, its atoms joined by "·" where it is a
-     *  product, "1" where it holds no factor. */
-    public String abbreviation() {
-        List<Factor> numerator = positives();
-        if (numerator.isEmpty()) return ONE_ABBREVIATION;
-        if (numerator.size() == 1 && numerator.get(0).exponent() == 1) return numerator.get(0).abbreviation();
-        List<String> atoms = new ArrayList<>();
-        for (Factor f : numerator)
-            for (int i = 0; i < f.exponent(); i++) atoms.add(f.abbreviation());
-        return String.join("·", atoms);
+    /** The one factor of a declared unit. Any other unit has no abbreviation, system or canonical of its own: asking
+     *  would read a part of it as the whole. */
+    private Factor atom() {
+        if (!isAtom())
+            throw new IllegalStateException("de eenheid '" + rendering() + "' is geen gedeclareerde eenheid: haar spelling"
+                    + " komt uit rendering(), haar delen uit factors()");
+        return factors.get(0);
     }
 
-    /** The unit system of the numerator's first factor; null where the numerator holds no factor. */
-    public String system() {
-        List<Factor> numerator = positives();
-        return numerator.isEmpty() ? null : numerator.get(0).system();
-    }
+    /** The abbreviation of a declared unit.
+     *  @throws IllegalStateException on any other unit, as {@link #system}, {@link #canonical} and
+     *  {@link #factorToCanonical} do. */
+    public String abbreviation() { return atom().abbreviation(); }
 
-    /** The canonical unit of a numerator of one atom; a product and an empty numerator have none. */
-    public String canonical() { return isSingleAtomNumerator() ? positives().get(0).canonical() : null; }
+    /** The unit system that declares this unit; see {@link #abbreviation}. */
+    public String system() { return atom().system(); }
 
-    /** The factor into the canonical unit of a numerator of one atom; a product and an empty numerator have none. */
-    public BigDecimal factorToCanonical() { return isSingleAtomNumerator() ? positives().get(0).factorToCanonical() : null; }
+    /** The canonical unit this declared unit reduces to; see {@link #abbreviation}. */
+    public String canonical() { return atom().canonical(); }
 
-    private boolean isSingleAtomNumerator() {
-        List<Factor> numerator = positives();
-        return numerator.size() == 1 && numerator.get(0).exponent() == 1;
-    }
+    /** The factor into the canonical unit; see {@link #abbreviation}. */
+    public BigDecimal factorToCanonical() { return atom().factorToCanonical(); }
 
     /** The factors with a negative exponent, inverted, as a unit; null where there are none. */
     public Unit denominator() {
@@ -269,6 +264,13 @@ public record Unit(List<Factor> factors) {
                 : String.join("·", numerator.stream().map(Factor::rendering).toList()));
         for (Factor f : negatives()) b.append('/').append(f.rendering());
         return b.toString();
+    }
+
+    /** The spelling of {@link #dimension}: "€/mnd" for "€/jr" with "jr = 12 mnd", "1" where no class is left. */
+    public String dimensionRendering() {
+        List<Factor> classes = new ArrayList<>();
+        dimension().forEach((c, e) -> classes.add(new Factor(c, null, c, BigDecimal.ONE, e)));
+        return classes.isEmpty() ? ONE_ABBREVIATION : sorted(classes).rendering();
     }
 
     /** The dimension of this unit (ch. 2.6): canonical class to the sum of its exponents, without zeros. */
@@ -301,56 +303,40 @@ public record Unit(List<Factor> factors) {
         return powers;
     }
 
-    /** Multiplier to restate a quantity in THIS unit as a quantity in {@code target}, rounded to one ratio on DECIMAL64:
-     *  jr→mnd is 12, mnd→jr is 1/12, and €/mnd→€/jr is 12 (the denominator jr is 12 of the mnd it replaces).
+    /** The factors {num, den} to restate a quantity in THIS unit as one in {@code target}: multiply by num, then divide
+     *  by den, with one rounding at the end. They are the products of the powers of the factors the units carry: jr→mnd
+     *  is 12/1, €/jr→€/mnd is 1/12, m^2→cm^2 is 10000/1. A factor that the system declares as a fraction without a finite
+     *  decimal ("1/3") is carried here rounded (CONSTRUCTS row 26).
      *
-     *  <p>The caller MUST gate on {@link #convertibleTo}: between two units that do not inter-convert there
-     *  is NO factor, and answering 1 turns a name mismatch into a wrong magnitude instead of a fault. Measured:
-     *  a reference-type copy that lied only in CASE ("KG" against the declared "kg") compares unequal both on
-     *  the abbreviation and on the canonical, so a due restatement silently became the identity and one and the
-     *  same case read 3,75 in the reference interpreter against 3.750,00 down the Drools path. Every caller in
-     *  this repo gates already (measured); this precondition keeps that path dead rather than assuming it is.
+     *  <p>Between two units that do not inter-convert there is NO factor, and answering 1 turns a name mismatch into a
+     *  wrong magnitude instead of a fault. Measured: a reference-type copy that lied only in CASE ("KG" against the
+     *  declared "kg") compares unequal both on the abbreviation and on the canonical, so a due restatement silently
+     *  became the identity and one and the same case read 3,75 in the reference interpreter against 3.750,00 down the
+     *  Drools path.
      *
-     *  @throws IllegalStateException when {@code target} is absent or not inter-convertible with this unit —
-     *  and ALSO on the one shape the outer gate admits: an inter-convertible pair where half a conversion pair
-     *  stands (a canonical without a declared factorToCanonical, the wire form). Gating on {@link #convertibleTo}
-     *  is therefore necessary but not sufficient; the wire form has no factor to give either way. */
-    public BigDecimal conversionFactorTo(Unit target) {
+     *  @throws IllegalStateException when {@code target} is absent or not inter-convertible with this unit, and ALSO on
+     *  the one shape {@link #convertibleTo} admits: half a conversion pair (a canonical without a declared
+     *  factorToCanonical, the wire form), which has no factor to give either way. */
+    public BigDecimal[] exactRestateFactors(Unit target) {
         if (!convertibleTo(target))
             throw new IllegalStateException("geen omrekenfactor van eenheid '" + rendering() + "' naar '"
                     + (target == null ? "(geen eenheid)" : target.rendering()) + "': niet inwisselbaar");
-        BigDecimal[] f = fraction(powersTo(target));
-        return f[0].divide(f[1], MathContext.DECIMAL64);
+        return fraction(powersTo(target));
     }
 
-    /** The EXACT restatement factors {num, den} to restate a quantity in THIS unit as one in {@code target} —
-     *  multiply by num then DIVIDE by den (one rounding, at the end), the lossless alternative to
-     *  {@link #conversionFactorTo}'s pre-rounded single ratio (which truncates a non-terminating quotient like mnd→jr
-     *  = 1/12 = 0.0833…). num and den are the products of the powers of the declared factors: jr→mnd is 12/1, €/jr→€/mnd
-     *  is 1/12, m^2→cm^2 is 10000/1. Returns {@code null} when not exactly restatable here: not convertible, or half a
-     *  conversion pair — the caller then keeps the single-ratio fallback, which is available only on a CONVERTIBLE
-     *  pair: between units with no common unit there is no ratio either, and {@link #conversionFactorTo} says so. */
-    public BigDecimal[] exactRestateFactors(Unit target) {
-        if (target == null || !convertibleTo(target)) return null;
-        List<Factor> powers = powersTo(target);
-        return powers.stream().allMatch(Factor::hasFactor) ? fraction(powers) : null;
-    }
-
-    /** True when restating this unit in {@code target} is not the identity (factor ≠ 1) —
-     *  composite-aware, so €/jr→€/mnd (factor 1/12) requires conversion even though the
-     *  numerators share an abbreviation.
+    /** True when restating this unit in {@code target} is not the identity (factor ≠ 1), by numerator and denominator
+     *  and so without a rounding that reads a factor next to 1 as 1. €/jr→€/mnd (factor 1/12) requires conversion even
+     *  though the numerators share an abbreviation.
      *
-     *  <p>Two units that do NOT inter-convert answer false, explicitly rather than through an invented
-     *  factor of 1. This is the one legitimate caller of the unguarded question: the transpilers ask it as
-     *  "is this a cross-unit site?" on operand pairs whose convertibility they have not established (a §8.2
-     *  timeline bound, an additive pair, a begrenzing bound) — and "no common unit" is precisely where no
-     *  factor exists. The one exception is the wire form: a CONVERTIBLE pair with half a conversion pair in it
-     *  throws here too, via the factor question — the method is not total, and it sits behind every gated call
-     *  site as well.
+     *  <p>Two units that do NOT inter-convert answer false, explicitly rather than through an invented factor of 1. This
+     *  is the one legitimate caller of the unguarded question: the transpilers ask it as "is this a cross-unit site?" on
+     *  operand pairs whose convertibility they have not established (a §8.2 timeline bound, an additive pair, a
+     *  begrenzing bound), and "no common unit" is precisely where no factor exists.
      *  @throws IllegalStateException on the wire form: convertible, but a canonical carries no declared
-     *  factorToCanonical. A caller that must tell "same unit" from "no common unit" apart asks
-     *  {@link #convertibleTo}. */
+     *  factorToCanonical. A caller that must tell "same unit" from "no common unit" apart asks {@link #convertibleTo}. */
     public boolean requiredConversion(Unit target) {
-        return convertibleTo(target) && conversionFactorTo(target).compareTo(BigDecimal.ONE) != 0;
+        if (!convertibleTo(target)) return false;
+        BigDecimal[] f = exactRestateFactors(target);
+        return f[0].compareTo(f[1]) != 0;
     }
 }

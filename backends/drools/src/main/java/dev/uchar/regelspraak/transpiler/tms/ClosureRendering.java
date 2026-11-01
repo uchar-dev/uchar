@@ -192,15 +192,11 @@ final class ClosureRendering {
         };
     }
 
-    /** A restatement through the function the plan names, with the factors it takes: the numerator and the denominator
-     *  of {@link StaticFunction#RESTATE_EXACT}, or the one ratio of {@link StaticFunction#RESTATE}, whose plan has no
-     *  denominator ({@link Term.Restate}). */
+    /** A restatement with the numerator and the denominator its plan carries ({@link Term.Restate}). */
     private static ValueFunction restate(Term.Restate h) {
         ValueFunction f = valueFunction(h.term());
-        Implementation g = implementation(h.function());
         BigDecimal counter = h.counter(), denominator = h.denominator();
-        if (denominator != null) return w -> g.of(new Object[]{f.of(w), counter, denominator});
-        return w -> g.of(new Object[]{f.of(w), counter});
+        return w -> ComputeHelpers.restateExact(f.of(w), counter, denominator);
     }
 
     /**
@@ -362,7 +358,6 @@ final class ClosureRendering {
             case CELL -> x -> ComputeHelpers.cell(x[0], (String) x[1]);
             case MAP -> x -> ComputeHelpers.map(x[0]);
             case RESTATE_EXACT -> x -> ComputeHelpers.restateExact(x[0], (BigDecimal) x[1], (BigDecimal) x[2]);
-            case RESTATE -> x -> ComputeHelpers.restate(x[0], (BigDecimal) x[1]);
             case SMALLEST -> x -> ComputeHelpers.smallest(x[0], x[1]);
             case LARGEST -> x -> ComputeHelpers.largest(x[0], x[1]);
             case FALLBACK -> x -> ComputeHelpers.fallback(x[0], x[1]);

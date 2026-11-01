@@ -1410,8 +1410,9 @@ therefore correct, and is the only reading that keeps that arithmetic exact.
    rounded per step, so exact double equality does not find the declared
    `1/N` form, and the RegelSpraak frontend's re-emission of the parity
    dump, which knows the declared forms, checks the result (card
-   `20260924-l3-typesysteem`). The pre-rounded ratio the Drools backend
-   still computes from a factor is the remainder of the row-26 delta.
+   `20260924-l3-typesysteem`). The decimal the Drools backend keeps for a
+   factor that is no whole number, rounded to 16 significant digits, is the
+   remainder of the row-26 delta.
    *v0 mirror note (fail-open):* v0's factor lookup
    returns 1 both for "identical" and for "not convertible", so
    correctness depends on the caller checking convertibility first; v1

@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -42,7 +43,7 @@ class EffectiveUnitWitnessTest {
     // "Geld" and "Tijd", for the §4.4 product rules: € per jaar is a RATE (a numerator over a denominator).
     private static final Unit EUR = new Unit("EUR", "Geld", "EUR", BigDecimal.ONE);
     private static final Unit JR = new Unit("jr", "Tijd", "mnd", new BigDecimal("12"));
-    private static final Unit EUR_PER_JR = Unit.compound(EUR, JR);
+    private static final Unit EUR_PER_JR = Unit.divide(EUR, JR);
 
     private static Datatype num(Unit e) {
         return new Datatype.Numeric(false, 2, Datatype.Sign.ONBEPAALD, e);
@@ -145,7 +146,7 @@ class EffectiveUnitWitnessTest {
         Unit out = bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL,
                 lyingRef(ot, "prijs"), lyingRef(ot, "gewicht"), num(TON), source()));
         assertEquals(Unit.times(EUR, KG), out);
-        assertNull(out.exactRestateFactors(EUR), "geen factor naar een andere dimensie");
+        assertThrows(IllegalStateException.class, () -> out.exactRestateFactors(EUR), "geen factor naar een andere dimensie");
         assertFalse(out.convertibleTo(EUR), "€·kg herschaalt niet naar €");
         assertFalse(out.convertibleTo(KG), "en niet naar kg");
         assertTrue(out.convertibleTo(Unit.times(KG, EUR)), "dezelfde factoren zijn één eenheid");
@@ -155,7 +156,7 @@ class EffectiveUnitWitnessTest {
         // ch. 2.6: the quotient's annotation is a repetition like the product's, and the lie in num(TON) stays unread
         ObjectType ot = vracht();
         Expr.Literal one = new Expr.Literal("1", num(null), source());
-        assertEquals(Unit.reciprocal(JR), bare().unitOf(new Expr.Binary(Expr.BinOp.GEDEELD_DOOR,
+        assertEquals(Unit.divide(null, JR), bare().unitOf(new Expr.Binary(Expr.BinOp.GEDEELD_DOOR,
                 one, lyingRef(ot, "looptijd"), num(TON), source())), "eenheidloos gedeeld door jr is 1/jr");
         assertEquals(EUR_PER_JR, bare().unitOf(new Expr.Binary(Expr.BinOp.GEDEELD_DOOR,
                 lyingRef(ot, "prijs"), lyingRef(ot, "looptijd"), num(TON), source())), "€ gedeeld door jr is €/jr");
@@ -167,7 +168,7 @@ class EffectiveUnitWitnessTest {
 
     @Test void a_reciprocal_falls_away_against_its_unit_and_makes_a_rate_of_another() {
         ObjectType ot = vracht();
-        ot.attributes.put("tempo", num(Unit.reciprocal(JR)));
+        ot.attributes.put("tempo", num(Unit.divide(null, JR)));
         assertNull(bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL,
                 lyingRef(ot, "tempo"), lyingRef(ot, "looptijd"), num(TON), source())), "1/jr maal jr heeft geen eenheid");
         assertNull(bare().unitOf(new Expr.Binary(Expr.BinOp.MAAL,
@@ -193,7 +194,7 @@ class EffectiveUnitWitnessTest {
     /** Ch. 2.6, rule 8: of more than one negative factor the one of the attribute's grid rises, on a fold over its
      *  timeline; with none of that grid the unit stands, and the write boundary refuses it. */
     @Test void a_fold_over_a_timeline_raises_the_factor_of_its_grid() {
-        Unit rate = Unit.divide(Unit.compound(new Unit("EUR", "Munt"), new Unit("m", "Maat")), new Unit("mnd", "Tijd"));
+        Unit rate = Unit.divide(Unit.divide(new Unit("EUR", "Munt"), new Unit("m", "Maat")), new Unit("mnd", "Tijd"));
         assertEquals("EUR/m/mnd", rate.rendering());
         ObjectType ot = new ObjectType("Haven");
         ot.attributes.put("tarief", num(rate));
