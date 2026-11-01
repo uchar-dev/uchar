@@ -361,6 +361,11 @@ type ctx = {
      condition, so an excluded subject must never fault (set around
      the value translation, [] elsewhere) *)
   mutable rule_guard : string list;
+  (* what a §9.5 deposit carries beside [rule_guard]: the decision of the
+     default whose evaluation it belongs to (RUNTIME-SEMANTICS ch. 7.1, 7.5).
+     Not in [rule_guard], because the value helpers the decision rests on carry
+     that one: a decision among its own premises is never derived *)
+  mutable deposit_guard : string list;
   (* the write target's scale, as a lower bound for a bare division's
      out-scale: ref writes the exact rational, so a quotient that fits
      the target's declared decimals exactly must translate — testing
@@ -371,6 +376,8 @@ type ctx = {
      mandated rounding, which the spec does not mandate there (false
      outside a write) *)
   mutable write_unbounded : bool;
+  (* the defaults group being translated is the ch. 7.7 desugaring of v0 forms *)
+  mutable desugared_group : bool;
   (* the enclosing rule's (or creation's) name: the §9.5 channel fact
      is keyed by it, exactly as ref's insert_error keys its channel —
      the reason text stays executor-internal (a hunted checker split:
@@ -674,6 +681,7 @@ let emit ctx fmt =
    pair. The channel read and the consistent check look at inconsistent/2
    alone; the codes deposited for one pair form a set beside it *)
 let deposit ctx ~code ~rule ~subject body =
+  let body = String.concat ", " (body :: ctx.deposit_guard) in
   emit ctx "inconsistent(%s,%s) :- %s." rule subject body;
   emit ctx "inconsistent_code(%s,%s,%s) :- %s." rule subject (quote code) body
 
@@ -10281,10 +10289,26 @@ let translate_rule ctx (r : resolved_rule) =
                     a
             else None
           in
+          (* an initialisation that the input or a computed value blocks does not
+             decide, so neither its condition nor its value is evaluated
+             (RUNTIME-SEMANTICS ch. 5.4, 5.7, 7.3): the fences and deposits of both
+             carry this guard, as the val head does *)
+          let init_guard =
+            match r.rr_presentation with
+            | Some Initialisation ->
+                let _, comps, _ = init_writers ctx ~ot ~a in
+                Printf.sprintf "not inputfilled(%s,%s)" subject (str a)
+                :: (if comps <> [] then [ Printf.sprintf "not comp_decides(%s,%s)" subject (str a) ] else [])
+            | _ -> []
+          in
           let cond =
             match (clip, r.rr_condition) with
             | Some _, _ | None, None -> []
-            | None, Some c -> cond_atoms ctx ~subject ~subject_ot:ot c
+            | None, Some c ->
+                ctx.rule_guard <- init_guard;
+                let atoms = cond_atoms ctx ~subject ~subject_ot:ot c in
+                ctx.rule_guard <- [];
+                atoms
           in
           (* the val head, and on a target with co-writers the writer's own
              value beside it ([co_writer]) *)
@@ -10596,11 +10620,7 @@ let translate_rule ctx (r : resolved_rule) =
               in
               emit ctx "#defined inputfilled/2.";
               if beside then emit ctx "#defined comp_decides/2. #defined comp_fires/2.";
-              let guard =
-                Printf.sprintf "not inputfilled(%s,%s)" subject (str a)
-                :: (if beside then [ Printf.sprintf "not comp_decides(%s,%s)" subject (str a) ]
-                    else [])
-              in
+              let guard = init_guard in
               let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
               units_identical_ok
                 ~what:(Printf.sprintf "the write to %S" a)
@@ -10968,7 +10988,13 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
     let saved_r = ctx.param_reach and saved_g = ctx.rule_guard in
     let saved_n = ctx.let_needs and saved_b = ctx.binders and saved_v = ctx.value_of in
     ctx.param_reach <- (fun _ -> (base :: reached n) @ extra);
-    ctx.rule_guard <- [];
+    (* what a default evaluates, it evaluates only where it is reached: its
+       fences and deposits carry that (ch. 5.7, 7.1) *)
+    ctx.rule_guard <-
+      (reached n @ extra
+      @ if (List.nth defaults n).default_initialisation then
+          match has_input with Some hi -> [ Printf.sprintf "not %s(%s)" hi subject ] | None -> []
+        else []);
     ctx.let_needs <- [];
     ctx.binders <- [];
     ctx.value_of <- None;
@@ -11002,26 +11028,38 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
      fall-through gate for free; [extra] carries the `not U_any` guard that
      restricts a form-a fall-back to exception groups that decide nothing (ch. 7.9) *)
   let emit_own_dec n (r : default) ~extra =
+    (* the channel key of what this default deposits: as ref keys it, the stack's
+       target form, and on a v0 form the desugaring moved here its own rule's name.
+       A v0 form is no speculative context (ch. 7.8): its deposit stands where it is
+       evaluated. A default of a group deposits only where it decides (ch. 7.1) *)
+    let saved_name = ctx.rule_name and saved_d = ctx.deposit_guard in
+    ctx.rule_name <-
+      (if ctx.desugared_group then Option.value r.default_source ~default:target_form else target_form);
+    ctx.deposit_guard <-
+      (if ctx.desugared_group then [] else [ Printf.sprintf "%s(%s,_)" (dec n) subject ]);
     if is_char then
       let b = if req "default decision" r.default_decision then 1 else 0 in
       head_body ctx (Printf.sprintf "%s(%s,%d)" (dec n) subject b)
         ((base :: own_just ~extra n r) @ extra)
-    else
-      (* a consequence is read only under its holding justification. The
-         justification is translated AFTER the consequence, as it always was,
-         unless a parameter read inside the consequence needs its atoms first —
-         which happens only for a parameter the case does not bind *)
-      let just = lazy (own_just ~extra n r) in
-      let saved_r = ctx.param_reach in
-      ctx.param_reach <- (fun _ -> (base :: reached n) @ Lazy.force just @ extra);
+    else begin
+      let just = own_just ~extra n r in
+      let saved_r = ctx.param_reach and saved_g = ctx.rule_guard in
+      ctx.param_reach <- (fun _ -> (base :: reached n) @ just @ extra);
+      (* a consequence is read only under its holding justification, on a default
+         that is reached *)
+      ctx.rule_guard <- reached n @ just @ extra;
       let bindings, term, scale =
         expr_term ctx ~subject ~subject_ot:(ot_at n) (req "default consequence" r.default_consequence)
       in
       ctx.param_reach <- saved_r;
+      ctx.rule_guard <- saved_g;
       if scale <> target_scale then
         fault "default value scale %d does not match target scale %d" scale target_scale;
       head_body ctx (Printf.sprintf "%s(%s,%s)" (dec n) subject term)
-        ((base :: Lazy.force just) @ bindings @ extra)
+        ((base :: just) @ bindings @ extra)
+    end;
+    ctx.rule_name <- saved_name;
+    ctx.deposit_guard <- saved_d
   in
   List.iteri
     (fun n (r : default) ->
@@ -11176,6 +11214,8 @@ let translate_defaults_group ctx gidx ~owner
     | None -> ())
   else begin
   let l0, _ = List.hd members in
+  (* Ir_v0.Desugar.document marks what it makes so *)
+  ctx.desugared_group <- l0.pd_source = Some "ch. 7.7 v0 desugaring";
   let subject = "S" in
   let base = Printf.sprintf "is_a(%s,%s)" subject (str owner) in
   let is_char, target_name =
@@ -12485,8 +12525,8 @@ let translate (doc : document) (case : Case.t) : string =
   let doc = Normalise.document doc in
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
-    { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; write_scale = 1;
-      write_unbounded = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
+    { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; deposit_guard = []; write_scale = 1;
+      write_unbounded = false; desugared_group = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
       value_of = None;
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
       before_arm = []; pre_scope = []; pre_reach = []; pre_let = [];

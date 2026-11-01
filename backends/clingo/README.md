@@ -36,7 +36,8 @@ spec bug.
   barrier only that member raises. `Let k = restpost in (som(bonus van
   werven die TEN MINSTE 1 schuiten [k > 0]) plus p)`, with one schuit
   created for each Werf and restpost leeg, refuses in the named
-  sentence where ref faults at p in the pass before the creation. The
+  sentence, where ref answers the fixpoint: its fault at p in the pass
+  before the creation is replaced (RUNTIME-SEMANTICS ch. 5.7). The
   same holds for a short circuit that a created member settles at the
   fixpoint (decision of the main session, 2026-09-23): an `atLeast`
   composite's prefix or an `atLeast` fold's open prefix is open in that
@@ -50,9 +51,9 @@ spec bug.
   member a creation adds is there before the members added to its own
   ranges. `keur = 99 indien TEN MINSTE 1 [TEN MINSTE 1 schuiten
   [lengte > 5], p > 0]`, with one schuit of 8 created for each Werf,
-  refuses in the named sentence where ref faults at p in the pass
-  before the creation. So the named refusal also stands where ref
-  plays: two creations of 8
+  refuses in the named sentence, where ref again answers the fixpoint.
+  So the named refusal also stands where ref plays on every order: two
+  creations of 8
   and 3 for each Werf, each behind a condition that holds, and `TEN
   MINSTE 1 [lengte > 5, lengte > p]` over the schuiten — ref runs them
   in document order, reads 8 and stops, and [3, 8] reads p [N1]; the
@@ -106,30 +107,7 @@ spec bug.
     out of bel's value and the guard is exact. ([S2] is retired: the
     branch hoist puts the operand beside the branch behind the branch's
     condition, and that operand's read has a second guard without the
-    arm's atoms.) [S3] The intermediate pass within
-    one stratum (the ch. 6.1 residual of order-dependent transients, in
-    fail-fast form). ref runs the forms of a stratum pass by pass until
-    nothing changes, so a form that reads what a later form of the same
-    stratum writes sees it leeg in the first pass. Where a short
-    circuit depends on that value, ref reads the
-    parameter in that pass and faults, while the fixpoint never reads
-    it, and clingo answers the fixpoint: `heffing = 5,00 indien TEN
-    MINSTE 1 [a > 0, p > 0]`, written before `a = inkomen`, with
-    inkomen 20 and p unbound, answers 5,00 where ref faults; with the
-    writing rule first both answer 5,00. Where the writer is a
-    creation, that pass is the pass before the creation and the
-    refusal is named (above). Whether ref's fault in such a pass is
-    the arbiter's answer is a norm question for the maintainer. [S4] A
-    condition that holds on absence (ch. 6.1: a count against zero,
-    read positively) with a creation as writer, in an `all` prefix, in
-    a taken arm or in a rule's condition: `ALLE [het aantal schuiten =
-    0, p > 0]`, `Let n = het aantal schuiten in (als n > 0 dan 99
-    anders p)`, or `keur = p indien het aantal schuiten = 0`, with one
-    schuit created for each Werf. In the pass before the creation the
-    member holds, the other arm is taken or the condition holds, and
-    ref faults there; clingo answers the fixpoint. Only an `atLeast`
-    prefix gets that pass (above); an `all` prefix, a branch condition
-    and a rule's condition are read at the fixpoint.
+    arm's atoms.)
 
   Each tagged entry, here and under Recorded limitations ([V1], [V2],
   [V3], [V4], [V5]),
@@ -329,6 +307,11 @@ spec bug.
   (scalar or temporal); it applies to multi-writer and versioned
   computing targets, and an allocation `doelAttribuut` supplied by the
   case is fenced the same way.
+- A fail-fast or a §9.5 deposit fires only where ref evaluates its place at
+  the fixpoint (RUNTIME-SEMANTICS ch. 5.7): under a default that is reached,
+  under the guard of an initialisation, and a deposit of a declared default
+  only under its decision (ch. 7.1). A default the ch. 7.7 desugaring made
+  from a v0 form deposits where it is evaluated, under its rule's name.
 - Two or more computing rules on one target whose populations share a
   concrete type (on one type, or on a type and its subtype) would give
   the target two values in one model wherever two of them apply to one
