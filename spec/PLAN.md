@@ -1062,9 +1062,6 @@ forms with the calculation date; allocation and timelines; the switch-over,
 where the branch becomes gate 12's exec-model leg and the distribution's and
 the destructive lowering leaves (the distribution follows with its own card
 and a pin bump); then the DRL-text branch, with which `Stratificatie` leaves.
-Recorded, not opened: this branch withdraws a deposit made at an intermediate
-state where ref keeps it (RUNTIME-SEMANTICS ch. 6.1, "recorded residuals"),
-the question `fout-op-tussenstand` asks for faults; no golden reaches it.
 
 **Creation in the truth-maintenance lowering is stated, not logical
 (2026-10-08, card `tms-aggregaties-creatie-en-fouten`):** the first build
@@ -1097,17 +1094,21 @@ sentence in ch. 3.8 and the executors follow with the second card, which also
 repairs the silent wrap-arounds it records.
 
 **Faults and deposits count at the fixpoint (2026-10-09, card
-`fout-op-tussenstand`, to be built):** maintainer decision on Fable advice: an
+`fout-op-tussenstand`, built 2026-11-01):** maintainer decision on Fable advice: an
 evaluation fault and a §9.5 deposit are outcomes of one form's evaluation on
-one subject; re-evaluation under freshness replaces them, a form that does not
-decide is not evaluated, and the session reports what stands at the fixpoint
+one subject; re-evaluation under freshness replaces them, a displaced default
+or an initialisation its guard blocks is not evaluated, and the session reports what stands at the fixpoint
 of the form's stratum (ch. 5.2: an intermediate state is not observable). The
 card's documents answer bergloon 30, aandeel 3 and toeslag 7 in every rule
 order. The spec text, the reference interpreter and the ASP backend follow
 with the card; the truth-maintenance branch already reads so, and its two
-refusals that wait on this decision (a division in a default, a division in
-an initialisation beside another writer) can go. The decision does not depend
-on whether numeric-zero division becomes a channel fact (decision (7)).
+refusals that waited on this decision (a division in a default, a division in
+an initialisation beside another writer) are gone. The decision does not depend
+on whether numeric-zero division becomes a channel fact (decision (7)). A write
+whose condition later turns false keeps its value in the reference interpreter:
+the residual of ch. 6.1 stays, and `TmsTimelineWitnessTest` B2 and
+`TmsWholePeriodWitnessTest` A and A3 still measure it (card
+`written-value-at-fixpoint`).
 
 **Creation reads by generations, and its budget counts depth (2026-10-09,
 cards `creatie-initialisatie-leest-groeiende-waarde` and

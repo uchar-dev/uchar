@@ -432,7 +432,8 @@ missing line makes `make gates` exit non-zero. Current gates:
     kind `RETIRED`, which no place may name and which keeps its number,
     since the card `frontend-kwantor-over-een-pad` (2026-10-20)
     DROOLS-026 and DROOLS-258, since the card
-    `test-beyond-thirteen-reads` (2026-10-27) DROOLS-264; every raised code
+    `test-beyond-thirteen-reads` (2026-10-27) DROOLS-264, since the card
+    `fout-op-tussenstand` (2026-11-01) DROOLS-120 and DROOLS-165; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`

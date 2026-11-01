@@ -404,6 +404,6 @@ In de alinea "Faults and deposits count at the fixpoint (2026-10-09 …)": "to b
 - Ref's `run_consistency` vuurt nog steeds pas na de laatste generatie; dat hoeft niet meer voor de juistheid, omdat de uitkomst nu vervangt.
 - `vouwfilter-resterende-vormen` niet aangeraakt. Een deling in een vouwfilter onder een gedeclareerde default is wel gemeten: het proefdocument (`jutterswet`-model van `fold-filter-divides-by-zero`, `zware vondsten` als default) geeft op ref, clingo, exec en DRL 1 met EF-005 onder `Jutter.zware vondsten`; er is geen golden voor.
 
-### Gates (elk apart, in de worktree, op `dff96768f`, `logs/gates-r2.summary`)
+### Gates
 
-Groen: 1, 2, 3, 4, 5 (ref-suite 1686, 960 cases), 6 (suite 2238, 960 cases), 7, 8 (63 rode cases), 10 (154 rgs-goldens), 12 (293 gespeeld, DRL 293, JUnit 1714), 13, 17 (293 goldens vergeleken). Niet gedraaid: 9, 11, 14, 15, 16; die draait de hoofdsessie met `make gates`.
+`make gates` op `a3c5c9dcc`: alle 17 groen, 339 s, `red=0`, `out/gates/20261101-123755/`. Gate 12 speelt 295 op beide takken.
