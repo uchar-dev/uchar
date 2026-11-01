@@ -3621,7 +3621,10 @@ places — the computed value above; the initialisation's own earlier write
 does not. Its value is therefore an equation like any attribute write
 (ch. 5.1, and ch. 6.1: attribute writes are revocable): it is re-evaluated
 when a value it reads changes, and the fixpoint does not depend on the
-order in which the rules are written. Read off the running fact base alone,
+order in which the rules are written. Another writer that writes the value
+the initialisation holds has placed that value all the same: the
+initialisation does not decide (`corpus/golden/jutterswet-lezer-van-initialisatie`,
+case 3, in either order). Read off the running fact base alone,
 the guard kept the value the initialisation had computed against a read
 that another rule had not yet written. Measured on verifier-clean
 documents: the reference interpreter and both Drools branches answered 0
@@ -3996,6 +3999,8 @@ surfaces beside the result. Operational clauses, mirrored:
   often re-evaluated) and **validity-gated**: a version whose window
   excludes the evaluation date raises nothing (the version simply does
   not apply — ch. 3.10's gate).
+- A deposit is an outcome of one evaluation (ch. 5.7): the fact stands
+  while an evaluation of its form at the fixpoint deposits it.
 - Every producer deposits with the **code** of its kind, a row of ch. 5.7b
   on the channel `§9.5`. The identity of a fact stays rule × subject; the
   codes deposited for that pair form a set beside it, each code once. A
@@ -4093,6 +4098,59 @@ is" beside the same rule on its aanspoeldatum; V with vinddatum 04-03-2026
 and aanspoeldatum 01-03-2026 faults, naming both rules and the values
 2026-03-04 and 2026-03-01; V with only one of the two dates gets that
 date; V with both dates on 02-03-2026 gets **02-03-2026**.
+
+**Faults and deposits are read at the fixpoint.** An evaluation fault
+(ch. 1.4) and a §9.5 deposit are outcomes of one form's evaluation on one
+subject. Re-evaluation under freshness (ch. 5.1) replaces the earlier
+outcome, and a form that does not decide (ch. 7.1, 7.3) is not evaluated;
+the session reports the outcomes standing at the fixpoint of the form's
+stratum. A fault stands in place of what the form would write, so a form
+that faults at the fixpoint leaves the session without an answer whichever
+states came before it, and where several stand the report names them all.
+An initialisation tests its guard (ch. 5.4) before its condition and its
+value, so a target the input fills or another writer's value displaces
+evaluates neither. Worked examples (absolute; goldens with the rules in the
+order below and in the reverse order, replayed by gates 5, 6 and 12, and
+`WV-5.7-fixpoint` in `ref/test/`, which runs every order of the rules). A
+Vondst with whole numbers `taxatie`, `opbrengst`, `aantal deelnemers`,
+`bergloon`, `aandeel` and `toeslag`, and characteristics `gemeld` and
+`erkend`, where every document opens with "Een Vondst is erkend indien hij
+gemeld is":
+
+- **A** (`jutterswet-initialisatie-naast-regel`): "Het bergloon moet gesteld
+  worden op zijn taxatie indien hij erkend is" and "Het bergloon moet
+  geïnitialiseerd worden op zijn opbrengst gedeeld door zijn aantal
+  deelnemers". V gemeld, taxatie 30, opbrengst 100, deelnemers 0 gives
+  **bergloon 30, consistent**, in either order: the computation decides, so
+  the initialisation does not, and its division is not a fault or a deposit
+  of the session; with deelnemers 3 as well, whose 100/3 fits no target
+  (EF-006). V not gemeld, otherwise the same: the initialisation decides,
+  **bergloon leeg**, and the fact (standaardbergloon × V) with EF-005 stands;
+  with deelnemers 3, EF-006 faults the session
+  (`corpus/red/jutterswet-initialisatie-past-niet`).
+- **B** (`jutterswet-lezer-van-initialisatie`): "Het bergloon moet gesteld
+  worden op zijn taxatie indien hij erkend is", "Het bergloon moet
+  geïnitialiseerd worden op 0" and "Het aandeel moet berekend worden als zijn
+  opbrengst gedeeld door zijn bergloon". V gemeld, taxatie 30, opbrengst 90
+  gives **bergloon 30, aandeel 3, consistent**, in either order: the 0 of the
+  initialisation is a state between, in which an aandeel written first
+  divides by zero, and that outcome is replaced. V not gemeld: the 0 stands,
+  **bergloon 0, aandeel leeg**, and (aandeel × V) with EF-005 stands. With
+  "geïnitialiseerd worden op 7" (`jutterswet-fout-op-tussenstand`) the state
+  between faults instead, 90/7 not fitting the aandeel (EF-006), and V gemeld
+  still gives **bergloon 30, aandeel 3, consistent**; with taxatie 7 the same
+  90/7 stands at the fixpoint and faults the session
+  (`corpus/red/jutterswet-fout-aan-fixpunt`).
+- **C** (`jutterswet-voorwaarde-onder-invoer`): "De toeslag moet
+  geïnitialiseerd worden op 5 indien zijn opbrengst gedeeld door zijn aantal
+  deelnemers groter is dan 10". Opbrengst 100, deelnemers 0, toeslag 7 in the
+  input gives **toeslag 7, consistent**. Without that input the condition is
+  evaluated: **toeslag leeg**, and (standaardtoeslag × V) with EF-005 stands.
+- **D** (`jutterswet-deponering-onder-invoer`), a Jutter with `b` and
+  `heffing`: "De heffing moet geïnitialiseerd worden op 7 indien 5 gedeeld
+  door zijn b leeg is". Heffing 9,00 in the input and b leeg gives **heffing
+  9,00, consistent**. Without that input **heffing 7,00**, and (heffing van een
+  jutter × J) with EF-031 stands.
 
 `Unresolved` nodes take no part in evaluation and must survive into the
 report (WF-044); an engine that reaches one fails that rule's evaluation
@@ -4273,8 +4331,8 @@ parameters, the clause that defines it and its witnesses.
 | EF-002 | a role link of the case input names a label the case does not declare | case input | `role`, `label`, `target` | ch. 5.7 step 3 | `corpus/red/unknown-role-target-label` |
 | EF-003 | a date lexeme of the case input names no calendar day | case input | `field`, `lexeme` | ch. 5.7 step 3 | `corpus/red/as-of-date-calendar`, `corpus/red/input-date-calendar` |
 | EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 11.3 | `corpus/red/input-overprecision`, `corpus/red/input-overprecision-param`, `corpus/red/list-element-overprecision`, `corpus/red/struct-field-overprecision` |
-| EF-005 | a filled dividend is divided by a numeric zero | §9.5 | `rule`, `label` | ch. 1.4 point 4; ch. 2.2 | `corpus/golden/division-by-numeric-zero`, `corpus/golden/division-abs-by-numeric-zero`, `corpus/golden/filled-count-unguarded-division`, `corpus/golden/at-most-reads-until-settled`, `corpus/golden/closed-runtime-division-by-zero`, `corpus/golden/fold-filter-divides-by-zero` |
-| EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4 | `corpus/red/closed-nonexact-division`, `corpus/red/closed-runtime-nonexact-division`, `corpus/red/decimal-nonterminating` |
+| EF-005 | a filled dividend is divided by a numeric zero | §9.5 | `rule`, `label` | ch. 1.4 point 4; ch. 2.2 | `corpus/golden/division-by-numeric-zero`, `corpus/golden/division-abs-by-numeric-zero`, `corpus/golden/filled-count-unguarded-division`, `corpus/golden/at-most-reads-until-settled`, `corpus/golden/closed-runtime-division-by-zero`, `corpus/golden/fold-filter-divides-by-zero`, `corpus/golden/jutterswet-initialisatie-naast-regel`, `corpus/golden/jutterswet-lezer-van-initialisatie` |
+| EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4 | `corpus/red/closed-nonexact-division`, `corpus/red/closed-runtime-nonexact-division`, `corpus/red/decimal-nonterminating`, `corpus/red/jutterswet-fout-aan-fixpunt` |
 | EF-007 | a datum-tijd step or construction leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range`, `corpus/red/date-time-with-outside-range` |
 | EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/red/date-time-step-outside-range` |
 | EF-009 | a day-kind walk passes the reach fence without a day of the kind | fault | `from`, `reach` | ch. 3.8 | `corpus/red/day-kind-unsatisfiable-walk`, `corpus/red/day-kind-scope-outside-table` |
@@ -6055,10 +6113,8 @@ edge runs through the relation).
 attribute write whose condition later turns false keeps its written
 value — the mirror has no retraction — so conditions on
 attribute-writing forms read positively here, except a leeg/gevuld
-predicate, which reads negatively in every position since 2026-09-23;
-and §9.5 deposits from arithmetic transients within a stratum persist
-(idempotent inserts, never retracted). Both await the default model of
-ch. 7.
+predicate, which reads negatively in every position since 2026-09-23.
+It awaits the default model of ch. 7.
 
 *Recorded residual — conditions that hold on absence (measured
 2026-09-23, open).* The leeg/gevuld predicate, the range of a quantifier
@@ -6758,9 +6814,10 @@ specialised by what the ASP hand-exercises established
   fallen-through default's arithmetic channel deposits (a division by
   leeg inside a consequence that then falls through, ch. 1.2) do
   **not** persist — only the deciding default's evaluation deposits on
-  the §9.5 channel. This scopes the ch. 6.1 residual (b): transient
-  deposits keep persisting in ordinary evaluation (the v0 mirror);
-  prioritized defaults are the one sanctioned speculative context.
+  the §9.5 channel. Outside a defaults group a form that is evaluated at
+  the fixpoint deposits whether it writes or not (ch. 7.8), so prioritized
+  defaults are the one sanctioned speculative context; a deposit on a
+  state before the fixpoint is replaced in either (ch. 5.7).
 - The **base rule** is a default like any other; the initialisation
   default, when present, sits below it (ch. 7.3). The textual nesting of
   art. 4 — "geldt niet indien …, dat laatste geldt weer niet indien …"
@@ -6897,7 +6954,7 @@ gevuld value; characteristic target: always — the boolean decision).
 |---|---|---|---|
 | default *n* | its outcome rule carries `not decides_m` for each higher default *m* (the nested art. 4 chain of `ASP-TRANSLATION.md` ch. 6.1 is the desugared characteristic special case) | generated guard from the higher defaults' `decides` conditions | the salience −1 trick — becomes derivable output |
 | fall-through on leeg (attribute) | `decides_n` is underivable when the consequence body is — absence composes | consequence-null guard | nothing (v0 cannot express it) |
-| speculative default evaluation (ch. 7.1) | channel deposits of a default's arithmetic are **guarded derivations** — the `inconsistent/2` rule for a default's transient carries `decides_n` in its body (ASP has no retraction; the guard is the speculation) | evaluate the deciding default only | v0's persist-always transients (the ch. 6.1 residual (b), here scoped) |
+| speculative default evaluation (ch. 7.1) | channel deposits of a default's arithmetic are **guarded derivations** — the `inconsistent/2` rule for a default's transient carries `decides_n` in its body (ASP has no retraction; the guard is the speculation) | evaluate the deciding default only | v0's persist-always transients (ch. 5.7) |
 | initialisation default | NAF over the input fact | the empty-guard of ch. 5.4 | the hard-coded guard |
 | declared-unordered group | both `decides` ∧ decisions differ → `inconsistent/2`, no `val/3` | §9.5 channel insert, no write | silent last-writer-wins |
 
@@ -7019,9 +7076,10 @@ holds — the case-supplied input value, or leeg. The v0 mirror wrote
 the computed leeg over the input (ch. 1.2g); that erase is retired on
 this domain as a **tracked delta** (`CONSTRUCTS.md` rows 8/18) —
 decided openly where ch. 7.7 records it as the reason the bare form
-could not be desugared silently. Channel deposits of the evaluation
-persist as in any ordinary evaluation — prioritized defaults remain the
-one sanctioned speculative context (ch. 7.1). Together with ch. 7.7, every
+could not be desugared silently. Channel deposits of the evaluation at
+the fixpoint stand as in any ordinary evaluation (ch. 5.7) — prioritized
+defaults remain the one sanctioned speculative context (ch. 7.1). Together
+with ch. 7.7, every
 scalar single-writer form now carries the defaults reading:
 initialisation alone and initialisation-beside-computation through the
 desugaring, the bare computation through this norm.

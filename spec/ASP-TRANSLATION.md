@@ -1402,7 +1402,17 @@ arm), and the head fires under the group's conflict guard:
 disagreement between members derives
 `inconsistent("onderwerp.target",S) :- dlI_dec(S,X), dlJ_dec(S,Y),
 X != Y` — the §9.5 channel, never an arbitrary pick (a singleton
-group elides the conflict machinery entirely). An `initialisation`
+group elides the conflict machinery entirely). The fail-fasts and
+deposits of a default's condition and consequence carry what its `val`
+head carries (RS ch. 5.7): `not dlI_decides_m` for every higher m and,
+on an initialisation default, `not grpG_has_input(S)`, and the consequence
+also its default's condition. A deposit of a declared default carries its
+decision as well (RS ch. 7.1, 7.5), and is keyed by the target form; a
+default the ch. 7.7 desugaring made from a v0 form deposits where it is
+evaluated (RS ch. 7.8), under the name of its rule. The native arm of a
+conditional or windowed initialisation puts `not inputfilled(S,a)` and,
+beside a computing rule, `not comp_decides(S,a)` on the fences and deposits
+of its condition and its value. An `initialisation`
 default additionally requires `not grpG_has_input(S)`: initialisation
 yields to case input by definition (RS ch. 7.3, and the virtual
 input default of ch. 7.8 that sits above it). An initialisation that the
