@@ -578,3 +578,119 @@ Enige verschil, zie afwijking 3: ref meldt `m^2 vs m*m` waar het `m·m vs m*m` m
 - `Unit.exactFactors` blijft per afkorting per stelsel; `IrEmitter.exactFactor` neemt nu een `Unit.Factor`.
 - IR-SPEC: punt 4 (opaak product) en de voorbeeldregel `€·m` staan nog in ch. 2.5, net als RUNTIME-SEMANTICS ch. 2.6/2.10 en ASP-TRANSLATION S6/S19; punt 5 heet nu "The factor list". De zin in `grammar/DIVERGENCES.md` over `m^2` noemt de wirevorm `[{m, exponent: 2}]` en moet in C4 weg.
 - Lange runs: een Bash-aanroep zonder `timeout` of achtergrondvlag stopt na 2 minuten en trekt een `&`-proces mee. Gebruik de achtergrondvlag van het hulpmiddel voor `make gates`. Bewerk geen bron tijdens de run: `after-run` faalt erop.
+
+### Stap 2 (C3), 2026-11-01
+
+Commits op `card/unit-factors`: `e1297eb0f` verifier, ref en clingo; `a5c1ce25c` Java en spec; `316c2b51b` `Arith.conv_factor` leest `Units.factor`; `dad99d20c` en `06d0df94d` testrijen en dode hulpfuncties; de commit `unit-factors: Stand van stap 2` deze tekst. De frontend leest de nieuwe spellingen nog niet: RGS-360 staat er nog, en `m^2` komt in deze stap alleen als tussenresultaat en via de wire voor (stap 3).
+
+**Gates.** `make gates` op `06d0df94d`: 17 groen, `after-run` groen, `red=0`, 312 s (`werk/unit-factors/logs/stap2-gates-2.log`). `EXPECTED_PLAYED` 296 op beide takken. Geen `EXPECTED_`-regel in `scripts/` gewijzigd; in `scripts/` veranderde alleen een commentaarzin in `check-reftype-derivation.sh`. Gate 3: 396 golden schoon, 548 negatief geweigerd, `expect.txt` 391. Gate 5: 1764 voorbeelden, 964 cases. Gate 6: 2264 checks, 964 cases. Gate 10: 1342 tests, 157 goldens byte-gelijk, 353 codes (vloer 347). Gate 13: 46 annotaties getwist over 26 goldens, geen overlevende. Gate 17: 296 goldens, 834 case-bestanden.
+
+**Wat niet bewoog (§8).** `git diff 55fee8d32 -- corpus toka` is leeg: geen waarde, geen declaratie, geen `expect.txt`, geen case. `jutterswet-vondsttempo` speelt in alle uitvoerders.
+
+**Per uitvoerder.**
+
+- *Gedeeld (`spec/verifier/lib/units.ml`):* `times`, `divide`, `convertible`, `factor`, `atom_class`, `dimension`, `is_atom`, `integrated`; `norm` en `collapse_ws` verhuisden hierheen, `Checks` verwijst ernaar.
+- *Verifier:* `times_unit`, `quotient_unit`, `units_convertible`, `is_reciprocal`, `is_product`, `numerator_unit`, `reciprocal_unit` weg. `composite_expectation` claimt elke maal en elke deling van twee `Number`s. `time_unit_of_unit` antwoordt alleen op één factor met exponent 1.
+- *Loader:* een `Executor` weigert `unit: []` en `exponent: 0` bij het laden, in de zin van WF-124; de `Verifier` laadt beide. Rijen `WV-2.5-an-executor-refuses-*` in `test_ref`.
+- *Ref:* `Value.Product` weg, `mul` en `div_gen` via `Units` met `Arith.restatement`, `conv_factor` via `Units.factor` en met een fout op een niet-omrekenbaar paar, `Timeline.duration` via regel 8.
+- *Clingo:* `eff_unit` via `Units`, `product_factor`, `mul_units_ok`, `quotient_units_ok`, `comparison_factors` en `grid_strip_ok` naar §3, `reciprocal_cancels` weg; `Normalise` raakt alleen een eenheid van één factor met exponent 1 aan. Geen nieuwe deling.
+- *Java:* `Unit.times`, `divide`, `timesFactors`, `divideFactors`, `convertibleTo` op dimensie, `exactRestateFactors` met machten, `isAtom`, `negativeAtom`, `afterTimeFold`; `product`, `isProduct`, `isReciprocal`, `numerator` weg. `Typing.compoundUnit` weg. RGS-282, RGS-293, RGS-294 uit register en beide catalogi. `EffectiveUnit` via `Unit`, `DERIVED_PRODUCTS` en de vrijstelling in `UnitConflict` weg. `TmsTranspiler`: de factor van een product of deling als `Term.Restate` op de rechter operand, `intoDenominator` weg. `ScenarioResolver.exactRescaling` per factor met machten. `TimeCalculation.chronoUnit(Unit)` antwoordt alleen op één factor met exponent 1.
+- *Spec:* RUNTIME-SEMANTICS ch. 2.6 (regels en tabel) en ch. 2.10 (vierde MAAL-uitkomst en quotient zonder normaalvorm weg), IR-SPEC ch. 2.5 (punten 1, 2, 3, 4, voorbeelden, het opake product weg) en ch. 4.1 (de `times`-alinea, de rij WF-091), ASP-TRANSLATION S6 en S19.
+
+**De tabel van §2** staat in ch. 2.6 en als `WV-2.6-*` in `test_ref`, op waarde en eenheid, met de spelling van de regel van §1.4: `kg·€/jr^2`, `m·€/jr`, `n·€`. Rij 3 wijkt in één opzicht af, zie afwijking 3.
+
+**Omgedraaide testen, oud en nieuw.** De kaart verandert dit gedrag expliciet; geen verwachting is losser gemaakt.
+
+| test | oud | nieuw |
+|---|---|---|
+| `test_ref` `WV-2.6-c` | `3 € × 2 m` is `Value.Product` | `Unit`, gespeld `m·€` |
+| `test_ref` `WV-2.6-the-unit-m^2-has-no-inverse` | `reciprocal_unit` is `None` | `WV-2.6-the-inverse-of-m^2-is-1/m^2`: `1/m^2` |
+| `test_ref` `WV-2.6-2m-times-3m-does-not-restate-into-a-declared-m^2` | fout `incompatible units` | `WV-2.6-2m-times-3m-restates-into-a-declared-m^2`: 6 |
+| `test_clingo` needle bij `1/wk × dg` | `the factor 1/7 from the quantity into the denominator` | `the factor 1/7 from the right operand into the left unit`: de zin geldt nu ook voor `m × cm` |
+| `TypingTest.the_inverse_of_a_product_is_a_loud_error` | RGS-282 | `the_inverse_of_a_product_is_a_unit`: `1/EUR/m` |
+| `TypingTest.times_unspellable_rate_factor_is_a_loud_error` | RGS-293 | `times_a_rate_and_another_unit_is_their_product`: `EUR·m/jr` |
+| `TypingTest.divided_by_a_rate_is_a_loud_error` | RGS-294 | `divided_by_a_rate_cancels_what_the_two_share`: `jr` |
+| `TypingTest.times_two_separate_units_gives_an_opaque_product_unit` | naam en commentaar opaak | `times_two_separate_units_gives_their_product`, zelfde asserts |
+| `UnitIdentityTest.unspellable_rate_factor_is_refused_loudly` | RGS-293, "niet uitdrukken" | `a_rate_factor_into_another_dimension_is_refused_by_its_unit`: RGS-335 met `value unit 'EUR·m/jr', target unit 'EUR'` |
+| `UnitFactorTest.a_self_product_is_one_factor_with_exponent_two` | `isProduct`, `abbreviation` `m·m`, `canonical` null | de factor `m`, exponent 2, met zijn eigen `canonical` en factor; omrekenbaar in zichzelf, niet in `m` |
+| `UnitFactorTest.opaque_product_refuses_the_factor_question` | naam | `a_product_refuses_the_factor_question_into_its_own_factor`, zelfde asserts |
+| `UnitConflictWitnessTest.a_DERIVED_opaque_product_stays_the_conservative_no_op` | geen fout | `a_product_against_another_dimension_is_a_fault`: `UnitConflict` |
+| `UnitConflictWitnessTest.a_namesake_declared_on_the_wire_not_gets_the_vrijstelling` | herkomst maakt het verschil | `a_product_declared_on_the_wire_is_the_same_unit_as_a_derived_one`: beide `UnitConflict` tegen `EUR` |
+| `UnitConflictWitnessTest.two_different_derived_products_also_set_each_other_free` | geen fout | `two_different_products_are_a_fault` |
+| `UnitConflictWitnessTest.the_origin_table_grows_per_derivation_not_per_document` | groei van de tabel | weg, met de tabel |
+| `EffectiveUnitWitnessTest.a_times_of_two_separate_units_gives_the_opaque_product` | `canonical` null, alleen identiek product omrekenbaar | `a_times_of_two_separate_units_gives_their_product`: dezelfde factoren zijn één eenheid, geen factor naar een andere dimensie |
+| `TmsLikeRefWitnessTest.COUNT` | 28 | 30: `product-into-square`, `product-restated-into-left-factor` |
+
+`UnitFactorTest.a_case_lie_refuses_the_factor_question` en de andere vijf weigervormen staan ongewijzigd.
+
+**Nieuw.** In `test_ref` de tabel, regel 1 (`cm·m` tegen `m^2`), regel 8 (`€/mnd^2`, `€/m/mnd`, geen factor van het rooster, `Units.integrated`), een half paar in een product, de loader, en de kruising door de verifier op `product-into-rate`. In `test_clingo` 22 checks over `factors_doc`: `m × m` in `m^2`, `cm × m` en `m × m` in `m^2/s` geweigerd bij de schrijfgrens, `m × cm` geweigerd op de factor 1/100, `€/dg × wk` ×7, `€/dg/m × dg × m`, `€ × m`, `m^2 ÷ m`, `€ ÷ aantal`, `1 ÷ m^2`, `dg ÷ wk` geweigerd, en `m^2` tegen `cm^2` in beide uitkomsten. In Java `TypingTest.the_table_of_the_algebra_types_every_row`, zeven testen in `UnitFactorTest`, `UnitConflictWitnessTest.a_product_into_its_declared_square_plays`.
+
+**Rode stand.** Op `55fee8d32` met de nieuwe testbestanden (`werk/unit-factors/logs/stap2-ref-red-2.log`, `stap2-red-tests-1.log`):
+
+- `test_ref`: 21 `FAIL`-regels, onder andere `2m-times-3m-is-6-m^2`, `2cm-times-3m-is-600-cm^2`, `6-m^2-divided-by-2m-is-3-m`, `1-divided-by-4-m^2`, `5-eur-per-dg-per-m...`, `2-m^2-equals-20000-cm^2`. Elf rijen van de tabel zijn daarbij rood; de andere acht waren al groen (`100 €/jr × 6 mnd`, `30 €/dg × 1 wk`, `3 dg ÷ 1 wk`, `6 m^2` in `m^2` en in `m^2/s`, en de drie bestaande).
+- `test_clingo`: de eerste nieuwe rij stopt de suite op `incompatible units: m^2 vs m*m`, en de oude zin bij `1/wk × dg` is rood.
+- Drools, de oude jar, beide takken: `product-restated-into-left-factor` is `FAIL`, verwacht 600.0000, werkelijk 6.0000. `product-into-square` speelde al.
+- De nieuwe Java-testen roepen `Unit.times` aan, dat op `55fee8d32` niet bestond; ik heb daar geen aparte run van. Het oude gedrag staat in de omgedraaide testen hierboven, die in stap 1 groen waren.
+
+**Vierkant op het document** (`werk/unit-factors/stap2-proof/`): `m × m` in `m^2`: verifier `PASS`, ref en clingo `PASS (1 expectations)`, Drools `PLAYED 1` op beide takken. `m × m` in `m^2/s`: verifier `WF-023.incompatible-units`, ref `incompatible units: m^2/s vs m^2`, clingo `non-identical units under the write`, Drools `UnitConflict` op beide takken.
+
+**Mutaties, niet gecommit** (`werk/unit-factors/logs/stap2-mutations-{1,2,3}.log`, script `werk/unit-factors/mutate.py`, op een kopie). Elke mutatie is door haar suite gevangen.
+
+| regel | mutatie | gevangen door |
+|---|---|---|
+| 1, OCaml | dimensie zonder exponent | `WV-2.6-m^2-against-m-is-no-unit-pair` |
+| 1, Java | idem | `a_dimension_is_a_class_with_its_exponent` en 5 andere |
+| 2, OCaml | geen factor op de waarde | `WV-2.6-2cm-times-3m-is-600-cm^2` en 16 andere |
+| 2, OCaml | zelfde atoom telt niet op | `WV-2.6-2m-times-3m-is-6-m^2` en 13 andere |
+| 2, OCaml | klasse niet herrekend | `WV-2.6-2-per-dg-times-3wk-is-42` en 16 andere |
+| 2, Java | geen factor op de waarde | `UnitFactorTest` (3 testen) |
+| 3, OCaml | geen inverse | `WV-2.6-6-m^2-divided-by-2m-is-3-m` en 8 andere |
+| 3, OCaml | eenheidloos gedeeld zonder inverse | `WV-2.6-1-divided-by-4-m^2-is-1/4-per-m^2` en 5 andere |
+| 3, Java | geen inverse | `a_quotient_is_the_product_with_the_inverse` en 7 andere |
+| 8, ref | geen roostertoets | `WV-2.6-rule-8-no-negative-factor-of-the-grid`, `WV-3.6-g-vreemde-noemer` |
+| 8, gedeeld | `integrated` haalt de factor weg | `WV-2.6-rule-8-one-negative-factor-rises-one-power` (de eerste ronde overleefde; de rij is daarna toegevoegd) |
+| 8, Java | de factor valt weg | `a_time_fold_raises_the_one_negative_factor` |
+| machten, Java | exponent genegeerd | `a_power_restates_by_the_power_of_its_factor` |
+| WF-091 | maal claimt de eenheid van links | `WV-2.6-the-verifier-derives-the-product-against-the-annotation` (idem) |
+| loader | `[]` of exponent 0 niet geweigerd | `WV-2.5-an-executor-refuses-*` |
+| clingo | gehele factor niet toegepast | `€/dg × wk`: 3000 tegen 21000 |
+| clingo | niet-gehele factor stil afgekapt | `1/wk × dg`, `m × cm` |
+| clingo | vergelijking zonder factor | `m^2 against cm^2` |
+| clingo | deler met factor toegelaten | `dg ÷ wk` |
+| clingo | `eff_unit` van maal is links | `m × m in m^2` en 5 andere |
+| Drools | maal zonder factor | `TmsLikeRefWitnessTest`: `product-restated-into-left-factor` |
+| Drools | factor van de deling omgedraaid | `TmsLikeRefWitnessTest`: `quotient-of-convertible-units` |
+| Drools | `EffectiveUnit` van maal is links | `EffectiveUnitWitnessTest` (4 testen) |
+| Drools | vrijstelling terug op een product | `UnitConflictWitnessTest` (6 testen) |
+
+**Afwijkingen van het advies.**
+
+1. `Units.times` en `divide` geven geen `Q.t`, maar de eenheid en een product van machten van gedeclareerde eenheden (`measure_unit`). Reden: `ir_v0` linkt alleen `yojson`, en een half omrekenpaar moet in ref bij naam fout gaan terwijl de verifier het getal niet nodig heeft. Ref neemt de waarde met `Arith.restatement`; `Units.factor a b` is `a` met `b` omgekeerd.
+2. `product_factor` is `int option` en niet `(side, int) option`: de factor staat altijd op de rechter operand. De oude tak op de linker operand (`wk × 1/dg`) geeft dezelfde waarde; alleen het range-hek ligt op de andere term. Hetzelfde in Drools: `intoDenominator` is weg, de `Term.Restate` staat altijd rechts.
+3. Tabelrij 3, `6 m^2 in een m^2/s-attribuut`. De tekst `incompatible units: m^2 vs m^2/s` komt uit `restate_into (m^2) 6 (m^2/s)`, en zo staat de rij in `test_ref`. Een schrijfregel kruist de waarde in de gedeclareerde eenheid en meldt `m^2/s vs m^2`; ch. 2.6 zegt dat in een zin onder de tabel.
+4. De klasse in Java vergelijkt namen zoals geschreven, niet onder `norm` zoals §2 zegt; OCaml volgt §2. `UnitFactorTest.a_case_lie_refuses_the_factor_question` blijft daarmee staan. Een document waarin een `canonical` alleen in hoofdletters verschilt, herrekent in ref en is in Drools een `UnitConflict`: luid, en zoals vóór deze stap. Wel nieuw in Java: een kale eenheid is het canonieke doel van een eenheid die haar noemt, met factor 1, zoals §2 zegt.
+5. `quotient_units_ok` laat ook `€ ÷ aantal` toe (factor 1, deler bewezen eenheidloos). Dat was geweigerd; §3 noemt alleen "factor 1 toegelaten". Geen test pinde de weigering.
+6. De projecties die stap 1 noemde: ik heb `compound`, `reciprocal`, `abbreviation()`, `system()`, `canonical()`, `factorToCanonical()`, `denominator()` en in OCaml `Units.denominator`, `numerator_text`, `over` laten staan. Ze lezen een gedeclareerde eenheid of de spelling in een melding, en de grep op die namen geeft ongeveer tweehonderd regels, ook in testen. Geen van hen rekent nog met een eenheid. `Unit.reciprocal` geeft nu nooit `null`.
+7. Buiten de lijst van §11: IR-SPEC ch. 4.1 (de `times`-alinea, die de claim van de verifier beschrijft) en de rij WF-091 in de index.
+8. `like-ref`: `rate-times-converted-quantity` bestond al en dekt `€/dg × wk`. De twee nieuwe documenten zijn `product-into-square` en `product-restated-into-left-factor`. `a_rate_times_a_convertible_unit_applies_the_factor` is daarom geen aparte test.
+
+**Voorlopige besluiten.**
+
+- *Regel 8 bij meer dan één negatieve factor.* Ref heeft het rooster en rekent (`€/m/mnd` over maanden is `€/m`). Drools weigert bij naam (`RATE_DENOMINATOR_NOT_GRID`, `negativeAtom` is null), clingo komt bij de schrijfgrens uit op `non-identical units`, de frontend typeert het totaal ongewijzigd, en de verifier claimt daar niets. Geen golden heeft de vorm. Bij één negatieve factor is de uitkomst in alle vier gelijk, ook bij een macht (`€/mnd^2` is `€/mnd`).
+- *`conv_factor` op een niet-omrekenbaar paar* is een fout met `incompatible units`, waar de oude toets alleen rate tegen plain ving. Elke aanroeper toetst eerst.
+- *`convertible` met een factor zonder klasse* (geen `canonical`, geen afkorting; de wire kent de vorm niet, het AST wel) geeft waar, zoals de oude functie; `Normalise.unit_named` blijft de grens.
+- *Een grote `exponent`:* de exacte machten rekenen zonder bovengrens door; ik heb er geen gezet.
+
+**Open, buiten §11, voor de hoofdsessie.** `corpus/golden/jutterswet-aanvoergeld/NOTE.md` beschrijft twee vormen die clingo weigerde: `t` tegen `kg` in een vergelijking en `€/kg` maal gewicht in `€`. Beide vertalen nu. De andere NOTE's met `unit-carrying multiplicative operand` gaan over `percentageOf` en kloppen nog. `spec/CONSTRUCTS.md` rij 26 is nog niet bijgewerkt; dat is C6. `check-reftype-derivation.sh` is een beschermd pad (alleen commentaar).
+
+**Wat stap 3 moet weten.**
+
+- `DefinitionResolver.normalForm` is ongewijzigd en gebruikt `Unit.compound` en `Unit.reciprocal`. `compound` neemt de positieve factoren van links en keert rechts om, zonder atomen samen te voegen; voor `A^a/B^b/…` is een lijst met `Unit.Factor` en de canonieke volgorde de directe weg (`sorted` is nu privé).
+- `IrEmitter` schrijft `exponent` al voor elke factor met een exponent anders dan 1 (r. 633), en de frontend houdt `Number.unit` als lijst factoren; daar is voor C4 geen wijziging nodig.
+- Register: 353 codes, RGS-360 staat er nog; na C4 −1 +1. Catalogi idem. De vloer is 347.
+- `grammar/DIVERGENCES.md` zegt bij `m^2` nu alleen dat deze lezer de spelling niet leest, en de tabel daarboven noemt RGS-360: beide gaan weg in C4.
+- `UnitIdentityTest.a_power_is_refused_and_is_not_the_unit` en `a_spelling_without_a_normal_form_is_refused_by_name` pinnen RGS-360 en keren in C4 om.
+- `UnitIdentityTest` en `TypingTest` gebruiken `EUR` als afkorting met `€` als alias: de rendering is `EUR·m/jr`. Let daarop bij een verwachting met `€`.
+- Clingo-grenzen voor de goldens van C5: een product van drie operanden met decimalen raakt het range-hek van 46340 (`5,00 × 2,00 × 3,00`: `factors_doc` gebruikt daarom operanden zonder decimalen).
+- Een Bash-aanroep die langer dan 180 s loopt, gaat vanzelf de achtergrond in; houd de wachtlus onder 170 s.
+
