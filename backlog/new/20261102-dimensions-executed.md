@@ -4,48 +4,52 @@
 dimensies, dus uchar moet ze uitvoeren, niet alleen beschrijven. Aanleiding: bij `20261009-drools-schrijfgrens` bleek dat EF-004
 op een dimensiecel geen test kan krijgen.*
 
-Goal: een attribuut met een dimensie (een geordende lijst labels, IR-SPEC ch. 2.7) houdt per label een waarde, en het lezen van
-een cel, het schrijven van een cel en de vouw over een selectie van cellen draaien in het vierkant ref ≡ clingo ≡ Drools, op
-goldens met cases en absolute verwachtingen.
+Goal: een attribuut met een of meer dimensies (geordende lijsten labels, IR-SPEC ch. 2.7) houdt per combinatie van labels een
+waarde, en het lezen van een cel, het schrijven van een cel en de vouw (sum, minimum, maximum) over een selectie van cellen
+draaien in het vierkant ref ≡ clingo ≡ Drools, op goldens met cases en absolute verwachtingen.
 
-## Stand op main `b54a8fd3a`
+## Stand op main `e77dbf2b7`
 
 | Laag | Dimensies |
 |---|---|
-| IR en schema | `Dimension {name, plural?, preposition?, labels}`, `DimensionCellRead {attribute, labels}`, `Aggregation.dimensionSelection {dimension, labels}` (sum, minimum, maximum) |
-| verifier | WF-014, WF-040, WF-089 tot en met WF-091 |
+| IR en schema | `Dimension {name, plural?, preposition?, labels}`, `DimensionCellRead {attribute, labels}`, `Aggregation.dimensionSelection {dimension, labels}`; een regel kan geen cel schrijven (`RuleVersion.target` is een `AttributeReference`) |
+| verifier | WF-014, WF-040, WF-089 tot en met WF-091; laat zes documenten door die onder de huidige norm fout zijn, en weigert één goed (advies §1) |
 | frontend | schrijft cel en vouw; goldens `jutterswet-seizoenvondst`, `jutterswet-seizoenvouw`, `jutterswet-vormenkabinet`, alle zonder cases |
-| semantiek | ch. 5.8.5 (lege cel telt niet mee; een geheel lege selectie is leeg); de vouw staat als "postponed, not rejected" (IR-SPEC rond 5843) |
-| case-formaat (`spec/schema/uchar-case-v0.schema.json`) | geen invoer of verwachting voor een cel |
-| ref | "Not implemented" (`ref/README.md`), faalt met context |
-| clingo | geen vertaling |
-| Drools | de transpiler kent `DimensionCellRead` (één dimensie; meer is `DIMENSION_CELL_MULTI_DIMENSION`) en de vouw (`rsDimSom`, `rsDimMin`, `rsDimMax`), maar weigert gedimensioneerde invoer (DROOLS-047) |
+| case-formaat | geen invoer of verwachting voor een cel |
+| ref, clingo | weigeren cel en vouw (`REF-002`, `CLINGO-008`), en nemen een gewone waarde op een gedimensioneerd attribuut stil aan (`ref/lib/case.ml:450-469` leest `attribute_dimensions` niet) |
+| Drools | kent cel en vouw over één dimensie, maar weigert invoer (DROOLS-047), dus speelt alleen met lege cellen |
 
-CONSTRUCTS rij 28 deelt het in als "split": de declaratie van een dimensie is core, het gebruik op een attribuut dialect.
+## Onderzoek en besluiten
 
-## Eerst onderzoeken (vóór de bouw)
+- Onderzoek: `/Users/yeb/Developer/uchar-dev/research/dimensies-2026-11-02/rapport.md` met `notes/` (RegelSpraak v2.3.0, ALEF,
+  geporte runtime, metingen en mutanten).
+- Ontwerpadvies: `/Users/yeb/Developer/uchar-dev/werk/dimensions-executed/fable/advies.md` (toets van het rapport, besluitpunten,
+  stappenplan met acceptatie per stap). Dit advies is de bron voor de bouw.
+- **Besluit Yeb (2026-11-02): waar de RegelSpraak-specificatie zwijgt, is ALEF de normbron** (een cel schrijven, een vouw over meer
+  dimensies, een cel van een ander type dan getal). Waar de typering van de specificatie ALEF tegenspreekt (`eerste`, `laatste`,
+  `aantal` over cellen), bouwt deze kaart niets. Vastleggen in CONSTRUCTS rij 28 (hoofdsessie) en IR-SPEC ch. 4.3.
+- Voorlopige besluiten volgens het advies §2 (technisch): B1 een `DimensionCellRead` is toegestaan als schrijfdoel, plus
+  `labels?` op `MemberInit`; B2 labels per positie, in de gedeclareerde volgorde van de dimensies; B3 `dimensionSelections` als lijst,
+  één per dimensie, onder die nieuwe naam; B4 afhankelijkheden per cel; B5 alleen sum, minimum, maximum; B6 `cells` als invoer,
+  `cellValue` en `cellEmpty` als verwachting, twee nieuwe EF-codes (onbekend of misplaatst label, dubbele cel), een scalar of
+  tijdlijn op een gedimensioneerd attribuut een `CASE ERROR`; B7 een cel over een rol in ref en clingo in stap 2.
 
-1. Wat RegelSpraak (specificatie v2.3.0, §3.6, §13.3.7; parafrase met §-nummer, geen citaten in de repo) en ALEF
-   (`/Users/yeb/Developer/uwv/ALEF`, o.a. `Test_Spraken.Dimensie_voorbeelden.mps`, de structuur- en translatormodellen) met een
-   dimensie doen: meer dimensies op één attribuut, een cel schrijven, een lege cel, een interval van labels, de volgorde, invoer en
-   uitvoer van een cel, en wat de geporte runtime (`RegelSpraakRuntime`, de `rsDim*`-functies) doet.
-2. Wat in de IR ontbreekt: een schrijfactie naar een cel (een doel met labels), meer dimensies tegelijk, een cel op een tijdlijn.
-3. Een voorstel voor de case-vorm van een cel (invoer en verwachting), de semantiek per uitvoerder, en de goldens; daarna een
-   ontwerpadvies (Fable) over de keuzes.
+## Stappen (elke stap `make gates` groen; beschermde paden als voorstel)
 
-## Acceptatie (na het onderzoek aanscherpen)
+De vijf stappen van het advies §3, met daar de acceptatie per stap:
 
-- (a) De case-vorm draagt een cel als invoer en als verwachting (schema, beschermd: voorstel); gate 4 toetst haar.
-- (b) Ref en clingo lezen, schrijven en vouwen cellen volgens ch. 5.8.5 en de nieuwe tekst; Drools draagt de invoer (DROOLS-047
-  `RETIRED` of beperkt) en speelt de goldens op beide branches.
-- (c) De drie bestaande goldens krijgen cases; nieuwe goldens voor wat het onderzoek vindt (meer dimensies, schrijven naar een cel),
-  eigen Jutterswet-casus, rechtenvrij. Gate 12 `EXPECTED_PLAYED` en `EXPECTED_CHANNEL` bewegen met naam.
-- (d) EF-004 op een cel (de schrijfgrens en de invoertoets uit `20261009-drools-schrijfgrens`), met een rood geval.
-- (e) Gate 17 leest een `DimensionCellRead` (nu buiten gate 17, RUNTIME-SEMANTICS rond 6055).
-- (f) `make gates` groen.
+1. Spec, verifier, IR- en case-schema, frontend-emitter (`dimensionSelections`), de lezersgrens in de case-lezer en de tekst van
+   ch. 5.12 voor een cel. Rood eerst: de verifier-negatieven met `expect.txt`.
+2. Ref en clingo lezen en vouwen; cases op de bestaande goldens; rood EF-004 en de twee nieuwe codes op een cel.
+3. Schrijven naar een cel in ref en clingo; golden `jutterswet-seizoenboeking` met bron; rood EF-006 op een cel.
+4. Drools: bean per cel, invoer en terugleggen, lezen en vouwen over n dimensies, graaf per cel (gate 15), lezingen (gate 17);
+   DROOLS-040, -047, -184, -191 `RETIRED`; `EXPECTED_PLAYED` en `EXPECTED_CHANNEL` met naam.
+5. Frontend met meer dimensies; golden `jutterswet-strandseizoen`.
 
-Omvang: groot (schema, drie uitvoerders, spec, corpus). Waarschijnlijk in stappen, zoals `unit-factors`.
+Parallel na stap 1: stap 2 en het Drools-leesdeel van stap 4; stap 3 na 2; het Drools-schrijfdeel na 3; stap 5 naast 3 en 4.
 
-May touch: `spec/schema/uchar-case-v0.schema.json`, `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md` (voorstel), `ref/`,
-`backends/clingo/`, `backends/drools/`, `frontends/regelspraak/` (als de schrijfvorm ontbreekt), `corpus/`, `scripts/` (pins,
-voorstel), `ref/README.md`.
+Buiten deze kaart (advies §4): `eerste`/`laatste`/`aantal` over cellen (vervolgkaart met een normkeuze), dimensie plus tijdlijn
+(een WF-weigering in stap 1), de scenariolaag, `GedimensioneerdeLiteral`. De distributie volgt met de pin-bump na stap 4.
+
+May touch: `spec/schema/`, `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md` (voorstel), `spec/verifier/`, `ref/`, `backends/clingo/`,
+`backends/drools/`, `frontends/regelspraak/`, `corpus/`, `scripts/` (pins en vloeren, voorstel), `ref/README.md`.
