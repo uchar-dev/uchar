@@ -90,11 +90,11 @@ class MarkerReasonPinTest {
                     "alle vier de markers staan direct onder hun eigen melding — de aggregatie over een "
                     + "ongedeclareerd lid, de niet-omgezette dimensieselectie / 'gedurende de tijd dat', "
                     + "(2026-09-20) de WF-037-ERROR op een niet-set bron onder 'het aantal gevulde "
-                    + "waarden van', en (2026-11-02) de RGS-372-, RGS-373- of RGS-374-ERROR die "
+                    + "waarden van', en (2026-11-02) de RGS-366-, RGS-367- of RGS-368-ERROR die "
                     + "resolveDimensionSelections opwerpt (een dimensie zonder selectie, een dimensie twee keer, "
                     + "een kaal interval dat in twee dimensies past)"),
             new Site("ExpressionBuilder.java", "dimensionCell", 2,
-                    "de RGS-371-ERROR (een naam die op twee cellen past) respectievelijk de RGS-370-ERROR (een cel "
+                    "de RGS-365-ERROR (een naam die op twee cellen past) respectievelijk de RGS-364-ERROR (een cel "
                     + "zonder label van een dimensie) staat vlak boven de marker (2026-11-02)"),
             new Site("ExpressionBuilder.java", "checkFoldSource", 4,
                     "elk van de vier vouwbron-weigeringen zet haar eigen WARNING neer vlak voor de marker"),

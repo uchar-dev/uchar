@@ -86,9 +86,9 @@ class DimensionCellTest {
     }
 
     @Test void a_cell_without_a_label_of_every_dimension_is_refused() {
-        assertOneError(resolve("zijn vondstgewicht in voorjaar."), "RGS-370",
+        assertOneError(resolve("zijn vondstgewicht in voorjaar."), "RGS-364",
                 Map.of("written", "zijn vondstgewicht in voorjaar", "attribute", "vondstgewicht", "dimension", "strand"));
-        assertOneError(resolve("zijn natte buit."), "RGS-370",
+        assertOneError(resolve("zijn natte buit."), "RGS-364",
                 Map.of("written", "zijn natte buit", "attribute", "buit", "dimension", "seizoen"));
     }
 
@@ -111,7 +111,7 @@ class DimensionCellTest {
                 geldig altijd
                     De uitkomst van een Jutter moet berekend worden als zijn stand in noord in zuid.
             """);
-        assertOneError(m, "RGS-371",
+        assertOneError(m, "RGS-365",
                 Map.of("written", "zijn stand in noord in zuid", "cells", "stand[noord, zuid]; stand[zuid, noord]"));
     }
 

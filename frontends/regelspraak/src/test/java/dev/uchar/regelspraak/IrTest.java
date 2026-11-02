@@ -179,7 +179,7 @@ class IrTest {
                 "een multidimensioneel attribuut mag niet over één as gevouwen worden");
         assertEquals(1, m.diagnostics.size(), () -> "verwachtte precies één diagnose: " + m.diagnostics);
         RegelSpraakModel.Diagnostic d = m.diagnostics.get(0);
-        assertEquals("RGS-372", d.code(), d::toString);
+        assertEquals("RGS-366", d.code(), d::toString);
         assertEquals(RegelSpraakModel.Severity.ERROR, d.severity(), d::toString);
         assertEquals("brutonettodimensie", d.args().get("dimension"), d::toString);
     }

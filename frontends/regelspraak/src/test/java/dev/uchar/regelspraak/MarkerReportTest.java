@@ -85,10 +85,10 @@ class MarkerReportTest {
                 + "element en regelonderwerp; RGS-358, een tussenliggend element of 'zelf' na een andere naam): geen "
                 + "document");
         CLASSIFICATION.put("ExpressionBuilder.java#buildFold", "WARNING: aggregatie_over_een_ongedeclareerd_lid, "
-                + "dimensieselectie_of_gedurende_op_een_aggregatie; ERROR (WF-037, aantal gevulde; RGS-372 tot en met "
-                + "RGS-374, de selecties van een dimensievouw): geen document");
-        CLASSIFICATION.put("ExpressionBuilder.java#dimensionCell", "ERROR (RGS-370, een cel zonder label van een "
-                + "dimensie; RGS-371, een naam die op twee cellen past): geen document");
+                + "dimensieselectie_of_gedurende_op_een_aggregatie; ERROR (WF-037, aantal gevulde; RGS-366 tot en met "
+                + "RGS-368, de selecties van een dimensievouw): geen document");
+        CLASSIFICATION.put("ExpressionBuilder.java#dimensionCell", "ERROR (RGS-364, een cel zonder label van een "
+                + "dimensie; RGS-365, een naam die op twee cellen past): geen document");
         CLASSIFICATION.put("ExpressionBuilder.java#checkFoldSource", "WARNING: vouwbron_geneste_verzamelingsstap, "
                 + "vouwbron_tussenstap, vouwbron_rolanker, vouwbron_bindt_niet_op_de_geschreven_naam");
         CLASSIFICATION.put("ExpressionBuilder.java#aggregationFilter", "WARNING (van buildFunction): deelselectie_op_een_aggregatie_operand");

@@ -1797,7 +1797,7 @@ final class ExpressionBuilder {
             List<RegelSpraakModel.Dimension> fits = attrDims.stream().filter(d -> interval(d, from, to) != null).toList();
             List<RegelSpraakModel.Dimension> free = fits.stream().filter(d -> !named.contains(d.name())).toList();
             if (free.size() > 1) {
-                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-374",
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-368",
                         params("expression", expression, "interval", src(dim),
                                 "dimensions", String.join(", ", free.stream().map(RegelSpraakModel.Dimension::name).toList())),
                         f.getStart().getLine()));
@@ -1815,7 +1815,7 @@ final class ExpressionBuilder {
         boolean missing = false;
         for (RegelSpraakModel.Dimension d : attrDims)
             if (!byDimension.containsKey(d.name())) {
-                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-372",
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-366",
                         params("expression", expression, "attribute", a.attribute(), "dimension", d.name(),
                                 "plural", d.pluralName()), f.getStart().getLine()));
                 missing = true;
@@ -1825,7 +1825,7 @@ final class ExpressionBuilder {
     }
 
     private DimensionSelections repeatedDimension(FunctieAanroepContext f, String expression, RegelSpraakModel.Dimension d) {
-        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-373",
+        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-367",
                 params("expression", expression, "dimension", d.name()), f.getStart().getLine()));
         return DimensionSelections.REFUSED;
     }
@@ -3915,7 +3915,7 @@ final class ExpressionBuilder {
      *  inkomen van huidig jaar" = attribuut "inkomen" with a label before and one behind it). Returns the
      *  {@link Expr.DimensionCellRead} with the labels per position in the declared order of the dimensions (WF-040);
      *  null when {@code bareName} is no cell; and a marker whose ERROR is recorded when it writes labels of some
-     *  dimensions only (RGS-370) or fits two cells (RGS-371). The longest matching attribute wins, so a dimensioned
+     *  dimensions only (RGS-364) or fits two cells (RGS-365). The longest matching attribute wins, so a dimensioned
      *  name is not shadowed by a shorter one inside it. */
     private Expr dimensionCell(String bareName, ObjectType ot, String navRole, String subjectSource, Source source) {
         if (ot == null || bareName == null) return null;
@@ -3930,7 +3930,7 @@ final class ExpressionBuilder {
                 if (r.attribute().length() == longest && cells.stream().noneMatch(c -> c.spelling().equals(r.spelling())))
                     cells.add(r);
             if (cells.size() > 1) {
-                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-371",
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-365",
                         params("written", source.snippet(), "cells",
                                 String.join("; ", cells.stream().map(CellReading::spelling).toList())), line));
                 return new Expr.Unresolved(ot.attribute(cells.get(0).attribute()), source, null);   // the ERROR above is this marker's diagnosis
@@ -3947,7 +3947,7 @@ final class ExpressionBuilder {
                     || r.attribute().length() == partial.attribute().length() && r.missing().size() < partial.missing().size())
                 partial = r;
         for (RegelSpraakModel.Dimension d : partial.missing())
-            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-370",
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-364",
                     params("written", source.snippet(), "attribute", partial.attribute(), "dimension", d.name()), line));
         return new Expr.Unresolved(ot.attribute(partial.attribute()), source, null);   // the ERROR above is this marker's diagnosis
     }

@@ -205,14 +205,14 @@ class DimensionFoldTest {
     }
 
     @Test void a_fold_without_a_selection_of_every_dimension_is_refused() {
-        DimensionCellTest.assertOneError(resolveTwo("de som van zijn vondstgewicht over alle seizoenen."), "RGS-372",
+        DimensionCellTest.assertOneError(resolveTwo("de som van zijn vondstgewicht over alle seizoenen."), "RGS-366",
                 Map.of("expression", "de som van zijn vondstgewicht over alle seizoenen", "attribute", "vondstgewicht",
                         "dimension", "strand", "plural", "stranden"));
     }
 
     @Test void a_dimension_selected_twice_is_refused() {
         DimensionCellTest.assertOneError(resolveTwo("de som van zijn vondstgewicht over alle seizoenen over de seizoenen "
-                + "in {voorjaar} over alle stranden."), "RGS-373",
+                + "in {voorjaar} over alle stranden."), "RGS-367",
                 Map.of("expression", "de som van zijn vondstgewicht over alle seizoenen over de seizoenen in {voorjaar} "
                         + "over alle stranden", "dimension", "seizoen"));
     }
@@ -238,7 +238,7 @@ class DimensionFoldTest {
     /** Two dimensions carry both bounds of the interval and neither has a selection of its own. */
     @Test void a_bare_interval_that_fits_two_dimensions_is_refused() {
         RegelSpraakModel m = Resolver.resolve(COAST + "de som van zijn stand vanaf noord t/m zuid.\n");
-        DimensionCellTest.assertOneError(m, "RGS-374", Map.of("expression", "de som van zijn stand vanaf noord t/m zuid",
+        DimensionCellTest.assertOneError(m, "RGS-368", Map.of("expression", "de som van zijn stand vanaf noord t/m zuid",
                 "interval", "vanaf noord t/m zuid", "dimensions", "kust, wind"));
     }
 }

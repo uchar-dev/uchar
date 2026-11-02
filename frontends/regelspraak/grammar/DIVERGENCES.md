@@ -1050,8 +1050,8 @@ document that parsed then parses the same way now. What changes is the reading
 of three forms that were an unresolved marker with a WARNING: a name run that
 is a cell of an attribute with more than one dimension, or of a dimension
 declared before the attribute, now reads as that cell; a run with labels of
-some dimensions only is refused (RGS-370); a fold over some dimensions of its
-attribute only is refused (RGS-372). Every `source.rgs` golden re-emits
+some dimensions only is refused (RGS-364); a fold over some dimensions of its
+attribute only is refused (RGS-366). Every `source.rgs` golden re-emits
 byte-identically (gate 10), as do the documents of the parity zone (gate 11)
 and every scenario golden (gate 16).
 
@@ -1072,15 +1072,15 @@ and every scenario golden (gate 16).
 
 ### Fail-fast refusals (resolver, loud diagnostics)
 
-- **RGS-370** — a run that reads as a cell with labels of some dimensions
+- **RGS-364** — a run that reads as a cell with labels of some dimensions
   only (`zijn vondstgewicht in voorjaar` of a `vondstgewicht` over `seizoen`
   and `strand`): ERROR, one per dimension without a label.
-- **RGS-371** — a run that reads as two cells (two dimensions with one
+- **RGS-365** — a run that reads as two cells (two dimensions with one
   preposition and a label in common).
-- **RGS-372** — a fold with no selection for a dimension of its argument:
+- **RGS-366** — a fold with no selection for a dimension of its argument:
   ERROR, one per such dimension, naming the form of a fixed dimension.
-- **RGS-373** — a fold that selects in one dimension twice.
-- **RGS-374** — a bare interval that fits two dimensions no over-form names.
+- **RGS-367** — a fold that selects in one dimension twice.
+- **RGS-368** — a bare interval that fits two dimensions no over-form names.
 - An over-form that names no dimension of the attribute, a label that is no
   label of its dimension and an interval that runs backwards stay the honest
   marker of RGS-070, as for one dimension.
