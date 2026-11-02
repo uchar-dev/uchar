@@ -437,7 +437,8 @@ missing line makes `make gates` exit non-zero. Current gates:
     `fout-op-tussenstand` (2026-11-01) DROOLS-120 and DROOLS-165, since the card
     `dimensions-executed` (2026-11-02) DROOLS-040, DROOLS-047, DROOLS-184,
     DROOLS-191, DROOLS-297 and DROOLS-298, since the card
-    `dimensions-remaining` (2026-11-02) DROOLS-189; every raised code
+    `dimensions-remaining` (2026-11-02) DROOLS-189, since the card
+    `drools-exact-arithmetic` (2026-11-02) DROOLS-296; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`

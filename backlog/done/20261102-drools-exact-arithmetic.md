@@ -249,3 +249,5 @@ end 2026-11-02 22:56:50 343s red=0
 Gate 12: 315 gespeeld op beide branches, JUnit 1773. Gate 17: 315 goldens, 885 case files op beide branches. Gate 8: 72 rode
 gevallen in ref en clingo, de Drools-leg 52 met de code van het geval. Een eerdere run vóór de rebase op `e5fe54e4a`
 (`logs/stap8-gates-1.log`) was ook geheel groen.
+
+**Landing (hoofdsessie, 2026-11-02).** Zelf nagemeten: het rode geval `jutterswet-tijdsevenredig-past-niet` gaf op ref en de jar van `3d4676b88` geen fout ("EXPECTED FAULT DID NOT OCCUR", `NOFAULT`) en geeft nu in ref en Drools EF-006 met `place` `L1.ligdeel`, `value` `135/14`, `decimals` 2. Nagelopen: de invoer 36 → 366 in `TemporalFixpointWitnessTest` houdt de bedoeling van die getuige (het fixpunt), en de nieuwe norm per segment heeft een eigen rood geval. Gerebased op `3b75ac8e0`, ff; `make gates` groen op `f7c87d481`, daarna alleen het Result. In dezelfde landing: CONSTRUCTS rij 2 en 28, CLAUDE.md gate 12 (DROOLS-296 retired). Ch. 2.3 min/max blijft bij `static-precision-gate`.
