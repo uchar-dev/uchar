@@ -2444,8 +2444,9 @@ exact rationals with a **pinned finite scale S = 4** (vraag 4-A): a
 4-decimal declaration scales by 10^4, ref stays exact-rational, and a
 value that does not terminate at four decimals faults loudly and
 *consistently* in both executors — ref's bounded-write gate and clingo's
-does-not-fit / non-exact-division fence (the red witness
-`corpus/red/decimal-nonterminating`, `1,0000 / 3,0000` at four decimals:
+does-not-fit / non-exact-division fence (the document
+`corpus/negative/wf023-decimal-nonterminating`, `1,0000 / 3,0000` at four
+decimals, which the precision gate of WF-023 refuses before it runs:
 ref's *"does not fit the declared 4 decimals"* and clingo's *"non-exact
 division (an explicit rounding is mandated before precision is lost)"*).
 The rational operators and the `ToRat` casts ride the existing numeric
@@ -2994,7 +2995,9 @@ narrowed to what the corpus exercises); a **list-valued
 scalars and leegte; a list comparison is not built until a case wants
 one). The **closed-body arithmetic forms now translate** (S15, goldens
 `jutterswet-kinderfoldheffing` and the `jutterswet-kinder*` rest-form
-witnesses; reds `closed-nonexact-division`, `closed-runtime-division-by-zero`),
+witnesses; the document `corpus/negative/wf023-closed-nonexact-division`, which
+the precision gate of WF-023 refuses before it runs, and the golden
+`closed-runtime-division-by-zero`),
 each reusing its rule-level encoding and every fence in the fold interior:
 `Maal` and `Percentage_van`, the money×rate split rounded to the cent, a
 division by a compile-time positive constant **or a runtime (bound-binder)
