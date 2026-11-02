@@ -368,3 +368,5 @@ jar rc=0 2s drools-jar: rebuilt (4 source path(s) newer than the jar, e.g. front
 after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
 end 2026-11-02 23:24:05 314s red=0
 ```
+
+**Landing (hoofdsessie, 2026-11-02).** Zelf nagemeten: `wf023-precision-quotient-by-attribute`, `-quotient-by-three`, `-percentage-literal` en `-unit-factor` geven op de verifier van `3d4676b88` `verifier: PASS` en nu `WF-023.precision-unbounded` of `-exceeds FAIL`; `jutterswet-precisiepoort` en `anchor/jutterswet-vindersloon` (met afronding, voorstel op beschermd pad) verifier-schoon en `oracle: PASS`. Catala (a): besloten door Yeb, uitvoering niet gelukt in deze kaart (clingo houdt de onbegrensde vorm als geheel getal, de plugin pint S = 4); op Fable-advies (`werk/static-precision-gate/fable/advies-catala.md`) geland met dat punt OPEN en meteen de vervolgkaart `20261102-catala-decimal-unbounded`. Ff op main `5afac5597`; `make gates` groen op `57d2a5003`, daarna alleen `ASP-TRANSLATION.md` (twee verwijzingen) en het Result. In dezelfde landing: CONSTRUCTS rij 2 en 10, CLAUDE.md gate 8 (`EXPECTED_MIN_DROOLS_EXCLUDE_CODES` 16).

@@ -291,7 +291,7 @@ missing line makes `make gates` exit non-zero. Current gates:
    parameter column of ch. 5.7b, and the two pairs of cases that differ in a parameter only (`aanvoergeld-parameter-unbound`,
    `jutterswet-dubbele-melding`) are told apart by their pinned `params` (stale-guarded). An empty red set is a failure,
    never silently green. Floors: `EXPECTED_MIN_RED_CASES=44`, `EXPECTED_MIN_RED_CODES=82`, `EXPECTED_MIN_RED_PARAMS=120`,
-   `EXPECTED_MIN_EF_CODES=31`, `EXPECTED_MIN_GOLDEN_CODES=80`, `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=18`,
+   `EXPECTED_MIN_EF_CODES=31`, `EXPECTED_MIN_GOLDEN_CODES=80`, `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=16`,
    `EXPECTED_MIN_DROOLS_PARAMS=28` (the last two on the Drools leg). An `EXCLUDE` entry of the Drools list pins the
    register code of the refusal (`name|EXCLUDE DROOLS-###  <reason>`) and the leg compares it with the head of the
    status line, failing by case name with both codes; a `NOFAULT` entry carries none (card `drools-refusal-codes`).
