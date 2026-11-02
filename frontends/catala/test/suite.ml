@@ -233,8 +233,9 @@ let () =
          the map body, synthesises exactly `KamerMulti bedrag` (grondslag + 100)
          and folds to a scalar. grondslagen [1;2;3] -> 306, ref AND clingo *)
       ("subscope_per_element_multi.catala_en", [ "cases/per_element_three.json" ]);
-      (* an integer division, a decimal in Catala: 7 / 2 and 9 / 4, exact at
-         the pinned scale *)
+      (* an integer division, a decimal in Catala: 7 / 4 and 9 / 4, exact at
+         the pinned scale; the divisor is the number 4, which the precision gate
+         admits into the scale (a quotient by an attribute has no finite bound) *)
       ("division.catala_en", [ "cases/division_seven.json"; "cases/division_nine.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;

@@ -4935,11 +4935,16 @@ let arm_param ident =
 
 (* de deling waarvan §6.5 de lege deler meldt en de numerieke nul-deler
    afbreekt — in de ANDERS-arm van de knoop hieronder *)
+(* the quotient through a rounding to the 2 decimals of the heffing: the
+   precision gate (RUNTIME-SEMANTICS ch. 2.4 point 4) refuses a quotient by an
+   attribute into a bounded target, and the rounding of a leeg quotient is
+   leeg, so every arm below reads as it did *)
 let arm_division =
   Printf.sprintf
-    {|{ "node": "Binary", "op": "dividedBy", "left": %s, "right": %s, "type": %s,
-        "source": { "snippet": "de grondslag gedeeld door zijn restpost" } }|}
-    (branch_binder "k") (arm_attr "restpost") arm_ob
+    {|{ "node": "Rounding", "base": { "node": "Binary", "op": "dividedBy", "left": %s, "right": %s, "type": %s,
+        "source": { "snippet": "de grondslag gedeeld door zijn restpost" } }, "mode": "halfAwayFromZero",
+        "decimals": 2, "type": %s, "source": { "snippet": "de grondslag gedeeld door zijn restpost rekenkundig afgerond op 2 decimalen" } }|}
+    (branch_binder "k") (arm_attr "restpost") arm_ob arm_ob
 
 (* vorm 1 + 2: Let k = zijn inkomen in (als k > de drempel dan de basisheffing
    anders k gedeeld door zijn restpost) *)
@@ -5261,7 +5266,33 @@ let cb_plus right_side source_name =
 
 (* [cutoff] scheidt de twee richtingen; [else_branch] is de anders-arm, zodat de
    ch.-10.6-variant (de deling achter een behoefte) hetzelfde raamwerk deelt *)
-let cb_doc ~cutoff ~lambda_body =
+(* [rounded]: the fold through a rounding to the 2 decimals of the delertotaal,
+   which the precision gate (RUNTIME-SEMANTICS ch. 2.4 point 4) asks of a fold
+   that divides by its elements before the document is verifier-clean; the
+   rounding of a leeg total is leeg, and the totals below are whole *)
+let cb_doc ?(rounded = false) ~cutoff ~lambda_body () =
+  let fold =
+    Printf.sprintf
+      {|{ "node": "Fold", "type": %s,
+          "list": { "node": "ParameterReference", "parameter": "kindertallen",
+                    "source": { "snippet": "de kindertallen" } },
+          "function": { "node": "Lambda",
+            "parameters": [ { "name": "acc", "datatype": %s },
+                            { "name": "x", "datatype": %s } ],
+            "body": %s,
+            "source": { "snippet": "de kinddelen opgeteld" } },
+          "init": { "node": "Literal", "value": { "number": "0.00" }, "type": %s, "source": { "snippet": "0.00" } },
+          "source": { "snippet": "de kindertallen gevouwen tot het delertotaal" } }|}
+      cb_sum cb_sum cb_count (lambda_body ~cutoff) cb_sum
+  in
+  let value =
+    if not rounded then fold
+    else
+      Printf.sprintf
+        {|{ "node": "Rounding", "base": %s, "mode": "halfAwayFromZero", "decimals": 2, "type": %s,
+          "source": { "snippet": "het delertotaal rekenkundig afgerond op 2 decimalen" } }|}
+        fold cb_sum
+  in
   Printf.sprintf
     {|{ "format": "uchar-ir-v1",
   "model": {
@@ -5280,23 +5311,14 @@ let cb_doc ~cutoff ~lambda_body =
       { "node": "Rule", "name": "delertotaal van een jutter", "versions": [ { "initialisation": false, "presentation": "calculation",
         "target": { "node": "AttributeReference", "attribute": "delertotaal", "subjectType": "Jutter",
                   "source": { "snippet": "Het delertotaal van een Jutter" } },
-        "value": { "node": "Fold", "type": %s,
-          "list": { "node": "ParameterReference", "parameter": "kindertallen",
-                    "source": { "snippet": "de kindertallen" } },
-          "function": { "node": "Lambda",
-            "parameters": [ { "name": "acc", "datatype": %s },
-                            { "name": "x", "datatype": %s } ],
-            "body": %s,
-            "source": { "snippet": "de kinddelen opgeteld" } },
-          "init": { "node": "Literal", "value": { "number": "0.00" }, "type": %s, "source": { "snippet": "0.00" } },
-          "source": { "snippet": "de kindertallen gevouwen tot het delertotaal" } },
+        "value": %s,
         "validity": { "node": "Validity" } } ] } ],
     "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
     "uniquenesses": [], "factCreations": [], "startPointDeterminations": [],
     "ruleGroups": [] },
   "diagnostics": []
 }|}
-    cb_sum cb_count cb_count cb_sum cb_sum cb_count (lambda_body ~cutoff) cb_sum
+    cb_sum cb_count cb_count value
 
 (* als het kindertal groter of gelijk aan <drempel> is dan het opgetelde deel
    plus 1,00 anders het opgetelde deel plus <anders> *)
@@ -5374,7 +5396,7 @@ let () =
   (* de niet-betreden arm: drempel 0, kindertal 0 — de dan-arm telt 1,00 op en
      de deling door dat nul-kindertal mag het programma niet afbreken *)
   let zero_value = {|{ "number": "0" }|} in
-  let recht_0 = cb_doc ~cutoff:0 ~lambda_body:cb_body_recht in
+  let recht_0 = cb_doc ~cutoff:0 ~lambda_body:cb_body_recht () in
   let tallies = cb_case ~kindertallen:zero_value ~expected_value:(cb_total "1.00") in
   ref_matches ~name:"ch10.2 closed body: zero division in the not-entered arm" ~ir:recht_0
     ~case_text:tallies;
@@ -5385,7 +5407,7 @@ let () =
   translates_carrying ~name:"ch10.2 closed body: the zero guard is still in the program"
     ~ir:recht_0 ~case_text:tallies ~needle:zero_deposit;
   (* de betreden arm REKENT: drempel 4, kindertal 3 — 0,00 + 60/3 = 20,00 *)
-  let recht_4 = cb_doc ~cutoff:4 ~lambda_body:cb_body_recht in
+  let recht_4 = cb_doc ~cutoff:4 ~lambda_body:cb_body_recht () in
   let calculates = cb_case ~kindertallen:{|{ "number": "3" }|} ~expected_value:(cb_total "20.00") in
   ref_matches ~name:"ch10.2 closed body: the entered arm calculates" ~ir:recht_4
     ~case_text:calculates;
@@ -5398,13 +5420,13 @@ let () =
     ~case_text:(cb_case ~kindertallen:zero_value ~expected_value:cb_zero_coalesced);
   (* dezelfde grens langs ch. 10.6, binnen de gesloten body: de deling zit
      achter een behoefte die alleen de anders-arm leest *)
-  let let_0 = cb_doc ~cutoff:0 ~lambda_body:cb_body_let in
+  let let_0 = cb_doc ~cutoff:0 ~lambda_body:cb_body_let () in
   ref_matches ~name:"ch10.6 closed body: need only in the not-entered arm" ~ir:let_0
     ~case_text:tallies;
   clingo_matches
     ~name:"ch10.6 closed body: need only in the not-entered arm does not abort"
     ~ir:let_0 ~case_text:tallies;
-  let let_4 = cb_doc ~cutoff:4 ~lambda_body:cb_body_let in
+  let let_4 = cb_doc ~cutoff:4 ~lambda_body:cb_body_let () in
   (* de behoefte m is leeg en wordt gelezen, dus de barrière leegt de Let en
      daarmee het vouwlichaam: ref geeft leeg en de melding, clingo weigert *)
   pinned_loud ~entry:"V4" ~name:"ch10.6 closed body: need in the ENTERED arm" ~ir:let_4
@@ -5913,7 +5935,7 @@ let cb_body_condition ~cutoff =
 
 let cb_three ~ident ~lambda_body =
   let zero_value = {|{ "number": "0" }|} in
-  let lower_end = cb_doc ~cutoff:0 ~lambda_body and upper_end = cb_doc ~cutoff:4 ~lambda_body in
+  let lower_end = cb_doc ~rounded:true ~cutoff:0 ~lambda_body () and upper_end = cb_doc ~rounded:true ~cutoff:4 ~lambda_body () in
   verifier_clean ~name:ident ~ir:lower_end;
   verifier_clean ~name:(ident ^ " (hoge drempel)") ~ir:upper_end;
   (* de niet-betreden arm: drempel 0, kindertal 0 — de dan-arm telt op en de

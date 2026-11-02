@@ -727,8 +727,10 @@ PYEOF
         # monotone floor (maintainer decision 2026-09-09) on the EXCLUDE entries that pin a register code: a list that
         # quietly lost its code pins would keep passing on the channel alone. Measured 2026-10-19 (card
         # drools-refusal-codes): 19 cases, the 19 EXCLUDE entries of the list; 18 the same day, when the card
-        # zero-division-channel moved closed-runtime-division-by-zero to the golden corpus.
-        EXPECTED_MIN_DROOLS_EXCLUDE_CODES=18
+        # zero-division-channel moved closed-runtime-division-by-zero to the golden corpus; 16 since the card
+        # static-precision-gate (2026-11-02), whose precision gate of WF-023 moved closed-nonexact-division and
+        # closed-runtime-nonexact-division to corpus/negative, two EXCLUDE DROOLS-008 entries with them.
+        EXPECTED_MIN_DROOLS_EXCLUDE_CODES=16
         if [ "$d_excl_codes" -lt "$EXPECTED_MIN_DROOLS_EXCLUDE_CODES" ]; then
             printf 'check-red: FAIL — Drools leg: %s EXCLUDE cases compared on their DROOLS code, but EXPECTED_MIN_DROOLS_EXCLUDE_CODES pins at least %s — the list shrank or lost its code pins\n' "$d_excl_codes" "$EXPECTED_MIN_DROOLS_EXCLUDE_CODES" >&2
             status=1
