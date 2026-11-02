@@ -40,6 +40,9 @@ public enum Route {
     /** An input timeline as the asOfDate-bucket scalar the case gave, which {@link Consequence.State} carries where it says
      *  so. */
     BUCKET_SCALAR(ComputeHelpers.class, "bucketScalarOf"),
+    /** The input of a cell of a dimensioned attribute, the entry of its key in the map of the attribute's cells, which
+     *  {@link Consequence.State} carries where it names a cell. */
+    CELL(ComputeHelpers.class, "cell"),
     /** The fault of the form of an input, its sentence around the object, named in a rule, which
      *  {@link Consequence.InputFormFault} inserts. */
     INPUT_FORM_FAULT(ComputeHelpers.class, "inputFormFault"),
@@ -65,6 +68,9 @@ public enum Route {
     /** An attribute initialisation set on the new bean of an object creation where its value is not null, through the
      *  setter {@code Namen.lidnamen} names ({@link Consequence.Construction.Setting}). */
     SET(ComputeHelpers.class, "set"),
+    /** An initialisation of a cell of a dimensioned attribute put into the map of the new bean of an object creation
+     *  where its value is not null ({@link Consequence.Construction.Setting} with a cell). */
+    SET_CELL(ComputeHelpers.class, "setCell"),
     /** Whether the outcome of an evaluation is an evaluation fault, which a consequence inserts as a fault. */
     IS_EVALUATION_FAULT(ComputeHelpers.class, "isEvaluationFault"),
     /** An exception caught in an evaluation as its outcome where it is an evaluation fault; any other passes on. */

@@ -116,7 +116,7 @@ final class FormsPlan {
                 new Consequence.InsertCharacteristicState(O, ElementKey.of("wachter", "rustwacht", true), Consequence.StateSource.NONE, false,
                         Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("stand", null, null, one, List.of(subject), new Consequence.State(O,
-                ElementKey.of("wachter", "uitkijkbonus", false), Consequence.StateSource.INPUT, 0, true,
+                ElementKey.of("wachter", "uitkijkbonus", false), Consequence.StateSource.INPUT, 0, true, null,
                 Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("padstand zonder link", null, null, new ReadTable(List.of()),
                 List.of(new Subject(wachter, O, List.of(), List.of(), List.of())), new Consequence.InsertPathState(O, "Wachter:post",
@@ -255,7 +255,7 @@ final class FormsPlan {
                         new Consequence.Initialisation(ElementKey.of("post", "bemand", true),
                                 new Term.Const(Boolean.TRUE, null, null))),
                         fault, Consequence.Insertion.STATED, new Consequence.Construction(post, List.of(
-                                new Consequence.Construction.Setting(0, new Binding.Field(post, "hoogte")))), 1,
+                                new Consequence.Construction.Setting(0, new Binding.Field(post, "hoogte"), null))), 1,
                         List.of(new Consequence.Insert.New(Consequence.Insertion.STATED),
                                 new Consequence.Insert.Mark(Consequence.Insertion.STATED),
                                 new Consequence.Insert.Link("wachterpost", false, Consequence.Insertion.STATED),

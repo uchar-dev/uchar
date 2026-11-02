@@ -212,7 +212,7 @@ public enum DroolsCode {
     DIMENSION_READ_UNRESOLVED_ATTRIBUTE("DROOLS-188", Kind.CONTRACT, "dimension-read-unresolved-attribute", "description,snippet", null),
     DIMENSION_READ_OVER_PATH("DROOLS-189", Kind.REFUSAL, "dimension-read-over-path", "description,snippet", null),
     OWN_READ_FOREIGN_SUBJECT("DROOLS-190", Kind.CONTRACT, "own-read-foreign-subject", "objectType,subject,snippet", null),
-    DIMENSION_READ_WRITTEN_ATTRIBUTE("DROOLS-191", Kind.REFUSAL, "dimension-read-written-attribute", "description,attribute,snippet", null),
+    DIMENSION_READ_WRITTEN_ATTRIBUTE("DROOLS-191", Kind.RETIRED, "dimension-read-written-attribute", "description,attribute,snippet", null),
     LET_WITHOUT_BINDER("DROOLS-192", Kind.CONTRACT, "let-without-binder", "snippet", null),
     BINDER_READ_FOLD_FILTER("DROOLS-193", Kind.REFUSAL, "binder-read-fold-filter", "binder,snippet", null),
     BINDER_WITHOUT_ENCLOSING_LET("DROOLS-194", Kind.CONTRACT, "binder-without-enclosing-let", "binder,snippet", null),
@@ -319,7 +319,7 @@ public enum DroolsCode {
     NARROWING_HOST_NOT_CARRIED("DROOLS-295", Kind.LIMIT, "narrowing-host-not-carried", "snippet", null),
     FOLD_OVER_UNBOUNDED_VALUE("DROOLS-296", Kind.LIMIT, "fold-over-unbounded-value", "attribute,objectType", null),
     DIMENSION_FOLD_MULTI_DIMENSION("DROOLS-297", Kind.RETIRED, "dimension-fold-multi-dimension", "dimensionCount,snippet", null),
-    DIMENSION_CELL_WRITE("DROOLS-298", Kind.REFUSAL, "dimension-cell-write", "attribute,form", null),
+    DIMENSION_CELL_WRITE("DROOLS-298", Kind.RETIRED, "dimension-cell-write", "attribute,form", null),
     DIMENSION_LABELS_NAME_NO_CELL("DROOLS-299", Kind.CONTRACT, "dimension-labels-name-no-cell", "description,attribute,labels,dimensions,snippet", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is

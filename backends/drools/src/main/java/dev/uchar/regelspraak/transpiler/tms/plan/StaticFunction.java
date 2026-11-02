@@ -102,6 +102,9 @@ public enum StaticFunction {
     CELL(ComputeHelpers.class, "cell", false),
     /** A dimension map as it is, or leeg where the value is no map. */
     MAP(ComputeHelpers.class, "map", false),
+    /** A copy of a dimension map in which the cell at its labels, a {@code List} constant, holds a value, or nothing
+     *  where it is leeg: a cell a form writes, read through its standing, in a fold over the cells. */
+    WITH_CELL(ComputeHelpers.class, "withCell", false),
     /** A value restated by the canonical factors of two units (ch. 2.1, 2.6), a {@code BigDecimal} numerator and
      *  denominator, as rationals; a leeg value and a value that is no number pass unchanged. The function of a
      *  {@link Term.Restate}. */

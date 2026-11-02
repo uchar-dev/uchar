@@ -90,9 +90,9 @@ public final class StandingTargets {
                     && (f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN);
             String k = key(r.target());
             if (!isComputing(r) || !executable || k == null || count.getOrDefault(k, 0) != 1) continue;
-            Expr.AttributeReference d = (Expr.AttributeReference) r.target();
-            if (!temporalAttribute(d.objectType(), d.attribute())) continue;   // ref's wanted_shape
-            if (otherWriter(d.objectType().name, d.attribute())) continue;
+            Expr.AttributeReference d = written(r.target());
+            if (!temporalAttribute(d.objectType(), member(r.target()))) continue;   // ref's wanted_shape
+            if (otherWriter(d.objectType().name, member(r.target()))) continue;
             out.add(k);
         }
         temporal = out;
@@ -114,9 +114,9 @@ public final class StandingTargets {
         for (ResolvedRule r : model.resolvedRules) {
             String k = key(r.target());
             if (!isComputing(r) || k == null || count.getOrDefault(k, 0) != 1) continue;
-            Expr.AttributeReference d = (Expr.AttributeReference) r.target();
-            if (temporalAttribute(d.objectType(), d.attribute())) continue;   // ref's wanted_shape, ~temporal:false
-            if (otherWriter(d.objectType().name, d.attribute())) continue;
+            Expr.AttributeReference d = written(r.target());
+            if (temporalAttribute(d.objectType(), member(r.target()))) continue;   // ref's wanted_shape, ~temporal:false
+            if (otherWriter(d.objectType().name, member(r.target()))) continue;
             out.add(k);
         }
         scalar = out;
@@ -193,7 +193,8 @@ public final class StandingTargets {
         for (ResolvedObjectCreation oc : model.objectCreations)
             if (oc.createdType() != null && equalName(oc.createdType().name, ot))
                 for (var t : oc.initialisations())
-                    if (!t.characteristic() && equalName(t.attribute(), attr)) return true;
+                    if (!t.characteristic() && t.attribute() != null && equalName(cellMember(t.attribute(), t.labels()), attr))
+                        return true;
         return false;
     }
 
@@ -205,11 +206,33 @@ public final class StandingTargets {
     }
 
     /** The {@code "<objecttype>|<attribuut>"} key of a rule doel (ref's {@code target_of} + {@code key}), or
-     *  null when the doel is not an objecttype-bound attribuutreferentie. Normalisation is ref's
+     *  null when the doel is not an objecttype-bound attribuutreferentie. A target that names a cell of a dimensioned
+     *  attribute keys on the cell, {@code "jutter|vondstgewicht[najaar]"}, so a cell is a target of its own in every
+     *  domain here (RUNTIME-SEMANTICS ch. 5.8c), as ref's {@code target_of} keys it. Normalisation is ref's
      *  {@code Checks.norm} mirror, null-safe. */
     public static String key(Expr target) {
-        return target instanceof Expr.AttributeReference d && d.objectType() != null && d.attribute() != null
-                ? Namen.norm(d.objectType().name) + "|" + Namen.norm(d.attribute()) : null;
+        Expr.AttributeReference d = written(target);
+        return d != null && d.objectType() != null && d.attribute() != null
+                ? Namen.norm(d.objectType().name) + "|" + Namen.norm(member(target)) : null;
+    }
+
+    /** The attribute reference a target writes: itself, or the reference under a target that names a cell; null for
+     *  any other target. */
+    private static Expr.AttributeReference written(Expr target) {
+        return target instanceof Expr.DimensionCellRead c ? c.attribute()
+                : target instanceof Expr.AttributeReference d ? d : null;
+    }
+
+    /** The member a target writes as ref's {@code Checks.cell_member} spells it: the attribute, or the cell its labels
+     *  name, {@code vondstgewicht[najaar]}. */
+    private static String member(Expr target) {
+        Expr.AttributeReference d = written(target);
+        return cellMember(d.attribute(), target instanceof Expr.DimensionCellRead c ? c.labels() : null);
+    }
+
+    /** ref's {@code Checks.cell_member}: {@code attribute}, or with {@code labels} the cell they name. */
+    private static String cellMember(String attribute, List<String> labels) {
+        return labels == null ? attribute : attribute + "[" + String.join(", ", labels) + "]";
     }
 
     private static boolean equalName(String a, String b) {

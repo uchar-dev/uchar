@@ -556,6 +556,21 @@ public final class Cycles {
             return key;
         }
 
+        /** The node of the cell {@code labels} of the dimensioned attribute {@code name} of {@code ot}, a node of its own
+         *  (the verifier's {@code n_cell}): the attribute's node with the labels as written, in their order, so that a
+         *  rule that computes one cell from another cell of the same attribute closes no cycle. Without labels, the
+         *  attribute's node. */
+        private String cell(ObjectType ot, String name, List<String> labels) {
+            String attribute = member(ot, name, false);
+            if (labels == null) return attribute;
+            List<String> normalised = new ArrayList<>();
+            for (String l : labels) normalised.add(Namen.norm(l));
+            String key = attribute + "[" + String.join(", ", normalised) + "]";
+            names.putIfAbsent(key, names.get(attribute) + "[" + String.join(", ", labels) + "]");
+            order.putIfAbsent(key, order.get(attribute) + " " + String.join(", ", normalised));
+            return key;
+        }
+
         private String channel(String rule) {
             String key = "chan:" + Namen.norm(withoutVersion(rule));
             names.putIfAbsent(key, Msg.drools("PART.cycle.channel", "rule", ProducerConsumer.baseName(rule)));
@@ -588,21 +603,31 @@ public final class Cycles {
 
         /** A member write by a form that iterates {@code ot}: on {@code ot} and every type comparable with it that
          *  carries the member (the verifier's {@code member_writes ~over:`Extension}). */
-        private Set<String> extensionWrite(ObjectType ot, String name, boolean characteristic) {
+        private Set<String> extensionWrite(ObjectType ot, String name, boolean characteristic, List<String> labels) {
             Set<String> out = new LinkedHashSet<>();
-            out.add(member(ot, name, characteristic));
+            out.add(node(ot, name, characteristic, labels));
             for (ObjectType s : model.objectTypes.values())
-                if ((s.isA(ot) || ot.isA(s)) && carries(s, name, characteristic)) out.add(member(s, name, characteristic));
+                if ((s.isA(ot) || ot.isA(s)) && carries(s, name, characteristic)) out.add(node(s, name, characteristic, labels));
             return out;
         }
 
+        private Set<String> extensionWrite(ObjectType ot, String name, boolean characteristic) {
+            return extensionWrite(ot, name, characteristic, null);
+        }
+
         /** A member write by an object creation of {@code ot}: on {@code ot} and its ancestors that carry the member
-         *  (the verifier's {@code member_writes ~over:`Minted}), since creation mints exactly {@code ot}. */
-        private Set<String> mintWrite(ObjectType ot, String name, boolean characteristic) {
+         *  (the verifier's {@code member_writes ~over:`Minted}), since creation mints exactly {@code ot}; a member
+         *  with {@code labels} writes that cell of it (null: the member). */
+        private Set<String> mintWrite(ObjectType ot, String name, boolean characteristic, List<String> labels) {
             Set<String> out = new LinkedHashSet<>();
-            out.add(member(ot, name, characteristic));
-            for (ObjectType t : ot.chain()) if (carries(t, name, characteristic)) out.add(member(t, name, characteristic));
+            out.add(node(ot, name, characteristic, labels));
+            for (ObjectType t : ot.chain()) if (carries(t, name, characteristic)) out.add(node(t, name, characteristic, labels));
             return out;
+        }
+
+        /** The node of member {@code name} of {@code ot}, or of its cell {@code labels} where they are not null. */
+        private String node(ObjectType ot, String name, boolean characteristic, List<String> labels) {
+            return labels == null || characteristic ? member(ot, name, characteristic) : cell(ot, name, labels);
         }
 
         // ---------------- the forms ----------------
@@ -613,9 +638,13 @@ public final class Cycles {
                 if (g.recursive()) for (String member : g.members()) if (member != null) recursive.add(Namen.norm(withoutVersion(member)));
             List<Form> out = new ArrayList<>();
             for (ResolvedRule r : model.resolvedRules) {
-                if (!(r.target() instanceof Expr.AttributeReference d) || d.objectType() == null || d.attribute() == null) continue;
+                // a target that names a cell writes the cell (the verifier's written_reference and written_labels)
+                Expr.AttributeReference d = r.target() instanceof Expr.DimensionCellRead c ? c.attribute()
+                        : r.target() instanceof Expr.AttributeReference a ? a : null;
+                if (d == null || d.objectType() == null || d.attribute() == null) continue;
                 boolean characteristic = r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING;
-                Set<String> writes = extensionWrite(d.objectType(), d.attribute(), characteristic);
+                Set<String> writes = extensionWrite(d.objectType(), d.attribute(), characteristic,
+                        r.target() instanceof Expr.DimensionCellRead c ? c.labels() : null);
                 if (r.name() != null) writes.add(channel(r.name()));
                 List<Read> reads = new ArrayList<>();
                 formSubject = d.objectType();
@@ -679,7 +708,8 @@ public final class Cycles {
                 if (backLinkRelation != null) writes.add(relation(backLinkRelation));
                 if (o.createdType() != null)
                     for (ResolvedObjectCreation.MemberInit t : o.initialisations())
-                        if (t.attribute() != null) writes.addAll(mintWrite(o.createdType(), t.attribute(), t.characteristic()));
+                        if (t.attribute() != null)
+                            writes.addAll(mintWrite(o.createdType(), t.attribute(), t.characteristic(), t.labels()));
                 List<Read> reads = new ArrayList<>();
                 if (o.subject() != null) reads.add(new Read(population(o.subject()), false));
                 formSubject = o.subject();
@@ -786,6 +816,18 @@ public final class Cycles {
                     out.add(new Read(member(a.objectType(), a.attribute(), false), false, then(at, hops)));
                 }
                 case Expr.Binary b -> { expr(b.left(), subject, at, out); expr(b.right(), subject, at, out); }
+                // a dimension fold reads every cell its selections pick, each a node of its own, over the argument's
+                // own hops, and its fallback
+                case Expr.FunctionCall f when f.dimensionSelections() != null && f.arguments().size() == 1
+                        && f.arguments().get(0) instanceof Expr.AttributeReference a
+                        && a.objectType() != null && a.attribute() != null -> {
+                    List<RoleBindingRef> hops = navigation.getOrDefault(a, List.of());
+                    for (RoleBindingRef hop : hops)
+                        if (hop.factType() != null) out.add(new Read(relation(hop.factType()), false));
+                    for (List<String> labels : ProducerConsumer.selectedCells(f.dimensionSelections()))
+                        out.add(new Read(cell(a.objectType(), a.attribute(), labels), false, then(at, hops)));
+                    expr(f.emptyFallback(), subject, at, out);
+                }
                 case Expr.FunctionCall f -> {
                     ObjectType el = f.elementObjectType();
                     if (el != null) out.add(new Read(population(el), false));
@@ -821,7 +863,19 @@ public final class Cycles {
                     expr(b.minimum(), subject, at, out);
                     expr(b.maximum(), subject, at, out);
                 }
-                case Expr.DimensionCellRead c -> expr(c.attribute(), subject, at, out);
+                // the cell is the node, reached over the reference's own hops
+                case Expr.DimensionCellRead c -> {
+                    Expr.AttributeReference a = c.attribute();
+                    if (a == null || a.objectType() == null || a.attribute() == null) {
+                        expr(a, subject, at, out);
+                        return;
+                    }
+                    List<RoleBindingRef> hops = navigation.getOrDefault(a, List.of());
+                    for (RoleBindingRef hop : hops)
+                        if (hop.factType() != null) out.add(new Read(relation(hop.factType()), false));
+                    out.add(new Read(cell(a.objectType(), a.attribute(), c.labels() == null ? List.of() : c.labels()),
+                            false, then(at, hops)));
+                }
                 case Expr.TextComposition t -> {
                     for (Expr.TextComposition.Part d : t.parts())
                         if (d instanceof Expr.TextComposition.EmbeddedExpression i) expr(i.expr(), subject, at, out);

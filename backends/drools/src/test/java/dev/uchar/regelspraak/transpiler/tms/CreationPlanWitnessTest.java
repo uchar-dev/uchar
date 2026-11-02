@@ -454,7 +454,7 @@ class CreationPlanWitnessTest {
         List<Consequence.Initialisation> inits = List.of(new Consequence.Initialisation(amount, new Term.SlotValue(1, "bedrag")),
                 new Consequence.Initialisation(uitgereikt, new Term.Const(true, null, "waar")));
         Consequence.Construction build = new Consequence.Construction(Object.class,
-                List.of(new Consequence.Construction.Setting(0, new Binding.Field(Object.class, "bedrag"))));
+                List.of(new Consequence.Construction.Setting(0, new Binding.Field(Object.class, "bedrag"), null)));
         Consequence.Insert fresh = new Consequence.Insert.New(Consequence.Insertion.STATED);
         Consequence.Insert mark = new Consequence.Insert.Mark(Consequence.Insertion.STATED);
         Consequence.Insert link = new Consequence.Insert.Link("uitgifte", true, Consequence.Insertion.STATED);
@@ -473,7 +473,7 @@ class CreationPlanWitnessTest {
                 List.of(creation(inits, build, List.of(fresh, mark, link, characteristic)),
                         creation(inits, build, List.of(mark, fresh, link, characteristic)),
                         creation(inits, new Consequence.Construction(Object.class, List.of(build.settings().get(0),
-                                new Consequence.Construction.Setting(1, new Binding.Field(Object.class, "uitgereikt")))),
+                                new Consequence.Construction.Setting(1, new Binding.Field(Object.class, "uitgereikt"), null))),
                                 List.of(fresh, mark, link, characteristic)),
                         creation(inits, new Consequence.Construction(Object.class, List.of()),
                                 List.of(fresh, mark, link, characteristic, new Consequence.Insert.Characteristic(0,
@@ -498,9 +498,9 @@ class CreationPlanWitnessTest {
                 new Consequence.Initialisation(uitgereikt, new Term.Const(true, null, "waar")),
                 new Consequence.Initialisation(minted, new Term.Const(true, null, "waar")),
                 new Consequence.Initialisation(weight, new Term.SlotValue(1, "gewicht")));
-        Consequence.Construction.Setting setAmount = new Consequence.Construction.Setting(0, new Binding.Field(Object.class, "bedrag"));
+        Consequence.Construction.Setting setAmount = new Consequence.Construction.Setting(0, new Binding.Field(Object.class, "bedrag"), null);
         Consequence.Construction.Setting setWeight = new Consequence.Construction.Setting(3,
-                new Binding.Field(Object.class, "gewicht"));
+                new Binding.Field(Object.class, "gewicht"), null);
         Consequence.Construction build = new Consequence.Construction(Object.class, List.of(setAmount, setWeight));
         Consequence.Insert fresh = new Consequence.Insert.New(Consequence.Insertion.STATED);
         Consequence.Insert mark = new Consequence.Insert.Mark(Consequence.Insertion.STATED);
@@ -537,7 +537,7 @@ class CreationPlanWitnessTest {
         List<Consequence.Initialisation> inits = List.of(new Consequence.Initialisation(amount, new Term.SlotValue(1, "bedrag")),
                 new Consequence.Initialisation(uitgereikt, new Term.Const(true, null, "waar")));
         Consequence.Construction build = new Consequence.Construction(Object.class,
-                List.of(new Consequence.Construction.Setting(0, new Binding.Field(Object.class, "bedrag"))));
+                List.of(new Consequence.Construction.Setting(0, new Binding.Field(Object.class, "bedrag"), null)));
         Consequence.Insertion set = Consequence.Insertion.STATED, logical = Consequence.Insertion.LOGICAL;
         Consequence.Insert fresh = new Consequence.Insert.New(set);
         Consequence.Insert mark = new Consequence.Insert.Mark(set);

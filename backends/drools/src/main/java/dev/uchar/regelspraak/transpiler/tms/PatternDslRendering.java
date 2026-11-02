@@ -196,7 +196,8 @@ final class PatternDslRendering {
                     insert(drools, x.insertion(), new CharacteristicState(a[0], x.characteristic(), x.holds())));
             case Consequence.State x -> new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.value())},
                     (drools, a) -> insert(drools, x.insertion(), new State(a[0], x.attribute(),
-                            x.bucketScalar() ? ComputeHelpers.bucketScalarOf(a[1]) : a[1])));
+                            x.bucketScalar() ? ComputeHelpers.bucketScalarOf(a[1])
+                                    : x.cell() != null ? ComputeHelpers.cell(a[1], x.cell()) : a[1])));
             case Consequence.InsertPathState x -> x.source() == Consequence.StateSource.MISSING_LINK
                     ? new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                             insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(), null, null)))
@@ -439,8 +440,11 @@ final class PatternDslRendering {
             }
             Object fresh = newObject(construction.javaClass());
             for (int j = 0; j < setters.size(); j++) {
-                Object value = v[construction.settings().get(j).initialisation()];
-                if (value != null) setters.get(j).accept(fresh, value);
+                Consequence.Construction.Setting z = construction.settings().get(j);
+                Object value = v[z.initialisation()];
+                if (value == null) continue;
+                if (z.cell() != null) ComputeHelpers.setCell(fresh, z.field().property(), z.cell(), value);
+                else setters.get(j).accept(fresh, value);
             }
             int phase = (Integer) w[g.phase()];
             for (Consequence.Insert i : g.insertions())

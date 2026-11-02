@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -251,6 +252,33 @@ public final class ComputeHelpers {
     /** The map of a dimensioned attribute as it is, leeg where the value is no map. */
     public static Map<?, ?> map(Object value) {
         return value instanceof Map<?, ?> m ? m : null;
+    }
+
+    /** A copy of the map {@code map} of a dimensioned attribute's cells in which the cell {@code labels} holds
+     *  {@code value}, and holds nothing where it is leeg: a fold reads a cell a form writes through its standing, which
+     *  takes the place of the input the bean's map holds (RUNTIME-SEMANTICS ch. 5.8c). The map itself, the case input,
+     *  is not changed; leeg where it is no map is an empty one. */
+    public static Map<?, ?> withCell(Object map, List<?> labels, Object value) {
+        Map<Object, Object> out = map instanceof Map<?, ?> m ? new LinkedHashMap<>(m) : new LinkedHashMap<>();
+        if (value == null) out.remove(labels);
+        else out.put(labels, value);
+        return out;
+    }
+
+    /** Writes {@code value} into the cell {@code labels} of the dimensioned attribute whose bean property is
+     *  {@code property} on {@code object}, the map of its cells, made where the bean holds none; a leeg value takes the
+     *  cell out of the map, so that the cell is leeg (RUNTIME-SEMANTICS ch. 5.8c). The write-back of a cell, and an
+     *  object creation's initialisation of a cell of its new bean, before the bean is inserted. */
+    public static void setCell(Object object, String property, List<?> labels, Object value) {
+        @SuppressWarnings("unchecked")
+        Map<Object, Object> cells = (Map<Object, Object>) Accessors.eigenschapGetter(object.getClass(), property).apply(object);
+        if (cells == null) {
+            if (value == null) return;
+            cells = new LinkedHashMap<>();
+            Accessors.eigenschapSetter(object.getClass(), property).accept(object, cells);
+        }
+        if (value == null) cells.remove(labels);
+        else cells.put(List.copyOf(labels), value);
     }
 
     /** {@code value}, or {@code fallback} where it is leeg: a sum's {@code emptyFallback} (§5.8.2), which is evaluated

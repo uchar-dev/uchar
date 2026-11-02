@@ -72,6 +72,7 @@ class RouteWitnessTest {
                 "COMPUTE_FAULT: ComputeFault ComputeHelpers.computeFault[String, String]",
                 "INCONSISTENCY: Object ComputeHelpers.inconsistency[String, Object, List]",
                 "BUCKET_SCALAR: BucketScalar ComputeHelpers.bucketScalarOf[Object]",
+                "CELL: Object ComputeHelpers.cell[Object, List]",
                 "INPUT_FORM_FAULT: InputFormFault ComputeHelpers.inputFormFault[String, Object, String, String]",
                 "UNIQUENESS_KEYS: List ComputeHelpers.uniquenessKeys[String, int, Object, Object, List, int]",
                 "PAYOUT: List ComputeHelpers.payout[String, Object, Method, Object, Object, boolean, boolean,"
@@ -81,6 +82,7 @@ class RouteWitnessTest {
                 "CREATION_DEPTH: int ComputeHelpers.creationDepth[String, int, String, List, int]",
                 "NEW_OBJECT: Object ComputeHelpers.newObject[Object, String]",
                 "SET: void ComputeHelpers.set[Object, String, Object]",
+                "SET_CELL: void ComputeHelpers.setCell[Object, String, List, Object]",
                 "IS_EVALUATION_FAULT: boolean ComputeHelpers.isEvaluationFault[Object]",
                 "CAUGHT: RuntimeException ComputeHelpers.caught[RuntimeException]",
                 "DESIGNATE: RuntimeException ComputeHelpers.designate[Object, String]",

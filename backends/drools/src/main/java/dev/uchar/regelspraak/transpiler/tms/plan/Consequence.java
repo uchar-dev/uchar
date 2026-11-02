@@ -161,14 +161,21 @@ public sealed interface Consequence {
      * The standing of attribute {@code attribute} on the object {@code subject} binds: the value in slot
      * {@code value} of the value array, from {@code source}, a derivation's value or the input on the bean. Where
      * {@code bucketScalar}, the input, a timeline, stands as the asOfDate-bucket scalar the case gave
-     * ({@code BucketScalar}, RUNTIME-SEMANTICS ch. 8.4), which the consequence takes from the bound timeline.
+     * ({@code BucketScalar}, RUNTIME-SEMANTICS ch. 8.4), which the consequence takes from the bound timeline. Where
+     * {@code cell} is not null, the standing is that of a cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c),
+     * and its input the entry of the key {@code cell} in the bound map of the attribute's cells, leeg where the map or
+     * the entry is absent.
      */
     record State(String subject, ElementKey attribute, StateSource source, int value, boolean bucketScalar,
-                 Insertion insertion) implements Consequence {
+                 List<String> cell, Insertion insertion) implements Consequence {
         public State {
             if (source != StateSource.INPUT && source != StateSource.DERIVATION || bucketScalar && source != StateSource.INPUT)
                 throw new IllegalArgumentException("een stand komt uit de invoer of een afleiding, en alleen de invoer"
                         + " staat als emmerscalair, niet " + source + (bucketScalar ? " als emmerscalair" : ""));
+            if (cell != null && (source != StateSource.INPUT || bucketScalar))
+                throw new IllegalArgumentException("alleen de invoer van een cel neemt haar uit de kaart, niet " + source
+                        + (bucketScalar ? " als emmerscalair" : ""));
+            cell = cell == null ? null : List.copyOf(cell);
         }
     }
 
@@ -458,8 +465,14 @@ public sealed interface Consequence {
         }
 
         /** The value of the attribute initialisation at index {@code initialisatie}, set on the new bean through the
-         *  setter of the bean property {@code field} where the value is gevuld; a leeg value leaves the member unset. */
-        public record Setting(int initialisation, Binding.Field field) {}
+         *  setter of the bean property {@code field} where the value is gevuld; a leeg value leaves the member unset.
+         *  Where {@code cell} is not null, the initialisation writes a cell of a dimensioned attribute
+         *  (RUNTIME-SEMANTICS ch. 5.8c), whose value goes into the map of the property under the key {@code cell}. */
+        public record Setting(int initialisation, Binding.Field field, List<String> cell) {
+            public Setting {
+                cell = cell == null ? null : List.copyOf(cell);
+            }
+        }
     }
 
     /** One insertion of an object creation, after its construction, with how it goes into working memory. */

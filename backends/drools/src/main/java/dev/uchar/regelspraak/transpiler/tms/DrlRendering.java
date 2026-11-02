@@ -1232,7 +1232,10 @@ final class DrlRendering {
                         + "(" + x.subject() + ", " + key(x.characteristic()) + ", " + x.holds() + ")");
                 case Consequence.State x -> insert(b, "    ", x.insertion(), "new " + typeName(State.class) + "("
                         + x.subject() + ", " + key(x.attribute()) + ", " + (x.bucketScalar()
-                        ? route(Route.BUCKET_SCALAR) + "(" + variable(x.value()) + ")" : variable(x.value())) + ")");
+                        ? route(Route.BUCKET_SCALAR) + "(" + variable(x.value()) + ")"
+                        : x.cell() != null ? route(Route.CELL) + "(" + variable(x.value()) + ", "
+                                + consequenceConstant(x.cell()).text() + ")"
+                        : variable(x.value())) + ")");
                 case Consequence.InsertPathState x -> insert(b, "    ", x.insertion(), "new " + typeName(PathState.class) + "("
                         + x.subject() + ", " + str(x.path()) + ", " + key(x.member()) + ", "
                         + (x.source() == Consequence.StateSource.MISSING_LINK ? "null, null"
@@ -1615,8 +1618,12 @@ final class DrlRendering {
             f.append("    Object nieuw = ").append(route(Route.NEW_OBJECT)).append("(").append(x.subject())
                     .append(", ").append(str(x.construction().javaClass().getName())).append(");\n");
             for (Consequence.Construction.Setting z : x.construction().settings())
-                f.append("    ").append(route(Route.SET)).append("(nieuw, ").append(str(z.field().property()))
-                        .append(", i").append(z.initialisation()).append(");\n");
+                if (z.cell() != null)
+                    f.append("    ").append(route(Route.SET_CELL)).append("(nieuw, ").append(str(z.field().property())).append(", ")
+                            .append(constant(z.cell()).text()).append(", i").append(z.initialisation()).append(");\n");
+                else
+                    f.append("    ").append(route(Route.SET)).append("(nieuw, ").append(str(z.field().property()))
+                            .append(", i").append(z.initialisation()).append(");\n");
             f.append("    int fase = ((Integer) ").append(slot(x.phase(), c)).append(").intValue();\n");
             f.append("    java.util.List feiten = new java.util.ArrayList();\n");
             for (Consequence.Insert i : x.insertions())

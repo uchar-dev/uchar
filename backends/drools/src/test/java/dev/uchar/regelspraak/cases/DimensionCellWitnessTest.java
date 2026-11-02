@@ -9,6 +9,8 @@ import dev.uchar.regelspraak.graph.ProducerConsumer;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.refusal.DroolsCode;
+import dev.uchar.regelspraak.refusal.Reason;
+import dev.uchar.regelspraak.transpiler.tms.Cycles;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -21,6 +23,8 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -38,8 +42,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * nodes and the reference under them without a line; the rule graph (IR-SPEC ch. 5.1) reads a cell as a member of its
  * own, spelled as the verifier spells the node. A cell read or a fold whose labels name no cell of the dimensions of
  * its attribute breaks the contract of WF-040 and is refused by name. A cell written by a rule, an initialisation or an
- * object creation ({@code jutterswet-seizoenboeking}) is carried by the loader and written per cell by the rule graph,
- * and the build refuses it, since the beans and the rules write no cell yet (DROOLS-298).
+ * object creation ({@code jutterswet-seizoenboeking}, {@code jutterswet-seizoenkopie}) is a member of its own: the
+ * loader carries the forms, the rule graph and the cycle check draw the cell as a node, the rules write it, a fold reads
+ * it beside the input cells, the write-back puts it into the map, its write boundary names it, and a reading reads a rule
+ * on a cell as a rule on an attribute.
+ *
+ * <p><b>Red before the writing of cells</b> (measured 2026-11-02 on {@code 2e07be6b2}, the four rows of "writing
+ * cells" after the loader row): the build refused both goldens and the red case, {@code EXCLUDE DROOLS-298} ("het
+ * schrijven van een cel van het gedimensioneerde attribuut 'vondstgewicht' door 'najaarsgewicht van een jutter': deze
+ * tak schrijft geen cel"), where a play, {@code FAULT EF-006} and readings were expected; and the cycle check admitted a
+ * rule that computes the cell najaar from itself, since it left a rule with a cell target out of its graph.
  *
  * <p><b>Red before the change</b> (measured 2026-11-02 on {@code 574faa1a7}, all nine rows): every case with a cells
  * input {@code EXCLUDE DROOLS-047} ("invoer van een attribuut met dimensie 'vondstgewicht' (§3.6, een Map-beanlid)
@@ -283,20 +295,110 @@ class DimensionCellWitnessTest {
         assertEquals(List.of("vondstgewicht[najaar]"), members(creation));
     }
 
-    /** The build refuses a document that writes a cell, on both branches and in a build with readings, before a bean or
-     *  a rule is built: DROOLS-298, which names the attribute and the form. */
-    @Test void a_cell_write_is_refused_when_the_backend_builds() throws Exception {
-        Path ir = GOLDEN.resolve("jutterswet-seizoenboeking").resolve("ir.json");
-        Path c = GOLDEN.resolve("jutterswet-seizoenboeking").resolve("case1-voorjaar-en-zomer.json");
+    /** jutterswet-seizoenboeking, the worked example "Writing" of ch. 5.8c: a rule writes the cell najaar from the cell
+     *  voorjaar of the same attribute, an initialisation the cell zomer, a sum folds the input cell beside the two written
+     *  ones, and an object creation writes the cell najaar of the Vangst it makes, which two rules carry back to the jutter.
+     *  J1 voorjaar 1.50: najaar 3.00, zomer 0.00, jaargewicht 4.50, geboekte gewicht 3.00; J2 with zomer 2.00 as input as
+     *  well: the input fills the cell, so the initialisation is not at its turn, jaargewicht 6.50. The computed najaar
+     *  displaces an input of the cell (J4, ch. 7.8). jutterswet-seizoenkopie: a cell is a standing target of its own, so a
+     *  copy of an empty cell writes nothing and the input of the cell stands (J2 zomer 7.00). The comparison reads a written
+     *  cell back from the bean. */
+    @Test void a_cell_written_by_a_rule_an_initialisation_and_a_creation_plays() throws Exception {
+        Path boeking = GOLDEN.resolve("jutterswet-seizoenboeking");
+        assertPlays(boeking.resolve("ir.json"), List.of(boeking.resolve("case1-voorjaar-en-zomer.json"),
+                boeking.resolve("case2-zonder-invoer.json"), boeking.resolve("case3-invoer-in-een-geschreven-cel.json")));
+        Path kopie = GOLDEN.resolve("jutterswet-seizoenkopie");
+        assertPlays(kopie.resolve("ir.json"), List.of(kopie.resolve("case1-kopie-en-staande-invoer.json")));
+        Path ir = boeking.resolve("ir.json");
+        assertFails(ir, caseFile(List.of(jutter("J1", cell("1.50", "voorjaar"))),
+                List.of(cellValue("J1", "3.01", "najaar"))), "3.01");
+        assertFails(ir, caseFile(List.of(jutter("J1", cell("1.50", "voorjaar"))), List.of(cellEmpty("J1", "zomer"))),
+                "0");
+    }
+
+    /** jutterswet-cel-schrijfgrens: 1.25 maal 1.5 is 1.875, which the 2 decimals of the cell najaar do not hold (EF-006,
+     *  RUNTIME-SEMANTICS ch. 2.4 point 1), its place the cell, as the reference interpreter names it. */
+    @Test void a_value_a_cell_does_not_hold_is_the_fault_of_the_write_boundary() throws Exception {
+        Path red = Path.of("..", "..", "corpus", "red", "jutterswet-cel-schrijfgrens");
         for (DroolsBackend.Branch branch : BRANCHES) {
-            CaseRunner.Result r = replay(ir, List.of(c), branch);
-            assertEquals("EXCLUDE", r.status(), () -> branch + ": " + r);
-            assertEquals(DroolsCode.DIMENSION_CELL_WRITE, r.code(), () -> branch + ": " + r);
-            assertTrue(r.reason().contains("'vondstgewicht'") && r.reason().contains("'najaarsgewicht van een jutter'"),
+            CaseRunner.RedResult r = CaseRunner.runRed(red.resolve("ir.json"), red.resolve("case1.json"), branch);
+            assertEquals("FAULT", r.status(), () -> branch + ": " + r);
+            assertEquals("EF-006", r.code(), () -> branch + ": " + r);
+            assertEquals(List.of(Map.of("place", "j1.vondstgewicht[najaar]", "value", "15/8", "decimals", "2")),
+                    r.params(), () -> branch + ": " + r);
+        }
+    }
+
+    /** ch. 5.12: a rule whose target is a cell reads as a rule on an attribute, and an initialisation of a cell is
+     *  displaced where its cell is filled (J2, zomer 2.00), as in the reference interpreter's {@code WV-5.12-celdoel}. */
+    @Test void a_rule_on_a_cell_reads_as_a_rule_on_an_attribute() throws Exception {
+        Path boeking = GOLDEN.resolve("jutterswet-seizoenboeking");
+        String r0 = "/rules/rules/0/versions/0 ", r1 = "/rules/rules/1/versions/0 ";
+        List<String> expected = List.of(
+                r0 + "\"J1\" 0 Binary 3 \"kg\"", r0 + "\"J1\" 1 DimensionCellRead 1.5 \"kg\"", r0 + "\"J1\" 3 Literal 2",
+                r0 + "\"J1\" HOLDS",
+                r0 + "\"J2\" 0 Binary 3 \"kg\"", r0 + "\"J2\" 1 DimensionCellRead 1.5 \"kg\"", r0 + "\"J2\" 3 Literal 2",
+                r0 + "\"J2\" HOLDS",
+                r1 + "\"J1\" 0 Literal 0 \"kg\"", r1 + "\"J1\" HOLDS", r1 + "\"J2\" DISPLACED");
+        for (DroolsBackend.Branch branch : BRANCHES) {
+            List<String> lines = new ArrayList<>();
+            for (String l : CaseRunner.readings(boeking.resolve("ir.json"), List.of(boeking.resolve(
+                    "case1-voorjaar-en-zomer.json")), branch))
+                if (l.startsWith("reading " + r0) || l.startsWith("reading " + r1)) lines.add(l.substring("reading ".length()));
+            assertEquals(expected, lines, branch::toString);
+        }
+    }
+
+    /** RUNTIME-SEMANTICS ch. 5.7 per cell: jutterswet-seizoenkopie with a second rule on each of its two cells, which
+     *  computes voorjaar maal 2 where the first copies voorjaar. Where the two agree, voorjaar 0.00, the document plays;
+     *  where they differ, voorjaar 1.00, each cell has two writers that disagree, and the fault names the cell. The WF-079
+     *  refusal of two unconditional writers of one cell is the verifier's, which this backend does not run. */
+    @Test void two_writers_of_one_cell_that_disagree_are_the_fault_of_the_cell() throws Exception {
+        JsonNode ir = golden("jutterswet-seizoenkopie");
+        JsonNode doubled = IrPath.version(golden("jutterswet-seizoenboeking"), "rules", "najaarsgewicht van een jutter")
+                .get("value");
+        ArrayNode rules = IrPath.rulesList(ir, "rules");
+        for (int k = 0; k < 2; k++) {
+            ObjectNode second = rules.get(k).deepCopy();
+            second.put("name", second.get("name").asText() + " verdubbeld");
+            ((ObjectNode) second.get("versions").get(0)).set("value", doubled.deepCopy());
+            rules.add(second);
+        }
+        Path p = document(ir);
+        assertPlays(p, List.of(caseFile(List.of(jutter("J1", cell("0.00", "voorjaar"))),
+                List.of(cellValue("J1", "0.00", "najaar"), cellValue("J1", "0.00", "zomer")))));
+        Path c = caseFile(List.of(jutter("J1", cell("1.00", "voorjaar"))), List.of(cellValue("J1", "1.00", "najaar")));
+        for (DroolsBackend.Branch branch : BRANCHES) {
+            CaseRunner.RedResult r = CaseRunner.runRed(p, c, branch);
+            assertEquals("FAULT", r.status(), () -> branch + ": " + r);
+            // the report carries the parameters of the first fault, the one of the rule first in the document
+            assertEquals("EF-016", r.code(), () -> branch + ": " + r);
+            assertEquals(List.of("vondstgewicht[najaar]"), r.params().stream().map(m -> m.get("attribute")).toList(),
                     () -> branch + ": " + r);
-            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.readings(ir, List.of(c), branch),
-                    branch::toString);
-            assertEquals(DroolsCode.DIMENSION_CELL_WRITE, e.code(), () -> branch + ": " + e.getMessage());
+            assertTrue(r.detail().contains("in het attribuut vondstgewicht[najaar] van J1")
+                    && r.detail().contains("in het attribuut vondstgewicht[zomer] van J1"), () -> branch + ": " + r);
+        }
+    }
+
+    /** IR-SPEC ch. 5.1: a cell is a node of the graph whose cycles the exec-model branch refuses (WF-045), as the
+     *  verifier draws it. A rule that computes the cell najaar from the cell voorjaar of the same attribute closes no
+     *  cycle; one that computes najaar from najaar does, and so does one that computes najaar from the sum over all
+     *  seasons, which reads the cell najaar among them. */
+    @Test void a_cell_is_a_node_of_the_cycles_the_branch_refuses() throws Exception {
+        assertNull(Cycles.refusal(IrLoader.loadAll(golden("jutterswet-seizoenboeking"))));
+        assertNull(Cycles.refusal(IrLoader.loadAll(golden("jutterswet-seizoenkopie"))));
+        JsonNode itself = golden("jutterswet-seizoenkopie");
+        ((ArrayNode) IrPath.version(itself, "rules", "najaarsgewicht van een jutter").get("value").get("labels"))
+                .set(0, "najaar");
+        JsonNode sum = golden("jutterswet-seizoenboeking");
+        IrPath.version(sum, "rules", "najaarsgewicht van een jutter").set("value",
+                IrPath.version(sum, "rules", "jaargewicht van een jutter").get("value").deepCopy());
+        for (JsonNode ir : List.of(itself, sum)) {
+            Reason r = Cycles.refusal(IrLoader.loadAll(ir));
+            assertNotNull(r);
+            assertEquals(DroolsCode.CYCLE_OUTSIDE_RECURSIVE_CREATION, r.code(), r::text);
+            assertTrue(r.text().contains("Jutter.vondstgewicht[najaar]") && r.text().contains("najaarsgewicht van een jutter"),
+                    r::text);
         }
     }
 

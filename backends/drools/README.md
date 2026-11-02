@@ -574,6 +574,24 @@ and the two writers disagree, where the reference interpreter faults on the pass
 Witnesses `TmsWritersWitnessTest` and, for a member an object creation sets and a division in an initialisation
 beside a writer on a sister subtype, `TmsCreationInputWitnessTest`.
 
+**Cells.** A cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c) is a member of its own, keyed as the rule
+graph keys it, the attribute on its declaring type with the labels of the cell (`ProducerConsumer.cellOf`,
+`vondstgewicht[najaar]`). The bean holds the input of every cell in the map of its attribute, under the labels in their
+declared spelling (`FactModelGenerator.cellKey`). A cell no form writes is input and is read off that map. A rule, an
+initialisation or an object creation's member with labels (IR-SPEC ch. 3.1, 3.3) writes one cell: its `Value` carries
+the cell's key, and the cell is read through a `State` of its own, the derived value or else the entry of the map. So
+everything this README says of a target holds per cell: the standing norm and the domain of ch. 7.7
+(`StandingTargets` keys a cell target on the cell, as the reference interpreter does), the guard of an initialisation,
+which reads the cell's entry of the map, two writers that disagree, and the write boundary, whose fault names the cell
+(`j1.vondstgewicht[najaar]`, EF-006). A fold over the cells reads the map and every written cell through its standing,
+which takes the place of its entry in a copy of the map. The write-back puts a derived cell into the map on the bean,
+and takes a written leeg out of it; `Fixpoint.DerivedValue` gives such a value with the labels of its cell. An object
+creation puts the cells it initialises into the map of the new bean before the bean is inserted. `Cycles` draws a cell as
+a node of its own, as the verifier does (IR-SPEC ch. 5.1), so a rule that computes one cell from another cell of the
+same attribute closes no cycle, and one that computes a cell from itself, or from a fold over the cells that holds it,
+is refused. Goldens `jutterswet-seizoenboeking` and `jutterswet-seizoenkopie`, red case `jutterswet-cel-schrijfgrens`,
+witness `DimensionCellWitnessTest`.
+
 **Allocations.** An allocation (RUNTIME-SEMANTICS ch. 4) is a computation over the recipients that the left-hand
 side binds. A rule of the allocation inserts, per source and per recipient, an `Recipient` logically: an instance of
 `targetType` that the connecting relation links to the source, through the bean field of an input relation or the
@@ -782,8 +800,8 @@ reaches a made object. Witnesses `TmsCreationWitnessTest`, `TmsConsumerWitnessTe
 never as a silent fall:
 
 - of dimensioned attributes, with no golden with cases: a read or a write outside a dimension cell and a fold over a
-  dimension selection, and in those two an attribute that lies on a timeline, is read over a path or is written by a
-  form; and a cell or a fold whose labels name no cell of the attribute's dimensions, which WF-040 refuses. Witness
+  dimension selection, and in those two an attribute that lies on a timeline or is read over a path; and a cell or a
+  fold whose labels name no cell of the attribute's dimensions, which WF-040 refuses. Witness
   `TmsTimelineRefusalWitnessTest` for a dimensioned attribute on a timeline, by its cell and by its total, and
   `DimensionCellWitnessTest` for labels that name no cell;
 - of timelines, each with no golden with cases unless one is named: a second writer of a timeline target, which ch.
@@ -866,11 +884,7 @@ never as a silent fall:
   that reads the reader's target, the verifier sees no cycle and the reference interpreter computes the document, while
   this branch refuses it. It refuses none of the goldens the loader loads (`TmsCycleVerifierWitnessTest`).
 
-The loader and the bean model refuse on both branches alike, before the analysis. So does the build, before a bean
-is generated, for a document that writes a cell of a dimensioned attribute, by a rule, an initialisation or an object
-creation's member (IR-SPEC ch. 3.1, 3.3; DROOLS-298): the loader carries those forms into the model and the rule graph
-writes each cell as a member of its own, but the beans and the rules write no cell yet (goldens
-`jutterswet-seizoenboeking` and `jutterswet-seizoenkopie`, witness `DimensionCellWitnessTest`).
+The loader and the bean model refuse on both branches alike, before the analysis.
 
 ## The rule graph and gate 15
 

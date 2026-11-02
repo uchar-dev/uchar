@@ -357,6 +357,7 @@ final class ClosureRendering {
                     x[7]);
             case CELL -> x -> ComputeHelpers.cell(x[0], (List<?>) x[1]);
             case MAP -> x -> ComputeHelpers.map(x[0]);
+            case WITH_CELL -> x -> ComputeHelpers.withCell(x[0], (List<?>) x[1], x[2]);
             case RESTATE_EXACT -> x -> ComputeHelpers.restateExact(x[0], (BigDecimal) x[1], (BigDecimal) x[2]);
             case SMALLEST -> x -> ComputeHelpers.smallest(x[0], x[1]);
             case LARGEST -> x -> ComputeHelpers.largest(x[0], x[1]);

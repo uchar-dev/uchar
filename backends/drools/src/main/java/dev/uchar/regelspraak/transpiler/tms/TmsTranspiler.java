@@ -112,11 +112,12 @@ import java.util.function.Supplier;
  * so an initialisation's guard reads the input of its derived target off the bean as well; {@link #setDerivedValues}
  * writes the derivations onto the beans afterwards.
  *
- * <p>What it lowers: a characteristic attribution; an assignment or a computation of an attribute of the subject, which
+ * <p>What it lowers: a characteristic attribution; an assignment or a computation of an attribute of the subject, or of
+ * a cell of a dimensioned one (RUNTIME-SEMANTICS ch. 5.8c), which
  * writes nothing for a computed leeg on a standing target (RUNTIME-SEMANTICS ch. 7.8, or beside one unconditional
  * initialisation, the desugaring domain of ch. 7.7) and writes the leeg elsewhere (ch. 1.2g), any number of them on one
  * target, two that stand on one object with different values being the fault of ch. 5.7 ({@link #differenceRule}); an
- * initialisation (ch. 5.4), the only one on its target per concrete type; a
+ * initialisation (ch. 5.4), of an attribute or a cell, the only one on its target per concrete type; a
  * consistency, whose violation is a logical §9.5 inconsistency; a uniqueness, over one source or more, whose
  * duplicates are as well ({@link #unionUniquenessRules}); a prioritized-defaults group, as the effective
  * stack per concrete type of ch. 7.10, which decides by logical control facts ({@link ControlFact}) and into which an
@@ -253,9 +254,10 @@ public final class TmsTranspiler {
     private final EffectiveUnit eff;
     /** Every member a form of the document writes, lowered or not. A member that no form writes is input. */
     private Map<ElementKey, Set<String>> writers = Map.of();
-    /** Per attribute, the assignments and computations of the document that write it. */
+    /** Per attribute, and per cell of a dimensioned attribute, the assignments and computations of the document that
+     *  write it. */
     private final Map<ElementKey, List<ResolvedRule>> computeRules = new LinkedHashMap<>();
-    /** Per attribute, the initialisations of the document that write it. */
+    /** Per attribute, and per cell of a dimensioned attribute, the initialisations of the document that write it. */
     private final Map<ElementKey, List<ResolvedRule>> initialisations = new LinkedHashMap<>();
     /** The members a defaults group writes, on their declaring type. */
     private final Set<ElementKey> defaultsTargets = new LinkedHashSet<>();
@@ -1406,7 +1408,13 @@ public final class TmsTranspiler {
                 @SuppressWarnings("unchecked")
                 Object v = member.time() == null ? ComputeHelpers.collapse(earliest.value())
                         : Period.beans((List<Period>) earliest.value(), segmentClass());
-                values.add(new Fixpoint.DerivedValue(earliest.subject(), member.name(), v));
+                values.add(new Fixpoint.DerivedValue(earliest.subject(), member.name(), member.cell(), v));
+                // a cell is an entry of the map its attribute holds (RUNTIME-SEMANTICS ch. 5.8c)
+                if (member.cell() != null) {
+                    String property = Namen.property(member.name());
+                    acts.add(() -> ComputeHelpers.setCell(earliest.subject(), property, member.cell(), v));
+                    continue;
+                }
                 BiConsumer<Object, Object> setter = Accessors.eigenschapSetter(member.javaClass(),
                         Namen.property(member.name()));
                 acts.add(() -> setter.accept(earliest.subject(), v));
@@ -1519,7 +1527,7 @@ public final class TmsTranspiler {
      *  {@code subjectType}: the writers as {@link WritersConflict#inDocumentOrder} ranks them over the document's
      *  rules {@link #documentOrder}, the attribute as declared, and the object's own type. */
     private WritersConflict conflict(Object subjectType, ElementKey key, List<Value> values) {
-        return WritersConflict.of(subjectType, memberOf(subjectType, key).name(), values, documentOrder, typeClasses,
+        return WritersConflict.of(subjectType, memberOf(subjectType, key).spelled(), values, documentOrder, typeClasses,
                 types);
     }
 
@@ -1561,14 +1569,13 @@ public final class TmsTranspiler {
         // computing rules and initialisations are counted apart: one of each on a target is a pair the branch carries
         // (the initialisation falls through below the rule), two of either kind is not
         for (ResolvedRule r : model.resolvedRules) {
-            if (!(r.target() instanceof Expr.AttributeReference d) || d.objectType() == null || d.attribute() == null) continue;
+            ElementKey written = writtenKey(r);
+            if (written == null) continue;
             Map<ElementKey, List<ResolvedRule>> per =
                     r.kind() == ResolvedRule.Kind.GELIJKSTELLING || r.kind() == ResolvedRule.Kind.BEREKENING
                             ? computeRules
                             : r.kind() == ResolvedRule.Kind.INITIALISATIE ? initialisations : null;
-            if (per != null)
-                per.computeIfAbsent(ProducerConsumer.elementOf(d.objectType(), d.attribute(), false),
-                        k -> new ArrayList<>()).add(r);
+            if (per != null) per.computeIfAbsent(written, k -> new ArrayList<>()).add(r);
         }
         for (PrioritizedDefaults p : defaults)
             if (p.target() != null)
@@ -1715,15 +1722,24 @@ public final class TmsTranspiler {
     private List<RulePlan> rule(ResolvedRule r) {
         // the rule of a form is named by the form, and a KieBase keeps one rule per name
         if (r.name() == null) throw new Refusal(DroolsCode.RULE_WITHOUT_NAME.reason());
-        if (!(r.target() instanceof Expr.AttributeReference target) || target.objectType() == null || target.attribute() == null)
+        Expr.AttributeReference target = writtenReference(r.target());
+        if (target == null || target.objectType() == null || target.attribute() == null)
             throw new Refusal(DroolsCode.RULE_TARGET_UNRESOLVED.reason());
         if (navigationBindings.containsKey(target)) throw new Refusal(DroolsCode.RULE_NAVIGATED_TARGET.reason());
+        // a cell target writes one cell of a dimensioned attribute, a member of its own (RUNTIME-SEMANTICS ch. 5.8c); a
+        // characteristic has no cell, so an attribution to one names no characteristic (WF-022)
+        Member cell = null;
+        if (r.target() instanceof Expr.DimensionCellRead c) {
+            if (r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING) throw new Refusal(DroolsCode.RULE_TARGET_UNRESOLVED.reason());
+            cell = cellMember(target.objectType(), target.attribute(), c.labels(),
+                    Msg.drools("PART.desc.dimension-cell-read"), c.source());
+        }
         // a version with a bounded validity gates on the evaluation date: its rules bind the date where the window
         // admits it (Reads.valid), and beside them a rule faults the session that carries no date
         List<RulePlan> out = new ArrayList<>(switch (r.kind()) {
             case KENMERKTOEKENNING -> characteristicRule(r, target);
-            case GELIJKSTELLING, BEREKENING -> computeRule(r, target);
-            case INITIALISATIE -> initialisationRule(r, target);
+            case GELIJKSTELLING, BEREKENING -> computeRule(r, target, cell);
+            case INITIALISATIE -> initialisationRule(r, target, cell);
         });
         RulePlan withoutDate = validityFault(model.emittedRuleName(r.name()), r.name(), r.validity());
         if (withoutDate != null) out.add(withoutDate);
@@ -1831,10 +1847,14 @@ public final class TmsTranspiler {
      * <p>A member an object creation sets is the input of the object it makes ({@link #objectCreation}), so a rule on it
      * displaces that value as it displaces case input, and outside the standing domain a computed leeg erases it, as in
      * the reference interpreter, which overwrites the value the creation wrote at the making (ch. 5.5, 1.2g).
+     *
+     * <p>A rule whose target is a cell ({@code cell}, null for an attribute) writes that cell as a member of its own
+     * (RUNTIME-SEMANTICS ch. 5.8c): its {@link Value} carries the cell's key, and everything above holds per cell.
      */
-    private List<RulePlan> computeRule(ResolvedRule r, Expr.AttributeReference target) {
-        if (declared(target.objectType(), target.attribute(), false).time() != null) return timelineRule(r, target);
-        Member member = member(target.objectType(), target.attribute(), false);
+    private List<RulePlan> computeRule(ResolvedRule r, Expr.AttributeReference target, Member cell) {
+        if (cell == null && declared(target.objectType(), target.attribute(), false).time() != null)
+            return timelineRule(r, target);
+        Member member = cell != null ? cell : member(target.objectType(), target.attribute(), false);
         Set<Class<?>> absorbed = absorbed(target, member);
         boolean writesEmpty = !standingTargets.standingScalar(r);
         return writeRule(r, target.objectType(), member, null, absorbed, writesEmpty);
@@ -1973,9 +1993,8 @@ public final class TmsTranspiler {
     private List<String> otherWriters(ResolvedRule r, ObjectType type, ElementKey key) {
         Set<String> out = new LinkedHashSet<>();
         for (ResolvedRule x : model.resolvedRules)
-            if (x != r && x.kind() != ResolvedRule.Kind.KENMERKTOEKENNING && x.target() instanceof Expr.AttributeReference d
-                    && d.objectType() != null && d.attribute() != null && related(d.objectType(), type)
-                    && ProducerConsumer.elementOf(d.objectType(), d.attribute(), false).equals(key))
+            if (x != r && x.kind() != ResolvedRule.Kind.KENMERKTOEKENNING && key.equals(writtenKey(x))
+                    && related(writtenReference(x.target()).objectType(), type))
                 out.add(ProducerConsumer.baseName(x.name()));
         for (ResolvedAllocation v : model.allocations)
             if (v.targetType() != null && v.targetAttribute() != null && related(v.targetType(), type)
@@ -2043,30 +2062,43 @@ public final class TmsTranspiler {
      * displaces it later. What it faulted or deposited then is logical and goes when the other writer's value matches the
      * guard, so only an initialisation that decides at the fixpoint reports it (ch. 5.7).
      */
-    private List<RulePlan> initialisationRule(ResolvedRule r, Expr.AttributeReference target) {
-        Member time = declared(target.objectType(), target.attribute(), false);
-        if (time.time() != null)
-            throw new Refusal(DroolsCode.INITIALISATION_OF_TIME_ATTRIBUTE.reason("attribute", time.name(), "declarant", time.declarant().name));
-        Member member = member(target.objectType(), target.attribute(), false);
+    private List<RulePlan> initialisationRule(ResolvedRule r, Expr.AttributeReference target, Member cell) {
+        if (cell == null) {
+            Member time = declared(target.objectType(), target.attribute(), false);
+            if (time.time() != null)
+                throw new Refusal(DroolsCode.INITIALISATION_OF_TIME_ATTRIBUTE.reason("attribute", time.name(), "declarant", time.declarant().name));
+        }
+        Member member = cell != null ? cell : member(target.objectType(), target.attribute(), false);
         ElementKey key = member.key();
         Set<Class<?>> absorbed = absorbed(target, member);
         List<ResolvedRule> writing = initialisations.get(key).stream()
-                .filter(x -> related(((Expr.AttributeReference) x.target()).objectType(), target.objectType())).toList();
+                .filter(x -> related(writtenReference(x.target()).objectType(), target.objectType())).toList();
         if (writing.size() > 1)
-            throw new Refusal(DroolsCode.MULTIPLE_INITIALISATIONS_ON_TARGET.reason("attribute", member.name(), "declarant", member.declarant().name, "rules", String.join(", ", writing.stream().map(x -> "\"" + x.name() + "\"").toList())));
+            throw new Refusal(DroolsCode.MULTIPLE_INITIALISATIONS_ON_TARGET.reason("attribute", member.spelled(), "declarant", member.declarant().name, "rules", String.join(", ", writing.stream().map(x -> "\"" + x.name() + "\"").toList())));
         // a computing rule outside the standing domain writes a computed leeg, which empties the target for the guard
         boolean emptyBeside = computeRules.getOrDefault(key, List.of()).stream().anyMatch(x ->
-                !standingTargets.standingScalar(x) && related(((Expr.AttributeReference) x.target()).objectType(), target.objectType()));
+                !standingTargets.standingScalar(x) && related(writtenReference(x.target()).objectType(), target.objectType()));
         String name = r.name();
         Alpha.FieldTest ofTarget = new Alpha.FieldTest("attribute", Alpha.Comparator.GELIJK, key);
         Alpha.FieldTest ofOther = new Alpha.FieldTest("writer", Alpha.Comparator.NOT_EQUAL, name);
         if (!emptyBeside)
             return writeRule(r, target.objectType(), member, reads -> {
-                reads.addSubjectAlpha(new Alpha(id("doel-leeg-in-de-invoer"),
-                        List.of(new Alpha.FieldTest(member.name(), Alpha.Comparator.LEEG, null))));
+                List<LhsItem> out = new ArrayList<>();
+                // the input of an attribute is a field of the bean, tested on the subject pattern; that of a cell is an
+                // entry of the map the bean holds, which a test reads where it evaluates
+                if (member.cell() == null)
+                    reads.addSubjectAlpha(new Alpha(id("doel-leeg-in-de-invoer"),
+                            List.of(new Alpha.FieldTest(member.name(), Alpha.Comparator.LEEG, null))));
                 Alpha another = new Alpha(id("andere-schrijver"), List.of(ofTarget, ofOther));
-                return List.of(new Not(new FactPattern(Value.class, "$andere_schrijver", List.of(another),
+                out.add(new Not(new FactPattern(Value.class, "$andere_schrijver", List.of(another),
                         List.of(new Join(id("andere-schrijver-onderwerp"), "subject", SUBJECT)), List.of())));
+                if (member.cell() != null) {
+                    int subjectType = reads.member();
+                    out.add(new TestItem(id("doel-leeg-in-de-invoer"), TestItem.Role.VORM,
+                            new Term.Call(StaticFunction.EMPTY_TEST, List.of(inputOf(member, subjectType), constant(true)),
+                                    null), -1, List.of(subjectType), reads.size()));
+                }
+                return out;
             }, absorbed, false);
         return writeRule(r, target.objectType(), member, reads -> {
             Alpha another = new Alpha(id("andere-schrijver"),
@@ -2079,9 +2111,8 @@ public final class TmsTranspiler {
             int subjectType = reads.member();
             // the target's input on the subject's bean, as it is, which the guard tests for leeg as the first variant's
             // constraint does; read in the test, so the executable model binds no value of it
-            Term inputData = new Term.Input(new Term.SlotValue(subjectType, null), new Binding.Field(member.javaClass(), member.name()),
-                    Binding.ReadForm.VALUE, null);
-            Term targetEmpty = new Term.Call(StaticFunction.TARGET_EMPTY, List.of(new Term.SlotValue(emptyWriterCount, null), inputData), null);
+            Term targetEmpty = new Term.Call(StaticFunction.TARGET_EMPTY, List.of(new Term.SlotValue(emptyWriterCount, null),
+                    inputOf(member, subjectType)), null);
             return List.of(
                     new Not(new FactPattern(Value.class, "$andere_schrijver", List.of(another), List.of(otherOnSubject),
                             List.of())),
@@ -2090,6 +2121,15 @@ public final class TmsTranspiler {
                     new TestItem(id("doel-leeg"), TestItem.Role.VORM, targetEmpty, -1, List.of(emptyWriterCount, subjectType),
                             reads.size()));
         }, absorbed, false);
+    }
+
+    /** The input of {@code member} on the bean of the object bound at slot {@code subject}, as a test that reads it where it
+     *  evaluates takes it ({@link Term.Input}): the field of an attribute as it is, and of a cell the entry its key names
+     *  in the map of its attribute, leeg where the map or the entry is absent. */
+    private static Term inputOf(Member member, int subject) {
+        Term field = new Term.Input(new Term.SlotValue(subject, null), new Binding.Field(member.javaClass(), member.name()),
+                Binding.ReadForm.VALUE, null);
+        return member.cell() == null ? field : new Term.Call(StaticFunction.CELL, List.of(field, constant(member.cell())), null);
     }
 
     /**
@@ -2204,14 +2244,14 @@ public final class TmsTranspiler {
         Join onSubject = new Join(id("waarde-onderwerp"), "subject", SUBJECT);
         TestItem difference = new TestItem(id("verschil"), TestItem.Role.VORM,
                 new Term.Call(StaticFunction.DIFFER, List.of(new Term.SlotValue(0, null)), null), -1, List.of(0), 1);
-        return new RulePlan("schrijvers " + member.declarant().name + "." + member.name() + ": verschil", null, null,
+        return new RulePlan("schrijvers " + member.declarant().name + "." + member.spelled() + ": verschil", null, null,
                 new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0, ReadKind.VALUES,
                         "waarden", "$waarden"))),
                 List.of(new Subject(member.javaClass(), SUBJECT, List.of(), List.of(), List.of()),
                         new Accumulation(new FactPattern(Value.class, "$waarde", List.of(ofTarget), List.of(onSubject),
                                 List.of()), List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, "$waarden"))),
                         difference),
-                new Consequence.WritersConflict(SUBJECT, 0, key, member.name(), documentOrder, typeClasses, types,
+                new Consequence.WritersConflict(SUBJECT, 0, key, member.spelled(), documentOrder, typeClasses, types,
                         Consequence.Insertion.LOGICAL));
     }
 
@@ -2903,7 +2943,12 @@ public final class TmsTranspiler {
             String squareRoot = squareRoot(t.value());
             if (squareRoot != null)
                 throw new Refusal(DroolsCode.MEMBER_INIT_SQUARE_ROOT.reason("squareRoot", squareRoot));
-            Member member = member(fresh, t.attribute(), t.characteristic());
+            // a member with labels writes one cell of a dimensioned attribute of the new object (IR-SPEC ch. 3.3); a
+            // characteristic has no cell, and the attribute its name does not declare is refused by name
+            Member member = t.labels() != null
+                    ? cellMember(fresh, t.attribute(), t.labels(), Msg.drools("PART.desc.dimension-cell-read"),
+                            t.value().source())
+                    : member(fresh, t.attribute(), t.characteristic());
             Term w = value(t.value(), reads);
             if (!t.characteristic())
                 w = fitted(restated(w, eff.unitOf(t.value()), member.datatype().unitOf(),
@@ -2937,7 +2982,8 @@ public final class TmsTranspiler {
             Member member = inits.get(i).member();
             initialisations.add(new Consequence.Initialisation(member.key(), inits.get(i).value()));
             if (member.characteristic()) insertions.add(new Consequence.Insert.Characteristic(i, Consequence.Insertion.STATED));
-            else settings.add(new Consequence.Construction.Setting(i, new Binding.Field(member.javaClass(), member.name())));
+            else settings.add(new Consequence.Construction.Setting(i, new Binding.Field(member.javaClass(), member.name()),
+                    member.cell()));
         }
         // a creation fires on a fixpoint of the rule layer, so a fault in an initialisation is the session's at the
         // making, as in the reference interpreter, which then makes nothing; the fault is stated like everything a
@@ -4344,11 +4390,12 @@ public final class TmsTranspiler {
     /** {@code t}, the value a form writes into {@code member}, under the write boundary of the member's declaration
      *  (RUNTIME-SEMANTICS ch. 2.4 point 1) where it bounds the decimals, the member an attribute of the new object of
      *  the object creation {@code creation} where that is not null; unchanged where the declaration holds every value,
-     *  the unbounded form and a datatype that is no number (ch. 2.4 point 3). */
+     *  the unbounded form and a datatype that is no number (ch. 2.4 point 3). A fault names a cell with its labels, the
+     *  place {@code J1.vondstgewicht[najaar]} (ch. 5.8c). */
     private static Term fitted(Term t, Member member, String creation) {
         Integer d = ceiling(member.datatype());
         return d == null ? t : new Term.Call(StaticFunction.FIT_TARGET,
-                List.of(t, constant(d), constant(member.name()), constant(creation)), t.source());
+                List.of(t, constant(d), constant(member.spelled()), constant(creation)), t.source());
     }
 
     /** The decimals {@code t} declares where it bounds them, a number or a percentage that is not of the unbounded form;
@@ -4705,28 +4752,33 @@ public final class TmsTranspiler {
     }
 
     /** A cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c): the value of the cell its labels name, one per
-     *  dimension of the attribute, in the attribute's bean member, a map of its cells by their labels
-     *  ({@link FactModelGenerator#cellKey}), leeg where the map or the cell is absent. The attribute is input, read off
-     *  the subject's own bean ({@link #dimensionRead}). The reference under the cell is no node of a reading
-     *  (RUNTIME-SEMANTICS ch. 5.12), so only the cell is noted. */
+     *  dimension of the attribute. A cell a form writes is a member of its own, read through its standing
+     *  ({@link #cellMember}, {@link Reads#own}); any other cell is input, the entry of its key in the attribute's bean
+     *  member, a map of its cells by their labels ({@link FactModelGenerator#cellKey}), read off the subject's own bean
+     *  ({@link #dimensioned}), leeg where the map or the cell is absent. The reference under the cell is no node of a
+     *  reading (RUNTIME-SEMANTICS ch. 5.12), so only the cell is noted. */
     private Term dimensionCell(Expr.DimensionCellRead c, Reads reads) {
         Object description = Msg.drools("PART.desc.dimension-cell-read");
-        int i = dimensionRead(c.attribute(), reads, description);
-        List<String> key = cellKey(c.attribute(), c.labels(), description, c.source());
-        Term map = new Term.SlotValue(i, source(c.attribute().source()));
+        Expr.AttributeReference a = c.attribute();
+        Member attribute = dimensioned(a, reads, description);
+        if (writers.containsKey(ProducerConsumer.cellOf(a.objectType(), a.attribute(), c.labels() == null ? List.of() : c.labels())))
+            return new Term.SlotValue(reads.own(cellMember(a.objectType(), a.attribute(), c.labels(), description,
+                    c.source())), source(c.source()));
+        List<String> key = cellKey(a.objectType(), a.attribute(), c.labels(), description, c.source());
+        Term map = new Term.SlotValue(reads.own(attribute), source(a.source()));
         return new Term.Call(StaticFunction.CELL, List.of(map, constant(key)), source(c.source()));
     }
 
-    /** The key of the cell {@code labels} name of the dimensioned attribute {@code a} reads
+    /** The key of the cell {@code labels} name of the dimensioned attribute {@code attribute} of {@code holder}
      *  ({@link FactModelGenerator#cellKey}). Labels that name no cell break WF-040, which a verified document holds, and
      *  are refused by name, never read as an empty cell. */
-    private List<String> cellKey(Expr.AttributeReference a, List<String> labels, Object description,
+    private List<String> cellKey(ObjectType holder, String attribute, List<String> labels, Object description,
                                  dev.uchar.regelspraak.ir.Source at) {
-        List<String> dimensions = a.objectType().dimensionsOf(a.attribute());
+        List<String> dimensions = holder.dimensionsOf(attribute);
         List<String> key = FactModelGenerator.cellKey(model, dimensions, labels == null ? List.of() : labels);
         if (key == null)
             throw new Refusal(DroolsCode.DIMENSION_LABELS_NAME_NO_CELL.reason("description", description, "attribute",
-                    a.attribute(), "labels", labels == null ? "" : String.join(", ", labels), "dimensions",
+                    attribute, "labels", labels == null ? "" : String.join(", ", labels), "dimensions",
                     String.join(", ", dimensions), "snippet", snippet(at)));
         return key;
     }
@@ -4735,8 +4787,10 @@ public final class TmsTranspiler {
      *  product of its selections, one per dimension of the attribute, the first selection outermost and each in its own
      *  label order, a leeg cell skipped and an all-leeg selection leeg, through the runtime's {@code rsDimSom},
      *  {@code rsDimMin} and {@code rsDimMax}; a sum's {@code emptyFallback} is evaluated after the cells, every time
-     *  (RUNTIME-SEMANTICS ch. 5.11), and stands in for an all-leeg sum. The argument is no node of a reading
-     *  (RUNTIME-SEMANTICS ch. 5.12), so only the fold is noted. */
+     *  (RUNTIME-SEMANTICS ch. 5.11), and stands in for an all-leeg sum. The fold reads the map of the cells off the
+     *  subject's bean, and every cell a form writes through its standing, which takes the place of its entry in a copy of
+     *  the map ({@link ComputeHelpers#withCell}). The argument is no node of a reading (RUNTIME-SEMANTICS ch. 5.12), so
+     *  only the fold is noted. */
     private Term dimensionFold(Expr.FunctionCall f, Reads reads) {
         Expr.FunctionKind kind = f.kind();
         if (kind != Expr.FunctionKind.SOM && kind != Expr.FunctionKind.MINIMUM && kind != Expr.FunctionKind.MAXIMUM)
@@ -4746,7 +4800,7 @@ public final class TmsTranspiler {
         if (f.arguments().size() != 1 || !(f.arguments().get(0) instanceof Expr.AttributeReference a))
             throw new Refusal(DroolsCode.DIMENSION_FOLD_NON_ATTRIBUTE.reason("snippet", snippet(f.source())));
         Object description = Msg.drools("PART.desc.dimension-aggregation");
-        int i = dimensionRead(a, reads, description);
+        int i = reads.own(dimensioned(a, reads, description));
         // selection d ranges over dimension d of the argument (WF-040)
         List<String> dimensions = a.objectType().dimensionsOf(a.attribute());
         boolean eachDimension = f.dimensionSelections().size() == dimensions.size();
@@ -4758,8 +4812,16 @@ public final class TmsTranspiler {
                             .map(s -> s.dimension() + ": " + String.join(", ", s.labels())).toList()),
                     "dimensions", String.join(", ", dimensions), "snippet", snippet(f.source())));
         List<List<String>> keys = new ArrayList<>();
-        for (List<String> t : ProducerConsumer.selectedCells(f.dimensionSelections()))
-            keys.add(cellKey(a, t, description, f.source()));
+        String source = source(f.source());
+        Term map = new Term.SlotValue(i, source(a.source()));
+        for (List<String> t : ProducerConsumer.selectedCells(f.dimensionSelections())) {
+            List<String> key = cellKey(a.objectType(), a.attribute(), t, description, f.source());
+            keys.add(key);
+            if (writers.containsKey(ProducerConsumer.cellOf(a.objectType(), a.attribute(), t)))
+                map = new Term.Call(StaticFunction.WITH_CELL, List.of(map, constant(key),
+                        new Term.SlotValue(reads.own(cellMember(a.objectType(), a.attribute(), t, description,
+                                f.source())), null)), null);
+        }
         Term fallback = f.emptyFallback() == null ? null : restated(value(f.emptyFallback(), reads),
                 eff.unitOf(f.emptyFallback()), eff.unitOf(a), "een §5.8.2 terugvalwaarde");
         StaticFunction fold = switch (kind) {
@@ -4767,27 +4829,24 @@ public final class TmsTranspiler {
             case MINIMUM -> StaticFunction.RS_DIM_MIN;
             default -> StaticFunction.RS_DIM_MAX;
         };
-        String source = source(f.source());
-        Term map = new Term.SlotValue(i, source(a.source()));
         Term cells = new Term.Call(fold, List.of(new Term.Call(StaticFunction.MAP, List.of(map), null), constant(keys)),
                 source);
         // only a sum has a fallback, evaluated after the cells
         return fallback == null ? cells : new Term.Call(StaticFunction.FALLBACK, List.of(cells, fallback), source);
     }
 
-    /** The read of the dimensioned attribute {@code a} as its whole map: the subject's own attribute, which no form
-     *  writes, bound off its bean. A dimensioned attribute over a path, or one a form writes, is refused by name. */
-    private int dimensionRead(Expr.AttributeReference a, Reads reads, Object description) {
+    /** The dimensioned attribute {@code a} reads: the subject's own attribute, whose map, bound off its bean
+     *  ({@link Reads#own}), holds the input of its cells. A cell a form writes is a member of its own
+     *  ({@link #cellMember}), which the reads of a cell and of a fold take through its standing instead. A dimensioned
+     *  attribute over a path is refused by name. */
+    private Member dimensioned(Expr.AttributeReference a, Reads reads, Object description) {
         if (a.objectType() == null || a.attribute() == null)
             throw new Refusal(DroolsCode.DIMENSION_READ_UNRESOLVED_ATTRIBUTE.reason("description", description, "snippet", snippet(a.source())));
         if (navigationBindings.containsKey(a))
             throw new Refusal(DroolsCode.DIMENSION_READ_OVER_PATH.reason("description", description, "snippet", snippet(a.source())));
         if (a.objectType() != reads.subject)
             throw new Refusal(DroolsCode.OWN_READ_FOREIGN_SUBJECT.reason("objectType", a.objectType().name, "subject", reads.subject.name, "snippet", snippet(a.source())));
-        Member member = dimensionedMember(reads.subject, a.attribute());
-        if (writers.containsKey(member.key()))
-            throw new Refusal(DroolsCode.DIMENSION_READ_WRITTEN_ATTRIBUTE.reason("description", description, "attribute", member.name(), "snippet", snippet(a.source())));
-        return reads.own(member);
+        return dimensionedMember(reads.subject, a.attribute());
     }
 
     /**
@@ -7765,7 +7824,7 @@ public final class TmsTranspiler {
      */
     private List<RulePlan> attributeStateRules(Member member) {
         ElementKey key = member.key();
-        String name = "stand " + member.declarant().name + "." + member.name() + ": ";
+        String name = "stand " + member.declarant().name + "." + member.spelled() + ": ";
         List<RulePlan> out = new ArrayList<>();
 
         if (writers.containsKey(key)) {
@@ -7774,7 +7833,7 @@ public final class TmsTranspiler {
             out.add(new RulePlan(name + "uit een afleiding", null, null,
                     oneSlot(ReadKind.DERIVATION, "afleiding " + key, "$v"),
                     List.of(new Subject(member.javaClass(), SUBJECT, List.of(), List.of(), List.of()), value),
-                    new Consequence.State(SUBJECT, key, Consequence.StateSource.DERIVATION, 0, false,
+                    new Consequence.State(SUBJECT, key, Consequence.StateSource.DERIVATION, 0, false, null,
                             Consequence.Insertion.LOGICAL)));
         }
 
@@ -7789,7 +7848,7 @@ public final class TmsTranspiler {
 
     /** The input rule {@code name} of {@link #attributeStateRules}: where no {@link Value} stands on the object, the
      *  {@link State} of the input on the bean, read as it is, or as its segments for a member on a timeline
-     *  ({@link #inputForm}); with {@code bucket} null for a member that holds one value, and for a member on a timeline
+     *  ({@link #inputForm}), or for a cell as the entry of its key in the map its attribute holds; with {@code bucket} null for a member that holds one value, and for a member on a timeline
      *  only where an {@link BucketInput} of the member on the object exists ({@code true}), the input then standing as
      *  its {@link BucketScalar}, or does not ({@code false}). The bucket is taken in the consequence, from the bound
      *  timeline: a binding is computed for every object the subject pattern matches, also one whose input is a full
@@ -7809,7 +7868,7 @@ public final class TmsTranspiler {
                 List.of(onSubject(id("waarde-onderwerp"))), List.of())));
         return new RulePlan(name, null, null, oneSlot(ReadKind.INPUT, "invoer " + key, "$invoer"),
                 items, new Consequence.State(SUBJECT, key, Consequence.StateSource.INPUT, 0, Boolean.TRUE.equals(bucket),
-                        Consequence.Insertion.LOGICAL));
+                        member.cell(), Consequence.Insertion.LOGICAL));
     }
 
     /** The value array of a standing rule whose consequence reads one value: slot 0, of {@code category}, which the
@@ -7967,9 +8026,19 @@ public final class TmsTranspiler {
      *  bean property), whether it is a characteristic, its declared datatype (null for a characteristic), the bean
      *  class of the declaring type, whose subtypes' beans extend it, and, for a member on a timeline, the granularity of
      *  its grid (null for a member that holds one value). A member on a timeline is read and written as a
-     *  {@code List<Period>} ({@link Period}). */
+     *  {@code List<Period>} ({@link Period}). A cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c) is a member
+     *  of its own: its key is the cell's ({@link ProducerConsumer#cellOf}), {@code name} its attribute's, the bean
+     *  property of the map that holds the cells, and {@code cell} its key in that map ({@link FactModelGenerator#cellKey});
+     *  null for every other member. */
     private record Member(ElementKey key, ObjectType declarant, String name, boolean characteristic, Datatype datatype,
-                       Class<?> javaClass, RegelSpraakModel.Granularity time) {}
+                       Class<?> javaClass, RegelSpraakModel.Granularity time, List<String> cell) {
+
+        /** The member as a sentence names it: a cell as its attribute with its labels, {@code vondstgewicht[najaar]},
+         *  the spelling of the place of a fault and of the node of IR-SPEC ch. 5.1. */
+        String spelled() {
+            return cell == null ? name : name + "[" + String.join(", ", cell) + "]";
+        }
+    }
 
     /** Whether {@code member} is an attribute on a timeline: one the branch reads through its standing, derived or input,
      *  whose input stands in the convention the case gave it ({@link #attributeStateRules}). */
@@ -8027,7 +8096,7 @@ public final class TmsTranspiler {
                 for (String k : t.characteristics)
                     if (Namen.norm(k).equals(Namen.norm(name)))
                         return new Member(ProducerConsumer.elementOf(holder, name, true), t, k, true, null, beanClass(t),
-                                t.characteristicGranularity.get(k));
+                                t.characteristicGranularity.get(k), null);
             } else {
                 for (Map.Entry<String, Datatype> e : t.attributes.entrySet())
                     if (Namen.norm(e.getKey()).equals(Namen.norm(name))) {
@@ -8037,7 +8106,7 @@ public final class TmsTranspiler {
                         if (t.attributeDimensions.containsKey(a))
                             throw new Refusal(DroolsCode.DIMENSIONED_READ_OUTSIDE_CELL.reason("attribute", a, "objectType", t.name));
                         return new Member(ProducerConsumer.elementOf(holder, name, false), t, a, false, e.getValue(),
-                                beanClass(t), t.attributeGranularity.get(a));
+                                beanClass(t), t.attributeGranularity.get(a), null);
                     }
             }
         }
@@ -8057,9 +8126,39 @@ public final class TmsTranspiler {
                     if (t.attributeGranularity.containsKey(a))
                         throw new Refusal(DroolsCode.DIMENSIONED_ATTRIBUTE_TIMELINE.reason("attribute", a, "objectType", t.name));
                     return new Member(ProducerConsumer.elementOf(holder, name, false), t, a, false, e.getValue(),
-                            beanClass(t), null);
+                            beanClass(t), null, null);
                 }
         throw new Refusal(DroolsCode.ATTRIBUTE_NOT_DECLARED.reason("attribute", name, "objectType", holder.name));
+    }
+
+    /** The cell {@code labels} of the dimensioned attribute {@code name} as declared on {@code holder}'s chain, a member of
+     *  its own ({@link Member#cell}) that {@code description} reads or writes: keyed as the rule graph and the producer
+     *  index key it ({@link ProducerConsumer#cellOf}), on the declaring type with the labels as written, and held in the
+     *  map of its attribute under the labels as declared ({@link FactModelGenerator#cellKey}). An attribute that is not
+     *  dimensioned or lies on a timeline is refused by name, and so are labels that name no cell of its dimensions. */
+    private Member cellMember(ObjectType holder, String name, List<String> labels, Object description,
+                              dev.uchar.regelspraak.ir.Source at) {
+        Member attribute = dimensionedMember(holder, name);
+        List<String> key = cellKey(holder, name, labels, description, at);
+        return new Member(ProducerConsumer.cellOf(holder, name, labels), attribute.declarant(), attribute.name(), false,
+                attribute.datatype(), attribute.javaClass(), null, key);
+    }
+
+    /** The attribute reference a rule writes: its target, or the reference under a target that names a cell (IR-SPEC
+     *  ch. 3.1); null for a target of another kind. */
+    private static Expr.AttributeReference writtenReference(Expr target) {
+        return target instanceof Expr.DimensionCellRead c ? c.attribute()
+                : target instanceof Expr.AttributeReference a ? a : null;
+    }
+
+    /** The member a rule writes, as the producer index keys it: its attribute, or its characteristic, on the declaring
+     *  type, or the cell its target names ({@link ProducerConsumer#cellOf}); null for a target that names neither. */
+    private static ElementKey writtenKey(ResolvedRule r) {
+        Expr.AttributeReference a = writtenReference(r.target());
+        if (a == null || a.objectType() == null || a.attribute() == null) return null;
+        return r.target() instanceof Expr.DimensionCellRead c && c.labels() != null
+                ? ProducerConsumer.cellOf(a.objectType(), a.attribute(), c.labels())
+                : ProducerConsumer.elementOf(a.objectType(), a.attribute(), r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING);
     }
 
     /** A path of to-one roles from a subject type over the reference fields of the beans: the walk
