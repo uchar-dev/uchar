@@ -286,3 +286,5 @@ end 2026-11-02 22:35:50 377s red=0
 
 Gate 12: played 315 op beide branches; gate 17: 315 goldens en 885 case files vergeleken, deviations 0. Een eerdere run op
 `14327882e` (vóór de verdeling) was ook groen, 322 s, `red=0`.
+
+**Landing (hoofdsessie, 2026-11-02).** Zelf nagemeten met ref van `3d4676b88` tegen de nieuwe ref: `jutterswet-geschreven-waarde-aan-fixpunt` case1 en case3 en `jutterswet-twee-schrijvers-aan-fixpunt` case1, case2 en case5 gaven `MISMATCH`, nu alle 28 cases van de zes goldens `oracle: PASS`; de kenmerk-goldens waren al groen (geen document raakt het; de `ref/test`-rij dekt het). Gerebased op main `5ce41723e` (alleen de kaart met de besluiten), ff. `make gates` groen op `0dc3643a6`; daarna alleen spec-tekst, Javadoc en het Result (gate 1 en de Drools-suite groen). In dezelfde landing: CONSTRUCTS rij 8 en PLAN.

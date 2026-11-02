@@ -1106,11 +1106,17 @@ order. The spec text, the reference interpreter and the ASP backend follow
 with the card; the truth-maintenance branch already reads so, and its two
 refusals that waited on this decision (a division in a default, a division in
 an initialisation beside another writer) are gone. The decision does not depend
-on whether numeric-zero division becomes a channel fact (decision (7)). A write
-whose condition later turns false keeps its value in the reference interpreter:
-the residual of ch. 6.1 stays, and `TmsTimelineWitnessTest` B2 and
-`TmsWholePeriodWitnessTest` A and A3 still measure it (card
-`written-value-at-fixpoint`).
+on whether numeric-zero division becomes a channel fact (decision (7)). Writes
+count at the fixpoint as well (2026-11-02, card `written-value-at-fixpoint`): a
+value, a timeline or a characteristic stands only where the form that wrote it
+decides there, and a target of two or more writers takes the value of those that
+decide there — none: its input; one: its value; two that differ: the fault of
+ch. 5.7 (maintainer decisions of that day on characteristics and on writers).
+The residual of ch. 6.1 is gone; in the reference interpreter
+`TmsTimelineWitnessTest` B2 and `TmsWholePeriodWitnessTest` A pass in every
+order, and of A3 only `J5.ongelijkpremie` remains (card
+`20261009-ref-gehele-periode-lege-grens`). The ASP backend carries a case input
+beside two writers; both Drools branches already read so.
 
 **Creation reads by generations, and its budget counts depth (2026-10-09,
 cards `creatie-initialisatie-leest-groeiende-waarde` and
