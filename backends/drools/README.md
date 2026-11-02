@@ -191,7 +191,8 @@ alone.
 **Faults.** An evaluation fault is a fact of the fixpoint, on both branches, not an exception out of the fire: `fixpointOf` gives it as data (`Fixpoint.faults`, the subject, the rule and the exception), and `setDerivedValues`
 throws what stands before it writes anything, and then writes nothing: one fault as its own exception, a
 `ComputeFault` for a fault of a computation or of the evaluation date, a `WritersConflict` (an `IllegalStateException`) for two writers of one
-attribute that disagree (RUNTIME-SEMANTICS ch. 5.7) and an `InputFormFault` for a timeline input in the other
+attribute that disagree (RUNTIME-SEMANTICS ch. 5.7), a `WriteBoundaryFault` for a value that does not fit the declared
+decimals of its target (EF-006, ch. 2.4 point 1) and an `InputFormFault` for a timeline input in the other
 convention (ch. 8.4); two or more as `EvaluationFaults`, with each fault in `faults()`. Any other exception is no
 evaluation fault: a broken contract or a bug.
 
