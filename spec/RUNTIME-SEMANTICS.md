@@ -470,9 +470,11 @@ an explicit rounding. At assignment:
    is a property of the evaluation: 1001/2 and 1000/2 have one type, so no
    rule on types decides it. It stands behind the static gate of point 4,
    which refuses the `1,5` and the quotient of these examples before they
-   run; on a document the gate admits, the share of an allocation reaches it
-   (`corpus/red/jutterswet-verdeling-past-niet`), and an executor holds it on
-   every document it runs, the verifier being no part of a run.
+   run; on a document the gate admits, the share of an allocation and a
+   segment of a pro-rata write into a timeline reach it
+   (`corpus/red/jutterswet-verdeling-past-niet`,
+   `corpus/red/jutterswet-tijdsevenredig-past-niet`), and an executor holds it
+   on every document it runs, the verifier being no part of a run.
 2. A rounding changes the *facing* precision: `afgerond op n` makes the
    expression n-decimal (whole when n = 0).
 3. An unbounded target (the "getal" precision form, `IR-SPEC.md` ch. 2.4)
@@ -724,8 +726,16 @@ exact fraction. Example: base 1200, 90 of 365 days → 1200 × 90/365 =
 21600/73 — non-terminating, and rounded only by an explicit rounding:
 afgerond op 2 rekenkundig = **295,89**. The assignment gate rounds nothing
 and holds per segment of a timeline target (ch. 2.4, 3.7): 21600/73 written
-unrounded into a target of 2 decimals is EF-006. STATIC-GATE-TIMELINE Full timeline algebra:
-ch. 3.
+unrounded into a target of 2 decimals is EF-006. The static gate of ch. 2.4
+point 4 leaves a timeline target alone: the part is the one computed write
+such a target takes, and no executor carries a rounding around it (ref
+faults on it, the ASP backend refuses it with CLINGO-024 and the Drools
+backend with DROOLS-105, measured 2026-11-02), so an unrounded part into a
+timeline of 2 decimals is well-formed (`anchor/jutterswet-borgdeel`) and the
+fault per segment stands behind it (`corpus/red/jutterswet-tijdsevenredig-past-niet`);
+into a scalar target of 2 decimals the part is refused (∞ > 2,
+`corpus/negative/wf023-precision-time-proportional-part`). Full timeline
+algebra: ch. 3.
 
 ### 2.9 The pinned decimal scale — Catala decimals (Phase-5c, vraag 4-A)
 
