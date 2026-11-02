@@ -229,3 +229,198 @@ May touch: `backends/drools/**`, `backends/clingo/lib/translate.ml` (afbeelding)
 
 Out of scope: de statische poort (`20261102-static-precision-gate`), `ref/lib` (gedrag verandert niet), de vervolgkaart
 `drools-exact-arithmetic`.
+
+## Result
+
+Bouwer, 2026-11-02, op main `b3e49849a` (gerebased; de branch begon op `a0e0fa0ee`). Niet gemerged, niet gepusht.
+
+### Commits
+
+- `159813320` kaart naar doing
+- `816c2ea0e` clingo: een aandeel dat niet past is EF-006
+- `1a245e23a` drools: de schrijfgrens toetst de waarde, en rust is exact (Drools, rode gevallen, gate 8 en 8b-script: voorstel op beschermd pad)
+- `c9903e8c2` spec: de schrijfgrens is een evaluatiefout op de waarde (voorstel op beschermd pad; ref/test)
+- `d1a0792a4` drools: getuige van het besluit in de eenvoudige vorm
+- en de commit van dit Result
+
+### Wat veranderde
+
+**Spec** (`spec/RUNTIME-SEMANTICS.md`, voorstel). Ch. 2.4 punt 1: EF-006 op de waarde, in plaats van de write; de waarde telt,
+niet de getypeerde precisie en niet de schaal; een statische poort in de verifier is OPEN (de v0-noot houdt de kandidaatregel
+als OPEN, voor wat zij niet beslist: het aandeel van een verdeling en een eindigend quotiënt dat niet past). Ch. 2.4 punt 3:
+de Drools-zin beschrijft nu de exacte waarde in het werkgeheugen, de decimaal op de bean (16 cijfers half-even) en de weigering
+van een vouw; nieuw uitgewerkt voorbeeld "factor maal inkomen is precies de grens". Ch. 2.1: de schrijfgrens is geen
+collapspunt (twee collapspunten), met voorbeeld; ch. 2.9 volgt ("the two of ch. 2.1"). Ch. 2.8 en 3.7: geen "target rounding"
+of afronding aan de gate; de gate op een tijdlijn is OPEN (ref schrijft exact, clingo weigert, Drools 16 cijfers). Ch. 4.2: de
+floor eenmaal op de exacte breuk, aandeel en rest door de gate, één fout per verdeling × bron; ch. 4.4 een rij; ch. 4.6 twee
+voorbeelden (exact vóór de floor; een aandeel dat niet past). Ch. 5.7: de secundaire uitkomsten van een falende sessie zijn
+niet genormeerd (ref zet terug, Drools trekt de `Value` in), met voorbeeld. Ch. 5.7b: Drools emitteert `place`, `value`,
+`decimals` voor EF-004 en EF-006; de vier nieuwe rode gevallen staan als getuigen van EF-006. Ch. 7.1: een besluit dat niet
+past beslist wel. Elk voorbeeld staat in `ref/test/test_ref.ml` in een eigen blok na de ch. 4.6-voorbeelden: `WV-2.1-schrijfgrens-a..c`,
+`WV-2.4-i..l`, `WV-2.4-p-factor`, `WV-2.4-p`, `WV-4.6-exact`, `WV-4.6-exact-rest`, `WV-5.7-schrijfgrens`, `WV-7.1-past-niet` (14
+voorbeelden; de suite telt er 1789). IR-SPEC is niet aangeraakt.
+
+**Drools** (`backends/drools`, de zeven punten):
+1. `StaticFunction.FIT_TARGET` → `ComputeHelpers.fitTarget(value, decimals, attribute, creation)` in de waardeterm, ná
+   `restated`, op regel, initialisatie en creatie-initialisatie met een begrensd doel; één plan voor beide renderingen. Een
+   passende waarde komt als decimaal terug (een eindigende `Breuk` als zijn exacte decimaal). Bij een default staat de toets op
+   de write (`StackFact.Value.decimals`, route `FITTED`, `ComputeHelpers.fitted`), zie (g).
+2. `WriteBoundaryFault` (EF-006) met `place`, `value` (exacte breuk), `decimals`; de write-back noemt de plaats
+   (`named(subject, label, inputOrder)`); catalogus nl en en (`EF-006`), `CaseRunner.faultKinds` leest code en parameters.
+3. `Value` en `Decision` met `collapse = false`; `readFixpoint` collapset voor de bean en `DerivedValue`;
+   `decisionsOf` geeft het besluit in dezelfde vorm. Het veld `collapse` blijft in het plan bestaan (de handplannen van de
+   tests gebruiken het); geen plan van de transpiler zet het nog aan.
+4. De bean van een onbegrensd attribuut krijgt `Breuk.naarDecimal()`: exact of 16 cijfers half-even (javadoc van `Breuk`
+   bijgewerkt: de "resolver-guard"-zin klopte niet).
+5. DROOLS-296 (`FOLD_OVER_UNBOUNDED_VALUE`, soort limit, nl en en): een vouw (som, minimum, maximum) over de waarde van een
+   onbegrensd attribuut. Raakt geen golden en geen werkbank-geval, dus `ExactSum` bleef bij de vervolgkaart.
+6. `Allocation` en `rsVerdeelOpVolgorde` rekenen in `Breuk`, met één `naarDecimal(d, FLOOR)` op de echte breuk; aandelen en
+   rest zijn `BigDecimal` waar ze eindigen, `Breuk` waar niet. `payout` toetst aandeel en rest (`Payout.shareDecimals`,
+   `restDecimals`, `fault`) en geeft bij een misser alleen de ene `Fault` op de bron (geen aandeel, geen rest, geen
+   deponering), `place` de eerste misser in de volgorde van de invoerbeans (`Watch.inputPlace`).
+7. EF-004 in de case-lezer (`CaseRunner.inputFits`, `InputPrecisionFault`, catalogus `EF-004`): attribuut (scalair en
+   tijdlijn per segment) en parameter; een rationaal lexeem wordt eerst getoetst, daarna weigert DROOLS-042 de vorm.
+
+**Clingo**: `allocation_share_misfit` als constante en zijn arm in `viol_code` op EF-006 zonder parameters (de zin noemt geen
+place, value of decimals; het onderwerp is een label).
+
+**Corpus**: `corpus/red/jutterswet-verdeling-past-niet` (gelijkdeling zonder afronding), `-halvering-past-niet` (maal 0,5),
+`-kopie-past-niet` (taxatie 1.50 in een geheel bergloon), `-vast-bergloon-past-niet` (literal 1,5), elk `expectedFault
+{EF-006, {}}`. Gemeten vóór de Drools-wijziging: ref EF-006 op alle vier (met place/value/decimals), clingo EF-006 op drie en op
+de verdeling alleen de `viol` zonder code; na de clingo-commit EF-006 op alle vier. De pins zijn `{}`, omdat clingo bij EF-006
+geen `value`/`decimals` emitteert en als `place` het kale attribuut (`veilingdeel`) waar ref en Drools `J1.veilingdeel` geven.
+
+**Scripts** (voorstel): de negen `NOFAULT`-regels in `scripts/check-red.sh` weg; `EF_PLACES` in `scripts/check-drools-codes.sh`
+kent `EF-004` en `EF-006` met `{place, value, decimals}`. Geen vloer veranderd; `EXPECTED_PLAYED` blijft 300 (op main sinds
+`instance-depth-owner-hop`; de replay geeft 300 op beide takken).
+
+### Rood eerst
+
+Rode stand op `a0e0fa0ee` (detached worktree, de nieuwe testklassen en rode gevallen erin gekopieerd, niet gecommit):
+`WriteBoundaryWitnessTest` en `RationalAtRestWitnessTest` 18 van 22 rood. Elk foutgeval "ran to a model without faulting"
+(`NOFAULT`), ook de vier nieuwe rode gevallen en de negen `NOFAULT`-regels; de exacte verdeling gaf "verwacht 999999999999999.99,
+werkelijk 1000000000000000.00" (rest -0.03); de invoer 11.50 op een geheel tijdlijnattribuut en `1/3` op twee decimalen speelden
+of gaven DROOLS-042; de derde maal drie gaf "geheel: werkelijk 0.9999999999999999; kenmerk heel: werkelijk afwezig"; de factor
+stond als `BigDecimal(0.6666666666666667)` in de feiten, het vrijgelaten inkomen 4567.500000000000228375 en "boven de grens"
+aanwezig; de vouw sommeerde tot 0.9999999999999999. Groen op de oude code: de vier tussenstand-families van (b) (m4a, m4c, m4d,
+m4f), omdat er daar geen toets was; die zijn rood met mutatie M6.
+
+Mutaties, elk in een detached worktree van `c9903e8c2`/`d1a0792a4`, niet gecommit (script en logs in
+`werk/drools-schrijfgrens/scratch/mutate.py`, `logs/mutation-*.log`):
+- M1, de toets: `fitTarget` gooit niet → 8 van 18 rood (elk foutgeval `NOFAULT`, en de (g)-getuige).
+- M2, EF-004: `inputFits` keert meteen terug → 3 rood (attribuut/parameter, tijdlijn, rationaal lexeem).
+- M3, de exacte verdeling: het gelijke aandeel als `DECIMAL64`-quotiënt → 2 rood ("verwacht 999999999999999.99, werkelijk
+  1000000000000000.00"; en bij 1001 over drie een fout op `V1.veilingrestant: -1/1000000000000` in plaats van op het aandeel).
+- M4, de weigering van punt 5: de `throw` weg → de vouwgetuige rood ("P1.ploegsom: de waarde 9999999999999999/10000000000000000
+  past niet").
+- M5, het besluit blijft staan: geen controlefeiten naast de fout in de closure-rendering → de (g)-getuige in de eenvoudige vorm
+  rood (de twee takken verschillen; de lagere regel schrijft). Op de eerste versie van de getuige, alleen de algemene vorm, bleef
+  M5 groen; daarom de getuige in de eenvoudige vorm (`d1a0792a4`).
+- M6, het logische feit: de `Fault` van een waardegevolg gesteld in plaats van logisch → 2 rood (m4a: "V1.aandeel: de waarde
+  90/7 past niet" aan het fixpunt; m4d: de takken verschillen).
+
+### Aangepaste verwachtingen, pins en vloeren
+
+Pins die door de extra aanroep veranderen (het gedrag verandert expliciet): 23 testmethoden. Plandumps: `RulePlanWitnessTest`
+(6), `ChannelPlanWitnessTest` (3), `DefaultsplanWitnessTest` (3), `CreationPlanWitnessTest` (2), `ValueTermWitnessTest` (2),
+`RouteWitnessTest` (1, `PAYOUT` met drie parameters erbij en `FITTED`). DRL-tekst: `DrlValueFunctionsWitnessTest` (5),
+`DrlConditionFunctionsWitnessTest` (1). Voorbeeld oud → nieuw (`RulePlanWitnessTest.a_subject_outside_a_stack`):
+`value=RS_TIMES(Read 0, Const 2), … collapse=true` → `value=FIT_TARGET(RS_TIMES(Read 0, Const 2), Const 2, Const uitkering,
+Const null), … collapse=false`, met de knopen een niveau dieper; in de DRL-tekst `Object v =
+ComputeHelpers.collapse(new java.math.BigDecimal("10"));` → `Object v = new java.math.BigDecimal("10");`, en een constante in een
+begrensd getal heeft nu een functie `return ComputeHelpers.fitTarget(new java.math.BigDecimal("5"), Integer.valueOf(2),
+"registratiekosten", null);`. Handplannen: `FormsPlan` (drie `Payout`s met de nieuwe velden, twee tekstfragmenten),
+`DefaultsplanWitnessTest` en `DrlCarriedValueWitnessTest` (`StackFact.Value` met `null`). Vloer in
+`DrlPiecesCorpusWitnessTest`: "gevolgen die hun waarde dragen" 330 → 241 en "…, met de zin erboven" 258 → 165 (beide met en
+zonder lezingen): een waardegevolg in een begrensd getal gaat nu door een functie. `TemporalInputWitnessTest`: de invoer 11.50
+op het gehele attribuut `wachtvergoeding per maand` werd 11.00, want EF-004 weigert 11.50 nu, zoals ref. `RationalAtRestWitnessTest`
+herschreven: de pin `value=BigDecimal(0.3333333333333333)` in de feiten wordt `Breuk("1/3")`; de pin op de bean blijft.
+
+### (g)
+
+1. Een falende default: met de toets in de waardeterm (de proefbouw) keerde `decisionOf` terug vóór `Decides`, en de lagere
+   default (de regel "op 1,00") besliste en schreef naast de fout; ref laat de default beslissen en faalt op de write.
+   Gerepareerd in de Drools-backend: bij een default staat de toets op de write, het besluit voegt zijn controlefeiten (`Decides`,
+   of `Outcome` met de exacte waarde) naast de `Fault` in, en niet de `Value` en niet de deponering van zijn gevolg. In de
+   algemene vorm toetst de afstemming aan de wortel, zodat een lid op zijn exacte waarde afstemt (met de toets in de term van
+   het lid zou een conflict EF-027 van ref een EF-006 worden). Getuige en M5 hierboven; spec ch. 7.1. Niet veranderd: een andere
+   evaluatiefout in het gevolg van een default keert nog terug vóór `Decides`; ref breekt dan de hele stapel op het onderwerp
+   af. Dat is een secundaire uitkomst van een falende sessie (ch. 5.7).
+2. Gate 17 op een regel met `FIT_TARGET`: de lezing van de waardeknoop is de term binnen de toets. Op het rode geval
+   `jutterswet-halvering-past-niet` (verwachting `consistent` in plaats van de fout) geeft `--readings` `reading
+   /rules/rules/0/versions/0 "J1" 0 Binary 500.5` en `HOLDS`, terwijl de vorm EF-006 geeft; ref's trace stopt daar met de fout van
+   de sessie. Op de goldens draagt elke begrensde regel nu `FIT_TARGET`; gate 17 vergelijkt ze (zie de gates).
+
+### Werkbankmeting
+
+Werkbank `e27bed1`, `v2/herleving-ww`, het manifest opnieuw door de frontend van deze worktree (`scratch/werkbank.py`, alleen
+lezen in de werkbank): 175 scenariogevallen plus de witness van art. 20 lid 1 onder c (`case1-factor-twee-derde-precies-op-de-grens`,
+het scenario uit `meting/werkbank/`), op de eindjar: 176 × `PLAYED 1` op exec-model en 176 × op DRL-tekst. De witness verwacht
+"I1 heeft geen herlevingsgrens overschreden" en speelt dus op beide takken; op de jar van `3d4676b88` gaf zij "kenmerk
+herlevingsgrens overschreden: verwacht afwezig, werkelijk aanwezig" (`meting/werkbank/result.txt`). Ref niet opnieuw gedraaid.
+
+### Voorlopige besluiten
+
+1. Punt 5 als statische weigering (bij het bouwen, een vouw over een onbegrensd scalair attribuut, behalve een gevulde
+   telling), niet bij het vuren: een weigering tijdens de fire heeft in deze backend geen route (weigeringen komen uit de bouw
+   of de case-lezer; een uitzondering uit een gevolg wordt een ERROR). Raakt 0 goldens en geen werkbank-geval. Strenger dan
+   "met een niet-eindigende waarde": ook een vouw over gehele waarden van die vorm wordt geweigerd.
+2. De toets bij een default op de write (zie (g)), niet in de waardeterm zoals de kaart voor de andere vormen schrijft.
+3. `place` van een creatie-initialisatie: `«creatie»(onderwerp).attribuut` (ref: `oc<i>::<label>.attribuut`); niet gepind.
+4. `place` van een verdeling: de eerste misser in de volgorde van de invoerbeans, gemaakte objecten daarna; ref neemt de
+   volgorde van de lijst van de verbindende rol. Gelijk waar de case zijn lijst in instantievolgorde schrijft (het rode geval).
+5. EF-004: `value` als ref's lexeem (decimaal zonder nullen achteraan, anders t/n); een rationaal lexeem eerst getoetst.
+6. EF-004 op een dimensiecel: niet gebouwd, er is geen route (het case-schema heeft geen celwaarde, en de case-lezer weigert
+   invoer op een gedimensioneerd attribuut met DROOLS-047 vóór er een waarde gelezen wordt).
+7. Clingo's verdelingsarm zonder parameters; de rode gevallen pinnen `{}`.
+8. De zin over secundaire uitkomsten in ch. 5.7 (keuze van de norm: niet genormeerd, in plaats van een kant kiezen).
+
+### Voorgestelde tekst voor `spec/CONSTRUCTS.md` rij 2
+
+Vervang "Candidate WF (RUNTIME-SEMANTICS ch. 2.4): a possibly non-terminating value must pass explicit rounding before a bounded
+write" door: "**Write boundary on the value (2026-11-02, card `drools-schrijfgrens`):** RUNTIME-SEMANTICS ch. 2.4 point 1 is the
+evaluation fault EF-006 on the value, in place of the write, in all three executors (Drools: `StaticFunction.FIT_TARGET`, at the
+write of a defaults stack `ComputeHelpers.fitted`; the input fence EF-004 in its case reader); a value of the unbounded form is
+exact in Drools's working memory and a decimal on the bean. Red cases `jutterswet-verdeling-past-niet`, `-halvering-`, `-kopie-`,
+`-vast-bergloon-past-niet`. The candidate WF rule (a possibly non-terminating value must pass an explicit rounding before a
+bounded write) is OPEN, card `20261102-static-precision-gate`." `spec/PLAN.md`: geen scopewijziging.
+
+### Voor `drools-exact-arithmetic`
+
+`DECIMAL128` in `rsPlus`, `rsMin`, `rsMaal`; `ExactSum` in beide renderingen en `Contribution` zonder collapse (heft DROOLS-296
+op); het tijdsevenredig deel exact, met ch. 2.4 op de tijdlijn in ref en Drools; de wortel (`toBd` geeft het radicand nog als
+`DECIMAL64`); ch. 5.12 op `t/n`; de gebroken exponent. Nieuw gevonden: een onbegrensd attribuut dat een objectcreatie
+initialiseert, gaat als decimaal op de nieuwe bean (de creatie collapset bij de constructie), dus een lezer ziet daar 16 cijfers;
+en de grens van de kwalificatie over de gehele periode (`ComputeHelpers.wholePeriod`) leest een `Breuk` via `toBd`.
+
+### make gates
+
+Eén run op `d1a0792a4` (gerebased op `b3e49849a`), alle regels groen (`out/gates/20261102-114326`):
+
+```
+start 2026-11-02 11:43:26 d1a0792a4 card/drools-schrijfgrens
+ocaml rc=0 3s ocaml-build: rebuilt (6 source path(s) newer than the stamp, e.g. backends/clingo/lib; 3s)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 0s drools-jar: fresh (jar newer than 536 source files)
+01-self-contained rc=0 1s
+02-ir-schema rc=0 125s
+04-case-schema rc=0 7s
+03-verifier rc=0 36s
+05-oracle rc=0 21s
+06-clingo rc=0 261s
+07-noop rc=0 12s
+08-red rc=0 153s
+09-catala rc=0 5s
+10-regelspraak rc=0 217s
+11-toka-parity rc=0 219s
+12-drools rc=0 323s
+13-reftype rc=0 260s
+14-flogic rc=0 2s
+15-graph rc=0 47s
+16-scenario rc=0 30s
+17-readings rc=0 239s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 11:48:52 326s red=0
+```
+
+Gate 17 groen: de lezingen van alle goldens, waar elke begrensde regel nu `FIT_TARGET` draagt, zijn gelijk aan de trace van ref.
