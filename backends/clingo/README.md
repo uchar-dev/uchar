@@ -333,7 +333,11 @@ spec bug.
   (`corpus/golden/jutterswet-melding-naar-aard`,
   `corpus/red/jutterswet-dubbele-melding`). On a standing target the
   case input stands only where no writer of the subject decides, a
-  standing writer on another type of the chain included. Two computing
+  standing writer on another type of the chain included. Beside writers
+  that are not standing the case input enters as `inputval/3` as well
+  and stands only where none of them fires (`wfired/2`): the value at the
+  fixpoint is that of the writers that decide there, a leeg one included
+  (`corpus/golden/jutterswet-twee-schrijvers-aan-fixpunt`). Two computing
   rules on a temporal target are refused by name: a timeline is no
   single term to compare.
 - An initialisation outside the desugaring domain — a conditional one,

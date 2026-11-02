@@ -192,7 +192,10 @@ input, that input enters as `inputval/3` (scalar) or `inputtl/5`
 (timeline) instead of `val/3`/`tl/5`, so the producer can defeat it;
 everything else enters as plain facts. Case input on a *non-standing*
 computed target is refused loudly (ref overwrites; a monotone
-encoding would union — the hunted superset model of ch. 6d). Role
+encoding would union — the hunted superset model of ch. 6d), except on
+a target of two or more co-writers (S3): there it enters as
+`inputval/3` and stands where none of them fires (RS ch. 5.7,
+`jutterswet-twee-schrijvers-aan-fixpunt`). Role
 fillings are doubled as `inputrole/3` when object creation is present
 (the ch. 5.5 input-snapshot narrowing, S11). With recursive creation,
 every input instance gets `depth(L,0)` under the creation budget.
@@ -330,7 +333,7 @@ target. Witness: `jutterswet-vensterheffing`.
 
 Not translated, loudly (S19 carries the full list):
 temporal targets outside the two ch. 3.7/3.8 fold shapes; case input
-on non-standing computed targets; a `standing` target outside its own
+on a non-standing computed target that is no co-writer's; a `standing` target outside its own
 domain; boolean computed targets (above); the initialisation shapes the
 native arm has no guard for (above).
 
@@ -2752,7 +2755,8 @@ fallback-less som now translates via its presence guard, S8, and the
 fallback-0 facet rides `#sum`'s native 0); uniqueness key
 lists with more than one temporal component, and ever-unique keys
 served by a scalar; case input on non-standing SCALAR and TEMPORAL
-computed targets (the ch. 6d superset-model fence) — an ALLOCATION
+computed targets (the ch. 6d superset-model fence), a scalar target of
+two or more co-writers apart (S2) — an ALLOCATION
 target now enters defeasibly instead (S10/S12, `jutterswet-veilinginvoer`),
 so what stays loud there is only the residual: a target attribute READ
 anywhere else (a feedback into the pot, weights, criteria or condition,
@@ -3901,7 +3905,8 @@ atom that carries condition **and** value bindings (the defeasibility
 machinery this section named as the principled home; a condition-only
 atom would encode v0's erase instead — the atom's body is the semantic
 choice). The fence remains on non-standing computing targets
-(multi-writer, versioned) — the temporal arm followed with the
+(versioned; a scalar target of two or more co-writers enters its input
+as `inputval/3` too, S2) — the temporal arm followed with the
 temporal-standing card (2026-08-21): a standing temporal target's
 input timeline enters as `inputtl/5`, standing **whole** by NAF
 against the fold's per-bucket effectiveness atom (`prN_eff` carries

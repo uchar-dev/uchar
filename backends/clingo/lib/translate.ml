@@ -10760,7 +10760,10 @@ let translate_rule ctx (r : resolved_rule) =
               let standing =
                 List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc)
               in
-              if (not standing) && case_supplies ctx ~otype:ot ~attr:a then
+              (* beside co-writers the case input enters defeasibly as well, and
+                 stands where none of them fires ([co_input_stands]) *)
+              let co_input_stands = (not standing) && writer <> None in
+              if (not standing) && (not co_input_stands) && case_supplies ctx ~otype:ot ~attr:a then
                 fault
                   "the case supplies input for computed target %S: ref (like v0) overwrites it, \
                    which has no monotone encoding here (no corpus case)"
@@ -10849,7 +10852,20 @@ let translate_rule ctx (r : resolved_rule) =
                   head_body ctx
                     (Printf.sprintf "val(%s,%s,V)" subject (str a))
                     ([ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base; "not " ^ e ] @ co_eff)
-              | None -> ())
+              | None -> ());
+              (* two or more writers of one target: the value at the fixpoint is
+                 that of the writers that fire there (RUNTIME-SEMANTICS ch. 5.7),
+                 so the case input stands where none fires; one that fires with a
+                 leeg value writes leeg ([writer_conflicts]) *)
+              if co_input_stands then begin
+                head_body ctx
+                  (Printf.sprintf "val(%s,%s,V)" subject (str a))
+                  [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base;
+                    Printf.sprintf "not wfired(%s,%s)" subject (str a) ];
+                head_body ctx
+                  (Printf.sprintf "wfired(%s,%s)" subject (str a))
+                  [ Printf.sprintf "wfires(%s,%s,_)" subject (str a) ]
+              end
           | Some Initialisation ->
               (* RUNTIME-SEMANTICS ch. 5.4, natively: an initialisation
                  reaches this arm only outside the ch. 7.7 desugaring domain
@@ -12219,6 +12235,18 @@ let translate_case ctx (case : Case.t) =
         | None -> false)
       doc.prioritized_defaults
     || List.exists (fun (t, a) -> a = norm aname && inherits otype t) standing
+    (* a target of two or more co-writers that are not standing: the input
+       stands where none of them fires (translate_rule) *)
+    || List.exists
+         (fun (r : resolved_rule) ->
+           match Ir_v0.Desugar.target_of r with
+           | Some (t, a) ->
+               norm a = norm aname && inherits otype t
+               && applies ctx r.rr_validity
+               && co_writer ctx r ~ot:t ~a <> None
+               && not (List.mem (norm t, norm a) standing)
+           | None -> false)
+         doc.resolved_rules
     || List.exists
          (fun (v : resolved_allocation) ->
            (match v.objective_type_name with Some dt -> inherits otype dt | None -> false)
