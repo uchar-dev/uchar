@@ -281,9 +281,11 @@ card, `../../backlog/done/20260924-l4-regel-en-expressielaag.md`):
   null was always (since L5 a `Validity` with neither bound). An absent
   `condition` is unconditional.
 - **`RuleVersion`** (`validity`, `target`, `value`, `condition`?,
-  `initialisation`, `presentation`?). The target is an `AttribuutRef` and
-  nothing else; whether it names an attribute or a characteristic is its
-  declaration's (B20), so the v0 rule kind is no field: a computing version
+  `initialisation`, `presentation`?). The target is an `AttributeReference`,
+  or a `DimensionCellRead` that names the one cell of a dimensioned attribute
+  the version writes (IR-SPEC ch. 3.1, ch. 2.7), and nothing else; whether
+  it names an attribute or a characteristic is its declaration's (B20), so
+  the v0 rule kind is no field: a computing version
   writes `initialisation: false` with the tag `presentation` (`GELIJKSTELLING`
   or `BEREKENING`, since L5 `equation` or `calculation`), an
   initialisation writes `initialisation: true` without a tag, and a
@@ -298,7 +300,8 @@ card, `../../backlog/done/20260924-l4-regel-en-expressielaag.md`):
 - **`ObjectCreationVersion`** (`createdType`, `subject`, `initialisations`,
   `condition`?, `validity`, `connectingRole`?): absent, the back-link is
   derived (RUNTIME-SEMANTICS ch. 5.5). Each initialisation stayed a v0
-  `Toekenning` until L5, since then a `MemberInit`.
+  `Toekenning` until L5, since then a `MemberInit`, which carries `labels`?
+  where it writes one cell of a dimensioned attribute (IR-SPEC ch. 3.3).
 - **`FactCreationVersion`** (`factType`, `anchorRole`, `targetRole`,
   `anchor`, `path`, `condition`?, `validity`): the target type is not written,
   because it is the declared filler of `targetRole`, and `path` is a non-empty
@@ -312,7 +315,7 @@ card, `../../backlog/done/20260924-l4-regel-en-expressielaag.md`):
   closes the position.
 - **`Aggregation` and `BuiltinCall`** (B21) split the v0 function node by
   kind: the eight fold kinds carry `elementType`?, `filter`?,
-  `emptyFallback`?, `dimensionSelection`?, `sourceRole`? and `sourcePath`?,
+  `emptyFallback`?, `dimensionSelections`?, `sourceRole`? and `sourcePath`?,
   the seventeen builtins `filter`? and `granularity`? (its five buckets, in
   their v0 spelling until L5). A
   field of the one node on the other, and a kind of the other node, cannot be
@@ -629,6 +632,12 @@ Conventions, deliberate:
   attribute — an attribute carries one convention or the other, and the
   executors fault when a construct needs the one the case did not
   supply.
+- A dimensioned attribute carries the **cells variant** and nothing else:
+  per cell its labels, one label of each dimension in the declared order of
+  the attribute's dimensions, and its value; a cell the list does not name
+  is empty. Two expectations name a cell, `cellValue` and `cellEmpty`
+  (RUNTIME-SEMANTICS ch. 5.8c). That the labels name a cell, and that no
+  cell occurs twice, are the case readers' checks (EF-034, EF-035).
 
 Two deliberate narrowings relative to the donor conformance layer this
 format was mined from: a case has **no rule scope** — evaluation is

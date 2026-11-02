@@ -130,7 +130,7 @@ empty or all-empty source differs per aggregation — this is the
 | aantal | 0 (a count, never empty) | aantal over {} = 0 |
 | aantal gevulde | 0 (a count, never empty) | aantal gevulde over {leeg} = 0; over {} = 0 (ch. 3.4c) |
 | minimum/maximum, eerste/laatste | **empty**; no fallback form exists | min(5, leeg, 3) = 3; min(leeg, leeg) = leeg |
-| dimension folds (§5.8.5) | empty cells skipped; all-empty selection = empty (som may use its fallback) | cells {Q1: 3, Q2: leeg, Q3: 2}: som over Q1–Q3 = 5; som over {Q2} = leeg |
+| dimension folds (§5.8.5; ch. 5.8c) | empty cells skipped; all-empty selection = empty (som may use its fallback); over the product of one selection per dimension | cells {Q1: 3, Q2: leeg, Q3: 2}: som over Q1–Q3 = 5; som over {Q2} = leeg; over two dimensions, ch. 5.8c |
 
 **Eerste/laatste are ordering folds.** The articulated value fold
 "de eerste van A en B [en C …]" (§5.8.3/§4.14–.15, ≥ 2 listed operands)
@@ -4189,6 +4189,10 @@ the case does not declare is refused, since it names no instance
 (EF-002). A date lexeme that names no calendar day — `2026-02-30`, which
 the case schema's pattern admits because a pattern checks field widths and
 not a calendar — is refused, naming its position and the lexeme (EF-003).
+The cells of a dimensioned attribute are refused where their labels name no
+cell of the attribute (EF-034) and where the input names one cell twice
+(EF-035), and a scalar or a timeline on a dimensioned attribute is a case
+error (ch. 5.8c).
 
 **Divergence by two writers of one target.** Two rules that write one
 attribute and whose conditions both hold on one instance demand, by
@@ -4489,6 +4493,8 @@ parameters, the clause that defines it and its witnesses.
 | EF-031 | a filled dividend is divided by an empty divisor | §9.5 | `rule`, `label` | ch. 1.2; ch. 1.4 point 4 | `corpus/golden/jutterswet-bergloon`, `corpus/golden/synth3-takhek`, `corpus/golden/synth3-operandvolgorde` |
 | EF-032 | the parts of a date construction name no calendar day or no clock time | fault | `year`, `month`, `day`, `hour`, `minute`, `second`, `millisecond` | ch. 3.8 | `corpus/red/date-with-no-calendar-day` |
 | EF-033 | the links of the switch relation of an instance-ordered cycle form a cycle | case input | `factType`, `cycle` | ch. 6.2; IR-SPEC ch. 5.3 | `corpus/red/instance-order-link-cycle` |
+| EF-034 | the labels of a cell of the case input name no cell of its attribute | case input | `label`, `attribute`, `labels` | ch. 5.8c | `corpus/red/jutterswet-cel-onbekend-label` |
+| EF-035 | the case input names one cell of an attribute twice | case input | `label`, `attribute`, `labels` | ch. 5.8c | `corpus/red/jutterswet-cel-dubbel` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified
@@ -4945,6 +4951,137 @@ Jutrecht is ploegvarend indien ten minste één van de rechten van de ploeg van
 het Jutrecht de vaartijd heeft" holds for J1, W1 and W2, each of whose ranges
 holds W1; with only S1 beside it (case 2), J1 is not ploegvarend.
 
+### 5.8c The dimensioned attribute: its cells
+
+A dimensioned attribute (IR-SPEC ch. 2.7) has no value of its own. On each
+object it holds a partial map from **label tuples** to values. A tuple names
+one label of each dimension of the attribute, label i a label of dimension i
+of the attribute's `dimensions`; a tuple the map does not hold is an **empty
+cell**. Labels compare as names do (IR-SPEC ch. 2.1). A cell behaves in every
+respect as a scalar attribute whose member is the pair (attribute, tuple),
+and every clause of this document about an attribute holds for a cell in the
+same way. Where RegelSpraak v2.3.0 is silent — writing a cell, a fold over
+more than one dimension, a cell of another type than a number — this
+chapter follows ALEF (IR-SPEC ch. 2.7, the norm source).
+
+1. **Reading a cell.** A `DimensionCellRead` evaluates to the value of the
+   cell its `labels` name, on the object its `attribute` reaches: the
+   subject itself, or the object a path of roles reaches, by the rules of
+   ch. 5.8 unchanged — an absent link reads leeg (rule 1), and a to-many
+   hop never reaches a cell (rule 2). The reference under the cell names
+   the attribute and the object and is not evaluated as a value of its
+   own. An empty cell reads leeg (ch. 1.2).
+2. **Writing a cell.** A rule version whose `target` is a cell writes that
+   cell of its subject and no other cell. The written value is collapsed to
+   the attribute's declared representation at the write boundary (ch. 2.4);
+   a value that does not fit is EF-006, its `place` the cell,
+   `J1.vondstgewicht[najaar]`. A write that changes nothing is no change
+   (ch. 5.1). An initialisation writes its cell only where that cell is
+   empty (ch. 5.4): another cell of the attribute that is filled does not
+   keep it from its turn. Two writers of one cell whose values differ fault
+   the session (EF-016, ch. 5.7); two writers of two cells do not meet. An
+   object creation's member with `labels` writes that cell of the object it
+   makes (ch. 5.5).
+3. **Folding cells.** An aggregation with `dimensionSelections` — a `sum`,
+   a `minimum` or a `maximum` (WF-037) — folds the cells of the product of
+   its selections on the object its argument reaches. The tuples are formed
+   with the first selection outermost, each selection in its own label
+   order, and the cells are read in that order (ch. 5.11). Empty cells are
+   skipped (ch. 1.2e); where every selected cell is empty the fold is
+   empty, and a sum then takes its `emptyFallback`, which is evaluated after
+   the cells (ch. 1.2, the table of the aggregations). A dimension the fold
+   does not range over is selected with one label, which stands in every
+   tuple. No cell read faults, so the order of the cells is stated and has
+   no witness.
+4. **The dependency graph** has a node per cell (IR-SPEC ch. 5.1): a cell
+   read reads its cell, a cell target and a member with `labels` write
+   theirs, and a dimension fold reads every cell of the product of its
+   selections. A rule that computes one cell from another cell of the same
+   attribute is therefore no cycle.
+
+**The case.** An input of a dimensioned attribute is its cells,
+`{"cells": [{"labels": [<label>, …], "value": <value>}, …]}`, the labels
+positional as on the wire; a cell the list does not name is empty. A cell's
+value has the attribute's datatype and is held to its declared decimals
+(EF-004, the `place` the cell, `j1.vondstgewicht[voorjaar]`). Two
+expectations name a cell, `cellValue` (the cell holds the value) and
+`cellEmpty` (the cell is empty), with the labels spelled as in the input. The
+case reader refuses, while it reads the case (ch. 5.7 step 3):
+
+- labels that name no cell of the attribute — a number of labels other than
+  the number of its dimensions, or a label at position i that is no label of
+  dimension i — with EF-034;
+- a cell the input names twice, with EF-035;
+- a scalar or a timeline input on a dimensioned attribute, a `cells` input
+  on an attribute without dimensions, and an `attributeValue`,
+  `attributeEmpty` or `attributeTimeline` expectation on a dimensioned
+  attribute: a case error without a code, since the case does not fit the
+  document's declarations, as a timeline on an attribute without one does
+  not. A scalar on a dimensioned attribute would otherwise load as a value
+  the document cannot read; measured 2026-11-02 before the reader held this,
+  `ref` and the ASP backend each returned the scalar 3.00 to an
+  `attributeValue` expectation on the attribute, `PASS`.
+
+**Worked examples** (absolute). A dimension `seizoen` with the labels
+`voorjaar`, `zomer`, `najaar` and, where named, a dimension `strand` with
+`noord`, `zuid`; on the `Jutter` a `vondstgewicht` in kg with 2 decimals.
+
+- **Reading** (`jutterswet-seizoenvondst`, the dimension `seizoen` with
+  `voorjaar` and `najaar` there): "Het voorjaarsgewicht van een Jutter moet
+  berekend worden als zijn vondstgewicht in voorjaar". J1 with the cells
+  `voorjaar` 12.50 and `najaar` 4.00 gives **voorjaarsgewicht 12.50**; J2
+  with the cell `najaar` 4.00 alone gives **voorjaarsgewicht leeg**.
+- **Folding over one dimension** (`jutterswet-seizoenvouw`): `jaargewicht`
+  is the sum over all seasons, `groeigewicht` the sum from `voorjaar` up to
+  and including `zomer`, `piekgewicht` the maximum over `voorjaar`, `zomer`
+  and `najaar`, `dalgewicht` the minimum from `zomer` up to and including
+  `najaar`. J1 with `voorjaar` 3.00 and `najaar` 2.00, `zomer` empty, gives
+  **5.00, 3.00, 3.00 and 2.00**; J2 without a cell gives **leeg** for all
+  four; J3 with `zomer` 1.25 alone gives **1.25** for all four.
+- **Folding over two dimensions**: `vondstgewicht` dimensioned by `seizoen`
+  and `strand`, with the cells (`voorjaar`, `noord`) 2.00, (`najaar`,
+  `noord`) 1.00 and (`voorjaar`, `zuid`) 5.00. The cell read `voorjaar`,
+  `zuid` gives **5.00**. A sum with the selections `seizoen`: `voorjaar`,
+  `zomer`, `najaar` and `strand`: `noord` reads (`voorjaar`, `noord`),
+  (`zomer`, `noord`), (`najaar`, `noord`) and gives **3.00**; with
+  `strand`: `zuid` it gives **5.00**. A sum with the selections `seizoen`:
+  all three and `strand`: `noord`, `zuid` reads (`voorjaar`, `noord`),
+  (`voorjaar`, `zuid`), (`zomer`, `noord`), (`zomer`, `zuid`), (`najaar`,
+  `noord`), (`najaar`, `zuid`) and gives **8.00**; the minimum over the same
+  selections gives **1.00**.
+- **Writing**: "Het vondstgewicht in najaar van een Jutter moet berekend
+  worden als zijn vondstgewicht in voorjaar maal 2", "Het vondstgewicht in
+  zomer van een Jutter moet geïnitialiseerd worden op 0 kg" and the sum
+  `jaargewicht` over all seasons. J1 with `voorjaar` 1.50 gives **najaar
+  3.00, zomer 0.00, jaargewicht 4.50**. J2 with `voorjaar` 1.50 and `zomer`
+  2.00 gives **zomer 2.00** — the input fills the cell, so the
+  initialisation is not at its turn — **najaar 3.00, jaargewicht 6.50**. J3
+  without input gives **najaar leeg** (a leeg operand empties the product,
+  ch. 1.2), **zomer 0.00, jaargewicht 0.00**. With "maal 1,5" in place of
+  "maal 2", J1 with `voorjaar` 1.25 faults: 1.875 does not fit 2 decimals,
+  **EF-006** at `J1.vondstgewicht[najaar]`, value 15/8, decimals 2.
+- **The case**: on `vondstgewicht` dimensioned by `seizoen` and `strand`, the
+  cell `zuid`, `voorjaar` — two declared labels in the reversed order — is
+  refused with **EF-034** {`label`: j1, `attribute`: vondstgewicht,
+  `labels`: zuid, voorjaar} (`corpus/red/jutterswet-cel-onbekend-label`), and
+  the cell `voorjaar`, `zuid` named twice with **EF-035** {`label`: j1,
+  `attribute`: vondstgewicht, `labels`: voorjaar, zuid}
+  (`corpus/red/jutterswet-cel-dubbel`); the input 1.005 in a cell of 2
+  decimals is refused with **EF-004** {`place`: j1.vondstgewicht[voorjaar],
+  `value`: 1.005, `decimals`: 2}.
+
+**Where the executors stand** (measured 2026-11-02). The reference
+interpreter and the ASP backend share the case reader, which holds the
+refusals of the case above and then refuses a valid cell input as well; they
+decline a cell read (REF-002, CLINGO-008), a dimension fold (ref without a
+code, CLINGO-008) and a cell target (REF-012, CLINGO-026). The Drools
+backend reads a cell and folds over one dimension, of an attribute of the
+subject without input, and refuses a cell input (DROOLS-047), a fold over
+more than one dimension (DROOLS-297) and a cell write (DROOLS-298). So no
+golden with case files reads or writes a cell, and the worked examples
+above have no replay; the two red witnesses of EF-034 and EF-035 have one in
+`ref` and the ASP backend.
+
 ### 5.9 Uniqueness: the union and the scope
 
 Both uniqueness forms fire at the fixpoint of their stratum and deposit
@@ -5280,7 +5417,7 @@ name its kinds the same way.
 | `duration` / `absoluteDuration` (tijdsduur / absolute tijdsduur) | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
 | `dateWith` / `dateTimeWith` (datum met / datum-tijd met) | the `arguments` list: year, month, day, and for `dateTimeWith` hour, minute, second, millisecond (WF-037 leaves its arity open; ch. 3.8 fixes it) | **visible** | argument order; every part runs before the leeg test, so a leeg part costs its successors nothing |
 | aggregation (`sum` (som), `total` (totaal), `count` (aantal), `minimum`, `maximum`, `first` (eerste), `last` (laatste), `filledCount`) | the contributors — the listed `arguments`, or the instance fold's members each gated by the `filter` — then the `emptyFallback` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `emptyFallback` (WF-037 confines it to `sum`) |
-| aggregation over a `dimensionSelection` (the third contributor source; WF-037 admits it on `sum`, `minimum`, `maximum`) | the selected cells, then the `emptyFallback` | **visible** | the cells in the selection's own label order, then the `emptyFallback`. *ref declines the form; the order is stated, not yet exercised* |
+| aggregation over `dimensionSelections` (the third contributor source; WF-037 admits it on `sum`, `minimum`, `maximum`) | the selected cells, then the `emptyFallback` | **visible** | the cells of the product of the selections, the first selection outermost and each in its own label order (ch. 5.8c), then the `emptyFallback`. *No executor evaluates the form with cells; the order is stated and has no witness, as no cell read faults* |
 | `concatenation` (concatenatie), `TextComposition` | the inserted parts | **visible** | part order |
 | `ListLiteral` | `elements` | **visible** | element order |
 | `StructLiteral` | `fields` | **visible** | declared field order (WF-073) |
@@ -5670,7 +5807,8 @@ on, where the evaluation reached it and it did not fault. Such a node is an
 `AttributeReference` (IR-SPEC ch. 4.1a) — of the subject's own member
 (ch. 5.8 rule 4) or over a path of roles, also where the evaluation reads it
 as a timeline (the operand of a whole-period test, the base of a temporal
-total or of a time-proportional part) and under a `DimensionCellRead` — and
+total or of a time-proportional part) —, a `DimensionCellRead`, which reads
+one cell (ch. 5.8c), and
 a `CharacteristicCheck` — of the subject's own characteristic, which a
 `host` names in a rule's condition as well (ch. 5.8b), or over a role
 (`navigation`), also under the whole-period qualifier. A check with a
@@ -5688,6 +5826,22 @@ none; a node without a reading of its own (above) has none to name, and the
 contributors of a fold name their members already. The object is what the
 evaluation read, not a second walk: an executor names the object its own
 evaluation of the node reached.
+
+**The cell.** A `DimensionCellRead` is the node of a cell read: it has the
+value of the cell, leeg for an empty cell, and over a path of roles it
+names the object the path reached, `on "<object>"` or `on none`, as an
+`AttributeReference` over a path does. The `AttributeReference` under it has
+no reading of its own and keeps its number: it names the attribute and the
+object, and a dimensioned attribute has no value of its own (ch. 5.8c). The
+node of a dimension fold has the value of the fold, and its argument has no
+reading of its own either; the fold carries no contributors, since the
+cells it reads are named by the labels of its selections and are no
+members of a set (*provisional decision of the builder of card
+`dimensions-executed`, 2026-11-02*). Worked example: on the case J1 of the
+reading example of ch. 5.8c, the condition "indien zijn vondstgewicht in
+voorjaar groter is dan 10 kg" of a rule on the `Jutter` reads `HOLDS`, its
+node 1, the `DimensionCellRead`, the value `12.5 "kg"`, and its node 2, the
+`AttributeReference` under the cell, no line.
 
 **Folds over a set.** A node that the evaluation reads once per member of
 a fold over a set — the source, the filter and the matrix of an
@@ -6051,13 +6205,12 @@ plays to the nodes of a reading at its turn, and every operand in them to
 the value of the fixpoint; gate 17 compares their node lines as it
 compares every other, and counts them.
 
-Four boundaries, recorded rather than left implicit. The object of the
-`AttributeReference` under a `DimensionCellRead` stays outside gate 17 and
-outside that corpus witness: `ref` refuses the cell (REF-002), the case
-format carries no dimensioned input, so no golden with case files reads
-one, and the Drools backend reads a cell only of the subject's own
-attribute (a cell over a path it refuses, DROOLS-189), whose object the
-text does not write. The status `FAULTS`
+Four boundaries, recorded rather than left implicit. The reading of a
+cell stays outside gate 17 and outside that corpus witness: `ref` refuses
+the cell read (REF-002) and, with the ASP backend, a cell input (ch. 5.8c),
+so no golden with case files reads one, and the Drools backend reads a cell
+only of the subject's own attribute (a cell over a path it refuses,
+DROOLS-189), whose object the text does not write. The status `FAULTS`
 and a fault at a node stay outside that differential: a golden does not
 fault at its fixpoint, and `runner --trace` refuses a case that pins one.
 Neither does a displaced default of a golden fault in its reading

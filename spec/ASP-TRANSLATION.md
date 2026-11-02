@@ -1313,10 +1313,10 @@ operands is not translated …`) rather than the expression fall-through,
 for the reason the catch-all inventory below records. Its guard takes
 TWO wire fields, not one: an absent `elementType` means listed
 *or* dimension cell, because WF-037 grants the DIMENSION som an
-explicit arity exemption (one operand, a `dimensionSelection`, no stamp),
+explicit arity exemption (one operand, `dimensionSelections`, no stamp),
 and that form is not listed — `ref` refuses it earlier and on its own
 ground, `dimension selection not implemented in this card`. So the
-named arm demands an absent `dimensionSelection` too, and the dimension
+named arm demands absent `dimensionSelections` too, and the dimension
 som keeps the fall-through.
 
 Witnesses (gate 6): count by `jutterswet-erflijn`,
@@ -2724,7 +2724,7 @@ the catch-all's own sentence:
 case exercises it" was false while that witness stood — the same
 untruth WF-044's condition arm had just removed from the condition
 half. The form is `sum` with an absent `elementType` AND an
-absent `dimensionSelection`: the first rules out the instance folds
+absent `dimensionSelections`: the first rules out the instance folds
 (every som arm this backend carries demands the stamp present), and the
 second is needed because absence of the stamp alone means listed *or*
 dimension cell — WF-037 exempts the dimension som from the arity rule,
