@@ -16439,12 +16439,17 @@ let () =
     instance "J1" "Jutter"
       [ ("vondstgewicht", cells_of [ ([ "voorjaar"; "noord" ], "2.00"); ([ "najaar"; "noord" ], "1.00"); ([ "voorjaar"; "zuid" ], "5.00") ]) ]
   in
+  (* J3: two cells of one value both count, so the cell keeps them apart in the #sum *)
+  let j3_two =
+    instance "J3" "Jutter" [ ("vondstgewicht", cells_of [ ([ "voorjaar"; "noord" ], "2.00"); ([ "najaar"; "noord" ], "2.00") ]) ]
+  in
   both ~name:"the cells over two dimensions (ch. 5.8c)" ~ir:two
     ~case_text:
-      (case_of [ j1_two; instance "J2" "Jutter" [] ]
+      (case_of [ j1_two; instance "J2" "Jutter" []; j3_two ]
          (expected
             [ value "J1" "voorjaarzuid" "5.00"; value "J1" "noordgewicht" "3.00"; value "J1" "zuidgewicht" "5.00";
               value "J1" "strandgewicht" "8.00"; value "J1" "minimumgewicht" "1.00";
+              value "J3" "noordgewicht" "4.00"; value "J3" "strandgewicht" "4.00"; value "J3" "minimumgewicht" "2.00";
               {|{"kind": "cellValue", "label": "J1", "attribute": "vondstgewicht", "labels": ["najaar", "noord"], "value": {"number": "1.00"}}|};
               {|{"kind": "cellEmpty", "label": "J1", "attribute": "vondstgewicht", "labels": ["zomer", "zuid"]}|};
               empty "J2" "voorjaarzuid"; empty "J2" "noordgewicht"; empty "J2" "minimumgewicht" ]));
@@ -16469,6 +16474,33 @@ let () =
          (expected
             [ value "P1" "leidersvoorjaar" "12.50"; value "P1" "leidersjaargewicht" "16.50"; empty "P2" "leidersvoorjaar";
               empty "P2" "leidersjaargewicht" ]));
+  (* the #sum of three cells stays inside clingo's integer range when each
+     cell does by a third: two cells of 15000000.00 kg, each inside the range
+     at scale 10^2, add up past it; ref answers the exact sum *)
+  let year =
+    document
+      ~object_types:[ object_type "Jutter" "Jutters" [ attribute ~dimensions:[ "seizoen" ] "vondstgewicht"; attribute "jaargewicht" ] ]
+      ~dimensions:[ seizoen ]
+      [ rule "jaargewicht van een jutter" "jaargewicht" (fold "sum" (reference "vondstgewicht") [ all_seasons ]) ]
+  in
+  clingo_fence_fires ~name:"a dimension fold past clingo's integer range" ~ir:year
+    ~case_text:
+      (case_of
+         [ instance "J1" "Jutter" [ ("vondstgewicht", cells_of [ ([ "voorjaar" ], "15000000.00"); ([ "najaar" ], "15000000.00") ]) ] ]
+         (expected [ value "J1" "jaargewicht" "30000000.00" ]))
+    ~needle:"arithmetic range exceeded (clingo grounds in machine integers)" ();
+  (* a read of a dimensioned attribute outside a cell, in WF-125's sentence *)
+  let bare =
+    document
+      ~object_types:[ object_type "Jutter" "Jutters" [ attribute ~dimensions:[ "seizoen" ] "vondstgewicht"; attribute "kopie" ] ]
+      ~dimensions:[ seizoen ]
+      [ rule "kopie van een jutter" "kopie" (reference "vondstgewicht") ]
+  in
+  faults_with ~name:"WF-125: a dimensioned attribute read outside a cell" ~ir:bare
+    ~case_text:(case_of [ instance "J1" "Jutter" [] ] (expected [ empty "J1" "kopie" ]))
+    ~needle:
+      "the dimensioned attribute 'vondstgewicht' of 'Jutter' is read outside a cell: it has a value per cell and none \
+       of its own";
   (* the input precision of a cell: EF-004 while the input is laid down *)
   let one =
     document

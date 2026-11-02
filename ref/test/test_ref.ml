@@ -11150,12 +11150,18 @@ let () =
     instance "J1" "Jutter"
       [ ("vondstgewicht", cells_of [ ([ "voorjaar"; "noord" ], "2.00"); ([ "najaar"; "noord" ], "1.00"); ([ "voorjaar"; "zuid" ], "5.00") ]) ]
   in
+  (* J3: two cells of one value both count *)
+  let j3_two =
+    instance "J3" "Jutter" [ ("vondstgewicht", cells_of [ ([ "voorjaar"; "noord" ], "2.00"); ([ "najaar"; "noord" ], "2.00") ]) ]
+  in
   plays_named ~ident:"WV-5.8c-vouw-twee-dimensies" ~ir:two
     ~case_data:
-      (case_of [ j1_two ]
+      (case_of [ j1_two; j3_two ]
          (expected
             [ value "J1" "voorjaarzuid" "5.00"; value "J1" "noordgewicht" "3.00"; value "J1" "zuidgewicht" "5.00";
-              value "J1" "strandgewicht" "8.00"; value "J1" "minimumgewicht" "1.00" ]));
+              value "J1" "strandgewicht" "8.00"; value "J1" "minimumgewicht" "1.00"; empty "J3" "voorjaarzuid";
+              value "J3" "noordgewicht" "4.00"; empty "J3" "zuidgewicht"; value "J3" "strandgewicht" "4.00";
+              value "J3" "minimumgewicht" "2.00" ]));
   (* a cell and a fold over a path of roles (B7): the leader of a ploeg *)
   let path =
     document
