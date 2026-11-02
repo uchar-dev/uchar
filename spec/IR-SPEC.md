@@ -8449,7 +8449,7 @@ ch. 3.12), and it belongs to whoever measures it.
   foreign dimension, over one of two dimensions, over an undimensioned
   attribute, a repeated label and an empty selection, and refused the cell
   over a shared label (measured that day). (Row 28; the restriction of the
-  frontend's folds to the subject's own single-dimension attributes is
+  frontend's folds to the subject's own dimensioned attributes is
   frontend maturity, not IR scope — noted, not normative.)
 - **WF-041** A counting quantifier's `threshold` MUST be ≥ 1 (mirror of
   the v0 error). The sentence is about the VOCABULARY, not about one

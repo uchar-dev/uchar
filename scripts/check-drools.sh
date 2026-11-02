@@ -1473,7 +1473,10 @@ EXPECTED_CHANNEL=(
 # Value carries the cell's key, its standing reads the entry of the map on the bean, the write-back puts it into that
 # map, and the cycle check draws it as a node of its own (DROOLS-298 and DROOLS-191 retired). They play on both with
 # PLAYED 3 and 1.
-EXPECTED_PLAYED=305
+# 306 since the same card (2026-11-02, step 5): the golden jutterswet-strandseizoen, a cell over two dimensions read in
+# either order of its labels and folds with one selection per dimension (a fixed one, both running), written in
+# RegelSpraak with hand-computed cases. It plays on both with PLAYED 2.
+EXPECTED_PLAYED=306
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
