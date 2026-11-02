@@ -378,6 +378,46 @@ class ScenarioCellTest {
                 errorsOn(scenario("", "- de droge buit van J is leeg\n"), "buit van J"));
     }
 
+    /** Where a name reads as several cells with labels of some dimensions only, the refusal names the dimensions the
+     *  reading a rule takes leaves out: of the longest attribute, and among its readings the one with the fewest
+     *  dimensions left out. "droge buit in voorjaar" leaves `strand` out of "droge buit" and out of "buit"; "natte
+     *  droge vangst" leaves `seizoen` out where "natte" and "droge" are labels of two dimensions, and `glans` as well
+     *  where "natte droge" is one label. */
+    @Test void a_partial_cell_is_refused_for_what_its_best_reading_leaves_out() {
+        String text = """
+            Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+                1. voorjaar
+                2. najaar
+
+            Dimensie het strand, bestaande uit de stranden (na het attribuut met voorzetsel op):
+                1. noord
+                2. zuid
+
+            Dimensie de soort, bestaande uit de soorten (voor het attribuut zonder voorzetsel):
+                1. natte droge
+                2. natte
+
+            Dimensie de glans, bestaande uit de glansen (voor het attribuut zonder voorzetsel):
+                1. droge
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de buit Numeriek (geheel getal) gedimensioneerd met glans en seizoen en strand;
+                de droge buit Numeriek (geheel getal) gedimensioneerd met seizoen en strand;
+                de vangst Numeriek (geheel getal) gedimensioneerd met soort en glans en seizoen;
+
+            Scenario s
+            Gegeven is de volgende situatie:
+            een Jutter J
+            - de droge buit in voorjaar is 3
+            - de natte droge vangst is 3
+            Met als verwacht resultaat:
+            - de gegevens zijn consistent
+            """;
+        ScenarioBundle b = ScenarioResolver.resolve(text);
+        assertEquals(List.of(missing("droge buit in voorjaar", "droge buit", "strand")), errorsOn(b, text, "droge buit in voorjaar"));
+        assertEquals(List.of(missing("natte droge vangst", "vangst", "seizoen")), errorsOn(b, text, "natte droge vangst"));
+    }
+
     /** Two dimensions with one preposition and the same labels: "in noord in zuid" fits two cells. */
     @Test void a_cell_that_fits_two_ways_is_refused() {
         String text = """
