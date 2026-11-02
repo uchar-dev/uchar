@@ -68,6 +68,7 @@ a single expectation can be checked:
 | Rule | Construct (WF row) | Fault the reference interpreter raises |
 |---|---|---|
 | `vakcijfer uit voorjaarsopbrengst` | dimension-cell read of the dimensioned `opbrengst` (WF-004/014/040) | `expression kind not implemented in this card` |
+| `zeecijfer uit voorjaarsaanspoeling` | dimension-cell read over two dimensions of `aanspoeling` (WF-004/040) | `expression kind not implemented in this card` |
 | `peiling bij dubbele borging` | composite condition with a time-window (`TimeWindow`) member (WF-042) | **none any more** — the window became executable on 2026-09-20, see the section below |
 
 The ASP backend mirrors these same refusals by construction
@@ -121,10 +122,25 @@ belong to executing goldens, not to a scaffold.
 
 | Stays | WF rows | Measured 2026-09-19 |
 |---|---|---|
-| `vakcijfer uit voorjaarsopbrengst`, the dimensioned `opbrengst`, the `seizoen` dimension | WF-004, WF-014, WF-040 | The only other corpus document carrying a `Dimension` or a `DimensionCellRead` is `jutterswet-seizoenvondst`, and that golden carries **no case file either** — it is the second verifier-only golden (`corpus/golden/README.md`). No *executing* document carries the form, so the row stays. The shrinking card's 2026-09-17 reading that `jutterswet-seizoenvondst` covers it had measured the construct without measuring the execution |
+| `vakcijfer uit voorjaarsopbrengst`, the dimensioned `opbrengst`, the `seizoen` dimension; `zeecijfer uit voorjaarsaanspoeling`, the `aanspoeling` dimensioned by `seizoen` and `herkomst`, the `herkomst` dimension | WF-004, WF-014, WF-040 | The only other corpus document carrying a `Dimension` or a `DimensionCellRead` is `jutterswet-seizoenvondst`, and that golden carries **no case file either** — it is the second verifier-only golden (`corpus/golden/README.md`). No *executing* document carries the form, so the row stays. The shrinking card's 2026-09-17 reading that `jutterswet-seizoenvondst` covers it had measured the construct without measuring the execution |
 | the variable-start `boekjaar` timeline, its `StartPointDetermination`, the `meetdatum` anchor and the `waterstand` member | WF-016, WF-032 | `jutterswet-penningjaar` is the corpus's other timeline golden, but its `het penningjaar` declares `variableStart: false`; this is the only GOLDEN with a non-empty `startPointDeterminations`, so both halves of the row are uncovered. (Two negative cases carried the node — `wf032-fixed-start-anchor` and `wf034-wees-attribuutdimensies`, the second removed at M1 — but a refusal pins no positive form) |
 | the `TimeWindow` member of `peiling bij dubbele borging` | WF-042 | `"node": "TimeWindow"` occurs in no other GOLDEN, and both executors still refuse it (the table above). Its host composite therefore stays, with the counting quantifier that *did* leave replaced by `all`. (`wf042-empty-window` carries the node on the refusing side, as `wf034-wees-attribuutdimensies` did until M1 removed it) |
 | the two day kinds, each with its plural | WF-017 (positive side) | the section below. Until L3 the row also carried the four registry entries and WF-034 arm (s)'s identity half; both left the wire with the registry (same section) |
+
+## A cell over two dimensions that share a label: WF-040's positional reading
+
+The dimensions `seizoen` (`voorjaar`, `najaar`) and `herkomst` (`voorjaar`,
+`zee`) share the label `voorjaar`, and the rule `zeecijfer uit
+voorjaarsaanspoeling` reads the cell `voorjaar`, `zee` of `aanspoeling`,
+dimensioned by `seizoen` and `herkomst` in that order. WF-040 reads a cell
+positionally (`IR-SPEC.md` ch. 4.3): label 1 is a label of `seizoen`, label
+2 one of `herkomst`, so the shared label is no ambiguity and the document is
+verifier-clean. The verifier of main `b906f78ba` counted per dimension how
+many labels of the cell belong to it and refused this document,
+`WF-040.dimension-pin-count FAIL /rules/rules/1/versions/0/value: cell read
+pins dimension 'herkomst' 2 times, must be exactly once` (measured
+2026-11-02; mutant h of the dimension research). The refusing side is
+`corpus/negative/wf040-cell-labels-reversed`.
 
 ## The day kinds and their plurals: WF-017's positive witness (since 2026-09-10)
 

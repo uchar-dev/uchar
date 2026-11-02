@@ -1069,7 +1069,13 @@ public final class IrEmitter {
             else condition(f.filter());
         }
         if (f.emptyFallback() != null) { w.key("emptyFallback"); expr(f.emptyFallback()); }
-        if (f.dimensionSelection() != null) { w.key("dimensionSelection"); dimensionSelection(f.dimensionSelection()); }
+        // IR-SPEC ch. 4.3: one selection per dimension of the argument. The resolver folds an attribute of one
+        // dimension only, so its one selection is the whole list.
+        if (f.dimensionSelection() != null) {
+            w.key("dimensionSelections").beginArray();
+            dimensionSelection(f.dimensionSelection());
+            w.endArray();
+        }
         // IR-SPEC ch. 4.3 / WF-102: the range is ONE field with two spellings. A resolved
         // multi-step range goes out as sourcePath; the one-step range stays sourceRole, and the two are
         // mutually exclusive on the wire — so the path is written INSTEAD OF the binding, never

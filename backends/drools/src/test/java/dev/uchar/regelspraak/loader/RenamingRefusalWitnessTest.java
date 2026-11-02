@@ -609,9 +609,9 @@ class RenamingRefusalWitnessTest {
                     "{\"node\":\"VariableReference\",\"name\":\"x\",\"source\":{\"snippet\":\"x\"}}");
             case "Unresolved (expression)" -> new Site(ir, W, W, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"x\"}}");
             case "Unresolved (condition)" -> new Site(ir, V, V, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"x\"}}");
-            case "DimensionSelection" -> new Site(ir, W + "/dimensionSelection", W, "{\"node\":\"Aggregation\","
-                    + "\"kind\":\"sum\",\"arguments\":[],\"dimensionSelection\":{\"node\":\"DimensionSelection\","
-                    + "\"dimension\":\"d\",\"labels\":[],\"source\":{\"snippet\":\"x\"}},\"type\":null,"
+            case "DimensionSelection" -> new Site(ir, W + "/dimensionSelections/0", W, "{\"node\":\"Aggregation\","
+                    + "\"kind\":\"sum\",\"arguments\":[],\"dimensionSelections\":[{\"node\":\"DimensionSelection\","
+                    + "\"dimension\":\"d\",\"labels\":[],\"source\":{\"snippet\":\"x\"}}],\"type\":null,"
                     + "\"source\":{\"snippet\":\"x\"}}");
             case "TemporalRead" -> new Site(ir, W, W, "{\"node\":\"TemporalRead\",\"base\":" + literal + ",\"date\":"
                     + date + ",\"type\":" + number + ",\"source\":{\"snippet\":\"x op 1 januari 2024\"}}");

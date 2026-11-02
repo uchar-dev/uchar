@@ -456,8 +456,8 @@ class TmsBuiltinWitnessTest {
                 + "{\"snippet\":\"zijn omzet in k2\"}}";
         String second = computingRule("tweede kwartaal van een jutter", "BEREKENING", "Jutter", "tweede kwartaal",
                 binary("plus", cell, ownRead("toeslag", "Jutter"), TWO), "null");
-        String fold = "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[" + OMZET + "],\"dimensionSelection\":"
-                + "{\"node\":\"DimensionSelection\",\"dimension\":\"kwartaal\",\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]},"
+        String fold = "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[" + OMZET + "],\"dimensionSelections\":"
+                + "[{\"node\":\"DimensionSelection\",\"dimension\":\"kwartaal\",\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]}],"
                 + "\"type\":" + TWO + ",\"source\":{\"snippet\":\"de som van zijn omzet over alle kwartalen\"}}";
         String year = computingRule("jaaromzet van een jutter", "BEREKENING", "Jutter", "jaaromzet",
                 binary("plus", fold, ownRead("toeslag", "Jutter"), TWO), "null");

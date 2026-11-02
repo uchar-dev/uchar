@@ -102,9 +102,9 @@ let rec expr (e : expr) : json =
       node "AttributeReference"
         [ ("attribute", so attribute_ref); ("subjectType", so object_type); source br ]
   | Function_call
-      { kind; call_arguments; element_object_type; empty_fallback; filter; dimension_selection;
+      { kind; call_arguments; element_object_type; empty_fallback; filter; dimension_selections;
         typ = t; source_name = br; grain; source_role; source_path; anchor } ->
-      if filter <> None || dimension_selection <> None || grain <> None
+      if filter <> None || dimension_selections <> None || grain <> None
          || source_path <> None || anchor <> None then
         failwith "Emit: aggregation qualifier not produced by the F-logic slice";
       (* the slice's two folds read linked instances, so the range is written

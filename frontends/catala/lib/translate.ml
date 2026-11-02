@@ -1890,7 +1890,7 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
                   boolean-typed value expression as its init. Numeric/date/struct/
                   enum inputs stay attribute initialisations. *)
                let to_characteristic = (match ir_typ value_node with Some Boolean -> true | _ -> false) in
-               { I.to_attribute = Some attr; to_value = Some value_node; to_characteristic } :: acc
+               { I.to_attribute = Some attr; to_labels = None; to_value = Some value_node; to_characteristic } :: acc
              end)
            args [])
     in

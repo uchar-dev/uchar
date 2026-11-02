@@ -739,7 +739,7 @@ class SubtypeDialectTest {
         assertTrue(c.contains("\"kind\":\"sum\",\"arguments\":[{\"node\":\"AttributeReference\","
                         + "\"attribute\":\"betaaldebelasting\",\"subjectType\":\"Ondernemer\","),
                 () -> "de gedeclareerde spelling op de wire:\n" + c);
-        assertTrue(c.contains("\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"jaardimensie\","
+        assertTrue(c.contains("\"dimensionSelections\":[{\"node\":\"DimensionSelection\",\"dimension\":\"jaardimensie\","
                 + "\"labels\":[\"vorigjaar\",\"huidigjaar\"]"), () -> "de dimensieselectie op de wire:\n" + c);
     }
 

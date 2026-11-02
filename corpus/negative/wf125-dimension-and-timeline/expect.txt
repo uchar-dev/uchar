@@ -1,0 +1,3 @@
+WF-125.timeline
+attribute=vondstgewicht
+objectType=Jutter

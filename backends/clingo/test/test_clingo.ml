@@ -6523,8 +6523,8 @@ let sum_dimensions =
       "preposition": "in", "labels": [ "voorjaar", "najaar" ] }|}
 
 let sum_dimension_selection =
-  {|{ "node": "DimensionSelection", "dimension": "seizoen",
-      "labels": [ "voorjaar", "najaar" ], "source": { "snippet": "in alle seizoenen" } }|}
+  {|[ { "node": "DimensionSelection", "dimension": "seizoen",
+      "labels": [ "voorjaar", "najaar" ], "source": { "snippet": "in alle seizoenen" } } ]|}
 
 let listed_fold_doc ?(dimensions = "") ?(attribute_dimensions = "")
     ?(dimension_selection = "null") ?call_arguments ~kind ~element_object_type () =
@@ -6566,7 +6566,7 @@ let listed_fold_doc ?(dimensions = "") ?(attribute_dimensions = "")
 |}
     sum_num0 attribute_dimensions sum_num0 sum_num0 dimensions kind call_arguments
     (optional "elementType" element_object_type)
-    (optional "dimensionSelection" dimension_selection)
+    (optional "dimensionSelections" dimension_selection)
     sum_num0
 
 let listed_fold_case =
@@ -12528,7 +12528,7 @@ let () =
       ( "KENMERKTOEKENNING als presentation", ({|"initialisation": false, "presentation": "calculation"|}, {|"initialisation": false, "presentation": "KENMERKTOEKENNING"|}),
         {|unknown presentation value "KENMERKTOEKENNING"|} );
       ( "een doel dat geen AttribuutRef is", ({|"target": { "node": "AttributeReference", "attribute": "heffing", "subjectType": "Jutter", "source": { "snippet": "De heffing" } }|}, {|"target": { "node": "ParameterReference", "parameter": "heffing", "source": { "snippet": "De heffing" } }|}),
-        "the target of a rule version is an AttributeReference" );
+        "the target of a rule version is an AttributeReference or a DimensionCellRead" );
       ( "een vormnaam als versienaam", ({|"name": "heffing van een jutter"|}, {|"name": "heffing van een jutter #2"|}),
         "a form's name does not end in a space, '#' and digits: that spelling names one version of a form with several" );
       ( "een vorm zonder versies", ({|"name": "vrijstelling", "versions": [ {
@@ -13432,7 +13432,7 @@ let () =
               "node": "Aggregation",
               "kind": "sum",
               "arguments": [{"node": "AttributeReference", "attribute": "vakgewicht", "subjectType": "Jutter"}],
-              "dimensionSelection": {"node": "DimensionSelection", "dimension": "kustvak", "labels": ["noord", "zuid"]},
+              "dimensionSelections": [{"node": "DimensionSelection", "dimension": "kustvak", "labels": ["noord", "zuid"]}],
               "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}
             },
             "initialisation": false,
@@ -13753,7 +13753,7 @@ let () =
       ("/rules/rules/8/versions/0/value", Node "VariabeleRef");
       ("/rules/rules/4/versions/0/value", Node "Onopgelost");
       ("/rules/rules/2/versions/0/condition", Node "Onopgelost");
-      ("/rules/rules/5/versions/0/value/dimensionSelection", Node "DimensieSelectie");
+      ("/rules/rules/5/versions/0/value/dimensionSelections/0", Node "DimensieSelectie");
       ("/rules/rules/0/versions/0/condition/parts/1", Node "Vergelijking");
       ("/rules/rules/0/versions/0/condition/parts/0", Node "Predicaat");
       ("/rules/rules/0/versions/0/condition/parts/2", Node "Kenmerk");
@@ -13820,7 +13820,7 @@ let () =
       ("/rules/rules/8/versions/0/value", Key ("name", "naam"));
       ("/rules/rules/0/versions/0/condition/parts/1/left", Key ("base", "basis"));
       ("/rules/rules/0/versions/0/condition/parts/1/left", Key ("date", "datum"));
-      ("/rules/rules/5/versions/0/value/dimensionSelection", Key ("dimension", "dimensie"));
+      ("/rules/rules/5/versions/0/value/dimensionSelections/0", Key ("dimension", "dimensie"));
       ("/rules/rules/0/versions/0/condition/parts/1", Key ("left", "links"));
       ("/rules/rules/0/versions/0/condition/parts/1", Key ("right", "rechts"));
       ("/rules/rules/0/versions/0/condition/parts/1", Key ("wholePeriod", "periode"));

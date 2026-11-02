@@ -399,7 +399,7 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
                 { attribute_ref = Some role; object_type = Some ctx.c_subject;
                   source_name = Some (show_expr operand); navigation_bindings = None; anchor = None } ];
           element_object_type = Some el; empty_fallback = None; filter = None;
-          dimension_selection = None;
+          dimension_selections = None;
           typ = Some (num ~sign_char:A.Non_negative ~whole_part:true ~decimal_places:0 ());
           source_name = Some (show_expr whole); grain = None;
           source_role = Some { rb_fact_type = f.f_name; rb_role = role }; source_path = None; anchor = None }
@@ -426,7 +426,7 @@ and low_agg m ctx ~line ~kind ~operand ~goals ~whole =
             Some
               (A.Literal
                  { variant = A.Lv_number zero; typ = Some (literal_type zero); source_name = Some zero });
-          filter = None; dimension_selection = None; typ = Some dt;
+          filter = None; dimension_selections = None; typ = Some dt;
           source_name = Some (show_expr whole); grain = None;
           source_role = Some { rb_fact_type = f.f_name; rb_role = role }; source_path = None; anchor = None }
   | "count", _ ->

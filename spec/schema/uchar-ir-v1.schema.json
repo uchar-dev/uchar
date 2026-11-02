@@ -883,8 +883,13 @@
         "emptyFallback": {
           "$ref": "#/$defs/expr"
         },
-        "dimensionSelection": {
-          "$ref": "#/$defs/DimensionSelection"
+        "dimensionSelections": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/DimensionSelection"
+          },
+          "description": "The dimension fold (IR-SPEC ch. 4.3): one selection per dimension of the argument, selection i over dimension i of its declared dimensions; a dimension the fold does not range over is selected with one label. Absent is the one spelling of a fold that is no dimension fold. The number, the order and the labels are WF-040's."
         },
         "sourceRole": {
           "$ref": "#/$defs/RoleBinding"
@@ -953,7 +958,7 @@
           }
         }
       ],
-      "description": "An aggregation (IR-SPEC ch. 4.3): the eight fold kinds, with only the fields a fold carries (delta B21); an absent optional field is none. The RANGE of an instance fold is written, never derived (delta B12; CONSTRUCTS row 4): with an elementType, exactly one argument and a kind other than total, exactly one of sourceRole (the one-step range) and sourcePath (the multi-step range, WF-102) is present. A total without either is the subject's own read over its own attribute (the verifier holds that it is, WF-083), and no fold carries both. With two or more arguments the node is the listed value fold, whose operands are ordinary reads: it has no range, whatever elementType it carries. Which kind admits emptyFallback and dimensionSelection is WF-037's."
+      "description": "An aggregation (IR-SPEC ch. 4.3): the eight fold kinds, with only the fields a fold carries (delta B21); an absent optional field is none. The RANGE of an instance fold is written, never derived (delta B12; CONSTRUCTS row 4): with an elementType, exactly one argument and a kind other than total, exactly one of sourceRole (the one-step range) and sourcePath (the multi-step range, WF-102) is present. A total without either is the subject's own read over its own attribute (the verifier holds that it is, WF-083), and no fold carries both. With two or more arguments the node is the listed value fold, whose operands are ordinary reads: it has no range, whatever elementType it carries. Which kind admits emptyFallback and dimensionSelections is WF-037's."
     },
     "BuiltinCall": {
       "type": "object",
@@ -3274,7 +3279,14 @@
           "$ref": "#/$defs/Validity"
         },
         "target": {
-          "$ref": "#/$defs/AttributeReference"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AttributeReference"
+            },
+            {
+              "$ref": "#/$defs/DimensionCellRead"
+            }
+          ]
         },
         "value": {
           "$ref": "#/$defs/expr"
@@ -3303,7 +3315,7 @@
           }
         }
       },
-      "description": "One version of a Rule (IR-SPEC ch. 3.1), without a node discriminator: a version is part of its form. 'validity' is always written; a Validity with neither bound is always. 'target' is an attribute reference, and whether it names an attribute or a characteristic is its declaration's (delta B20). 'initialisation' is always written. 'presentation' is the dialect tag of a computing version and never stands beside initialisation true; which member kind each combination writes is WF-022's. An absent condition is unconditional."
+      "description": "One version of a Rule (IR-SPEC ch. 3.1), without a node discriminator: a version is part of its form. 'validity' is always written; a Validity with neither bound is always. 'target' is an attribute reference, and whether it names an attribute or a characteristic is its declaration's (delta B20); or the one cell of a dimensioned attribute it writes, a DimensionCellRead (IR-SPEC ch. 3.1), whose labels are WF-040's. 'initialisation' is always written. 'presentation' is the dialect tag of a computing version and never stands beside initialisation true; which member kind each combination writes is WF-022's. An absent condition is unconditional."
     },
     "DayKindDefinition": {
       "type": "object",
@@ -3364,6 +3376,14 @@
             "string",
             "null"
           ]
+        },
+        "labels": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "description": "The cell of a dimensioned attribute member the initialisation writes (IR-SPEC ch. 3.3): one label of each dimension, in the declared order of the attribute's dimensions, as a DimensionCellRead's labels. Absent on a scalar member; which members are dimensioned, and the labels, are WF-040's and WF-125's."
         },
         "value": {
           "anyOf": [

@@ -1,0 +1,4 @@
+WF-040.selection-dimension-position
+position=1
+dimension=strand
+declared=seizoen

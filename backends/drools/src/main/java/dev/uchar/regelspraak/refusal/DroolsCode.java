@@ -317,7 +317,9 @@ public enum DroolsCode {
     ANCHOR_FORM_SUBJECT_UNBOUND("DROOLS-293", Kind.REFUSAL, "anchor-form-subject-unbound", "snippet", null),
     ANCHORED_FORM_NOT_CARRIED("DROOLS-294", Kind.REFUSAL, "anchored-form-not-carried", "snippet", null),
     NARROWING_HOST_NOT_CARRIED("DROOLS-295", Kind.LIMIT, "narrowing-host-not-carried", "snippet", null),
-    FOLD_OVER_UNBOUNDED_VALUE("DROOLS-296", Kind.LIMIT, "fold-over-unbounded-value", "attribute,objectType", null);
+    FOLD_OVER_UNBOUNDED_VALUE("DROOLS-296", Kind.LIMIT, "fold-over-unbounded-value", "attribute,objectType", null),
+    DIMENSION_FOLD_MULTI_DIMENSION("DROOLS-297", Kind.REFUSAL, "dimension-fold-multi-dimension", "dimensionCount,snippet", null),
+    DIMENSION_CELL_WRITE("DROOLS-298", Kind.REFUSAL, "dimension-cell-write", "attribute,form", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

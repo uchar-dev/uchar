@@ -1210,9 +1210,9 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
                 ~matches:(day_kind_pred env world self ~err k)
                 ~result_unit van up_to)
       | _ -> Value.fault "duration expects two arguments")
-  | Function_call { kind; call_arguments; element_object_type; empty_fallback; filter; dimension_selection; grain; source_role; source_path; typ = _; source_name = _; anchor = _ } ->
+  | Function_call { kind; call_arguments; element_object_type; empty_fallback; filter; dimension_selections; grain; source_role; source_path; typ = _; source_name = _; anchor = _ } ->
       eval_function_call env world self ~err ~kind ~call_arguments ~element_object_type ~empty_fallback ~filter
-        ~dimension_selection ~grain ~source_role ~source_path
+        ~dimension_selections ~grain ~source_role ~source_path
   | Text_composition { pieces; _ } ->
       Arith.concat
         (map_in_order
@@ -1602,13 +1602,13 @@ and numeric_builtin_operand env kind a =
   | None -> ()
 
 and eval_function_call env world self ~err ~kind ~call_arguments ~element_object_type ~empty_fallback ~filter
-    ~dimension_selection ~grain ~source_role ~source_path =
+    ~dimension_selections ~grain ~source_role ~source_path =
   (* the die/dat subselection executes on the instance folds below; the
      SAME wire field also carries the §7.1 gedurende timeline clip (a
      filter on the temporal total, where elementType is the
      subject itself) — that form must never run as an instance
      subselection and faults in its own arm *)
-  if dimension_selection <> None then Value.fault "dimension selection not implemented in this card";
+  if dimension_selections <> None then Value.fault "dimension selection not implemented in this card";
   (* a granularity is a BuiltinCall facet since the L4 landing, read by the
      two bucketing builtins alone, and those run only as the whole value of a
      rule on a temporal target ([run_pro_rata]). On any other kind the facet
@@ -2820,7 +2820,7 @@ let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
         call_arguments =
           [ Attribute_reference
               { attribute_ref = Some b; object_type = Some bot; navigation_bindings = None; _ } ];
-        filter = Some c; grain = Some g; empty_fallback = None; dimension_selection = None; _ }
+        filter = Some c; grain = Some g; empty_fallback = None; dimension_selections = None; _ }
     when norm bot = norm ot ->
       let target_gran =
         match Ir_v0.Checks.find_ci ot_decl.attribute_granularity attr with
@@ -2884,7 +2884,7 @@ let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
       else World.write_timeline w ~label:self.label ~attr result
   | Function_call
       { kind = Day_count; call_arguments = [];
-        filter = Some c; grain = Some g; empty_fallback = None; dimension_selection = None; _ }
+        filter = Some c; grain = Some g; empty_fallback = None; dimension_selections = None; _ }
     ->
       (* ch. 3.8 "aantal dagen in": per touched bucket the true-day
          count; WF-058 mirrors WF-056's facets — bucket equals the

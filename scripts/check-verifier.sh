@@ -166,7 +166,7 @@ fi
 # vanished wf###-case takes a MUST's failing witness with it (CLAUDE.md, Spec discipline) and no
 # other check would notice. NO floor on n_golden: that is byte-for-byte the file set gate 2 already
 # floors (both scan corpus/golden + corpus/red for ir.json), and one quantity wants one floor.
-EXPECTED_MIN_NEGATIVE=350   # 2026-09-10: measured 350 (corpus/negative/**/ir.json)
+EXPECTED_MIN_NEGATIVE=568   # 2026-11-02: measured 568 (corpus/negative/**/ir.json), card dimensions-executed, the fifteen witnesses of WF-040, WF-079 and WF-125 on cells; 350 on 2026-09-10
 # The arm fragments (U1) are floored for the same reason and in the same regime: a vanished
 # expect.txt takes the arm pin of a rewritten witness with it, and its directory keeps passing on
 # the rule number alone. Measured at the L2 landing: every rewritten or replaced witness of the
@@ -185,18 +185,18 @@ EXPECTED_MIN_NEGATIVE=350   # 2026-09-10: measured 350 (corpus/negative/**/ir.js
 # range on a node that is no instance fold) and three that never had one (WF-030's source type and
 # key resolution, WF-037's bucketing builtin without a granularity) — and three more WF-037 arms the
 # fix round found without one (the two builtin arities, a value fold with fewer than two operands).
-EXPECTED_MIN_EXPECT=354     # 2026-10-19: measured 354 (corpus/negative/*/expect.txt), card verifier-arm-keys; before that 260 (2026-09-25, L5)
+EXPECTED_MIN_EXPECT=411     # 2026-11-02: measured 411 (corpus/negative/*/expect.txt), card dimensions-executed; 354 on 2026-10-19 (card verifier-arm-keys), 260 on 2026-09-25 (L5)
 # The arm keys and their parameter lines (card verifier-arm-keys, 2026-10-19), floored for the same
 # reason: a pin that quietly lost its `name=value` lines would still pass on its key.
-EXPECTED_MIN_ARMS=213         # 2026-10-19: measured 213 distinct keys named by the expect.txt files
-EXPECTED_MIN_PARAM_LINES=572  # 2026-10-19: measured 572 `name=value` lines over the expect.txt files
+EXPECTED_MIN_ARMS=239         # 2026-11-02: measured 239 distinct keys named by the expect.txt files (213 on 2026-10-19)
+EXPECTED_MIN_PARAM_LINES=686  # 2026-11-02: measured 686 `name=value` lines over the expect.txt files (572 on 2026-10-19)
 # The key and template check reads every negative report; a parse that stopped finding keys would
 # check nothing. The static count is the key literals in checks.ml (two sites may share one).
-EXPECTED_MIN_REPORT_KEYS=318  # 2026-10-19: measured 318 distinct keys over the negative reports
-EXPECTED_MIN_ARM_SITES=421    # 2026-10-19: measured 421 key literals "WF-###.<slug>" in spec/verifier/lib/checks.ml
+EXPECTED_MIN_REPORT_KEYS=340  # 2026-11-02: measured 340 distinct keys over the negative reports (318 on 2026-10-19)
+EXPECTED_MIN_ARM_SITES=442    # 2026-11-02: measured 442 key literals "WF-###.<slug>" in spec/verifier/lib/checks.ml (421 on 2026-10-19)
 # The cited pointers (check 4) are floored in the same regime: a parse that stopped finding the
 # pointer in a report line would check nothing and pass.
-EXPECTED_MIN_POINTERS=619   # 2026-10-19: measured 619 pointers over the negative reports, all resolving (547 on 2026-09-25)
+EXPECTED_MIN_POINTERS=706   # 2026-11-02: measured 706 pointers over the negative reports, all resolving (619 on 2026-10-19, 547 on 2026-09-25)
 
 # check 2: golden dumps — and the red corpus's documents, whose faults
 # are behavioural, never well-formedness — are verifier-clean.

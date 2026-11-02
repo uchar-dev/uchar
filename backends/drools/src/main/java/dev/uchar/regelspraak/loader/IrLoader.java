@@ -1452,7 +1452,7 @@ public final class IrLoader {
             keyNames("TextComposition", List.of("node", "parts", "type"), "source"),
             keyNames("Binary", List.of("node", "op", "left", "right", "type"), "source"),
             keyNames("Aggregation", List.of("node", "kind", "arguments", "type"), "elementType", "anchor", "filter",
-                    "emptyFallback", "dimensionSelection", "sourceRole", "sourcePath", "source"),
+                    "emptyFallback", "dimensionSelections", "sourceRole", "sourcePath", "source"),
             keyNames("BuiltinCall", List.of("node", "kind", "arguments", "type"), "filter", "granularity", "source"),
             keyNames("Rounding", List.of("node", "base", "mode", "decimals", "type"), "source"),
             keyNames("Clamp", List.of("node", "base", "type"), "minimum", "maximum", "source"),
@@ -1686,7 +1686,7 @@ public final class IrLoader {
         }
         String elementType = optText(n, p, "elementType");
         Expr.FunctionCall f = new Expr.FunctionCall(fk, args, ot(elementType), expr(nodeField(n, "emptyFallback")),
-                condition(nodeField(n, "filter")), dimensionSelection(nodeField(n, "dimensionSelection")), typeField(n),
+                condition(nodeField(n, "filter")), dimensionSelections(n, p), typeField(n),
                 source(n), null, anchorValue(n, p));
         // IR-SPEC ch. 4.3: the range of a fold over ONE source is one field with two spellings, and a fold with an
         // element type and a kind other than total carries it — without it the argument is the subject's own
@@ -2122,6 +2122,25 @@ public final class IrLoader {
         };
     }
 
+    /** IR-SPEC ch. 4.3: a dimension fold carries one selection per dimension of its argument. The model holds the
+     *  selection of a fold over an attribute of one dimension, the form this backend carries; a fold over more
+     *  dimensions is refused here, before its selections are read. */
+    private Expr.DimensionSelection dimensionSelections(JsonNode fold, String p) {
+        JsonNode a = fold.get("dimensionSelections");
+        if (a == null) return null;
+        if (!a.isArray() || a.isEmpty())
+            throw new DocumentError(p + "/dimensionSelections", "dimensionSelections is a non-empty list of DimensionSelection nodes");
+        if (a.size() > 1) {
+            JsonNode src = fold.get("source");
+            String snippet = src != null && src.has("snippet") ? src.get("snippet").asText() : "";
+            throw new Refusal(DroolsCode.DIMENSION_FOLD_MULTI_DIMENSION.reason("dimensionCount", a.size(), "snippet", snippet),
+                    "Aggregation.dimensionSelections");
+        }
+        if (!a.get(0).isObject())
+            throw new DocumentError(p + "/dimensionSelections/0", "expected a JSON object, got " + shortQuote(a.get(0)));
+        return dimensionSelection(a.get(0));
+    }
+
     private Expr.DimensionSelection dimensionSelection(JsonNode n) {
         if (n == null || n.isNull()) return null;
         fields(n, pathOf(n), "DimensionSelection", List.of("node", "dimension", "labels"), List.of("source"));
@@ -2423,6 +2442,10 @@ public final class IrLoader {
         ResolvedRule.Kind ruleKind = initialisation ? ResolvedRule.Kind.INITIALISATIE
                 : tagged == null ? ResolvedRule.Kind.KENMERKTOEKENNING : tagged;
         JsonNode t = n.get("target");
+        // IR-SPEC ch. 3.1: a version may write one cell of a dimensioned attribute, a form this backend does not carry
+        if (t.isObject() && "DimensionCellRead".equals(text(t, "node")))
+            throw new Refusal(DroolsCode.DIMENSION_CELL_WRITE.reason("attribute", cellAttribute(t), "form", version.name()),
+                    "RuleVersion.target");
         if (!t.isObject() || !"AttributeReference".equals(text(t, "node")))
             throw new DocumentError(path + "/target", TARGET_ATTRIBUTE_REFERENCE);
         Expr.AttributeReference target = (Expr.AttributeReference) expr(t);
@@ -2447,7 +2470,14 @@ public final class IrLoader {
     /** The shared loader's sentences for a rule version's kind and target. */
     static final String PRESENTATION_AT_INITIALISATION = "presentation beside initialisation true: a presentation tags"
             + " a computing version, never an initialisation";
-    static final String TARGET_ATTRIBUTE_REFERENCE = "the target of a rule version is an AttributeReference";
+    static final String TARGET_ATTRIBUTE_REFERENCE = "the target of a rule version is an AttributeReference or a"
+            + " DimensionCellRead";
+
+    /** The attribute a cell target names, as the wire writes it; empty where its reference does not name one. */
+    private static String cellAttribute(JsonNode cell) {
+        JsonNode a = cell.get("attribute");
+        return a != null && a.isObject() && a.has("attribute") && a.get("attribute").isTextual() ? a.get("attribute").asText() : "";
+    }
 
     /** WF-022, the member-kind arm and the name that is both (IR-SPEC ch. 3.1): the verifier's sentences, which
      *  name the member and the type as the target writes them. A target whose type or member does not resolve is
@@ -2491,7 +2521,12 @@ public final class IrLoader {
                     List.of("condition", "connectingRole"));
             List<ResolvedObjectCreation.MemberInit> tk = new ArrayList<>();
             list(k, p, "initialisations", (tp, t) -> {
-                fields(t, tp, "MemberInit", List.of("node", "member", "value", "characteristic"), List.of());
+                fields(t, tp, "MemberInit", List.of("node", "member", "value", "characteristic"), List.of("labels"));
+                // IR-SPEC ch. 3.3: a member with labels writes one cell of a dimensioned attribute, which this backend
+                // does not carry
+                if (t.has("labels"))
+                    throw new Refusal(DroolsCode.DIMENSION_CELL_WRITE.reason("attribute", text(t, "member"), "form", v.name()),
+                            "MemberInit.labels");
                 tk.add(new ResolvedObjectCreation.MemberInit(text(t, "member"), expr(nodeField(t, "value")),
                         bool(t, "characteristic")));
             });

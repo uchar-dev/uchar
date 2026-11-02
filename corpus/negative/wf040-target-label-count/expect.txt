@@ -1,0 +1,3 @@
+WF-040.label-count-mismatch
+labelCount=2
+dimensionCount=1

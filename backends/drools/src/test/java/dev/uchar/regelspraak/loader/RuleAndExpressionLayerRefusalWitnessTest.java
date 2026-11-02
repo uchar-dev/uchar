@@ -163,7 +163,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
                         "granulariteit", "granularity"));
         // the builtin's own fields, and the five fold fields, which it does not carry
         rows.put(new String[] { PACHTVENSTER, VALUE, "BuiltinCall" },
-                List.of("argumenten", "granulariteit", "elementType", "emptyFallback", "dimensionSelection",
+                List.of("argumenten", "granulariteit", "elementType", "emptyFallback", "dimensionSelections",
                         "sourceRole", "sourcePath"));
         rows.put(new String[] { PREMIEVENSTER, VALUE, "Literal" }, List.of("waarde"));
         rows.put(new String[] { HAVENROOSTER, BOUNDDAY, "BoundDay" }, List.of("name", "naam"));
@@ -476,7 +476,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
             ObjectNode ir = golden(PREMIEVENSTER);
             set(ir, VERSION + "/target", target);
             assertTrue(refuses(ir, VERSION + "/target").getMessage()
-                    .endsWith(": the target of a rule version is an AttributeReference"), target);
+                    .endsWith(": the target of a rule version is an AttributeReference or a DimensionCellRead"), target);
         }
     }
 

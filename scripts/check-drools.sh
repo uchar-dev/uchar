@@ -327,6 +327,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-penningstaffel-catala|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-postenheffing|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-premiespelling|EXCLUDE DROOLS-070|bean name collision: the object types 'RechtOpPremie' and 'Recht op premie' fall on one fact class, dev.uchar.regelspraak.facts.RechtOpPremie. Measured 2026-09-28 before the refusal: both branches crashed compiling the generated beans (cyclic inheritance), so its pins are a ref = clingo pair"
+  "jutterswet-seizoenkopie|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-seizoenvondst|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-seizoenvouw|NOCASE|a golden with no case file — nothing to replay"
   "jutterswet-vaarwaterspelling|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"

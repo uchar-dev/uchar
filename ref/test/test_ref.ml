@@ -1284,7 +1284,7 @@ let () =
             created_type = Some "Rekenkamer";
             oc_subject = Some "Jutter";
             assignments =
-              [ { to_attribute = Some "overzees"; to_value = Some value_node; to_characteristic = true } ];
+              [ { to_attribute = Some "overzees"; to_labels = None; to_value = Some value_node; to_characteristic = true } ];
             oc_condition = None;
             oc_validity = None;
             oc_connecting_role = None;
@@ -1606,6 +1606,7 @@ let () =
               [
                 {
                   to_attribute = Some "rang";
+                  to_labels = None;
                   to_value =
                     Some
                       (Binary
@@ -3066,7 +3067,7 @@ let () =
               { attribute_ref = Some "bewaartarief"; object_type = Some "Vondst";
                 source_name = None; navigation_bindings = None; anchor = None } ];
         element_object_type = Some "Vondst"; empty_fallback = None; filter = None;
-        dimension_selection = None; typ = Some num_eur; source_name = None; grain = None;
+        dimension_selections = None; typ = Some num_eur; source_name = None; grain = None;
         source_role = Some { rb_fact_type = "bewaring"; rb_role = "vondst" }; source_path = None; anchor = None }
   in
   let tl_of segs label = { (inst label "Vondst" []) with
@@ -4251,7 +4252,7 @@ let () =
   let portion kind : Ir_v0.Ast.expr =
     Function_call
       { kind; call_arguments = [ the_day ]; element_object_type = None; empty_fallback = None;
-        filter = None; dimension_selection = None;
+        filter = None; dimension_selections = None;
         typ = Some (Number { whole_part = true; decimal_places = 0; sign_char = None; measure_unit = None });
         source_name = None; grain = None; source_role = None; source_path = None; anchor = None }
   in
@@ -4306,7 +4307,7 @@ let () =
       { kind = Duration;
         call_arguments =
           [ aref "aanvang" "Post"; aref "sluiting" "Post" ];
-        element_object_type = None; empty_fallback = None; filter = None; dimension_selection = None;
+        element_object_type = None; empty_fallback = None; filter = None; dimension_selections = None;
         typ = Some num_kd; source_name = None; grain = None; source_role = None; source_path = None; anchor = None }
   in
   check "WV-3.8-dk-eval-stap" (ev (step_item "2") = Value.date_of_iso "2024-12-26");
@@ -4567,7 +4568,7 @@ let () =
       { kind = Duration;
         call_arguments = [ aref a "Vondst"; aref b "Vondst" ];
         element_object_type = None; empty_fallback = None; filter = None;
-        dimension_selection = None; typ = Some num_hour; source_name = None;
+        dimension_selections = None; typ = Some num_hour; source_name = None;
         grain = None; source_role = None; source_path = None; anchor = None }
   in
   (* the widened WF-035 fence: a datum-tijd operand rides its sub-day unit
@@ -4629,7 +4630,7 @@ let () =
     Function_call
       { kind = Count; call_arguments = [ count_source ];
         element_object_type = Some "Vondst"; empty_fallback = None; filter = None;
-        dimension_selection = None; typ = Some num0; source_name = None;
+        dimension_selections = None; typ = Some num0; source_name = None;
         grain = None; source_role; source_path = None; anchor = None }
   in
   let vondst = Some { Ir_v0.Ast.rb_fact_type = "vondstaanmelding"; rb_role = "vondst" } in
@@ -4708,7 +4709,7 @@ let () =
   let fold_node kind attr el trail empty_fallback : Ir_v0.Ast.expr =
     Function_call
       { kind; call_arguments = [ source_name attr el ]; element_object_type = Some el; empty_fallback; filter = None;
-        dimension_selection = None; typ = Some num2; source_name = None; grain = None;
+        dimension_selections = None; typ = Some num2; source_name = None; grain = None;
         source_role = None; source_path = Some trail; anchor = None }
   in
   let minimum = fold_node Minimum "gewicht" "Vondst" path2 None in
@@ -4781,7 +4782,7 @@ let () =
         (Function_call
            { kind = Minimum; call_arguments = [ source_name "gewicht" "Vondst" ];
              element_object_type = Some "Vondst"; empty_fallback = None; filter = None;
-             dimension_selection = None; typ = Some num2; source_name = None; grain = None;
+             dimension_selections = None; typ = Some num2; source_name = None; grain = None;
              source_role = Some (rb "berging" "geborgen vondst"); source_path = Some path2; anchor = None }))
     "sourcePath beside sourceRole: a fold carries one range, never two";
   expect_fault "WV-3.4b-eenstaps-pad-faalt"
@@ -4793,7 +4794,7 @@ let () =
         (Function_call
            { kind = Minimum; call_arguments = [ source_name "gewicht" "Vondst"; source_name "gewicht" "Vondst" ];
              element_object_type = Some "Vondst"; empty_fallback = None; filter = None;
-             dimension_selection = None; typ = Some num2; source_name = None; grain = None;
+             dimension_selections = None; typ = Some num2; source_name = None; grain = None;
              source_role = None; source_path = Some path2; anchor = None }));
   (* WF-102 (c), the verifier's sentence: a count's range is one step,
      spelled sourceRole, so a path under `count` is refused by name, with and
@@ -4803,7 +4804,7 @@ let () =
     Function_call
       { kind = Count; call_arguments = [ source_name "geborgen vondsten" "Jutter" ];
         element_object_type = Some "Vondst"; empty_fallback = None; filter;
-        dimension_selection = None; typ = Some num0; source_name = None; grain = None;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = None;
         source_role = None; source_path = Some path2; anchor = None }
   in
   let zwaar : Ir_v0.Ast.condition_expr =
@@ -4826,7 +4827,7 @@ let () =
   let count_over source_label source_ot trail : Ir_v0.Ast.expr =
     Function_call
       { kind = Count; call_arguments = [ source_name source_label source_ot ]; element_object_type = Some "Vondst";
-        empty_fallback = None; filter = None; dimension_selection = None; typ = Some num0; source_name = None;
+        empty_fallback = None; filter = None; dimension_selections = None; typ = Some num0; source_name = None;
         grain = None; source_role = None; source_path = Some trail; anchor = None }
   in
   let one_step = [ rb "berging" "geborgen vondst" ] in
@@ -4895,7 +4896,7 @@ let () =
           [ Attribute_reference
               { attribute_ref = Some "gewicht"; object_type = Some "Vondst"; source_name = None; navigation_bindings = None; anchor = None } ];
         element_object_type = Some "Vondst"; empty_fallback = None; filter = None;
-        dimension_selection = None; typ = Some num2; source_name = None; grain = None;
+        dimension_selections = None; typ = Some num2; source_name = None; grain = None;
         source_role = None;
         source_path = Some [ rb "bemanning" "boot"; rb "bootvangst" "vondst" ]; anchor = None }
   in
@@ -4996,7 +4997,7 @@ let () =
   let fold_node kind call_arguments filter trail : Ir_v0.Ast.expr =
     Function_call
       { kind; call_arguments; element_object_type = Some "Vondst"; empty_fallback = None; filter;
-        dimension_selection = None; typ = Some num0; source_name = None; grain = None;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = None;
         source_role = (if trail = None then Some (rb "vondstaanmelding" "vondst") else None);
         source_path = trail; anchor = None }
   in
@@ -5197,7 +5198,7 @@ let () =
   let tally branch_list : Ir_v0.Ast.expr =
     Function_call
       { kind = Count; call_arguments = [ union branch_list ]; element_object_type = None; empty_fallback = None;
-        filter = None; dimension_selection = None; typ = Some num0; source_name = None;
+        filter = None; dimension_selections = None; typ = Some num0; source_name = None;
         grain = None; source_role = None; source_path = None; anchor = None }
   in
   let over_relations =
@@ -5295,7 +5296,7 @@ let () =
       { kind = Count;
         call_arguments =
           [ union [ branch_node "vondstaanmelding" "aangemelde vondst"; branch_node "vondstberging" "geborgen vondst" ] ];
-        element_object_type = el; empty_fallback = None; filter; dimension_selection = None;
+        element_object_type = el; empty_fallback = None; filter; dimension_selections = None;
         typ = Some num0; source_name = None; grain = None; source_role = role_ref; source_path = None; anchor = None }
   in
   let sentence_text field_list =
@@ -5357,7 +5358,7 @@ let () =
   let enumerated call_arguments : Ir_v0.Ast.expr =
     Function_call
       { kind = Count; call_arguments; element_object_type = None; empty_fallback = None; filter = None;
-        dimension_selection = None; typ = Some num0; source_name = None; grain = None;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = None;
         source_role = None; source_path = None; anchor = None }
   in
   let proportion = aref "gewicht" "Vondst" in
@@ -5406,7 +5407,7 @@ let () =
   let fold_node ?source_role kind call_arguments : Ir_v0.Ast.expr =
     Function_call
       { kind; call_arguments; element_object_type = Some "Vondst"; empty_fallback = None; filter = None;
-        dimension_selection = None; typ = Some num0; source_name = None; grain = None; source_role;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = None; source_role;
         source_path = None; anchor = None }
   in
   let element_list : Ir_v0.Ast.expr =
@@ -5466,7 +5467,7 @@ let () =
   let fold_node ?(element = Some "Vondst") kind call_arguments : Ir_v0.Ast.expr =
     Function_call
       { kind; call_arguments; element_object_type = element; empty_fallback = None; filter = None;
-        dimension_selection = None; typ = Some num0; source_name = None; grain = None;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = None;
         source_role = Some value_range; source_path = None; anchor = None }
   in
   let two = litv "2" num0 in
@@ -5485,7 +5486,7 @@ let () =
       ("a BuiltinCall",
         Function_call
           { kind = Absolute_value; call_arguments = [ two ]; element_object_type = None;
-            empty_fallback = None; filter = None; dimension_selection = None; typ = Some num0;
+            empty_fallback = None; filter = None; dimension_selections = None; typ = Some num0;
             source_name = None; grain = None; source_role = None; source_path = None; anchor = None });
       ("an Unresolved", Expr_unresolved { typ = Some num0; source_name = Some "iets onbekends" });
       ("an Aggregation", fold_node Count [ aref "vondsten" "Vondst" ]) ]
@@ -5518,7 +5519,7 @@ let () =
       ev
         (Function_call
            { kind = Total; call_arguments = [ two ]; element_object_type = Some "Vondst"; empty_fallback = None;
-             filter = None; dimension_selection = None; typ = Some num0; source_name = None; grain = None;
+             filter = None; dimension_selections = None; typ = Some num0; source_name = None; grain = None;
              source_role = None; source_path = None; anchor = None }))
     "a total aggregation carries elementType \"Vondst\" and a Literal operand";
   expect_fault_msg "WF-037-bronarm-filledCount-a Literal"
@@ -5673,7 +5674,7 @@ let () =
             (Characteristic_check
                { characteristic = Some "actief"; negation = false; holder = None;
                  time_period = None; source_name = None; navigation_binding = None; anchor = None });
-        dimension_selection = None; typ = Some num0; source_name = None; grain = year;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = year;
         source_role = None; source_path = None; anchor = None }
   in
   let window ?starting_at ?up_to ?(incl = false) () : Ir_v0.Ast.condition_expr =
@@ -5784,7 +5785,7 @@ let () =
             (Characteristic_check
                { characteristic = Some "aanwezig"; negation = false; holder = None;
                  time_period = None; source_name = None; navigation_binding = None; anchor = None });
-        dimension_selection = None; typ = Some num0; source_name = None; grain = month_kind;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = month_kind;
         source_role = None; source_path = None; anchor = None }
   in
   let window : Ir_v0.Ast.condition_expr =
@@ -5867,7 +5868,7 @@ let () =
         call_arguments =
           [ Attribute_reference { attribute_ref = Some "opvolgers"; object_type = Some "Wachter"; source_name = None; navigation_bindings = None; anchor = None } ];
         element_object_type = Some "Wachter"; empty_fallback = None; filter = None;
-        dimension_selection = None; typ = Some num0; source_name = None; grain = None;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = None;
         source_role = Some { rb_fact_type = "ketenband"; rb_role = "opvolger" };
         source_path = None;
         anchor = None;
@@ -6054,7 +6055,7 @@ let () =
     Function_call
       { kind = Count; call_arguments = [ count_source name ];
         element_object_type = Some el; empty_fallback = None; filter = None;
-        dimension_selection = None; typ = Some num0; source_name = None;
+        dimension_selections = None; typ = Some num0; source_name = None;
         grain = None; source_role; source_path = None; anchor = None }
   in
   let kavel = { Ir_v0.Ast.rb_fact_type = "kaveltoewijzing"; rb_role = "duinkavel" } in
@@ -7095,7 +7096,7 @@ let () =
   let summed args empty_value : Ir_v0.Ast.expr =
     Function_call
       { kind = Sum_function; call_arguments = args; element_object_type = None; empty_fallback = empty_value;
-        filter = None; dimension_selection = None; typ = Some num0; source_name = None;
+        filter = None; dimension_selections = None; typ = Some num0; source_name = None;
         grain = None; source_role = None; source_path = None; anchor = None }
   in
   expect_msg "WV-5.11-som-bijdrager0-eerst" (run_v (summed [ tree; pit ] None)) bm;
@@ -7111,7 +7112,7 @@ let () =
   let concat args : Ir_v0.Ast.expr =
     Function_call
       { kind = Concatenation; call_arguments = args; element_object_type = None; empty_fallback = None;
-        filter = None; dimension_selection = None; typ = Some Text_type; source_name = None;
+        filter = None; dimension_selections = None; typ = Some Text_type; source_name = None;
         grain = None; source_role = None; source_path = None; anchor = None }
   in
   expect_msg "WV-5.11-concat-deel0-eerst" (run_v (concat [ tree; pit ])) bm;
@@ -7127,7 +7128,7 @@ let () =
   let date_with args : Ir_v0.Ast.expr =
     Function_call
       { kind = Date_with; call_arguments = args @ [ litv "1" num0 ]; element_object_type = None;
-        empty_fallback = None; filter = None; dimension_selection = None; typ = Some Date_in_days;
+        empty_fallback = None; filter = None; dimension_selections = None; typ = Some Date_in_days;
         source_name = None; grain = None; source_role = None; source_path = None; anchor = None }
   in
   expect_msg "WV-5.11-datummet-deel0-eerst" (run_v (date_with [ tree; pit ])) bm;
@@ -7250,7 +7251,7 @@ let () =
         call_arguments =
           [ Attribute_reference { attribute_ref = Some "deelvangsten"; object_type = Some "Vangst"; source_name = None; navigation_bindings = None; anchor = None } ];
         element_object_type = Some "Deelvangst"; empty_fallback = None; filter = Some member_filter;
-        dimension_selection = None; typ = Some num0; source_name = None; grain = None;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = None;
         source_role = Some { rb_fact_type = "deelname"; rb_role = "deelvangst" }; source_path = None; anchor = None }
   in
   expect_msg "WV-5.11-instantiefold-lid0-eerst" (run_members counting "1" "0") bm;
@@ -7263,7 +7264,7 @@ let () =
           [ Attribute_reference
               { attribute_ref = Some "bedrag"; object_type = Some "Deelvangst"; source_name = None; navigation_bindings = None; anchor = None } ];
         element_object_type = Some "Deelvangst"; empty_fallback = None; filter = Some member_filter;
-        dimension_selection = None; typ = Some num0; source_name = None; grain = None;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = None;
         source_role = Some { rb_fact_type = "deelname"; rb_role = "deelvangst" }; source_path = None; anchor = None }
   in
   expect_msg "WV-5.11-instantiesom-lid0-eerst" (run_members members_sum "1" "0") bm;
@@ -9095,7 +9096,7 @@ let () =
   let grand_total el : Ir_v0.Ast.expr =
     Function_call
       { kind = Total; call_arguments = [ aref "leeftijd" "Jutter" ]; element_object_type = Some el;
-        empty_fallback = None; filter = None; dimension_selection = None; typ = Some num0; source_name = None;
+        empty_fallback = None; filter = None; dimension_selections = None; typ = Some num0; source_name = None;
         grain = None; source_role = None; source_path = None; anchor = None }
   in
   expect_fault_msg "WV-4.3-totaal-zonder-bereik-over-een-supertype-faalt"
@@ -9122,7 +9123,7 @@ let () =
   let with_granularity kind call_arguments : Ir_v0.Ast.expr =
     Function_call
       { kind; call_arguments; element_object_type = None; empty_fallback = None; filter = None;
-        dimension_selection = None; typ = Some num0; source_name = None; grain = Some Month;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = Some Month;
         source_role = None; source_path = None; anchor = None }
   in
   expect_fault_msg "WF-037-granulariteit-op-een-niet-emmerende-builtin-faalt"
@@ -9304,7 +9305,7 @@ let () =
   let builtin kind : Ir_v0.Ast.expr =
     Function_call
       { kind; call_arguments = [ body_text ]; element_object_type = None; empty_fallback = None; filter = None;
-        dimension_selection = None; typ = Some num0; source_name = None; grain = None; source_role = None;
+        dimension_selections = None; typ = Some num0; source_name = None; grain = None; source_role = None;
         source_path = None; anchor = None }
   in
   let run value_node =
@@ -9342,7 +9343,7 @@ let () =
   let extent kind : Ir_v0.Ast.expr =
     Function_call
       { kind; call_arguments = [ aref "van" "Jutter"; aref "tot" "Jutter" ];
-        element_object_type = None; empty_fallback = None; filter = None; dimension_selection = None;
+        element_object_type = None; empty_fallback = None; filter = None; dimension_selections = None;
         typ = Some vadem; source_name = None; grain = None; source_role = None; source_path = None; anchor = None }
   in
   let doc kind =
@@ -9381,7 +9382,7 @@ let () =
   let extent ?(kind = Ir_v0.Ast.Duration) typ a b : Ir_v0.Ast.expr =
     Function_call
       { kind; call_arguments = [ a; b ]; element_object_type = None; empty_fallback = None; filter = None;
-        dimension_selection = None; typ; source_name = None; grain = None; source_role = None; source_path = None; anchor = None }
+        dimension_selections = None; typ; source_name = None; grain = None; source_role = None; source_path = None; anchor = None }
   in
   let van = aref "van" "Jutter" and up_to = aref "tot" "Jutter" and moment = aref "moment" "Jutter" in
   let run value_node =

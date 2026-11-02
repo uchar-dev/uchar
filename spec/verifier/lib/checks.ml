@@ -1018,6 +1018,29 @@ let has_characteristic ot name = mem_ci (some_names ot.characteristics) name
 let attr_temporal ot name =
   List.exists (fun (k, _) -> norm k = norm name) ot.attribute_granularity
 
+(* The dimensions of an attribute in declared order, None for a scalar one
+   (IR-SPEC ch. 2.2): a cell names one label of each, in this order (B2). *)
+let attr_dimensions ot name = Option.map some_names (find_ci ot.attribute_dimensions name)
+
+(* The attribute reference a rule target names: the target itself, or the
+   reference under a cell target (IR-SPEC ch. 3.1). The checks that resolve
+   the written member read it here, so a cell target resolves as its
+   attribute does. *)
+let written_reference = function
+  | Some (Dimension_cell_read { attribute_ref = Some inner; _ }) -> Some inner
+  | e -> e
+
+(* The labels of a cell target; None where the target names a whole member. *)
+let written_labels = function
+  | Some (Dimension_cell_read { labels; _ }) -> Some (some_names labels)
+  | _ -> None
+
+(* One cell as a member name, for the checks that key a write on its member:
+   two writers of two cells of one attribute write two members. *)
+let cell_member a = function
+  | None -> a
+  | Some labels -> a ^ "[" ^ String.concat ", " labels ^ "]"
+
 let find_timeline ctx name =
   List.find_opt
     (fun tl -> match tl.tl_name with
@@ -1990,7 +2013,7 @@ let wf022 ctx =
   List.concat_map
     (fun (r : resolved_rule) ->
       let at = r.rr_pointer in
-      match r.objective with
+      match written_reference r.objective with
       | Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ }) -> (
           match object_type ctx otn with
           | None -> [ v ~params:[("objectType", otn)] "WF-022.undeclared-object-type" (at ^ "/target") ("target object type '" ^ otn ^ "' is not declared") ]
@@ -2023,7 +2046,9 @@ let wf022 ctx =
               | false, false ->
                   [ v ~params:[("member", a); ("objectType", otn)] "WF-022.target-not-member" (at ^ "/target")
                       ("target '" ^ a ^ "' is neither an attribute nor a characteristic of '" ^ otn ^ "'") ]))
-      | Some _ -> [ v "WF-022.target-not-attribute" (at ^ "/target") "rule target is not an attribute reference" ]
+      | Some _ ->
+          [ v "WF-022.target-not-attribute" (at ^ "/target")
+              "rule target is neither an attribute reference nor a cell over one" ]
       | None -> [ v "WF-022.rule-without-target" (at ^ "/target") "rule without a target" ])
     ctx.doc.resolved_rules
 
@@ -4802,12 +4827,140 @@ let anchor_placement ctx at node =
   | None -> []
   | Some position -> [ anchor_outside ~node ~position at ]
 
-let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) at (e : expr) :
-    violation list =
+(* WF-040, the cell (IR-SPEC ch. 4.3, B2): a cell names one label of each
+   declared dimension of its attribute, in declared order — label i is a
+   label of dimension i. The same cross at the three places a cell is
+   written down: a DimensionCellRead, a rule target and an object
+   creation's member. Positional and not by membership, so a label two
+   dimensions share is no ambiguity and two labels in the reversed order
+   are no cell. *)
+let wf040_cell ctx at ~(ot : object_type) ~attribute:a (labels : string option list) =
+  match attr_dimensions ot a with
+  | None ->
+      [ v ~params:[("attribute", a)] "WF-040.undimensioned-cell" at
+          ("cell of undimensioned attribute '" ^ a ^ "'") ]
+  | Some dims ->
+      let lbls = some_names labels in
+      if List.length lbls <> List.length dims then
+        [ v ~params:[("labelCount", string_of_int (List.length lbls)); ("dimensionCount", string_of_int (List.length dims))]
+            "WF-040.label-count-mismatch" at
+            (Printf.sprintf "cell carries %d labels for %d dimensions" (List.length lbls) (List.length dims)) ]
+      else
+        List.concat
+          (List.mapi
+             (fun i (l, dn) ->
+               match find_ci ctx.doc.dimensions dn with
+               | None -> [] (* WF-004 reports it *)
+               | Some dim when mem_ci (some_names dim.dim_values) l -> []
+               | Some _ ->
+                   [ v ~params:[("position", string_of_int (i + 1)); ("label", l); ("dimension", dn)]
+                       "WF-040.misplaced-label" at
+                       (Printf.sprintf
+                          "label '%s' at position %d is not a label of dimension '%s', the \
+                           dimension declared at that position"
+                          l (i + 1) dn) ])
+             (List.combine lbls dims))
+
+(* WF-040, the selections of a dimension fold (IR-SPEC ch. 4.3, B3): the
+   fold takes one argument, the reference of a dimensioned attribute, and
+   one selection per declared dimension of it, selection i over dimension
+   i; each selection is a non-empty set of declared labels of its
+   dimension, none twice. A dimension the fold does not range over is
+   pinned by a selection of one label, so the fold reads whole cells. *)
+let wf040_selections ctx at (args : expr list) (sels : dimension_selection list) =
+  let sel_at i = Printf.sprintf "%s/dimensionSelections/%d" at i in
+  let own =
+    List.concat
+      (List.mapi
+         (fun i (ds : dimension_selection) ->
+           match ds.ds_dimension with
+           | None -> []
+           | Some dn -> (
+               match find_ci ctx.doc.dimensions dn with
+               | None ->
+                   [ v ~params:[("dimension", dn)] "WF-040.selection-undeclared-dimension" (sel_at i)
+                       ("selection over undeclared dimension '" ^ dn ^ "'") ]
+               | Some dim ->
+                   let lbls = some_names ds.ds_labels in
+                   (if lbls = [] then
+                      [ v ~params:[("dimension", dn)] "WF-040.selection-empty" (sel_at i)
+                          ("selection over dimension '" ^ dn ^ "' selects no label") ]
+                    else [])
+                   @ List.concat_map
+                       (fun l ->
+                         if mem_ci (some_names dim.dim_values) l then []
+                         else
+                           [ v ~params:[("label", l); ("dimension", dn)] "WF-040.label-not-declared" (sel_at i)
+                               ("label '" ^ l ^ "' is not declared on dimension '" ^ dn ^ "'") ])
+                       lbls
+                   @ (dups_by norm (List.map (fun l -> (l, sel_at i)) lbls)
+                     |> List.map (fun (l, _, p) ->
+                            v ~params:[("label", l); ("dimension", dn)] "WF-040.selection-duplicate-label" p
+                              ("selection over dimension '" ^ dn ^ "' selects label '" ^ l ^ "' twice")))))
+         sels)
+  in
+  own
+  @
+  match args with
+  | [ Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ } ] -> (
+      match object_type ctx otn with
+      | None -> [] (* WF-034 reports it *)
+      | Some ot -> (
+          match attr_dimensions ot a with
+          | None ->
+              [ v ~params:[("attribute", a)] "WF-040.selection-undimensioned-argument" at
+                  ("dimension fold over undimensioned attribute '" ^ a ^ "'") ]
+          | Some dims when List.length sels <> List.length dims ->
+              [ v ~params:[("selectionCount", string_of_int (List.length sels)); ("dimensionCount", string_of_int (List.length dims))]
+                  "WF-040.selection-count" at
+                  (Printf.sprintf
+                     "dimension fold carries %d selections for the %d dimensions of its argument: \
+                      one selection per dimension, a dimension the fold does not range over \
+                      selected with one label"
+                     (List.length sels) (List.length dims)) ]
+          | Some dims ->
+              List.concat
+                (List.mapi
+                   (fun i ((ds : dimension_selection), dn) ->
+                     match ds.ds_dimension with
+                     | Some sd when norm sd <> norm dn ->
+                         [ v ~params:[("position", string_of_int (i + 1)); ("dimension", sd); ("declared", dn)]
+                             "WF-040.selection-dimension-position" (sel_at i)
+                             (Printf.sprintf
+                                "selection %d is over dimension '%s', and the dimension declared at \
+                                 that position is '%s'"
+                                (i + 1) sd dn) ]
+                     | _ -> [])
+                   (List.combine sels dims))))
+  | [ Attribute_reference _ ] -> [] (* WF-034 reports the empty half *)
+  | _ ->
+      [ v "WF-040.selection-argument" at
+          "a dimension fold takes one argument, the reference of a dimensioned attribute" ]
+
+(* WF-125 (a): a dimensioned attribute has no value of its own, only cells
+   (IR-SPEC ch. 2.7), so a reference to one is read only as the attribute
+   of a DimensionCellRead or as the argument of a dimension fold. *)
+let wf125_bare_read ctx at (e : expr) =
+  match e with
+  | Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ } -> (
+      match object_type ctx otn with
+      | Some ot when attr_dimensions ot a <> None ->
+          [ v ~params:[("attribute", a); ("objectType", otn)] "WF-125.bare-read" at
+              (Printf.sprintf
+                 "the dimensioned attribute '%s' of '%s' is read outside a cell: it has a value per \
+                  cell and none of its own, so it is read as the attribute of a DimensionCellRead \
+                  or as the argument of a dimension fold"
+                 a otn) ]
+      | _ -> [])
+  | _ -> []
+
+let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?(cell_owner = false) at
+    (e : expr) : violation list =
   match unanchored_expr e with
   | Some inner ->
       anchor_placement ctx at (Spelling.expr_node e)
-      @ walk_expr { ctx with scope = Scope_form } ~binders ~subject:ctx.form ~body ~union_ok at inner
+      @ walk_expr { ctx with scope = Scope_form } ~binders ~subject:ctx.form ~body ~union_ok ~cell_owner at
+          inner
   | None ->
   (* [union_ok] is WF-110 (a) carried DOWN one level: the instance-set union
      is admissible at exactly one position, and only the parent knows the
@@ -5019,7 +5172,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (if f.empty_fallback <> None && f.kind <> Sum_function then
          [ v "WF-037.empty-fallback-kind" at "empty-value fallback on a non-sum aggregation" ]
        else [])
-      @ (if f.dimension_selection <> None && not (List.mem f.kind [ Sum_function; Minimum; Maximum ]) then
+      @ (if f.dimension_selections <> None && not (List.mem f.kind [ Sum_function; Minimum; Maximum ]) then
            [ v "WF-037.dimension-selection-kind" at "dimension selection on a kind other than sum/min/max" ]
          else [])
       @ (match f.grain, f.kind with
@@ -5040,7 +5193,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
          exclusion here would state it twice, in the wrong words. *)
       @ (if
            List.mem f.kind aggregation_kinds && f.element_object_type = None
-           && f.dimension_selection = None && arity < 2 && f.kind <> Count
+           && f.dimension_selections = None && arity < 2 && f.kind <> Count
            && f.kind <> Filled_count
          then [ v "WF-037.fold-few-operands" at "value fold with fewer than two operands" ]
          else [])
@@ -5369,25 +5522,9 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
               | _ -> [])
              @ walk_expr ctx ~binders ~subject (sub "emptyFallback") lw)
          | None -> [])
-      (* WF-040: dimension selection labels *)
-      @ (match f.dimension_selection with
-         | Some ds -> (
-             match ds.ds_dimension with
-             | Some dn -> (
-                 match find_ci ctx.doc.dimensions dn with
-                 | None ->
-                     [ v ~params:[("dimension", dn)] "WF-040.selection-undeclared-dimension" (sub "dimensionSelection")
-                         ("selection over undeclared dimension '" ^ dn ^ "'") ]
-                 | Some dim ->
-                     List.concat_map
-                       (fun l ->
-                         match l with
-                         | Some l when not (mem_ci (some_names dim.dim_values) l) ->
-                             [ v ~params:[("label", l); ("dimension", dn)] "WF-040.label-not-declared" (sub "dimensionSelection")
-                                 ("label '" ^ l ^ "' is not declared on dimension '" ^ dn ^ "'") ]
-                         | _ -> [])
-                       ds.ds_labels)
-             | None -> [])
+      (* WF-040: the selections of a dimension fold *)
+      @ (match f.dimension_selections with
+         | Some sels -> wf040_selections ctx at f.call_arguments sels
          | None -> [])
       @ (match f.filter with
          | Some c ->
@@ -5489,7 +5626,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                        ("attribute reference on '" ^ otn
                       ^ "' without an attribute name: it resolves against no declaration") ]
                | Attribute_reference _, Some el when source_position ->
-                   aggregation_source_check ctx p ~element_type:el ~subject ~kind:f.kind ~ranged a
+                   wf125_bare_read ctx p a
+                   @ aggregation_source_check ctx p ~element_type:el ~subject ~kind:f.kind ~ranged a
                | _ ->
                    (* the union's admissible position (WF-110 (a)): the SINGLE
                       argument of a count. Keyed on the kind and the arity and
@@ -5503,6 +5641,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                       ASP backend and the Drools loader give. *)
                    walk_expr ctx ~binders ~subject
                      ~union_ok:((f.kind = Count && arity = 1) || non_source <> None)
+                     ~cell_owner:(f.dimension_selections <> None)
                      p a)
              f.call_arguments)
       (* WF-055: the gedurende clip — a filter on the temporal total is a
@@ -5809,6 +5948,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
                [ ("minimum", minimum); ("maximum", maximum) ]
          | _ -> [])
   | Attribute_reference { attribute_ref; object_type = otn; navigation_bindings; _ } -> (
+      (if cell_owner then [] else wf125_bare_read ctx at e)
+      @
       match otn with
       | Some otn -> (
           match object_type ctx otn with
@@ -5857,41 +5998,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) a
       (match attribute_ref with
        | Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ } as inner) ->
            (match object_type ctx otn with
-            | Some ot -> (
-                match find_ci ot.attribute_dimensions a with
-                | Some dims ->
-                    let dims = some_names dims in
-                    let lbls = some_names labels in
-                    List.concat_map
-                      (fun dn ->
-                        match find_ci ctx.doc.dimensions dn with
-                        | None -> [] (* WF-004 reports it *)
-                        | Some dim ->
-                            let hits =
-                              List.filter (fun l -> mem_ci (some_names dim.dim_values) l) lbls
-                            in
-                            if List.length hits <> 1 then
-                              [ v ~params:[("dimension", dn); ("count", string_of_int (List.length hits))] "WF-040.dimension-pin-count" at
-                                  (Printf.sprintf
-                                     "cell read pins dimension '%s' %d times, must be exactly once"
-                                     dn (List.length hits)) ]
-                            else [])
-                      dims
-                    @
-                    if List.length lbls <> List.length dims then
-                      [ v ~params:[("labelCount", string_of_int (List.length lbls)); ("dimensionCount", string_of_int (List.length dims))] "WF-040.label-count-mismatch" at
-                          (Printf.sprintf "cell read carries %d labels for %d dimensions"
-                             (List.length lbls) (List.length dims)) ]
-                    else []
-                | None ->
-                    [ v ~params:[("attribute", a)] "WF-040.undimensioned-cell-read" at ("cell read of undimensioned attribute '" ^ a ^ "'") ])
+            | Some ot -> wf040_cell ctx at ~ot ~attribute:a labels
             | None -> [])
-           @ walk_expr ctx ~binders ~subject (sub "attribute") inner
+           @ walk_expr ctx ~binders ~subject ~cell_owner:true (sub "attribute") inner
        | Some (Attribute_reference _ as inner) ->
            (* an attribute reference with an empty half: the walk's own
               WF-034 arms report that endpoint, so this arm stays silent
               rather than reporting the same defect twice *)
-           walk_expr ctx ~binders ~subject (sub "attribute") inner
+           walk_expr ctx ~binders ~subject ~cell_owner:true (sub "attribute") inner
        | Some inner ->
            (* WF-034 (widened, maintainer decision 2026-09-04, third wave):
               a cell read reads ONE dimensioned attribute, so its `attribute`
@@ -7272,7 +7386,7 @@ let expression_layer ctx =
     (fun (r : resolved_rule) ->
       let at = r.rr_pointer in
       let subject =
-        match r.objective with
+        match written_reference r.objective with
         | Some (Attribute_reference { object_type; _ }) -> object_type
         | _ -> None
       in
@@ -7336,10 +7450,13 @@ let expression_layer ctx =
          | Some c -> walk_cond ctx ~binders:[] ~subject (at ^ "/condition") c
          | None -> [])
       (* WF-122 (a): the target names what the form writes on its subject *)
-      @ (match r.objective with
-         | Some (Attribute_reference { anchor = Some _; _ }) ->
+      @ (match (r.objective, written_reference r.objective) with
+         | Some (Attribute_reference _), Some (Attribute_reference { anchor = Some _; _ }) ->
              [ anchor_outside ~node:"AttributeReference" ~position:"the target of a rule version"
                  (at ^ "/target") ]
+         | Some (Dimension_cell_read _), Some (Attribute_reference { anchor = Some _; _ }) ->
+             [ anchor_outside ~node:"AttributeReference" ~position:"the target of a rule version"
+                 (at ^ "/target/attribute") ]
          | _ -> []))
     ctx.doc.resolved_rules
   @ List.concat_map
@@ -7462,6 +7579,22 @@ let expression_layer ctx =
    are relation-node edges (n_rel). *)
 
 let n_attr ot a = "attr:" ^ norm ot ^ ":" ^ norm a
+
+(* A cell of a dimensioned attribute is a node of its own (IR-SPEC ch. 5.1,
+   B4): the labels on the wire are literals, so which cell a form reads or
+   writes is static, and a rule that computes one cell from another cell of
+   the same attribute is no cycle. Spelled as an attribute node whose member
+   carries its labels in declared order, so a reader that splits a node at
+   its colons finds the cell where it finds a member. *)
+let n_cell ot a labels = n_attr ot a ^ "[" ^ String.concat ", " (List.map norm labels) ^ "]"
+
+(* The cells a dimension fold reads: the product of its selections, the
+   first selection outermost (RUNTIME-SEMANTICS ch. 5.8c). *)
+let selected_cells (sels : dimension_selection list) =
+  List.fold_right
+    (fun (ds : dimension_selection) tails ->
+      List.concat_map (fun l -> List.map (fun t -> l :: t) tails) (some_names ds.ds_labels))
+    sels [ [] ]
 let n_char ot k = "char:" ^ norm ot ^ ":" ^ norm k
 let n_chan rule = "chan:" ^ norm (strip_version rule)
 let n_pop ot = "pop:" ^ norm ot
@@ -7529,8 +7662,13 @@ let pop_writes ctx t =
    Reads stay literal on purpose: every legal read spelling of `m` is a type
    comparable with some writer's owner, so the write side alone already
    draws every real edge. *)
-let member_writes ctx ~kind ~over ot m =
-  let node = match kind with `Attribute -> n_attr | `Characteristic -> n_char in
+let member_writes ?labels ctx ~kind ~over ot m =
+  let node =
+    match (kind, labels) with
+    | `Attribute, Some ls -> fun t a -> n_cell t a ls
+    | `Attribute, None -> n_attr
+    | `Characteristic, _ -> n_char
+  in
   let carries s =
     match object_type ctx s with
     | None -> false
@@ -7624,6 +7762,19 @@ let rec dep_expr_at ctx ~subject ~at acc (e : expr) =
         acc pieces
   | Binary { left_side; right_side; _ } ->
       dep_opt_at ctx ~subject ~at (dep_opt_at ctx ~subject ~at acc left_side) right_side
+  | Function_call
+      { call_arguments = [ Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings; _ } ];
+        dimension_selections = Some sels; empty_fallback; _ } ->
+      (* a dimension fold reads every cell its selections pick, each a node
+         of its own (B4), and the fallback *)
+      let rel_edges =
+        match navigation_bindings with
+        | Some hops -> List.map (fun (rb : role_binding) -> (n_rel rb.rb_fact_type, Dep_pos, None)) hops
+        | None -> []
+      in
+      let path = Option.map (fun p -> p @ Option.value navigation_bindings ~default:[]) at in
+      let cells = List.map (fun ls -> (n_cell ot a ls, Dep_pos, path)) (selected_cells sels) in
+      dep_opt_at ctx ~subject ~at (rel_edges @ cells @ acc) empty_fallback
   | Function_call { kind; call_arguments; element_object_type; empty_fallback; filter; source_role; source_path; _ } ->
       let acc =
         match element_object_type with Some el -> (n_pop el, Dep_pos, None) :: acc | None -> acc
@@ -7698,6 +7849,17 @@ let rec dep_expr_at ctx ~subject ~at acc (e : expr) =
   | Rounding { base_expr; _ } -> dep_opt_at ctx ~subject ~at acc base_expr
   | Clamp { base_expr; minimum; maximum; _ } ->
       dep_opt_at ctx ~subject ~at (dep_opt_at ctx ~subject ~at (dep_opt_at ctx ~subject ~at acc base_expr) minimum) maximum
+  | Dimension_cell_read
+      { attribute_ref = Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings; _ });
+        labels; _ } ->
+      (* the cell is the node (B4), reached over the reference's own hops *)
+      let rel_edges =
+        match navigation_bindings with
+        | Some hops -> List.map (fun (rb : role_binding) -> (n_rel rb.rb_fact_type, Dep_pos, None)) hops
+        | None -> []
+      in
+      let path = Option.map (fun p -> p @ Option.value navigation_bindings ~default:[]) at in
+      rel_edges @ ((n_cell ot a (some_names labels), Dep_pos, path) :: acc)
   | Dimension_cell_read { attribute_ref; _ } -> dep_opt_at ctx ~subject ~at acc attribute_ref
   | Temporal_read { base_expr; date_value; _ } ->
       (* the read consumes its timeline reference and its date operand;
@@ -7956,10 +8118,10 @@ let dep_forms ctx : dep_form list =
       (fun (r : resolved_rule) ->
         let at = r.rr_pointer in
         let name = Option.value r.rr_name ~default:at in
-        match r.objective with
+        match written_reference r.objective with
         | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }) ->
             let writes =
-              member_writes ctx ~over:`Extension
+              member_writes ?labels:(written_labels r.objective) ctx ~over:`Extension
                 ~kind:(if r.rr_presentation = Some Characteristic_attribution then `Characteristic else `Attribute)
                 ot a
             in
@@ -8135,7 +8297,7 @@ let dep_forms ctx : dep_form list =
                      (* `Minted, not `Extension: this value lands on the ONE
                         instance the creation makes, and its concrete type
                         is exactly nt (creation is not polymorphic) *)
-                     member_writes ctx ~over:`Minted
+                     member_writes ?labels:(Option.map some_names t.to_labels) ctx ~over:`Minted
                        ~kind:(if t.to_characteristic then `Characteristic else `Attribute)
                        nt a
                  | None -> [])
@@ -9227,24 +9389,36 @@ let wf079 ctx =
         | None -> false)
       ctx.doc.prioritized_defaults
   in
+  (* a cell target writes one cell, so the member a pair is keyed on is the
+     cell: two writers of two cells of one attribute write two targets *)
   let computing =
     List.filter_map
       (fun (r : resolved_rule) ->
-        match (r.rr_presentation, r.objective, r.rr_condition) with
+        match (r.rr_presentation, written_reference r.objective, r.rr_condition) with
         | ( Some (Equation | Calculation),
             Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ }),
             None ) ->
-            Some (Option.map strip_version r.rr_name, otn, a, r.rr_validity, r.rr_pointer)
+            Some
+              ( Option.map strip_version r.rr_name,
+                otn,
+                cell_member a (written_labels r.objective),
+                r.rr_validity,
+                r.rr_pointer )
         | _ -> None)
       ctx.doc.resolved_rules
   in
   let initialisations =
     List.filter_map
       (fun (r : resolved_rule) ->
-        match (r.rr_presentation, r.objective) with
+        match (r.rr_presentation, written_reference r.objective) with
         | Some Initialisation, Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ })
           ->
-            Some (Option.map strip_version r.rr_name, otn, a, r.rr_validity, r.rr_pointer)
+            Some
+              ( Option.map strip_version r.rr_name,
+                otn,
+                cell_member a (written_labels r.objective),
+                r.rr_validity,
+                r.rr_pointer )
         | _ -> None)
       ctx.doc.resolved_rules
   in
@@ -11253,6 +11427,159 @@ let wf121 (t : vocabulary_table) : violation list =
 let vocabularies (doc : document) (t : vocabulary_table) : violation list =
   wf116 t @ wf117 t @ wf118 doc t @ wf119 t @ wf120 doc t @ wf121 t
 
+(* WF-040 at the two write positions of a cell (IR-SPEC ch. 3.1, ch. 3.3):
+   a rule target that is a DimensionCellRead, and an object creation's
+   member that carries labels. The cross is the read's ([wf040_cell]); the
+   target is no part of the expression walk, so it is crossed here. *)
+let wf040_writes ctx =
+  List.concat_map
+    (fun (r : resolved_rule) ->
+      match r.objective with
+      | Some
+          (Dimension_cell_read
+             { attribute_ref = Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ });
+               labels; _ }) -> (
+          match object_type ctx otn with
+          | Some ot -> wf040_cell ctx (r.rr_pointer ^ "/target") ~ot ~attribute:a labels
+          | None -> [])
+      | _ -> [])
+    ctx.doc.resolved_rules
+  @ List.concat_map
+      (fun (o : resolved_object_creation) ->
+        match Option.bind o.created_type (object_type ctx) with
+        | None -> []
+        | Some ot ->
+            List.concat
+              (List.mapi
+                 (fun j (t : assignment) ->
+                   match (t.to_attribute, t.to_labels) with
+                   | Some a, Some labels when not t.to_characteristic ->
+                       wf040_cell ctx (Printf.sprintf "%s/initialisations/%d/labels" o.oc_pointer j) ~ot
+                         ~attribute:a labels
+                   | _ -> [])
+                 o.assignments))
+      ctx.doc.object_creations
+
+(* WF-125 (IR-SPEC ch. 2.7): a dimensioned attribute has a value per cell
+   and none of its own. (a) is the read, judged in the expression walk
+   ([wf125_bare_read]). (b) a write position names one cell: a rule target
+   that is a bare reference, and an object creation's member without
+   labels, write the whole attribute. (c) the forms that name a member
+   whole — an allocation, a uniqueness key, a defaults group, a start point
+   — have no cell to name. (d) a dimension and a timeline are not combined
+   on one attribute: a cell holds one value, not a timeline. *)
+let wf125 ctx =
+  let dimensioned otn a =
+    match Option.bind otn (object_type ctx) with
+    | Some ot -> attr_dimensions ot a <> None
+    | None -> false
+  in
+  let whole_write at otn a =
+    [ v ~params:[("attribute", a); ("objectType", otn)] "WF-125.whole-write" at
+        (Printf.sprintf
+           "the dimensioned attribute '%s' of '%s' is written whole: it has a value per cell and \
+            none of its own, so a write position names one cell, with a label of each dimension"
+           a otn) ]
+  in
+  let whole_member at ~form otn a =
+    if dimensioned (Some otn) a then
+      [ v ~params:[("attribute", a); ("objectType", otn); ("form", form)] "WF-125.whole-member" at
+          (Printf.sprintf
+             "the dimensioned attribute '%s' of '%s' is named whole by %s, which reads or writes a \
+              member whole: a dimensioned attribute has a value per cell and none of its own"
+             a otn form) ]
+    else []
+  in
+  List.concat_map
+    (fun (r : resolved_rule) ->
+      match r.objective with
+      | Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ })
+        when dimensioned (Some otn) a ->
+          whole_write (r.rr_pointer ^ "/target") otn a
+      | _ -> [])
+    ctx.doc.resolved_rules
+  @ List.concat_map
+      (fun (o : resolved_object_creation) ->
+        List.concat
+          (List.mapi
+             (fun j (t : assignment) ->
+               match (o.created_type, t.to_attribute, t.to_labels) with
+               | Some otn, Some a, None when (not t.to_characteristic) && dimensioned (Some otn) a ->
+                   whole_write (Printf.sprintf "%s/initialisations/%d" o.oc_pointer j) otn a
+               | _ -> [])
+             o.assignments))
+      ctx.doc.object_creations
+  @ List.concat_map
+      (fun (r : resolved_allocation) ->
+        let named otn field a =
+          match (otn, a) with
+          | Some otn, Some a -> whole_member (r.vd_pointer ^ "/" ^ field) ~form:"an allocation" otn a
+          | _ -> []
+        in
+        named r.source_type "sourceAttribute" r.source_attribute
+        @ named r.objective_type_name "targetAttribute" r.target_attribute
+        @ named r.objective_type_name "ratioAttribute" r.ratio_attribute
+        @ named r.objective_type_name "maximumAttribute" r.maximum_attribute
+        @ named r.objective_type_name "orderingAttribute" r.ordering_attribute
+        @ named r.source_type "remainderAttribute" r.remainder_attribute)
+      ctx.doc.allocations
+  @ List.concat_map
+      (fun (u : resolved_uniqueness) ->
+        match u.uni_subject with
+        | Some otn ->
+            List.concat_map
+              (fun k -> whole_member (u.uni_pointer ^ "/sources/0") ~form:"a uniqueness key" otn k)
+              (some_names u.key_list)
+        | None -> [])
+      ctx.doc.uniquenesses
+  @ List.concat_map
+      (fun (u : resolved_uniqueness_union) ->
+        List.concat
+          (List.mapi
+             (fun i (b : uniqueness_union_source) ->
+               match b.uub_type with
+               | Some otn ->
+                   List.concat_map
+                     (fun k ->
+                       whole_member (Printf.sprintf "%s/sources/%d" u.uu_pointer i) ~form:"a uniqueness key"
+                         otn k)
+                     (some_names b.uub_keys)
+               | None -> [])
+             u.source_list))
+      ctx.doc.uniqueness_unions
+  @ List.concat
+      (List.mapi
+         (fun i (l : prioritized_defaults) ->
+           match l.pd_attribute with
+           | Some a ->
+               whole_member (Printf.sprintf "/prioritizedDefaults/%d/attribute" i) ~form:"a defaults group"
+                 l.pd_subject a
+           | None -> [])
+         ctx.doc.prioritized_defaults)
+  @ List.concat
+      (List.mapi
+         (fun i (sp : resolved_start_point_determination) ->
+           match (sp.sp_subject_type, sp.one_member) with
+           | Some otn, Some a ->
+               whole_member (Printf.sprintf "/startPointDeterminations/%d/member" i)
+                 ~form:"a start-point determination" otn a
+           | _ -> [])
+         ctx.doc.resolved_start_point_determinations)
+  @ List.concat_map
+      (fun (otn, (ot : object_type)) ->
+        List.concat_map
+          (fun (a, _) ->
+            if attr_temporal ot a then
+              [ v ~params:[("attribute", a); ("objectType", otn)] "WF-125.timeline"
+                  ("/objecttypen/" ^ otn ^ "/attribuutDimensies/" ^ a)
+                  (Printf.sprintf
+                     "the attribute '%s' of '%s' carries a dimension and a timeline: the two are not \
+                      combined, a cell holds one value and no timeline"
+                     a otn) ]
+            else [])
+          ot.attribute_dimensions)
+      ctx.doc.object_types
+
 let all (doc : document) : violation list =
   let ctx = ctx_of doc in
   List.map (fun x -> { x with at = m1_named doc x.at })
@@ -11269,4 +11596,5 @@ let all (doc : document) : violation list =
       wf045_046 ctx;
       wf047_allocations ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf088 ctx; wf065 ctx; wf067 ctx;
-      wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; wf113 ctx; expression_layer ctx ]
+      wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; wf113 ctx; expression_layer ctx;
+      wf040_writes ctx; wf125 ctx ]

@@ -1,8 +1,8 @@
 # wf037-filled-count-dimension-selection
 
 Violates WF-037 (`spec/IR-SPEC.md` ch. 4.3, ch. 4.6) in its
-`dimensionSelection` clause — "sum/min/max only". A `filledCount`
-carries one.
+`dimensionSelections` clause — "sum/min/max only". A `filledCount`
+carries one selection.
 
     WF-037 FAIL /rules/rules/0/versions/0/value: dimension selection on
     a kind other than sum/min/max
@@ -20,9 +20,11 @@ no amendment: it grants the facet to an enumerated set. The witness is what
 turns that silence into a checked MUST.
 
 The document. The well-formed shape plus a declared dimension `kustvak`
-(labels `noord`, `zuid`) and a `dimensionSelection` over both labels — the
-labels resolve, so WF-040 has nothing to say and the facet's presence is the
-only defect. The verifier reports one fault.
+(labels `noord`, `zuid`) and `dimensionSelections` with one selection over
+both labels. The labels resolve; the fold's source `gewicht` carries no
+dimension, so WF-040's argument arm reports it too
+(`WF-040.selection-undimensioned-argument`), since a dimension fold folds the
+cells of a dimensioned attribute. `expect.txt` pins the WF-037 arm.
 
 Rood-eerst, measured on this document. With the wire enum landed and the
 arms absent (verifier md5 `220741bf2cee253d71ca6b13b8ad1402`): the WF-037
@@ -49,6 +51,6 @@ report of the 718.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each
 with only its own fields — `arguments`, and on an aggregation `elementType`,
-`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+`emptyFallback`, `dimensionSelections`, `sourceRole` and `sourcePath`, on a
 builtin `granularity`; the report cites and names them. `expect.txt` pins the
 arm.

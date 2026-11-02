@@ -33,6 +33,30 @@
           },
           {
             "node": "Attribute",
+            "name": "aanspoeling",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "dimensions": [
+              "seizoen",
+              "herkomst"
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "zeecijfer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
             "name": "meetdatum",
             "datatype": {
               "node": "Date",
@@ -94,6 +118,16 @@
           "voorjaar",
           "najaar"
         ]
+      },
+      {
+        "node": "Dimension",
+        "name": "herkomst",
+        "plural": "herkomsten",
+        "preposition": "uit",
+        "labels": [
+          "voorjaar",
+          "zee"
+        ]
       }
     ],
     "timelines": [
@@ -151,6 +185,45 @@
               ],
               "source": {
                 "snippet": "de opbrengst in het voorjaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zeecijfer uit voorjaarsaanspoeling",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zeecijfer",
+              "subjectType": "Schouwveld",
+              "source": {
+                "snippet": "Het zeecijfer van een Schouwveld"
+              }
+            },
+            "value": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "aanspoeling",
+                "subjectType": "Schouwveld",
+                "source": {
+                  "snippet": "de aanspoeling in het voorjaar uit zee"
+                }
+              },
+              "labels": [
+                "voorjaar",
+                "zee"
+              ],
+              "source": {
+                "snippet": "de aanspoeling in het voorjaar uit zee"
               }
             },
             "initialisation": false,

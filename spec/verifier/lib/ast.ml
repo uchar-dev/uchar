@@ -216,7 +216,10 @@ type expr =
       element_object_type : string option;
       empty_fallback : expr option;
       filter : condition_expr option;
-      dimension_selection : dimension_selection option;
+      dimension_selections : dimension_selection list option;
+          (* one selection per dimension of the argument, in declared order
+             (IR-SPEC ch. 4.3) — carried AS LOADED, empty included, so a
+             wrong number is WF-040's violation and never a load failure *)
       typ : datatype option;
       source_name : string option;
       grain : grain option;
@@ -589,7 +592,9 @@ type resolved_rule = {
          presentation tag is Gelijkstelling or Berekening,
          `initialisation: true` is Initialisatie, and neither is
          Kenmerktoekenning *)
-  objective : expr option; (* always an [Attribute_reference] *)
+  objective : expr option;
+      (* an [Attribute_reference], or a [Dimension_cell_read] over one: the
+         one cell a version writes (IR-SPEC ch. 3.1) *)
   value_node : expr option;
   rr_condition : condition_expr option;
   rr_validity : validity_window option;
@@ -608,6 +613,9 @@ type resolved_day_kind = {
 
 type assignment = {
   to_attribute : string option;
+  to_labels : string option list option;
+      (* the cell of a dimensioned member, one label per dimension in
+         declared order (IR-SPEC ch. 3.3); absent on a scalar member *)
   to_value : expr option;
   to_characteristic : bool;
 }

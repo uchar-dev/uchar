@@ -93,8 +93,8 @@ class UnknownFieldWitnessTest {
         rows.put("Unresolved (expression)", new String[] { w, "{\"node\":\"Unresolved\",\"source\":{\"snippet\":\"x\"},\"" + FOREIGN
                 + "\":1}", w });
         rows.put("DimensionSelection", new String[] { w, "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[],"
-                + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"d\",\"labels\":[],"
-                + "\"source\":{\"snippet\":\"x\"},\"" + FOREIGN + "\":1},\"type\":null,\"source\":{\"snippet\":\"x\"}}", w + "/dimensionSelection" });
+                + "\"dimensionSelections\":[{\"node\":\"DimensionSelection\",\"dimension\":\"d\",\"labels\":[],"
+                + "\"source\":{\"snippet\":\"x\"},\"" + FOREIGN + "\":1}],\"type\":null,\"source\":{\"snippet\":\"x\"}}", w + "/dimensionSelections/0" });
         rows.put("ContextValue", new String[] { w, "{\"node\":\"ContextValue\",\"name\":\"evaluationDate\",\"type\":"
                 + "{\"node\":\"Date\",\"precision\":\"day\"},\"source\":{\"snippet\":\"de Rekendatum\"},\"" + FOREIGN + "\":1}", w });
         rows.put("Regelversie", new String[] { v, "{\"node\":\"Regelversie\",\"regel\":\"x\",\"inconsistent\":false,"

@@ -6468,7 +6468,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the unsolved-state guard: an Unresolved node never vanishes —
          the rule that carries it fails observably (WF-044) *)
       faultc "EF-019" "Unresolved reached in translation: this rule fails observably"
-  | Function_call { kind = Sum_function; element_object_type = None; dimension_selection = None; _ } ->
+  | Function_call { kind = Sum_function; element_object_type = None; dimension_selections = None; _ } ->
       (* the LISTED-operand som (§5.8.3, RUNTIME-SEMANTICS ch. 5.11): the
          contributors are spelled out as operands and there is no instance
          source. ref carries it — its contributor arm reads the operand list
@@ -10525,7 +10525,7 @@ let translate_rule ctx (r : resolved_rule) =
                          Some
                            (Characteristic_check
                               { characteristic = Some k; navigation_binding = None; negation = false; _ } as fc);
-                       grain = Some g; empty_fallback = None; dimension_selection = None; _ })
+                       grain = Some g; empty_fallback = None; dimension_selections = None; _ })
                 when norm bot = norm ot ->
                   clip_member_qualifications fc;
                   translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~g
@@ -10536,7 +10536,7 @@ let translate_rule ctx (r : resolved_rule) =
                          Some
                            (Characteristic_check
                               { characteristic = Some k; navigation_binding = None; negation = false; _ } as fc);
-                       grain = Some g; empty_fallback = None; dimension_selection = None; _ }) ->
+                       grain = Some g; empty_fallback = None; dimension_selections = None; _ }) ->
                   clip_member_qualifications fc;
                   translate_day_count ?clip ctx ~subject ~ot ~a ~cond ~k ~g
               | _ ->

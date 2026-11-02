@@ -331,6 +331,8 @@ DROOLS-293	an anchored node ('{snippet}', IR-SPEC ch. 4.1a) in the filter or the
 DROOLS-294	an anchored node ('{snippet}', IR-SPEC ch. 4.1a) in a form that this branch reads off the subject of its own rule only: the whole-period qualifier, the total over the own timeline, a role check, a relation, an allocation or the origin of a creation; this branch does not carry this form yet
 DROOLS-295	a CharacteristicCheck ('{snippet}') with a host strictly below the subject that this branch does not carry: it reads a narrowing host only on a check without navigation and without the whole-period qualifier, and only where the host is the type that declares the characteristic (WF-109, RUNTIME-SEMANTICS ch. 5.8b rule 4)
 DROOLS-296	a fold over the value of the attribute '{attribute}' of {objectType}, which is of the unbounded form: a value of that form is an exact rational in working memory, and this branch folds decimals, so a sum of three times 1/3 would give 0.9999999999999999; this branch does not carry this form yet (RUNTIME-SEMANTICS ch. 2.4)
+DROOLS-297	a dimension fold over {dimensionCount} dimensions ('{snippet}'): this branch folds only an attribute of one dimension
+DROOLS-298	a write of a cell of the dimensioned attribute '{attribute}' by '{form}': this branch writes no cell
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	input {place} = {value} does not fit {decimals} decimals: a case value whose exact value its declaration cannot hold is refused at the input (RUNTIME-SEMANTICS ch. 2.4, 5.7)

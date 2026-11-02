@@ -1,0 +1,289 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            },
+            "dimensions": [
+              "seizoen"
+            ]
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vangst",
+        "animate": false,
+        "plural": "Vangsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vangstgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            },
+            "dimensions": [
+              "seizoen"
+            ]
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vangstboeking",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "boeker",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "geboekte vangst",
+            "objectType": "Vangst",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Gewicht",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "kg",
+            "system": "Gewicht",
+            "canonical": "kg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "kilogram",
+              "kilogrammen"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [
+      {
+        "node": "Dimension",
+        "name": "seizoen",
+        "plural": "seizoenen",
+        "preposition": "in",
+        "labels": [
+          "voorjaar",
+          "zomer",
+          "najaar"
+        ]
+      }
+    ],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "najaarsgewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "vondstgewicht",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "Het vondstgewicht in najaar van een Jutter"
+                }
+              },
+              "labels": [
+                "najaar",
+                "voorjaar"
+              ],
+              "source": {
+                "snippet": "Het vondstgewicht in najaar van een Jutter"
+              }
+            },
+            "value": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "vondstgewicht",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn vondstgewicht in voorjaar"
+                }
+              },
+              "labels": [
+                "voorjaar"
+              ],
+              "source": {
+                "snippet": "zijn vondstgewicht in voorjaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zomergewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "vondstgewicht",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "Het vondstgewicht in zomer van een Jutter"
+                }
+              },
+              "labels": [
+                "zomer"
+              ],
+              "source": {
+                "snippet": "Het vondstgewicht in zomer van een Jutter"
+              }
+            },
+            "value": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "vondstgewicht",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn vondstgewicht in voorjaar"
+                }
+              },
+              "labels": [
+                "voorjaar"
+              ],
+              "source": {
+                "snippet": "zijn vondstgewicht in voorjaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "boek een vangst bij elke jutter",
+        "versions": [
+          {
+            "createdType": "Vangst",
+            "subject": "Jutter",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "vangstgewicht",
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "node": "DimensionCellRead",
+                  "attribute": {
+                    "node": "AttributeReference",
+                    "attribute": "vondstgewicht",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn vondstgewicht in najaar"
+                    }
+                  },
+                  "labels": [
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "zijn vondstgewicht in najaar"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "vangstboeking",
+              "role": "geboekte vangst"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

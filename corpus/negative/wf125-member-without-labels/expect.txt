@@ -1,0 +1,3 @@
+WF-125.whole-write
+attribute=vangstgewicht
+objectType=Vangst

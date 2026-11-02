@@ -1,0 +1,4 @@
+WF-125.whole-member
+attribute=wachtgeld
+objectType=Jutter
+form=a defaults group

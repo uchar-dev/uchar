@@ -147,17 +147,19 @@
                 }
               ],
               "elementType": "Vondst",
-              "dimensionSelection": {
-                "node": "DimensionSelection",
-                "dimension": "kustvak",
-                "labels": [
-                  "noord",
-                  "zuid"
-                ],
-                "source": {
-                  "snippet": "op kustvak noord en zuid"
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "kustvak",
+                  "labels": [
+                    "noord",
+                    "zuid"
+                  ],
+                  "source": {
+                    "snippet": "op kustvak noord en zuid"
+                  }
                 }
-              },
+              ],
               "sourceRole": {
                 "node": "RoleBinding",
                 "factType": "vondstaanmelding",

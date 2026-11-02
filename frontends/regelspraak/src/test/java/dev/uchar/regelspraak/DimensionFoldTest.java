@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * A sum, minimum or maximum over the labels of the subject's own dimensioned attribute (§13.4.17.51-.54) is an
- * {@code Aggregation} with a {@code dimensionSelection} (IR-SPEC ch. 4.3, CONSTRUCTS row 28): it folds label cells,
+ * {@code Aggregation} with {@code dimensionSelections} (IR-SPEC ch. 4.3, CONSTRUCTS row 28): it folds label cells,
  * not instances, so it carries no element type and no range, and its one argument is the subject's own read. The
  * resolver records the subject as the fold's element type; written on the wire, an element type on a
  * single-argument fold demands a range. Measured on the frontend before this: the emitter refused every such fold
@@ -46,8 +46,8 @@ class DimensionFoldTest {
     @Test void the_sum_over_all_labels_carries_the_selection_and_no_element_type() {
         String c = emitCompact("de som van zijn vondstgewicht over alle seizoenen.");
         assertTrue(c.contains("\"node\":\"Aggregation\",\"kind\":\"sum\"," + OWN_READ
-                + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
-                + "\"labels\":[\"voorjaar\",\"zomer\",\"najaar\"],\"source\":{\"snippet\":\"overalleseizoenen\"}},"
+                + "\"dimensionSelections\":[{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
+                + "\"labels\":[\"voorjaar\",\"zomer\",\"najaar\"],\"source\":{\"snippet\":\"overalleseizoenen\"}}],"
                 + "\"type\":{\"node\":\"Number\""), () -> "de som over alle seizoenen:\n" + c);
         assertFalse(c.contains("\"elementType\""), () -> "een elementtype op de dimensievouw:\n" + c);
         assertFalse(c.contains("\"sourceRole\"") || c.contains("\"sourcePath\""), () -> "een bereik op de dimensievouw:\n" + c);
@@ -56,8 +56,8 @@ class DimensionFoldTest {
     @Test void the_sum_over_an_interval_carries_the_labels_in_declared_order() {
         String c = emitCompact("de som van zijn vondstgewicht vanaf voorjaar t/m zomer.");
         assertTrue(c.contains("\"kind\":\"sum\"," + OWN_READ
-                + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
-                + "\"labels\":[\"voorjaar\",\"zomer\"],\"source\":{\"snippet\":\"vanafvoorjaart/mzomer\"}},"),
+                + "\"dimensionSelections\":[{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
+                + "\"labels\":[\"voorjaar\",\"zomer\"],\"source\":{\"snippet\":\"vanafvoorjaart/mzomer\"}}],"),
                 () -> "de som over een interval:\n" + c);
         assertFalse(c.contains("\"elementType\""), () -> "een elementtype op de dimensievouw:\n" + c);
     }
@@ -68,7 +68,7 @@ class DimensionFoldTest {
     @Test void a_set_of_two_labels_without_comma_reads_two_labels() {
         String c = emitCompact("de maximale waarde van zijn vondstgewicht over de seizoenen in {voorjaar en najaar}.");
         assertTrue(c.contains("\"kind\":\"maximum\"," + OWN_READ
-                + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
+                + "\"dimensionSelections\":[{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
                 + "\"labels\":[\"voorjaar\",\"najaar\"],"), () -> "de verzameling van twee labels:\n" + c);
     }
 
@@ -103,7 +103,7 @@ class DimensionFoldTest {
     @Test void the_maximum_over_an_interval_carries_the_selection() {
         String c = emitCompact("de maximale waarde van zijn vondstgewicht vanaf zomer t/m najaar.");
         assertTrue(c.contains("\"kind\":\"maximum\"," + OWN_READ
-                + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
+                + "\"dimensionSelections\":[{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
                 + "\"labels\":[\"zomer\",\"najaar\"],"), () -> "het maximum over een interval:\n" + c);
         assertFalse(c.contains("\"elementType\""), () -> "een elementtype op de dimensievouw:\n" + c);
     }

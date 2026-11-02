@@ -1044,8 +1044,8 @@ def _l4_base():
         # a dimension fold: no element type, so no range
         rule("vakkensom", version(ref("vondstwaarde", "Jutter"), {
             "node": "Aggregation", "kind": "sum", "arguments": [ref("vondstwaarde", "Jutter")],
-            "dimensionSelection": {"node": "DimensionSelection", "dimension": "kustvak",
-                                   "labels": ["noord", "zuid"]},
+            "dimensionSelections": [{"node": "DimensionSelection", "dimension": "kustvak",
+                                     "labels": ["noord", "zuid"]}],
             "type": dict(num)}, presentation="calculation")),
         # a builtin call with its bucket and its gedurende condition, and one over a session value
         rule("tariefdeel", version(ref("vondsttarief", "Jutter"), {
@@ -1414,8 +1414,8 @@ L4_SHAPE_ROWS = [
                                  "role": "vondst"}),
                  ("sourcePath", []),
                  ("emptyFallback", {"node": "Literal", "value": {"number": "0"}, "type": None}),
-                 ("dimensionSelection", {"node": "DimensionSelection", "dimension": "kustvak",
-                                         "labels": ["noord"]}))
+                 ("dimensionSelections", [{"node": "DimensionSelection", "dimension": "kustvak",
+                                           "labels": ["noord"]}]))
 ] + _v0_keys("Aggregation", _SOM,
              ["argumenten", "elementObjecttype", "leegwaarde", "dimensieSelectie", "bronRol",
               "bronPad", "granulariteit"],
@@ -1624,7 +1624,7 @@ _SPD = lambda d: d["rules"]["startPointDeterminations"][0]
 _PDC = lambda d: d["rules"]["prioritizedDefaults"][0]
 _PDA = lambda d: d["rules"]["prioritizedDefaults"][1]
 _DEF = lambda d: _PDC(d)["defaults"][0]
-_DSEL = lambda d: _val(d, "vakkensom")["dimensionSelection"]
+_DSEL = lambda d: _val(d, "vakkensom")["dimensionSelections"][0]
 
 # the nine lists under 'rules', v0 key and L5 key
 _RULE_LISTS = [("resolvedRegels", "rules"), ("resolvedDagsoorten", "dayKindDefinitions"),
@@ -1839,11 +1839,56 @@ L5_SHAPE_ROWS = [
      "the annotations are a list, never one text a reader has to split"),
 ]
 
+# The cell of a dimensioned attribute as a write position, and the selection list of a dimension fold (card
+# dimensions-executed, 2026-11-02; IR-SPEC ch. 3.1, ch. 3.3, ch. 4.3), on the L5 base. The schema cannot see which
+# attribute is dimensioned or how many dimensions it has: that a target or a member names a cell of the right attribute,
+# and that the fold carries one selection per dimension, are WF-040's and WF-125's.
+_CELL = {"node": "DimensionCellRead", "attribute": {"node": "AttributeReference", "attribute": "vondstwaarde",
+                                                    "subjectType": "Jutter"}, "labels": ["noord"]}
+_KUSTVAK = {"node": "DimensionSelection", "dimension": "kustvak", "labels": ["noord", "zuid"]}
+
+
+def _labelled_member(labels):
+    def mutate(d):
+        mi = _MI(d)
+        items = list(mi.items())
+        items.insert(2, ("labels", labels))
+        mi.clear()
+        mi.update(items)
+    return mutate
+
+
+CELL_SHAPE_ROWS = [
+    ("RuleVersion.target is a DimensionCellRead", _set(lambda d: _rv(d, "jaartarief"), "target", dict(_CELL)),
+     True, "B1: a version writes one cell of a dimensioned attribute, spelled as the cell is read"),
+    ("RuleVersion.target is a ParameterReference",
+     _set(lambda d: _rv(d, "jaartarief"), "target", {"node": "ParameterReference", "parameter": "tarief"}), False,
+     "a version writes an attribute, a characteristic or a cell, never another node"),
+    ("MemberInit carries labels", _labelled_member(["noord"]), True,
+     "B1: an object creation's member writes one cell of a dimensioned attribute"),
+    ("MemberInit.labels = []", _labelled_member([]), False,
+     "absent is the one spelling of a scalar member; a cell names at least one label"),
+    ("MemberInit.labels = null", _labelled_member(None), False, "absent is the one spelling of a scalar member"),
+    ("MemberInit.labels as an object keyed by dimension", _labelled_member({"kustvak": "noord"}), False,
+     "B2: the labels are positional, in the declared order of the attribute's dimensions"),
+    ("Aggregation carries the single dimensionSelection",
+     lambda d: _val(d, "vakkensom").update(dimensionSelection=_val(d, "vakkensom").pop("dimensionSelections")[0]),
+     False, "B3: the selections are a list, one per dimension, under the name dimensionSelections"),
+    ("Aggregation.dimensionSelections = []", _set(lambda d: _val(d, "vakkensom"), "dimensionSelections", []), False,
+     "absent is the one spelling of a fold that is no dimension fold"),
+    ("Aggregation.dimensionSelections as one node",
+     _set(lambda d: _val(d, "vakkensom"), "dimensionSelections", dict(_KUSTVAK)), False,
+     "B3: the selections are a list"),
+    ("Aggregation.dimensionSelections with two selections",
+     _set(lambda d: _val(d, "vakkensom"), "dimensionSelections", [dict(_KUSTVAK), dict(_KUSTVAK)]), True,
+     "B3: one selection per dimension; how many dimensions the argument has is WF-040's"),
+]
+
 
 shape_bad = 0
 for base, rows in ((_m1_base, M1_SHAPE_ROWS), (_l2_base, L2_SHAPE_ROWS),
                    (_l3_base, L3_SHAPE_ROWS), (_l4_base, L4_SHAPE_ROWS),
-                   (_l5_base, L5_SHAPE_ROWS)):
+                   (_l5_base, L5_SHAPE_ROWS), (_l5_base, CELL_SHAPE_ROWS)):
     for row, mutate, want_ok, why in rows:
         probe = base()
         mutate(probe)
@@ -1857,7 +1902,7 @@ if shape_bad:
     sys.stderr.write("check-ir-schema: FAIL (%d shape self-test row(s) bad)\n" % shape_bad)
     sys.exit(1)
 n_shape = (len(M1_SHAPE_ROWS) + len(L2_SHAPE_ROWS) + len(L3_SHAPE_ROWS) + len(L4_SHAPE_ROWS)
-           + len(L5_SHAPE_ROWS))
+           + len(L5_SHAPE_ROWS) + len(CELL_SHAPE_ROWS))
 
 
 # NOTE: gate 9 (scripts/check-catala.sh) executes the slice of this

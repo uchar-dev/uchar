@@ -117,8 +117,8 @@ class SourceReferenceRefusalWitnessTest {
                 + sourceReference + "}", w });
         rows.put("VariableReference", new String[] { w, "{\"node\":\"VariableReference\",\"name\":\"x\"," + sourceReference + "}", w });
         rows.put("DimensionSelection", new String[] { w, "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[],"
-                + "\"dimensionSelection\":{\"node\":\"DimensionSelection\",\"dimension\":\"d\",\"labels\":[]," + sourceReference
-                + "},\"type\":null,\"source\":{\"snippet\":\"x\"}}", w + "/dimensionSelection" });
+                + "\"dimensionSelections\":[{\"node\":\"DimensionSelection\",\"dimension\":\"d\",\"labels\":[]," + sourceReference
+                + "}],\"type\":null,\"source\":{\"snippet\":\"x\"}}", w + "/dimensionSelections/0" });
         rows.put("ContextValue", new String[] { w, "{\"node\":\"ContextValue\",\"name\":\"evaluationDate\",\"type\":"
                 + "{\"node\":\"Date\",\"precision\":\"day\"}," + sourceReference + "}", w });
         rows.put("Unresolved (expression)", new String[] { w, "{\"node\":\"Unresolved\"," + sourceReference + "}", w });

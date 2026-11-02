@@ -58,7 +58,7 @@ form the goldens carry — is untouched by construction.
 
 Since L4 the node is an `Aggregation` or a `BuiltinCall` (delta B21), each with
 only its own fields — `arguments`, and on an aggregation `elementType`,
-`emptyFallback`, `dimensionSelection`, `sourceRole` and `sourcePath`, on a
+`emptyFallback`, `dimensionSelections`, `sourceRole` and `sourcePath`, on a
 builtin `granularity`; the report cites and names them. The load error quoted
 above carries the pointer of the wire it was measured on (`resolvedRegels`,
 since L5 `rules`; `waarde/argumenten`, since L4 `versions/0/value/arguments`).

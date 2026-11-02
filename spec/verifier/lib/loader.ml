@@ -525,7 +525,7 @@ let rec expr path j : expr =
       (* the eight folds (delta B21), read into the in-memory [Function_call] with
          no granularity: that field is a builtin's and unknown here *)
       check_keys path kvs
-        ~ext:[ "elementType"; "anchor"; "filter"; "emptyFallback"; "dimensionSelection";
+        ~ext:[ "elementType"; "anchor"; "filter"; "emptyFallback"; "dimensionSelections";
                "sourceRole"; "sourcePath"; "source" ]
         [ "node"; "kind"; "arguments"; "type" ];
       let kind = enum Spelling.aggregation_kind (path / "kind") (f "kind") in
@@ -551,7 +551,11 @@ let rec expr path j : expr =
           element_object_type;
           empty_fallback = ext_field path kvs "emptyFallback" expr;
           filter = ext_field path kvs "filter" condition_expr;
-          dimension_selection = ext_field path kvs "dimensionSelection" dimension_selection;
+          (* loaded verbatim, empty list included: WF-040 owns the number
+             of selections, as WF-102 owns the arity of a path *)
+          dimension_selections =
+            ext_field path kvs "dimensionSelections" (fun p j ->
+                List.mapi (fun i x -> dimension_selection (p / string_of_int i) x) (list_ p j));
           typ = typ ();
           source_name = source_name ();
           grain = None;
@@ -578,7 +582,7 @@ let rec expr path j : expr =
           element_object_type = None;
           empty_fallback = None;
           filter = ext_field path kvs "filter" condition_expr;
-          dimension_selection = None;
+          dimension_selections = None;
           typ = typ ();
           source_name = source_name ();
           grain = ext_field path kvs "granularity" (enum Spelling.granularity);
@@ -1335,9 +1339,13 @@ let rule_version ~annotations name path j : resolved_rule =
   in
   let target =
     match f "target" with
-    | `Assoc tkvs as t when List.assoc_opt "node" tkvs = Some (`String "AttributeReference") ->
+    | `Assoc tkvs as t
+      when List.mem (List.assoc_opt "node" tkvs)
+             [ Some (`String "AttributeReference"); Some (`String "DimensionCellRead") ] ->
         expr (path / "target") t
-    | _ -> fail (path / "target") "the target of a rule version is an AttributeReference"
+    | _ ->
+        fail (path / "target")
+          "the target of a rule version is an AttributeReference or a DimensionCellRead"
   in
   {
     rr_name = name;
@@ -1375,9 +1383,10 @@ let resolved_day_kind path j : resolved_day_kind =
 let assignment path j : assignment =
   let kvs = obj path j in
   expect_node path kvs "MemberInit";
-  check_keys path kvs [ "node"; "member"; "value"; "characteristic" ];
+  check_keys path kvs ~ext:[ "labels" ] [ "node"; "member"; "value"; "characteristic" ];
   {
     to_attribute = str_opt (path / "member") (field path kvs "member");
+    to_labels = ext_field path kvs "labels" str_opt_list;
     to_value = opt (path / "value") expr (field path kvs "value");
     to_characteristic = bool_ (path / "characteristic") (field path kvs "characteristic");
   }

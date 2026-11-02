@@ -197,18 +197,20 @@
                   }
                 }
               ],
-              "dimensionSelection": {
-                "node": "DimensionSelection",
-                "dimension": "seizoen",
-                "labels": [
-                  "voorjaar",
-                  "zomer",
-                  "najaar"
-                ],
-                "source": {
-                  "snippet": "over alle seizoenen"
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "seizoen",
+                  "labels": [
+                    "voorjaar",
+                    "zomer",
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "over alle seizoenen"
+                  }
                 }
-              },
+              ],
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -265,17 +267,19 @@
                   }
                 }
               ],
-              "dimensionSelection": {
-                "node": "DimensionSelection",
-                "dimension": "seizoen",
-                "labels": [
-                  "voorjaar",
-                  "zomer"
-                ],
-                "source": {
-                  "snippet": "vanaf voorjaar t/m zomer"
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "seizoen",
+                  "labels": [
+                    "voorjaar",
+                    "zomer"
+                  ],
+                  "source": {
+                    "snippet": "vanaf voorjaar t/m zomer"
+                  }
                 }
-              },
+              ],
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -332,18 +336,20 @@
                   }
                 }
               ],
-              "dimensionSelection": {
-                "node": "DimensionSelection",
-                "dimension": "seizoen",
-                "labels": [
-                  "voorjaar",
-                  "zomer",
-                  "najaar"
-                ],
-                "source": {
-                  "snippet": "over de seizoenen in {voorjaar, zomer en najaar}"
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "seizoen",
+                  "labels": [
+                    "voorjaar",
+                    "zomer",
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "over de seizoenen in {voorjaar, zomer en najaar}"
+                  }
                 }
-              },
+              ],
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -400,17 +406,19 @@
                   }
                 }
               ],
-              "dimensionSelection": {
-                "node": "DimensionSelection",
-                "dimension": "seizoen",
-                "labels": [
-                  "zomer",
-                  "najaar"
-                ],
-                "source": {
-                  "snippet": "vanaf zomer t/m najaar"
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "seizoen",
+                  "labels": [
+                    "zomer",
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "vanaf zomer t/m najaar"
+                  }
                 }
-              },
+              ],
               "type": {
                 "node": "Number",
                 "whole": false,
