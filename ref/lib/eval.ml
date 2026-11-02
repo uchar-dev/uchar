@@ -4380,14 +4380,13 @@ let evaluate env world =
      the same terms. Other conditions that hold on absence (a comparison
      against leeg, a count against zero, a propositional `none` over a
      comparison, arithmetic that coalesces leeg to 0) are not negative
-     edges. They still reach this loop on an admissible cycle, and off a
-     cycle they leave this interpreter order-dependent in the condition of
-     an attribute-writing form, as the leeg reader was before: with the
-     reader first, "b = 1 indien de a van het ding ongelijk is aan 5" and
-     "b = 1 indien het aantal dingen waarvan a > 0 gelijk is aan 0" give
-     b = 1 here and leeg in the ASP backend. RUNTIME-SEMANTICS ch. 6.1
-     records both as open (the older residual "conditions on
-     attribute-writing forms read positively"). *)
+     edges. They still reach this loop on an admissible cycle, where
+     RUNTIME-SEMANTICS ch. 6.1 records them as open. Off a cycle a form
+     whose condition held on a transient leeg gives its write back once the
+     condition is false (World.release): with the reader first, "b = 1
+     indien de a van het ding ongelijk is aan 5" and "b = 1 indien het
+     aantal dingen waarvan a > 0 gelijk is aan 0" give b leeg here, as in
+     the ASP backend. *)
   let dforms = Ir_v0.Checks.dep_forms (Ir_v0.Checks.ctx_of env.doc) in
   let n = List.length dforms in
   let arr = Array.of_list dforms in

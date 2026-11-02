@@ -11048,6 +11048,33 @@ let () =
   let w, _ = World.set_char_by w ~form:"a" ~label:"x" ~char:"spoedeisend" in
   let w, changed = World.release_char w ~form:"a" ~label:"x" ~char:"spoedeisend" in
   check "WV-6.1-written-holders-input" (holds w && not changed);
+  (* the same at the forms, on a state no case can write: the input world as an
+     attribution and a defaults group would have left it on a state between,
+     the characteristic and the wachtpremie 1 theirs; at the fixpoint the
+     meldingsgetal is 10, so neither decides and both give back *)
+  let between ~holders ~owners (w : World.t) =
+    let v1 = World.get w "V1" in
+    let w = World.update w { v1 with chars = "spoedeisend" :: v1.chars; attrs = World.SMap.add "wachtpremie" (Value.Num (Q.one, Value.Unitless)) v1.attrs } in
+    { w with World.holders; owners }
+  in
+  let attribution_pointer = "/rules/rules/0/versions/0" and group_form = "Vondst attribute Vondst.wachtpremie" in
+  with_files
+    ~world_state:
+      (between
+         ~holders:(World.Key.singleton ("V1", "spoedeisend") ([ attribution_pointer ], false))
+         ~owners:
+           (World.Key.singleton ("V1", "wachtpremie")
+              { World.owner_form = group_form; initialisation = false; base = World.Held_value (Value.Num (Q.of_int 4, Value.Unitless)) }))
+    ~ir:(doc ~groups:[ group ] [ attribution ~name:"spoedeisendheid bij weinig meldingen" (compare_with "less" "meldingsgetal" 5); count ])
+    ~case_data:
+      (case_of [ ("aantal getuigen", 10); ("meldingsgetal", 3); ("wachtpremie", 4) ]
+         [ urgent false; value "wachtpremie" 4 ])
+    (fun findings c evaluate ->
+      check "WV-6.1-written-between: verifier-clean" (findings = []);
+      let mismatches = Case.check c (evaluate ()) in
+      check
+        ("WV-6.1-written-between" ^ match mismatches with [] -> "" | f -> " (" ^ String.concat "; " f ^ ")")
+        (mismatches = []));
   (* the timeline (TmsTimelineWitnessTest B2): the jaardeel the rule computes
      where the teller is below 5 goes where the teller is 10 at the fixpoint, and
      the input [2024]=4 comes back, in both orders *)
