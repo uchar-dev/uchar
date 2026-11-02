@@ -489,12 +489,24 @@ afwijkingen 0.
 
 ### Stap 4a (Drools lezen)
 
-Branch `card/dimensions-drools`, worktree `/Users/yeb/Developer/uchar-dev/wt/dimensions-drools`, vanaf `574faa1a7`
-(stap 1). Commits vóór de rebase op stap 2:
+Branch `card/dimensions-drools`, worktree `/Users/yeb/Developer/uchar-dev/wt/dimensions-drools`, gebouwd vanaf
+`574faa1a7` (stap 1) en daarna met `git rebase` op `card/dimensions-executed` `d1c54e405` (stap 2) gezet. Commits na
+de rebase (vóór de rebase `c5fd49f58` en `d8c79877f`):
 
-- `c5fd49f58` het leesdeel: gedeeld model, loader, bean, case-lezer, teruglezen, transpiler (beide branches uit één
+- `91f5760fa` het leesdeel: gedeeld model, loader, bean, case-lezer, teruglezen, transpiler (beide branches uit één
   plan), lezingen, regelgraaf, codes, catalogi, witnesses, README van de Drools-backend, de Drools-lijst van gate 8;
-- het commit van dit Result.
+- `3eff2671c` dit Result vóór de rebase;
+- `bd58ee8ae` voorstel pins: gate 8 en gate 12 (hieronder);
+- `8a9ec4529` voorstel spec en NOTEs: RUNTIME-SEMANTICS ch. 5.8c ("Where the executors stand"), ch. 5.11 (de rij van de
+  dimensievouw: "All three executors evaluate the form") en ch. 5.12 (de grens van gate 17: alleen een cel over een
+  pad blijft erbuiten, DROOLS-189); de NOTEs van `jutterswet-seizoenvondst`, `-seizoenvouw`, `-vormenkabinet`,
+  `corpus/red/jutterswet-cel-onbekend-label`, `-cel-dubbel`, `-cel-overprecisie` en de getuigenkast van
+  `corpus/golden/README.md` noemden Drools nog als weigeraar (DROOLS-047, -184) en noemen nu de gemeten uitkomst;
+- het commit van deze bijwerking.
+
+Conflicten bij de rebase: `scripts/check-red.sh` (stap 4a schrapte de twee regels van `cel-onbekend-label` en
+`cel-dubbel`, stap 2 voegde `cel-overprecisie` toe; beide gehouden, daarna vervalt de derde in `bd58ee8ae`) en de kaart
+(de Results van stap 2 en 4a staan allebei, in die volgorde).
 
 #### Wat er veranderde
 
@@ -586,6 +598,26 @@ Mutaties, elk apart, niet gecommit (`mutants/stap4a-mutate.py`, `logs/stap4a-mut
 - Gate 12: suite 1743 → 1752 tests; `EXPECTED_PLAYED` 300 en `EXPECTED_CHANNEL` ongewijzigd tot de rebase (geen golden
   met cellen had een case).
 
+Na de rebase op stap 2 (`bd58ee8ae`, beschermde paden, voorstel; oud is de stand van stap 2 `d1c54e405`):
+
+- Gate 8 (`scripts/check-red.sh`): `jutterswet-cel-overprecisie|EXCLUDE DROOLS-047 …` uit de Drools-lijst; de Drools-leg
+  leest het geval nu als `FAULT EF-004 {"place":"j1.vondstgewicht[voorjaar]","value":"1.005","decimals":"2"}`, de
+  gepinde `value` en `decimals` erin. Drools-leg 47 → 50 met fout (alle 50 met de code van het geval), 70 → 78
+  parameterchecks (vloer 28), 23 → 20 met reden, 21 → 18 EXCLUDE met code (vloer `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=18`,
+  ongewijzigd, nu precies gehaald).
+- Gate 12 (`scripts/check-drools.sh`): `jutterswet-seizoenvondst` en `jutterswet-seizoenvouw` (`EXCLUDE DROOLS-047`) en
+  `jutterswet-vormenkabinet` (`EXCLUDE DROOLS-184`) uit `EXPECTED_CHANNEL`, 51 → 48 niet-gespeelde goldens met naam
+  (47 EXCLUDE, 1 NOCASE: `jutterswet-seizoenkopie`); `EXPECTED_PLAYED` 300 → 303, met reden in het commentaar
+  (PLAYED 1, 2 en 1 op beide takken); DRL-teksttak 300 → 303 gespeeld; suite 1752 tests (vloer 1573); codes 298 → 299.
+- Gate 13, 15, 17: geen pin of vloer bewoog (gemeten in de run hieronder, oud uit de laatste run van stap 2
+  `out/gates/20261102-151130`). Gate 13: 61 annotaties over 30 goldens en 160 replays ongewijzigd, waarvan door de
+  DRL-teksttak gespeeld 28 → 29 (`jutterswet-seizoenvouw` met de vier getwiste vouwen), 0 overlevers. Gate 15: 313 van
+  351 goldens vergeleken, 273 afhankelijkheden, 3 lijstverschillen, ongewijzigd (de regelgraaf leest de cel per cel,
+  zoals de verifier; een golden met cellen stond al in de vergelijking). Gate 17: vergeleken 300 → 303 goldens, 842 →
+  846 case-bestanden, 6812 → 6832 lezingen, 22331 → 22361 knoopregels, 3797 → 3800 `unreached`; `DEVIATIONS` en
+  `READINGS_ERROR_KNOWN` blijven leeg, afwijkingen 0.
+- Geen verschil tussen ref, clingo en Drools op een golden of een lezing gezien; niets in `backends/drools/` gerepareerd.
+
 #### Voorlopige besluiten
 
 1. **Het model draagt de selectielijst** (null zonder selectie, nooit leeg), in afwijking van besluit 4 van stap 1,
@@ -612,3 +644,51 @@ alle zeventien groen, `red=0`, 322 s; gate 12 299 codes, 300 gespeeld op beide t
 `seizoenvondst` PLAYED 1, `seizoenvouw` PLAYED 2, `vormenkabinet` PLAYED 1 op beide takken; `runner --trace` en
 `--readings` gelijk op alle vier case-bestanden en beide takken; de drie rode cellen `FAULT EF-034`, `EF-035`, `EF-004`
 met de gepinde parameters; één conflict, in `scripts/check-red.sh` (de drie regels van de cellen vervallen).
+
+#### `make gates` na de rebase
+
+Drools-suite eerst (`mvn -o test`, `logs/stap4a-finish-suite-1.log`): 1752 tests, 0 fouten, 0 overgeslagen. Daarna één
+`make gates` op de werkboom van `bd58ee8ae` (de pins nog niet gecommit bij de start, vandaar `3eff2671c` in de
+startregel; `logs/stap4a-finish-gates-1.log`), `out/gates/20261102-152228/summary.txt`:
+
+```
+start 2026-11-02 15:22:28 3eff2671c card/dimensions-drools
+ocaml rc=0 4s ocaml-build: rebuilt (15 source path(s) newer than the stamp, e.g. backends/clingo/lib; 4s)
+frontend rc=0 3s frontend: rebuilt (3s)
+jar rc=0 3s drools-jar: rebuilt (37 source path(s) newer than the jar, e.g. backends/drools/src/main/java/dev/uchar/regelspraak/cases; 3s)
+01-self-contained rc=0 1s
+02-ir-schema rc=0 133s
+04-case-schema rc=0 6s
+03-verifier rc=0 36s
+05-oracle rc=0 21s
+06-clingo rc=0 270s
+07-noop rc=0 12s
+08-red rc=0 163s
+09-catala rc=0 4s
+10-regelspraak rc=0 222s
+11-toka-parity rc=0 225s
+12-drools rc=0 326s
+13-reftype rc=0 268s
+14-flogic rc=0 1s
+15-graph rc=0 45s
+16-scenario rc=0 36s
+17-readings rc=0 245s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 15:27:58 330s red=0
+```
+
+Uit de gate-logs: gate 4 1046 cases; gate 5 1834 voorbeelden, 976 cases, één golden zonder case
+(`jutterswet-seizoenkopie`); gate 6 2277 checks, 976 cases; gate 7 931 weerleggende cases, 45 overlevers; gate 8 70
+rode gevallen, 131 codechecks, 207 parameterchecks, Drools-leg 50 met fout, 78 parameterchecks, 20 met reden; gate 12
+299 codes (9 retired), 303 gespeeld op beide takken, 48 niet-gespeelde goldens met naam, JUnit 1752; gate 13 61
+annotaties over 30 goldens, 160 replays; gate 15 313 van 351 vergeleken; gate 17 976 getraceerd, 303 goldens en 846
+case-bestanden vergeleken, afwijkingen 0. Losse replay (`logs/stap4a-finish-cells-1.log`): de drie goldens PLAYED 1,
+2 en 1 op beide takken; de drie rode cellen `FAULT EF-035`, `EF-034`, `EF-004` met de gepinde parameters.
+
+Na de run kwam alleen `8a9ec4529` (proza in `corpus/**/NOTE.md`, `corpus/golden/README.md` en RUNTIME-SEMANTICS
+buiten de tabel van ch. 5.7b, die gate 8 en de codetoetsen lezen); gate 1, de enige gate die die tekst leest, daarop
+apart groen (`logs/stap4a-finish-gate1-1.log`). Niet gemerged, niet gepusht.
+
+Voor de hoofdsessie: de CONSTRUCTS-tekst van stap 2 eindigt met "Drools weigert de celinvoer (DROOLS-047) en de cel
+over twee dimensies (DROOLS-184), dus die pins zijn een ref = clingo-paar tot stap 4"; na deze branch spelen de drie
+goldens in het vierkant, dus die zin vervalt bij de landing van beide.
