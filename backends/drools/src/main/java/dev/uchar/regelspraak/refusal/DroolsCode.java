@@ -210,7 +210,7 @@ public enum DroolsCode {
     EMPTY_FALLBACK_NON_SUM("DROOLS-186", Kind.CONTRACT, "empty-fallback-non-sum", "kind,snippet", null),
     DIMENSION_FOLD_NON_ATTRIBUTE("DROOLS-187", Kind.REFUSAL, "dimension-fold-non-attribute", "snippet", null),
     DIMENSION_READ_UNRESOLVED_ATTRIBUTE("DROOLS-188", Kind.CONTRACT, "dimension-read-unresolved-attribute", "description,snippet", null),
-    DIMENSION_READ_OVER_PATH("DROOLS-189", Kind.REFUSAL, "dimension-read-over-path", "description,snippet", null),
+    DIMENSION_READ_OVER_PATH("DROOLS-189", Kind.RETIRED, "dimension-read-over-path", "description,snippet", null),
     OWN_READ_FOREIGN_SUBJECT("DROOLS-190", Kind.CONTRACT, "own-read-foreign-subject", "objectType,subject,snippet", null),
     DIMENSION_READ_WRITTEN_ATTRIBUTE("DROOLS-191", Kind.RETIRED, "dimension-read-written-attribute", "description,attribute,snippet", null),
     LET_WITHOUT_BINDER("DROOLS-192", Kind.CONTRACT, "let-without-binder", "snippet", null),

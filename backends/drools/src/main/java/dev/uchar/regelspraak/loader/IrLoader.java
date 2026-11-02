@@ -1777,6 +1777,10 @@ public final class IrLoader {
         if (operandKind.equals("ListLiteral"))
             return count ? head + " and a ListLiteral operand: a listed value is no source of instances" : null;
         if (operandKind.equals("InstanceSetUnion") && aggregationKind.equals("count")) return null;
+        // one cell of each contributor (ALEF's fold of a cell over a role): the value folds and the filled count read
+        // it; a count counts instances and a total integrates a timeline, which a cell does not carry
+        if (operandKind.equals("DimensionCellRead") && !aggregationKind.equals("count") && !aggregationKind.equals("total"))
+            return null;
         return head + " and " + ("AEIOU".indexOf(operandKind.charAt(0)) >= 0 ? "an " : "a ") + operandKind
                 + " operand: the source of an instance fold is an AttributeReference";
     }

@@ -280,7 +280,8 @@ final class PatternDslRendering {
             case Consequence.Input.Count t -> consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) ->
                     insert(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()], null)));
             case Consequence.Input.MemberValue l -> consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) -> {
-                Contribution b = ComputeHelpers.contribution(g.fold(), carrier, w[g.member()], w[l.value()], l.total(), l.filled());
+                Object value = l.cell() == null ? w[l.value()] : ComputeHelpers.cell(w[l.value()], l.cell());
+                Contribution b = ComputeHelpers.contribution(g.fold(), carrier, w[g.member()], value, l.total(), l.filled());
                 if (b != null) insert(drools, g.insertion(), b);
             });
             case Consequence.Input.Verdict o -> {

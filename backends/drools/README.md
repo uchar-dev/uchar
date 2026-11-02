@@ -593,6 +593,13 @@ same attribute closes no cycle, and one that computes a cell from itself, or fro
 is refused. Goldens `jutterswet-seizoenboeking` and `jutterswet-seizoenkopie`, red case `jutterswet-cel-schrijfgrens`,
 witness `DimensionCellWitnessTest`.
 
+A cell, and a fold over the cells, of the object a path of to-one roles reaches reads that object as a member read over
+the path does: the map off the reached bean where its links are input, a written cell through the path's standing
+(`PathState`), leeg where a link is absent; the reading of a cell over a path names the object the path reached. A fold
+over a set whose source is one cell of each member (IR-SPEC ch. 4.3) contributes per member the cell's entry of the
+member's map, or the standing of a cell a form writes (`Consequence.Input.MemberValue.cell`). Golden
+`jutterswet-ploegseizoen`.
+
 **Allocations.** An allocation (RUNTIME-SEMANTICS ch. 4) is a computation over the recipients that the left-hand
 side binds. A rule of the allocation inserts, per source and per recipient, an `Recipient` logically: an instance of
 `targetType` that the connecting relation links to the source, through the bean field of an input relation or the
@@ -801,7 +808,8 @@ reaches a made object. Witnesses `TmsCreationWitnessTest`, `TmsConsumerWitnessTe
 never as a silent fall:
 
 - of dimensioned attributes, with no golden with cases: a read or a write outside a dimension cell and a fold over a
-  dimension selection, and in those two an attribute that lies on a timeline or is read over a path; a fold over a cell
+  dimension selection, and in those two an attribute that lies on a timeline; a cell target over a path, as every
+  target over a path (DROOLS-100); a fold over a cell
   a form writes on the unbounded form, an exact rational in working memory where the runtime's folds over cells fold
   decimals (DROOLS-296, as for a fold over a set); and a cell or a fold whose labels name no cell of the attribute's
   dimensions, which WF-040 refuses. Witness

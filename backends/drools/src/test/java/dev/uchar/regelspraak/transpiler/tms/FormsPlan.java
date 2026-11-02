@@ -453,10 +453,10 @@ final class FormsPlan {
                 new Consequence.Input.Count(), List.of(0), 1, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidwaarde", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: som", 1,
-                new Consequence.Input.MemberValue(0, null, false), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, null, false, null), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidwaarde per maand", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: totaal", 1,
-                new Consequence.Input.MemberValue(0, "MAAND", true), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, "MAAND", true, null), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("oordeel", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: oordeel", 1,
                 new Consequence.Input.Verdict(matrix), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));

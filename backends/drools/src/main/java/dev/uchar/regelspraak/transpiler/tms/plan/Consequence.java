@@ -295,8 +295,14 @@ public sealed interface Consequence {
         /** The member's value in slot {@code value}, made by the route {@link Route#CONTRIBUTION}: nothing where it is
          *  leeg; where {@code total} is not null the slot holds the member's timeline, which contributes its total over
          *  time per that unit, and nothing where the case gives it as the asOfDate-bucket scalar; where {@code filled},
-         *  the member without a value, a count of the members whose value is gevuld. */
-        record MemberValue(int value, String total, boolean filled) implements Input {}
+         *  the member without a value, a count of the members whose value is gevuld. Where {@code cell} is not null
+         *  the slot holds the map of the cells of a dimensioned attribute of the member, and the value is the cell of
+         *  that key ({@code ComputeHelpers.cell}): a cell of each member, which no form writes. */
+        record MemberValue(int value, String total, boolean filled, List<String> cell) implements Input {
+            public MemberValue {
+                cell = cell == null ? null : List.copyOf(cell);
+            }
+        }
 
         /** The verdict of the matrix of a quantifier fold for the member, the condition {@code matrix}, which cannot
          *  fault or deposit: 1 where it holds, 0 where it does not. */

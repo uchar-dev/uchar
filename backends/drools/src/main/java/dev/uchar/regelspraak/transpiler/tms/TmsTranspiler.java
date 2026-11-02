@@ -4752,21 +4752,31 @@ public final class TmsTranspiler {
     }
 
     /** A cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c): the value of the cell its labels name, one per
-     *  dimension of the attribute. A cell a form writes is a member of its own, read through its standing
-     *  ({@link #cellMember}, {@link Reads#own}); any other cell is input, the entry of its key in the attribute's bean
-     *  member, a map of its cells by their labels ({@link FactModelGenerator#cellKey}), read off the subject's own bean
-     *  ({@link #dimensioned}), leeg where the map or the cell is absent. The reference under the cell is no node of a
-     *  reading (RUNTIME-SEMANTICS ch. 5.12), so only the cell is noted. */
+     *  dimension of the attribute, on the subject or on the object the reference's path of roles reaches
+     *  ({@link #dimensionedPath}). A cell a form writes is a member of its own, read through its standing
+     *  ({@link #cellMember}, {@link #dimensionedRead}); any other cell is input, the entry of its key in the attribute's
+     *  bean member, a map of its cells by their labels ({@link FactModelGenerator#cellKey}), read off the bean of the
+     *  object, leeg where the map, the cell or a link of the path is absent. The reference under the cell is no node of
+     *  a reading (RUNTIME-SEMANTICS ch. 5.12), so only the cell is noted, with the object a path reaches. */
     private Term dimensionCell(Expr.DimensionCellRead c, Reads reads) {
         Object description = Msg.drools("PART.desc.dimension-cell-read");
         Expr.AttributeReference a = c.attribute();
-        Member attribute = dimensioned(a, reads, description);
-        if (writers.containsKey(ProducerConsumer.cellOf(a.objectType(), a.attribute(), c.labels() == null ? List.of() : c.labels())))
-            return new Term.SlotValue(reads.own(cellMember(a.objectType(), a.attribute(), c.labels(), description,
-                    c.source())), source(c.source()));
-        List<String> key = cellKey(a.objectType(), a.attribute(), c.labels(), description, c.source());
-        Term map = new Term.SlotValue(reads.own(attribute), source(a.source()));
-        return new Term.Call(StaticFunction.CELL, List.of(map, constant(key)), source(c.source()));
+        Path path = dimensionedPath(a, reads, description);
+        ObjectType holder = path == null ? reads.subject : path.reaches();
+        Member attribute = dimensionedMember(holder, a.attribute());
+        int slot;
+        Term cell;
+        if (writers.containsKey(ProducerConsumer.cellOf(holder, a.attribute(), c.labels() == null ? List.of() : c.labels()))) {
+            slot = dimensionedRead(path, cellMember(holder, a.attribute(), c.labels(), description, c.source()), reads);
+            cell = new Term.SlotValue(slot, source(c.source()));
+        } else {
+            List<String> key = cellKey(holder, a.attribute(), c.labels(), description, c.source());
+            slot = dimensionedRead(path, attribute, reads);
+            cell = new Term.Call(StaticFunction.CELL, List.of(new Term.SlotValue(slot, source(a.source())), constant(key)),
+                    source(c.source()));
+        }
+        if (path != null) noteObject(c, reads, slot);
+        return cell;
     }
 
     /** The key of the cell {@code labels} name of the dimensioned attribute {@code attribute} of {@code holder}
@@ -4793,7 +4803,9 @@ public final class TmsTranspiler {
      *  (RUNTIME-SEMANTICS ch. 5.11), and stands in for an all-leeg sum. The fold reads the map of the cells off the
      *  subject's bean, and every cell a form writes through its standing, which takes the place of its entry in a copy of
      *  the map ({@link ComputeHelpers#withCell}). The argument is no node of a reading (RUNTIME-SEMANTICS ch. 5.12), so
-     *  only the fold is noted. */
+     *  only the fold is noted. The attribute may stand on the object a path of roles reaches
+     *  ({@link #dimensionedPath}); the fold then reads that object's map and standings, an empty map where a link is
+     *  absent, and its reading names no object (RUNTIME-SEMANTICS ch. 5.12). */
     private Term dimensionFold(Expr.FunctionCall f, Reads reads) {
         Expr.FunctionKind kind = f.kind();
         boolean arithmetic = kind == Expr.FunctionKind.SOM || kind == Expr.FunctionKind.MINIMUM
@@ -4806,7 +4818,9 @@ public final class TmsTranspiler {
         if (f.arguments().size() != 1 || !(f.arguments().get(0) instanceof Expr.AttributeReference a))
             throw new Refusal(DroolsCode.DIMENSION_FOLD_NON_ATTRIBUTE.reason("snippet", snippet(f.source())));
         Object description = Msg.drools("PART.desc.dimension-aggregation");
-        int i = reads.own(dimensioned(a, reads, description));
+        Path path = dimensionedPath(a, reads, description);
+        ObjectType holder = path == null ? reads.subject : path.reaches();
+        int i = dimensionedRead(path, dimensionedMember(holder, a.attribute()), reads);
         // selection d ranges over dimension d of the argument (WF-040)
         List<String> dimensions = a.objectType().dimensionsOf(a.attribute());
         boolean eachDimension = f.dimensionSelections().size() == dimensions.size();
@@ -4821,10 +4835,10 @@ public final class TmsTranspiler {
         String source = source(f.source());
         Term map = new Term.SlotValue(i, source(a.source()));
         for (List<String> t : ProducerConsumer.selectedCells(f.dimensionSelections())) {
-            List<String> key = cellKey(a.objectType(), a.attribute(), t, description, f.source());
+            List<String> key = cellKey(holder, a.attribute(), t, description, f.source());
             keys.add(key);
-            if (!writers.containsKey(ProducerConsumer.cellOf(a.objectType(), a.attribute(), t))) continue;
-            Member cell = cellMember(a.objectType(), a.attribute(), t, description, f.source());
+            if (!writers.containsKey(ProducerConsumer.cellOf(holder, a.attribute(), t))) continue;
+            Member cell = cellMember(holder, a.attribute(), t, description, f.source());
             // a cell a form writes on the unbounded form holds an exact rational in working memory (RUNTIME-SEMANTICS
             // ch. 2.4 point 3), and the runtime's folds over cells fold decimals; an input cell is a decimal. A first, a
             // last and a filled count compute nothing with the value
@@ -4832,7 +4846,7 @@ public final class TmsTranspiler {
                 throw new Refusal(DroolsCode.FOLD_OVER_UNBOUNDED_VALUE.reason("attribute", cell.spelled(), "objectType",
                         cell.declarant().name));
             map = new Term.Call(StaticFunction.WITH_CELL, List.of(map, constant(key),
-                    new Term.SlotValue(reads.own(cell), null)), null);
+                    new Term.SlotValue(dimensionedRead(path, cell, reads), null)), null);
         }
         Term fallback = f.emptyFallback() == null ? null : restated(value(f.emptyFallback(), reads),
                 eff.unitOf(f.emptyFallback()), eff.unitOf(a), "een §5.8.2 terugvalwaarde");
@@ -4850,18 +4864,24 @@ public final class TmsTranspiler {
         return fallback == null ? cells : new Term.Call(StaticFunction.FALLBACK, List.of(cells, fallback), source);
     }
 
-    /** The dimensioned attribute {@code a} reads: the subject's own attribute, whose map, bound off its bean
-     *  ({@link Reads#own}), holds the input of its cells. A cell a form writes is a member of its own
-     *  ({@link #cellMember}), which the reads of a cell and of a fold take through its standing instead. A dimensioned
-     *  attribute over a path is refused by name. */
-    private Member dimensioned(Expr.AttributeReference a, Reads reads, Object description) {
+    /** The path of to-one roles over which the dimensioned attribute {@code a} is read, as {@link #attributeRead} walks
+     *  one; null for the subject's own attribute, whose reference names the subject's type (WF-053). */
+    private Path dimensionedPath(Expr.AttributeReference a, Reads reads, Object description) {
         if (a.objectType() == null || a.attribute() == null)
             throw new Refusal(DroolsCode.DIMENSION_READ_UNRESOLVED_ATTRIBUTE.reason("description", description, "snippet", snippet(a.source())));
-        if (navigationBindings.containsKey(a))
-            throw new Refusal(DroolsCode.DIMENSION_READ_OVER_PATH.reason("description", description, "snippet", snippet(a.source())));
+        List<RoleBindingRef> bindings = navigationBindings.get(a);
+        if (bindings != null) return path(reads.subject, bindings, a.objectType(), description);
         if (a.objectType() != reads.subject)
             throw new Refusal(DroolsCode.OWN_READ_FOREIGN_SUBJECT.reason("objectType", a.objectType().name, "subject", reads.subject.name, "snippet", snippet(a.source())));
-        return dimensionedMember(reads.subject, a.attribute());
+        return null;
+    }
+
+    /** The slot of {@code member}, a dimensioned attribute, whose map bound off the bean holds the input of its cells,
+     *  or one of its cells that a form writes ({@link #cellMember}), read through its standing: on the subject where
+     *  {@code path} is null ({@link Reads#own}), else on the object the path reaches, null where a link is absent
+     *  ({@link Reads#navigated}). */
+    private int dimensionedRead(Path path, Member member, Reads reads) {
+        return path == null ? reads.own(member) : reads.navigated(path, member);
     }
 
     /**
@@ -5276,10 +5296,16 @@ public final class TmsTranspiler {
             throw new Refusal(DroolsCode.EMPTY_FALLBACK_NON_SUM.reason("kind", kind, "snippet", snippet(f.source())));
         boolean count = kind == Expr.FunctionKind.AANTAL;
         Expr.AttributeReference arg = null;
+        // the labels of the cell each member gives, where the source is a cell of a dimensioned attribute of the
+        // element type (ALEF's fold of one cell over a role, RUNTIME-SEMANTICS ch. 5.8c); null for an attribute
+        List<String> cell = null;
         if (!count) {
-            if (!(f.arguments().get(0) instanceof Expr.AttributeReference a) || a.attribute() == null)
-                throw new Refusal(DroolsCode.AGGREGATION_NON_ATTRIBUTE_OPERAND.reason("kind", kind, "snippet", snippet(f.source())));
-            arg = a;
+            Expr operand = f.arguments().get(0);
+            if (operand instanceof Expr.DimensionCellRead c && c.attribute() != null && c.attribute().attribute() != null) {
+                arg = c.attribute();
+                cell = c.labels() == null ? List.of() : c.labels();
+            } else if (operand instanceof Expr.AttributeReference a && a.attribute() != null) arg = a;
+            else throw new Refusal(DroolsCode.AGGREGATION_NON_ATTRIBUTE_OPERAND.reason("kind", kind, "snippet", snippet(f.source())));
         }
         boolean withRange = sourcePaths.containsKey(f) || roleBindings.containsKey(f);
         if (kind == Expr.FunctionKind.TOTAAL && !withRange) return ownTotal(f, reads);
@@ -5291,12 +5317,15 @@ public final class TmsTranspiler {
         Expr.AttributeReference member = arg;
         // a member on a timeline the case gives as the asOfDate-bucket scalar faults, naming the first such member in
         // fold order (RUNTIME-SEMANTICS ch. 3.6, 8.4), and a made link has no place in that order
-        boolean timelineMember = member != null && declared(elem, member.attribute(), false).time() != null;
+        // a dimensioned attribute lies on no timeline (WF-125)
+        boolean timelineMember = member != null && cell == null && declared(elem, member.attribute(), false).time() != null;
         // a member on a timeline is asked by the per-element fold, which refuses one that is no number (integreerbaar)
         if (member != null && !timelineMember) {
-            Reason setSource = setSourceRefusal(kind, elem, member);
+            Reason setSource = setSourceRefusal(kind, elem, member, cell == null
+                    ? declared(elem, member.attribute(), false).datatype() : dimensionedMember(elem, member.attribute()).datatype());
             if (setSource != null) throw new Refusal(setSource);
         }
+        List<String> labels = cell;
         RoleBindingRef source = roleBindings.get(f);
         if (timelineMember && source != null && source.factType() != null
                 && createdRelations.contains(Namen.norm(source.factType())))
@@ -5305,7 +5334,7 @@ public final class TmsTranspiler {
             List<RulePlan> rules = new ArrayList<>();
             List<Reads> readings = new ArrayList<>();
             boolean canFail = contributionRules(key, name, kind, reads.subject, elem, range(f, reads.subject, elem), 0,
-                    f.filter(), member, rules, readings);
+                    f.filter(), member, labels, rules, readings);
             refuseMixedDeposits(name, Collections.singletonList(f.filter()));
             return new Fold(key, List.copyOf(rules), List.copyOf(readings), canFail, deposits(f.filter()), false, false,
                     timelineMember);
@@ -5344,11 +5373,10 @@ public final class TmsTranspiler {
      * ASP runner declines the form, while this branch would hand the members to a BigDecimal sum, which fails at fire,
      * or to the Java order of their values, which answers. Both branches refuse in this sentence.
      */
-    private Reason setSourceRefusal(Expr.FunctionKind kind, ObjectType elem, Expr.AttributeReference arg) {
+    private Reason setSourceRefusal(Expr.FunctionKind kind, ObjectType elem, Expr.AttributeReference arg, Datatype t) {
         boolean summing = kind == Expr.FunctionKind.SOM || kind == Expr.FunctionKind.TOTAAL;
         boolean ordering = kind == Expr.FunctionKind.MINIMUM || kind == Expr.FunctionKind.MAXIMUM
                 || kind == Expr.FunctionKind.EERSTE || kind == Expr.FunctionKind.LAATSTE;
-        Datatype t = declared(elem, arg.attribute(), false).datatype();
         Msg head = Msg.drools("PART.desc.set-source-head", "kind", kind, "attribute", arg.attribute(), "element", elem.name,
                 "type", t.name());
         if (summing && !t.isNumberLike())
@@ -5734,7 +5762,7 @@ public final class TmsTranspiler {
                     throw new Refusal(DroolsCode.UNION_BRANCH_WITHOUT_TYPE.reason("snippet", snippet(t.source())));
                 canFail |= contributionRules(key, name + ", selectie " + k, Expr.FunctionKind.AANTAL, subject,
                         t.elementType(), oneStepRange(t.sourceRole(), subject, t.elementType(), snippet(t.source())), k,
-                        t.filter(), null, rules, readings);
+                        t.filter(), null, null, rules, readings);
                 deposits |= deposits(t.filter());
                 filters.add(t.filter());
             }
@@ -5757,7 +5785,8 @@ public final class TmsTranspiler {
      */
     private boolean contributionRules(String key, String name, Expr.FunctionKind kind, ObjectType subject,
                                    ObjectType elem, Range range, int selection, Condition filter,
-                                   Expr.AttributeReference arg, List<RulePlan> out, List<Reads> readings) {
+                                   Expr.AttributeReference arg, List<String> cell, List<RulePlan> out,
+                                   List<Reads> readings) {
         Reads reads = contributionReads(subject, elem, range.join());
         Set<Integer> read = reads.follow();
         Term testTerm = filter == null ? null : conditionTerm(filter, reads);
@@ -5767,20 +5796,32 @@ public final class TmsTranspiler {
         int member = reads.member();
         // a member on a timeline contributes its own total over time (RUNTIME-SEMANTICS ch. 3.6, the per-element fold);
         // vouw admits only a sum and a total over one
-        Member memberValue = arg == null ? null : declared(elem, arg.attribute(), false).time() == null
+        // a cell of each member is a member of its own where a form writes it, read through its standing, and
+        // otherwise the entry of its key in the map of its attribute, which the contribution takes (ch. 5.8c)
+        List<String> cellKey = null;
+        Member memberValue;
+        if (arg != null && cell != null) {
+            Object description = Msg.drools("PART.desc.dimension-cell-read");
+            if (writers.containsKey(ProducerConsumer.cellOf(elem, arg.attribute(), cell)))
+                memberValue = cellMember(elem, arg.attribute(), cell, description, arg.source());
+            else {
+                cellKey = cellKey(elem, arg.attribute(), cell, description, arg.source());
+                memberValue = dimensionedMember(elem, arg.attribute());
+            }
+        } else memberValue = arg == null ? null : declared(elem, arg.attribute(), false).time() == null
                 ? member(elem, arg.attribute(), false) : integrable(timeMember(elem, arg.attribute(), false,
                         Msg.drools("PART.desc.member-total", "snippet", snippet(arg.source()))), Msg.drools("PART.desc.member-total-plain"));
         // a value of the unbounded form is an exact rational in working memory (RUNTIME-SEMANTICS ch. 2.4 point 3), and
-        // the accumulates of this branch fold decimals; a filled count reads no value
+        // the accumulates of this branch fold decimals; a filled count reads no value, and an input cell is a decimal
         if (memberValue != null && memberValue.time() == null && memberValue.datatype().unbounded()
-                && kind != Expr.FunctionKind.AANTAL_GEVULDE)
-            throw new Refusal(DroolsCode.FOLD_OVER_UNBOUNDED_VALUE.reason("attribute", memberValue.name(), "objectType", elem.name));
+                && kind != Expr.FunctionKind.AANTAL_GEVULDE && cellKey == null)
+            throw new Refusal(DroolsCode.FOLD_OVER_UNBOUNDED_VALUE.reason("attribute", memberValue.spelled(), "objectType", elem.name));
         int value = memberValue == null ? -1 : memberValue.time() == null ? reads.own(memberValue) : reads.timeline(memberValue);
         String total = memberValue == null || memberValue.time() == null ? null : memberValue.time().name();
         reads.stop();
         List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
         Consequence.Input input = kind == Expr.FunctionKind.AANTAL ? new Consequence.Input.Count()
-                : new Consequence.Input.MemberValue(value, total, kind == Expr.FunctionKind.AANTAL_GEVULDE);
+                : new Consequence.Input.MemberValue(value, total, kind == Expr.FunctionKind.AANTAL_GEVULDE, cellKey);
         String formName = model.emittedRuleName(form);
         out.add(as(RuleOrigin.Role.FOLD_CONTRIBUTION, reads.rulePlan(formName + ": bijdrage aan " + name, items,
                 new Consequence.Contribution(FOLD_SUBJECT, key, member, input, List.copyOf(use), reads.size(),
