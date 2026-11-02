@@ -4050,6 +4050,98 @@ let validate_input_precision env world =
         tl)
     env.param_tls
 
+(* The depth of each object in the chain the switch relation of the
+   instance-ordered part [o] lays (RUNTIME-SEMANTICS ch. 6.2): 0 without a
+   predecessor, d + 1 after a predecessor at depth d, a satellite at the
+   depth of its owner, 0 with neither. The links are the case's, since no
+   form writes them, so the depths are read off the input world [world0].
+
+   A hop over a relation leaves the role opposite the one it reaches, so it
+   is taken only from an object whose type fills that role: the hop to the
+   predecessor from an object of the chain, the hop to the owner from a
+   satellite, as the verifier's ch. 5.3 analysis reads them. The fact base
+   keys a link by role name alone. An object of the chain type holds the
+   back-link of the switch relation under the name of the sister role, and
+   where the owner's role carries that name too, a hop to the owner from it
+   would reach its successor, whose predecessor it is; an object of another
+   type can hold, under the name of the predecessor's role, a link of
+   another relation.
+
+   The case reader refused a cycle in the switch relation (EF-033). The
+   owner links can close one too, among satellites whose type lies below the
+   filler of the owner's role, and ch. 6.2 gives such a satellite no depth:
+   an object whose depth is asked for while it is still open fails with the
+   path, rather than recursing until the stack runs out. *)
+let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
+  let pred = { rb_fact_type = o.io_relation; rb_role = o.io_role } in
+  let leaves_from (i : World.instance) (rb : role_binding) =
+    let named (r : role_ref) =
+      match r.role_identifier with Some n -> norm n = norm rb.rb_role | None -> false
+    in
+    let refused what =
+      failwith
+        (Printf.sprintf "ref/lib/eval.ml, instance order: the hop over %S to the role %S of the part over %S %s"
+           rb.rb_fact_type rb.rb_role o.io_relation what)
+    in
+    match Ir_v0.Checks.find_ci env.doc.fact_types rb.rb_fact_type with
+    | Some ({ role_names = [ a; b ]; _ } : fact_type_name) -> (
+        let left =
+          match (named a, named b) with
+          | true, false -> b
+          | false, true -> a
+          | _ -> refused "names neither role of the fact type or both"
+        in
+        match left.role_object_type_name with
+        | Some s -> isa env i.otype s
+        | None -> refused "leaves a role without an object type")
+    | _ -> refused "names no fact type with two roles"
+  in
+  (* the hops of the trail are each (object, the binding taken from it) *)
+  let hop (label, (rb : role_binding)) = Printf.sprintf "%s -(%s: %s)->" label rb.rb_fact_type rb.rb_role in
+  (* None while the depth of the object is open *)
+  let memo = Hashtbl.create 16 in
+  let rec depth trail label =
+    match Hashtbl.find_opt memo label with
+    | Some (Some d) -> d
+    | Some None ->
+        let rec cycle acc = function
+          | ((l, _) as h) :: rest -> if l = label then h :: acc else cycle (h :: acc) rest
+          | [] -> acc
+        in
+        failwith
+          (Printf.sprintf
+             "ref/lib/eval.ml, instance order: the depth of %S over the switch relation %S depends on \
+              itself: %s %s"
+             label o.io_relation
+             (String.concat " " (List.map hop (cycle [] trail)))
+             label)
+    | None ->
+        Hashtbl.replace memo label None;
+        let d =
+          match SMap.find_opt label world0.World.instances with
+          | None -> 0
+          | Some i -> (
+              match if leaves_from i pred then linked env world0 i ~binding:pred else [] with
+              | p :: _ -> 1 + depth ((label, pred) :: trail) p.World.label
+              | [] -> (
+                  match
+                    List.find_map
+                      (fun owner ->
+                        if not (leaves_from i owner) then None
+                        else
+                          match linked env world0 i ~binding:owner with
+                          | q :: _ -> Some (owner, q)
+                          | [] -> None)
+                      o.io_owners
+                  with
+                  | Some (owner, q) -> depth ((label, owner) :: trail) q.World.label
+                  | None -> 0))
+        in
+        Hashtbl.replace memo label (Some d);
+        d
+  in
+  depth []
+
 let evaluate env world =
   (* WF-007: a presentation tag inside a type annotation. The loader lists
      where one stands (the in-memory datatype does not carry the tag), and
@@ -4234,10 +4326,9 @@ let evaluate env world =
      the objects without a predecessor, depth d + 1 those whose predecessor
      stands at depth d, a satellite at the depth of its owner; per depth the
      members run level by level, so a member that reads another negatively
-     on the same object reads it settled. The links are the case's, since no
-     form writes them, so the depths are read off the input world; an
-     instance a creation makes has no link and stands at depth 0. The case
-     reader refused a cycle in the links (EF-033), so every chain ends.
+     on the same object reads it settled. The depths are read off the input
+     world ([instance_depth]); an instance a creation makes has no link and
+     stands at depth 0.
 
      Without this order the members ran in passes over every object at once:
      a member that tested the predecessor's value leeg acted on a value not
@@ -4245,26 +4336,7 @@ let evaluate env world =
   let ordered = Hashtbl.create 8 in
   List.iter
     (fun (o : Ir_v0.Checks.instance_order) ->
-      let pred = { rb_fact_type = o.io_relation; rb_role = o.io_role } in
-      let memo = Hashtbl.create 16 in
-      let rec depth label =
-        match Hashtbl.find_opt memo label with
-        | Some d -> d
-        | None ->
-            let d =
-              match SMap.find_opt label world0.World.instances with
-              | None -> 0
-              | Some i -> (
-                  match linked env world0 i ~binding:pred with
-                  | p :: _ -> 1 + depth p.World.label
-                  | [] -> (
-                      match List.concat_map (fun owner -> linked env world0 i ~binding:owner) o.io_owners with
-                      | owner :: _ -> depth owner.World.label
-                      | [] -> 0))
-            in
-            Hashtbl.replace memo label d;
-            d
-      in
+      let depth = instance_depth env world0 o in
       let deepest = SMap.fold (fun label _ acc -> max acc (depth label)) world0.World.instances 0 in
       List.iter (fun (at, level) -> Hashtbl.replace ordered at (depth, level, deepest)) o.io_members)
     (Ir_v0.Checks.instance_orders (Ir_v0.Checks.ctx_of env.doc));

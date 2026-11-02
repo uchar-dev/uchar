@@ -10398,6 +10398,261 @@ let () =
           check tag (Case.check c (evaluate c) = [])))
     [ ([ 0; 1; 2 ], false); ([ 2; 1; 0 ], false); ([ 1; 2; 0 ], true); ([ 2; 0; 1 ], true) ]
 
+(* The depth of each object in the chain of a document's one instance-ordered
+   part (ch. 6.2), read through [Eval.instance_depth] on a case: [f] gets the
+   verifier's violations, the loaded case, its environment and the depth of a
+   label, a failure of the depth as its message. Every label is asked of a
+   depth of its own, so a failure on one does not reach the next. *)
+let with_depth_case ir case_data f =
+  let write suffix text =
+    let file = Filename.temp_file "ref-wv64-depth" suffix in
+    let oc = open_out file in
+    output_string oc text;
+    close_out oc;
+    file
+  in
+  let irf = write ".ir.json" ir and casef = write ".case.json" case_data in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      let d = Ir_v0.Loader.load_file irf in
+      let c = Case.load_file d casef in
+      let env =
+        { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+          locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
+      in
+      let depth label =
+        match Ir_v0.Checks.instance_orders (Ir_v0.Checks.ctx_of d) with
+        | [ o ] -> ( match Eval.instance_depth env c.world o label with n -> Ok n | exception Failure m -> Error m)
+        | orders -> Error (Printf.sprintf "%d instance-ordered parts, not one" (List.length orders))
+      in
+      f (Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier irf)) c env depth)
+
+let expect_depth name depth label want =
+  match depth label with
+  | Ok d -> check (if d = want then name else Printf.sprintf "%s (got depth %d)" name d) (d = want)
+  | Error m -> check (name ^ " (got: " ^ m ^ ")") false
+
+let expect_outcome name (c : Case.t) env =
+  match Eval.evaluate env c.world with
+  | final -> check name (Case.check c final = [])
+  | exception Failure m -> check (name ^ " (got: " ^ m ^ ")") false
+
+(* WV-6.4-n (ch. 6.2, the depth): an object of the chain without a predecessor
+   stands at depth 0, also where it holds the back-link of the switch relation
+   under the name of the owner's role of the satellite relation. The document
+   is WV-6.4-m's with the owner's role "houder" named "vergunning", the name the
+   switch relation "vorige vergunning" gives its other role: the case reader
+   keys the back-link of "V2 vorige vergunning V1" on V1 under "vergunning", and
+   a hop to the owner from V1 reached V2, whose predecessor V1 is. V1 and its
+   termijnen T1 and T2 stand at depth 0, V2 and its termijn T3 at depth 1, and
+   the outcome is WV-6.4-m's. *)
+let () =
+  let renamed =
+    let sub = {|"houder"|} and via = {|"vergunning"|} in
+    let b = Buffer.create (String.length wv64_household) and n = String.length sub and hits = ref 0 in
+    let rec go i =
+      if i > String.length wv64_household - n then
+        Buffer.add_string b (String.sub wv64_household i (String.length wv64_household - i))
+      else if String.sub wv64_household i n = sub then (Buffer.add_string b via; incr hits; go (i + n))
+      else (Buffer.add_char b wv64_household.[i]; go (i + 1))
+    in
+    go 0;
+    (* the role and the two bindings of "overschot" that hop to the owner *)
+    if !hits <> 3 then failwith (Printf.sprintf "WV-6.4-n: \"houder\" occurs %d times, not 3" !hits);
+    Buffer.contents b
+  in
+  with_depth_case renamed
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [
+       {"label": "V1", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-06-01"}}, "roles": {}, "characteristics": []},
+       {"label": "T1", "objectType": "Termijn", "attributes": {"einddag": {"date": "2026-06-11"}}, "roles": {"vergunning": ["V1"]}, "characteristics": []},
+       {"label": "T2", "objectType": "Termijn", "attributes": {"einddag": {"date": "2026-06-21"}}, "roles": {"vergunning": ["V1"]}, "characteristics": []},
+       {"label": "V2", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-12-01"}}, "roles": {"vorige vergunning": ["V1"]}, "characteristics": []},
+       {"label": "T3", "objectType": "Termijn", "attributes": {"einddag": {"date": "2027-01-10"}}, "roles": {"vergunning": ["V2"]}, "characteristics": []}],
+       "parameters": {}}, "expected": [
+       {"kind": "attributeValue", "label": "V1", "attribute": "verlengde einddag", "value": {"date": "2026-06-01"}},
+       {"kind": "attributeValue", "label": "T1", "attribute": "overschot", "value": {"number": "10"}},
+       {"kind": "attributeValue", "label": "T2", "attribute": "overschot", "value": {"number": "20"}},
+       {"kind": "attributeValue", "label": "V1", "attribute": "restant", "value": {"number": "30"}},
+       {"kind": "attributeValue", "label": "V2", "attribute": "verlengde einddag", "value": {"date": "2026-12-31"}},
+       {"kind": "attributeValue", "label": "T3", "attribute": "overschot", "value": {"number": "10"}},
+       {"kind": "attributeValue", "label": "V2", "attribute": "restant", "value": {"number": "10"}},
+       {"kind": "consistent"}]}|}
+    (fun violations c env depth ->
+      check "WV-6.4-n-verifier-clean" (violations = []);
+      check "WV-6.4-n-back-link-under-the-owner-role"
+        (World.left_side (World.get c.world "V1") "vergunning" = [ "V2" ]);
+      List.iter
+        (fun (label, want) -> expect_depth ("WV-6.4-n-depth-" ^ label) depth label want)
+        [ ("V1", 0); ("T1", 0); ("T2", 0); ("V2", 1); ("T3", 1) ];
+      expect_outcome "WV-6.4-n" c env)
+
+(* WV-6.4-o (ch. 6.2, the depth): only a link of the switch relation makes a
+   predecessor. The Ding d holds under "vorige vergunning" a link of the
+   relation "verwijzing", whose role to a Bijlage carries that name; d is no
+   Vergunning, so it has no predecessor and stands at depth 0, and the Bijlage
+   i, whose eigenaar d is, at the depth of its owner, 0. A hop to the
+   predecessor from d reached i, and the hop to the owner from i reached d
+   again. The overschot of i is 92 days, from the stopdag 01-03-2026 of d to
+   its verlengde einddag 01-06-2026, and the verlengde einddag of V1, without
+   a predecessor, is its basiseinddag 01-06-2026; the ASP backend answers the
+   same (measured 2026-11-02). *)
+let wv64_other_relation =
+  {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Ding","animate":false,
+"plural":"Dingen","attributes":[{"node":"Attribute","name":"stopdag","datatype":{"node":"Date",
+"precision":"day"}},{"node":"Attribute","name":"verlengde einddag","datatype":{"node":"Date",
+"precision":"day"}}],"characteristics":[]},{"node":"ObjectType","name":"Vergunning",
+"supertype":"Ding","animate":false,"plural":"Vergunningen","attributes":[{"node":"Attribute",
+"name":"basiseinddag","datatype":{"node":"Date","precision":"day"}}],"characteristics":[]},
+{"node":"ObjectType","name":"Bijlage","animate":false,"plural":"Bijlagen",
+"attributes":[{"node":"Attribute","name":"overschot","datatype":{"node":"Number","whole":true,
+"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"dg","system":"Tijd",
+"canonical":"dg","factorToCanonical":{"num":1,"den":1}}]}}],"characteristics":[]}],
+"factTypes":[{"node":"FactType","name":"vorige vergunning","reciprocal":false,
+"roles":[{"node":"Role","name":"vergunning","objectType":"Vergunning","many":false},{"node":"Role",
+"name":"vorige vergunning","objectType":"Vergunning","many":false}]},{"node":"FactType",
+"name":"bijlagerelatie","reciprocal":false,"roles":[{"node":"Role","name":"eigenaar",
+"objectType":"Ding","many":false},{"node":"Role","name":"bijlage","objectType":"Bijlage",
+"many":false}]},{"node":"FactType","name":"verwijzing","reciprocal":false,"roles":[{"node":"Role",
+"name":"verwijzer","objectType":"Ding","many":false},{"node":"Role","name":"vorige vergunning",
+"objectType":"Bijlage","many":false}]}],"parameters":[],"domains":[],
+"unitSystems":[{"node":"UnitSystem","name":"Tijd","units":[{"node":"Unit","abbreviation":"dg",
+"system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1},"spellings":["dag"]}]}],
+"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"overschot",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"overschot","subjectType":"Bijlage"},"value":{"node":"BuiltinCall","kind":"duration",
+"arguments":[{"node":"AttributeReference","attribute":"stopdag","subjectType":"Ding",
+"path":[{"node":"RoleBinding","factType":"bijlagerelatie","role":"eigenaar"}]},
+{"node":"AttributeReference","attribute":"verlengde einddag","subjectType":"Ding",
+"path":[{"node":"RoleBinding","factType":"bijlagerelatie","role":"eigenaar"}]}],
+"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}]}},
+"condition":{"node":"Comparison","op":"earlier","left":{"node":"AttributeReference",
+"attribute":"stopdag","subjectType":"Ding","path":[{"node":"RoleBinding","factType":"bijlagerelatie",
+"role":"eigenaar"}]},"right":{"node":"AttributeReference","attribute":"verlengde einddag",
+"subjectType":"Ding","path":[{"node":"RoleBinding","factType":"bijlagerelatie","role":"eigenaar"}]}},
+"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"verlengde einddag",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"verlengde einddag","subjectType":"Vergunning"},"value":{"node":"Binary","op":"plus",
+"left":{"node":"AttributeReference","attribute":"basiseinddag","subjectType":"Vergunning"},
+"right":{"node":"AttributeReference","attribute":"overschot","subjectType":"Bijlage",
+"path":[{"node":"RoleBinding","factType":"vorige vergunning","role":"vorige vergunning"},
+{"node":"RoleBinding","factType":"bijlagerelatie","role":"bijlage"}]},"type":{"node":"Date",
+"precision":"day"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],
+"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],
+"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+
+let () =
+  with_depth_case wv64_other_relation
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [
+       {"label": "d", "objectType": "Ding", "attributes": {"stopdag": {"date": "2026-03-01"}, "verlengde einddag": {"date": "2026-06-01"}}, "roles": {"vorige vergunning": ["i"]}, "characteristics": []},
+       {"label": "i", "objectType": "Bijlage", "attributes": {}, "roles": {"eigenaar": ["d"]}, "characteristics": []},
+       {"label": "V1", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-06-01"}}, "roles": {}, "characteristics": []}],
+       "parameters": {}}, "expected": [
+       {"kind": "attributeValue", "label": "i", "attribute": "overschot", "value": {"number": "92"}},
+       {"kind": "attributeValue", "label": "V1", "attribute": "verlengde einddag", "value": {"date": "2026-06-01"}},
+       {"kind": "consistent"}]}|}
+    (fun violations c env depth ->
+      check "WV-6.4-o-verifier-clean" (violations = []);
+      List.iter
+        (fun (label, want) -> expect_depth ("WV-6.4-o-depth-" ^ label) depth label want)
+        [ ("d", 0); ("i", 0); ("V1", 0) ];
+      expect_outcome "WV-6.4-o" c env)
+
+(* The owner links of a satellite relation can close a cycle the case reader,
+   which reads the switch relation (EF-033), does not refuse: here the eigenaar
+   of a Bijlage is a Ding, and a Bijlage is a Ding. b1 and b2 are each other's
+   eigenaar, so ch. 6.2 gives them no depth, and the depth fails with the
+   cycle, from the label it was asked for, instead of recursing until the stack
+   runs out. The verifier admits the document; the ASP backend, which orders
+   nothing by depth, answers the case (measured 2026-11-02). *)
+let wv64_owner_cycle =
+  {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Ding","animate":false,
+"plural":"Dingen","attributes":[{"node":"Attribute","name":"stopdag","datatype":{"node":"Date",
+"precision":"day"}},{"node":"Attribute","name":"einddag","datatype":{"node":"Date",
+"precision":"day"}},{"node":"Attribute","name":"grensdag","datatype":{"node":"Date",
+"precision":"day"}}],"characteristics":[]},{"node":"ObjectType","name":"Vergunning",
+"supertype":"Ding","animate":false,"plural":"Vergunningen","attributes":[{"node":"Attribute",
+"name":"basiseinddag","datatype":{"node":"Date","precision":"day"}},{"node":"Attribute",
+"name":"restant","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified",
+"unit":[{"node":"Unit","abbreviation":"dg","system":"Tijd","canonical":"dg",
+"factorToCanonical":{"num":1,"den":1}}]}}],"characteristics":[]},{"node":"ObjectType",
+"name":"Bijlage","supertype":"Ding","animate":false,"plural":"Bijlagen",
+"attributes":[{"node":"Attribute","name":"overschot","datatype":{"node":"Number","whole":true,
+"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"dg","system":"Tijd",
+"canonical":"dg","factorToCanonical":{"num":1,"den":1}}]}}],"characteristics":[]}],
+"factTypes":[{"node":"FactType","name":"vorige vergunning","reciprocal":false,
+"roles":[{"node":"Role","name":"vergunning","objectType":"Vergunning","many":false},{"node":"Role",
+"name":"vorige vergunning","objectType":"Vergunning","many":false}]},{"node":"FactType",
+"name":"bijlagerelatie","reciprocal":false,"roles":[{"node":"Role","name":"eigenaar",
+"objectType":"Ding","many":false},{"node":"Role","name":"bijlage","objectType":"Bijlage",
+"plural":"bijlagen","many":true}]}],"parameters":[],"domains":[],"unitSystems":[{"node":"UnitSystem",
+"name":"Tijd","units":[{"node":"Unit","abbreviation":"dg","system":"Tijd","canonical":"dg",
+"factorToCanonical":{"num":1,"den":1},"spellings":["dag"]}]}],"dimensions":[],"timelines":[],
+"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"einddag",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"einddag","subjectType":"Vergunning"},"value":{"node":"Binary","op":"plus",
+"left":{"node":"AttributeReference","attribute":"basiseinddag","subjectType":"Vergunning"},
+"right":{"node":"AttributeReference","attribute":"restant","subjectType":"Vergunning",
+"path":[{"node":"RoleBinding","factType":"vorige vergunning","role":"vorige vergunning"}]},
+"type":{"node":"Date","precision":"day"}},"initialisation":false,"presentation":"calculation"}]},
+{"node":"Rule","name":"grensdag","versions":[{"validity":{"node":"Validity"},
+"target":{"node":"AttributeReference","attribute":"grensdag","subjectType":"Ding"},
+"value":{"node":"AttributeReference","attribute":"einddag","subjectType":"Ding"},
+"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"overschot",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"overschot","subjectType":"Bijlage"},"value":{"node":"BuiltinCall","kind":"duration",
+"arguments":[{"node":"AttributeReference","attribute":"stopdag","subjectType":"Bijlage"},
+{"node":"AttributeReference","attribute":"grensdag","subjectType":"Bijlage"}],
+"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit",
+"abbreviation":"dg","system":"Tijd","canonical":"dg","factorToCanonical":{"num":1,"den":1}}]}},
+"condition":{"node":"Comparison","op":"earlier","left":{"node":"AttributeReference",
+"attribute":"stopdag","subjectType":"Bijlage"},"right":{"node":"AttributeReference",
+"attribute":"grensdag","subjectType":"Bijlage"}},"initialisation":false,
+"presentation":"calculation"}]},{"node":"Rule","name":"restant",
+"versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference",
+"attribute":"restant","subjectType":"Vergunning"},"value":{"node":"Aggregation","kind":"sum",
+"arguments":[{"node":"AttributeReference","attribute":"overschot","subjectType":"Bijlage"}],
+"elementType":"Bijlage","sourceRole":{"node":"RoleBinding","factType":"bijlagerelatie",
+"role":"bijlage"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified",
+"unit":[{"node":"Unit","abbreviation":"dg","system":"Tijd","canonical":"dg",
+"factorToCanonical":{"num":1,"den":1}}]}},"initialisation":false,"presentation":"calculation"}]}],
+"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],
+"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+
+let () =
+  with_depth_case wv64_owner_cycle
+    {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [
+       {"label": "b1", "objectType": "Bijlage", "attributes": {}, "roles": {"eigenaar": ["b2"]}, "characteristics": []},
+       {"label": "b2", "objectType": "Bijlage", "attributes": {}, "roles": {"eigenaar": ["b1"]}, "characteristics": []},
+       {"label": "V1", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-06-01"}}, "roles": {}, "characteristics": []}],
+       "parameters": {}}, "expected": [{"kind": "consistent"}]}|}
+    (fun violations c env depth ->
+      let cycle from other =
+        Printf.sprintf
+          "ref/lib/eval.ml, instance order: the depth of %S over the switch relation \"vorige \
+           vergunning\" depends on itself: %s -(bijlagerelatie: eigenaar)-> %s -(bijlagerelatie: \
+           eigenaar)-> %s"
+          from from other from
+      in
+      let expect_cycle name got want =
+        match got with
+        | Error m -> check (if m = want then name else name ^ " (got: " ^ m ^ ")") (m = want)
+        | Ok d -> check (Printf.sprintf "%s (got depth %d)" name d) false
+      in
+      check "instance-depth-owner-cycle-verifier-clean" (violations = []);
+      expect_depth "instance-depth-owner-cycle-depth-V1" depth "V1" 0;
+      expect_cycle "instance-depth-owner-cycle-b1" (depth "b1") (cycle "b1" "b2");
+      expect_cycle "instance-depth-owner-cycle-b2" (depth "b2") (cycle "b2" "b1");
+      match Eval.evaluate env c.world with
+      | _ -> check "instance-depth-owner-cycle-evaluate (no failure)" false
+      | exception Failure m ->
+          let want = cycle "b1" "b2" in
+          check
+            (if m = want then "instance-depth-owner-cycle-evaluate"
+             else "instance-depth-owner-cycle-evaluate (got: " ^ m ^ ")")
+            (m = want))
+
 (* WV-5.7-fixpoint (ch. 5.7, "Faults and deposits are read at the fixpoint"): a
    fault and a deposit are outcomes of one form's evaluation on one subject, the
    next evaluation replaces them, and a displaced default or an initialisation
