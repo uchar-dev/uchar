@@ -265,3 +265,5 @@ jar rc=0 6s drools-jar: rebuilt (50 source path(s) newer than the jar, e.g. back
 after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
 end 2026-11-02 11:59:39 333s red=0
 ```
+
+**Landing (hoofdsessie, 2026-11-02).** Zelf nagemeten op de eerste stand: beide cases van de golden geven op ref van `3d4676b88` `Stack overflow` (`l=1M`) en op `e3248176e` PASS (9 en 12 verwachtingen); de 28 werkbank-gevallen alle `oracle: PASS`. Normvraag 3 op Fable-advies (`werk/instance-depth-owner-hop/fable/advies.md`) beslist als (c), in dezelfde landing. `make gates` op `d614df120` (basis `a6574fd4d`, met `drools-schrijfgrens`) groen; daarna alleen gerebased op `aa7fb75e1`, dat alleen backlog en `spec/CONSTRUCTS.md` raakt. CONSTRUCTS rij 45 bijgewerkt.
