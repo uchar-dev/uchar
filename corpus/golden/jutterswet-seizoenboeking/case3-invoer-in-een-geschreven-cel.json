@@ -1,0 +1,127 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "number": "5.00"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "number": "1.00"
+                }
+              },
+              {
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "number": "5.00"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "cellValue",
+      "label": "J4",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J4",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "zomer"
+      ],
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "geboekte gewicht",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J5",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "2.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J5",
+      "attribute": "geboekte gewicht",
+      "value": {
+        "number": "2.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

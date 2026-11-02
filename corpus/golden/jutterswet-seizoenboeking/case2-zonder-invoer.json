@@ -1,0 +1,67 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "cellValue",
+      "label": "J3",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J3",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "zomer"
+      ],
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "cellEmpty",
+      "label": "J3",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "voorjaar"
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "geboekte gewicht",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -117,8 +117,7 @@ one dimension execute in `jutterswet-seizoenvondst` and
 `jutterswet-seizoenvouw`, and a cell over two dimensions that share a label
 stands in the cabinet alone.
 
-Gate 5 currently lists **one** golden as not replayed:
-`jutterswet-seizoenkopie`.
+Gate 5 currently lists **no** golden as not replayed.
 
 `jutterswet-seizoenvondst` is a UNIT-bearing dimensioned attribute read
 through a dimension cell (`DimensionCellRead`), and
@@ -128,13 +127,16 @@ fold, emitted by the RegelSpraak frontend. Both carry cases that `ref`,
 clingo and the Drools backend replay (`RUNTIME-SEMANTICS.md` ch. 5.8c), and
 each `NOTE.md` carries the outcome per executor.
 
-`jutterswet-seizoenkopie` is the cell as a write position: two rules that
-each write one cell of `vondstgewicht` from another cell of it, and an
-object creation whose member writes one cell of the created object
-(`IR-SPEC.md` ch. 3.1, 3.3), hand-written. It witnesses the dependency graph
-per cell (ch. 5.1) and WF-079 per cell. `ref` and clingo refuse the cell
-target, the Drools loader refuses the document (DROOLS-298); its `NOTE.md`
-carries the refusals.
+`jutterswet-seizoenboeking` is the cell as a write position written in
+RegelSpraak: a rule that computes one cell of `vondstgewicht` from another
+cell of it, an initialisation of a cell and an object creation whose member
+writes one cell of the created object (`IR-SPEC.md` ch. 3.1, 3.3).
+`jutterswet-seizoenkopie` is its hand-written sibling, two rules that copy
+one cell into two others, and it witnesses WF-079 per cell. Both witness the
+dependency graph per cell (ch. 5.1), and their cases replay in `ref` and
+clingo (`RUNTIME-SEMANTICS.md` ch. 5.8c); the Drools backend refuses a cell
+write when it builds (DROOLS-298). Each `NOTE.md` carries the outcome per
+executor.
 
 `jutterswet-tempototaal` is the route-split witness of `het totaal van`:
 the set reading and the temporal reading of one operator over one unit

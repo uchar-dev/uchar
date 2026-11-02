@@ -1,9 +1,10 @@
-# jutterswet-seizoenkopie — the cell written, verifier-only
+# jutterswet-seizoenkopie — two cells copied from a third
 
 A witness of the cell as a write position (`IR-SPEC.md` ch. 3.1, ch. 3.3;
-`RUNTIME-SEMANTICS.md` ch. 5.8c) and of the dependency graph per cell
-(`IR-SPEC.md` ch. 5.1). Hand-written, without a source: the RegelSpraak
-frontend refuses a cell as the target of a rule (RGS-307, RGS-308).
+`RUNTIME-SEMANTICS.md` ch. 5.8c), of the dependency graph per cell
+(`IR-SPEC.md` ch. 5.1) and of the standing norm per cell (ch. 7.8).
+Hand-written, without a source; `jutterswet-seizoenboeking` is the golden
+of a cell write written in RegelSpraak.
 
 ## What it carries
 
@@ -33,17 +34,24 @@ What the verifier admits here, and refuses one change away:
   attribute write two targets (WF-079): `corpus/negative/wf079-two-writers-one-cell`
   puts both on `najaar`.
 
-## Why no replay case
+## The case
 
-Measured 2026-11-02, with a case that supplies the cells `voorjaar` 12.50
-and `najaar` 4.00 and with a case without input:
+Hand-computed. `case1-kopie-en-staande-invoer`: J1 with the cells `voorjaar`
+12.50 and `najaar` 4.00 gives `najaar` 12.50 (the computed value displaces
+the input of the cell) and `zomer` 12.50; J2 with the cell `zomer` 7.00
+alone gives `zomer` 7.00 and `najaar` empty. The copy of an empty cell is
+leeg, and the rule on `zomer` is that cell's only writer, so it is a
+standing target (ch. 7.8): a leeg evaluation writes nothing and the input
+stands. The case is no witness of the creation, whose object no case can
+name; `jutterswet-seizoenboeking` carries the cells of a made object back to
+a jutter, and `ref/test` reads them there.
 
-| executor | with cells | without input |
-|---|---|---|
-| verifier (gate 3) | `verifier: PASS` | — |
-| `ref` (gate 5) | `CASE ERROR: j1.vondstgewicht: a cells input is checked and then refused: neither executor that shares this reader evaluates a cell` | `EVALUATION FAULT: REF-012: rule "najaarsgewicht van een jutter": unsupported target shape` |
-| `clingo` (gate 6) | the same case error (the case reader of `ref`) | `TRANSLATION FAULT: CLINGO-026: unsupported rule target` |
-| Drools (gate 12) | `EXCLUDE DROOLS-298: loader: a write of a cell of the dimensioned attribute 'vondstgewicht' by 'najaarsgewicht van een jutter': this branch writes no cell` | the same |
+## Where the executors stand
 
-So a case here pins nothing yet. Gate 12 lists the golden as `NOCASE`, and
-gate 15 reports it among the goldens the Drools loader refuses.
+Measured 2026-11-02: `ref` and the ASP backend replay the case (gates 5 and
+6; `ref/test` `WV-5.8c-schrijven-staande-invoer`). The Drools backend loads
+the document and refuses it when it builds, with `EXCLUDE DROOLS-298: a write
+of a cell of the dimensioned attribute 'vondstgewicht' by 'najaarsgewicht van
+een jutter': this branch writes no cell`, so gate 12 pins `EXCLUDE
+DROOLS-298`; its rule graph carries the cells, and gate 15 compares it with
+the verifier's.

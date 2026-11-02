@@ -1,0 +1,138 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "number": "1.50"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "number": "1.50"
+                }
+              },
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "number": "2.00"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "cellValue",
+      "label": "J1",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J1",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "zomer"
+      ],
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "4.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "geboekte gewicht",
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J2",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "zomer"
+      ],
+      "value": {
+        "number": "2.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J2",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "6.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "geboekte gewicht",
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
