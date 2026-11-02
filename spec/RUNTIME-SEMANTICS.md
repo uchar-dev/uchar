@@ -5866,7 +5866,10 @@ node 1, the `DimensionCellRead`, the value `12.5 "kg"`, its node 2, the
 `empty "kg"`. The sum of `vondstgewicht` over all seasons, the value of a
 rule without a condition, reads on J1 its node 0, the `Aggregation`,
 `16.5 "kg"`, and its node 1, the argument, no line. The `ref/test` row
-`WV-5.12-cel` pins both.
+`WV-5.12-cel` pins both. Over a path, on the example "Reading over a path"
+of ch. 5.8c, the cell read of P1 reads `12.5 "kg" on "J1"` and that of P2
+`empty "kg" on none`, while the fold over the path names no object
+(`WV-5.12-cel-over-een-pad`).
 
 **Folds over a set.** A node that the evaluation reads once per member of
 a fold over a set — the source, the filter and the matrix of an
