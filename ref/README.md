@@ -167,8 +167,20 @@ faults with file/position context — never a silent fallback.
   (ch. 3.11) except in the two shapes that produce buckets: the ch. 3.7
   pro-rata target and the ch. 3.8 day-count target. Never a silent
   coercion.
+- **Cells of a dimensioned attribute** (ch. 5.8c): a cell is a member of
+  its own in the fact base, the attribute's name with its labels in
+  declared order (`World.cell`, `vondstgewicht[voorjaar]`), so it is read,
+  held to its declared decimals at input (EF-004) and compared as an
+  attribute is. A `DimensionCellRead` reads its cell on the subject or on
+  the object a path of roles reaches, and a dimension fold (sum, minimum,
+  maximum) folds the cells of the product of its selections, an empty cell
+  skipped and a fold whose every cell is empty leeg. The case reader lays
+  the `cells` input down cell by cell (EF-034, EF-035) and reads the
+  `cellValue` and `cellEmpty` expectations. A read of a dimensioned
+  attribute outside a cell is refused (WF-125), and so is a cell as a write
+  target (REF-012).
 - **Not implemented** (each faults with context): multi-period grids,
-  dimension cells, dimension selections, variable/constant refs, the "is gevuurd" test (row 30:
+  variable/constant refs, the "is gevuurd" test (row 30:
   decided as a dialect-only fixpoint predicate, not yet implemented),
   and a granular parameter read in a SCALAR slot — vintage selection is
   ch. 8 scope.

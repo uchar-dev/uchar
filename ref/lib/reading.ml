@@ -94,12 +94,15 @@ let rec walk_expr ~own ?(scope = []) acc (e : expr) =
         (fun acc -> function Embedded_expression { expr = Some x } -> sub acc x | _ -> acc)
         acc pieces
   | Binary { left_side; right_side; _ } -> opt sub (opt sub acc left_side) right_side
-  | Function_call { call_arguments; filter; empty_fallback; _ } ->
+  | Function_call { call_arguments; filter; empty_fallback; dimension_selections; _ } ->
       (* the source and the filter of a fold over a set are read per member;
          the filter of a temporal total or of a time-proportional part is
-         read over a timeline, once *)
+         read over a timeline, once; the argument of a dimension fold names
+         the attribute whose cells the fold reads and is no value of its own *)
       let own_parts = own && not (set_fold e) in
-      let acc = List.fold_left (sub ~own:own_parts) acc call_arguments in
+      let acc =
+        List.fold_left (sub ~own:(own_parts && dimension_selections = None)) acc call_arguments
+      in
       let acc = opt (walk_cond ~own:own_parts) acc filter in
       opt sub acc empty_fallback
   | Instance_set_union { branches; _ } ->
@@ -109,7 +112,10 @@ let rec walk_expr ~own ?(scope = []) acc (e : expr) =
   | Rounding { base_expr; _ } -> opt sub acc base_expr
   | Clamp { base_expr; minimum; maximum; _ } ->
       opt sub (opt sub (opt sub acc base_expr) minimum) maximum
-  | Dimension_cell_read { attribute_ref; _ } -> opt sub acc attribute_ref
+  (* the cell is the node of its read; the reference under it names the
+     attribute and the object, and a dimensioned attribute has no value of
+     its own (ch. 5.8c) *)
+  | Dimension_cell_read { attribute_ref; _ } -> opt (sub ~own:false) acc attribute_ref
   | Temporal_read { base_expr; date_value; _ } -> sub (sub acc base_expr) date_value
   | Construct { argument; _ } -> opt sub acc argument
   | Match { scrutinee; arms; _ } ->
@@ -897,6 +903,7 @@ let lines env ~world (rs : reading list) =
     let navigates =
       match n.site with
       | S_expr (Attribute_reference { navigation_bindings = Some _; _ })
+      | S_expr (Dimension_cell_read { attribute_ref = Some (Attribute_reference { navigation_bindings = Some _; _ }); _ })
       | S_cond (Characteristic_check { navigation_binding = Some _; _ }) ->
           true
       | _ -> false

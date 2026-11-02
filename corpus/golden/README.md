@@ -85,13 +85,13 @@ of `ref/test/` (WV-1.2e), not by this case.
 
 ## The witness cabinet
 
-`jutterswet-vormenkabinet` is a **verifier-only** golden: it carries no
-case files (gate 5 lists it explicitly as not replayed) and exists to
-witness, positively and verifier-clean, the well-formedness rules whose
-constructs no executing document carries yet. The rule at admission:
-when one of these constructs becomes executable, its witness moves into
-an executing document and the cabinet shrinks — it is scaffolding for
-the WF index, never a place for semantics.
+`jutterswet-vormenkabinet` exists to witness, positively and
+verifier-clean, the well-formedness rules whose constructs no other golden
+carries. The rule at admission: when one of these constructs becomes
+executable and another golden carries it with a case, its witness moves
+there and the cabinet shrinks — it is scaffolding for the WF index, never a
+place for semantics. Every construct it holds executes in `ref` and the ASP
+backend, so it carries a case of its own, which gates 5 and 6 replay.
 
 The cabinet holds **four** rows: the dimensioned attribute with its cell
 reads (WF-004/014/040; one of them over two dimensions that share a label,
@@ -112,27 +112,22 @@ the whole-period qualifier over a time-dependent operand (WF-043) in
 `jutterswet-keurploeg`, `jutterswet-ploegpremie`,
 `jutterswet-reddingsvloot` and `jutterswet-sleepvloot`; and the day-kind
 definition (WF-031) in `jutterswet-schouwkalender`. The cabinet's own
-`NOTE.md` carries the measurement per row: the dimensioned attribute's
-only other carrier, `jutterswet-seizoenvondst`, is itself case-less, so
-that row has no *executing* successor.
+`NOTE.md` carries the measurement per row: the cell read and the fold over
+one dimension execute in `jutterswet-seizoenvondst` and
+`jutterswet-seizoenvouw`, and a cell over two dimensions that share a label
+stands in the cabinet alone.
 
-Gate 5 currently lists **four** goldens as not replayed: the cabinet,
-`jutterswet-seizoenvondst`, `jutterswet-seizoenvouw` and
+Gate 5 currently lists **one** golden as not replayed:
 `jutterswet-seizoenkopie`.
 
 `jutterswet-seizoenvondst` is a UNIT-bearing dimensioned attribute read
-through a dimension cell (`DimensionCellRead`). It carries no case for the same measured reason the cabinet does —
-`ref` and clingo decline a cell read, and the case reader they share checks
-a cell input (`cells`) and then refuses it, and the Drools backend refuses
-the input. Its `NOTE.md` carries the refusals verbatim.
-
-`jutterswet-seizoenvouw` is the dimension fold on the same kind of
-attribute: a sum, a maximum and a minimum whose `dimensionSelections` pick
-the labels they fold, emitted by the RegelSpraak frontend. It carries no
-case for the same reason, measured per executor in its `NOTE.md`: `ref`
-faults on the selection, clingo has no arm for the fold, and the Drools
-backend, which does carry the fold, refuses any case that supplies the
-dimensioned attribute.
+through a dimension cell (`DimensionCellRead`), and
+`jutterswet-seizoenvouw` the dimension fold on the same kind of attribute: a
+sum, a maximum and a minimum whose `dimensionSelections` pick the labels they
+fold, emitted by the RegelSpraak frontend. Both carry cases that `ref` and
+clingo replay (`RUNTIME-SEMANTICS.md` ch. 5.8c); the Drools backend refuses
+their cells input (DROOLS-047), and each `NOTE.md` carries the outcome per
+executor.
 
 `jutterswet-seizoenkopie` is the cell as a write position: two rules that
 each write one cell of `vondstgewicht` from another cell of it, and an

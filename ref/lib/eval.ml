@@ -16,10 +16,7 @@
 
    Coverage is deliberately partial: a construct no golden exercises
    faults with context instead of guessing — fail fast, never a silent
-   fallback. Of the forms this header once listed as uncovered,
-   navigation paths, filters, timelines and object/fact creation have
-   since landed; dimension cells and day kinds still fault. ref/README.md
-   carries the maintained list. *)
+   fallback. ref/README.md carries the maintained list of what faults. *)
 
 open Ir_v0.Ast
 module SMap = World.SMap
@@ -807,6 +804,84 @@ let nav_target env world (self : World.instance) ~(bindings : role_binding list)
   in
   walk self roles
 
+(* The object an attribute reference reads its member on (ch. 5.8): the
+   subject itself, or the object its path reaches, None where a link on the
+   path is absent. The reference names a declared attribute that is not
+   temporal (ch. 3.3). [node] is the node whose reading names the object
+   (ch. 5.12): the reference itself, or the cell read above it. *)
+let member_holder env world (self : World.instance) ?node (e : expr) : World.instance option =
+  let env, self, e = unanchored env self e in
+  match e with
+  | Attribute_reference { attribute_ref; object_type = ot; navigation_bindings; _ } -> (
+      let name = req "AttributeReference.attribute" attribute_ref in
+      let ot = req "AttributeReference.subjectType" ot in
+      (* a value position reads a DECLARED attribute of the type the value
+         lives on; any other name — a characteristic, or the role name a
+         count source writes — has no value here, and reading it as an
+         absent attribute would answer leeg for a form no reader writes *)
+      if Ir_v0.Checks.find_ci (object_type env ot).attributes name = None then
+        if Ir_v0.Checks.has_characteristic (object_type env ot) name then
+          Value.fault
+            "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
+             ill-formed in a value position"
+            name ot
+        else
+          Value.fault "%S is not a declared attribute of %S: a value position reads an attribute" name ot;
+      (* ch. 3.3, mirrored: no point-in-time read exists — a temporal
+         attribute in a scalar slot is refused; the only bridges are
+         the dedicated collapses (the temporal total handles its own
+         argument in eval_function_call). [ot] is the type the value lives on:
+         the subject itself, or the navigation endpoint. *)
+      if Ir_v0.Checks.attr_temporal (object_type env ot) name then
+        Value.fault
+          "temporal attribute %S in a scalar context is refused (ch. 3.3; no point-in-time \
+           read exists — the collapses are the only bridges)"
+          name;
+      match navigation_bindings with
+      | None ->
+          (* D10: without bindings the read is the subject's own — which
+             includes an INHERITED member, written at the declaring
+             supertype and read on a subtype instance (ch. 2.2) *)
+          if not (own_read env self ot) then
+            Value.fault
+              "a read of %S on %S without navigation bindings is the subject's own read, but the \
+               subject is %S"
+              name ot self.otype;
+          Some self
+      | Some bindings ->
+          (* the navigated read (ch. 5.8): walk the to-one hops; an absent
+             link anywhere reads the whole operand as leeg *)
+          let target = nav_target env world self ~bindings ~endpoint:ot in
+          Option.iter
+            (fun node -> object_reached (Navigated_read node) (Option.map (fun (t : World.instance) -> t.label) target))
+            node;
+          target)
+  | _ -> Value.fault "%s stands where an attribute reference is read" (Ir_v0.Spelling.a_node e)
+
+(* The member of the cell [labels] of the dimensioned attribute [attr] of
+   [ot] (World.cell): label i a label of dimension i (WF-040, IR-SPEC
+   ch. 4.3), refused otherwise, since a tuple that names no cell would read an
+   absent member as leeg *)
+let cell_member env ~ot ~attr labels =
+  match Ir_v0.Checks.attr_dimensions (object_type env ot) attr with
+  | None -> Value.fault "cell of undimensioned attribute '%s'" attr
+  | Some dims ->
+      if not (Case.names_cell env.doc ~dims labels) then
+        Value.fault "the labels [%s] name no cell of '%s', whose dimensions are %s" (String.concat ", " labels) attr
+          (String.concat ", " dims);
+      World.cell attr labels
+
+(* The attribute a member of an instance's [attrs] belongs to: the member
+   itself, or the dimensioned attribute of a cell (World.cell) *)
+let member_attribute env ~otype member =
+  let ot = object_type env otype in
+  match Ir_v0.Checks.find_ci ot.attributes member with
+  | Some _ -> member
+  | None -> (
+      match List.filter (fun (a, _) -> World.cell_of a member) ot.attribute_dimensions with
+      | [ (a, _) ] -> a
+      | _ -> Value.fault "%S is neither an attribute nor a cell of an attribute of %S" member otype)
+
 (* ch. 3.9, the timeline a whole-period leeg/gevuld test folds: an own
    time-dependent attribute, or one reached over to-one hops (ch. 5.8). A
    hop that reaches nothing gives the null timeline, which touches no bucket
@@ -1021,52 +1096,21 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
           | _ ->
               Value.faultc ~params:[ ("parameter", name) ] "EF-014" "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)"
                 name))
-  | Attribute_reference { attribute_ref; object_type = ot; navigation_bindings; _ } -> (
+  | Attribute_reference { attribute_ref; object_type = ot; _ } -> (
       let name = req "AttributeReference.attribute" attribute_ref in
       let ot = req "AttributeReference.subjectType" ot in
-      (* a value position reads a DECLARED attribute of the type the value
-         lives on; any other name — a characteristic, or the role name a
-         count source writes — has no value here, and reading it as an
-         absent attribute would answer leeg for a form no reader writes *)
-      if Ir_v0.Checks.find_ci (object_type env ot).attributes name = None then
-        if Ir_v0.Checks.has_characteristic (object_type env ot) name then
-          Value.fault
-            "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
-             ill-formed in a value position"
-            name ot
-        else
-          Value.fault "%S is not a declared attribute of %S: a value position reads an attribute" name ot;
-      (* ch. 3.3, mirrored: no point-in-time read exists — a temporal
-         attribute in a scalar slot is refused; the only bridges are
-         the dedicated collapses (the temporal total handles its own
-         argument in eval_function_call). [ot] is the type the value lives on:
-         the subject itself, or the navigation endpoint. *)
-      if Ir_v0.Checks.attr_temporal (object_type env ot) name then
+      (* WF-125 (a), the verifier's sentence: a dimensioned attribute has a
+         value per cell and none of its own, which a read here would answer
+         leeg *)
+      if Ir_v0.Checks.attr_dimensions (object_type env ot) name <> None then
         Value.fault
-          "temporal attribute %S in a scalar context is refused (ch. 3.3; no point-in-time \
-           read exists — the collapses are the only bridges)"
-          name;
-      match navigation_bindings with
-      | None ->
-          (* D10: without bindings the read is the subject's own — which
-             includes an INHERITED member, written at the declaring
-             supertype and read on a subtype instance (ch. 2.2) *)
-          if not (own_read env self ot) then
-            Value.fault
-              "a read of %S on %S without navigation bindings is the subject's own read, but the \
-               subject is %S"
-              name ot self.otype;
-          World.attr self name
-      | Some bindings -> (
-          (* the navigated read (ch. 5.8): walk the to-one hops; an absent
-             link anywhere reads the whole operand as leeg *)
-          match nav_target env world self ~bindings ~endpoint:ot with
-          | None ->
-              object_reached (Navigated_read e) None;
-              Value.Empty
-          | Some target ->
-              object_reached (Navigated_read e) (Some target.label);
-              World.attr target name))
+          "the dimensioned attribute '%s' of '%s' is read outside a cell: it has a value per cell and none \
+           of its own, so it is read as the attribute of a DimensionCellRead or as the argument of a \
+           dimension fold"
+          name ot;
+      match member_holder env world self ~node:e e with
+      | None -> Value.Empty
+      | Some holder -> World.attr holder name)
   | Binary { op = (Plus | Min) as op; left_side; right_side; _ }
     when List.exists
            (fun e ->
@@ -1261,7 +1305,19 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
           Value.faultc "EF-010"
             "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind \
              evaluation it denotes nothing")
-  | Dimension_cell_read _ | Variable_reference _ | Context_value _ ->
+  | Dimension_cell_read { attribute_ref = Some inner; labels; _ } -> (
+      (* ch. 5.8c, 1: the cell its labels name, on the object its reference
+         reaches; the reference names the attribute and the object and is no
+         value of its own *)
+      match Option.value (Ir_v0.Checks.unanchored_expr inner) ~default:inner with
+      | Attribute_reference { attribute_ref = Some name; object_type = Some ot; _ } -> (
+          let member = cell_member env ~ot ~attr:name (List.map (req "DimensionCellRead.labels") labels) in
+          match member_holder env world self ~node:e inner with
+          | None -> Value.Empty
+          | Some holder -> World.attr holder member)
+      | _ -> Value.fault "the attribute of a DimensionCellRead is an attribute reference (IR-SPEC ch. 4.3)")
+  | Dimension_cell_read { attribute_ref = None; _ } -> req "DimensionCellRead.attribute" None
+  | Variable_reference _ | Context_value _ ->
       Value.faultc "REF-002" "expression kind not implemented in this card"
   | Temporal_read { base_expr; date_value; typ = _; source_name = _ } -> (
       (* ch. 3.3, the point-in-time read: read(tl, d). The base is never
@@ -1603,12 +1659,20 @@ and numeric_builtin_operand env kind a =
 
 and eval_function_call env world self ~err ~kind ~call_arguments ~element_object_type ~empty_fallback ~filter
     ~dimension_selections ~grain ~source_role ~source_path =
+  match dimension_selections with
+  | Some selections ->
+      if element_object_type <> None || source_role <> None || source_path <> None || filter <> None || grain <> None
+      then
+        Value.fault
+          "a dimension fold folds the cells of its argument: it carries no elementType, range, filter or \
+           granularity";
+      eval_dimension_fold env world self ~err ~kind ~call_arguments ~empty_fallback selections
+  | None ->
   (* the die/dat subselection executes on the instance folds below; the
      SAME wire field also carries the §7.1 gedurende timeline clip (a
      filter on the temporal total, where elementType is the
      subject itself) — that form must never run as an instance
      subselection and faults in its own arm *)
-  if dimension_selections <> None then Value.fault "dimension selection not implemented in this card";
   (* a granularity is a BuiltinCall facet since the L4 landing, read by the
      two bucketing builtins alone, and those run only as the whole value of a
      rule on a temporal target ([run_pro_rata]). On any other kind the facet
@@ -2179,6 +2243,47 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
       (* unreachable: eval_expr routes both variants on the node-type unit *)
       assert false
   | _ -> Value.faultc "REF-007" "function kind not implemented in this card"
+
+(* A dimension fold (RUNTIME-SEMANTICS ch. 5.8c, 3): the cells of the product
+   of the selections, the first selection outermost and each in its own label
+   order (Ir_v0.Checks.selected_cells, the cells the dependency graph gives the
+   fold), read in that order on the object the argument reaches. An empty cell
+   is skipped, a fold whose every cell is empty is empty, and a sum then takes
+   its emptyFallback, evaluated after the cells (ch. 5.11). The cells are no
+   members of a set, so the fold hands its observer no contributor
+   (ch. 5.12). *)
+and eval_dimension_fold env world self ~err ~kind ~call_arguments ~empty_fallback selections =
+  (match kind with
+  | Sum_function | Minimum | Maximum -> ()
+  | k ->
+      Value.fault "a dimension selection on a %s aggregation: WF-037 admits one on sum, minimum and maximum"
+        (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind k));
+  match call_arguments with
+  | [ argument ] -> (
+      match Option.value (Ir_v0.Checks.unanchored_expr argument) ~default:argument with
+      | Attribute_reference { attribute_ref = Some name; object_type = Some ot; _ } -> (
+          let dims =
+            match Ir_v0.Checks.attr_dimensions (object_type env ot) name with
+            | Some dims -> dims
+            | None -> Value.fault "dimension fold over undimensioned attribute '%s'" name
+          in
+          if List.length selections <> List.length dims then
+            Value.fault "dimension fold carries %d selections for the %d dimensions of its argument"
+              (List.length selections) (List.length dims);
+          let members = List.map (cell_member env ~ot ~attr:name) (Ir_v0.Checks.selected_cells selections) in
+          let cells =
+            match member_holder env world self argument with
+            | None -> List.map (fun _ -> Value.Empty) members
+            | Some holder -> List.map (World.attr holder) members
+          in
+          match kind with
+          | Sum_function ->
+              let fallback = Option.map (eval_expr env world self ~err) empty_fallback in
+              Arith.agg_sum ~fallback cells
+          | Minimum -> Arith.agg_min cells
+          | _ -> Arith.agg_max cells)
+      | _ -> Value.fault "a dimension fold takes one argument, the reference of a dimensioned attribute")
+  | _ -> Value.fault "a dimension fold takes one argument, the reference of a dimensioned attribute"
 
 (* ch. 3.10's two bounds, read once for BOTH of the chapter's cases — the
    scalar gate in [eval_cond] and the clip in [run_rule] — so the two can
@@ -4029,7 +4134,8 @@ let validate_input_precision env world =
   SMap.iter
     (fun _ (i : World.instance) ->
       let decl attr = Option.join (Ir_v0.Checks.find_ci (object_type env i.otype).attributes attr) in
-      SMap.iter (fun a v -> check ~what:(i.label ^ "." ^ a) (decl a) v) i.attrs;
+      (* a cell's value has its attribute's declaration, its place the cell *)
+      SMap.iter (fun a v -> check ~what:(i.label ^ "." ^ a) (decl (member_attribute env ~otype:i.otype a)) v) i.attrs;
       SMap.iter
         (fun a (tl : Timeline.t) ->
           List.iter

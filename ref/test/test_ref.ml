@@ -11006,12 +11006,271 @@ let () =
     ~expected:consistent ~code:(Some "EF-035")
     ~params:[ ("label", "j1"); ("attribute", "vondstgewicht"); ("labels", "Voorjaar, zuid") ]
     ~text:"j1.vondstgewicht: the cell [Voorjaar, zuid] of \"vondstgewicht\" is supplied twice";
-  refused "WV-5.8c-caselezer-weigert-geldige-cellen"
-    ~attributes:(cells (cell [ "voorjaar"; "zuid" ] "1.00" ^ ", " ^ cell [ "najaar"; "zuid" ] "2.00"))
-    ~expected:consistent ~code:None ~params:[]
+  (* a valid cells input loads, cell by cell, and the two expectations that
+     name a cell read it: here against the input world itself *)
+  let two_cells = cells (cell [ "voorjaar"; "zuid" ] "1.00" ^ ", " ^ cell [ "najaar"; "zuid" ] "2.00") in
+  let cell_value labels v =
+    Printf.sprintf
+      {|{ "kind": "cellValue", "label": "j1", "attribute": "vondstgewicht", "labels": [ %s ], "value": { "number": "%s" } }|}
+      (String.concat ", " (List.map (Printf.sprintf "%S") labels)) v
+  in
+  let cell_empty ?(attribute = "vondstgewicht") labels =
+    Printf.sprintf {|{ "kind": "cellEmpty", "label": "j1", "attribute": "%s", "labels": [ %s ] }|} attribute
+      (String.concat ", " (List.map (Printf.sprintf "%S") labels))
+  in
+  let accepted ident ~attributes ~expected ~mismatches =
+    match load ~attributes ~expected with
+    | Ok c ->
+        let got = Case.check c c.world in
+        check (ident ^ " (got: " ^ String.concat "; " got ^ ")") (got = mismatches)
+    | Error (_, _, t) -> check (ident ^ " (refused: " ^ t ^ ")") false
+  in
+  accepted "WV-5.8c-caselezer-geldige-cellen" ~attributes:two_cells
+    ~expected:(cell_value [ "voorjaar"; "zuid" ] "1.00" ^ ", " ^ cell_empty [ "najaar"; "noord" ])
+    ~mismatches:[];
+  accepted "WV-5.8c-verwachting-afwijkende-cel" ~attributes:two_cells
+    ~expected:(cell_value [ "najaar"; "zuid" ] "3.00" ^ ", " ^ cell_empty [ "voorjaar"; "zuid" ])
+    ~mismatches:[ "j1.vondstgewicht[najaar, zuid] = 2, expected 3"; "j1.vondstgewicht[voorjaar, zuid] = 1, expected leeg" ];
+  refused "WV-5.8c-verwachting-weigert-omgekeerde-labels" ~attributes:two_cells
+    ~expected:(cell_value [ "zuid"; "voorjaar" ] "1.00") ~code:None ~params:[]
     ~text:
-      "j1.vondstgewicht: a cells input is checked and then refused: neither executor that shares this \
-       reader evaluates a cell"
+      "expected[0]: the labels [zuid, voorjaar] name no cell of \"vondstgewicht\", whose dimensions are \
+       seizoen, strand: a cell names one label of each dimension, in declared order";
+  refused "WV-5.8c-verwachting-weigert-cel-op-scalair" ~attributes:""
+    ~expected:(cell_empty ~attribute:"voorjaarsgewicht" [ "voorjaar" ]) ~code:None ~params:[]
+    ~text:"expected[0]: \"voorjaarsgewicht\" is no dimensioned attribute: a cell expectation names a cell of one"
+
+(* The worked examples of RUNTIME-SEMANTICS ch. 5.8c, verbatim: a cell read,
+   on the subject and over a path of roles, the fold over one dimension and
+   over two, the input precision of a cell, and the reading of a cell at the
+   fixpoint (ch. 5.12). The examples of one dimension are the goldens
+   `jutterswet-seizoenvondst` and `jutterswet-seizoenvouw`; the others are
+   written here. A refusal while the case is read is reported by name, so a
+   red run says which example it stopped. *)
+let () =
+  let unit_kg =
+    {|{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}|}
+  in
+  let kg = Printf.sprintf {|{"node": "Number", "whole": false, "decimals": 2, "sign": "nonNegative", "unit": [%s]}|} unit_kg in
+  let whole = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
+  let quoted ls = String.concat ", " (List.map (Printf.sprintf "%S") ls) in
+  let attribute ?dimensions ?(datatype = kg) name =
+    Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s%s}|} name datatype
+      (match dimensions with Some ds -> Printf.sprintf {|, "dimensions": [%s]|} (quoted ds) | None -> "")
+  in
+  let object_type ?(animate = true) name plural attributes =
+    Printf.sprintf
+      {|{"node": "ObjectType", "name": "%s", "animate": %b, "plural": "%s", "attributes": [%s], "characteristics": []}|}
+      name animate plural (String.concat ", " attributes)
+  in
+  let leider = {|[{"node": "RoleBinding", "factType": "ploegleiding", "role": "leider"}]|} in
+  let reference ?path a =
+    Printf.sprintf {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "Jutter"%s}|} a
+      (match path with Some p -> {|, "path": |} ^ p | None -> "")
+  in
+  let cell ?path a labels =
+    Printf.sprintf {|{"node": "DimensionCellRead", "attribute": %s, "labels": [%s]}|} (reference ?path a) (quoted labels)
+  in
+  let selection d ls = Printf.sprintf {|{"node": "DimensionSelection", "dimension": "%s", "labels": [%s]}|} d (quoted ls) in
+  let fold kind argument selections =
+    Printf.sprintf {|{"node": "Aggregation", "kind": "%s", "arguments": [%s], "dimensionSelections": [%s], "type": %s}|}
+      kind argument (String.concat ", " selections) kg
+  in
+  let rule ?(subject = "Jutter") ?condition name target value =
+    Printf.sprintf
+      {|{"node": "Rule", "name": "%s", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "%s", "subjectType": "%s"}, "value": %s%s, "initialisation": false, "presentation": "calculation"}]}|}
+      name target subject value
+      (match condition with Some c -> {|, "condition": |} ^ c | None -> "")
+  in
+  let dimension name plural preposition labels =
+    Printf.sprintf {|{"node": "Dimension", "name": "%s", "plural": "%s", "preposition": "%s", "labels": [%s]}|} name plural
+      preposition (quoted labels)
+  in
+  let seizoen = dimension "seizoen" "seizoenen" "in" [ "voorjaar"; "zomer"; "najaar" ] in
+  let all_seasons = selection "seizoen" [ "voorjaar"; "zomer"; "najaar" ] in
+  let document ?(fact_types = "") ~object_types ~dimensions rules =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [%s], "factTypes": [%s], "parameters": [], "domains": [], "unitSystems": [{"node": "UnitSystem", "name": "Gewicht", "units": [{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}, "spellings": ["kilogram", "kilogrammen"]}]}], "dimensions": [%s], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+      (String.concat ", " object_types) fact_types (String.concat ", " dimensions) (String.concat ", " rules)
+  in
+  let cells_of cs =
+    Printf.sprintf {|{"cells": [%s]}|}
+      (String.concat ", "
+         (List.map (fun (ls, v) -> Printf.sprintf {|{"labels": [%s], "value": {"number": "%s"}}|} (quoted ls) v) cs))
+  in
+  let instance ?(roles = "{}") label otype attributes =
+    Printf.sprintf {|{"label": "%s", "objectType": "%s", "attributes": {%s}, "roles": %s, "characteristics": []}|} label otype
+      (String.concat ", " (List.map (fun (a, v) -> Printf.sprintf "%S: %s" a v) attributes))
+      roles
+  in
+  let case_of instances expected =
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [%s], "parameters": {}}, %s}|}
+      (String.concat ", " instances) expected
+  in
+  let value label a v =
+    Printf.sprintf {|{"kind": "attributeValue", "label": "%s", "attribute": "%s", "value": {"number": "%s"}}|} label a v
+  in
+  let empty label a = Printf.sprintf {|{"kind": "attributeEmpty", "label": "%s", "attribute": "%s"}|} label a in
+  let expected es = Printf.sprintf {|"expected": [%s, {"kind": "consistent"}]|} (String.concat ", " es) in
+  (* [plays], with a refusal of the case reported under the example's name *)
+  let plays_named ~ident ~ir ~case_data =
+    try plays ~ident ~ir ~case_data (fun _ -> ())
+    with Case.Error { text; _ } -> check (ident ^ " (case refused: " ^ text ^ ")") false
+  in
+  let read_corpus rel = In_channel.with_open_text (corpus_file rel) In_channel.input_all in
+  (* reading a cell of the subject, and folding over one dimension: the goldens *)
+  List.iter
+    (fun (ident, golden, case) ->
+      let g = "corpus/golden/" ^ golden ^ "/" in
+      plays_named ~ident ~ir:(read_corpus (g ^ "ir.json")) ~case_data:(read_corpus (g ^ case)))
+    [ ("WV-5.8c-lezen", "jutterswet-seizoenvondst", "case1-voorjaarscel.json");
+      ("WV-5.8c-vouw-een-dimensie-J1", "jutterswet-seizoenvouw", "case1-twee-seizoenen.json");
+      ("WV-5.8c-vouw-een-dimensie-J2-J3", "jutterswet-seizoenvouw", "case2-leeg-en-zomer.json") ];
+  (* folding over two dimensions *)
+  let strand = dimension "strand" "stranden" "op" [ "noord"; "zuid" ] in
+  let two =
+    document
+      ~object_types:
+        [ object_type "Jutter" "Jutters"
+            (attribute ~dimensions:[ "seizoen"; "strand" ] "vondstgewicht"
+            :: List.map attribute [ "voorjaarzuid"; "noordgewicht"; "zuidgewicht"; "strandgewicht"; "minimumgewicht" ]) ]
+      ~dimensions:[ seizoen; strand ]
+      [ rule "voorjaarzuid van een jutter" "voorjaarzuid" (cell "vondstgewicht" [ "voorjaar"; "zuid" ]);
+        rule "noordgewicht van een jutter" "noordgewicht"
+          (fold "sum" (reference "vondstgewicht") [ all_seasons; selection "strand" [ "noord" ] ]);
+        rule "zuidgewicht van een jutter" "zuidgewicht"
+          (fold "sum" (reference "vondstgewicht") [ all_seasons; selection "strand" [ "zuid" ] ]);
+        rule "strandgewicht van een jutter" "strandgewicht"
+          (fold "sum" (reference "vondstgewicht") [ all_seasons; selection "strand" [ "noord"; "zuid" ] ]);
+        rule "minimumgewicht van een jutter" "minimumgewicht"
+          (fold "minimum" (reference "vondstgewicht") [ all_seasons; selection "strand" [ "noord"; "zuid" ] ]) ]
+  in
+  let j1_two =
+    instance "J1" "Jutter"
+      [ ("vondstgewicht", cells_of [ ([ "voorjaar"; "noord" ], "2.00"); ([ "najaar"; "noord" ], "1.00"); ([ "voorjaar"; "zuid" ], "5.00") ]) ]
+  in
+  plays_named ~ident:"WV-5.8c-vouw-twee-dimensies" ~ir:two
+    ~case_data:
+      (case_of [ j1_two ]
+         (expected
+            [ value "J1" "voorjaarzuid" "5.00"; value "J1" "noordgewicht" "3.00"; value "J1" "zuidgewicht" "5.00";
+              value "J1" "strandgewicht" "8.00"; value "J1" "minimumgewicht" "1.00" ]));
+  (* a cell and a fold over a path of roles (B7): the leader of a ploeg *)
+  let path =
+    document
+      ~fact_types:
+        {|{"node": "FactType", "name": "ploegleiding", "reciprocal": false, "roles": [{"node": "Role", "name": "ploeg", "objectType": "Ploeg", "plural": "ploegen", "many": true}, {"node": "Role", "name": "leider", "objectType": "Jutter", "many": false}]}|}
+      ~object_types:
+        [ object_type "Jutter" "Jutters" [ attribute ~dimensions:[ "seizoen" ] "vondstgewicht" ];
+          object_type ~animate:false "Ploeg" "Ploegen" [ attribute "leidersvoorjaar"; attribute "leidersjaargewicht" ] ]
+      ~dimensions:[ seizoen ]
+      [ rule ~subject:"Ploeg" "leidersvoorjaar van een ploeg" "leidersvoorjaar" (cell ~path:leider "vondstgewicht" [ "voorjaar" ]);
+        rule ~subject:"Ploeg" "leidersjaargewicht van een ploeg" "leidersjaargewicht"
+          (fold "sum" (reference ~path:leider "vondstgewicht") [ all_seasons ]) ]
+  in
+  plays_named ~ident:"WV-5.8c-cel-over-een-pad" ~ir:path
+    ~case_data:
+      (case_of
+         [ instance ~roles:{|{"leider": ["J1"]}|} "P1" "Ploeg" [];
+           instance "P2" "Ploeg" [];
+           instance "J1" "Jutter" [ ("vondstgewicht", cells_of [ ([ "voorjaar" ], "12.50"); ([ "najaar" ], "4.00") ]) ] ]
+         (expected
+            [ value "P1" "leidersvoorjaar" "12.50"; value "P1" "leidersjaargewicht" "16.50"; empty "P2" "leidersvoorjaar";
+              empty "P2" "leidersjaargewicht" ]));
+  (* the input precision of a cell (EF-004): its place is the cell *)
+  let seizoenvondst = read_corpus "corpus/golden/jutterswet-seizoenvondst/ir.json" in
+  (match
+     with_files ~ir:seizoenvondst
+       ~case_data:
+         (case_of
+            [ instance "j1" "Jutter" [ ("vondstgewicht", cells_of [ ([ "voorjaar" ], "1.005"); ([ "najaar" ], "4.00") ]) ] ]
+            {|"expectedFault": {"code": "EF-004", "params": {}}|})
+       (fun _ _ evaluate -> evaluate ())
+   with
+  | exception Value.Fault { code; params; _ } ->
+      check "WV-5.8c-invoer-ef004"
+        (code = Some "EF-004"
+        && params = [ ("place", "j1.vondstgewicht[voorjaar]"); ("value", "1.005"); ("decimals", "2") ])
+  | exception Case.Error { text; _ } -> check ("WV-5.8c-invoer-ef004 (case refused: " ^ text ^ ")") false
+  | _ -> check "WV-5.8c-invoer-ef004 (no fault)" false);
+  (* a bare read of a dimensioned attribute is WF-125's; ref refuses it in the
+     verifier's sentence instead of reading a value the attribute does not have *)
+  let bare =
+    document
+      ~object_types:[ object_type "Jutter" "Jutters" [ attribute ~dimensions:[ "seizoen" ] "vondstgewicht"; attribute "kopie" ] ]
+      ~dimensions:[ seizoen ]
+      [ rule "kopie van een jutter" "kopie" (reference "vondstgewicht") ]
+  in
+  (match
+     with_files ~ir:bare
+       ~case_data:
+         (case_of [ instance "J1" "Jutter" [ ("vondstgewicht", cells_of [ ([ "voorjaar" ], "1.00") ]) ] ] (expected [ empty "J1" "kopie" ]))
+       (fun findings _ evaluate ->
+         check "WV-5.8c-kale-lezing: the verifier refuses it"
+           (List.exists (fun (x : Ir_v0.Checks.violation) -> x.wf = "WF-125") findings);
+         evaluate ())
+   with
+  | exception Value.Fault { text; _ } ->
+      check ("WV-5.8c-kale-lezing (got: " ^ text ^ ")")
+        (text
+        = "the dimensioned attribute 'vondstgewicht' of 'Jutter' is read outside a cell: it has a value per cell and \
+           none of its own, so it is read as the attribute of a DimensionCellRead or as the argument of a dimension \
+           fold")
+  | exception Case.Error { text; _ } -> check ("WV-5.8c-kale-lezing (case refused: " ^ text ^ ")") false
+  | _ -> check "WV-5.8c-kale-lezing (no fault)" false);
+  (* WV-5.12-cel: the cell is the node of its reading, the reference under it
+     has none; the node of a dimension fold has the fold's value and carries no
+     contributors, its argument has no reading of its own *)
+  let reading =
+    document
+      ~object_types:
+        [ object_type "Jutter" "Jutters"
+            [ attribute ~dimensions:[ "seizoen" ] "vondstgewicht"; attribute ~datatype:whole "voorjaarsbonus"; attribute "jaargewicht" ] ]
+      ~dimensions:[ seizoen ]
+      [ rule "voorjaarsbonus van een jutter" "voorjaarsbonus"
+          ~condition:
+            (Printf.sprintf
+               {|{"node": "Comparison", "op": "greater", "left": %s, "right": {"node": "Literal", "value": {"number": "10"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [%s]}}}|}
+               (cell "vondstgewicht" [ "voorjaar" ]) unit_kg)
+          {|{"node": "Literal", "value": {"number": "1"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}}|};
+        rule "jaargewicht van een jutter" "jaargewicht" (fold "sum" (reference "vondstgewicht") [ all_seasons ]) ]
+  in
+  let write suffix body_text =
+    let f = Filename.temp_file "ref-wv58c" suffix in
+    let oc = open_out f in
+    output_string oc body_text;
+    close_out oc;
+    f
+  in
+  let irf = write ".ir.json" reading
+  and casef =
+    write ".case.json"
+      (case_of
+         [ instance "J1" "Jutter" [ ("vondstgewicht", cells_of [ ([ "voorjaar" ], "12.50"); ([ "najaar" ], "4.00") ]) ];
+           instance "J2" "Jutter" [ ("vondstgewicht", cells_of [ ([ "najaar" ], "4.00") ]) ] ]
+         (expected [ value "J1" "voorjaarsbonus" "1"; empty "J2" "voorjaarsbonus" ]))
+  in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      match readings_of irf casef with
+      | got ->
+          let row form subject cells =
+            List.map (fun c -> Printf.sprintf "/rules/rules/%d/versions/0 \"%s\" %s" form subject c) cells
+          in
+          let expected =
+            List.sort compare
+              (row 0 "J1" [ "HOLDS"; "0 Comparison true"; "1 DimensionCellRead 12.5 \"kg\""; "3 Literal 10 \"kg\""; "4 Literal 1" ]
+              @ row 0 "J2"
+                  [ "FAILS"; "0 Comparison false"; "1 DimensionCellRead empty \"kg\""; "3 Literal 10 \"kg\""; "4 Literal unreached" ]
+              @ row 1 "J1" [ "HOLDS"; "0 Aggregation 16.5 \"kg\"" ]
+              @ row 1 "J2" [ "HOLDS"; "0 Aggregation 4 \"kg\"" ])
+          in
+          check "WV-5.12-cel" (got = expected);
+          if got <> expected then List.iter (Printf.printf "  got: %s\n") got
+      | exception Case.Error { text; _ } -> check ("WV-5.12-cel (case refused: " ^ text ^ ")") false
+      | exception Value.Fault { text; _ } -> check ("WV-5.12-cel (fault: " ^ text ^ ")") false)
 
 let () =
   if !failures > 0 then begin

@@ -348,6 +348,31 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
               Some
                 (Printf.sprintf "%s.%s = [%s], expected leeg" label attr
                    (String.concat ";" (List.map render_arg got))))
+      (* a cell (RUNTIME-SEMANTICS ch. 5.8c) is the val/3 member World.cell
+         names, scaled by its attribute's declaration; a cell of a number is
+         the one this encoding carries *)
+      | Cell_value { label; attr; labels; value = Value.Num _ as value } -> (
+          let member = Uchar_ref.World.cell attr labels in
+          let because = scaled_expect ~label ~attr value in
+          match val_of model label member with
+          | [ got ] when got = because -> None
+          | [] -> Some (Printf.sprintf "%s.%s is underived (leeg), expected %d" label member because)
+          | got ->
+              Some
+                (Printf.sprintf "%s.%s = [%s], expected %d" label member
+                   (String.concat ";" (List.map string_of_int got))
+                   because))
+      | Cell_value { value; _ } ->
+          fault "a cellValue expectation of %s is not checked here: this encoding carries a cell of a number"
+            (Value.to_string value)
+      | Cell_empty { label; attr; labels } -> (
+          let member = Uchar_ref.World.cell attr labels in
+          match val_present model label member with
+          | [] -> None
+          | got ->
+              Some
+                (Printf.sprintf "%s.%s = [%s], expected leeg" label member
+                   (String.concat ";" (List.map render_arg got))))
       | Attribute_timeline { label; attr; tl } ->
           (* segment-exact: the model's tl/5 atoms for this attribute
              (derived plus any case-supplied) must equal the expected

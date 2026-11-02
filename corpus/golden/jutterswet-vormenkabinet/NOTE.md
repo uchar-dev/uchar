@@ -1,19 +1,18 @@
-# jutterswet-vormenkabinet — no replay case, by design
+# jutterswet-vormenkabinet — the witness cabinet
 
-This golden is the **verifier-only witness cabinet** (see the "witness
-cabinet" section of `corpus/golden/README.md`). It exists to witness,
-positively and verifier-clean, the well-formedness rules whose constructs
-no *executing* corpus document carries yet. After the 2026-09-19 shrink
+This golden is the **witness cabinet** (see the "witness cabinet" section
+of `corpus/golden/README.md`). It exists to witness, positively and
+verifier-clean, the well-formedness rules whose constructs no other golden
+carries. After the 2026-09-19 shrink
 (the next section) that is WF-004/014/040 (the dimensioned attribute and
 its cell read), WF-016/032 (the variable-start timeline with its start
-point), WF-042 (the time window — **eligible to leave since 2026-09-20**,
-see below: the window now executes, and `jutterswet-premievenster` is its
-successor), plus WF-017's positive side, which the section near the end
+point), WF-042 (the time window — **eligible to leave since 2026-09-20**:
+the window executes, and `jutterswet-premievenster`, which carries it in both
+wire positions, is its successor), plus WF-017's positive side, which the section near the end
 carries (until L3 also WF-034 arm (s)'s identity half, which left the wire
-with the day-kind registry). It deliberately carries no `case*.json`, so
-gate 5 (the oracle) lists it as "NOT replayed, no case file yet". This NOTE
-records *why* that is a true report and not a gap to be filled with a
-manufactured case, and the exact condition under which it becomes one.
+with the day-kind registry). Every construct it holds executes in `ref`
+and the ASP backend, so it carries a case, `case1-cellen.json`, which gates
+5 and 6 replay (the section "The case" below).
 
 ## What left, and to whom (2026-09-19)
 
@@ -30,7 +29,7 @@ removals from the document:
 |---|---|---|
 | `staat na schouw`, with the `kwaliteit` domain and the `staat` attribute | WF-006, WF-039 (enum-label arm), the enum slice of WF-023 | `jutterswet-keurstaat`: it declares the domain `keurklasse`, and its `stempel voor een veilbare vondst` writes the label `gaaf` into an `Enumeration`-typed target — the same `equation`-with-enum-`Literal` shape this rule had. `jutterswet-vaarwatertoeslag-catala` carries a second one |
 | `aanwas na schouw`, with the `aanwas` attribute | WF-039 (sign arm) | `anchor/jutterswet-taxatie` (the literals `2` and `3`, each typed `nonNegative`), `anchor/jutterswet-aanspraaktelling` (`0.00`), `anchor/jutterswet-hardheid`, `anchor/jutterswet-vondstdossier` (`120.50`, `3`), `jutterswet-postenheffing`, `synth3-vondststaat`. Difference recorded rather than glossed: those carry the sign-restricted `Literal` as an **operand**, where this rule carried it at the write position. WF-039 reads the literal's own type wherever `walk_expr` reaches it, so it is the same node under the same clause — no corpus document outside this cabinet had it at a rule's value |
-| the counting quantifier of `peiling bij dubbele borging` — `atLeast` with threshold 2, now `all` with 0 | WF-041 | `jutterswet-wachtploeg` carries `atLeast` with threshold 2 on the composite host, the same form this rule had. Eight further composite goldens carry the other quantors and thresholds (`paasvondst`, `rubriektabel`, `seinwacht`, `sluimerwacht`, `tweevoudkeur`, `vacuumwacht`, `vrijgavetoets`, `wachtdeling`), and `jutterswet-reddingsvloot` carries the fold host of WF-108 (e). The rule itself stays: its `TimeWindow` member is a row that did not leave — *and that is no longer true as of 2026-09-20, see "The second rule no longer refuses anything" below* |
+| the counting quantifier of `peiling bij dubbele borging` — `atLeast` with threshold 2, now `all` with 0 | WF-041 | `jutterswet-wachtploeg` carries `atLeast` with threshold 2 on the composite host, the same form this rule had. Eight further composite goldens carry the other quantors and thresholds (`paasvondst`, `rubriektabel`, `seinwacht`, `sluimerwacht`, `tweevoudkeur`, `vacuumwacht`, `vrijgavetoets`, `wachtdeling`), and `jutterswet-reddingsvloot` carries the fold host of WF-108 (e). The rule itself stays: its `TimeWindow` member is a row that did not leave — *eligible to leave since 2026-09-20, when the window became executable (the header above)* |
 | the two dated versions of `doorwaadbaar bij lage stand` (`#1`, `#2`) | WF-021 | `anchor/jutterswet-jutheffing` — `jutheffing naar jaartarief #1`/`#2` is the only other corpus document whose rule names group to one name under the version strip WF-021 applies, with non-overlapping windows replayed per window |
 | the whole-year qualifier on those same two rules, with the `waterstand` read and the `doorwaadbaar` characteristic | WF-043 | `jutterswet-keurploeg`, `jutterswet-ploegpremie`, `jutterswet-reddingsvloot` and `jutterswet-sleepvloot` each compare a `month`-granular attribute under a whole-year qualifier (the last one negated) — the same wire shape, a `Comparison` whose `wholePeriod` is a `WholePeriod` over a non-set `AttributeReference` — and `synth-gehelejaarkenmerk` carries the characteristic variant |
 | the two definitions in `dayKindDefinitions` | WF-031 | `jutterswet-schouwkalender` carries two pure definitions, replayed by gates 5–6 over its ordinary rule, and `jutterswet-schouwrooster` a second pair. The `dayKinds` **declarations** and (until L3) the day-kind registry stay here — WF-017 and WF-034 (s) read the declaration table, not the definitions, and their witnesses did not leave (the section below; gate 3 stays green with the definitions gone) |
@@ -45,86 +44,48 @@ them:
 - the `bewaakt` and `omheind` members of the composite. Under `all` they
   are no longer the "at least two of three" the old name counted, but the
   name still reads true — the peiling holds when the field is guarded *and*
-  fenced *and* the window is open. The swap does narrow one thing, and it
-  is recorded under "Why no replay case" below: `ref` now reaches the
-  `TimeWindow` only on an instance carrying both characteristics.
+  fenced *and* the window is open. The swap does narrow one thing: an
+  executor reaches the `TimeWindow` only on an instance carrying both
+  characteristics (S2 of the case below stops before it).
 
 As of this shrink the WF index in `spec/IR-SPEC.md` still names this
 cabinet in the Golden column of the rules that left. That file is a
 protected path; the replacement cells are proposed in the shrinking card's
 `Result:` note, for the maintainer to land.
 
-## Why no replay case
+## The case
 
-The oracle (`ref/`) and the differential backend (`backends/clingo/`)
-replay a case by evaluating the **whole** document to its fixpoint and then
-checking the pinned expectations — there is no per-rule replay. Both rules
-this cabinet still carries exercise constructs the two executors
-deliberately refuse (they fault with context rather than guess — the
-fail-fast discipline of `ref/lib/eval.ml` and
-`backends/clingo/lib/translate.ml`), so any case over this IR faults before
-a single expectation can be checked:
+`case1-cellen.json`, hand-computed, with `asOfDate` 2026-03-01:
 
-| Rule | Construct (WF row) | Fault the reference interpreter raises |
-|---|---|---|
-| `vakcijfer uit voorjaarsopbrengst` | dimension-cell read of the dimensioned `opbrengst` (WF-004/014/040) | `expression kind not implemented in this card` |
-| `zeecijfer uit voorjaarsaanspoeling` | dimension-cell read over two dimensions of `aanspoeling` (WF-004/040) | `expression kind not implemented in this card` |
-| `peiling bij dubbele borging` | composite condition with a time-window (`TimeWindow`) member (WF-042) | **none any more** — the window became executable on 2026-09-20, see the section below |
+| instance | input | `vakcijfer` | `zeecijfer` | `peiling` |
+|---|---|---|---|---|
+| S1 | `opbrengst` `voorjaar` 7, `najaar` 2; `aanspoeling` (`voorjaar`, `zee`) 4, (`voorjaar`, `voorjaar`) 9, (`najaar`, `voorjaar`) 1; `bewaakt`, `omheind` | 7 | 4 | 1 |
+| S2 | `opbrengst` `najaar` 2; `aanspoeling` (`najaar`, `zee`) 3; `bewaakt` | leeg | leeg | leeg |
 
-The ASP backend mirrors these same refusals by construction
-(`backends/clingo/lib/translate.ml`: everything outside the
-corpus-exercised subset faults with context), so neither executor can
-replay this document. Since 2026-09-19 the document holds no rule that
-runs to a value in `ref`: the two that did — `staat na schouw` and
-`aanwas na schouw` — are exactly the two that left for their executing
-successors.
+`zeecijfer` reads the cell (`voorjaar`, `zee`) and not (`voorjaar`,
+`voorjaar`): label 1 is a label of `seizoen`, label 2 one of `herkomst`, so
+the shared label `voorjaar` names a different cell at each position (the
+section on WF-040's positional reading below). The `peiling` of S1 is the
+window's verdict on 2026-03-01; S2 lacks `omheind`, so its composite stops
+before the window. The case pins no input cell, since an expectation on one
+holds on the input as well and the no-op guard (gate 7) would let it pass.
 
-**The second rule no longer refuses anything (2026-09-20).** Its `TimeWindow`
-member was the cabinet's WF-042 witness precisely because no executor
-carried the construct. That changed with the card
-`ref-periodeconditie-arm`: `RUNTIME-SEMANTICS.md` ch. 3.10 specifies the
-scalar target's evaluation-date gate in six clauses with a worked example,
-and `ref` and the ASP backend now both implement it. On this document the
-rule simply evaluates — `ref` reads the composite member by member and
-stops at the first false one, so a `Schouwveld` without both
-characteristics never reaches the window at all, and one carrying both
-gets the window's own verdict against the case's `asOfDate`.
+| executor | outcome (2026-11-02) |
+|---|---|
+| `ref` (gate 5) | `oracle: PASS (7 expectations)` |
+| `clingo` (gate 6) | `clingo: PASS (7 expectations)` |
+| Drools (gate 12) | `EXCLUDE DROOLS-184: transpiler SKIP: regel: zeecijfer uit voorjaarsaanspoeling — a DimensionCellRead over 2 dimensions ('de aanspoeling in het voorjaar uit zee'): this branch reads only a cell of one dimension`, both branches |
 
-**So this row is eligible to leave, under the cabinet's own admission rule
-at the bottom of this NOTE**, and its executing successor exists:
-`corpus/golden/jutterswet-premievenster` carries the window in both wire
-positions — as a rule's whole condition (five rules, one per spelling) and
-as a member of an `all` composite beside a characteristic check, which is
-exactly this rule's shape. Six cases, all four executors, the six ch. 3.10
-clauses pinned one by one. Moving the row is a shrink, and a shrink is its
-own card: the 2026-09-19 one above shows what it costs to do carefully
-(which declarations a staying row still needs, which WF index cells move).
-Recorded here rather than done halfway.
-
-Until that shrink the document still cannot be replayed, and the reason is
-now the FIRST rule alone: its dimension-cell read faults on any instance at
-all, in `ref` and in the ASP backend alike. `clingo` translates every rule
-body statically, so it reaches that refusal without needing a subject.
-
-A case with zero `Schouwveld` instances does not even evade the faults
-cleanly. The reference interpreter is lazy per-instance: with no subject no
-rule body runs, so `ref` reports `oracle: PASS`. But the ASP backend
-translates every rule body **statically**, independent of instance count, so
-`clingo` still faults —
-`TRANSLATION FAULT: expression kind not translated (no corpus case exercises it)`
-— and gate 6 would turn **red**, not merely pin nothing. (Re-measured
-2026-09-19 on the shrunken document: unchanged.) Either way the case
-exercises and pins nothing real: it is exactly the manufactured "make the
-report go away" case this cabinet must not carry. Executable expectations
-belong to executing goldens, not to a scaffold.
+So the pins are a `ref` = clingo pair until the Drools backend reads a cell
+over two dimensions.
 
 ## What stays, and the measurement that keeps it here
 
 | Stays | WF rows | Measured 2026-09-19 |
 |---|---|---|
-| `vakcijfer uit voorjaarsopbrengst`, the dimensioned `opbrengst`, the `seizoen` dimension; `zeecijfer uit voorjaarsaanspoeling`, the `aanspoeling` dimensioned by `seizoen` and `herkomst`, the `herkomst` dimension | WF-004, WF-014, WF-040 | The only other corpus document carrying a `Dimension` or a `DimensionCellRead` is `jutterswet-seizoenvondst`, and that golden carries **no case file either** — it is the second verifier-only golden (`corpus/golden/README.md`). No *executing* document carries the form, so the row stays. The shrinking card's 2026-09-17 reading that `jutterswet-seizoenvondst` covers it had measured the construct without measuring the execution |
+| `vakcijfer uit voorjaarsopbrengst`, the dimensioned `opbrengst`, the `seizoen` dimension; `zeecijfer uit voorjaarsaanspoeling`, the `aanspoeling` dimensioned by `seizoen` and `herkomst`, the `herkomst` dimension | WF-004, WF-014, WF-040 | Measured 2026-11-02: `jutterswet-seizoenvondst` executes the cell read over one dimension and `jutterswet-seizoenvouw` the fold over one; a cell over two dimensions, and one whose dimensions share a label, stands in no other golden, so the row stays |
 | the variable-start `boekjaar` timeline, its `StartPointDetermination`, the `meetdatum` anchor and the `waterstand` member | WF-016, WF-032 | `jutterswet-penningjaar` is the corpus's other timeline golden, but its `het penningjaar` declares `variableStart: false`; this is the only GOLDEN with a non-empty `startPointDeterminations`, so both halves of the row are uncovered. (Two negative cases carried the node — `wf032-fixed-start-anchor` and `wf034-wees-attribuutdimensies`, the second removed at M1 — but a refusal pins no positive form) |
-| the `TimeWindow` member of `peiling bij dubbele borging` | WF-042 | `"node": "TimeWindow"` occurs in no other GOLDEN, and both executors still refuse it (the table above). Its host composite therefore stays, with the counting quantifier that *did* leave replaced by `all`. (`wf042-empty-window` carries the node on the refusing side, as `wf034-wees-attribuutdimensies` did until M1 removed it) |
+| the `TimeWindow` member of `peiling bij dubbele borging` | WF-042 | `"node": "TimeWindow"` occurred in no other GOLDEN at the shrink; the window executes since 2026-09-20 and `jutterswet-premievenster` carries it. Its host composite therefore stays, with the counting quantifier that *did* leave replaced by `all`. (`wf042-empty-window` carries the node on the refusing side, as `wf034-wees-attribuutdimensies` did until M1 removed it) |
 | the two day kinds, each with its plural | WF-017 (positive side) | the section below. Until L3 the row also carried the four registry entries and WF-034 arm (s)'s identity half; both left the wire with the registry (same section) |
 
 ## A cell over two dimensions that share a label: WF-040's positional reading
@@ -214,28 +175,17 @@ L3 neither arm has a key to read; the refusing side of WF-017 is pinned by the
 `wf017-*` cases of `corpus/negative/`.
 
 Cost, then and now: the day kinds move no verdict and no report line
-anywhere else, and the cabinet still carries no `case*.json`, so gate 5 keeps
-listing it as "NOT replayed" and gate 12 keeps it `NOCASE`.
+anywhere else.
 
 ## Reproduction
 
-From the workspace root, with the ref runner built (`dune build ref`), the
-runner on this `ir.json` and any case carrying one `Schouwveld` instance
-faults with `expression kind not implemented in this card` — the
-dimension-cell read of the first rule, which needs nothing of the instance.
+From the workspace root, with the ref runner built (`dune build ref`):
 
-The second rule no longer contributes a refusal at all. Filtering
-`rules` down to it (for example with `jq`) and replaying a
-`Schouwveld` gives `oracle: PASS` on every instance and every `asOfDate`:
-the window is evaluated, not refused. Before 2026-09-20 an instance
-carrying **both** `bewaakt` and `omheind` faulted here with the residual
-`condition kind not implemented in this card`, and that is the measurement
-the section above replaces.
+    _build/default/ref/bin/runner.exe corpus/golden/jutterswet-vormenkabinet/ir.json \
+      corpus/golden/jutterswet-vormenkabinet/case1-cellen.json
 
-All of the above re-measured 2026-09-19 on the shrunken document. The
-validity-window wrinkle this section used to record went out with the two
-`doorwaadbaar bij lage stand` rules; it now reproduces on
-`anchor/jutterswet-jutheffing`, where those windows execute.
+gives `oracle: PASS (7 expectations)`, and the clingo runner on the same pair
+`clingo: PASS (7 expectations)` (2026-11-02).
 
 ## When this cabinet shrinks
 
@@ -243,7 +193,7 @@ When one of the refused constructs becomes executable in **both**
 executors, its witness moves into an executing golden with a replay case
 and its rows leave this cabinet — the README's rule: the cabinet is
 "scaffolding for the WF index, never a place for semantics". Applied for
-the first time on 2026-09-19 (the table at the top of this NOTE); until the
-next construct becomes executable the case-less state is the correct one,
-and gate 5's "NOT replayed" line for this directory is a true, motivated
-report — not a coverage hole.
+the first time on 2026-09-19 (the table at the top of this NOTE). The rows
+that stay execute in this document itself, which carries a case for that
+reason; a row leaves when another golden carries its construct with a
+case.

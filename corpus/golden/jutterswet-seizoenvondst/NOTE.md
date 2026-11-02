@@ -1,4 +1,4 @@
-# jutterswet-seizoenvondst — the dimension-cell witness, verifier-only
+# jutterswet-seizoenvondst — the dimension-cell witness
 
 Until L2 the **`DimensieCel` witness** of the domain rules' cell arm
 (WF-089/WF-090, ch. 2.4) and of the reference-type identity rule
@@ -14,10 +14,8 @@ dimensioned attribute, the cell's own shape checks stay live (WF-034,
 `corpus/negative/wf034-dimension-cell-*`), and gate 10 re-emits it byte for
 byte.
 
-It is the **second verifier-only golden** (see the "witness cabinet"
-section of `corpus/golden/README.md`): it carries no `case*.json`, so
-gate 5 lists it as not replayed. That is a true report, and the section
-below is the measurement that makes it true.
+It carries a case, and `ref` and the ASP backend replay it (gates 5 and 6):
+the cell read executes (`RUNTIME-SEMANTICS.md` ch. 5.8c).
 
 ## What it pins
 
@@ -65,27 +63,22 @@ over-reject at that arm, has no arm left to witness: no unit or domain rule
 crosses a cell read since L2. What stays is that the verifier passes the
 cell read.
 
-## Why no replay case — measured, per executor
+## The case — measured, per executor
 
-`uchar-case-v0` carries the cells of a dimensioned attribute (the `cells`
-input, the `cellValue` and `cellEmpty` expectations, RUNTIME-SEMANTICS
-ch. 5.8c), and no executor evaluates a cell read. Each executor was run on
-this document with three scratch cases (2026-11-02): one without input that
-asserts only consistency, one that supplies the cells `voorjaar` 12.50 and
-`najaar` 4.00, and one that supplies `vondstgewicht` as a scalar.
+`case1-voorjaarscel.json`, the reading example of `RUNTIME-SEMANTICS.md`
+ch. 5.8c: J1 with the cells `voorjaar` 12.50 and `najaar` 4.00 gives
+`voorjaarsgewicht` 12.50; J2 with the cell `najaar` 4.00 alone gives
+`voorjaarsgewicht` leeg. The case pins no input cell, since an expectation on
+one holds on the input as well and the no-op guard (gate 7) would let it pass.
 
-| executor | without input | with cells | with a scalar |
-|---|---|---|---|
-| verifier (gate 3) | `verifier: PASS` — the well-formedness arm is the point of this document | | |
-| `ref` (gate 5) | `EVALUATION FAULT: REF-002: expression kind not implemented in this card` | `CASE ERROR: j1.vondstgewicht: a cells input is checked and then refused: neither executor that shares this reader evaluates a cell` | `CASE ERROR: j1.vondstgewicht: a dimensioned attribute takes its input per cell ("cells"), never a scalar or a timeline` |
-| `clingo` (gate 6) | `TRANSLATION FAULT: CLINGO-008: expression kind not translated (no corpus case exercises it)` | the case error of `ref` (one case reader) | the case error of `ref` |
-| Drools (gate 12) | `PLAYED 1` | `EXCLUDE DROOLS-047: dimensioned attribute input 'vondstgewicht' (§3.6, a Map bean member) is not carried by the v0 backend` | the same `EXCLUDE DROOLS-047` |
+| executor | outcome (2026-11-02) |
+|---|---|
+| `ref` (gate 5) | `oracle: PASS (3 expectations)` |
+| `clingo` (gate 6) | `clingo: PASS (3 expectations)` |
+| Drools (gate 12) | `EXCLUDE DROOLS-047: dimensioned attribute input 'vondstgewicht' (§3.6, a Map bean member) is not carried by the v0 backend`, both branches |
 
-So a case here could pin nothing and would turn gates 5 and 6 red: it is
-exactly the manufactured "make the report go away" case the witness
-cabinet must not carry. When the cell read becomes executable in `ref` and
-the ASP backend, this witness moves into an executing document and this
-NOTE goes with it.
+So the pins are a `ref` = clingo pair until the Drools backend carries a
+cells input.
 
 Gate 10 still applies in full: `source.rgs` re-emits byte-identically to
 the checked-in `ir.json`, so the source-level shape is pinned too.

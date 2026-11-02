@@ -31,6 +31,10 @@ type expectation =
   | Attribute_value of { label : string; attr : string; value : Value.t }
   | Attribute_empty of { label : string; attr : string }
   | Attribute_timeline of { label : string; attr : string; tl : Timeline.t }
+  | Cell_value of { label : string; attr : string; labels : string list; value : Value.t }
+  | Cell_empty of { label : string; attr : string; labels : string list }
+      (* a cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c), its
+         labels in the declared order of the attribute's dimensions *)
   | Char_present of { label : string; char : string }
   | Char_absent of { label : string; char : string }
   | Consistent
@@ -438,13 +442,25 @@ let cells_json j = match j with `Assoc [ ("cells", c) ] -> Some c | _ -> None
    label of dimension i (EF-034), the case names no cell twice (EF-035), and
    a cell's value has the attribute's datatype. The labels are positional,
    as on the wire (IR-SPEC ch. 4.3), so a case spells one cell one way. *)
-let cells_of_json (doc : document) ~label ~attr ~(dims : string list) (decl : datatype option) ~at
-    (cj : Yojson.Safe.t) =
+(* whether [labels] name a cell of an attribute dimensioned by [dims]: label i
+   a label of dimension i *)
+let names_cell (doc : document) ~(dims : string list) labels =
   let declared dn =
     match Ir_v0.Checks.find_ci doc.dimensions dn with
     | Some (d : dimension) -> Ir_v0.Checks.some_names d.dim_values
     | None -> []
   in
+  List.length labels = List.length dims
+  && List.for_all2 (fun l dn -> Ir_v0.Checks.mem_ci (declared dn) l) labels dims
+
+let no_cell_sentence ~at ~attr ~dims labels =
+  Printf.sprintf
+    "%s: the labels [%s] name no cell of %S, whose dimensions are %s: a cell names one label of each \
+     dimension, in declared order"
+    at (String.concat ", " labels) attr (String.concat ", " dims)
+
+let cells_of_json (doc : document) ~label ~attr ~(dims : string list) (decl : datatype option) ~at
+    (cj : Yojson.Safe.t) =
   let cells =
     List.mapi
       (fun i c ->
@@ -453,17 +469,10 @@ let cells_of_json (doc : document) ~label ~attr ~(dims : string list) (decl : da
         let labels =
           List.mapi (fun k l -> str ~at:(Printf.sprintf "%s.labels[%d]" cat k) l) (list_field ~at:cat kvs "labels")
         in
-        let fits =
-          List.length labels = List.length dims
-          && List.for_all2 (fun l dn -> Ir_v0.Checks.mem_ci (declared dn) l) labels dims
-        in
-        if not fits then
+        if not (names_cell doc ~dims labels) then
           failc
             ~params:[ ("label", label); ("attribute", attr); ("labels", String.concat ", " labels) ]
-            "EF-034"
-            "%s: the labels [%s] name no cell of %S, whose dimensions are %s: a cell names one label \
-             of each dimension, in declared order"
-            cat (String.concat ", " labels) attr (String.concat ", " dims);
+            "EF-034" "%s" (no_cell_sentence ~at:cat ~attr ~dims labels);
         (labels, value_of_json ~at:(cat ^ ".value") decl (field ~at:cat kvs "value")))
       (list_ ~at:(child at "cells") cj)
   in
@@ -506,9 +515,13 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
                attributeValue expectation) *)
             match (Ir_v0.Checks.attr_dimensions ot name, cells_json vj) with
             | Some dims, Some cj ->
-                ignore (cells_of_json doc ~label ~attr:name ~dims decl ~at cj);
-                fail "%s: a cells input is checked and then refused: neither executor that shares this \
-                      reader evaluates a cell" at
+                (* each cell is a member of its own (World.cell); a cell the
+                   input does not name stays absent, which is empty *)
+                ( List.fold_left
+                    (fun attrs (labels, v) -> SMap.add (norm (World.cell name labels)) v attrs)
+                    attrs
+                    (cells_of_json doc ~label ~attr:name ~dims decl ~at cj),
+                  tls )
             | Some _, None ->
                 fail "%s: a dimensioned attribute takes its input per cell (\"cells\"), never a scalar \
                       or a timeline" at
@@ -906,6 +919,37 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
               ~grid decl
               (field ~at kvs "timeline");
         }
+  | "cellValue" | "cellEmpty" -> (
+      let i = get_instance () in
+      let attr = str_field ~at kvs "attribute" in
+      let ot = find_object_type doc i.otype in
+      let decl =
+        match Ir_v0.Checks.find_ci ot.attributes attr with
+        | Some d -> d
+        | None -> fail "expected attribute %S is not declared on %S" attr i.otype
+      in
+      let dims =
+        match Ir_v0.Checks.attr_dimensions ot attr with
+        | Some dims -> dims
+        | None -> fail "%s: %S is no dimensioned attribute: a cell expectation names a cell of one" at attr
+      in
+      let labels =
+        List.mapi (fun k l -> str ~at:(Printf.sprintf "%s.labels[%d]" at k) l) (list_field ~at kvs "labels")
+      in
+      (* labels that name no cell ask after a member the document does not
+         declare, as an unknown attribute does: a case error without a code *)
+      if not (names_cell doc ~dims labels) then fail "%s" (no_cell_sentence ~at ~attr ~dims labels);
+      match kind with
+      | "cellValue" ->
+          Cell_value
+            {
+              label = i.label;
+              attr;
+              labels;
+              value =
+                value_of_json ~at:("expected " ^ i.label ^ "." ^ World.cell attr labels) decl (field ~at kvs "value");
+            }
+      | _ -> Cell_empty { label = i.label; attr; labels })
   | "characteristicPresent" | "characteristicAbsent" ->
       let i = get_instance () in
       let c = str_field ~at kvs "characteristic" in
@@ -1120,6 +1164,19 @@ let check (case : t) (final : World.t) : string list =
           let actual = World.attr (World.get final label) attr in
           if actual = Value.Empty then None
           else Some (Printf.sprintf "%s.%s = %s, expected leeg" label attr (Value.to_string actual))
+      | Cell_value { label; attr; labels; value } ->
+          let member = World.cell attr labels in
+          let actual = World.attr (World.get final label) member in
+          if Arith.equal actual value then None
+          else
+            Some
+              (Printf.sprintf "%s.%s = %s, expected %s" label member (Value.to_string actual)
+                 (Value.to_string value))
+      | Cell_empty { label; attr; labels } ->
+          let member = World.cell attr labels in
+          let actual = World.attr (World.get final label) member in
+          if actual = Value.Empty then None
+          else Some (Printf.sprintf "%s.%s = %s, expected leeg" label member (Value.to_string actual))
       | Attribute_timeline { label; attr; tl } -> (
           let show (s : Timeline.segment) =
             Printf.sprintf "[%s,%s)=%s" (Value.iso_of_date s.s_from) (Value.iso_of_date s.s_to)

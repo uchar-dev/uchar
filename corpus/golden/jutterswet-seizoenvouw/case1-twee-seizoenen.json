@@ -1,0 +1,74 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "number": "3.00"
+                }
+              },
+              {
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "number": "2.00"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "5.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "groeigewicht",
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "piekgewicht",
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "dalgewicht",
+      "value": {
+        "number": "2.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

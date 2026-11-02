@@ -96,6 +96,17 @@ let of_type ~isa w otype =
       if isa i.otype otype then Some i else None)
     w.order
 
+(* A cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c) is a member
+   of its own, held in [attrs] beside the scalar attributes under this name:
+   the attribute's name with the cell's labels in declared order, spelled as
+   the dependency graph spells the cell (Ir_v0.Checks.n_cell) and as a fault
+   names its place. So every reader and writer of an attribute below serves a
+   cell unchanged. *)
+let cell name labels = name ^ "[" ^ String.concat ", " labels ^ "]"
+
+(* whether the member [m] is a cell of the attribute [name] *)
+let cell_of name m = String.starts_with ~prefix:(norm name ^ "[") (norm m)
+
 let attr i name = Option.value (SMap.find_opt (norm name) i.attrs) ~default:Value.Empty
 let has_char i name = List.mem (norm name) i.chars
 let left_side i role_key = Option.value (SMap.find_opt (norm role_key) i.left_side) ~default:[]

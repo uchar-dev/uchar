@@ -1,0 +1,93 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "number": "1.25"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "jaargewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "groeigewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "piekgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "dalgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "1.25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "groeigewicht",
+      "value": {
+        "number": "1.25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "piekgewicht",
+      "value": {
+        "number": "1.25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "dalgewicht",
+      "value": {
+        "number": "1.25"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# jutterswet-seizoenvouw — the dimension fold written in RegelSpraak, verifier-only
+# jutterswet-seizoenvouw — the dimension fold written in RegelSpraak
 
 The first golden that carries `dimensionSelections` (IR-SPEC ch. 4.3,
 `CONSTRUCTS.md` row 28): a sum, a maximum and a minimum over the labels of the
@@ -8,10 +8,8 @@ card frontend-emitterrestanten the frontend refused every such fold, so no
 document carried one outside the negative witness
 `wf037-filled-count-dimension-selection`.
 
-It is a **verifier-only** golden, the third after `jutterswet-vormenkabinet`
-and `jutterswet-seizoenvondst` (see the witness-cabinet section of
-`corpus/golden/README.md`): it carries no `case*.json`, and gate 5 lists it as
-not replayed. The section below is the measurement that makes that true.
+It carries two cases, and `ref` and the ASP backend replay them (gates 5
+and 6): the dimension fold executes (`RUNTIME-SEMANTICS.md` ch. 5.8c).
 
 ## Source (`source.rgs`)
 
@@ -60,21 +58,28 @@ labels joined by `en` when exactly one grouping of its words gives declared
 labels only, a declared label being read whole first (`DimensionFoldTest`), so
 `{voorjaar en najaar}` selects `voorjaar` and `najaar`.
 
-## Why no replay case — measured, per executor
+## The cases — measured, per executor
 
-`uchar-case-v0` carries the cells of a dimensioned attribute (the `cells`
-input, the `cellValue` and `cellEmpty` expectations, RUNTIME-SEMANTICS
-ch. 5.8c), and no executor evaluates a dimension fold. Each executor was run
-on this document with three scratch cases (2026-11-02): one without input
-that asserts only consistency, one that supplies the cells `voorjaar` 12.50
-and `najaar` 4.00, and one that supplies `vondstgewicht` as a scalar.
+The folding example of `RUNTIME-SEMANTICS.md` ch. 5.8c over one dimension,
+hand-computed:
 
-| executor | without input | with cells | with a scalar |
-|---|---|---|---|
-| verifier (gate 3) | `verifier: PASS` | | |
-| `ref` (gate 5) | `EVALUATION FAULT: dimension selection not implemented in this card` | `CASE ERROR: j1.vondstgewicht: a cells input is checked and then refused: neither executor that shares this reader evaluates a cell` | `CASE ERROR: j1.vondstgewicht: a dimensioned attribute takes its input per cell ("cells"), never a scalar or a timeline` |
-| `clingo` (gate 6) | `TRANSLATION FAULT: CLINGO-008: expression kind not translated (no corpus case exercises it)` | the case error of `ref` (one case reader) | the case error of `ref` |
-| Drools (gate 12) | `PLAYED 1`, every fold reading empty | `EXCLUDE DROOLS-047: dimensioned attribute input 'vondstgewicht' (§3.6, a Map bean member) is not carried by the v0 backend` | the same `EXCLUDE DROOLS-047` |
+| case | input | `jaargewicht` | `groeigewicht` | `piekgewicht` | `dalgewicht` |
+|---|---|---|---|---|---|
+| `case1-twee-seizoenen.json` | J1: `voorjaar` 3.00, `najaar` 2.00, `zomer` empty | 5.00 | 3.00 | 3.00 | 2.00 |
+| `case2-leeg-en-zomer.json` | J2: no cell | leeg | leeg | leeg | leeg |
+| | J3: `zomer` 1.25 alone | 1.25 | 1.25 | 1.25 | 1.25 |
 
-So a case here would pin nothing that two of the three executors can
-answer, and it would turn gates 5 and 6 red.
+An empty cell is skipped (`groeigewicht` of J1 is `voorjaar` alone, the
+`dalgewicht` `najaar` alone), and a fold whose every cell is empty is leeg,
+the four folds of J2. J2 shares its case with J3, since a case of J2 alone
+would hold on its input and the no-op guard (gate 7) would let it pass; for
+the same reason no case pins an input cell.
+
+| executor | outcome (2026-11-02) |
+|---|---|
+| `ref` (gate 5) | `oracle: PASS (5 expectations)`, `oracle: PASS (9 expectations)` |
+| `clingo` (gate 6) | `clingo: PASS (5 expectations)`, `clingo: PASS (9 expectations)` |
+| Drools (gate 12) | `EXCLUDE DROOLS-047: dimensioned attribute input 'vondstgewicht' (§3.6, a Map bean member) is not carried by the v0 backend`, both branches |
+
+So the pins are a `ref` = clingo pair until the Drools backend carries a
+cells input.

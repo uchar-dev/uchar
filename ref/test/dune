@@ -26,6 +26,12 @@
   ../../corpus/golden/anchor/jutterswet-nestuitzondering/case1-alleen-y.json
   ../../corpus/golden/anchor/jutterswet-nestuitzondering/case9-verdrongen-conflict.json
   (glob_files ../../corpus/golden/anchor/jutterswet-vondstwaardering/*.json)
+  ; the examples of ch. 5.8c over one dimension are goldens
+  ../../corpus/golden/jutterswet-seizoenvondst/ir.json
+  ../../corpus/golden/jutterswet-seizoenvondst/case1-voorjaarscel.json
+  ../../corpus/golden/jutterswet-seizoenvouw/ir.json
+  ../../corpus/golden/jutterswet-seizoenvouw/case1-twee-seizoenen.json
+  ../../corpus/golden/jutterswet-seizoenvouw/case2-leeg-en-zomer.json
   ; m × m written into a declared m·m/s, no golden: the verifier admits it and ref must fault on it
   fixtures/product-into-rate/ir.json
   fixtures/product-into-rate/case.json)

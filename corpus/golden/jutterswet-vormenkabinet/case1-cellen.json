@@ -1,0 +1,150 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-01",
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schouwveld",
+        "attributes": {
+          "opbrengst": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "number": "7"
+                }
+              },
+              {
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "number": "2"
+                }
+              }
+            ]
+          },
+          "aanspoeling": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar",
+                  "zee"
+                ],
+                "value": {
+                  "number": "4"
+                }
+              },
+              {
+                "labels": [
+                  "voorjaar",
+                  "voorjaar"
+                ],
+                "value": {
+                  "number": "9"
+                }
+              },
+              {
+                "labels": [
+                  "najaar",
+                  "voorjaar"
+                ],
+                "value": {
+                  "number": "1"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "bewaakt",
+          "omheind"
+        ]
+      },
+      {
+        "label": "S2",
+        "objectType": "Schouwveld",
+        "attributes": {
+          "opbrengst": {
+            "cells": [
+              {
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "number": "2"
+                }
+              }
+            ]
+          },
+          "aanspoeling": {
+            "cells": [
+              {
+                "labels": [
+                  "najaar",
+                  "zee"
+                ],
+                "value": {
+                  "number": "3"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "bewaakt"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "vakcijfer",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "zeecijfer",
+      "value": {
+        "number": "4"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "peiling",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "vakcijfer"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "zeecijfer"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S2",
+      "attribute": "peiling"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
