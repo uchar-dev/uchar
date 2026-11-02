@@ -225,7 +225,7 @@ missing line makes `make gates` exit non-zero. Current gates:
    without a key in `checks.ml`; floors `EXPECTED_MIN_ARMS=239`,
    `EXPECTED_MIN_PARAM_LINES=686`, `EXPECTED_MIN_REPORT_KEYS=340`,
    `EXPECTED_MIN_ARM_SITES=442`, `EXPECTED_MIN_EXPECT=411`,
-   `EXPECTED_MIN_POINTERS=706` and `EXPECTED_MIN_NEGATIVE=568` (measured
+   `EXPECTED_MIN_POINTERS=705` and `EXPECTED_MIN_NEGATIVE=568` (measured
    2026-11-02, card `dimensions-executed`; first set 2026-10-19). Since 2026-10-21 (card
    `default-statute-annotations`) WF-082 judges the `statuteAnnotations` of a
    Default too (IR-SPEC ch. 6.1); the verifier reads those lists beside the
@@ -436,7 +436,8 @@ missing line makes `make gates` exit non-zero. Current gates:
     `test-beyond-thirteen-reads` (2026-10-27) DROOLS-264, since the card
     `fout-op-tussenstand` (2026-11-01) DROOLS-120 and DROOLS-165, since the card
     `dimensions-executed` (2026-11-02) DROOLS-040, DROOLS-047, DROOLS-184,
-    DROOLS-191, DROOLS-297 and DROOLS-298; every raised code
+    DROOLS-191, DROOLS-297 and DROOLS-298, since the card
+    `dimensions-remaining` (2026-11-02) DROOLS-189; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`

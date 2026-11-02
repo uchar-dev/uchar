@@ -918,3 +918,5 @@ end 2026-11-02 20:34:33 319s red=0
 ```
 
 Niet gemerged, niet gepusht. De kaart blijft in `doing/`.
+
+**Landing (hoofdsessie, 2026-11-02).** Zelf nagemeten op `4e84d1794`: `jutterswet-ploegseizoen`, `-seizoenaanvang`, `-seizoenlogboek` en `-seizoenvouw` halen in ref PASS (23, 11, 9, 17, 10, 19 en 10 verwachtingen) en spelen op beide Drools-branches; de rode stand op `b7e3a9611` en `28df094fd` staat in de Results van A, D, M en B. Afgekeurd en in stap M hersteld: in A was de tokenfout van `{najaar en zomer}` in de golden omzeild. Ff op main `b7e3a9611`; de laatste `make gates` draaide op `3d8f12923`, daarna alleen het Result. In dezelfde landing: CONSTRUCTS rij 28, `DimensieSelectie`, `DimensieCel`; CLAUDE.md gate 3 (`EXPECTED_MIN_POINTERS` 705) en gate 12 (DROOLS-189 retired). Blijft open, elk met naam: een celdoel over een pad (DROOLS-100; ALEF schrijft het niet), een dimensievouw over de cellen van alle leden (geen draadvorm; ALEF schrijft het niet), DROOLS-296 (kaart `20261102-drools-exact-arithmetic`), de frontendgrenzen in `grammar/DIVERGENCES.md`. Pin-bump van de toolchain volgt.
