@@ -3318,25 +3318,43 @@ let run_allocation env world (v : resolved_allocation) =
     let target_attr = req "AllocationVersion.targetAttribute" v.target_attribute in
     let method_name = req "AllocationVersion.method" v.vd_method in
     over_subjects env world ~form:v.vd_pointer ~otype:source_type ~rule:name (fun w src cond_err ->
+        (* what the allocation writes from [src] is held under this name, so
+           where it does not decide on [src] it gives back (ch. 6.1) *)
+        let form = v.vd_pointer ^ " from " ^ src.label in
+        (* ch. 4.1: the recipient set is every DOELTYPE instance the
+           connecting relation reaches — the role only supplies the
+           relation. WF-047 asks ⊑-compatibility of the bound role's
+           filler and doelType (ch. 2.6), so the filler may be a STRICT
+           SUPERTYPE, and the role then reaches instances this allocation
+           does not target. Filtering is identity wherever the filler is
+           doelType or below. *)
+        let recipients_in w =
+          List.filter
+            (fun (i : World.instance) -> isa env i.otype objective_type_name)
+            (linked env w src ~binding:v.connecting_role)
+        in
+        let release w =
+          let w, ch =
+            List.fold_left
+              (fun (w, ch) (i : World.instance) ->
+                let w, c = World.release w ~form ~label:i.label ~attr:target_attr in
+                (w, ch || c))
+              (w, false) (recipients_in w)
+          in
+          match v.remainder_attribute with
+          | None -> (w, ch)
+          | Some ra ->
+              let w, c = World.release w ~form ~label:src.label ~attr:ra in
+              (w, ch || c)
+        in
         let cond_ok =
           match v.vd_condition with
           | Some c -> eval_cond env w src ~err:cond_err c
           | None -> true
         in
-        if not cond_ok then (w, false)
+        if not cond_ok then release w
         else
-          (* ch. 4.1: the recipient set is every DOELTYPE instance the
-             connecting relation reaches — the role only supplies the
-             relation. WF-047 asks ⊑-compatibility of the bound role's
-             filler and doelType (ch. 2.6), so the filler may be a STRICT
-             SUPERTYPE, and the role then reaches instances this allocation
-             does not target. Filtering is identity wherever the filler is
-             doelType or below. *)
-          let recipients =
-            List.filter
-              (fun (i : World.instance) -> isa env i.otype objective_type_name)
-              (linked env w src ~binding:v.connecting_role)
-          in
+          let recipients = recipients_in w in
           let recs =
             List.map
               (fun (i : World.instance) ->
@@ -3361,17 +3379,20 @@ let run_allocation env world (v : resolved_allocation) =
               w !alloc_errs
           in
           match outcome with
-          | Alloc.Nothing -> (w, false)
+          | Alloc.Nothing -> release w
           | Alloc.Distributed (shares, rest) ->
               let decl = attr_decl env ~otype:objective_type_name ~attr:target_attr in
               let w, ch =
                 List.fold_left
                   (fun (w, ch) (id, share) ->
                     match share with
-                    | Alloc.Excluded -> (w, ch) (* stays leeg, never 0 *)
+                    | Alloc.Excluded ->
+                        (* stays leeg, never 0 *)
+                        let w, c = World.release w ~form ~label:id ~attr:target_attr in
+                        (w, ch || c)
                     | Alloc.Assigned q ->
                         let w, c =
-                          World.write_attr w ~label:id ~attr:target_attr ~decl
+                          World.write_attr_by w ~form ~label:id ~attr:target_attr ~decl
                             (Value.Num (q, Value.Unitless))
                         in
                         (w, ch || c))
@@ -3381,7 +3402,7 @@ let run_allocation env world (v : resolved_allocation) =
                 match v.remainder_attribute with
                 | None -> (w, false) (* undeclared: the rest lapses (a SHOULD, no WF rule) *)
                 | Some ra ->
-                    World.write_attr w ~label:src.label ~attr:ra
+                    World.write_attr_by w ~form ~label:src.label ~attr:ra
                       ~decl:(attr_decl env ~otype:source_type ~attr:ra)
                       (Value.Num (rest, Value.Unitless))
               in

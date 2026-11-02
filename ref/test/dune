@@ -38,5 +38,10 @@
   ; the documents of TmsTimelineWitnessTest B2 in both orders, a timeline written on a state between
   fixtures/written-timeline/teller-first/ir.json
   fixtures/written-timeline/jaardeel-first/ir.json
-  fixtures/written-timeline/case.json)
+  fixtures/written-timeline/case.json
+  ; the golden jutterswet-voorwaardedeling with a computed condition, in both orders of its two rules
+  fixtures/written-allocation/vrijgavescore-first/ir.json
+  fixtures/written-allocation/tussenscore-first/ir.json
+  fixtures/written-allocation/case1-voorwaarde-vervalt.json
+  fixtures/written-allocation/case2-voorwaarde-blijft.json)
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

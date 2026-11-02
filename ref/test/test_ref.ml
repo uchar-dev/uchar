@@ -11087,7 +11087,24 @@ let () =
         ~ir:(read (dir ^ order ^ "/ir.json"))
         ~case_data:(read (dir ^ "case.json"))
         (fun _ -> ()))
-    [ "teller-first"; "jaardeel-first" ]
+    [ "teller-first"; "jaardeel-first" ];
+  (* the allocation (ch. 4.1): the golden jutterswet-voorwaardedeling with its
+     vrijgavescore computed from a tussenscore that a second rule replaces. On
+     the input tussenscore 12 the condition holds and the bergopbrengst 100 is
+     distributed 25 and 75; at the fixpoint the vrijgavescore is 5, and the
+     shares go back to leeg. With the bergscore 12 the shares stand. *)
+  List.iter
+    (fun (order, case) ->
+      let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+      let dir = "ref/test/fixtures/written-allocation/" in
+      plays
+        ~ident:(Printf.sprintf "WV-6.1-written-allocation %s %s" order case)
+        ~ir:(read (dir ^ order ^ "/ir.json"))
+        ~case_data:(read (dir ^ case ^ ".json"))
+        (fun _ -> ()))
+    (List.concat_map
+       (fun order -> [ (order, "case1-voorwaarde-vervalt"); (order, "case2-voorwaarde-blijft") ])
+       [ "vrijgavescore-first"; "tussenscore-first" ])
 
 (* The case reader at a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c):
    the attribute has a value per cell and none of its own, so a scalar or a

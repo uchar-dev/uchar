@@ -1,0 +1,76 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Strandberging",
+        "attributes": {
+          "bergopbrengst": {
+            "number": "100"
+          },
+          "tussenscore": {
+            "number": "12"
+          },
+          "bergscore": {
+            "number": "5"
+          }
+        },
+        "roles": {
+          "bergjutters": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "berggewicht": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "berggewicht": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "vrijgavescore",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "bergdeel"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "bergdeel"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

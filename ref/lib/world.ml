@@ -171,7 +171,7 @@ let store_attr w ~label ~attr:name ~decl v =
 let held_by_initialisation w key =
   match Key.find_opt key w.owners with Some o -> o.initialisation | None -> false
 
-(* A write that no form holds, an allocation's or a creation's: the target is
+(* A write that no form holds, a creation's at the making: the target is
    nobody's to give back. A write by any writer but an initialisation takes the
    target from the initialisation, also where it writes the value that stands:
    the value is that writer's then, whichever fired first, and the
