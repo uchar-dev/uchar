@@ -332,16 +332,16 @@
               "right": {
                 "node": "Literal",
                 "value": {
-                  "number": "0.1500"
+                  "number": "0.15"
                 },
                 "type": {
                   "node": "Number",
                   "whole": false,
-                  "decimals": 4,
+                  "decimals": 0,
                   "sign": "unspecified"
                 },
                 "source": {
-                  "snippet": "0.1500"
+                  "snippet": "0.15"
                 }
               },
               "type": {
@@ -375,16 +375,16 @@
               "right": {
                 "node": "Literal",
                 "value": {
-                  "number": "0.2000"
+                  "number": "0.2"
                 },
                 "type": {
                   "node": "Number",
                   "whole": false,
-                  "decimals": 4,
+                  "decimals": 0,
                   "sign": "unspecified"
                 },
                 "source": {
-                  "snippet": "0.2000"
+                  "snippet": "0.2"
                 }
               },
               "type": {
@@ -563,16 +563,16 @@
               "left": {
                 "node": "Literal",
                 "value": {
-                  "number": "1.0000"
+                  "number": "1"
                 },
                 "type": {
                   "node": "Number",
                   "whole": false,
-                  "decimals": 4,
+                  "decimals": 0,
                   "sign": "unspecified"
                 },
                 "source": {
-                  "snippet": "1.0000"
+                  "snippet": "1"
                 }
               },
               "right": {
@@ -598,29 +598,29 @@
                 "right": {
                   "node": "Literal",
                   "value": {
-                    "number": "4.0000"
+                    "number": "4"
                   },
                   "type": {
                     "node": "Number",
                     "whole": false,
-                    "decimals": 4,
+                    "decimals": 0,
                     "sign": "unspecified"
                   },
                   "source": {
-                    "snippet": "4.0000"
+                    "snippet": "4"
                   }
                 },
                 "type": {
                   "node": "Number",
                   "whole": false,
-                  "decimals": 4,
+                  "decimals": 0,
                   "sign": "unspecified"
                 }
               },
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 4,
+                "decimals": 0,
                 "sign": "unspecified"
               }
             },
@@ -690,16 +690,16 @@
                   "left": {
                     "node": "Literal",
                     "value": {
-                      "number": "1.0000"
+                      "number": "1"
                     },
                     "type": {
                       "node": "Number",
                       "whole": false,
-                      "decimals": 4,
+                      "decimals": 0,
                       "sign": "unspecified"
                     },
                     "source": {
-                      "snippet": "1.0000"
+                      "snippet": "1"
                     }
                   },
                   "right": {
@@ -726,29 +726,29 @@
                     "right": {
                       "node": "Literal",
                       "value": {
-                        "number": "4.0000"
+                        "number": "4"
                       },
                       "type": {
                         "node": "Number",
                         "whole": false,
-                        "decimals": 4,
+                        "decimals": 0,
                         "sign": "unspecified"
                       },
                       "source": {
-                        "snippet": "4.0000"
+                        "snippet": "4"
                       }
                     },
                     "type": {
                       "node": "Number",
                       "whole": false,
-                      "decimals": 4,
+                      "decimals": 0,
                       "sign": "unspecified"
                     }
                   },
                   "type": {
                     "node": "Number",
                     "whole": false,
-                    "decimals": 4,
+                    "decimals": 0,
                     "sign": "unspecified"
                   }
                 },
@@ -1893,16 +1893,16 @@
                 "right": {
                   "node": "Literal",
                   "value": {
-                    "number": "0.1500"
+                    "number": "0.15"
                   },
                   "type": {
                     "node": "Number",
                     "whole": false,
-                    "decimals": 4,
+                    "decimals": 0,
                     "sign": "unspecified"
                   },
                   "source": {
-                    "snippet": "0.1500"
+                    "snippet": "0.15"
                   }
                 },
                 "type": {
@@ -1952,16 +1952,16 @@
                 "right": {
                   "node": "Literal",
                   "value": {
-                    "number": "0.2000"
+                    "number": "0.2"
                   },
                   "type": {
                     "node": "Number",
                     "whole": false,
-                    "decimals": 4,
+                    "decimals": 0,
                     "sign": "unspecified"
                   },
                   "source": {
-                    "snippet": "0.2000"
+                    "snippet": "0.2"
                   }
                 },
                 "type": {

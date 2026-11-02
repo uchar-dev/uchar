@@ -1,0 +1,20 @@
+# Vangstverdeling door een invoer — rechtenvrij, eigen auteurschap
+
+Een deling door een invoer: twee integers gedeeld leveren in Catala een
+decimal op, en een Catala-decimal is de onbegrensde vorm (RUNTIME-SEMANTICS
+ch. 2.9). Een quotiënt door een attribuut heeft geen eindige precisiegrens
+(ch. 2.3), en de precisiepoort (ch. 2.4 punt 4) zet op de onbegrensde vorm
+geen plafond, dus de bron is welgevormd zonder afronding. ref rekent exact:
+7 / 2 = 3.5 en 9 / 4 = 2.25. clingo houdt de onbegrensde vorm zonder eindige
+grens als geheel getal en weigert 7 / 2 met naam; de fixture draait daarom
+door ref, en de suite toetst de weigering van clingo.
+
+```catala
+declaration scope Vangstverdeling:
+  input vangst content integer
+  input jutters content integer
+  output aandeel content decimal
+
+scope Vangstverdeling:
+  definition aandeel equals vangst / jutters
+```

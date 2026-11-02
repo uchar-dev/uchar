@@ -138,12 +138,16 @@ let () =
          with a binder-only condition (WF-077). Both branches through the full
          differential *)
       ("let_if.catala_en", [ "cases/letif_60.json"; "cases/letif_0.json" ]);
-      (* row-5c §5: Catala decimals at the pinned scale S = 4 — a percentage
+      (* row-5c §5: Catala decimals as the unbounded form — a percentage
          literal, the rational operators (Add/Sub/Mult/Div_rat_rat, unary
          Minus_rat) and the ToRat cast, plus a money × rate product that Catala
          rounds to the cent (Rounding{halfAwayFromZero,2}) on tutorial magnitude,
-         which clingo encodes SPLIT so the scale-6 product never wraps int31 *)
+         which clingo encodes SPLIT so the product never wraps int31 *)
       ("decimals.catala_en", [ "cases/dec_three.json"; "cases/dec_five.json" ]);
+      (* a decimal literal of five decimals: the plugin writes its shortest
+         exact lexeme, and clingo holds the attribute at the scale of its
+         precision bound (RUNTIME-SEMANTICS ch. 2.9) *)
+      ("decimal_literal.catala_en", [ "cases/decimal_literal.json" ]);
       (* PHASE5C-TUTORIAL §3: a declared subscope lowered onto existing kernel —
          one ObjectCreation of the callee (the call's args as MemberInits on
          its inputs, plus the connectingRole back-link) and the output read as
@@ -233,9 +237,9 @@ let () =
          the map body, synthesises exactly `KamerMulti bedrag` (grondslag + 100)
          and folds to a scalar. grondslagen [1;2;3] -> 306, ref AND clingo *)
       ("subscope_per_element_multi.catala_en", [ "cases/per_element_three.json" ]);
-      (* an integer division, a decimal in Catala: 7 / 4 and 9 / 4, exact at
-         the pinned scale; the divisor is the number 4, which the precision gate
-         admits into the scale (a quotient by an attribute has no finite bound) *)
+      (* an integer division, a decimal in Catala: 7 / 4 and 9 / 4; the divisor
+         is the number 4, so the quotient has a finite precision bound, two
+         decimals, at which clingo holds it *)
       ("division.catala_en", [ "cases/division_seven.json"; "cases/division_nine.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:false src cases) passing;
@@ -246,9 +250,31 @@ let () =
      backend limit, not a plugin bug. *)
   let passing_ref_only =
     [ ("date_value.catala_en", [ "cases/date_autumn.json"; "cases/date_spring.json" ]);
-      ("function_name.catala_en", [ "cases/function_ten.json" ]) ]
+      ("function_name.catala_en", [ "cases/function_ten.json" ]);
+      (* a quotient by an input, a decimal in Catala: the unbounded form, which
+         the precision gate admits without a rounding (ch. 2.4 point 4); ref
+         computes 7 / 2 and 9 / 4 exactly, while the quotient has no finite
+         precision bound, so clingo holds the decimal as a whole number and
+         refuses 7 / 2 by name (below) *)
+      ("division_runtime.catala_en",
+       [ "cases/division_runtime_seven.json"; "cases/division_runtime_nine.json" ]) ]
   in
   List.iter (fun (src, cases) -> run_passing ~ref_only:true src cases) passing_ref_only;
+  (* the limit of the clingo leg on that fixture, by name: a quotient into the
+     unbounded form without a finite bound is held as a whole number
+     (ASP-TRANSLATION S2, S19), never written as a value it is not *)
+  Printf.printf "[clingo-limit] division_runtime.catala_en\n%!";
+  let out = Filename.temp_file "catfe" ".ir.json" in
+  let code, o = run [ plugin; "division_runtime.catala_en"; out ] in
+  check "division_runtime.catala_en : translate (clingo limit)" (code = 0) (Printf.sprintf "exit %d\n%s" code o);
+  if code = 0 then begin
+    let needle =
+      "a division into a number declared without decimals is not whole, and this encoding holds the \
+       unbounded form as a whole number"
+    in
+    let gc, go = run [ clingo; out; "cases/division_runtime_seven.json" ] in
+    check "cases/division_runtime_seven.json : clingo refuses 7 / 2 by name" (gc <> 0 && contains ~needle go) go
+  end;
   (* Wire-shape assertions for the keuzetype normalisation (WF-087, maintainer
      decision 2026-09-01). Which of the two wire variants a Catala enum lands
      on is decided by its payloads, and an E2E replay cannot see that choice —
@@ -423,10 +449,6 @@ let () =
          plugin — each refusal cites its rule *)
       ("refuse_list_nullary_enum.catala_en", "WF-065");
       ("refuse_struct_nullary_enum.catala_en", "WF-071");
-      (* row-5c §5: a decimal literal that does not terminate at the pinned
-         scale S = 4 is refused loudly at the source (the leeg-barrier for
-         precision) *)
-      ("refuse_nonterminating.catala_en", "terminate");
       (* row-5c §6: WF-077, the condition-operand discipline — an if-then-else
          condition that reads an attribute directly (not through a `let … in`)
          is refused with the hoist instruction *)

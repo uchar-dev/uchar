@@ -128,13 +128,12 @@ let optional_domain = EnumName.base ConstantNames.option_enum
 let valid : I.validity_window = { valid_from = None; valid_to = None }
 let num_int : I.datatype = Number { whole_part = true; decimal_places = 0; sign_char = Some Unspecified; measure_unit = None }
 let num_money : I.datatype = Number { whole_part = false; decimal_places = 2; sign_char = Some Unspecified; measure_unit = None }
-(* the pinned Catala-decimal scale (PHASE5C-TUTORIAL §5, vraag 4-A): S = 4.
-   A Catala decimal is an exact rational; it lands as a bounded Number at
-   four decimals, and a value that does not terminate at four decimals faults
-   loudly and consistently in both executors (ref's bounded-write gate,
-   clingo's does-not-fit fence). *)
-let rat_scale = 4
-let num_rat : I.datatype = Number { whole_part = false; decimal_places = rat_scale; sign_char = Some Unspecified; measure_unit = None }
+(* A Catala decimal is an exact rational with no fixed number of decimals, so
+   it lands as the unbounded form (IR-SPEC ch. 2.4 (c), RUNTIME-SEMANTICS
+   ch. 2.9): a Number that is not whole and declares no decimals. The
+   precision gate of ch. 2.4 point 4 sets no ceiling there, so a Catala
+   quotient needs no rounding the source does not have. *)
+let num_rat : I.datatype = Number { whole_part = false; decimal_places = 0; sign_char = Some Unspecified; measure_unit = None }
 
 let not_whole : I.datatype -> I.datatype = function
   | Number n -> Number { n with whole_part = false }
@@ -304,24 +303,26 @@ let date_str (d : Catala_runtime.date) : string =
   let y, m, dd = Catala_runtime.date_to_years_months_days d in
   Printf.sprintf "%04d-%02d-%02d" y m dd
 
-(* an exact rational (a Catala decimal, [Q.t]) -> its four-decimal lexeme.
-   The pinned scale is S = 4 (vraag 4-A); a rational that does not terminate
-   at four decimals has no exact representation there and is refused loudly —
-   the same barrier ref's bounded-write gate and clingo's does-not-fit fence
-   enforce dynamically, applied at the source. *)
+(* an exact rational (a Catala decimal, [Q.t]) -> its shortest exact decimal
+   lexeme: as many decimals as the value has (RUNTIME-SEMANTICS ch. 2.3, the
+   bound of a literal is the decimals of its exact value), so 1/5 is 0.2 and
+   3 is 3. A rational whose reduced denominator has a prime other than 2 and
+   5 has no decimal lexeme at all and is refused. *)
 let rat_str (q : Q.t) : string =
-  let scale = Z.pow (Z.of_int 10) rat_scale in
-  let scaled = Q.mul q (Q.of_bigint scale) in
-  if not (Z.equal (Q.den scaled) Z.one) then
-    refuse
-      "decimal literal %s does not terminate at %d decimals (the pinned Catala-decimal scale): it \
-       has no exact four-decimal representation — refused"
-      (Q.to_string q) rat_scale;
-  let k = Q.num scaled in
-  let neg = Z.sign k < 0 in
-  let a = Z.abs k in
-  Printf.sprintf "%s%s.%0*d" (if neg then "-" else "") (Z.to_string (Z.div a scale)) rat_scale
-    (Z.to_int (Z.rem a scale))
+  match Ir_v0.Checks.rational_precision q with
+  | Ir_v0.Checks.Unbounded ->
+      refuse "decimal literal %s does not terminate: it has no exact decimal lexeme — refused"
+        (Q.to_string q)
+  | Ir_v0.Checks.Finite d ->
+      let scale = Z.pow (Z.of_int 10) d in
+      let k = Q.num (Q.mul q (Q.of_bigint scale)) in
+      let neg = Z.sign k < 0 in
+      let a = Z.abs k in
+      if d = 0 then Printf.sprintf "%s%s" (if neg then "-" else "") (Z.to_string a)
+      else
+        Printf.sprintf "%s%s.%s" (if neg then "-" else "") (Z.to_string (Z.div a scale))
+          (let r = Z.to_string (Z.rem a scale) in
+           String.make (d - String.length r) '0' ^ r)
 
 (* a Literal as the wire carries it (IR-SPEC ch. 4.1): the value variant its
    type names *)
@@ -677,7 +678,7 @@ let make_exprs ~(enums : enum_ctx) ~(structs : struct_ctx)
         | (Op.Mult_mon_int | Op.Mult_mon_rat), [ a; b ] ->
             (* Catala rounds a money product to the cent (o_mult_mon_rat, §5) —
                wrap the product in Rounding{halfAwayFromZero, 2} exactly as the money
-               divisions are (the Div precedent). A money × 4-decimal rate takes
+               divisions are (the Div precedent). A money × rate product takes
                clingo's split encoding downstream (money_mult_shape). *)
             Rounding
               { base_expr = Some (bin Times a b); mode_kind = Half_away_from_zero; decimal_places = 2;
@@ -2258,28 +2259,49 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
         List.iter fence_expr call_arguments; Option.iter fence_expr empty_fallback;
         Option.iter fence_cond filter
     | Rounding { base_expr = Some base_expr; _ } ->
-        (* clingo's closed-body [Rounding] carries ONLY the money × 4-decimal-rate
-           cent product ([money_mult_shape]: a Maal of a 2-decimal money by a
-           4-decimal rate). A money DIVISION ([Rounding] over a [Divided_by]) or
-           a money×integer rounding has no closed-body image — refuse those, or the
-           fence lets a ref-only lowering slip (card clingo-bodymult, S18(c)). *)
+        (* clingo's closed-body [Rounding] carries ONLY the money × rate cent
+           product ([money_mult_shape]: a Maal of a 2-decimal money by a rate of
+           one to four decimals). A money DIVISION ([Rounding] over a
+           [Divided_by]) or a money×integer rounding has no closed-body image —
+           refuse those, or the fence lets a ref-only lowering slip (card
+           clingo-bodymult, S18(c)). The rate is a decimal of the unbounded form,
+           so its decimals are its precision bound (RUNTIME-SEMANTICS ch. 2.3),
+           read from its literals and the declarations below it. *)
         let dec e =
           match ir_typ e with Some (Number { decimal_places; _ }) -> Some decimal_places | _ -> None
+        in
+        let module C = Ir_v0.Checks in
+        let rec bound (e : I.expr) : C.precision =
+          let literal w = match C.lexeme_value w with Some q -> C.rational_precision q | None -> C.Unbounded in
+          match e with
+          | Literal { variant = Lv_number w; _ } -> literal w
+          | Binary { op = Plus | Min | Reduced_by; left_side = Some l; right_side = Some r; _ } ->
+              C.widest (bound l) (bound r)
+          | Binary { op = Times; left_side = Some l; right_side = Some r; _ } -> C.added (bound l) (bound r)
+          | Binary { op = Divided_by; left_side = Some l; right_side = Some (Literal { variant = Lv_number w; _ }); _ }
+            -> (
+              match C.lexeme_value w with
+              | Some c when not (Q.equal c Q.zero) -> C.scaled (bound l) (Q.inv c)
+              | _ -> C.Unbounded)
+          | Rounding { decimal_places; _ } -> C.Finite decimal_places
+          | Binder_ref _ | Field_access _ | Attribute_reference _ | Parameter_ref _ -> (
+              match Option.bind (ir_typ e) C.declared_precision with Some b -> b | None -> C.Unbounded)
+          | _ -> C.Unbounded
         in
         let rec money_rate (b : I.expr) =
           match b with
           | Let { body; _ } -> money_rate body
-          | Binary { op = Times; left_side = Some m; right_side = Some r; _ } ->
-              dec m = Some 2 && dec r = Some 4
+          | Binary { op = Times; left_side = Some m; right_side = Some r; _ } -> (
+              dec m = Some 2 && match bound r with C.Finite d -> d >= 1 && d <= 4 | C.Unbounded -> false)
           | _ -> false
         in
         if money_rate base_expr then fence_expr base_expr
         else
           refuse
-            "per-element callee %S wraps a rounding (Rounding) that is not the money × 4-decimal-rate \
-             cent product: clingo's closed-body term carries only that product (card clingo-bodymult) \
-             — a money division or a money×integer rounding has no closed-body image, refused per \
-             element"
+            "per-element callee %S wraps a rounding (Rounding) that is not the money × rate cent \
+             product (a rate of one to four decimals): clingo's closed-body term carries only that \
+             product (card clingo-bodymult) — a money division or a money×integer rounding has no \
+             closed-body image, refused per element"
             cname
     | Rounding { base_expr = None; _ } -> ()
     | Clamp { base_expr; minimum; maximum; _ } ->

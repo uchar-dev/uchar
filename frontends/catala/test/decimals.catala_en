@@ -1,7 +1,7 @@
 # Decimals — percentage-literal, rationale rekenkunde en money × rat (§5)
 
-Catala-decimals zijn exacte rationalen; ze landen als een begrensde
-`Number` op de gepinde schaal S = 4 (vraag 4-A). Een percentage-literal
+Catala-decimals zijn exacte rationalen; ze landen als de onbegrensde vorm,
+een `Number` zonder decimalen die niet heel is (ch. 2.9). Een percentage-literal
 (`20%`) arriveert al voorgedeeld als de rationale `1/5`. De rationale
 operatoren (`+ - * /`, unaire `-`) lowieren naar de bestaande Binary-familie
 en de cast `decimal of …` is pass-through. Een geldproduct `income × rate`

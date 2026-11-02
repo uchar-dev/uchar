@@ -1,0 +1,14 @@
+# Decimaal-literal met vijf decimalen — rechtenvrij, eigen auteurschap
+
+Een Catala-decimal is de onbegrensde vorm (RUNTIME-SEMANTICS ch. 2.9); de
+plugin schrijft een literal met zijn kortste exacte lexeem, hier 0.12345
+(2469/20000). ref draagt de exacte waarde; clingo houdt het attribuut op de
+schaal van zijn precisiegrens, vijf decimalen. Draait door ref EN clingo.
+
+```catala
+declaration scope NonTerm:
+  output r content decimal
+
+scope NonTerm:
+  definition r equals 0.12345
+```

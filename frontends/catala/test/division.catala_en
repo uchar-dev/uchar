@@ -3,11 +3,11 @@
 Een gehele deling: twee integers gedeeld leveren in Catala een decimal op.
 RUNTIME-SEMANTICS ch. 2.3 typeert een quotiënt niet heel, wat de operanden
 ook zijn; de plugin typeert de `dividedBy` dus niet heel, en de suite leest
-de uitgestoten JSON terug om dat te toetsen. De deler is het getal 4: een
-quotiënt door een attribuut heeft geen eindige precisiegrens en past niet in
-de schaal S = 4 zonder afronding (de precisiepoort, ch. 2.4 punt 4), door 4
-heeft het er hoogstens twee. De twee cases (7 / 4 = 1.75, 9 / 4 = 2.25)
-draaien door ref EN clingo.
+de uitgestoten JSON terug om dat te toetsen. De deler is het getal 4, dus
+het quotiënt heeft een eindige precisiegrens van twee decimalen (ch. 2.3),
+en clingo houdt de decimal op die schaal. De twee cases (7 / 4 = 1.75,
+9 / 4 = 2.25) draaien door ref EN clingo; de deling door een invoer staat in
+`division_runtime.catala_en`.
 
 ```catala
 declaration scope Vangstverdeling:

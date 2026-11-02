@@ -33,7 +33,7 @@
             "datatype": {
               "node": "Number",
               "whole": false,
-              "decimals": 4,
+              "decimals": 0,
               "sign": "unspecified"
             }
           },
@@ -303,16 +303,16 @@
             "consequence": {
               "node": "Literal",
               "value": {
-                "number": "0.1500"
+                "number": "0.15"
               },
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 4,
+                "decimals": 0,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "0.1500"
+                "snippet": "0.15"
               }
             },
             "exceptions": {
@@ -353,16 +353,16 @@
                       "consequence": {
                         "node": "Literal",
                         "value": {
-                          "number": "0.1000"
+                          "number": "0.1"
                         },
                         "type": {
                           "node": "Number",
                           "whole": false,
-                          "decimals": 4,
+                          "decimals": 0,
                           "sign": "unspecified"
                         },
                         "source": {
-                          "snippet": "0.1000"
+                          "snippet": "0.1"
                         }
                       },
                       "source": {
@@ -409,16 +409,16 @@
                       "consequence": {
                         "node": "Literal",
                         "value": {
-                          "number": "0.0000"
+                          "number": "0"
                         },
                         "type": {
                           "node": "Number",
                           "whole": false,
-                          "decimals": 4,
+                          "decimals": 0,
                           "sign": "unspecified"
                         },
                         "source": {
-                          "snippet": "0.0000"
+                          "snippet": "0"
                         }
                       },
                       "source": {
@@ -450,16 +450,16 @@
             "consequence": {
               "node": "Literal",
               "value": {
-                "number": "0.2000"
+                "number": "0.2"
               },
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 4,
+                "decimals": 0,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "0.2000"
+                "snippet": "0.2"
               }
             },
             "source": {

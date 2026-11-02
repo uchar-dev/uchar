@@ -30,9 +30,10 @@ gebruikt de tutorial-regelvorm `let … in let … in if …`: de strikte
 `Let`-knopen (WF-076), de `IfThenElse` binnen de laatste `Let`-body
 (WF-069) met een binder-only conditie (WF-077), en het geldproduct
 `inkomen × tarief` dat Catala op de cent rondt — `Rounding{halfAwayFromZero,2}`,
-door clingo gesplitst geëncodeerd zodat het schaal-6-product op
-tutorial-magnitude (€20.000 × 20%) nooit int31 omwikkelt. Decimals dragen
-de gepinde schaal S = 4 (vraag 4-A).
+door clingo gesplitst geëncodeerd zodat het product op tutorial-magnitude
+(€20.000 × 20%) nooit int31 omwikkelt. Een decimal is de onbegrensde vorm
+(RUNTIME-SEMANTICS ch. 2.9); clingo houdt het tarief op de schaal van zijn
+precisiegrens, twee decimalen (0,15).
 
 ```catala
 declaration scope Penningplichtige:
