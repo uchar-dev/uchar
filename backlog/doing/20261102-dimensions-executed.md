@@ -692,3 +692,244 @@ apart groen (`logs/stap4a-finish-gate1-1.log`). Niet gemerged, niet gepusht.
 Voor de hoofdsessie: de CONSTRUCTS-tekst van stap 2 eindigt met "Drools weigert de celinvoer (DROOLS-047) en de cel
 over twee dimensies (DROOLS-184), dus die pins zijn een ref = clingo-paar tot stap 4"; na deze branch spelen de drie
 goldens in het vierkant, dus die zin vervalt bij de landing van beide.
+
+### Stap 3
+
+Branch `card/dimensions-executed`, worktree op `6c397de93` (stap 1, 2 en 4a). Commits:
+
+- `dfa7666e5` de frontend schrijft een cel als doel: `RuleChecker` (celdoel, `MemberInit` met labels, RGS-308),
+  `IrEmitter`, `ResolvedObjectCreation.MemberInit.labels`, `Dependencies` per cel, register en catalogi, tests,
+  `grammar/DIVERGENCES.md`;
+- `e14a39298` ref en clingo schrijven een cel: `ref/lib/eval.ml`, `ref/lib/reading.ml`,
+  `spec/verifier/lib/desugar.ml`, `backends/clingo/lib/translate.ml`, beide suites, `ref/README.md`,
+  `backends/clingo/README.md`;
+- `004536a30` Drools laadt een celschrijving en weigert haar bij de bouw: `IrLoader`, `DroolsBackend`,
+  `ProducerConsumer`, `DimensionCellWitnessTest`, `backends/drools/README.md`;
+- `215b371de` golden `jutterswet-seizoenboeking`, de case van `jutterswet-seizoenkopie`, rood
+  `jutterswet-cel-schrijfgrens`, NOTEs, `corpus/golden/README.md`, de pins van gate 8 en 12;
+- `8da463967` voorstel spec: RUNTIME-SEMANTICS ch. 5.7b, 5.8c, 5.12, 7.7; ASP-TRANSLATION S3, S11, S19;
+- `936f67a94` ref: de aparte weigering van een kenmerk met labels in `init_member` weg (zonder getuige; `cell_member`
+  faalt daar al, een kenmerk heeft geen dimensies);
+- het commit van dit Result (en dat met de samenvatting van de laatste `make gates`).
+
+Beschermde paden (voorstel, niet gemerged): `spec/RUNTIME-SEMANTICS.md`, `spec/verifier/lib/desugar.ml`,
+`scripts/check-drools.sh`, `scripts/check-red.sh`; `spec/ASP-TRANSLATION.md` onder het net van `/spec/`. Buiten de
+may-touch-set: niets.
+
+**Begintoets en afwijkingen van het advies** (gemeten op de werkboom van `6c397de93` met de nieuwe golden):
+
+- *De verwachting "J3 zonder invoer: najaar leeg"* (rapport §3.5 c3, en de tekst van stap 1 in ch. 5.8c, "a leeg
+  operand empties the product") klopt niet: ch. 1.2 laat `maal` een lege operand coalesceren naar 0. Gemeten: ref
+  `MISMATCH: J3.vondstgewicht[najaar] = 0, expected leeg`, clingo `= [0]`. Golden en spec zeggen nu najaar 0.00 (en
+  jaargewicht 0.00 bleef). Mijn eerste case3 (J4 met invoer `najaar` 5.00 en geen `voorjaar`) verwachtte dezelfde fout
+  (5.00 blijft staan); de case pint nu 0.00: de berekende 0 verdringt de invoer (ch. 7.8).
+- *RGS-308 blijft een weigering* (de opdracht en het advies zeggen "RGS-307/308 worden emissie"). ALEF schrijft een cel
+  als `DimAttribuutSelector`, met de editor "de" + attributieve labels + attribuut + predicatieve labels, en het
+  onderwerp via de keten erboven (`languages/regelspraak/languageModels/editor.mps:13470` e.v.): de labels staan
+  tussen attribuut en "van <onderwerp>", de vorm van RGS-307. De vorm van RGS-308 ("De premie van een Jutter in
+  voorjaar") is niet die van ALEF en niet die van §3.6 (de labels na het attribuut); zij blijft geweigerd, met een
+  tekst die de schrijfplaats noemt. RGS-307 is emissie en uit het register.
+- *Drools weigert bij de bouw, niet in de lader.* Gemeten: met de golden en de weigering in de lader faalt de
+  routetoets van gate 15 (`GraphSourceRouteTest`, `jutterswet-seizoenboeking`:
+  `IrLoader$Refusal: a write of a cell …`, 161 groen, 1 rood), omdat die van elke golden met een `source.rgs` de
+  graaf van beide routes vergelijkt. De lader draagt nu celdoel en `MemberInit.labels` in het model,
+  `DroolsBackend.build` weigert met DROOLS-298 voordat er een bean is, en de regelgraaf schrijft per cel; beide
+  goldens zijn daardoor in de specpoot van gate 15 vergeleken (315 van 352, was 313 van 351).
+
+#### Wat er veranderde
+
+- **ref.** `Eval.target_member` geeft van een regeldoel het type, het gedeclareerde attribuut en het lid in de
+  feitenbasis (het attribuut, of de cel `vondstgewicht[najaar]`); `run_rule` schrijft het lid met de declaratie van
+  het attribuut, dus de schrijfgrens (EF-006, `place` `j1.vondstgewicht[najaar]`), de idempotentie en de
+  initialisatiewacht gelden per cel. `Eval.init_member`: een `MemberInit` met labels schrijft de cel van het gemaakte
+  object. Een kenmerktoekenning op een cel faalt in de zin van WF-022. `reading.ml` leest een regel met een celdoel
+  als een regel op een attribuut, de initialisatie `DISPLACED` waar haar cel gevuld is.
+- **Gedeelde domeinen** (`Ir_v0.Desugar`, voorstel). `target_of` sleutelt een celdoel op de cel, zodat een cel een
+  eigen doel is in de staande norm (ch. 7.8) en in het domein van ch. 7.7; `other_writer` kent een `MemberInit` met
+  labels. `Desugar.document` herschrijft het paar op een cel niet naar een defaults-groep (zo'n groep noemt haar
+  attribuut heel, WF-125); ref leest het paar inheems in de defaults-lezing (`desugared_targets`).
+- **clingo.** `find_decl`: elke declaratie-opzoeking per lid vindt bij een cel de declaratie van haar attribuut
+  (decimalen, eenheid, datatype). `translate_rule` schrijft het celdoel onder de naam van de cel; `init_writers`,
+  `co_writer`, `writer_conflicts` en `translate_case` (`inputfilled/2`) sleutelen op `Desugar.target_of`; de
+  objectcreatie schrijft `val(ocI(S),"vangstgewicht[najaar]",…)`. Geweigerd met naam: een initialisatie naast een
+  berekening op één cel, en een kenmerktoekenning op een cel. CLINGO-026 blijft voor andere doelvormen.
+- **Frontend.** `RuleChecker.cellTarget`: een doel dat een cel noemt (label tussen attribuut en onderwerp) wordt een
+  `DimensionCellRead`; `makeMemberInit`: een toekenning die een cel noemt krijgt `labels`. `checkRuleTargets` toetst
+  de verwijzing onder een celdoel. `IrEmitter` schrijft het celdoel en `MemberInit.labels` (tussen `member` en
+  `value`). `Dependencies` (de WF-045-spiegel van de frontend) heeft een knoop per cel zoals de verifier: een
+  cellezing, een vouw over het product van haar selecties, een celdoel en een lid met labels; daardoor meldt de
+  frontend een cel uit zichzelf als WF-045 en een cel uit een andere cel van hetzelfde attribuut niet. RGS-307 weg
+  (register 355 → 354 codes), RGS-308 nieuwe tekst (nl/en).
+- **Drools.** Zie de afwijking hierboven; DROOLS-298 blijft de code, nu als `Excluded` uit `refuseCellWrites`. Zonder
+  die weigering weigert de transpiler het document met RULE_TARGET_UNRESOLVED (mutant D1), dus de weigering noemt de
+  reden en niet een gevolg.
+- **Corpus.** Golden `jutterswet-seizoenboeking` met `source.rgs`: regel `najaar` := `voorjaar` maal 2 (een cel uit
+  een andere cel van hetzelfde attribuut), initialisatie `zomer` op 0 kg, `jaargewicht` als som over alle seizoenen,
+  objectcreatie met `vangstgewicht in najaar`, en twee regels die de cellen van het gemaakte object terugbrengen naar
+  de jutter (een verwachting noemt alleen een invoerlabel). Cases (met de hand): `case1-voorjaar-en-zomer` (J1, J2; 9
+  verwachtingen), `case2-zonder-invoer` (J3; 6), `case3-invoer-in-een-geschreven-cel` (J4, J5; 8).
+  `jutterswet-seizoenkopie` krijgt `case1-kopie-en-staande-invoer` (5): de staande norm per cel (J2 `zomer` 7.00
+  blijft staan). Rood `corpus/red/jutterswet-cel-schrijfgrens`: het najaar-document met "maal 1,5", J1 `voorjaar`
+  1.25 → EF-006, pin `{}` zoals de andere EF-006-getuigen (ref `place` `j1.vondstgewicht[najaar]`, clingo `place`
+  `vondstgewicht[najaar]`; beide in de suites gepind).
+- **Suites.** ref/test (1834 → 1850 voorbeelden): `WV-5.8c-schrijven-J1-J2` (met `WV-5.8c-objectcreatie-cel` J1, J2
+  op de cellen van de gemaakte Vangst), `-schrijven-J3`, `-schrijven-invoer-verdrongen`,
+  `-schrijven-staande-invoer`, `-schrijfgrens-ef006`, `-initialisatie-naast-berekening`, `-celdoel-kenmerk`,
+  `WV-5.12-celdoel`. clingo-suite (2277 → 2280): de schrijfgrens van een cel, de weigering van het paar op een cel,
+  de weigering van een kenmerk op een cel. Frontend: `DimensionTargetTest` (6 rijen) en nieuw `CellEdgesTest` (2; de
+  graaf van de golden gelijk aan die van de verifier, de kring van een cel uit zichzelf). Drools
+  `DimensionCellWitnessTest` + 2 rijen (lader en graaf; weigering bij de bouw, beide takken, ook met lezingen).
+- **Spec (voorstel).** RUNTIME-SEMANTICS ch. 5.8c punt 2 (een cel als eigen doel in ch. 7.7 en 7.8), het voorbeeld
+  "Writing" (J3 gecorrigeerd, J4/J5, de cel van het gemaakte object, het rode geval) en een nieuw voorbeeld "The
+  standing norm and the pair on a cell", "Where the executors stand" herschreven; ch. 5.7b EF-006 (+ ch. 5.8c, + het
+  rode geval); ch. 5.12 (de lezing van een regel met een celdoel); ch. 7.7 (de cel). ASP-TRANSLATION S3 (een cel als
+  doel), S11 (een lid met labels), S19 (de weigering van het paar op een cel). IR-SPEC ongewijzigd.
+
+#### Rood op `6c397de93`
+
+In een losse werkboom op `6c397de93` met de nieuwe corpusbestanden en testbestanden (opgeruimd):
+
+- de vier golden-cases in ref `EVALUATION FAULT: REF-012: rule "najaarsgewicht van een jutter": unsupported target
+  shape`, in clingo `TRANSLATION FAULT: CLINGO-026: unsupported rule target`; het rode geval in beide `EXPECTED FAULT
+  MISMATCH` (REF-012, CLINGO-026) (`logs/stap3-red-cases.log`);
+- ref/test: de acht nieuwe rijen rood, alle op REF-012 (`logs/stap3-red-reftest.log`); clingo-suite: de drie nieuwe
+  frames rood, `unsupported rule target` (`logs/stap3-red-clingotest.log`);
+- frontend: `DimensionTargetTest` compileert niet (`MemberInit` heeft geen `labels()`); zonder die regel 7 van 8 rood
+  (RGS-307, RGS-189, de oude tekst van RGS-308), alleen `reading_a_cell_stays_clean` groen
+  (`logs/stap3-red-frontend*.log`);
+- Drools: de broncode van de witness compileert niet (`labels()`); zonder die regel beide nieuwe rijen rood: de lader
+  weigert met `IrLoader.Refusal` waar een model en een `Excluded` verwacht worden (`logs/stap3-red-drools.log`);
+- de oude frontend op `source.rgs`: RGS-307 tweemaal en RGS-189 (`objectcreatie: 'vangstgewicht in najaar' is not a
+  declared attribute of 'Vangst'`); de routetoets van gate 15 rood zoals hierboven.
+
+#### Mutaties
+
+`/Users/yeb/Developer/uchar-dev/werk/dimensions-executed/mutants/stap3/mutate3.py`, elk één vervanging in een `git
+worktree add --detach` op `8da463967` (opgeruimd); `logs/stap3-mutants-1.log` (M3, M6; de eerste poging van M1, M2
+en M4 compileerde niet en is overgedaan), `-2.log`, `-3.log`:
+
+| | bewaking | mutatie | rood |
+|---|---|---|---|
+| M1 | ref: het celdoel schrijft de cel | lid = het attribuut | 10 rijen, o.a. `-schrijven-J1-J2` (najaar leeg), `-schrijfgrens-ef006` (`place` `j1.vondstgewicht`), `WV-5.12-celdoel` |
+| M2 | ref: `MemberInit.labels` | lid = het attribuut | `-objectcreatie-cel` J1, J2 (alle cellen leeg) en de drie geboekte gewichten |
+| M3 | ref: kenmerk op een cel | weigering weg | `-celdoel-kenmerk` (geen fout) |
+| M4 | ref-lezing: initialisatiewacht per cel | wacht vraagt het attribuut | `WV-5.12-celdoel` |
+| M5 | domeinen per cel (`target_of`) | sleutel op het attribuut | `-staande-invoer` (J2 zomer leeg), `-initialisatie-naast-berekening` (geen vast punt); clingo op seizoenkopie: "the case supplies input for computed target" |
+| M6 | geen herschrijving van een cel | filter weg | clingo op seizoenboeking: `TRANSLATION FAULT: default value scale 1 does not match target scale 100` |
+| M7 | clingo: paar op één cel | weigering weg | frame "…beside a computing rule…": een model |
+| M8 | clingo: kenmerk op een cel | weigering weg | frame "a characteristic attributed to a cell": een model |
+| M9 | clingo: `find_decl` | geen declaratie voor een cel | seizoenboeking: `unknown attribute "vondstgewicht[najaar]" on "Jutter"` |
+| M10 | clingo: `inputfilled/2` per cel | alleen attribuutdoelen | seizoenboeking J2: `vondstgewicht[zomer] = [200;0]` |
+| F1 | frontend: celdoel | geen `cellTarget` | 5 rijen (RGS-113-zin "is geen gedeclareerd attribuut") |
+| F2 | frontend: lid met labels | tak weg | 3 rijen (RGS-189) |
+| F3 | frontend-graaf: celdoel per cel | attribuutknoop | `CellEdgesTest` beide rijen |
+| F4 | frontend-graaf: cellezing per cel | attribuutknoop | `CellEdgesTest` beide rijen |
+| D1 | Drools: weigering bij de bouw | aanroep weg | `a_cell_write_is_refused…`: RULE_TARGET_UNRESOLVED |
+| D2 | Drools-graaf: celdoel | schrijft niets | `the_loader_carries…`: `[]` voor `[vondstgewicht[najaar]]` |
+| D3 | Drools-graaf: lid met labels | attribuut | idem: `[vangstgewicht]` |
+
+#### Aangepaste verwachtingen, pins en vloeren (oud → nieuw)
+
+- `DimensionTargetTest.a_cell_assignment_refuses_with_the_dimension` (beide vormen geweigerd met de cel genoemd) →
+  `a_cell_target_is_written_as_the_cell` (de vorm "De premie in voorjaar van een Jutter" schrijft de cel) en
+  `labels_after_the_subject_are_refused_with_the_cell` (RGS-308, de hele nieuwe zin); door de kaart omgedraaid.
+- Register en catalogi: RGS-307 weg (354 codes, vloer 347); RGS-308 nl/en nieuwe tekst.
+- Gate 12 `EXPECTED_CHANNEL` (voorstel): + `jutterswet-seizoenboeking|EXCLUDE DROOLS-298`;
+  `jutterswet-seizoenkopie|NOCASE` → `EXCLUDE DROOLS-298`; 48 → 49 niet-gespeelde goldens met naam;
+  `EXPECTED_PLAYED` blijft 303.
+- Gate 8 Drools-lijst (voorstel): + `jutterswet-cel-schrijfgrens|EXCLUDE DROOLS-298`; niet gedragen met reden 20 → 21,
+  EXCLUDE met code 18 → 19.
+- De zin van DROOLS-298 is ongewijzigd; de statusregel verliest het voorvoegsel `loader:` (`EXCLUDE DROOLS-298: a
+  write of a cell …`), omdat de bouw weigert.
+- Geen vloer veranderd. Tellingen (oud uit de laatste run van stap 4a, `out/gates/20261102-152228`): gate 2 407 → 410
+  bestanden, 54515 → 54682 objecten in 975 → 978 documenten; gate 3 407 → 410 golden schoon; gate 4 1046 → 1051
+  cases; gate 5 1834 → 1850 voorbeelden, 976 → 980 cases, één → geen golden zonder case; gate 6 2277 → 2280 checks,
+  976 → 980 cases; gate 7 931 → 935 weerleggende cases, 45 overlevers; gate 8 70 → 71 rode gevallen, 131 → 133
+  codechecks, 207 → 209 parameterchecks; gate 10 1364 → 1369 tests, 161 → 162 rgs-goldens; gate 12 JUnit 1752 →
+  1754; gate 13 61 → 64 getwiste annotaties over 30 → 31 goldens, 160 → 168 replays; gate 15 313 → 315 van 351 → 352
+  vergeleken, 273 → 279 afhankelijkheden, 38 → 37 door de lader geweigerd, route 161 → 162 goldens; gate 17 976 →
+  980 getraceerd, vergeleken ongewijzigd (303 goldens, 846 bestanden), 2 goldens `EXCLUDE DROOLS-298`.
+
+#### Voorgestelde tekst voor CONSTRUCTS (hoofdsessie)
+
+Rij 28, achter de noot van stap 2:
+
+> **Landed (stap 3 van `dimensions-executed`, 2026-11-02, `dfa7666e5` … `936f67a94`):** ref en de ASP-backend schrijven
+> een cel met een regel, een initialisatie en een objectcreatie (`MemberInit.labels`), met de schrijfgrens per cel
+> (EF-006); een cel is een eigen doel in de staande norm en het domein van ch. 7.7, en de desugaring herschrijft het
+> paar op een cel niet. De RegelSpraak-frontend schrijft een celdoel in de vorm van ALEF ("Het vondstgewicht in najaar
+> van een Jutter"; RGS-307 vervalt, RGS-308 blijft voor de labels na het onderwerp). Golden
+> `jutterswet-seizoenboeking` met bron, cases op `jutterswet-seizoenkopie`, rood `jutterswet-cel-schrijfgrens`. Drools
+> laadt de vormen en weigert bij de bouw (DROOLS-298), dus die pins zijn een ref = clingo-paar tot het schrijfdeel van
+> stap 4.
+
+Rij `DimensieCel` (:106): "**Landed (stap 3):** als schrijfdoel uitgevoerd in ref en clingo en door de frontend
+geschreven."
+
+#### Voorlopige besluiten
+
+1. **RGS-308 blijft een weigering**, RGS-307 wordt emissie (afwijking van opdracht en advies; reden hierboven).
+2. **Een cel is een eigen doel in ch. 7.7 en 7.8, maar de desugaring herschrijft het paar op een cel niet**; ref leest
+   het paar inheems in de defaults-lezing, clingo weigert het paar op één cel met naam (geen corpusgeval; zonder het
+   filter faalt clingo op de golden, M6).
+3. **Drools weigert bij de bouw** met DROOLS-298 (`Excluded`), de lader draagt de vormen en de graaf schrijft per cel
+   (afwijking van "Drools weigert een celschrijving" in de lader; reden hierboven). De distributie die de lader
+   gebruikt, ziet nu een `DimensionCellRead` als doel en `MemberInit.labels`.
+4. **`jutterswet-seizoenkopie` blijft een eigen golden** met een case in plaats van op te gaan in
+   `jutterswet-seizoenboeking`: drie negatieven zijn er van afgeleid (`wf040-target-label-count`,
+   `wf079-two-writers-one-cell`, `wf125-member-without-labels`), en haar twee kopieën dragen WF-079 per cel en de
+   staande norm per cel.
+5. **De cellen van een gemaakt object** zijn in een golden alleen te zien via een regel die ze naar een invoerobject
+   terugbrengt (een verwachting noemt geen gemaakt object); ref/test leest ze rechtstreeks (`oc0::J1`).
+6. **EF-006 op een cel pint `{}`**: ref en clingo spellen `place` verschillend; de plaats van ref pint
+   `WV-5.8c-schrijfgrens-ef006`, die van clingo het frame van de suite.
+7. **Een kenmerktoekenning op een cel** faalt in ref en clingo in de zin van WF-022 (tweede lijn achter de verifier);
+   een kenmerkinitialisatie met labels faalt in `cell_member` ("cell of undimensioned attribute").
+8. **De WF-045-spiegel van de frontend is per cel**, zoals de verifier; stap 5 raakt de cellezing en de vouw van de
+   frontend, dus wie als tweede landt rebaset `Dependencies.java` en `RuleChecker.java`.
+9. **De frontend schrijft een celdoel alleen voor een attribuut van één dimensie met voorzetsel**, de reikwijdte van
+   de cellezing van de frontend; meer dimensies is stap 5.
+
+#### Wat niet lukte of buiten stap 3 bleef
+
+- Geen poging die mislukte, behalve de eerste ronde van M1, M2 en M4 (een ongebruikte variabele brak de dev-build;
+  overgedaan met een mutant die compileert).
+- Het schrijfdeel van Drools (beans, regels, TMS-`Value` per cel, `Cycles` per cel, DROOLS-191): stap 4b.
+- De ref/test-rij en het clingo-frame voor het paar op één cel tonen een divergentie per ontwerp (ref antwoordt,
+  clingo weigert); geen corpusgeval.
+
+#### `make gates`
+
+Eerste run op `8da463967` (`out/gates/20261102-161148`): alle zeventien gates groen, `red=0`, 364 s. Daarna kwam alleen
+`936f67a94` (een arm in `init_member` weg). Laatste run op `936f67a94` (dit Result zonder deze alinea; de kaart is geen
+invoer van een gate), `out/gates/20261102-162255/summary.txt`:
+
+```
+ocaml rc=0 0s ocaml-build: rebuilt (1 source path(s) newer than the stamp, e.g. ref/lib/eval.ml; 0s)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 0s drools-jar: fresh (jar newer than 537 source files)
+01-self-contained rc=0 2s
+02-ir-schema rc=0 137s
+04-case-schema rc=0 7s
+03-verifier rc=0 39s
+05-oracle rc=0 22s
+06-clingo rc=0 285s
+07-noop rc=0 13s
+08-red rc=0 165s
+09-catala rc=0 5s
+10-regelspraak rc=0 227s
+11-toka-parity rc=0 233s
+12-drools rc=0 343s
+13-reftype rc=0 281s
+14-flogic rc=0 2s
+15-graph rc=0 49s
+16-scenario rc=0 38s
+17-readings rc=0 251s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 16:28:38 343s red=0
+```
+
+Uit de gate-logs: de tellingen onder "Aangepaste verwachtingen" hierboven; gate 8 Drools-leg 50 met fout, 78
+parameterchecks, 21 met reden, 19 EXCLUDE met code; gate 12 299 codes, 303 gespeeld op beide takken, 49 niet-gespeelde
+goldens met naam, JUnit 1754; gate 15 315 van 352 vergeleken, 279 afhankelijkheden, route 162 goldens, 75 unit tests;
+gate 17 980 getraceerd, 303 goldens en 846 case-bestanden vergeleken, afwijkingen 0. Niet gemerged, niet gepusht.
