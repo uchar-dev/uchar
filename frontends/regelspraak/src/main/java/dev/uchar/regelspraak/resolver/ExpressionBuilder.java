@@ -3008,7 +3008,7 @@ final class ExpressionBuilder {
      *  because a set read over a TEMPORAL attribute is the §7.1 PER-ELEMENT TIMELINE FOLD — each element's
      *  tijdreeks is summed over time FIRST (rsTijdTotaal at the attribute's granularity) and only then over the
      *  set — so that form DOES integrate over time and the §4.20 strip must keep applying to it. */
-    private static boolean setRead(List<Expr> args) {
+    static boolean setRead(List<Expr> args) {
         return args.size() == 1 && args.get(0) instanceof Expr.AttributeReference a && a.set()
                 && !(a.objectType() != null && a.objectType().granularityOf(a.attribute()) != null);
     }

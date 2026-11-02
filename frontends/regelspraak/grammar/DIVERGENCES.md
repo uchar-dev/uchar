@@ -3728,10 +3728,9 @@ percentage row) and as the operand of a square root or an absolute value (tables
 unitless literal adopts the '%'; a date in a minimum or maximum and a number in
 a first or last (tables 22 to 25); one-sided or inconvertible units among the
 operands of a minimum or maximum, and a total over a unit without a time
-denominator (table 30), for which the verifier has no unit arm; more decimals
-than the target admits, at an assignment and at an allocation share (§6.1.2),
-and the family and unit checks of an allocation, since the verifier crosses no
-decimals and no allocation types; a unit the unit model cannot spell (a
+denominator (table 30), for which the verifier has no unit arm; the family and
+unit checks of an allocation, since the verifier crosses no allocation types; a
+unit the unit model cannot spell (a
 reciprocal, a rate factor, a rate divisor); a counting quantifier whose telwoord
 is not a whole number, which the wire would carry as 0, and an exact-digit count
 that is not one; a date or date-time token that is no calendar date, since the
@@ -3803,6 +3802,27 @@ units are an ERROR in the same WF-099 sentence, and a base or bound that is no
 number is an ERROR in the verifier's WF-035 sentence (`clamp base is <kind>,
 must be numeric`). When the parity zone leaves the repository, the warning can
 become an ERROR like the other refusals the verifier shares.
+
+---
+
+## §6.1.2 The decimals of a result — a bound, in the form ALEF types it
+
+§6.1.2 allows a result into an attribute only where it has no more decimals than
+the attribute, and §6.5 gives a quotient the highest number of decimals of its
+operands, where its own Tabel 11 and the typing document (§4.5) give a quotient no
+decimal precision at all. The frontend reads the number of decimals of a result as
+a bound, the reading ALEF's typing makes (RUNTIME-SEMANTICS ch. 2.3): a quotient
+by anything but a number has no finite bound and fits only the unbounded form
+(`Numeriek (getal)`), a quotient by a number is a product with its reciprocal
+(`gedeeld door 2` adds one decimal, `gedeeld door 3` has no bound), a literal
+factor of `maal` counts with its own decimals and the powers of ten it carries
+(`maal 100` takes two off), a percentage adds the two decimals of its hundred, a
+minimum or maximum takes the highest number of its operands, and a unit
+conversion counts (`m` into `km` adds three, `km` into `m` takes three off). A
+write that exceeds the bound is RGS-338, one without a finite bound RGS-370, in
+the verifier's sentences (WF-023). A verdeling is bounded by its rounding, or else
+by its pot (RGS-340, RGS-371); its division by the recipients is not typed, as in
+ALEF, and a share that does not fit stays the evaluation fault of ch. 2.4.
 
 ---
 

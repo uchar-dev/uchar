@@ -4179,7 +4179,7 @@ final class RuleChecker {
                     || (weightType != null && weightType.isNumberLike());   // mirror the transpiler's lowering gate
             if (lowers) {
                 Typing.Coded error = Typing.allocationAssignment(d.objectType().attribute(d.attribute()),
-                        b.objectType().attribute(b.attribute()), weightType, roundDec);
+                        b.objectType().attribute(b.attribute()), roundDec);
                 if (error != null)
                     model.diagnostics.add(error.frame("allocation").at(Severity.ERROR, v.getStart().getLine()));
             }
@@ -4265,6 +4265,7 @@ final class RuleChecker {
                 checkSign(targetType, t.value(), oc.getStart().getLine());   // §3.3.1 Teken-beperking, like registreer
                 Typing.Coded error = Typing.assignment(targetType, t.value().type(),
                         ExpressionBuilder.unitlessNumberLiteral(t.value()));
+                if (error == null) error = Typing.precisionGate(targetType, t.value(), model);
                 if (error != null)
                     model.diagnostics.add(error.frame("object-creation").at(Severity.ERROR, oc.getStart().getLine()));
             }
@@ -4801,6 +4802,7 @@ final class RuleChecker {
         checkSign(targetType, peeledValue, line);   // §3.3.1 Teken-beperking, static over a literal value
         if (targetType.isUnknown() || valueType.isUnknown()) return; // not enough resolved to judge
         Typing.Coded error = Typing.assignment(targetType, valueType, ExpressionBuilder.unitlessNumberLiteral(valueExpr));
+        if (error == null) error = Typing.precisionGate(targetType, valueExpr, model);
         if (error != null)
             model.diagnostics.add(error.frame("category", "category", category.name().toLowerCase()).at(Severity.ERROR, line));
     }

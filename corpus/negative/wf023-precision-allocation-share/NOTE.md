@@ -1,7 +1,7 @@
 Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1), the precision gate of RUNTIME-SEMANTICS ch. 2.4: an allocation whose pot has more decimals than its recipients.
 The opbrengst of a Berging, of 2 decimals, is divided in equal shares over the whole `bergingsaandeel` of its bergers, without a rounding. The bound of a share is the rounding of the allocation, and without one the declaration of its pot, 2 (the ALEF form); the division by the number of recipients is not typed, so a share that does not fit with a pot that does stays the evaluation fault EF-006 (`corpus/red/jutterswet-verdeling-past-niet`).
 
-    WF-023.precision-exceeds FAIL /rules/allocations/0/versions/0
+    WF-023.share-precision-exceeds FAIL /rules/allocations/0/versions/0
 
 The RegelSpraak the document denotes (the frontend refuses it with the same verdict, RGS-338 or RGS-370):
 

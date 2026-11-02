@@ -1,4 +1,3 @@
-WF-023.precision-exceeds
-write=share
-valueDecimals=2
+WF-023.share-precision-exceeds
+shareDecimals=2
 targetDecimals=0

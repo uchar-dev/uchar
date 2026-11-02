@@ -61,6 +61,18 @@ public final class TimeCalculation {
         return u.afterTimeFold();
     }
 
+    /** The first unit the document declares for the grid of {@code g}, where the units it declares for it are of one
+     *  class; null where it declares none or units of several classes. The precision bound of a temporal total restates
+     *  a rate into it (RUNTIME-SEMANTICS ch. 2.3), as the verifier does ({@code fold_grid}). */
+    public static Unit gridUnit(RegelSpraakModel.Granularity g, RegelSpraakModel model) {
+        String grid = gridChronoUnit(g);
+        if (model == null || gridClass(model, grid) == null) return null;
+        for (RegelSpraakModel.UnitSystem s : model.unitSystems.values())
+            for (Unit u : s.units.values())
+                if (grid.equals(chronoUnit(u))) return u;
+        return null;
+    }
+
     /** The class of the unit the document declares for the grid unit {@code grid}; null where it declares none or
      *  units of several classes, where no factor can be named as the grid's. */
     private static String gridClass(RegelSpraakModel model, String grid) {

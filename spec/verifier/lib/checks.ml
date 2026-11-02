@@ -9841,27 +9841,38 @@ and element_precision ctx ~calls ~env (l : expr) : precision option =
 
 (* WF-023's precision gate (RUNTIME-SEMANTICS ch. 2.4): a write whose value's
    bound, restated into the target's unit, exceeds the target's declared
-   decimals, where the target is not of the unbounded form. [write] names what
-   is written, a value or the share of an allocation. A value that makes no
-   claim defers, as elsewhere in this rule. *)
-let precision_gate at ~write (dt : datatype) ~(value_unit : measure_unit option) (bound : precision option) =
+   decimals, where the target is not of the unbounded form; [share] marks the
+   share of an allocation. A value that makes no claim defers, as elsewhere in
+   this rule. *)
+let precision_gate at ~share (dt : datatype) ~(value_unit : measure_unit option) (bound : precision option) =
   match (declared_precision dt, bound) with
   | Some (Finite td), Some b -> (
-      match restated b ~from:value_unit ~into:(unit_of dt) with
-      | Some Unbounded ->
-          [ v ~params:[ ("write", write); ("targetDecimals", string_of_int td) ] "WF-023.precision-unbounded" at
+      let target = string_of_int td in
+      match (restated b ~from:value_unit ~into:(unit_of dt), share) with
+      | Some Unbounded, false ->
+          [ v ~params:[ ("targetDecimals", target) ] "WF-023.precision-unbounded" at
               (Printf.sprintf
-                 "the %s has no finite precision bound (RUNTIME-SEMANTICS ch. 2.3) and its target declares %d \
+                 "the value has no finite precision bound (RUNTIME-SEMANTICS ch. 2.3) and its target declares %d \
                   decimals: it is written through an explicit rounding, or into the unbounded form"
-                 write td) ]
-      | Some (Finite d) when d > td ->
-          [ v
-              ~params:[ ("write", write); ("valueDecimals", string_of_int d); ("targetDecimals", string_of_int td) ]
-              "WF-023.precision-exceeds" at
+                 td) ]
+      | Some Unbounded, true ->
+          [ v ~params:[ ("targetDecimals", target) ] "WF-023.share-precision-unbounded" at
               (Printf.sprintf
-                 "the %s can carry %d decimals (RUNTIME-SEMANTICS ch. 2.3), more than the %d its target \
-                  declares: it is written through an explicit rounding"
-                 write d td) ]
+                 "the share has no finite precision bound (its pot is of the unbounded form) and its target \
+                  declares %d decimals: the allocation is written through an explicit rounding"
+                 td) ]
+      | Some (Finite d), false when d > td ->
+          [ v ~params:[ ("valueDecimals", string_of_int d); ("targetDecimals", target) ] "WF-023.precision-exceeds" at
+              (Printf.sprintf
+                 "the value can carry %d decimals, more than the %d its target declares (RUNTIME-SEMANTICS ch. \
+                  2.3): it is written through an explicit rounding"
+                 d td) ]
+      | Some (Finite d), true when d > td ->
+          [ v ~params:[ ("shareDecimals", string_of_int d); ("targetDecimals", target) ] "WF-023.share-precision-exceeds" at
+              (Printf.sprintf
+                 "the share can carry %d decimals, more than the %d its target declares (RUNTIME-SEMANTICS ch. \
+                  2.3): the allocation is written through an explicit rounding"
+                 d td) ]
       | _ -> [])
   | _ -> []
 
@@ -9874,7 +9885,7 @@ let precision_gate at ~write (dt : datatype) ~(value_unit : measure_unit option)
 let wf023_precision ctx =
   let value_gate at dt w =
     let unit = Option.bind (expr_type ctx ~binders:[] w) unit_of in
-    precision_gate at ~write:"value" dt ~value_unit:unit (precision ctx ~env:[] w)
+    precision_gate at ~share:false dt ~value_unit:unit (precision ctx ~env:[] w)
   in
   List.concat_map
     (fun (r : resolved_rule) ->
@@ -9939,7 +9950,7 @@ let wf023_precision ctx =
                 let bound =
                   match r.rounding_decimals with Some n -> Some (Finite n) | None -> declared_precision pot
                 in
-                precision_gate r.vd_pointer ~write:"share" dt ~value_unit:(unit_of pot) bound
+                precision_gate r.vd_pointer ~share:true dt ~value_unit:(unit_of pot) bound
             | _ -> [])
         | _ -> [])
       ctx.doc.allocations
