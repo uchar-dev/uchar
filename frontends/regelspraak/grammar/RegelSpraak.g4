@@ -1081,7 +1081,10 @@ percentageVanHaakjes : bepaaldLidwoord? kaleNaamDeel VAN LPAREN expressie RPAREN
 
 // §13.4.17.10-58 named functions and aggregations
 functieAanroep
-    : SOM_VAN expressie dimensieSelectie? leegwaardeAlternatief?                                   # somFunc
+    // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "§3.6 / §13.4.17.51 More dimensions"): a fold over a
+    // dimensioned attribute takes one dimensieSelectie PER DIMENSION, as ALEF writes it (a filter per dimension, a
+    // fixed dimension as a set of one label); §13.4.17.51 gives one. The same on minMaxFunc below.
+    : SOM_VAN expressie dimensieSelectie* leegwaardeAlternatief?                                   # somFunc
     // §13.4.17.47 telling. The EBNF (§13.4.17.46) gives all four getalaggregatie functions one
     // <expressie> operand, but a count ranges only over onderwerpexpressies (typeringen §4.11),
     // never an arithmetic one (whereas §5.8.2 lets a sum's operand BE arithmetic). So ONLY aantal
@@ -1103,7 +1106,7 @@ functieAanroep
     // 'maal'/'plus' binds OUTSIDE the count.
     | AANTAL_GEVULDE_WAARDEN_VAN primaireExpressie                                                # aantalGevuldeFunc
     | TOTAAL_VAN expressie conditieBijExpressie? leegwaardeAlternatief?                            # totaalFunc      // §13.4.17.56
-    | ( MAXIMALE_WAARDE_VAN | MINIMALE_WAARDE_VAN ) expressie ( COMMA expressie )* ( EN expressie )? dimensieSelectie? # minMaxFunc // §13.4.17.15/.16/.47
+    | ( MAXIMALE_WAARDE_VAN | MINIMALE_WAARDE_VAN ) expressie ( COMMA expressie )* ( EN expressie )? dimensieSelectie* # minMaxFunc // §13.4.17.15/.16/.47
     | ( EERSTE_VAN | LAATSTE_VAN ) expressie ( COMMA expressie )* ( EN expressie )?                 # eersteLaatsteFunc // §13.4.17.39/.40/.49
     | WORTEL_VAN primaireExpressie afronding                                                      # wortelFunc      // §13.4.17.13 (afronding mandatory; radicand is primair so the afronding rounds the ROOT)
     | ABSOLUTE_WAARDE_VAN LPAREN expressie RPAREN                                                  # absWaardeFunc   // §13.4.17.17

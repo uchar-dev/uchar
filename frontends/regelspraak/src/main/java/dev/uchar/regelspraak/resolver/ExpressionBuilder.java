@@ -1442,15 +1442,16 @@ final class ExpressionBuilder {
                     "RGS-069", params("filter", filter.source()), f.getStart().getLine()));
         // §13.4.17.51-.54: a dimensieselectie over a gedimensioneerd attribuut ("over alle <dim>",
         // "over de <dim> vanaf … t/m …", "in {…}", or the bare "… vanaf <label> t/m <label>") aggregates
-        // over a DIMENSION's label set, not over object instances. When it resolves — a single dimensioned
-        // attribute operand whose dimension and labels are all known — carry it as a DimensionSelection so the
-        // transpiler folds the attribute over exactly those labels.
-        Expr.DimensionSelection dimSel = resolveDimensionSelection(f, arguments);
+        // over the cells of a DIMENSIONED attribute, not over object instances. When it resolves — one dimensioned
+        // attribute operand, a selection per dimension, every dimension and label known — carry one
+        // DimensionSelection per dimension so the executors fold exactly those cells.
+        DimensionSelections dimSel = resolveDimensionSelections(f, arguments);
+        if (dimSel != null && dimSel.refused()) return new Expr.Unresolved(type, source, null);   // the ERROR above is this marker's diagnosis
         if (dimSel != null)
             // recomputed: the §13.4.17.53 re-split may have rebuilt the polluted operand in-place, so the
             // pre-computed type/element (derived from the then-Onopgelost argument) can be stale.
             return new Expr.FunctionCall(kind, arguments, aggregationElement(kind, arguments), emptyFallback, filter,
-                    List.of(dimSel), functionType(kind, arguments), source);
+                    dimSel.selections(), functionType(kind, arguments), source);
         // §13.4.17.51-.58: a dimensieselectie that did NOT resolve, or a conditiebijexpressie ("gedurende
         // de tijd dat …") — the temporal axis is not built yet (p5) — must not be SILENTLY DROPPED, which
         // would aggregate the whole set as if unrestricted. Capture its source as an Unresolved filter so
@@ -1679,42 +1680,55 @@ final class ExpressionBuilder {
      *  conditiebijexpressie (totaal / tijdsevenredig deel), or null when absent — used to mark the dropped
      *  temporal/dimensional restriction so the aggregation is not silently lowered as if unrestricted. */
     private Source dimensionOrConditionSource(FunctieAanroepContext f) {
-        DimensieSelectieContext dim = f instanceof SomFuncContext s ? s.dimensieSelectie()
-                : f instanceof MinMaxFuncContext m ? m.dimensieSelectie() : null;
-        if (dim != null) return source(dim);
+        List<DimensieSelectieContext> dims = dimensionSelectionsOf(f);
+        if (!dims.isEmpty()) {
+            DimensieSelectieContext first = dims.get(0);
+            return Source.of(first, DefinitionResolver.snippet(first.getStart(), dims.get(dims.size() - 1).getStop()));
+        }
         ConditieBijExpressieContext cnd = f instanceof TotaalFuncContext t ? t.conditieBijExpressie()
                 : f instanceof TijdsevenredigFuncContext tv ? tv.conditieBijExpressie() : null;
         return cnd != null ? source(cnd) : null;
     }
 
-    /** §13.4.17.51-.54: resolve a SOM/MIN/MAX dimensieselectie to the concrete dimension and the ordered
-     *  list of labels it ranges over, or null when it cannot be lowered — a null leaves the honest marker in
-     *  place. It only lowers a fold over a SINGLE gedimensioneerd attribuut's labels, and only when the
-     *  operand is the rule subject's OWN dimensioned attribute ({@code a.objectType() == huidigSubject} —
-     *  the §5.8.5 case, "zijn betaalde belasting in jaar"). A NAVIGATED operand is deferred: a to-MANY read
-     *  ("de prijs in jaar van alle deelnemers") would be a 2-level aggregation (over instances AND labels)
-     *  that the single-Map fold cannot express — resolving it would drop the marker and let the instance
-     *  accumulate sum Maps (a miscompile) — and a to-one navigated fold has no spec/corpus example yet. The
-     *  attribute must carry exactly ONE dimension (the value space is a Map&lt;label,value&gt;; a
-     *  multi-dimension attribute is keyed by label COMBINATIONS, §3.6, which the single-label fold would
-     *  mis-read), the named/implied dimension must be that one, every label must be a declared value, and a
-     *  "vanaf … t/m …" interval must not run backwards. (A conditiebijexpressie — temporal — never reaches
-     *  here.) */
-    private Expr.DimensionSelection resolveDimensionSelection(FunctieAanroepContext f, List<Expr> arguments) {
-        DimensieSelectieContext dim = f instanceof SomFuncContext s ? s.dimensieSelectie()
-                : f instanceof MinMaxFuncContext m ? m.dimensieSelectie() : null;
-        if (dim == null) return null;
-        if (arguments.size() != 1) return null;
+    /** The dimensieselecties of a SOM/MIN/MAX in written order; empty for every other function. */
+    private static List<DimensieSelectieContext> dimensionSelectionsOf(FunctieAanroepContext f) {
+        return f instanceof SomFuncContext s ? s.dimensieSelectie()
+                : f instanceof MinMaxFuncContext m ? m.dimensieSelectie() : List.of();
+    }
+
+    /** The selections of a dimension fold in the declared order of its argument's dimensions, or a refusal whose ERROR
+     *  is recorded. */
+    private record DimensionSelections(List<Expr.DimensionSelection> selections, boolean refused) {
+        static final DimensionSelections REFUSED = new DimensionSelections(null, true);
+    }
+
+    /** §13.4.17.51-.54: resolve the dimensieselecties of a SOM/MIN/MAX to one selection per dimension of the folded
+     *  attribute, in the declared order of its dimensions (IR-SPEC ch. 4.3, WF-040), whatever order the sentence
+     *  names them in; or null when they cannot be lowered — a null leaves the honest marker in place. §13.4.17.51
+     *  gives a fold one selection; the dialect takes one per dimension, as ALEF writes it, a fixed dimension being a
+     *  set of one label (grammar/DIVERGENCES.md, "§3.6 / §13.4.17.51 More dimensions"). It only lowers a fold whose
+     *  operand is the rule subject's OWN dimensioned attribute ({@code a.objectType() == currentSubject} — the §5.8.5
+     *  case, "zijn betaalde belasting in jaar"). A NAVIGATED operand is deferred: a to-MANY read ("de prijs in jaar
+     *  van alle deelnemers") would be a 2-level aggregation (over instances AND labels) — resolving it would drop the
+     *  marker and fold the instances as if they were cells (a miscompile) — and a to-one navigated fold has no
+     *  spec/corpus example yet. Every over-form must name a dimension of the attribute and every label must be a
+     *  declared value of it, and a "vanaf … t/m …" interval must not run backwards; otherwise null. A dimension named
+     *  twice, a dimension named by no selection, and a bare interval that fits two dimensions are refused with an
+     *  ERROR. (A conditiebijexpressie — temporal — never reaches here.) */
+    private DimensionSelections resolveDimensionSelections(FunctieAanroepContext f, List<Expr> arguments) {
+        List<DimensieSelectieContext> written = dimensionSelectionsOf(f);
+        if (written.isEmpty() || arguments.size() != 1) return null;
+        DimensieSelectieContext first = written.get(0);
         // §13.4.17.53 the EXPLICIT "over de <meervoud> vanaf … t/m …" form: OVER and DE are name words
         // (attribute names like "belasting over de afgelopen vier jaar" need them), so the greedy attribute
-        // bareName absorbs the " over de <meervoud>" tail — the possessive operand then fails to resolve
-        // AT ALL (an Expr.Unresolved) and the explicit form reaches here as the BARE interval. Re-split by
+        // bareName absorbs the " over de <meervoud>" tail of the FIRST selection — the possessive operand then fails
+        // to resolve AT ALL (an Expr.Unresolved) and the explicit form reaches here as the BARE interval. Re-split by
         // declared names (the §13.4-names design, like the objectcreatie/feitcreatie re-splits): peel the
         // tail only when it is a declared dimension's meervoud AND the peeled head is the subject's OWN
-        // declared attribute ("zijn/haar …") dimensioned by exactly that dimension; the fold operand is
+        // declared attribute ("zijn/haar …") dimensioned by that dimension; the fold operand is
         // rebuilt clean (declared spelling + element datatype) in the argument list.
         RegelSpraakModel.Dimension explicit = null;
-        if (dim.VANAF() != null && arguments.get(0) instanceof Expr.Unresolved on && currentSubject != null
+        if (first.VANAF() != null && arguments.get(0) instanceof Expr.Unresolved on && currentSubject != null
                 && on.source() != null && on.source().snippet().matches("(?is)(zijn|haar)\\s+.*")) {
             int snee = on.source().snippet().toLowerCase().lastIndexOf(" over de ");
             if (snee >= 0) {
@@ -1722,7 +1736,7 @@ final class ExpressionBuilder {
                 String mv = on.source().snippet().substring(snee + " over de ".length()).trim();
                 RegelSpraakModel.Dimension dd = model.dimensionByPlural(mv);
                 List<String> headDims = dd == null ? List.of() : currentSubject.dimensionsOf(head);
-                if (dd != null && headDims.size() == 1 && headDims.get(0).equalsIgnoreCase(dd.name())) {
+                if (dd != null && headDims.stream().anyMatch(n -> n.equalsIgnoreCase(dd.name()))) {
                     // the declared spelling may sit on an ancestor: headDims came from the chain-aware
                     // dimensionsOf, so the own map alone would fall back to the WRITTEN form and put a
                     // name on the wire that no declaration carries
@@ -1736,44 +1750,92 @@ final class ExpressionBuilder {
         }
         if (!(arguments.get(0) instanceof Expr.AttributeReference a) || a.objectType() == null) return null;
         if (a.objectType() != currentSubject) return null;   // only the subject's OWN dimensioned attribuut folds; a navigated read is deferred
-        List<String> attrDims = a.objectType().dimensionsOf(a.attribute());
-        if (attrDims.size() != 1) return null;   // not gedimensioneerd, or multi-dimension (composite key) — deferred
-
-        RegelSpraakModel.Dimension d;
-        List<String> labels;
-        if (dim.VANAF() != null) {
-            // §5.8.5 bare interval: the dimension is left implicit (unambiguous — the attribute carries
-            // exactly one dimension, guaranteed above); the re-split §13.4.17.53 form carries it explicitly.
-            d = explicit != null ? explicit : model.dimensionByName(attrDims.get(0));
+        List<RegelSpraakModel.Dimension> attrDims = new ArrayList<>();
+        for (String dn : a.objectType().dimensionsOf(a.attribute())) {
+            RegelSpraakModel.Dimension d = model.dimensionByName(dn);
             if (d == null) return null;
-            labels = interval(d, src(dim.dimensieWaarde(0)), src(dim.dimensieWaarde(1)));
-        } else if (dim.aggregerenOverAlleDimensies() != null) {
-            d = selectedDimension(dim.aggregerenOverAlleDimensies().dimensieNaamMeervoud(), attrDims);
-            if (d == null) return null;
-            labels = new ArrayList<>(d.values());
-        } else if (dim.aggregerenOverVerzameling() != null) {
-            AggregerenOverVerzamelingContext v = dim.aggregerenOverVerzameling();
-            d = selectedDimension(v.dimensieNaamMeervoud(), attrDims);
-            if (d == null) return null;
-            labels = interval(d, src(v.dimensieWaarde(0)), src(v.dimensieWaarde(1)));
-        } else if (dim.aggregerenOverBereik() != null) {
-            AggregerenOverBereikContext v = dim.aggregerenOverBereik();
-            d = selectedDimension(v.dimensieNaamMeervoud(), attrDims);
-            if (d == null) return null;
-            labels = range(d, v.dimensieWaarde());
-        } else {
-            return null;
+            attrDims.add(d);
         }
-        if (labels == null || labels.isEmpty()) return null;
-        return new Expr.DimensionSelection(d.name(), labels, source(dim));
+        if (attrDims.isEmpty()) return null;   // not gedimensioneerd
+        String expression = source(f).snippet();
+
+        Map<String, Expr.DimensionSelection> byDimension = new java.util.HashMap<>();   // keyed on the declared dimension name
+        List<DimensieSelectieContext> bare = new ArrayList<>();
+        for (DimensieSelectieContext dim : written) {
+            RegelSpraakModel.Dimension d;
+            List<String> labels;
+            if (dim.VANAF() != null) {
+                if (dim != first || explicit == null) { bare.add(dim); continue; }
+                d = explicit;
+                labels = interval(d, src(dim.dimensieWaarde(0)), src(dim.dimensieWaarde(1)));
+            } else if (dim.aggregerenOverAlleDimensies() != null) {
+                d = selectedDimension(dim.aggregerenOverAlleDimensies().dimensieNaamMeervoud(), attrDims);
+                if (d == null) return null;
+                labels = new ArrayList<>(d.values());
+            } else if (dim.aggregerenOverVerzameling() != null) {
+                AggregerenOverVerzamelingContext v = dim.aggregerenOverVerzameling();
+                d = selectedDimension(v.dimensieNaamMeervoud(), attrDims);
+                if (d == null) return null;
+                labels = interval(d, src(v.dimensieWaarde(0)), src(v.dimensieWaarde(1)));
+            } else if (dim.aggregerenOverBereik() != null) {
+                AggregerenOverBereikContext v = dim.aggregerenOverBereik();
+                d = selectedDimension(v.dimensieNaamMeervoud(), attrDims);
+                if (d == null) return null;
+                labels = range(d, v.dimensieWaarde());
+            } else {
+                return null;
+            }
+            if (labels == null || labels.isEmpty()) return null;
+            if (byDimension.putIfAbsent(d.name(), new Expr.DimensionSelection(d.name(), labels, source(dim))) != null)
+                return repeatedDimension(f, expression, d);
+        }
+        // §5.8.5 a bare interval names no dimension: it selects the one dimension of the attribute that no over-form
+        // of the fold names and whose labels it fits — with one dimension, that one
+        java.util.Set<String> named = new java.util.HashSet<>(byDimension.keySet());
+        for (DimensieSelectieContext dim : bare) {
+            String from = src(dim.dimensieWaarde(0)), to = src(dim.dimensieWaarde(1));
+            List<RegelSpraakModel.Dimension> fits = attrDims.stream().filter(d -> interval(d, from, to) != null).toList();
+            List<RegelSpraakModel.Dimension> free = fits.stream().filter(d -> !named.contains(d.name())).toList();
+            if (free.size() > 1) {
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-374",
+                        params("expression", expression, "interval", src(dim),
+                                "dimensions", String.join(", ", free.stream().map(RegelSpraakModel.Dimension::name).toList())),
+                        f.getStart().getLine()));
+                return DimensionSelections.REFUSED;
+            }
+            if (free.isEmpty()) {
+                if (fits.isEmpty()) return null;
+                return repeatedDimension(f, expression, fits.get(0));
+            }
+            RegelSpraakModel.Dimension d = free.get(0);
+            if (byDimension.putIfAbsent(d.name(), new Expr.DimensionSelection(d.name(), interval(d, from, to), source(dim))) != null)
+                return repeatedDimension(f, expression, d);
+        }
+        // every use of a dimensioned attribute names each of its dimensions (§3.6); a fixed one is a set of one label
+        boolean missing = false;
+        for (RegelSpraakModel.Dimension d : attrDims)
+            if (!byDimension.containsKey(d.name())) {
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-372",
+                        params("expression", expression, "attribute", a.attribute(), "dimension", d.name(),
+                                "plural", d.pluralName()), f.getStart().getLine()));
+                missing = true;
+            }
+        if (missing) return DimensionSelections.REFUSED;
+        return new DimensionSelections(attrDims.stream().map(d -> byDimension.get(d.name())).toList(), false);
+    }
+
+    private DimensionSelections repeatedDimension(FunctieAanroepContext f, String expression, RegelSpraakModel.Dimension d) {
+        model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-373",
+                params("expression", expression, "dimension", d.name()), f.getStart().getLine()));
+        return DimensionSelections.REFUSED;
     }
 
     /** The dimension an over-form names by its plural, but only when the operand attribute is actually
      *  gedimensioneerd with it (else summing a different axis would be silently wrong). */
-    private RegelSpraakModel.Dimension selectedDimension(DimensieNaamMeervoudContext mv, List<String> attrDims) {
+    private RegelSpraakModel.Dimension selectedDimension(DimensieNaamMeervoudContext mv,
+                                                         List<RegelSpraakModel.Dimension> attrDims) {
         RegelSpraakModel.Dimension d = model.dimensionByPlural(src(mv));
-        if (d == null) return null;
-        return attrDims.stream().anyMatch(n -> n.equalsIgnoreCase(d.name())) ? d : null;
+        return d != null && attrDims.contains(d) ? d : null;
     }
 
     /** §5.8.5 the contiguous label interval [van .. t/m] in the dimension's DECLARED order (§13.3.7.5),
@@ -3800,9 +3862,10 @@ final class ExpressionBuilder {
         Datatype dt = currentSubject.attribute(attr);
         // a subject-own attribute — no role navigation
         if (dt != null) return new Expr.AttributeReference(attr, currentSubject, "zijn", null, dt, source);
-        // §3.6 the bare name may be a gedimensioneerd attribuut READ with the label woven in
-        // ("zijn betaalde belasting in jaar van huidig jaar"): peel "<voorzetsel> <label>" off the run. An
-        // own-attribute read carries no navigation role (navRole null), exactly as the scalar branch above.
+        // §3.6 the bare name may be a gedimensioneerd attribuut READ with its labels woven in
+        // ("zijn betaalde belasting in jaar van huidig jaar", "zijn bruto inkomen van huidig jaar"): a label before
+        // the attribute, "<voorzetsel> <label>" behind it. An own-attribute read carries no navigation role
+        // (navRole null), exactly as the scalar branch above.
         Expr cell = dimensionCell(attr, currentSubject, null, "zijn", source);
         if (cell != null) return cell;
         // §8.1.7/§8.1.8 a possessive that names a feittype ROLE the subject reaches ("zijn partner een <k>
@@ -3846,40 +3909,129 @@ final class ExpressionBuilder {
         return null;
     }
 
-    /** §3.6 resolve {@code bareName} as a single-cell read of a gedimensioneerd attribuut of {@code ot} —
-     *  the bare attribuut followed by the dimension's read preposition and a declared label
-     *  ("betaalde belasting in jaar van huidig jaar" = attribuut "betaalde belasting in jaar" + jaardimensie
-     *  label "huidig jaar"). Returns the {@link Expr.DimensionCellRead}, or null when {@code bareName} is not such a
-     *  read. Scope (the rest stays an honest marker): a SINGLE-dimension attribute (a multi-dimension cell
-     *  needs every label and a composite-key model) read via the SUFFIX voorzetsel form (the prefix
-     *  "&lt;label&gt; &lt;attribuut&gt;" form is deferred). The longest matching attribute wins, so a
-     *  dimensioned name is not shadowed by a shorter scalar prefix of it. */
+    /** §3.6 resolve {@code bareName} as a read of one cell of a gedimensioneerd attribuut of {@code ot}: the
+     *  attribuut with one label of each of its dimensions, as {@link #cellReadings} reads them ("betaalde belasting
+     *  in jaar van huidig jaar" = attribuut "betaalde belasting in jaar" + jaardimensie label "huidig jaar"; "bruto
+     *  inkomen van huidig jaar" = attribuut "inkomen" with a label before and one behind it). Returns the
+     *  {@link Expr.DimensionCellRead} with the labels per position in the declared order of the dimensions (WF-040);
+     *  null when {@code bareName} is no cell; and a marker whose ERROR is recorded when it writes labels of some
+     *  dimensions only (RGS-370) or fits two cells (RGS-371). The longest matching attribute wins, so a dimensioned
+     *  name is not shadowed by a shorter one inside it. */
     private Expr dimensionCell(String bareName, ObjectType ot, String navRole, String subjectSource, Source source) {
         if (ot == null || bareName == null) return null;
-        String best = null; String bestLabel = null; RegelSpraakModel.Dimension bestDim = null;
-        for (var e : ot.dimensionedMembers().entrySet()) {   // own AND inherited (ch. 2.2)
-            String attr = e.getKey();
-            if (e.getValue().size() != 1) continue;                 // multi-dimension cell deferred
-            RegelSpraakModel.Dimension d = model.dimensionByName(e.getValue().get(0));
-            if (d == null || d.preposition() == null) continue;      // prefix-form (no voorzetsel) deferred
-            String prefix = attr + " " + d.preposition() + " ";
-            if (bareName.length() <= prefix.length()
-                    || !bareName.regionMatches(true, 0, prefix, 0, prefix.length())) continue;
-            String label = dimensionLabel(d, bareName.substring(prefix.length()).trim());
-            if (label == null) continue;
-            if (best == null || attr.length() > best.length()) { best = attr; bestLabel = label; bestDim = d; }
+        List<CellReading> readings = cellReadings(model, ot, bareName);
+        if (readings.isEmpty()) return null;
+        List<CellReading> complete = readings.stream().filter(CellReading::complete).toList();
+        int line = source == null ? 0 : source.line();
+        if (!complete.isEmpty()) {
+            int longest = complete.stream().mapToInt(r -> r.attribute().length()).max().getAsInt();
+            List<CellReading> cells = new ArrayList<>();
+            for (CellReading r : complete)
+                if (r.attribute().length() == longest && cells.stream().noneMatch(c -> c.spelling().equals(r.spelling())))
+                    cells.add(r);
+            if (cells.size() > 1) {
+                model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-371",
+                        params("written", source.snippet(), "cells",
+                                String.join("; ", cells.stream().map(CellReading::spelling).toList())), line));
+                return new Expr.Unresolved(ot.attribute(cells.get(0).attribute()), source, null);   // the ERROR above is this marker's diagnosis
+            }
+            CellReading cell = cells.get(0);
+            Datatype dt = ot.attribute(cell.attribute());
+            Expr.AttributeReference ref = new Expr.AttributeReference(cell.attribute(), ot, subjectSource, navRole, dt, source);
+            return new Expr.DimensionCellRead(ref, cell.labels(), source);
         }
-        if (best == null) return null;
-        Datatype dt = ot.attribute(best);
-        Expr.AttributeReference ref = new Expr.AttributeReference(best, ot, subjectSource, navRole, dt, source);
-        return new Expr.DimensionCellRead(ref, List.of(bestLabel), source);
+        // §3.6 every use of a dimensioned attribute names a label of each of its dimensions
+        CellReading partial = readings.get(0);
+        for (CellReading r : readings)
+            if (r.attribute().length() > partial.attribute().length()
+                    || r.attribute().length() == partial.attribute().length() && r.missing().size() < partial.missing().size())
+                partial = r;
+        for (RegelSpraakModel.Dimension d : partial.missing())
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR, "RGS-370",
+                    params("written", source.snippet(), "attribute", partial.attribute(), "dimension", d.name()), line));
+        return new Expr.Unresolved(ot.attribute(partial.attribute()), source, null);   // the ERROR above is this marker's diagnosis
     }
 
-    /** The declared label of {@code d} that equals {@code name} case-insensitively (returning the declared
-     *  spelling), or null. */
-    private static String dimensionLabel(RegelSpraakModel.Dimension d, String name) {
-        for (String w : d.values()) if (w.equalsIgnoreCase(name)) return w;
-        return null;
+    /** One reading of a written name as a cell of a dimensioned attribute: the attribute as declared, its dimensions in
+     *  declared order, and per dimension the label the name writes for it, null where it writes none. */
+    record CellReading(String attribute, List<RegelSpraakModel.Dimension> dimensions, List<String> labels) {
+        boolean complete() { return !labels.contains(null); }
+
+        List<RegelSpraakModel.Dimension> missing() {
+            List<RegelSpraakModel.Dimension> result = new ArrayList<>();
+            for (int i = 0; i < labels.size(); i++) if (labels.get(i) == null) result.add(dimensions.get(i));
+            return result;
+        }
+
+        /** The cell as the verifier's dependency node and the executors' place spell it: {@code attr[l1, l2]}. */
+        String spelling() { return attribute + "[" + String.join(", ", labels) + "]"; }
+    }
+
+    /** §3.6 every reading of {@code written} as a cell of a dimensioned attribute of {@code ot} (own and inherited): the
+     *  attribute's name with, before it, labels of dimensions declared "voor het attribuut zonder voorzetsel", and
+     *  behind it, for a dimension declared "na het attribuut met voorzetsel", that preposition and a label; each
+     *  dimension at most once and in any order, names and labels compared case-insensitively, labels returned in their
+     *  declared spelling. ALEF writes the labels the same way, before and behind the attribute, but joins those behind
+     *  it with "en", which ends a name in this grammar (grammar/DIVERGENCES.md, "§3.6 / §13.4.17.51 More
+     *  dimensions"). A reading may leave dimensions without a label; the attribute alone is no reading. */
+    static List<CellReading> cellReadings(RegelSpraakModel model, ObjectType ot, String written) {
+        List<CellReading> result = new ArrayList<>();
+        String[] words = written.trim().split("\\s+");
+        for (var e : ot.dimensionedMembers().entrySet()) {
+            String[] name = e.getKey().trim().split("\\s+");
+            List<RegelSpraakModel.Dimension> dims = new ArrayList<>();
+            for (String dn : e.getValue()) dims.add(model.dimensionByName(dn));
+            if (dims.contains(null)) continue;   // an undeclared dimension is the declaration's own error
+            for (int at = 0; at + name.length <= words.length; at++) {
+                if (!wordsAt(words, at, name) || (at == 0 && name.length == words.length)) continue;
+                int after = at + name.length;
+                labelsBefore(words, 0, at, dims, new String[dims.size()], labels -> labelsAfter(words, after, dims, labels,
+                        complete -> result.add(new CellReading(e.getKey(), List.copyOf(dims),
+                                java.util.Collections.unmodifiableList(java.util.Arrays.asList(complete.clone()))))));
+            }
+        }
+        return result;
+    }
+
+    /** Every way {@code words[from..to)} is a run of labels of distinct dimensions without a preposition. */
+    private static void labelsBefore(String[] words, int from, int to, List<RegelSpraakModel.Dimension> dims,
+                                     String[] labels, java.util.function.Consumer<String[]> done) {
+        if (from == to) { done.accept(labels); return; }
+        for (int k = 0; k < dims.size(); k++) {
+            if (labels[k] != null || dims.get(k).preposition() != null) continue;
+            for (String label : dims.get(k).values()) {
+                String[] lw = label.trim().split("\\s+");
+                if (from + lw.length > to || !wordsAt(words, from, lw)) continue;
+                labels[k] = label;
+                labelsBefore(words, from + lw.length, to, dims, labels, done);
+                labels[k] = null;
+            }
+        }
+    }
+
+    /** Every way {@code words[from..]} is a run of "&lt;preposition&gt; &lt;label&gt;" of distinct dimensions declared
+     *  with that preposition. */
+    private static void labelsAfter(String[] words, int from, List<RegelSpraakModel.Dimension> dims, String[] labels,
+                                    java.util.function.Consumer<String[]> done) {
+        if (from == words.length) { done.accept(labels); return; }
+        for (int k = 0; k < dims.size(); k++) {
+            RegelSpraakModel.Dimension d = dims.get(k);
+            if (labels[k] != null || d.preposition() == null || !d.preposition().equalsIgnoreCase(words[from])) continue;
+            for (String label : d.values()) {
+                String[] lw = label.trim().split("\\s+");
+                if (!wordsAt(words, from + 1, lw)) continue;
+                labels[k] = label;
+                labelsAfter(words, from + 1 + lw.length, dims, labels, done);
+                labels[k] = null;
+            }
+        }
+    }
+
+    /** Whether {@code words} carries {@code part} from {@code at} on, compared case-insensitively. */
+    private static boolean wordsAt(String[] words, int at, String[] part) {
+        if (at + part.length > words.length) return false;
+        for (int i = 0; i < part.length; i++) if (!words[at + i].equalsIgnoreCase(part[i])) return false;
+        return true;
     }
 
     /** A bare name: a "Daarbij geldt" variable, else a known parameter binds to a ParameterRef; anything else is

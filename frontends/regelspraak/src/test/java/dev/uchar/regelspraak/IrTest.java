@@ -156,11 +156,10 @@ class IrTest {
                 () -> "geen marker-WARNING verwacht: " + m.diagnostics);
     }
 
-    @Test void dimension_selection_over_multidimensional_attribute_stays_a_marker() {
-        // review (lens A): a MULTI-dimension attribuut (§3.6 "inkomen" over jaardimensie EN
-        // brutonettodimensie) is keyed by label COMBINATIONS, so the single-Map<label,value> fold would
-        // mis-read it (map.get(singleLabel) -> null). Until a composite-key model exists it must stay a
-        // marker, not silently fold over one axis. (Single-dimension is the only lowered case.)
+    @Test void dimension_selection_over_one_of_two_dimensions_is_refused() {
+        // a MULTI-dimension attribuut (§3.6 "inkomen" over jaardimensie EN brutonettodimensie) has a cell per
+        // label COMBINATION, and every use names each dimension (§3.6): a fold that selects in one of them only
+        // is refused with the dimension it leaves out, never folded over one axis.
         String src = """
             Objecttype de Persoon (mv: Personen)
                 de totaal Numeriek (geheel getal);
@@ -176,11 +175,13 @@ class IrTest {
                 De totaal van een Persoon moet berekend worden als de som van zijn inkomen over alle jaardimensies.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
-        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(0).value());
-        assertNull(sum.dimensionSelections(), "een multidimensioneel attribuut mag (nog) niet over één as gevouwen worden");
-        assertInstanceOf(Condition.Unresolved.class, sum.filter(), "moet de honest marker houden");
-        assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().contains("dimensieselectie")),
-                () -> "verwachtte een marker-WARNING: " + m.diagnostics);
+        assertInstanceOf(Expr.Unresolved.class, m.resolvedRules.get(0).value(),
+                "een multidimensioneel attribuut mag niet over één as gevouwen worden");
+        assertEquals(1, m.diagnostics.size(), () -> "verwachtte precies één diagnose: " + m.diagnostics);
+        RegelSpraakModel.Diagnostic d = m.diagnostics.get(0);
+        assertEquals("RGS-372", d.code(), d::toString);
+        assertEquals(RegelSpraakModel.Severity.ERROR, d.severity(), d::toString);
+        assertEquals("brutonettodimensie", d.args().get("dimension"), d::toString);
     }
 
     @Test void dimension_cell_read_becomes_a_dimension_cell_with_label() {

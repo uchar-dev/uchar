@@ -50,7 +50,8 @@ class MarkerReasonPinTest {
 
     /** The fourteen sanctioned null-constructions, measured 2026-09-19, grown by one 2026-09-20, by two 2026-10-20 and
      *  by two and by three 2026-10-22; on 2026-10-23 (card subselection-reads-subject) the way back and its refusal
-     *  went and the form anchor came, with its refusals. Growth
+     *  went and the form anchor came, with its refusals; on 2026-11-02 (card dimensions-executed) three came with the
+     *  cells and folds over more dimensions. Growth
      *  is NOT free here (unlike
      *  a gate floor): a null is a promise that something else speaks, so every new one is listed with
      *  the diagnostic that keeps that promise. */
@@ -85,11 +86,16 @@ class MarkerReasonPinTest {
                     + "deelselectie IS de diagnose van deze marker"),
             new Site("RuleChecker.java", "dayKindOperandError", 1,
                     "meldPredicaat werpt de Tabel-57-ERROR op; die is de diagnose van deze marker"),
-            new Site("ExpressionBuilder.java", "buildFold", 3,
-                    "alle drie de markers staan direct onder hun eigen melding — de aggregatie over een "
+            new Site("ExpressionBuilder.java", "buildFold", 4,
+                    "alle vier de markers staan direct onder hun eigen melding — de aggregatie over een "
                     + "ongedeclareerd lid, de niet-omgezette dimensieselectie / 'gedurende de tijd dat', "
-                    + "en (2026-09-20) de WF-037-ERROR op een niet-set bron onder 'het aantal gevulde "
-                    + "waarden van'"),
+                    + "(2026-09-20) de WF-037-ERROR op een niet-set bron onder 'het aantal gevulde "
+                    + "waarden van', en (2026-11-02) de RGS-372-, RGS-373- of RGS-374-ERROR die "
+                    + "resolveDimensionSelections opwerpt (een dimensie zonder selectie, een dimensie twee keer, "
+                    + "een kaal interval dat in twee dimensies past)"),
+            new Site("ExpressionBuilder.java", "dimensionCell", 2,
+                    "de RGS-371-ERROR (een naam die op twee cellen past) respectievelijk de RGS-370-ERROR (een cel "
+                    + "zonder label van een dimensie) staat vlak boven de marker (2026-11-02)"),
             new Site("ExpressionBuilder.java", "checkFoldSource", 4,
                     "elk van de vier vouwbron-weigeringen zet haar eigen WARNING neer vlak voor de marker"),
             new Site("ExpressionBuilder.java", "aggregationFilter", 3,

@@ -999,6 +999,113 @@ measurement above stated as a property.
 
 ---
 
+## §3.6 / §13.4.17.51 More dimensions — a cell names every dimension, a fold selects in every dimension
+
+Origin: card `dimensions-executed`, step 5; maintainer decision 2026-11-02:
+where RegelSpraak v2.3.0 is silent, ALEF is the norm source (IR-SPEC
+ch. 2.7). The wire carries a cell as a `DimensionCellRead` with one label per
+dimension, label i of dimension i, and a dimension fold with one
+`DimensionSelection` per dimension in the declared order (IR-SPEC ch. 4.3,
+WF-040); this section is how RegelSpraak writes both.
+
+**What v2.3.0 says.** §3.6: an attribute may have more than one dimension,
+and every use of it names all of them; a label is written behind the
+attribute after the preposition its dimension declares, or before it, like an
+adjective, for a dimension declared "voor het attribuut zonder voorzetsel".
+§13.4.2 gives `<attribuutvanonderwerp>` no place for a label, so the cell
+exists in the prose only. §13.4.17.51 gives a dimension aggregation exactly
+one `<dimensieselectie>`: over an attribute with two dimensions the other
+dimension would have to be fixed in the operand, which that same syntax does
+not write. **What ALEF does.** A cell is a selector with one label per
+dimension, the labels of attributive dimensions before the attribute, the
+others behind it, each after its preposition. A dimension aggregation carries
+one filter per dimension — all labels, an interval or a set — every dimension
+must have one, and the operand carries no label; a fixed dimension is a set of
+one label.
+
+### Surface syntax
+
+```
+Het noordgewicht van een Jutter moet berekend worden als
+    de som van zijn vondstgewicht over alle seizoenen over de stranden in {noord}.
+Het zuidvoorjaarsgewicht van een Jutter moet berekend worden als
+    zijn vondstgewicht in voorjaar op zuid.
+```
+
+The fold: `somFunc` and `minMaxFunc` take `dimensieSelectie*` where
+§13.4.17.51 has one, so a fold writes one selection per dimension, in any
+order. The cell needs no new production: the possessive's name run is read as
+the attribute with labels before it (dimensions without a preposition) and
+"`<voorzetsel> <label>`" behind it (dimensions with one), each dimension once,
+in any order. ALEF joins the labels behind the attribute with "en" ("in
+voorjaar en op zuid"); here `EN` ends a name (the §13.4.17 lists, see
+`naamWoordLower`), so the labels are written side by side ("in voorjaar op
+zuid") and the "en" form is a syntax error.
+
+### Inertness — measured, not assumed
+
+A second selection after a fold was a syntax error before this extension
+("extraneous input 'over'", measured on the frontend of `6c397de93`), so a
+document that parsed then parses the same way now. What changes is the reading
+of three forms that were an unresolved marker with a WARNING: a name run that
+is a cell of an attribute with more than one dimension, or of a dimension
+declared before the attribute, now reads as that cell; a run with labels of
+some dimensions only is refused (RGS-370); a fold over some dimensions of its
+attribute only is refused (RGS-372). Every `source.rgs` golden re-emits
+byte-identically (gate 10), as do the documents of the parity zone (gate 11)
+and every scenario golden (gate 16).
+
+### Lowering (resolver)
+
+- **The cell** (`ExpressionBuilder.cellReadings`, `dimensionCell`): every
+  reading of the run as one dimensioned attribute of the subject with its
+  labels. One reading of every dimension is the `DimensionCellRead`, its
+  labels in the declared order of the dimensions; the longest attribute name
+  wins.
+- **The fold** (`resolveDimensionSelections`): each over-form names its
+  dimension by its plural; a bare interval (`vanaf … t/m …`, §5.8.5) names
+  none and selects the one dimension of the attribute that no over-form of
+  the fold names and whose labels it fits. The selections go out in the
+  declared order of the attribute's dimensions. The operand of the first
+  selection may take `over de <meervoud>` as name words; it is split off by
+  the declared plural, as for one dimension.
+
+### Fail-fast refusals (resolver, loud diagnostics)
+
+- **RGS-370** — a run that reads as a cell with labels of some dimensions
+  only (`zijn vondstgewicht in voorjaar` of a `vondstgewicht` over `seizoen`
+  and `strand`): ERROR, one per dimension without a label.
+- **RGS-371** — a run that reads as two cells (two dimensions with one
+  preposition and a label in common).
+- **RGS-372** — a fold with no selection for a dimension of its argument:
+  ERROR, one per such dimension, naming the form of a fixed dimension.
+- **RGS-373** — a fold that selects in one dimension twice.
+- **RGS-374** — a bare interval that fits two dimensions no over-form names.
+- An over-form that names no dimension of the attribute, a label that is no
+  label of its dimension and an interval that runs backwards stay the honest
+  marker of RGS-070, as for one dimension.
+
+### Emission
+
+Unchanged: the emitter writes the `DimensionCellRead` and the list of
+selections as the resolver built them.
+
+### Scope / limitations
+
+- The subject's own attribute only (`zijn …`). A cell or a fold of an
+  attribute reached over a role is not read; the executors carry the cell
+  over a path (RUNTIME-SEMANTICS ch. 5.8c).
+- `de eerste van`, `de laatste van` and `het aantal` over cells are not
+  folds the wire has (WF-037).
+- The labels of a set selection are not checked for repeats here
+  (`in {noord, noord}`); the verifier refuses them (WF-040).
+- A read of a dimensioned attribute without any label outside a fold
+  (`zijn vondstgewicht`) is not refused here; the verifier refuses it
+  (WF-125).
+- A cell as a rule target is not this section's.
+
+---
+
 ## §8.4.3 A time window's bounds — narrowed to the wire's two shapes
 
 Not a dialect extension and not inert: a narrowing of what v2.3.0 spells.
