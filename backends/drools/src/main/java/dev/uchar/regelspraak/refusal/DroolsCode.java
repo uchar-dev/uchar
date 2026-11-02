@@ -61,14 +61,14 @@ public enum DroolsCode {
     CALENDAR_GRID_UNSUPPORTED("DROOLS-037", Kind.LIMIT, "calendar-grid-unsupported", "site,granularity,granularity", null),
     TIMELINE_VALUE_NON_NUMERIC("DROOLS-038", Kind.LIMIT, "timeline-value-non-numeric", "attribute", null),
     EXPECTATION_KIND_UNKNOWN("DROOLS-039", Kind.CONTRACT, "expectation-kind-unknown", "kind", null),
-    DIMENSIONED_ATTRIBUTE_READBACK("DROOLS-040", Kind.LIMIT, "dimensioned-attribute-readback", "attribute", null),
+    DIMENSIONED_ATTRIBUTE_READBACK("DROOLS-040", Kind.RETIRED, "dimensioned-attribute-readback", "attribute", null),
     SCALAR_READBACK_TEMPORAL_ATTRIBUTE("DROOLS-041", Kind.LIMIT, "scalar-readback-temporal-attribute", "attribute", null),
     RATIONAL_VALUE("DROOLS-042", Kind.REFUSAL, "rational-value", "field", null),
     TIMELINE_VALUE_SCALAR_POSITION("DROOLS-043", Kind.REFUSAL, "timeline-value-scalar-position", "field", null),
     VALUE_FORM_NOT_CARRIED("DROOLS-044", Kind.FALLBACK, "value-form-not-carried", "field,value", null),
     CASE_UNKNOWN_OBJECT_TYPE("DROOLS-045", Kind.CONTRACT, "case-unknown-object-type", "objectType", null),
     CASE_UNDECLARED_ATTRIBUTE("DROOLS-046", Kind.CONTRACT, "case-undeclared-attribute", "attribute,objectType", null),
-    DIMENSIONED_ATTRIBUTE_INPUT("DROOLS-047", Kind.LIMIT, "dimensioned-attribute-input", "attribute", null),
+    DIMENSIONED_ATTRIBUTE_INPUT("DROOLS-047", Kind.RETIRED, "dimensioned-attribute-input", "attribute", null),
     ROLE_UNKNOWN_LABEL("DROOLS-048", Kind.CONTRACT, "role-unknown-label", "role,label", "EF-002"),
     CASE_ROLE_NO_FIELD("DROOLS-049", Kind.LIMIT, "case-role-no-field", "role,fromType,toType,viaReason,directionReason", null),
     NAME_SHARING_ONE_ROLE("DROOLS-050", Kind.LIMIT, "name-sharing-one-role", "role,targetRole,objectType,cause", null),
@@ -205,7 +205,7 @@ public enum DroolsCode {
     DAY_KIND_CONDITION_UNSUPPORTED("DROOLS-181", Kind.REFUSAL, "day-kind-condition-unsupported", "dayKind,snippet", null),
     SQUARE_ROOT_ARGUMENT_COUNT("DROOLS-182", Kind.CONTRACT, "square-root-argument-count", "argumentCount,snippet", null),
     TEXT_PART_NON_TEXT("DROOLS-183", Kind.REFUSAL, "text-part-non-text", "datatype,where,snippet", null),
-    DIMENSION_CELL_MULTI_DIMENSION("DROOLS-184", Kind.REFUSAL, "dimension-cell-multi-dimension", "dimensionCount,snippet", null),
+    DIMENSION_CELL_MULTI_DIMENSION("DROOLS-184", Kind.RETIRED, "dimension-cell-multi-dimension", "dimensionCount,snippet", null),
     DIMENSION_FOLD_UNSUPPORTED_KIND("DROOLS-185", Kind.CONTRACT, "dimension-fold-unsupported-kind", "kind,snippet", null),
     EMPTY_FALLBACK_NON_SUM("DROOLS-186", Kind.CONTRACT, "empty-fallback-non-sum", "kind,snippet", null),
     DIMENSION_FOLD_NON_ATTRIBUTE("DROOLS-187", Kind.REFUSAL, "dimension-fold-non-attribute", "snippet", null),
@@ -318,8 +318,9 @@ public enum DroolsCode {
     ANCHORED_FORM_NOT_CARRIED("DROOLS-294", Kind.REFUSAL, "anchored-form-not-carried", "snippet", null),
     NARROWING_HOST_NOT_CARRIED("DROOLS-295", Kind.LIMIT, "narrowing-host-not-carried", "snippet", null),
     FOLD_OVER_UNBOUNDED_VALUE("DROOLS-296", Kind.LIMIT, "fold-over-unbounded-value", "attribute,objectType", null),
-    DIMENSION_FOLD_MULTI_DIMENSION("DROOLS-297", Kind.REFUSAL, "dimension-fold-multi-dimension", "dimensionCount,snippet", null),
-    DIMENSION_CELL_WRITE("DROOLS-298", Kind.REFUSAL, "dimension-cell-write", "attribute,form", null);
+    DIMENSION_FOLD_MULTI_DIMENSION("DROOLS-297", Kind.RETIRED, "dimension-fold-multi-dimension", "dimensionCount,snippet", null),
+    DIMENSION_CELL_WRITE("DROOLS-298", Kind.REFUSAL, "dimension-cell-write", "attribute,form", null),
+    DIMENSION_LABELS_NAME_NO_CELL("DROOLS-299", Kind.CONTRACT, "dimension-labels-name-no-cell", "description,attribute,labels,dimensions,snippet", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

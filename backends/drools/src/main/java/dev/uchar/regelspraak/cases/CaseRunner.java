@@ -590,6 +590,7 @@ public final class CaseRunner {
             else if (c instanceof InputPrecisionFault d) kind = new FaultKind(d.code(), d.params());
             else if (c instanceof WriteBoundaryFault w) kind = new FaultKind(w.code(), w.params());
             else if (c instanceof CaseInput.LinkCycleFault l) kind = new FaultKind(l.code(), l.params());
+            else if (c instanceof CaseInput.CellFault f) kind = new FaultKind(f.code(), f.params());
             if (kind != null) {
                 String code = kind.code();
                 if (kinds.stream().noneMatch(k -> k.code().equals(code))) kinds.add(kind);
@@ -712,9 +713,9 @@ public final class CaseRunner {
         return Namen.containsName(ot.granularityMembers(), attr);
     }
 
-    /** Whether {@code attr} on {@code ot} is a §3.6 dimensioned bean member — a {@code Map<String, BigDecimal>}
-     *  field. Checked BEFORE {@link #temporal}: the generator gives a dimensioned declaration the Map shape
-     *  even when a granularity is declared beside it. */
+    /** Whether {@code attr} on {@code ot} is a §3.6 dimensioned bean member — a {@code Map} field of its cells by
+     *  their labels ({@link FactModelGenerator#cellKey}). Checked BEFORE {@link #temporal}: the generator gives a
+     *  dimensioned declaration the Map shape even when a granularity is declared beside it. */
     boolean dimensioned(ObjectType ot, String attr) {
         return !ot.dimensionsOf(attr).isEmpty();
     }
@@ -925,6 +926,8 @@ public final class CaseRunner {
             case "consistent" -> consistency(session, false, v);
             case "inconsistent" -> consistency(session, true, v);
             case "attributeTimeline" -> timeline(v);
+            case "cellValue" -> cell(v, false);
+            case "cellEmpty" -> cell(v, true);
             default -> throw new Excluded(DroolsCode.EXPECTATION_KIND_UNKNOWN.reason("kind", kind));
         };
     }
@@ -934,8 +937,11 @@ public final class CaseRunner {
         String label = v.get("label").asText();
         ObjectType ot = typeOfLabel(v, label);
         ownField(ot, attr, false, "reads");
+        // a CASE defect: a dimensioned attribute has a value per cell and none of its own (RUNTIME-SEMANTICS ch. 5.8c),
+        // and its read-back form is the cellValue or cellEmpty expectation
         if (dimensioned(ot, attr))
-            throw new Excluded(DroolsCode.DIMENSIONED_ATTRIBUTE_READBACK.reason("attribute", attr));
+            throw new IllegalArgumentException(v.get("kind").asText() + " on the dimensioned attribute '" + attr + "' of "
+                    + label + ", whose values are its cells: an expectation on it names a cell");
         // a temporal attribute's bean member is the List<Segment> timeline itself: the scalar comparison below
         // would compare a list against a scalar. Its read-back form is the attributeTimeline expectation.
         if (temporal(ot, attr))
@@ -946,6 +952,45 @@ public final class CaseRunner {
         Object expected = valueToArg(v.get("value"), attr);
         return equalValue(v.get("value"), expected, actual) ? null
                 : "attribuut " + attr + ": verwacht " + render(expected) + ", werkelijk " + render(actual);
+    }
+
+    /** The read-back of one cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c): the value the map of its bean
+     *  member holds under the key of the cell the expectation's labels name ({@link FactModelGenerator#cellKey}), leeg
+     *  where the map holds none. A cell expectation on an attribute without dimensions, and labels that name no cell, are
+     *  defects of the case, as an expectation on an attribute the type does not declare is. */
+    private String cell(JsonNode v, boolean emptyExpected) {
+        String attr = v.get("attribute").asText(), label = v.get("label").asText(), kind = v.get("kind").asText();
+        ObjectType ot = typeOfLabel(v, label);
+        ownField(ot, attr, false, "reads");
+        if (!dimensioned(ot, attr))
+            throw new IllegalArgumentException(kind + " on the attribute '" + attr + "' of " + label
+                    + ", which has no dimensions");
+        Object actual = cellValue(v, labelToBean.get(label), ot);
+        if (emptyExpected)
+            return actual == null ? null : "cel " + attr + cellLabels(v) + ": verwacht leeg, werkelijk " + actual;
+        Object expected = valueToArg(v.get("value"), attr);
+        return equalValue(v.get("value"), expected, actual) ? null
+                : "cel " + attr + cellLabels(v) + ": verwacht " + render(expected) + ", werkelijk " + render(actual);
+    }
+
+    /** The labels of a cell expectation as the case writes them. */
+    private static List<String> cellLabels(JsonNode v) {
+        List<String> labels = new ArrayList<>();
+        for (JsonNode l : v.get("labels")) labels.add(l.asText());
+        return labels;
+    }
+
+    /** The value on {@code bean}, of type {@code ot}, of the cell that the cell expectation {@code v} names; null for an
+     *  empty cell. Labels that name no cell are a defect of the case. */
+    private Object cellValue(JsonNode v, Object bean, ObjectType ot) {
+        String attr = v.get("attribute").asText();
+        List<String> labels = cellLabels(v);
+        List<String> key = FactModelGenerator.cellKey(model, ot.dimensionsOf(attr), labels);
+        if (key == null)
+            throw new IllegalArgumentException(v.get("kind").asText() + " on " + v.get("label").asText() + "." + attr
+                    + ": the labels " + labels + " name no cell of the dimensions " + ot.dimensionsOf(attr));
+        Object map = bean == null ? null : invokeGetter(bean, Namen.getter(attributeName(ot, attr)));
+        return map == null ? null : ((Map<?, ?>) map).get(key);
     }
 
     /** The §13.3.6 timeline read-back: the doel's {@code List<Segment>} against the pinned segment list, with
@@ -1111,6 +1156,7 @@ public final class CaseRunner {
         StringBuilder b = new StringBuilder(kind);
         for (String field : new String[]{"label", "attribute", "characteristic"})
             if (v.hasNonNull(field)) b.append(' ').append(v.get(field).asText());
+        if (v.hasNonNull("labels")) b.append(cellLabels(v));
         return b.toString();
     }
 
@@ -1126,6 +1172,8 @@ public final class CaseRunner {
                             + render(valueToArg(s.get("value"), v.get("attribute").asText())));
                 yield segs.isEmpty() ? "(leeg)" : String.join(" ", segs);
             }
+            case "cellValue" -> render(valueToArg(v.get("value"), v.get("attribute").asText()));
+            case "cellEmpty" -> "leeg";
             case "characteristicPresent" -> "aanwezig";
             case "characteristicAbsent" -> "afwezig";
             case "consistent" -> "consistent";
@@ -1149,6 +1197,7 @@ public final class CaseRunner {
                         : invokeGetter(bean, Namen.getter(attributeName(ot, v.get("attribute").asText())));
                 yield read == null ? "(leeg)" : renderTl((List<?>) read);
             }
+            case "cellValue", "cellEmpty" -> render(cellValue(v, bean, ot));
             case "characteristicPresent", "characteristicAbsent" -> bean != null && Boolean.TRUE.equals(
                     invokeGetter(bean, Namen.getter(characteristicName(ot, v.get("characteristic").asText())))) ? "aanwezig" : "afwezig";
             default -> {

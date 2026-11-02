@@ -30,7 +30,9 @@ import java.util.Objects;
  * its fields and the fields in the order the document writes them. A text part, a whole-period qualifier, a dimension
  * selection, a type and a role binding are no nodes. A node inside the filter, the matrix or the source of a fold over a
  * set is evaluated per member of the fold, in its own rules, and has no reading of its own: the node of the fold
- * carries its contributors, and the numbers count those nodes all the same. A node that reads a member of one object
+ * carries its contributors, and the numbers count those nodes all the same. Neither has the reference under a cell read
+ * nor the argument of a fold over the cells of a dimensioned attribute, which names an attribute that has no value of
+ * its own: the cell read and the fold are the nodes, and the fold has no contributors. A node that reads a member of one object
  * names the object it read it on ({@link NodeReading#object}): over a path of roles the object the path reached, which
  * the form's own rule bound beside the member, never a second walk over the beans.
  *
@@ -96,8 +98,8 @@ public record ConditionReading(Object object, String form, Status status, List<N
      *                     {@code ComputeFault}, an {@code InputFormFault} or a division by a numeric zero, unnamed, as
      *                     the evaluation raises it, whose sentence names an object of the session by its type and
      *                     identity where it names one, as a {@code Fault} of {@code Fixpoint} does without labels
-     * @param object       for a node that reads a member of one object, an {@code AttributeReference} or a
-     *                     {@code CharacteristicCheck}, the object it read the member on, a bean of the build's bean
+     * @param object       for a node that reads a member of one object, an {@code AttributeReference}, a
+     *                     {@code DimensionCellRead} or a {@code CharacteristicCheck}, the object it read the member on, a bean of the build's bean
      *                     model, compared by identity (RUNTIME-SEMANTICS ch. 5.12): over a path of roles the object the
      *                     path reached, and without one the object of the reading, whose own member it read (ch. 5.8
      *                     rule 4). Null where the node was not reached or faulted, where a link on its path is absent

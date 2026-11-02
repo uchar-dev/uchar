@@ -70,7 +70,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * card"), the sub-day extractors, dateWith and dateTimeWith ("function kind not implemented in this card"), and the
  * dimension forms, as RUNTIME-SEMANTICS ch. 5.11 records; for those the expectations are the exec-model branch's, whose
  * runtime helpers this branch calls, and that branch played every one of those documents that has a case (the
- * dimension row fires beans set by hand, since no case reader carries dimensioned input). The ASP runner passes the
+ * dimension rows fire beans set by hand, so that the cells meet every order of the generated rules). The ASP runner passes the
  * date extractors, the duration and easterSunday, and declines the other forms at translation ("absoluteValue is not
  * translated", "rounded root is not translated", "condition kind not translated", a computed text or datum-tijd target
  * that the case also supplies, "Unresolved reached in translation").
@@ -82,11 +82,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * "een Let in een waarde ('k is …')" and "een DimensionCellRead in een waarde ('zijn omzet in k2')"; the row of the
  * text of a number expected its own sentence and got the TextComposition's.
  *
- * <p>Two rows pin a refusal whose sentence the switch-over rewrote (card tms-omschakeling, step 5a2): a cell over two
- * dimensions and the eleven test over a path. The verifier passes both documents (measured 2026-10-10). <b>Red</b> on
- * {@code 3d50652a}, before that rewrite: "… ('zijn omzet in k2 in noord'): de exec-modeltak en deze tak lezen alleen
- * een cel van één dimensie" and "… ('elevenTest'): de exec-modeltak laat een afwezige link beide polariteiten onwaar
- * maken, …". Step 6c of card drl-teksttak-op-truth-maintenance rewrote the eleven test's sentence once more, with what
+ * <p>One row pins a refusal whose sentence the switch-over rewrote (card tms-omschakeling, step 5a2): the eleven test
+ * over a path. The verifier passes the document (measured 2026-10-10). <b>Red</b> on {@code 3d50652a}, before that
+ * rewrite: "… ('elevenTest'): de exec-modeltak laat een afwezige link beide polariteiten onwaar maken, …". Step 6c of card drl-teksttak-op-truth-maintenance rewrote the eleven test's sentence once more, with what
  * the analysis itself cannot tell apart instead of the behaviour of a branch. <b>Red</b> on {@code fbd2f2c0}, before
  * that rewrite: "… ('elevenTest'): de DRL-teksttak laat een afwezige link beide polariteiten onwaar maken, …".
  */
@@ -428,14 +426,10 @@ class TmsBuiltinWitnessTest {
 
     private static final String OMZET = ownRead("omzet", "Jutter");
 
-    /** The case reader does not carry dimensioned input (§3.6, a Map bean member), on any branch, so the beans are
-     *  set here; "Het tweede kwartaal … als zijn omzet in k2 plus zijn toeslag" and "De jaaromzet … als de som van zijn
-     *  omzet over alle kwartalen plus zijn toeslag", with "De toeslag … als zijn grondtoeslag", in every order of the
-     *  generated rules. J1: omzet k1 10, k2 20, k4 5 (no k3), grondtoeslag 1, toeslag 99 in the input: tweede kwartaal
-     *  21, jaaromzet 36. */
-    /** "Het tweede kwartaal … als zijn omzet in k2 in noord": a cell over two dimensions, which the branch refuses by
-     *  name, since it reads a cell of one dimension (the row below). */
-    @Test void a_cell_over_two_dimensions_is_refused_by_name() throws Exception {
+    /** "Het tweede kwartaal … als zijn omzet in k2 in noord": a cell over two dimensions reads the cell of its two
+     *  labels in the map of the bean, its cells by their labels (RUNTIME-SEMANTICS ch. 5.8c). J1: omzet (k2, noord) 20
+     *  and (k2, zuid) 7: tweede kwartaal 20. */
+    @Test void a_cell_over_two_dimensions_reads_its_cell() throws Exception {
         String model = DIMENSION_MODEL.replace("\"dimensions\":[\"kwartaal\"]", "\"dimensions\":[\"kwartaal\",\"regio\"]")
                 .replace("\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]}]", "\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]},"
                         + "{\"node\":\"Dimension\",\"name\":\"regio\",\"plural\":\"regio's\",\"preposition\":\"in\","
@@ -443,12 +437,21 @@ class TmsBuiltinWitnessTest {
         String cell = "{\"node\":\"DimensionCellRead\",\"attribute\":" + OMZET + ",\"labels\":[\"k2\",\"noord\"],"
                 + "\"source\":{\"snippet\":\"zijn omzet in k2 in noord\"}}";
         String second = computingRule("tweede kwartaal van een jutter", "BEREKENING", "Jutter", "tweede kwartaal", cell, "null");
-        CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(
-                TmsDocuments.document(model, List.of(second)), DroolsBackend.Branch.EXEC_MODEL));
-        assertEquals("transpiler SKIP: regel: tweede kwartaal van een jutter — een DimensionCellRead over 2 dimensies"
-                + " ('zijn omzet in k2 in noord'): deze tak leest alleen een cel van één dimensie", e.getMessage());
+        DroolsBackend.Build b = DroolsBackend.build(TmsDocuments.document(model, List.of(second)),
+                DroolsBackend.Branch.EXEC_MODEL);
+        Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of());
+        Map<List<String>, Object> omzet = new LinkedHashMap<>();
+        omzet.put(List.of("k2", "noord"), new BigDecimal("20"));
+        omzet.put(List.of("k2", "zuid"), new BigDecimal("7"));
+        j1.getClass().getMethod(Namen.setter("omzet"), Map.class).invoke(j1, omzet);
+        assertNull(TmsDocuments.fixpoint(b, b.execModelTranspiler().model().getRules(), List.of(j1), session -> { }));
+        TmsFaultWitnessTest.assertNumber("20", TmsDocuments.read(j1, "tweede kwartaal"), "tweede kwartaal");
     }
 
+    /** The beans are set here, so that the cells meet every order of the generated rules; "Het tweede kwartaal … als
+     *  zijn omzet in k2 plus zijn toeslag" and "De jaaromzet … als de som van zijn omzet over alle kwartalen plus zijn
+     *  toeslag", with "De toeslag … als zijn grondtoeslag". J1: omzet k1 10, k2 20, k4 5 (no k3), grondtoeslag 1,
+     *  toeslag 99 in the input: tweede kwartaal 21, jaaromzet 36. */
     @Test void a_dimension_cell_and_a_dimension_fold_beside_a_later_derived_toeslag() throws Exception {
         String toeslag = computingRule("toeslag van een jutter", "BEREKENING", "Jutter", "toeslag",
                 ownRead("grondtoeslag", "Jutter"), "null");
@@ -468,10 +471,10 @@ class TmsBuiltinWitnessTest {
             List<String> names = order.stream().map(Rule::getName).toList();
             Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of("grondtoeslag", "1", "toeslag", "99"),
                     List.of());
-            Map<String, BigDecimal> omzet = new LinkedHashMap<>();
-            omzet.put("k1", new BigDecimal("10"));
-            omzet.put("k2", new BigDecimal("20"));
-            omzet.put("k4", new BigDecimal("5"));
+            Map<List<String>, Object> omzet = new LinkedHashMap<>();
+            omzet.put(List.of("k1"), new BigDecimal("10"));
+            omzet.put(List.of("k2"), new BigDecimal("20"));
+            omzet.put(List.of("k4"), new BigDecimal("5"));
             j1.getClass().getMethod(Namen.setter("omzet"), Map.class).invoke(j1, omzet);
             assertNull(TmsDocuments.fixpoint(b, order, List.of(j1), session -> { }), () -> "volgorde " + names);
             TmsFaultWitnessTest.assertNumber("21", TmsDocuments.read(j1, "tweede kwartaal"), "tweede kwartaal, " + names);

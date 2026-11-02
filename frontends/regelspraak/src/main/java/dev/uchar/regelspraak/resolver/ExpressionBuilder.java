@@ -329,10 +329,10 @@ final class ExpressionBuilder {
                 if (f.anchored()) return f;
                 if (dev.uchar.regelspraak.emit.IrEmitter.isFoldSource(f))
                     return new Expr.FunctionCall(f.kind(), f.arguments(), f.elementObjectType(), f.emptyFallback(), f.filter(),
-                            f.dimensionSelection(), f.type(), f.source(), f.granularity(), true);
+                            f.dimensionSelections(), f.type(), f.source(), f.granularity(), true);
                 // a fold over a dimension or of another shape, and the operators over the subject's own timeline, read
                 // the subject without a node the anchor can stand on
-                if (f.dimensionSelection() != null || f.elementObjectType() != null || f.filter() != null
+                if (f.dimensionSelections() != null || f.elementObjectType() != null || f.filter() != null
                         || f.kind() == Expr.FunctionKind.TOTAAL || f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL
                         || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN) {
                     why[0] = Msg.frontend("PART.subject-no-anchor", "expression", f.source());
@@ -348,7 +348,7 @@ final class ExpressionBuilder {
                 Expr fallback = again.apply(f.emptyFallback());
                 return !changed && fallback == f.emptyFallback() ? f
                         : new Expr.FunctionCall(f.kind(), List.copyOf(arguments), f.elementObjectType(), fallback, f.filter(),
-                                f.dimensionSelection(), f.type(), f.source(), f.granularity());
+                                f.dimensionSelections(), f.type(), f.source(), f.granularity());
             }
             case Expr.Binary b -> {
                 Expr l = again.apply(b.left()), r = again.apply(b.right());
@@ -408,7 +408,7 @@ final class ExpressionBuilder {
     /** Whether {@code e} reads anything of a subject: a read, a fold, a union or a choice. */
     static boolean readsSubject(Expr e) {
         return Expr.contains(e, x -> x instanceof Expr.AttributeReference || x instanceof Expr.FunctionCall f
-                && (f.elementObjectType() != null || f.dimensionSelection() != null)
+                && (f.elementObjectType() != null || f.dimensionSelections() != null)
                 || x instanceof Expr.InstanceSetUnion || x instanceof Expr.IfThenElse);
     }
 
@@ -1450,7 +1450,7 @@ final class ExpressionBuilder {
             // recomputed: the §13.4.17.53 re-split may have rebuilt the polluted operand in-place, so the
             // pre-computed type/element (derived from the then-Onopgelost argument) can be stale.
             return new Expr.FunctionCall(kind, arguments, aggregationElement(kind, arguments), emptyFallback, filter,
-                    dimSel, functionType(kind, arguments), source);
+                    List.of(dimSel), functionType(kind, arguments), source);
         // §13.4.17.51-.58: a dimensieselectie that did NOT resolve, or a conditiebijexpressie ("gedurende
         // de tijd dat …") — the temporal axis is not built yet (p5) — must not be SILENTLY DROPPED, which
         // would aggregate the whole set as if unrestricted. Capture its source as an Unresolved filter so

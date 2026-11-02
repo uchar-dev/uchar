@@ -731,7 +731,7 @@ class SubtypeDialectTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());
-        assertTrue(m.resolvedRules.get(0).value() instanceof Expr.FunctionCall f && f.dimensionSelection() != null
+        assertTrue(m.resolvedRules.get(0).value() instanceof Expr.FunctionCall f && f.dimensionSelections() != null
                         && f.arguments().get(0) instanceof Expr.AttributeReference a
                         && a.attribute().equals("betaalde belasting"),
                 () -> "de vouw hoort de GEDECLAREERDE spelling te dragen: " + m.resolvedRules.get(0).value());

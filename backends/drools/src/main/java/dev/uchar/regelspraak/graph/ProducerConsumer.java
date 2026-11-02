@@ -413,6 +413,14 @@ public final class ProducerConsumer {
             switch (e) {
                 case Expr.AttributeReference ref -> out.add(elementOf(ref.objectType(), ref.attribute(), false));
                 case Expr.Binary b -> { expr(b.left(), subject); expr(b.right(), subject); }
+                // a dimension fold reads every cell of the product of its selections, each a node of its own, and
+                // its fallback
+                case Expr.FunctionCall f when f.dimensionSelections() != null
+                        && f.arguments().size() == 1 && f.arguments().get(0) instanceof Expr.AttributeReference ref -> {
+                    for (List<String> labels : selectedCells(f.dimensionSelections()))
+                        out.add(cellOf(ref.objectType(), ref.attribute(), labels));
+                    expr(f.emptyFallback(), subject);
+                }
                 case Expr.FunctionCall f -> {
                     // A count's source names the relation's ROLE, never a member of the element type (the loader
                     // refuses a member there): it reads the link set, not an attribuut of each contributor.
@@ -427,7 +435,9 @@ public final class ProducerConsumer {
                 }
                 case Expr.Rounding a -> expr(a.base(), subject);
                 case Expr.Clamp b -> { expr(b.base(), subject); expr(b.minimum(), subject); expr(b.maximum(), subject); }
-                case Expr.DimensionCellRead c -> expr(c.attribute(), subject);
+                // the cell is the node (IR-SPEC ch. 5.1)
+                case Expr.DimensionCellRead c -> out.add(cellOf(c.attribute().objectType(), c.attribute().attribute(),
+                        c.labels()));
                 case Expr.TextComposition t -> {
                     for (Expr.TextComposition.Part d : t.parts())
                         if (d instanceof Expr.TextComposition.EmbeddedExpression i) expr(i.expr(), subject);
@@ -444,6 +454,36 @@ public final class ProducerConsumer {
                 case Expr.Unresolved ignored -> { }
             }
         }
+    }
+
+    /**
+     * The element identity of the cell {@code labels} of the dimensioned attribute {@code name} touched through
+     * {@code holder}: a node of its own (IR-SPEC ch. 5.1), keyed on the declaring type as a member is, its name the
+     * attribute with its labels as the verifier spells the cell node, {@code vondstgewicht[voorjaar, zuid]}, so that the
+     * rule graph and the verifier's dependency graph meet on it.
+     */
+    public static ElementKey cellOf(RegelSpraakModel.ObjectType holder, String name, List<String> labels) {
+        List<String> normalised = new ArrayList<>();
+        for (String l : labels) normalised.add(Namen.norm(l));
+        ElementKey attribute = elementOf(holder, name, false);
+        return new ElementKey(attribute.objectType(), attribute.name() + "[" + String.join(", ", normalised) + "]", false);
+    }
+
+    /** The cells a dimension fold reads: the product of its selections, the first selection outermost, each in its own
+     *  label order (RUNTIME-SEMANTICS ch. 5.8c). */
+    public static List<List<String>> selectedCells(List<Expr.DimensionSelection> selections) {
+        List<List<String>> tuples = List.of(List.of());
+        for (Expr.DimensionSelection s : selections) {
+            List<List<String>> longer = new ArrayList<>();
+            for (List<String> t : tuples)
+                for (String label : s.labels()) {
+                    List<String> u = new ArrayList<>(t);
+                    u.add(label);
+                    longer.add(u);
+                }
+            tuples = longer;
+        }
+        return tuples;
     }
 
     /** A count over one source whose argument names no member of the element type: the count source of IR-SPEC

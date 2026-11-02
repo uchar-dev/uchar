@@ -242,10 +242,10 @@ public final class ComputeHelpers {
 
     // ---------------- dimensions ----------------
 
-    /** The cell at {@code label} of a dimensioned attribute's {@code Map<label, value>}, leeg where the map or the label
-     *  is absent (§3.6). */
-    public static Object cell(Object map, String label) {
-        return map instanceof Map<?, ?> m ? m.get(label) : null;
+    /** The cell {@code labels} of a dimensioned attribute's map of its cells by their labels, one per dimension, leeg
+     *  where the map or the cell is absent (RUNTIME-SEMANTICS ch. 5.8c). */
+    public static Object cell(Object map, List<?> labels) {
+        return map instanceof Map<?, ?> m ? m.get(labels) : null;
     }
 
     /** The map of a dimensioned attribute as it is, leeg where the value is no map. */

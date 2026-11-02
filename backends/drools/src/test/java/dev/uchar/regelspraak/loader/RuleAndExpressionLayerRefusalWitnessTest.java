@@ -659,7 +659,7 @@ class RuleAndExpressionLayerRefusalWitnessTest {
         assertNotNull(part.filter(), "filter");
         assertNull(part.elementObjectType(), "a builtin carries none of the fold's fields");
         assertNull(part.emptyFallback());
-        assertNull(part.dimensionSelection());
+        assertNull(part.dimensionSelections());
     }
 
     @Test void a_literal_keeps_the_lexeme_of_its_variant() throws Exception {

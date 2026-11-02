@@ -1102,8 +1102,8 @@ public final class RegelSpraakRuntime {
         }
     }
 
-    // ---- §13.4.17.51-.54 dimensie folds (a gedimensioneerd attribuut is a Map<label,value>) ----
-    /** §5.8.5 fold a dimensioned attribute's per-label values over the SELECTED label keys, null-skipping empties
+    // ---- §13.4.17.51-.54 dimensie folds (a gedimensioneerd attribuut is a Map of its cells by their labels) ----
+    /** §5.8.5 fold a dimensioned attribute's cell values over the SELECTED cell keys, null-skipping empties
      *  (an absent label / null value is skipped, NOT 0) and returning null for an all-empty selection (§5.8.2 an
      *  empty sum is a leegwaarde). Exact add (no MathContext); the single implementation (single-runtime principle). */
     public static BigDecimal rsDimSom(Map<?, ?> m, List<?> keys) {

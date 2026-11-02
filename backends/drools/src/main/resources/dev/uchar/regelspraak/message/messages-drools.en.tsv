@@ -333,6 +333,7 @@ DROOLS-295	a CharacteristicCheck ('{snippet}') with a host strictly below the su
 DROOLS-296	a fold over the value of the attribute '{attribute}' of {objectType}, which is of the unbounded form: a value of that form is an exact rational in working memory, and this branch folds decimals, so a sum of three times 1/3 would give 0.9999999999999999; this branch does not carry this form yet (RUNTIME-SEMANTICS ch. 2.4)
 DROOLS-297	a dimension fold over {dimensionCount} dimensions ('{snippet}'): this branch folds only an attribute of one dimension
 DROOLS-298	a write of a cell of the dimensioned attribute '{attribute}' by '{form}': this branch writes no cell
+DROOLS-299	{description} over the attribute '{attribute}' ('{snippet}'): the labels [{labels}] name no cell of its dimensions {dimensions}; a cell names one label of each dimension, label i one of dimension i (WF-040)
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	input {place} = {value} does not fit {decimals} decimals: a case value whose exact value its declaration cannot hold is refused at the input (RUNTIME-SEMANTICS ch. 2.4, 5.7)
@@ -361,6 +362,8 @@ EF-019.expression	Unresolved reached in evaluation: this rule fails observably
 EF-032.day	{function}: year {year}, month {month} and day {day} name no calendar day
 EF-032.time	{function}: hour {hour}, minute {minute}, second {second} and millisecond {millisecond} name no clock time
 EF-033	the links of the fact type "{factType}" form a cycle through {cycle}: the forms of an instance-ordered cycle evaluate per object along the chain this relation lays, and the chain must end (RUNTIME-SEMANTICS ch. 6.2)
+EF-034	{label}.{attribute}: the labels [{labels}] name no cell of the attribute, whose dimensions are {dimensions}: a cell names one label of each dimension, in declared order (RUNTIME-SEMANTICS ch. 5.8c)
+EF-035	{label}.{attribute}: the cell [{labels}] is supplied twice (RUNTIME-SEMANTICS ch. 5.8c)
 FRAME.case-reads	{sentence}; the case reads it
 FRAME.case-sets	{sentence}; the case sets it
 FRAME.contract	contract: {sentence}

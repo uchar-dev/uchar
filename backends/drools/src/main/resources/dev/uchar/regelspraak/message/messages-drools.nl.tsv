@@ -333,6 +333,7 @@ DROOLS-295	een CharacteristicCheck ('{snippet}') met een host strikt onder het o
 DROOLS-296	een vouw over de waarde van het attribuut '{attribute}' van {objectType}, dat de onbegrensde vorm heeft: een waarde van die vorm is in het werkgeheugen een exacte breuk, en deze tak vouwt decimalen, zodat een som van drie keer 1/3 0.9999999999999999 zou geven; deze tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch. 2.4)
 DROOLS-297	een dimensievouw over {dimensionCount} dimensies ('{snippet}'): deze tak vouwt alleen over een attribuut met één dimensie
 DROOLS-298	het schrijven van een cel van het gedimensioneerde attribuut '{attribute}' door '{form}': deze tak schrijft geen cel
+DROOLS-299	{description} over het attribuut '{attribute}' ('{snippet}'): de labels [{labels}] noemen geen cel van zijn dimensies {dimensions}; een cel noemt één label van elke dimensie, label i een van dimensie i (WF-040)
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)
@@ -361,6 +362,8 @@ EF-019.expression	Unresolved reached in evaluation: this rule fails observably
 EF-032.day	{function}: year {year}, month {month} and day {day} name no calendar day
 EF-032.time	{function}: hour {hour}, minute {minute}, second {second} and millisecond {millisecond} name no clock time
 EF-033	de schakels van het feittype "{factType}" vormen een kring door {cycle}: de vormen van een per object geordende kring rekenen per object langs de keten die deze relatie legt, en die keten moet eindigen (RUNTIME-SEMANTICS ch. 6.2)
+EF-034	{label}.{attribute}: de labels [{labels}] noemen geen cel van het attribuut, dat de dimensies {dimensions} heeft: een cel noemt één label van elke dimensie, in gedeclareerde volgorde (RUNTIME-SEMANTICS ch. 5.8c)
+EF-035	{label}.{attribute}: de cel [{labels}] staat twee keer in de invoer (RUNTIME-SEMANTICS ch. 5.8c)
 FRAME.case-reads	{sentence}; de case leest het
 FRAME.case-sets	{sentence}; de case zet het
 FRAME.contract	contract: {sentence}

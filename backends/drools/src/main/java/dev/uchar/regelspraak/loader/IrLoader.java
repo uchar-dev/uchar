@@ -2122,23 +2122,20 @@ public final class IrLoader {
         };
     }
 
-    /** IR-SPEC ch. 4.3: a dimension fold carries one selection per dimension of its argument. The model holds the
-     *  selection of a fold over an attribute of one dimension, the form this backend carries; a fold over more
-     *  dimensions is refused here, before its selections are read. */
-    private Expr.DimensionSelection dimensionSelections(JsonNode fold, String p) {
+    /** IR-SPEC ch. 4.3: a dimension fold carries one selection per dimension of its argument, in the declared order of
+     *  its dimensions; null for a fold without them. */
+    private List<Expr.DimensionSelection> dimensionSelections(JsonNode fold, String p) {
         JsonNode a = fold.get("dimensionSelections");
         if (a == null) return null;
         if (!a.isArray() || a.isEmpty())
             throw new DocumentError(p + "/dimensionSelections", "dimensionSelections is a non-empty list of DimensionSelection nodes");
-        if (a.size() > 1) {
-            JsonNode src = fold.get("source");
-            String snippet = src != null && src.has("snippet") ? src.get("snippet").asText() : "";
-            throw new Refusal(DroolsCode.DIMENSION_FOLD_MULTI_DIMENSION.reason("dimensionCount", a.size(), "snippet", snippet),
-                    "Aggregation.dimensionSelections");
+        List<Expr.DimensionSelection> out = new ArrayList<>();
+        for (int i = 0; i < a.size(); i++) {
+            if (!a.get(i).isObject())
+                throw new DocumentError(p + "/dimensionSelections/" + i, "expected a JSON object, got " + shortQuote(a.get(i)));
+            out.add(dimensionSelection(a.get(i)));
         }
-        if (!a.get(0).isObject())
-            throw new DocumentError(p + "/dimensionSelections/0", "expected a JSON object, got " + shortQuote(a.get(0)));
-        return dimensionSelection(a.get(0));
+        return out;
     }
 
     private Expr.DimensionSelection dimensionSelection(JsonNode n) {

@@ -19,7 +19,8 @@ import java.util.Map;
  * Generates the fact-bean sources a resolved RegelSpraak model implies (the explicit fact-model contract) — the EXPLICIT form
  * of the contract the generated rules assume: one JavaBean per objecttype in {@code dev.uchar.regelspraak.facts}
  * with a getter/setter per attribute ({@code BigDecimal}/{@code String}/{@code Boolean}/{@code LocalDate}/
- * {@code LocalDateTime}; a {@code Map<String,BigDecimal>} for a §3.6 gedimensioneerd attribute; a
+ * {@code LocalDateTime}; a {@code Map<List<String>, Object>} for a §3.6 gedimensioneerd attribute, its cells by their
+ * labels ({@link #cellKey}); a
  * {@code List<Segment>} for a §13.3.6 tijdsafhankelijk attribute), an {@code is<X>}/{@code set<X>} boolean
  * pair per kenmerk (a temporal kenmerk is a {@code List<Segment>} true-period timeline), and — per §13.3.9
  * feittype — the to-one REFERENCE field on the MANY side, named after the ONE side's role, including the
@@ -132,7 +133,7 @@ public final class FactModelGenerator {
         for (Map.Entry<String, Datatype> e : ot.attributes.entrySet()) {
             String name = e.getKey();
             String type;
-            if (!ot.dimensionsOf(name).isEmpty()) type = "java.util.Map<String, java.math.BigDecimal>";   // §3.6
+            if (!ot.dimensionsOf(name).isEmpty()) type = "java.util.Map<java.util.List<String>, Object>";   // §3.6
             else if (ot.attributeGranularity.containsKey(name)) type = "java.util.List<Segment>";       // §13.3.6
             else type = javaType(e.getValue());
             out.add(new Candidate(new Member(Namen.ident(name, false), type, false),
@@ -379,6 +380,28 @@ public final class FactModelGenerator {
             }
         }
         return out;
+    }
+
+    /** The key of a cell in the map that the bean member of a dimensioned attribute holds (RUNTIME-SEMANTICS ch. 5.8c):
+     *  one label per dimension of {@code dimensions}, in their order, label i a label of dimension i, each in its
+     *  declared spelling, since a label compares as a name does (IR-SPEC ch. 2.1), so that the case input, an
+     *  expectation and a read of the document that spell one cell otherwise meet on one key. Null where {@code labels}
+     *  name no cell: a number of labels other than the number of dimensions, or a label at position i that dimension i
+     *  does not declare. */
+    public static List<String> cellKey(RegelSpraakModel model, List<String> dimensions, List<String> labels) {
+        if (labels.size() != dimensions.size()) return null;
+        List<String> key = new ArrayList<>();
+        for (int i = 0; i < labels.size(); i++) {
+            RegelSpraakModel.Dimension d = model.dimensionByName(dimensions.get(i));
+            if (d == null)
+                throw new IllegalStateException("the dimension '" + dimensions.get(i) + "' of a dimensioned attribute is"
+                        + " not declared (WF-004)");
+            String declared = null;
+            for (String l : d.values()) if (Namen.norm(l).equals(Namen.norm(labels.get(i)))) declared = l;
+            if (declared == null) return null;
+            key.add(declared);
+        }
+        return List.copyOf(key);
     }
 
     /**

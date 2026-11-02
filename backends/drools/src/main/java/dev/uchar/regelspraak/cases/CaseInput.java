@@ -58,15 +58,18 @@ import java.util.TreeMap;
  *
  * <p>{@link #of} refuses, before anything goes into a session:
  * <ul>
- *   <li>a form this backend does not carry (an unknown object type, an undeclared attribute, a dimensioned attribute,
- *       a rational value, …): a {@link CaseRunner.Excluded}, in the sentence of the replay's report;</li>
+ *   <li>a form this backend does not carry (an unknown object type, an undeclared attribute, a rational value, …): a
+ *       {@link CaseRunner.Excluded}, in the sentence of the replay's report;</li>
  *   <li>a role link the bean model cannot hold (a label no instance carries, a role that reaches no to-one reference
  *       field, a field a declared member of the same name displaces): a {@link RoleRefusal}, a
  *       {@link CaseRunner.Excluded} as well;</li>
  *   <li>a second, different target on a to-one reference field, one relation instance per to-one role (WF-013), which
  *       the reference interpreter refuses at load: a {@link RoleCollision}, an {@link IllegalArgumentException}, since the
  *       case is wrong;</li>
- *   <li>any other defect of the case (a malformed date or timeline, a scalar on a characteristic on a timeline, …): an
+ *   <li>a cell of a dimensioned attribute whose labels name no cell of it (EF-034) or that the input names twice
+ *       (EF-035), RUNTIME-SEMANTICS ch. 5.8c: a {@link CellFault}, an {@link IllegalArgumentException};</li>
+ *   <li>any other defect of the case (a malformed date or timeline, a scalar on a characteristic on a timeline, a scalar
+ *       on a dimensioned attribute, a {@code cells} input on an attribute without dimensions, …): an
  *       {@link IllegalArgumentException}.</li>
  * </ul>
  * The two refusals of a role link name the link the case wrote ({@link RoleError}), so a consumer can point at the field
@@ -251,9 +254,20 @@ public final class CaseInput {
             Datatype dt = ot.attribute(e.getKey());
             if (dt == null) throw new CaseRunner.Excluded(DroolsCode.CASE_UNDECLARED_ATTRIBUTE.reason("attribute", e.getKey(), "objectType", ot.name));
             reader.ownField(ot, e.getKey(), false, "sets");
-            CaseRunner.inputFits(e.getValue(), dt, i.get("label").asText() + "." + e.getKey());
-            if (reader.dimensioned(ot, e.getKey()))
-                throw new CaseRunner.Excluded(DroolsCode.DIMENSIONED_ATTRIBUTE_INPUT.reason("attribute", e.getKey()));
+            String site = i.get("label").asText() + "." + e.getKey();
+            // a dimensioned attribute has a value per cell and none of its own (RUNTIME-SEMANTICS ch. 5.8c), so its
+            // input is the cells variant and nothing else, as the reference interpreter reads it
+            boolean cells = e.getValue().isObject() && e.getValue().size() == 1 && e.getValue().has("cells");
+            if (reader.dimensioned(ot, e.getKey())) {
+                if (!cells)
+                    throw new IllegalArgumentException(site + ": a dimensioned attribute takes its input per cell"
+                            + " (\"cells\"), never a scalar or a timeline (RUNTIME-SEMANTICS ch. 5.8c)");
+                CaseRunner.call(bean, Namen.setter(CaseRunner.attributeName(ot, e.getKey())), Map.class,
+                        cells(e.getValue().get("cells"), ot, e.getKey(), dt, i.get("label").asText()));
+                continue;
+            }
+            if (cells) throw new IllegalArgumentException(site + ": a cells input on an attribute without dimensions");
+            CaseRunner.inputFits(e.getValue(), dt, site);
             if (reader.temporal(ot, e.getKey())) {
                 // the bean member was generated from the DECLARATION, so a case key spelled otherwise must be
                 // brought back to it or it names a setter the bean does not have (ref reads it as the same name)
@@ -295,6 +309,87 @@ public final class CaseInput {
             reader.ownField(ot, e.getKey(), true, "sets");
             CaseRunner.call(bean, Namen.setter(Namen.declaredName(ot.characteristicGranularityMembers().keySet(), e.getKey())),
                     List.class, characteristicTimeline(e.getValue(), e.getKey()));
+        }
+    }
+
+    /**
+     * The cells of the input of the dimensioned attribute {@code attribute} of the instance {@code label}
+     * (RUNTIME-SEMANTICS ch. 5.8c), as the map of its bean member holds them: each value under the key of its cell
+     * ({@link FactModelGenerator#cellKey}), in the order of the input. Refused in this order, as the reference interpreter
+     * refuses them: labels that name no cell of the attribute (EF-034), a cell the input names twice (EF-035), both
+     * before any value is read, and then per cell a value its declared decimals do not hold (EF-004, its place the cell,
+     * {@code J1.vondstgewicht[voorjaar]}) or of another variant than the datatype's.
+     */
+    private Map<List<String>, Object> cells(JsonNode cells, ObjectType ot, String attribute, Datatype dt, String label) {
+        if (!cells.isArray())
+            throw new IllegalArgumentException(label + "." + attribute + ": the cells input is no list of cells");
+        List<String> dimensions = ot.dimensionsOf(attribute);
+        List<List<String>> written = new ArrayList<>(), keys = new ArrayList<>();
+        for (JsonNode c : cells) {
+            if (!c.isObject() || !c.has("labels") || !c.get("labels").isArray() || !c.has("value"))
+                throw new IllegalArgumentException(label + "." + attribute + ": a cell of the input carries no list of"
+                        + " labels and no value: " + c);
+            List<String> labels = new ArrayList<>();
+            for (JsonNode l : c.get("labels")) labels.add(l.asText());
+            List<String> key = FactModelGenerator.cellKey(model, dimensions, labels);
+            if (key == null)
+                throw new CellFault("EF-034", label, attribute, labels, dev.uchar.regelspraak.message.Msg.drools("EF-034",
+                        "label", label, "attribute", attribute, "labels", String.join(", ", labels), "dimensions",
+                        String.join(", ", dimensions)));
+            written.add(labels);
+            keys.add(key);
+        }
+        for (int k = 0; k < keys.size(); k++)
+            if (keys.subList(0, k).contains(keys.get(k)))
+                throw new CellFault("EF-035", label, attribute, written.get(k), dev.uchar.regelspraak.message.Msg.drools(
+                        "EF-035", "label", label, "attribute", attribute, "labels", String.join(", ", written.get(k))));
+        Map<List<String>, Object> out = new LinkedHashMap<>();
+        for (int k = 0; k < keys.size(); k++) {
+            String place = label + "." + attribute + "[" + String.join(", ", written.get(k)) + "]";
+            JsonNode value = cells.get(k).get("value");
+            CaseRunner.inputFits(value, dt, place);
+            Object v = reader.valueToArg(value, attribute);
+            if (v == null) continue;   // an absent value is an empty cell
+            if (!CaseRunner.argType(dt).isInstance(v))
+                throw new IllegalArgumentException(place + ": the value variant "
+                        + (value.size() == 1 ? "\"" + value.fieldNames().next() + "\"" : value.toString())
+                        + " does not match the declared datatype");
+            out.put(keys.get(k), v);
+        }
+        return out;
+    }
+
+    /** A cell of the case input whose labels name no cell of its attribute (EF-034) or that the input names twice
+     *  (EF-035), RUNTIME-SEMANTICS ch. 5.8c: a fault kind of the case input, with the label of the instance, the
+     *  attribute and the labels of the cell as the case writes them. */
+    static final class CellFault extends IllegalArgumentException {
+        private static final long serialVersionUID = 1L;
+
+        private final String code;
+        private final String label;
+        private final String attribute;
+        private final String labels;
+
+        CellFault(String code, String label, String attribute, List<String> labels, dev.uchar.regelspraak.message.Msg message) {
+            super(message.text());
+            this.code = code;
+            this.label = label;
+            this.attribute = attribute;
+            this.labels = String.join(", ", labels);
+        }
+
+        String code() {
+            return code;
+        }
+
+        /** The parameters of the kind (ch. 5.7b): the label of the instance, the attribute and the labels of the cell,
+         *  joined by ", ". */
+        Map<String, String> params() {
+            Map<String, String> out = new LinkedHashMap<>();
+            out.put("label", label);
+            out.put("attribute", attribute);
+            out.put("labels", labels);
+            return out;
         }
     }
 

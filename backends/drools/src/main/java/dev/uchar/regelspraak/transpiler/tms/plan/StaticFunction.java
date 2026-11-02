@@ -45,11 +45,12 @@ public enum StaticFunction {
     RS_DATE_PART(RegelSpraakRuntime.class, "rsDatumDeel", false),
     /** The calendar year of a date, as a whole number without a unit. */
     RS_EVALUATION_YEAR(RegelSpraakRuntime.class, "rsRekenjaar", false),
-    /** The sum of the cells of a dimension map at a {@code List} constant of labels, a leeg cell skipped. */
+    /** The sum of the cells of a dimension map at a {@code List} constant of cells, each the {@code List} of its
+     *  labels, a leeg cell skipped. */
     RS_DIM_SUM(RegelSpraakRuntime.class, "rsDimSom", false),
-    /** The least cell of a dimension map at a list of labels. */
+    /** The least cell of a dimension map at a list of cells. */
     RS_DIM_MIN(RegelSpraakRuntime.class, "rsDimMin", false),
-    /** The greatest cell of a dimension map at a list of labels. */
+    /** The greatest cell of a dimension map at a list of cells. */
     RS_DIM_MAX(RegelSpraakRuntime.class, "rsDimMax", false),
     /** The total over time of a timeline on a grid, a {@code String} constant (ch. 3.6). */
     RS_TIME_TOTAL(RegelSpraakRuntime.class, "rsTijdTotaal", false),
@@ -97,7 +98,7 @@ public enum StaticFunction {
     DATUM_MET(ComputeHelpers.class, "dateWith", true),
     /** As {@link #DATUM_MET}, a date-time of seven parts. */
     DATUMTIJD_MET(ComputeHelpers.class, "dateTimeWith", true),
-    /** The cell at a label, a {@code String} constant, of a dimension map, leeg where the map or the label is absent. */
+    /** The cell of a dimension map at its labels, a {@code List} constant, leeg where the map or the cell is absent. */
     CELL(ComputeHelpers.class, "cell", false),
     /** A dimension map as it is, or leeg where the value is no map. */
     MAP(ComputeHelpers.class, "map", false),

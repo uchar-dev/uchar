@@ -1029,14 +1029,14 @@ public final class IrEmitter {
             if (f.elementObjectType() != null)
                 throw facetRefusal(f, "het elementtype '" + f.elementObjectType().name + "'", "een Aggregation");
             if (f.emptyFallback() != null) throw facetRefusal(f, "een leegwaarde", "een Aggregation");
-            if (f.dimensionSelection() != null) throw facetRefusal(f, "een dimensieselectie", "een Aggregation");
+            if (f.dimensionSelections() != null) throw facetRefusal(f, "een dimensieselectie", "een Aggregation");
         }
         // IR-SPEC ch. 4.3 (row 28): a dimension fold ranges over the labels of the subject's own
         // dimensioned attribute, not over instances, so it has no element type and no range and its one
         // argument is an ordinary read. The resolver records the subject as its element type; written, that
         // type would demand a range the fold does not have. Any other element type would be a fold this
         // reading does not describe.
-        boolean dimensionFold = aggregation && f.dimensionSelection() != null;
+        boolean dimensionFold = aggregation && f.dimensionSelections() != null;
         if (dimensionFold && f.elementObjectType() != null && f.elementObjectType() != currentSubject)
             throw foldRefusal(f, "haar dimensieselectie loopt over een attribuut van "
                     + f.elementObjectType().name + ", en een dimensievouw leest het eigen attribuut van "
@@ -1069,11 +1069,10 @@ public final class IrEmitter {
             else condition(f.filter());
         }
         if (f.emptyFallback() != null) { w.key("emptyFallback"); expr(f.emptyFallback()); }
-        // IR-SPEC ch. 4.3: one selection per dimension of the argument. The resolver folds an attribute of one
-        // dimension only, so its one selection is the whole list.
-        if (f.dimensionSelection() != null) {
+        // IR-SPEC ch. 4.3: one selection per dimension of the argument, in the declared order of its dimensions
+        if (f.dimensionSelections() != null) {
             w.key("dimensionSelections").beginArray();
-            dimensionSelection(f.dimensionSelection());
+            for (Expr.DimensionSelection ds : f.dimensionSelections()) dimensionSelection(ds);
             w.endArray();
         }
         // IR-SPEC ch. 4.3 / WF-102: the range is ONE field with two spellings. A resolved
@@ -1777,7 +1776,7 @@ public final class IrEmitter {
     /** Whether {@code f} is an instance fold over one source, whose single argument the wire reads through the
      *  fold's range and never as a read of its own (IR-SPEC ch. 4.3) — the fold {@link #foldRange} spells. */
     public static boolean isFoldSource(Expr.FunctionCall f) {
-        return kindFamily(f.kind()) == Spelling.AGGREGATION_KIND && f.dimensionSelection() == null
+        return kindFamily(f.kind()) == Spelling.AGGREGATION_KIND && f.dimensionSelections() == null
                 && f.elementObjectType() != null && f.arguments().size() == 1
                 && f.arguments().get(0) instanceof Expr.AttributeReference;
     }

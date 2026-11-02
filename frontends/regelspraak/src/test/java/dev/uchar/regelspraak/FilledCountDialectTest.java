@@ -80,7 +80,7 @@ class FilledCountDialectTest {
         assertEquals("Vondst", f.elementObjectType().name);
         // no facet is even writable: the grammar gives the phrase one operand and no slot
         assertNull(f.emptyFallback(), "een telling draagt nooit een leegwaarde (WF-037, 'sum only')");
-        assertNull(f.dimensionSelection(), "dimensieselectie is ill-formed op deze soort (besluit G7)");
+        assertNull(f.dimensionSelections(), "dimensieselectie is ill-formed op deze soort (besluit G7)");
         assertNull(f.granularity());
     }
 

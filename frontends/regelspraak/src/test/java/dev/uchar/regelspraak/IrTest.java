@@ -112,7 +112,7 @@ class IrTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(0).value());
-        assertNull(sum.dimensionSelection(), "een scalair operand heeft geen oplosbare dimensieselectie");
+        assertNull(sum.dimensionSelections(), "een scalair operand heeft geen oplosbare dimensieselectie");
         Condition.Unresolved f = assertInstanceOf(Condition.Unresolved.class, sum.filter(),
                 () -> "de dimensieselectie moet als Onopgelost-marker vastliggen, niet stil verdwijnen");
         assertTrue(f.source().snippet().contains("over alle jaardimensies"), () -> "bron: " + f.source());
@@ -145,8 +145,9 @@ class IrTest {
         assertTrue(m.errors().isEmpty(), () -> "fouten: " + m.errors());
         Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(0).value());
         assertEquals(Expr.FunctionKind.SOM, sum.kind());
-        Expr.DimensionSelection sel = sum.dimensionSelection();
-        assertNotNull(sel, "de vanaf..t/m dimensieselectie moet opgelost zijn, geen marker");
+        assertNotNull(sum.dimensionSelections(), "de vanaf..t/m dimensieselectie moet opgelost zijn, geen marker");
+        assertEquals(1, sum.dimensionSelections().size(), "een attribuut van één dimensie heeft één selectie");
+        Expr.DimensionSelection sel = sum.dimensionSelections().get(0);
         assertEquals("jaardimensie", sel.dimension());
         assertEquals(List.of("vier jaar geleden", "drie jaar geleden", "twee jaar geleden", "een jaar geleden"),
                 sel.labels(), "interval [vier..een jaar geleden] inclusief, in gedeclareerde volgorde");
@@ -176,7 +177,7 @@ class IrTest {
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, m.resolvedRules.get(0).value());
-        assertNull(sum.dimensionSelection(), "een multidimensioneel attribuut mag (nog) niet over één as gevouwen worden");
+        assertNull(sum.dimensionSelections(), "een multidimensioneel attribuut mag (nog) niet over één as gevouwen worden");
         assertInstanceOf(Condition.Unresolved.class, sum.filter(), "moet de honest marker houden");
         assertTrue(m.diagnostics.stream().anyMatch(d -> d.message().contains("dimensieselectie")),
                 () -> "verwachtte een marker-WARNING: " + m.diagnostics);

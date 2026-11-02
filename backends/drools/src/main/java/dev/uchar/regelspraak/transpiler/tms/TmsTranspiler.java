@@ -1898,7 +1898,7 @@ public final class TmsTranspiler {
             throw new Refusal(DroolsCode.TIMELINE_VALUE_GRANULARITY_MISMATCH.reason("description", description, "sourceGranularity", f.granularity(), "attribute", target.name(), "targetGranularity", target.time(), "ruleReference", part ? "WF-056" : "WF-058"));
         if (target.time() != RegelSpraakModel.Granularity.MAAND && target.time() != RegelSpraakModel.Granularity.JAAR)
             throw new Refusal(DroolsCode.TIMELINE_VALUE_NOT_BUCKET.reason("description", description, "targetGranularity", target.time()));
-        if (f.emptyFallback() != null || f.dimensionSelection() != null)
+        if (f.emptyFallback() != null || f.dimensionSelections() != null)
             throw new Refusal(DroolsCode.TIMELINE_VALUE_FALLBACK_SELECTION.reason("description", description));
         int condition = clipTimeline(f.filter(), subject, reads, description);
         String gran = target.time().name();
@@ -3979,11 +3979,18 @@ public final class TmsTranspiler {
         List<Object> nodes = new ArrayList<>(irCondition == null ? List.of() : positions.subtree(irCondition));
         if (irValue != null) nodes.addAll(positions.subtree(irValue));
         List<String> foldsAt = new ArrayList<>();
-        for (Object n : nodes)
+        // the reference under a cell read and the argument of a dimension fold name an attribute that has no value of
+        // its own (RUNTIME-SEMANTICS ch. 5.12, "The cell"): no node of the reading, though they keep their numbers
+        Set<Object> withoutReading = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Object n : nodes) {
             if (folds.containsKey(n) && noted.terms().containsKey(n)) foldsAt.add(positions.of(n).pointer() + "/");
+            if (n instanceof Expr.DimensionCellRead c) withoutReading.add(c.attribute());
+            if (n instanceof Expr.FunctionCall f && f.dimensionSelections() != null) withoutReading.addAll(f.arguments());
+        }
         List<Site> sites = new ArrayList<>();
         for (int i = 0; i < nodes.size(); i++) {
             Object n = nodes.get(i);
+            if (withoutReading.contains(n)) continue;
             dev.uchar.regelspraak.loader.NodePositions.Position at = positions.of(n);
             Term t = noted.terms().get(n);
             Derived derived = noted.derived().get(n);
@@ -4187,11 +4194,12 @@ public final class TmsTranspiler {
     }
 
     /** The object a reached node {@code s} without a path reads a member of, on the object {@code o} of its reading:
-     *  {@code o} itself for a read of an attribute or a check of a characteristic, whose member is the subject's own
-     *  there (RUNTIME-SEMANTICS ch. 5.8 rule 4, ch. 5.8b), and null for every other node, which reads no member of one
-     *  object. */
+     *  {@code o} itself for a read of an attribute or of a cell of one or a check of a characteristic, whose member is
+     *  the subject's own there (RUNTIME-SEMANTICS ch. 5.8 rule 4, ch. 5.8b, 5.12), and null for every other node, which
+     *  reads no member of one object. */
     private static Object own(Site s, Object o) {
-        return s.kind().equals("AttributeReference") || s.kind().equals("CharacteristicCheck") ? o : null;
+        return s.kind().equals("AttributeReference") || s.kind().equals("DimensionCellRead")
+                || s.kind().equals("CharacteristicCheck") ? o : null;
     }
 
     /** The reading of the node of {@code s}, whose reading follows from the outcomes of its inputs in the evaluation
@@ -4696,25 +4704,39 @@ public final class TmsTranspiler {
         return new Term.Call(StaticFunction.RS_TEXT, List.of(f), f.source());
     }
 
-    /** A cell of a dimensioned attribute (§3.6): the value at its one label in the attribute's {@code Map<label, value>}
-     *  bean member, leeg where the map or the label is absent. The attribute is
-     *  input, read off the subject's own bean ({@link #dimensionRead}); a cell over several dimensions is refused by
-     *  name, as that branch refuses it. The reference interpreter and the ASP backend do not read a cell. */
+    /** A cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c): the value of the cell its labels name, one per
+     *  dimension of the attribute, in the attribute's bean member, a map of its cells by their labels
+     *  ({@link FactModelGenerator#cellKey}), leeg where the map or the cell is absent. The attribute is input, read off
+     *  the subject's own bean ({@link #dimensionRead}). The reference under the cell is no node of a reading
+     *  (RUNTIME-SEMANTICS ch. 5.12), so only the cell is noted. */
     private Term dimensionCell(Expr.DimensionCellRead c, Reads reads) {
-        if (c.labels() == null || c.labels().size() != 1)
-            throw new Refusal(DroolsCode.DIMENSION_CELL_MULTI_DIMENSION.reason("dimensionCount", c.labels() == null ? 0 : c.labels().size(), "snippet", snippet(c.source())));
-        int i = dimensionRead(c.attribute(), reads, Msg.drools("PART.desc.dimension-cell-read"));
-        String label = c.labels().get(0);
+        Object description = Msg.drools("PART.desc.dimension-cell-read");
+        int i = dimensionRead(c.attribute(), reads, description);
+        List<String> key = cellKey(c.attribute(), c.labels(), description, c.source());
         Term map = new Term.SlotValue(i, source(c.attribute().source()));
-        note(c.attribute(), map);
-        return new Term.Call(StaticFunction.CELL, List.of(map, constant(label)), source(c.source()));
+        return new Term.Call(StaticFunction.CELL, List.of(map, constant(key)), source(c.source()));
     }
 
-    /** A sum, minimum or maximum over a dimension selection (§5.8.5): the attribute's cells at the selected labels, a
-     *  leeg cell skipped and an all-leeg selection leeg, through the runtime's {@code rsDimSom},
+    /** The key of the cell {@code labels} name of the dimensioned attribute {@code a} reads
+     *  ({@link FactModelGenerator#cellKey}). Labels that name no cell break WF-040, which a verified document holds, and
+     *  are refused by name, never read as an empty cell. */
+    private List<String> cellKey(Expr.AttributeReference a, List<String> labels, Object description,
+                                 dev.uchar.regelspraak.ir.Source at) {
+        List<String> dimensions = a.objectType().dimensionsOf(a.attribute());
+        List<String> key = FactModelGenerator.cellKey(model, dimensions, labels == null ? List.of() : labels);
+        if (key == null)
+            throw new Refusal(DroolsCode.DIMENSION_LABELS_NAME_NO_CELL.reason("description", description, "attribute",
+                    a.attribute(), "labels", labels == null ? "" : String.join(", ", labels), "dimensions",
+                    String.join(", ", dimensions), "snippet", snippet(at)));
+        return key;
+    }
+
+    /** A sum, minimum or maximum over the cells of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c): the cells of the
+     *  product of its selections, one per dimension of the attribute, the first selection outermost and each in its own
+     *  label order, a leeg cell skipped and an all-leeg selection leeg, through the runtime's {@code rsDimSom},
      *  {@code rsDimMin} and {@code rsDimMax}; a sum's {@code emptyFallback} is evaluated after the cells, every time
-     *  (RUNTIME-SEMANTICS ch. 5.11), and stands in for an all-leeg sum. The reference interpreter and the ASP backend do
-     *  not fold a dimension selection. */
+     *  (RUNTIME-SEMANTICS ch. 5.11), and stands in for an all-leeg sum. The argument is no node of a reading
+     *  (RUNTIME-SEMANTICS ch. 5.12), so only the fold is noted. */
     private Term dimensionFold(Expr.FunctionCall f, Reads reads) {
         Expr.FunctionKind kind = f.kind();
         if (kind != Expr.FunctionKind.SOM && kind != Expr.FunctionKind.MINIMUM && kind != Expr.FunctionKind.MAXIMUM)
@@ -4723,8 +4745,21 @@ public final class TmsTranspiler {
             throw new Refusal(DroolsCode.EMPTY_FALLBACK_NON_SUM.reason("kind", kind, "snippet", snippet(f.source())));
         if (f.arguments().size() != 1 || !(f.arguments().get(0) instanceof Expr.AttributeReference a))
             throw new Refusal(DroolsCode.DIMENSION_FOLD_NON_ATTRIBUTE.reason("snippet", snippet(f.source())));
-        int i = dimensionRead(a, reads, Msg.drools("PART.desc.dimension-aggregation"));
-        List<String> labels = List.copyOf(f.dimensionSelection().labels());
+        Object description = Msg.drools("PART.desc.dimension-aggregation");
+        int i = dimensionRead(a, reads, description);
+        // selection d ranges over dimension d of the argument (WF-040)
+        List<String> dimensions = a.objectType().dimensionsOf(a.attribute());
+        boolean eachDimension = f.dimensionSelections().size() == dimensions.size();
+        for (int d = 0; eachDimension && d < dimensions.size(); d++)
+            eachDimension = Namen.norm(f.dimensionSelections().get(d).dimension()).equals(Namen.norm(dimensions.get(d)));
+        if (!eachDimension)
+            throw new Refusal(DroolsCode.DIMENSION_LABELS_NAME_NO_CELL.reason("description", description, "attribute",
+                    a.attribute(), "labels", String.join("; ", f.dimensionSelections().stream()
+                            .map(s -> s.dimension() + ": " + String.join(", ", s.labels())).toList()),
+                    "dimensions", String.join(", ", dimensions), "snippet", snippet(f.source())));
+        List<List<String>> keys = new ArrayList<>();
+        for (List<String> t : ProducerConsumer.selectedCells(f.dimensionSelections()))
+            keys.add(cellKey(a, t, description, f.source()));
         Term fallback = f.emptyFallback() == null ? null : restated(value(f.emptyFallback(), reads),
                 eff.unitOf(f.emptyFallback()), eff.unitOf(a), "een §5.8.2 terugvalwaarde");
         StaticFunction fold = switch (kind) {
@@ -4734,8 +4769,7 @@ public final class TmsTranspiler {
         };
         String source = source(f.source());
         Term map = new Term.SlotValue(i, source(a.source()));
-        note(a, map);
-        Term cells = new Term.Call(fold, List.of(new Term.Call(StaticFunction.MAP, List.of(map), null), constant(labels)),
+        Term cells = new Term.Call(fold, List.of(new Term.Call(StaticFunction.MAP, List.of(map), null), constant(keys)),
                 source);
         // only a sum has a fallback, evaluated after the cells
         return fallback == null ? cells : new Term.Call(StaticFunction.FALLBACK, List.of(cells, fallback), source);
@@ -4948,7 +4982,7 @@ public final class TmsTranspiler {
     /** An aggregation, listed, over a set source or over a dimension selection; every other function node is a builtin
      *  call ({@link #builtin}). */
     private Term function(Expr.FunctionCall f, Reads reads) {
-        if (f.dimensionSelection() != null) return dimensionFold(f, reads);
+        if (f.dimensionSelections() != null) return dimensionFold(f, reads);
         if (!isFold(f.kind())) return builtin(f, reads);
         return isListedFold(f) ? listedFold(f, reads) : fold(f, reads);
     }

@@ -82,7 +82,11 @@ consumer does.
    links (RUNTIME-SEMANTICS ch. 5.7a: the written role by name, else by the type pair; on a one-to-one relation the
    far field as well; a to-many role in the far end's field; the reverse leg of a reciprocal role in a separate
    pass), and gives `beans()` by label, `types()` and `input()`, every to-many list in the order the reference
-   interpreter folds over. A consumer with a request of its own, such as a decision service, writes the request as
+   interpreter folds over. The `cells` of a dimensioned attribute go into its bean member, a map of its cells by their
+   labels in their declared spelling (`FactModelGenerator.cellKey`, RUNTIME-SEMANTICS ch. 5.8c); labels that name no
+   cell are refused with EF-034, a cell named twice with EF-035, a cell value its decimals do not hold with EF-004 at the
+   cell, and a scalar on a dimensioned attribute or `cells` on one without dimensions as a defect of the case (witness
+   `DimensionCellWitnessTest`). A consumer with a request of its own, such as a decision service, writes the request as
    the `instances` of a case with its ids as labels. A role link the bean model cannot hold is a
    `CaseInput.RoleRefusal` (a `CaseRunner.Excluded`), a second, different target on a to-one field (WF-013) a
    `CaseInput.RoleCollision` (an `IllegalArgumentException`); both name the link the case wrote, its instance, role key
@@ -114,7 +118,8 @@ consumer does.
    without `session.update` is not seen (below). After the write-back, `DroolsBackend.compare(build, session, label,
    expected)` compares the `expected` of a `uchar-case-v0` case with the session and returns a
    `DroolsBackend.Comparison`: per expectation a `ScenarioResult.ExpectationResult`, the diagnostic of the
-   scenario report, and `pass()`. `label` is a function as above, and an expectation names the bean to which it gives
+   scenario report, and `pass()`; `cellValue` and `cellEmpty` read one cell of a dimensioned attribute, and
+   `attributeValue` or `attributeEmpty` on one is a defect of the case. `label` is a function as above, and an expectation names the bean to which it gives
    the expectation's label, so the labels may be the ids of a request rather than those of a case file. It reads the
    beans, which carry the fixpoint only after `setDerivedValues`, and refuses a session that was not written back,
    one whose fixpoint carries evaluation faults, what `fixpointOf` refuses, a label given to two beans, an expectation on a
@@ -452,9 +457,11 @@ such place reports to it where it runs; a condition deposits through a rule of t
 de voorwaarde`, with the same left-hand side and a probe in its test, so a member of a composite that its verdict no
 longer reads deposits nothing (ch. 5.10). Witness `TmsDepositWitnessTest`. Rounding,
 clamp, the builtins outside the folds, a text composition of texts, percentages and `percentageOf`, a power with a
-whole exponent, the exact restatement of units at every operand boundary (ch. 2.6), a dimension cell and the eleven and
-exact-digit tests compute through the runtime's helpers from bound values; the last three and the sub-day extractors,
-dateWith and dateTimeWith, the reference interpreter declines (ch. 5.11), so only this backend computes them. The
+whole exponent, the exact restatement of units at every operand boundary (ch. 2.6), the eleven and exact-digit tests,
+a cell of a dimensioned attribute over any number of dimensions and a sum, minimum or maximum over the cells of the
+product of its selections (ch. 5.8c) compute through the runtime's helpers from bound values; the two tests and the
+sub-day extractors, dateWith and dateTimeWith, the reference interpreter declines (ch. 5.11), so only this backend
+computes them. The
 evaluation date is the fact `EvaluationDate`, put in working memory once per session from the global `evaluationDate` the case
 runner sets, with a null date in a time-free session. A version with a bounded validity gates on it with a pattern that
 admits the date (ch. 8.2) and beside it a rule inserts the fault where the session carries no date, as the reference
@@ -776,8 +783,9 @@ never as a silent fall:
 
 - of dimensioned attributes, with no golden with cases: a read or a write outside a dimension cell and a fold over a
   dimension selection, and in those two an attribute that lies on a timeline, is read over a path or is written by a
-  form. Witness `TmsTimelineRefusalWitnessTest` for a dimensioned attribute on a timeline, by its cell and by its
-  total;
+  form; and a cell or a fold whose labels name no cell of the attribute's dimensions, which WF-040 refuses. Witness
+  `TmsTimelineRefusalWitnessTest` for a dimensioned attribute on a timeline, by its cell and by its total, and
+  `DimensionCellWitnessTest` for labels that name no cell;
 - of timelines, each with no golden with cases unless one is named: a second writer of a timeline target, which ch.
   7.8 keeps fenced, and an initialisation of one; a time window in the condition of a rule with a timeline target,
   which clips the timeline (ch. 3.10; golden `jutterswet-pachtvenster`); a

@@ -11,6 +11,7 @@ import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.model.RegelSpraakModel.RoleBindingRef;
 import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
 import dev.uchar.regelspraak.transpiler.tms.ConditionReading;
@@ -52,9 +53,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       none holds with a decision;</li>
  *   <li>every operand that reads a member, an attribute read the evaluation reached, has the value the fixpoint gives
  *       that member on the object the read reaches ({@code DroolsBackend.reached}), the derived value or else the
- *       input; and every check of a characteristic of the object itself has the verdict of what stands there;</li>
- *   <li>every node that reads a member of one object, an attribute read or a characteristic check the evaluation
- *       reached without a fault, names the very object {@code DroolsBackend.reached} reaches over its walk on the
+ *       input, and every cell read the value of its cell in the input there; and every check of a characteristic of the
+ *       object itself has the verdict of what stands there;</li>
+ *   <li>every node that reads a member of one object, an attribute read, a cell read or a characteristic check the
+ *       evaluation reached without a fault, names the very object {@code DroolsBackend.reached} reaches over its walk on the
  *       written-back beans, by identity: the object of the reading for a member of its own, the object the path
  *       reached for one over a path, and none where a link on the path is absent (RUNTIME-SEMANTICS ch. 5.12); and no
  *       other node names one;</li>
@@ -252,7 +254,8 @@ class ReadingsCorpusWitnessTest {
             for (ConditionReading.NodeReading x : r.nodes()) {
                 if (x.node() >= form.nodes().size()) continue;
                 Object node = form.nodes().get(x.node());
-                boolean member = node instanceof Expr.AttributeReference || node instanceof Condition.CharacteristicCheck;
+                boolean member = node instanceof Expr.AttributeReference || node instanceof Expr.DimensionCellRead
+                        || node instanceof Condition.CharacteristicCheck;
                 if ((!member || !x.reached() || x.fault() != null) && x.object() != null)
                     differences.add(at + ": knoop " + x.node() + " (" + x.kind() + ") noemt het object "
                             + name(label, x.object()) + ", en leest geen lid of vond er niets");
@@ -265,6 +268,11 @@ class ReadingsCorpusWitnessTest {
                 if (node instanceof Expr.AttributeReference a) {
                     operands.add(() -> {
                         String difference = operand(model, p.loaded(), r.object(), a, x.value(), n);
+                        if (difference != null) differences.add(at + ": knoop " + x.node() + " " + difference);
+                    });
+                } else if (node instanceof Expr.DimensionCellRead c) {
+                    operands.add(() -> {
+                        String difference = cell(model, p.loaded(), r.object(), c, x.value(), n);
                         if (difference != null) differences.add(at + ": knoop " + x.node() + " " + difference);
                     });
                 } else if (node instanceof Condition.CharacteristicCheck k && k.period() == null
@@ -490,11 +498,13 @@ class ReadingsCorpusWitnessTest {
     private static String object(RegelSpraakModel model, IrLoader.Loaded loaded, Object subject, Object node,
                                  Object named, Counts n, Map<Object, String> label) {
         ObjectType type = typeOf(model, subject);
+        // a cell read walks the path of the reference under it
+        Object read = node instanceof Expr.DimensionCellRead c ? c.attribute() : node;
         List<RoleBindingRef> walk =
-                loaded.navigationBindings().getOrDefault(node, List.of());
+                loaded.navigationBindings().getOrDefault(read, List.of());
         Object reached;
         try {
-            reached = node instanceof Expr.AttributeReference a ? DroolsBackend.reached(model, subject, type, a, walk)
+            reached = read instanceof Expr.AttributeReference a ? DroolsBackend.reached(model, subject, type, a, walk)
                     : DroolsBackend.reached(model, subject, type, (Condition.CharacteristicCheck) node, walk);
         } catch (CaseRunner.Excluded e) {
             return null;
@@ -534,6 +544,35 @@ class ReadingsCorpusWitnessTest {
         boolean equal = read instanceof BigDecimal x && expected instanceof BigDecimal y ? x.compareTo(y) == 0
                 : Objects.equals(read, expected);
         return equal ? null : "leest " + read + ", en het fixpunt geeft " + a.attribute() + " " + expected;
+    }
+
+    /** Null where the value {@code read} of the cell read {@code c} on {@code subject} is the value its cell holds on the
+     *  object the read reaches, in the map of the beans (RUNTIME-SEMANTICS ch. 5.8c), leeg for a cell the map does not
+     *  hold; else the difference. A read the walk refuses is not held. */
+    private static String cell(RegelSpraakModel model, IrLoader.Loaded loaded, Object subject, Expr.DimensionCellRead c,
+                               Object read, Counts n) {
+        Expr.AttributeReference a = c.attribute();
+        Object reached;
+        try {
+            reached = DroolsBackend.reached(model, subject, typeOf(model, subject), a,
+                    loaded.navigationBindings().getOrDefault(a, List.of()));
+        } catch (CaseRunner.Excluded e) {
+            return null;
+        }
+        Object expected = null;
+        if (reached != null) {
+            ObjectType at = typeOf(model, reached);
+            String declared = declaredName(at, a.attribute());
+            if (declared == null) return null;
+            List<String> key = FactModelGenerator.cellKey(model, at.dimensionsOf(declared), c.labels());
+            Object map = Accessors.leesEigenschap(reached, Namen.property(declared));
+            expected = map instanceof Map<?, ?> m && key != null ? m.get(key) : null;
+        }
+        n.operands++;
+        boolean equal = read instanceof BigDecimal x && expected instanceof BigDecimal y ? x.compareTo(y) == 0
+                : Objects.equals(read, expected);
+        return equal ? null : "leest " + read + ", en het fixpunt geeft de cel " + a.attribute() + c.labels() + " "
+                + expected;
     }
 
     /** Whether the stop of composite {@code s}, read as {@code x}, follows from its members' verdicts. */

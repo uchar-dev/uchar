@@ -136,17 +136,24 @@ public sealed interface Expr {
      *  aggregation ranges over and the CONCRETE ordered list of labels selected — the
      *  "vanaf &lt;a&gt; t/m &lt;b&gt;" interval and the "in {…}" set are already expanded against the
      *  dimension's declared label order (§13.3.7.5), and "over alle …" is every label. The
-     *  transpiler folds the dimensioned attribute over exactly these labels (a fixed sum/min/max
-     *  of {@code map.get(label)}), so no label arithmetic survives into the back-end. */
+     *  transpiler folds the dimensioned attribute over exactly the cells these labels select with
+     *  those of the other selections of the fold, so no label arithmetic survives into the back-end. */
     record DimensionSelection(String dimension, List<String> labels, Source source) {}
 
-    /** {@code dimensionSelection} (§13.4.17.51-.54), when non-null, restricts a SOM/MIN/MAX over a
-     *  gedimensioneerd attribuut to the selected dimension labels — the only aggregation that
-     *  ranges over a dimension's value space rather than over object instances. Null for an
-     *  ordinary instance aggregation. */
+    /** {@code dimensionSelections} (§13.4.17.51-.54), when non-null, restricts a SOM/MIN/MAX over a
+     *  gedimensioneerd attribuut to the cells of the product of its selections, one per dimension of the
+     *  attribute in declared order (IR-SPEC ch. 4.3) — the only aggregation that ranges over a dimension's
+     *  value space rather than over object instances. Null for an ordinary instance aggregation; never empty. */
     record FunctionCall(FunctionKind kind, List<Expr> arguments, ObjectType elementObjectType,
-                   Expr emptyFallback, Condition filter, DimensionSelection dimensionSelection,
+                   Expr emptyFallback, Condition filter, List<DimensionSelection> dimensionSelections,
                    Datatype type, Source source, Granularity granularity, boolean anchored) implements Expr {
+        public FunctionCall {
+            if (dimensionSelections != null) {
+                if (dimensionSelections.isEmpty())
+                    throw new IllegalArgumentException("a fold over a dimension selection carries at least one selection");
+                dimensionSelections = List.copyOf(dimensionSelections);
+            }
+        }
         /** {@code granularity} is the §13.4.17.57 aantal-dagen-in operator's stated bucket unit ("in <de maand|
          *  het jaar>"); null for every other functie. The transpiler requires it to MATCH the doel's tijdlijn
          *  (§4.21/§7.2), markering a mismatch rather than silently bucketing by the wrong unit.
@@ -155,15 +162,15 @@ public sealed interface Expr {
          *  quantifier test and its range starts at the subject of the form, not at the element; the wire writes
          *  {@code anchor: "form"}. False everywhere else. */
         public FunctionCall(FunctionKind kind, List<Expr> arguments, ObjectType elementObjectType,
-                       Expr emptyFallback, Condition filter, DimensionSelection dimensionSelection,
+                       Expr emptyFallback, Condition filter, List<DimensionSelection> dimensionSelections,
                        Datatype type, Source source, Granularity granularity) {
-            this(kind, arguments, elementObjectType, emptyFallback, filter, dimensionSelection, type, source, granularity,
+            this(kind, arguments, elementObjectType, emptyFallback, filter, dimensionSelections, type, source, granularity,
                     false);
         }
         public FunctionCall(FunctionKind kind, List<Expr> arguments, ObjectType elementObjectType,
-                       Expr emptyFallback, Condition filter, DimensionSelection dimensionSelection,
+                       Expr emptyFallback, Condition filter, List<DimensionSelection> dimensionSelections,
                        Datatype type, Source source) {
-            this(kind, arguments, elementObjectType, emptyFallback, filter, dimensionSelection, type, source, null);
+            this(kind, arguments, elementObjectType, emptyFallback, filter, dimensionSelections, type, source, null);
         }
         /** Most call sites build an instance aggregation with no dimensieselectie and no granulariteit. */
         public FunctionCall(FunctionKind kind, List<Expr> arguments, ObjectType elementObjectType,

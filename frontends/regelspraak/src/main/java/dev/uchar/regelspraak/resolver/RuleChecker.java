@@ -1203,7 +1203,7 @@ final class RuleChecker {
                     navigation(f.arguments().get(i), from, reported);
                 navigation(f.emptyFallback(), from, reported);
                 // the filter reads each contributor; a dimension fold has none and reads the subject's labels
-                ObjectType element = f.dimensionSelection() == null ? f.elementObjectType() : null;
+                ObjectType element = f.dimensionSelections() == null ? f.elementObjectType() : null;
                 navigation(f.filter(), element != null ? element : from, reported);
             }
             case Expr.Binary b -> {
@@ -1936,13 +1936,13 @@ final class RuleChecker {
                             : opSubtype(x, sup, sub));
                 }
                 Expr empty = opSubtype(f.emptyFallback(), sup, sub);
-                Condition filter = f.dimensionSelection() != null ? opSubtype(f.filter(), sup, sub) : f.filter();
+                Condition filter = f.dimensionSelections() != null ? opSubtype(f.filter(), sup, sub) : f.filter();
                 boolean ownSource = fold && !args.isEmpty() && args.get(0) != f.arguments().get(0);
-                ObjectType element = f.elementObjectType() == sup && (f.dimensionSelection() != null || ownSource) ? sub
+                ObjectType element = f.elementObjectType() == sup && (f.dimensionSelections() != null || ownSource) ? sub
                         : f.elementObjectType();
                 boolean same = empty == f.emptyFallback() && filter == f.filter() && element == f.elementObjectType();
                 for (int i = 0; i < args.size(); i++) same &= args.get(i) == f.arguments().get(i);
-                yield same ? f : new Expr.FunctionCall(f.kind(), args, element, empty, filter, f.dimensionSelection(),
+                yield same ? f : new Expr.FunctionCall(f.kind(), args, element, empty, filter, f.dimensionSelections(),
                         f.type(), f.source(), f.granularity(), f.anchored());
             }
             case Expr.Rounding a -> {
@@ -3272,7 +3272,7 @@ final class RuleChecker {
                 for (Expr a : f.arguments()) checkSetRead(a, subject, isFoldSource, countElement);
                 checkSetRead(f.emptyFallback(), subject, false);   // §5.8.2 fallback: an ordinary read, never a source
                 // a dimension fold has no element: its filter reads the subject's own labels
-                checkSetRead(f.filter(), f.dimensionSelection() == null && f.elementObjectType() != null
+                checkSetRead(f.filter(), f.dimensionSelections() == null && f.elementObjectType() != null
                         ? f.elementObjectType() : subject);
             }
             case Expr.Binary b -> {
@@ -5695,7 +5695,7 @@ final class RuleChecker {
             case Expr.AttributeReference a -> a.anchored() ? null : a.source();
             case Expr.FunctionCall f -> {
                 if (f.anchored()) yield null;
-                if (f.elementObjectType() != null || f.dimensionSelection() != null) yield f.source();
+                if (f.elementObjectType() != null || f.dimensionSelections() != null) yield f.source();
                 Source found = null;
                 for (Expr x : f.arguments()) if (found == null) found = subjectRead(x, explicit);
                 yield found != null ? found : subjectRead(f.emptyFallback(), explicit);
