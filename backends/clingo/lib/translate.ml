@@ -230,6 +230,12 @@ let unbounded_refusal ~what q =
 let non_exact_division_bounded =
   "non-exact division (an explicit rounding is mandated before precision is lost)"
 
+(* the viol/2 reason of an unrounded allocation share that does not fit its
+   target scale (EF-006); the subject is the recipient *)
+let allocation_share_misfit =
+  "allocation: a share does not fit the target scale (an explicit rounding is mandated before \
+   precision is lost)"
+
 (* the limit of [closed_division]: a numeric-zero divisor in a closed body whose
    leeg quotient does not coalesce *)
 let closed_zero_division =
@@ -756,6 +762,9 @@ let viol_code witness =
   in
   let found k = function Some v -> [ (k, v) ] | None -> [] in
   if opens (non_exact_division_bounded ^ "\"") then Some ("EF-006", [])
+  (* the sentence names none of place, value and decimals; the subject is a
+     label, which is no parameter of EF-006 *)
+  else if opens (allocation_share_misfit ^ "\"") then Some ("EF-006", [])
   else if opens "result of " && holds " does not fit its declared decimals\"" then
     Some ("EF-006", found "place" (between "result of " " does not fit its declared decimals"))
   else if opens "day-kind walk: no day of the kind within " then
@@ -11633,7 +11642,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
     deposit ctx ~code:"EF-030" ~rule:(str name) ~subject:"X" (Printf.sprintf "%s, not %shas_cap(X)" raw_pat p);
     emit ctx "%shas_cap(X) :- val(X,%s,C), C >= 0, %s." p (str cap) raw_pat
   in
-  let exact_viol = "allocation: a share does not fit the target scale (an explicit rounding is mandated before precision is lost)" in
+  let exact_viol = allocation_share_misfit in
   match method_name with
   | Proportional ->
       let ratio = req "AllocationVersion.ratioAttribute (proportional)" v.ratio_attribute in
