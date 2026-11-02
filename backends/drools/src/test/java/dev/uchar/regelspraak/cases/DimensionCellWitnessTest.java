@@ -158,15 +158,15 @@ class DimensionCellWitnessTest {
     }
 
     /** jutterswet-seizoenaanvang, the pair of a computing rule and an initialisation on one cell (ch. 5.8c, 2): the cell
-     *  najaar is the copy of voorjaar above the initialisation's 0, in the defaults reading of ch. 7.7. J1 voorjaar 2.00:
-     *  najaar 2.00; J2 without input: the copy is leeg and the initialisation writes 0.00; J3 najaar 5.00 alone: the
+     *  najaar is the copy of voorjaar above the initialisation's 1 kg, in the defaults reading of ch. 7.7. J1 voorjaar
+     *  2.00: najaar 2.00; J2 without input: the copy is leeg and the initialisation writes 1.00; J3 najaar 5.00 alone: the
      *  input stands; J4 voorjaar 3.00 and najaar 5.00: the copy displaces the input. The sum over all seasons reads
      *  what the pair decided; a najaar the defaults reading does not give fails. */
     @Test void the_pair_on_one_cell_reads_as_its_defaults() throws Exception {
         Path ir = GOLDEN.resolve("jutterswet-seizoenaanvang").resolve("ir.json");
         Path c1 = GOLDEN.resolve("jutterswet-seizoenaanvang").resolve("case1-berekening-en-aanvang.json");
         assertPlays(ir, List.of(c1));
-        assertFails(ir, caseFile(List.of(jutter("J2")), List.of(cellEmpty("J2", "najaar"))), "0");
+        assertFails(ir, caseFile(List.of(jutter("J2")), List.of(cellEmpty("J2", "najaar"))), "werkelijk 1");
         assertFails(ir, caseFile(List.of(jutter("J3", cell("5.00", "najaar"))), List.of(cellEmpty("J3", "najaar"))), "5");
     }
 

@@ -177,7 +177,7 @@
             "value": {
               "node": "Literal",
               "value": {
-                "number": "0"
+                "number": "1"
               },
               "type": {
                 "node": "Number",
@@ -198,7 +198,7 @@
                 ]
               },
               "source": {
-                "snippet": "0 kg"
+                "snippet": "1 kg"
               }
             },
             "initialisation": true

@@ -16,11 +16,11 @@ A dimension `seizoen` with the labels `voorjaar`, `zomer`, `najaar`; on the
 | rule | form | target | value |
 |---|---|---|---|
 | `najaarsgewicht van een jutter` | computation | the cell `najaar` | the cell `voorjaar` |
-| `najaarsaanvang van een jutter` | initialisation | the cell `najaar` | 0 kg |
+| `najaarsaanvang van een jutter` | initialisation | the cell `najaar` | 1 kg |
 | `jaargewicht van een jutter` | computation | `jaargewicht` | the sum over all seasons |
 
-The initialisation writes 0 with no decimals into a cell of 2; the write
-boundary of ch. 2.4 holds it, 0.00.
+The initialisation writes 1 with no decimals into a cell of 2; the write
+boundary of ch. 2.4 holds it, 1.00.
 
 ## The case — measured, per executor
 
@@ -29,7 +29,7 @@ boundary of ch. 2.4 holds it, 0.00.
 | instance | input | cell `najaar` | `jaargewicht` | why |
 |---|---|---|---|---|
 | J1 | `voorjaar` 2.00 | 2.00 | 4.00 | the copy decides |
-| J2 | none | 0.00 | 0.00 | the copy is leeg and does not decide; the initialisation writes |
+| J2 | none | 1.00 | 1.00 | the copy is leeg and does not decide; the initialisation writes |
 | J3 | `najaar` 5.00 | 5.00 | 5.00 | the copy is leeg; the cell is filled, so the initialisation is not at its turn and the input stands |
 | J4 | `voorjaar` 3.00, `najaar` 5.00 | 3.00 | 6.00 | the copy decides and displaces the input |
 

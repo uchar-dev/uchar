@@ -16,7 +16,7 @@ Regel najaarsgewicht van een jutter
 
 Regel najaarsaanvang van een jutter
     geldig altijd
-        Het vondstgewicht in najaar van een Jutter moet geïnitialiseerd worden op 0 kg.
+        Het vondstgewicht in najaar van een Jutter moet geïnitialiseerd worden op 1 kg.
 
 Regel jaargewicht van een jutter
     geldig altijd
