@@ -406,7 +406,6 @@ public final class Typing {
             while (n.mod(bp).signum() == 0) { n = n.divide(bp); k++; }
             return k;
         }
-        String text() { return bounded() ? Integer.toString(decimals) : "onbegrensd"; }
     }
 
     /** The precision of a declaration: 0 for a whole number, the declared decimals, and no bound for the unbounded
@@ -417,35 +416,77 @@ public final class Typing {
         return t.unbounded() ? Precision.UNBOUNDED : new Precision(decimalsOf(t));
     }
 
+    /** A bound and the unit of the value it bounds, null where it has none (a unitless literal adopts the unit of its
+     *  sibling). A value is one quantity in every unit, so a bound in any unit is sound once a reader restates it into
+     *  the unit it reads the value in. */
+    record Bounded(Precision bound, Unit unit) {
+        Precision in(Unit into) { return bound.scaled(factor(unit, into)); }
+    }
+
+    /** The exact factor from {@code from} to {@code to}; 1 where either has no unit, and where the two do not
+     *  inter-convert, which is the unit check's refusal. */
+    private static Unit.Fraction factor(Unit from, Unit to) {
+        return from != null && to != null && from.convertibleTo(to) ? from.exactRestateFactors(to) : Unit.Fraction.ONE;
+    }
+
+    private static boolean narrower(Precision a, Precision b) {
+        return a.bounded() && (!b.bounded() || a.decimals() < b.decimals());
+    }
+
+    /** The bound of operands the value is one of or adds (a sum, a difference, a clamp, a minimum, a maximum, a
+     *  branch): every operand restated into one unit, the unit of one of them that gives the smallest bound. ALEF
+     *  restates both sides of a sum into their common unit, so "2 jaar plus b maand", with "jaar = 12 maand", is bound
+     *  in whole months, where restated into the left unit (ch. 2.6, rule 4) b/12 has no bound. Null where an operand
+     *  makes no claim. */
+    private static Bounded combined(List<Bounded> xs) {
+        if (xs.isEmpty() || xs.contains(null)) return null;
+        List<Unit> candidates = new java.util.ArrayList<>();
+        for (Bounded x : xs) if (x.unit() != null) candidates.add(x.unit());
+        if (candidates.isEmpty()) candidates.add(null);
+        Bounded best = null;
+        for (Unit c : candidates) {
+            Precision p = new Precision(0);
+            for (Bounded x : xs) p = p.widest(x.in(c));
+            if (best == null || narrower(p, best.bound())) best = new Bounded(p, c);
+        }
+        return best;
+    }
+
     /** The bound of {@code e} (RUNTIME-SEMANTICS ch. 2.3), or null where it makes no claim: a value that is no number,
      *  or a node nothing declares. {@code model} holds the grid of a temporal total. */
-    public static Precision precision(Expr e, dev.uchar.regelspraak.model.RegelSpraakModel model) {
+    public static Bounded precision(Expr e, dev.uchar.regelspraak.model.RegelSpraakModel model) {
         return precision(e, model, java.util.Map.of());
     }
 
-    private static Precision precision(Expr e, dev.uchar.regelspraak.model.RegelSpraakModel model,
-                                       java.util.Map<String, Precision> binders) {
+    private static Bounded precision(Expr e, dev.uchar.regelspraak.model.RegelSpraakModel model,
+                                     java.util.Map<String, Bounded> binders) {
         if (e == null) return null;
         return switch (e) {
             case Expr.Literal l -> {
                 Unit.Fraction v = literalValue(l);
-                yield v == null ? null : Precision.of(v);
+                yield v == null ? null : new Bounded(Precision.of(v), l.type().unitOf());
             }
-            case Expr.AttributeReference a -> declared(a.type());
-            case Expr.DimensionCellRead c -> declared(c.type());
-            case Expr.ParameterRef p -> declared(p.type());
-            case Expr.Constant c -> declared(c.type());
+            case Expr.AttributeReference a -> declaredBound(a.type());
+            case Expr.DimensionCellRead c -> declaredBound(c.type());
+            case Expr.ParameterRef p -> declaredBound(p.type());
+            case Expr.Constant c -> declaredBound(c.type());
             case Expr.BinderRef b -> binders.get(b.name());
             case Expr.Let l -> {
-                java.util.Map<String, Precision> inner = new java.util.HashMap<>(binders);
+                java.util.Map<String, Bounded> inner = new java.util.HashMap<>(binders);
                 inner.put(l.binder(), precision(l.value(), model, binders));
                 yield precision(l.body(), model, inner);
             }
-            case Expr.IfThenElse k -> widest(precision(k.then(), model, binders), precision(k.otherwise(), model, binders));
-            case Expr.Rounding r -> new Precision(r.decimals());
-            // the value is the base or one of its bounds, restated into the base's unit
-            case Expr.Clamp c -> widest(widest(precision(c.base(), model, binders),
-                    restated(c.minimum(), c.base(), model, binders)), restated(c.maximum(), c.base(), model, binders));
+            case Expr.IfThenElse k -> combined(java.util.Arrays.asList(precision(k.then(), model, binders),
+                    precision(k.otherwise(), model, binders)));
+            // the value is rounded in the unit of its base
+            case Expr.Rounding r -> new Bounded(new Precision(r.decimals()), unitOf(r.base()));
+            case Expr.Clamp c -> {
+                List<Bounded> xs = new java.util.ArrayList<>();
+                xs.add(precision(c.base(), model, binders));
+                if (c.minimum() != null) xs.add(precision(c.minimum(), model, binders));
+                if (c.maximum() != null) xs.add(precision(c.maximum(), model, binders));
+                yield combined(xs);
+            }
             case Expr.Binary b -> binary(b, model, binders);
             case Expr.FunctionCall f -> function(f, model, binders);
             case Expr.TextComposition t -> null;
@@ -455,80 +496,99 @@ public final class Typing {
         };
     }
 
-    private static Precision binary(Expr.Binary b, dev.uchar.regelspraak.model.RegelSpraakModel model,
-                                    java.util.Map<String, Precision> binders) {
+    private static Bounded declaredBound(Datatype t) {
+        Precision p = declared(t);
+        return p == null ? null : new Bounded(p, t.unitOf());
+    }
+
+    private static Unit unitOf(Expr e) {
+        return e == null || e.type() == null ? null : e.type().unitOf();
+    }
+
+    /** The bound of {@code x} in the unit {@code x} carries. */
+    private static Precision own(Expr x, dev.uchar.regelspraak.model.RegelSpraakModel model,
+                                 java.util.Map<String, Bounded> binders) {
+        Bounded b = precision(x, model, binders);
+        return b == null ? null : b.in(unitOf(x));
+    }
+
+    private static Bounded bounded(Precision p, Unit unit) { return p == null ? null : new Bounded(p, unit); }
+
+    private static Bounded binary(Expr.Binary b, dev.uchar.regelspraak.model.RegelSpraakModel model,
+                                  java.util.Map<String, Bounded> binders) {
         Unit.Fraction l = literal(b.left()), r = literal(b.right());
+        Unit lu = unitOf(b.left()), ru = unitOf(b.right());
         return switch (b.op()) {
-            // the right operand is restated into the left unit (ch. 2.6)
-            case PLUS, MIN, VERMINDERD_MET -> widest(precision(b.left(), model, binders),
-                    restated(b.right(), b.left(), model, binders));
+            case PLUS, MIN, VERMINDERD_MET -> combined(java.util.Arrays.asList(precision(b.left(), model, binders),
+                    precision(b.right(), model, binders)));
             case MAAL -> {
-                Unit.Fraction f = Unit.timesFactors(b.left().type().unitOf(), b.right().type().unitOf());
-                if (l != null && r != null) yield Precision.of(l.times(r).times(f));
-                if (l != null) yield scaled(precision(b.right(), model, binders), l.times(f));
-                if (r != null) yield scaled(precision(b.left(), model, binders), r.times(f));
-                Precision a = precision(b.left(), model, binders), c = precision(b.right(), model, binders);
-                yield a == null || c == null ? null : a.plus(c).scaled(f);
+                Unit.Fraction f = Unit.timesFactors(lu, ru);
+                Unit product = Unit.times(lu, ru);
+                if (l != null && r != null) yield new Bounded(Precision.of(l.times(r).times(f)), product);
+                if (l != null) yield bounded(scaled(own(b.right(), model, binders), l.times(f)), product);
+                if (r != null) yield bounded(scaled(own(b.left(), model, binders), r.times(f)), product);
+                Precision a = own(b.left(), model, binders), c = own(b.right(), model, binders);
+                yield a == null || c == null ? null : new Bounded(a.plus(c).scaled(f), product);
             }
             // a quotient by anything but a literal has no finite bound; by a literal it is a product with its reciprocal
             case GEDEELD_DOOR -> {
-                if (r == null || r.num().signum() == 0) yield Precision.UNBOUNDED;
-                Unit.Fraction f = Unit.divideFactors(b.left().type().unitOf(), b.right().type().unitOf());
-                if (l != null) yield Precision.of(l.times(r.inverted()).times(f));
-                yield scaled(precision(b.left(), model, binders), r.inverted().times(f));
+                Unit quotient = Unit.divide(lu, ru);
+                if (r == null || r.num().signum() == 0) yield new Bounded(Precision.UNBOUNDED, quotient);
+                Unit.Fraction f = Unit.divideFactors(lu, ru);
+                if (l != null) yield new Bounded(Precision.of(l.times(r.inverted()).times(f)), quotient);
+                yield bounded(scaled(own(b.left(), model, binders), r.inverted().times(f)), quotient);
             }
-            case GEDEELD_DOOR_ABS -> new Precision(5);
-            case TOT_DE_MACHT -> Precision.UNBOUNDED;
-            // l/100 × r: the hundred adds two decimals to the left operand
+            case GEDEELD_DOOR_ABS -> new Bounded(new Precision(5), unitOf(b));
+            case TOT_DE_MACHT -> new Bounded(Precision.UNBOUNDED, unitOf(b));
+            // l/100 × r, in the unit of r: the hundred adds two decimals to the left operand
             case PERCENTAGE_VAN -> {
                 Unit.Fraction hundredth = new Unit.Fraction(java.math.BigInteger.ONE, java.math.BigInteger.valueOf(100));
-                if (l != null && r != null) yield Precision.of(l.times(hundredth).times(r));
-                if (l != null) yield scaled(precision(b.right(), model, binders), l.times(hundredth));
-                Precision a = precision(b.left(), model, binders);
-                if (r != null) yield a == null ? null : a.plus(new Precision(2)).scaled(r);
-                Precision c = precision(b.right(), model, binders);
-                yield a == null || c == null ? null : a.plus(new Precision(2)).plus(c);
+                if (l != null && r != null) yield new Bounded(Precision.of(l.times(hundredth).times(r)), ru);
+                if (l != null) yield bounded(scaled(own(b.right(), model, binders), l.times(hundredth)), ru);
+                Precision a = own(b.left(), model, binders);
+                if (r != null) yield a == null ? null : new Bounded(a.plus(new Precision(2)).scaled(r), ru);
+                Precision c = own(b.right(), model, binders);
+                yield a == null || c == null ? null : new Bounded(a.plus(new Precision(2)).plus(c), ru);
             }
         };
     }
 
-    private static Precision function(Expr.FunctionCall f, dev.uchar.regelspraak.model.RegelSpraakModel model,
-                                      java.util.Map<String, Precision> binders) {
+    private static Bounded function(Expr.FunctionCall f, dev.uchar.regelspraak.model.RegelSpraakModel model,
+                                    java.util.Map<String, Bounded> binders) {
         List<Expr> args = f.arguments();
         return switch (f.kind()) {
             case AANTAL, AANTAL_GEVULDE, AANTAL_DAGEN_IN, TIJDSDUUR, ABSOLUTE_TIJDSDUUR, JAAR_UIT, MAAND_UIT, DAG_UIT,
-                 UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT -> new Precision(0);
+                 UUR_UIT, MINUUT_UIT, SECONDE_UIT, MILLISECONDE_UIT -> new Bounded(new Precision(0), null);
             case SOM, MINIMUM, MAXIMUM, EERSTE, LAATSTE, CONCATENATIE -> operands(f, model, binders);
             case TOTAAL -> {
                 if (ExpressionBuilder.setRead(args) || args.size() != 1) yield operands(f, model, binders);
                 // the temporal total adds whole periods of the grid (ch. 3.6); a rate whose period is not the grid's
                 // own unit is restated into it (ch. 2.6, rule 8)
                 Expr a = args.get(0);
-                Precision p = scaled(precision(a, model, binders), gridFactor(a, model));
-                yield f.emptyFallback() == null ? p : widest(p, restated(f.emptyFallback(), f, model, binders));
+                Bounded total = bounded(scaled(own(a, model, binders), gridFactor(a, model)), unitOf(f));
+                yield f.emptyFallback() == null ? total
+                        : combined(java.util.Arrays.asList(total, precision(f.emptyFallback(), model, binders)));
             }
-            case WORTEL, TIJDSEVENREDIG_DEEL -> Precision.UNBOUNDED;
+            case WORTEL, TIJDSEVENREDIG_DEEL -> new Bounded(Precision.UNBOUNDED, unitOf(f));
             case ABSOLUTE_WAARDE -> args.size() == 1 ? precision(args.get(0), model, binders) : null;
             case EERSTE_PAASDAG, DATUM_MET, DATUMTIJD_MET -> null;
         };
     }
 
-    /** A fold over its operands, each restated into the unit of operand 0, its empty fallback among them. */
-    private static Precision operands(Expr.FunctionCall f, dev.uchar.regelspraak.model.RegelSpraakModel model,
-                                      java.util.Map<String, Precision> binders) {
+    /** A fold over its operands, its empty fallback among them. */
+    private static Bounded operands(Expr.FunctionCall f, dev.uchar.regelspraak.model.RegelSpraakModel model,
+                                    java.util.Map<String, Bounded> binders) {
         if (f.arguments().isEmpty()) return null;
-        Expr first = f.arguments().get(0);
-        Precision p = precision(first, model, binders);
-        List<Expr> rest = new java.util.ArrayList<>(f.arguments().subList(1, f.arguments().size()));
-        if (f.emptyFallback() != null) rest.add(f.emptyFallback());
-        for (Expr x : rest) p = widest(p, restated(x, first, model, binders));
-        return p;
+        List<Bounded> xs = new java.util.ArrayList<>();
+        for (Expr x : f.arguments()) xs.add(precision(x, model, binders));
+        if (f.emptyFallback() != null) xs.add(precision(f.emptyFallback(), model, binders));
+        return combined(xs);
     }
 
     /** The factor a temporal total of {@code operand} restates its value by: 1 where the grid is the unit's own period,
      *  the grid over that period where the period is another unit of the grid's class. */
     private static Unit.Fraction gridFactor(Expr operand, dev.uchar.regelspraak.model.RegelSpraakModel model) {
-        Unit u = operand.type() == null ? null : operand.type().unitOf();
+        Unit u = unitOf(operand);
         if (u == null || !(operand instanceof Expr.AttributeReference a) || a.objectType() == null) return Unit.Fraction.ONE;
         dev.uchar.regelspraak.model.RegelSpraakModel.Granularity g = a.objectType().granularityOf(a.attribute());
         if (g == null) return Unit.Fraction.ONE;
@@ -546,19 +606,7 @@ public final class Typing {
         return new Unit(f.abbreviation(), f.system(), f.canonical(), f.factorToCanonical());
     }
 
-    /** The bound of {@code x} restated into the unit of {@code into}; a pair of units that do not inter-convert is the
-     *  unit check's, and restates nothing here. */
-    private static Precision restated(Expr x, Expr into, dev.uchar.regelspraak.model.RegelSpraakModel model,
-                                      java.util.Map<String, Precision> binders) {
-        if (x == null) return null;
-        Precision p = precision(x, model, binders);
-        Unit from = x.type() == null ? null : x.type().unitOf(), to = into.type() == null ? null : into.type().unitOf();
-        return scaled(p, from != null && from.convertibleTo(to) ? from.exactRestateFactors(to) : Unit.Fraction.ONE);
-    }
-
     private static Precision scaled(Precision p, Unit.Fraction f) { return p == null ? null : p.scaled(f); }
-
-    private static Precision widest(Precision a, Precision b) { return a == null || b == null ? null : a.widest(b); }
 
     /** The exact value of a numeric literal operand, null for any other operand. */
     private static Unit.Fraction literal(Expr e) {
@@ -576,13 +624,15 @@ public final class Typing {
 
     /** §6.1.2, the precision gate of RUNTIME-SEMANTICS ch. 2.4: a computed value whose bound, restated into the unit of
      *  the target, exceeds the target's declared decimals is RGS-338, and one without a finite bound RGS-370; an
-     *  unbounded target has no ceiling, and a value that makes no claim passes. */
-    public static Coded precisionGate(Datatype target, Expr value, dev.uchar.regelspraak.model.RegelSpraakModel model) {
-        if (target.isUnknown() || !target.isNumberLike() || target.unbounded()) return null;
-        Precision p = precision(value, model);
-        if (p == null || value.type() == null) return null;
-        Unit from = value.type().unitOf(), to = target.unitOf();
-        p = p.scaled(from != null && from.convertibleTo(to) ? from.exactRestateFactors(to) : Unit.Fraction.ONE);
+     *  unbounded target has no ceiling, and a value that makes no claim passes. A target with a timeline
+     *  ({@code timeline}) stands outside the gate: no executor carries a rounding around the pro-rata write of ch. 3.7,
+     *  the one computed write such a target takes, so the gate would leave that write no form (ch. 2.8). */
+    public static Coded precisionGate(Datatype target, boolean timeline, Expr value,
+                                      dev.uchar.regelspraak.model.RegelSpraakModel model) {
+        if (timeline || target.isUnknown() || !target.isNumberLike() || target.unbounded()) return null;
+        Bounded b = precision(value, model);
+        if (b == null) return null;
+        Precision p = b.in(target.unitOf());
         int dd = decimalsOf(target);
         if (!p.bounded()) return new Coded("RGS-370", params("targetDecimals", dd));
         return p.decimals() > dd ? new Coded("RGS-338", params("valueDecimals", p.decimals(), "targetDecimals", dd)) : null;
@@ -591,8 +641,9 @@ public final class Typing {
 
     /** §6.1.2 for a §13.4.10 verdeling share: the family and unit rule of {@link #assignment}, and the precision gate
      *  over the bound of a share, the rounding of the verdeling ({@code roundDec}) or else the declaration of its pot.
-     *  An unbounded ({@code getal}) target has no ceiling. Returns the refusal, or null. */
-    public static Coded allocationAssignment(Datatype target, Datatype source, Integer roundDec) {
+     *  An unbounded ({@code getal}) target has no ceiling, and a target with a timeline stands outside the gate as in
+     *  {@link #precisionGate}. Returns the refusal, or null. */
+    public static Coded allocationAssignment(Datatype target, boolean timeline, Datatype source, Integer roundDec) {
         // An Onbekend bron/doel carries no type claim — the assignment check no-ops.
         if (target == null || source == null || target.isUnknown() || source.isUnknown())
             return null;
@@ -610,13 +661,12 @@ public final class Typing {
         // cancels. An inconvertible unit (€ distributed over a metre target) is the same fout regel raises.
         Coded unitError = unitsCompatible(target, source, "", false, false, null);   // RuleChecker prepends "verdeling: "
         if (unitError != null) return unitError;
-        if (target.unbounded()) return null;   // an unbounded (getal) target has no precision ceiling
+        if (timeline || target.unbounded()) return null;   // an unbounded (getal) target has no precision ceiling
         // the bound of a share is the rounding of the allocation, and without one the declaration of its pot (the ALEF
         // form): the division by the recipients is not typed, so a share that does not fit with a pot that does stays
         // the evaluation fault EF-006 (RUNTIME-SEMANTICS ch. 2.4)
-        Precision share = roundDec != null ? new Precision(roundDec) : declared(source);
-        Unit from = source.unitOf(), to = target.unitOf();
-        share = share.scaled(from != null && from.convertibleTo(to) ? from.exactRestateFactors(to) : Unit.Fraction.ONE);
+        Precision share = new Bounded(roundDec != null ? new Precision(roundDec) : declared(source), source.unitOf())
+                .in(target.unitOf());
         int dd = decimalsOf(target);
         if (!share.bounded()) return new Coded("RGS-371", params("targetDecimals", dd));
         return share.decimals() > dd

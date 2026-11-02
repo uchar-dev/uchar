@@ -4179,7 +4179,7 @@ final class RuleChecker {
                     || (weightType != null && weightType.isNumberLike());   // mirror the transpiler's lowering gate
             if (lowers) {
                 Typing.Coded error = Typing.allocationAssignment(d.objectType().attribute(d.attribute()),
-                        b.objectType().attribute(b.attribute()), roundDec);
+                        d.objectType().granularityOf(d.attribute()) != null, b.objectType().attribute(b.attribute()), roundDec);
                 if (error != null)
                     model.diagnostics.add(error.frame("allocation").at(Severity.ERROR, v.getStart().getLine()));
             }
@@ -4265,7 +4265,7 @@ final class RuleChecker {
                 checkSign(targetType, t.value(), oc.getStart().getLine());   // §3.3.1 Teken-beperking, like registreer
                 Typing.Coded error = Typing.assignment(targetType, t.value().type(),
                         ExpressionBuilder.unitlessNumberLiteral(t.value()));
-                if (error == null) error = Typing.precisionGate(targetType, t.value(), model);
+                if (error == null) error = Typing.precisionGate(targetType, createdType.granularityOf(t.attribute()) != null, t.value(), model);
                 if (error != null)
                     model.diagnostics.add(error.frame("object-creation").at(Severity.ERROR, oc.getStart().getLine()));
             }
@@ -4802,9 +4802,16 @@ final class RuleChecker {
         checkSign(targetType, peeledValue, line);   // §3.3.1 Teken-beperking, static over a literal value
         if (targetType.isUnknown() || valueType.isUnknown()) return; // not enough resolved to judge
         Typing.Coded error = Typing.assignment(targetType, valueType, ExpressionBuilder.unitlessNumberLiteral(valueExpr));
-        if (error == null) error = Typing.precisionGate(targetType, valueExpr, model);
+        if (error == null) error = Typing.precisionGate(targetType, timelineTarget(targetExpr), valueExpr, model);
         if (error != null)
             model.diagnostics.add(error.frame("category", "category", category.name().toLowerCase()).at(Severity.ERROR, line));
+    }
+
+    /** Whether a rule target is an attribute with a timeline, which the precision gate leaves alone
+     *  ({@link Typing#precisionGate}); a cell has none (a dimension and a timeline are not combined). */
+    private static boolean timelineTarget(Expr target) {
+        return target instanceof Expr.AttributeReference a && a.objectType() != null
+                && a.objectType().granularityOf(a.attribute()) != null;
     }
 
     /** The expression a ch. 4.10 {@code Let} chain ultimately DENOTES, for the shape-sensitive static checks:

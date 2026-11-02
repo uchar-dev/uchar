@@ -31,11 +31,6 @@
               "whole": false,
               "decimals": 2,
               "sign": "unspecified"
-            },
-            "timeline": {
-              "node": "TimelineFacet",
-              "granularity": "month",
-              "count": 1
             }
           }
         ],

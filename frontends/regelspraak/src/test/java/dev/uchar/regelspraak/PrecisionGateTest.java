@@ -152,20 +152,41 @@ class PrecisionGateTest {
     }
 
     // wf023-precision-time-proportional-part
-    @Test void a_time_proportional_part_has_no_bound() {
+    @Test void a_time_proportional_part_has_no_bound_and_a_timeline_target_stands_outside_the_gate() {
         String model = """
             Objecttype de Bakenmeester (mv: Bakenmeesters) (bezield)
                 het onderhoudstarief Numeriek (getal met 2 decimalen) voor elk jaar;
-                de onderhoudsbijdrage Numeriek (getal met 2 decimalen) voor elke maand;
+                de onderhoudsbijdrage Numeriek (getal met 2 decimalen)%s;
                 is dienstdoend kenmerk (bijvoeglijk) voor elke maand;
 
             Regel onderhoudsbijdrage van een bakenmeester
                 geldig altijd
-                    De onderhoudsbijdrage van een Bakenmeester moet gesteld worden op\s""";
-        refused(model + "het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is.\n",
-                "RGS-370", unbounded(2));
-        passes(model + "(het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is)"
-                + " rekenkundig afgerond op 2 decimalen.\n");
+                    De onderhoudsbijdrage van een Bakenmeester moet gesteld worden op het tijdsevenredig deel per maand \
+            van zijn onderhoudstarief gedurende de tijd dat hij dienstdoend is.
+            """;
+        refused(model.formatted(""), "RGS-370", unbounded(2));
+        // into a monthly timeline the pro-rata write is the one computed write, and no executor rounds around it
+        passes(model.formatted(" voor elke maand"));
+    }
+
+    @Test void a_sum_across_units_is_bound_in_the_unit_that_bounds_it_best() {
+        String model = """
+            Eenheidsysteem Termijn
+                de maand mnd
+                het jaar jr = 12 mnd
+
+            Objecttype de Bergingsvergunning (mv: Bergingsvergunningen)
+                de basisduur Numeriek (geheel getal) met eenheid mnd;
+                de looptijd Numeriek (geheel getal) met eenheid mnd;
+                de lange looptijd Numeriek (geheel getal) met eenheid jr;
+
+            """;
+        // 2 jr plus b mnd is b/12 jr in the left unit, and whole in months
+        passes(model + "Regel looptijd\n    geldig altijd\n        De looptijd van een Bergingsvergunning moet berekend worden "
+                + "als 2 jr plus zijn basisduur.\n");
+        // into years it does not fit whatever the unit it is bound in
+        refused(model + "Regel lange looptijd\n    geldig altijd\n        De lange looptijd van een Bergingsvergunning moet "
+                + "berekend worden als 2 jr plus zijn basisduur.\n", "RGS-370", unbounded(0));
     }
 
     // wf023-precision-creation-member
