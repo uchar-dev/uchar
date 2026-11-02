@@ -6868,10 +6868,12 @@ ch. 3.12), and it belongs to whoever measures it.
   emptied or overwritten with a literal. WF-040 travels with the identity
   family here, which is why the loss is a label/dimension cross as well as a
   type cross. This is the one wave-3
-  channel with **no executor witness under today's executors**: a cell read
-  is declined as a FORM by both OCaml executors, so no golden carrying one
-  has or could have a case file today, and the argument for the clause is the
-  identity family's silence, not an engine divergence. (h) *(Removed at L2 with
+  channel whose argument is the identity family's silence and not an engine
+  divergence: `ref` and the ASP backend refuse a cell whose `attribute` is
+  not an attribute reference, and a cell read over an attribute reference
+  executes in both
+  (`RUNTIME-SEMANTICS.md` ch. 5.8c) and the goldens
+  `jutterswet-seizoenvondst` and `jutterswet-vormenkabinet` replay one. (h) *(Removed at L2 with
   (d) — history.)* The **container half** of
   (d): the sentinel is refused in a `ListType` element or a `StructType`
   field nested under a constructor payload, and in a sum reached back

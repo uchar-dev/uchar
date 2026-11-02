@@ -132,7 +132,12 @@ The case loader's world enters as ground facts. Per instance: `is_a`
 with its label; each scalar attribute value as `val/3` (scaled); each
 characteristic as `has/2`; each attribute timeline segment as
 `tl/5`; each condition timeline as `ktl/4`; each role filling as
-`role/3`. Parameters enter as `param/2`, vintaged (granular) parameters
+`role/3`. A cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c)
+is a member of its own and enters as `val/3` under the name the reference
+interpreter gives it, the attribute's name with the cell's labels in
+declared order — `val("J1","vondstgewicht[voorjaar, zuid]",500)` — scaled by
+the attribute's declaration; a cell the input does not name derives no
+atom. Parameters enter as `param/2`, vintaged (granular) parameters
 as `param_tl/4` segments; a *scalar* value on a granular parameter is
 refused at load by the shared case loader (both executors identically
 — the fence that keeps an unread slot from splitting the
@@ -351,7 +356,13 @@ unconditional own read, structurally (witness
 type itself, anything else refused by name (WF-053). *Until L2* the
 translator also resolved written hop names (`Eval.connecting_role`,
 `Eval.nav_single_step`), and the zero-hop self-reference was a written
-step that resolved to an empty hop list. **evaluationDate** (ch. 8.2): the session's evaluation date
+step that resolved to an empty hop list. A reference to a dimensioned
+attribute outside a cell is refused in WF-125's sentence, as `ref` refuses
+it. **Cell read** (`DimensionCellRead`, RUNTIME-SEMANTICS ch. 5.8c): the
+`val/3` atom of the attribute reference under it, own or over a path, with
+the cell's name in place of the attribute's, `val(S,"vondstgewicht[voorjaar]",A)`,
+at the attribute's scale; an empty cell, like an absent link, leaves the
+body underivable. **evaluationDate** (ch. 8.2): the session's evaluation date
 as a compile-time civil day number; a case without `asOfDate` faults.
 **Temporal point read** (ch. 3.3): a `tl/5`/`param_tl/4` atom with
 `F <= D, D < T` — the gap and the empty-index corner are the
@@ -1314,10 +1325,26 @@ for the reason the catch-all inventory below records. Its guard takes
 TWO wire fields, not one: an absent `elementType` means listed
 *or* dimension cell, because WF-037 grants the DIMENSION som an
 explicit arity exemption (one operand, `dimensionSelections`, no stamp),
-and that form is not listed — `ref` refuses it earlier and on its own
-ground, `dimension selection not implemented in this card`. So the
-named arm demands absent `dimensionSelections` too, and the dimension
-som keeps the fall-through.
+and that form is not listed: it has an arm of its own, the dimension fold
+below. So the named arm demands absent `dimensionSelections` too.
+
+**Dimension fold** (an `Aggregation` with `dimensionSelections`, a `sum`,
+`minimum` or `maximum`; RUNTIME-SEMANTICS ch. 5.8c): one helper atom per
+selected cell that holds a value, `dimN(S,I,A) :- isa(S,T), val(S,c_I,A).`,
+where `c_I` is the name of cell I of the product of the selections (the
+first selection outermost, `Ir_v0.Checks.selected_cells`, the cells the
+dependency graph gives the fold) and the `val/3` read is that of the cell
+read above, own or over a path. The fold is `#sum { A,I : dimN(S,I,A) }`,
+`#min` or `#max` over the helper, at the argument attribute's scale; the
+cell index keeps two cells of one value apart in the `#sum`. An empty cell
+derives no helper atom and drops out; the definedness atom
+`dimN_def(S) :- dimN(S,_,_).` keeps a fold whose every cell is empty
+underivable, `ref`'s leeg, and a `sum` with the `emptyFallback` 0 has it
+on every subject, so the bare `#sum` answers 0 there; a fallback other than
+0 is refused, as on the set folds. Each cell of a `sum` carries the range
+fence of a sum of n terms, `|A| > 2^31 / n`. Witnesses: gate 6 on
+`jutterswet-seizoenvouw` (one dimension, a selection whose every cell is
+empty) and the frames of the backend's suite (two dimensions, a path).
 
 Witnesses (gate 6): count by `jutterswet-erflijn`,
 `jutterswet-maatschap`, `jutterswet-kustregister`, the self-denoting
@@ -2728,24 +2755,20 @@ absent `dimensionSelections`: the first rules out the instance folds
 (every som arm this backend carries demands the stamp present), and the
 second is needed because absence of the stamp alone means listed *or*
 dimension cell — WF-037 exempts the dimension som from the arity rule,
-and `ref` refuses that form on its own ground before asking where the
-contributors come from. Its three boundaries — the kind, the stamp and
-the dimension selection — are pinned in the backend's own suite and
-cannot be pinned by the corpus: a red witness for any of them would
+and that form has its own arm (S8). Its three boundaries — the kind, the
+stamp and the dimension selection — are pinned in the backend's own suite
+and cannot be pinned by the corpus: a red witness for the first two would
 re-falsify the sentence by exercising the catch-all again. What keeps
 the catch-all keeps it truthfully: `total`'s temporal subject-own arms
 carry an absent `elementType`, so absence does not mean "listed"
-there; the `count` listed form is no som; and no document in any zone
-carries a `dimensionSelection` on a `sum` (measured 2026-09-19 over
-corpus and parity, when the field was `dimensieSelectie` on a `Functie`,
-and again 2026-09-25: the only carrier since is the negative witness
-`wf037-filled-count-dimension-selection`, on a `filledCount` that WF-037
-refuses);
+there; the `count` listed form is no som; and a dimension fold on another
+kind than `sum`, `minimum` and `maximum` stands in no document of any zone
+but the negative witness `wf037-filled-count-dimension-selection`, on a
+`filledCount` that WF-037 refuses;
 what remains under it for composites is the member-less
 counting list (`a counting composite without members is not
 translated (no corpus case)`) and every member kind that keeps its
-own fault (a TimeWindow member — the vormenkabinet's peiling rule, still
-refused by both executors — an Unresolved bullet, a
+own fault (an Unresolved bullet, a
 comparison carrying a periode, the negated gevuld predicate; the role
 check rides the S7 `role/3` join, above, with no to-many exception since
 L2 — until L2 the near-side `Rollidmaatschap`'s **to-many connecting

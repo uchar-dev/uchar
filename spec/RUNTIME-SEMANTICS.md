@@ -4463,7 +4463,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-001 | a role key of the case input resolves to two roles | case input | `roleKey`, `objectType` | ch. 5.7 step 3; IR-SPEC ch. 2.6 | `corpus/red/ambiguous-case-role-key` |
 | EF-002 | a role link of the case input names a label the case does not declare | case input | `role`, `label`, `target` | ch. 5.7 step 3 | `corpus/red/unknown-role-target-label` |
 | EF-003 | a date lexeme of the case input names no calendar day | case input | `field`, `lexeme` | ch. 5.7 step 3 | `corpus/red/as-of-date-calendar`, `corpus/red/input-date-calendar` |
-| EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 11.3 | `corpus/red/input-overprecision`, `corpus/red/input-overprecision-param`, `corpus/red/list-element-overprecision`, `corpus/red/struct-field-overprecision` |
+| EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 5.8c; ch. 11.3 | `corpus/red/input-overprecision`, `corpus/red/input-overprecision-param`, `corpus/red/list-element-overprecision`, `corpus/red/struct-field-overprecision`, `corpus/red/jutterswet-cel-overprecisie` |
 | EF-005 | a filled dividend is divided by a numeric zero | §9.5 | `rule`, `label` | ch. 1.4 point 4; ch. 2.2 | `corpus/golden/division-by-numeric-zero`, `corpus/golden/division-abs-by-numeric-zero`, `corpus/golden/filled-count-unguarded-division`, `corpus/golden/at-most-reads-until-settled`, `corpus/golden/closed-runtime-division-by-zero`, `corpus/golden/fold-filter-divides-by-zero`, `corpus/golden/jutterswet-initialisatie-naast-regel`, `corpus/golden/jutterswet-lezer-van-initialisatie` |
 | EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4 | `corpus/red/closed-nonexact-division`, `corpus/red/closed-runtime-nonexact-division`, `corpus/red/decimal-nonterminating`, `corpus/red/jutterswet-fout-aan-fixpunt`, `corpus/red/jutterswet-verdeling-past-niet`, `corpus/red/jutterswet-halvering-past-niet`, `corpus/red/jutterswet-kopie-past-niet`, `corpus/red/jutterswet-vast-bergloon-past-niet` |
 | EF-007 | a datum-tijd step or construction leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range`, `corpus/red/date-time-with-outside-range` |
@@ -5031,6 +5031,13 @@ case reader refuses, while it reads the case (ch. 5.7 step 3):
   berekend worden als zijn vondstgewicht in voorjaar". J1 with the cells
   `voorjaar` 12.50 and `najaar` 4.00 gives **voorjaarsgewicht 12.50**; J2
   with the cell `najaar` 4.00 alone gives **voorjaarsgewicht leeg**.
+- **Reading over a path**: a `Ploeg` whose to-one role `leider` reaches a
+  `Jutter`; its `leidersvoorjaar` is the cell `voorjaar` of the leader's
+  `vondstgewicht`, its `leidersjaargewicht` the sum of the leader's
+  `vondstgewicht` over all seasons. P1 whose leader J1 has the cells
+  `voorjaar` 12.50 and `najaar` 4.00 gives **leidersvoorjaar 12.50,
+  leidersjaargewicht 16.50**; P2 without a leader gives **leeg** for both
+  (rule 1 of ch. 5.8: the absent link reads every cell leeg).
 - **Folding over one dimension** (`jutterswet-seizoenvouw`): `jaargewicht`
   is the sum over all seasons, `groeigewicht` the sum from `voorjaar` up to
   and including `zomer`, `piekgewicht` the maximum over `voorjaar`, `zomer`
@@ -5072,15 +5079,25 @@ case reader refuses, while it reads the case (ch. 5.7 step 3):
 
 **Where the executors stand** (measured 2026-11-02). The reference
 interpreter and the ASP backend share the case reader, which holds the
-refusals of the case above and then refuses a valid cell input as well; they
-decline a cell read (REF-002, CLINGO-008), a dimension fold (ref without a
-code, CLINGO-008) and a cell target (REF-012, CLINGO-026). The Drools
-backend reads a cell and folds over one dimension, of an attribute of the
-subject without input, and refuses a cell input (DROOLS-047), a fold over
-more than one dimension (DROOLS-297) and a cell write (DROOLS-298). So no
-golden with case files reads or writes a cell, and the worked examples
-above have no replay; the two red witnesses of EF-034 and EF-035 have one in
-`ref` and the ASP backend.
+refusals of the case above and lays a valid cell input down cell by cell.
+Both read a cell, of the subject and over a path, and fold over one
+dimension and over more, and both refuse a read of a dimensioned attribute
+outside a cell in WF-125's sentence and a cell target (REF-012, CLINGO-026).
+A cell is a member of its own in either executor: `ref` holds it in its fact
+base under the attribute's name with the cell's labels, `vondstgewicht[najaar]`,
+and the ASP backend reads and writes it with the `val/3` of an attribute
+under the same name (`spec/ASP-TRANSLATION.md`). The worked examples of
+reading and folding replay in both: the goldens `jutterswet-seizoenvondst`,
+`jutterswet-seizoenvouw` and `jutterswet-vormenkabinet` (a cell over two
+dimensions that share a label), the `ref/test` rows `WV-5.8c-*` and the
+frames of `backends/clingo/test/test_clingo.ml` for two dimensions and a
+path; the red witness `corpus/red/jutterswet-cel-overprecisie` carries the
+input precision of a cell. The Drools backend reads a cell and folds over
+one dimension, of an attribute of the subject without input, and refuses a
+cell input (DROOLS-047), a cell over two dimensions (DROOLS-184), a fold
+over more than one dimension (DROOLS-297) and a cell write (DROOLS-298), so
+the pins of those goldens are a `ref` = ASP pair. The worked example of
+writing has no replay.
 
 ### 5.9 Uniqueness: the union and the scope
 
@@ -5417,7 +5434,7 @@ name its kinds the same way.
 | `duration` / `absoluteDuration` (tijdsduur / absolute tijdsduur) | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
 | `dateWith` / `dateTimeWith` (datum met / datum-tijd met) | the `arguments` list: year, month, day, and for `dateTimeWith` hour, minute, second, millisecond (WF-037 leaves its arity open; ch. 3.8 fixes it) | **visible** | argument order; every part runs before the leeg test, so a leeg part costs its successors nothing |
 | aggregation (`sum` (som), `total` (totaal), `count` (aantal), `minimum`, `maximum`, `first` (eerste), `last` (laatste), `filledCount`) | the contributors — the listed `arguments`, or the instance fold's members each gated by the `filter` — then the `emptyFallback` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `emptyFallback` (WF-037 confines it to `sum`) |
-| aggregation over `dimensionSelections` (the third contributor source; WF-037 admits it on `sum`, `minimum`, `maximum`) | the selected cells, then the `emptyFallback` | **visible** | the cells of the product of the selections, the first selection outermost and each in its own label order (ch. 5.8c), then the `emptyFallback`. *No executor evaluates the form with cells; the order is stated and has no witness, as no cell read faults* |
+| aggregation over `dimensionSelections` (the third contributor source; WF-037 admits it on `sum`, `minimum`, `maximum`) | the selected cells, then the `emptyFallback` | **visible** | the cells of the product of the selections, the first selection outermost and each in its own label order (ch. 5.8c), then the `emptyFallback`. *`ref` and the ASP backend evaluate the form; the order is stated and has no witness, as no cell read faults* |
 | `concatenation` (concatenatie), `TextComposition` | the inserted parts | **visible** | part order |
 | `ListLiteral` | `elements` | **visible** | element order |
 | `StructLiteral` | `fields` | **visible** | declared field order (WF-073) |
@@ -5840,8 +5857,13 @@ members of a set (*provisional decision of the builder of card
 `dimensions-executed`, 2026-11-02*). Worked example: on the case J1 of the
 reading example of ch. 5.8c, the condition "indien zijn vondstgewicht in
 voorjaar groter is dan 10 kg" of a rule on the `Jutter` reads `HOLDS`, its
-node 1, the `DimensionCellRead`, the value `12.5 "kg"`, and its node 2, the
-`AttributeReference` under the cell, no line.
+node 1, the `DimensionCellRead`, the value `12.5 "kg"`, its node 2, the
+`AttributeReference` under the cell, no line, and its node 3, the literal,
+`10 "kg"`; on J2, with the cell `najaar` 4.00 alone, it reads `FAILS`, node 1
+`empty "kg"`. The sum of `vondstgewicht` over all seasons, the value of a
+rule without a condition, reads on J1 its node 0, the `Aggregation`,
+`16.5 "kg"`, and its node 1, the argument, no line. The `ref/test` row
+`WV-5.12-cel` pins both.
 
 **Folds over a set.** A node that the evaluation reads once per member of
 a fold over a set — the source, the filter and the matrix of an
@@ -6206,10 +6228,12 @@ the value of the fixpoint; gate 17 compares their node lines as it
 compares every other, and counts them.
 
 Four boundaries, recorded rather than left implicit. The reading of a
-cell stays outside gate 17 and outside that corpus witness: `ref` refuses
-the cell read (REF-002) and, with the ASP backend, a cell input (ch. 5.8c),
-so no golden with case files reads one, and the Drools backend reads a cell
-only of the subject's own attribute (a cell over a path it refuses,
+cell stays outside the comparison of gate 17 and outside that corpus
+witness: `ref`'s trace reads the cell on every case file of the goldens that
+read one (ch. 5.8c), and the Drools backend refuses those cases (DROOLS-047,
+DROOLS-184), so gate 17 holds its `EXCLUDE` line to that of the plain replay;
+`WV-5.12-cel` pins the reading of a cell in `ref`. The Drools backend reads a
+cell only of the subject's own attribute (a cell over a path it refuses,
 DROOLS-189), whose object the text does not write. The status `FAULTS`
 and a fault at a node stay outside that differential: a golden does not
 fault at its fixpoint, and `runner --trace` refuses a case that pins one.
