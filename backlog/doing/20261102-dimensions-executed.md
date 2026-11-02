@@ -1154,3 +1154,204 @@ codes (11 retired), 305 gespeeld op beide takken, 47 niet-gespeelde goldens met 
 annotaties over 31 goldens, 168 replays, 30 gespeeld door de DRL-teksttak; gate 15 315 van 352 vergeleken, 279
 afhankelijkheden; gate 17 980 getraceerd, 305 goldens en 850 case-bestanden vergeleken, 6861 lezingen, afwijkingen 0.
 Niet gemerged, niet gepusht.
+
+### Stap 5 (frontend met meer dimensies)
+
+Branch `card/dimensions-frontend`, worktree `/Users/yeb/Developer/uchar-dev/wt/dimensions-frontend`, op `6c397de93`
+(stap 1, 2 en 4a). Commits:
+
+- `5c93c45f5` frontend: grammatica, `ExpressionBuilder`, register en catalogi (RGS-370 tot en met RGS-374), de tests,
+  `grammar/DIVERGENCES.md`;
+- `e4ed381db` golden `jutterswet-strandseizoen` en `corpus/golden/README.md`;
+- `fdb11c812` voorstel: `scripts/check-drools.sh` (`EXPECTED_PLAYED`) en de frontendnoot bij WF-040 in
+  `spec/IR-SPEC.md`;
+- het commit van dit Result.
+
+Beschermde paden (voorstel, niet gemerged): `scripts/check-drools.sh`, `spec/IR-SPEC.md`. Buiten de may-touch-set:
+niets. Geen `ref/` of `backends/clingo/` aangeraakt: de golden legde in geen uitvoerder een fout bloot.
+
+**Begintoets van het advies** (frontend van `6c397de93`, `logs/stap5-red-golden-1.log`): de frontend leest een cel
+alleen bij een attribuut met één dimensie en in de voorzetselvorm (`zijn vondstgewicht in voorjaar op zuid`:
+`WARNING onopgelost`, marker), en een vouw draagt één selectie (een tweede: `syntaxfout: extraneous input 'over'`, plus
+RGS-070 en de emitterweigering "a single-argument fold with an elementType carries its range"). Het advies (M6) klopt.
+Afwijking: ALEF schrijft de labels achter het attribuut met "en" ertussen ("in voorjaar en op zuid", editor en
+`predicatieveLabelsAsText` in `gegevensspraak/behavior.mps`); die vorm leest de frontend niet (besluit 2).
+
+#### Wat er veranderde
+
+- **Grammatica.** `somFunc` en `minMaxFunc` nemen `dimensieSelectie*` in plaats van `dimensieSelectie?`: een vouw
+  schrijft per dimensie een selectie, in elke volgorde, zoals ALEF per dimensie een filter schrijft (een vaste dimensie
+  als `over de stranden in {noord}`). Voor de cel is geen productie nodig.
+- **Cel** (`ExpressionBuilder.cellReadings`, `dimensionCell`). De naamreeks van `zijn …` wordt gelezen als een
+  gedimensioneerd attribuut van het onderwerp met ervoor labels van dimensies zonder voorzetsel (vóórvorm) en erachter
+  `<voorzetsel> <label>` van dimensies met voorzetsel (voorzetselvorm), elke dimensie hoogstens één keer, in elke
+  volgorde, labels van meer woorden inbegrepen. Eén lezing met een label van elke dimensie is de `DimensionCellRead`,
+  labels per positie in gedeclareerde volgorde; het langste attribuut wint (zoals voorheen). Een lezing met labels van
+  een deel van de dimensies: RGS-370, één ERROR per dimensie zonder label. Twee lezingen: RGS-371. `dimensionLabel`
+  (alleen voor één dimensie) is weg.
+- **Vouw** (`resolveDimensionSelections`, was `resolveDimensionSelection`). Elke over-vorm noemt haar dimensie bij het
+  meervoud; een kaal interval noemt er geen en neemt de ene dimensie van het attribuut die geen over-vorm noemt en waar
+  zijn labels in passen (met één dimensie: die). De selecties gaan in de gedeclareerde volgorde van de dimensies naar
+  de draad. De afsplitsing van `over de <meervoud>` uit het operand (§13.4.17.53) geldt voor de eerste selectie en
+  eist nu dat de dimensie een van de dimensies van het attribuut is in plaats van de enige. Een dimensie zonder
+  selectie: RGS-372 (één per dimensie, met de vorm van een vaste dimensie); een dimensie twee keer: RGS-373; een kaal
+  interval dat in twee vrije dimensies past: RGS-374. Geweigerd geeft een marker zonder reden onder de ERROR. Een
+  over-vorm met een vreemde dimensie, een onbekend label of een achterwaarts interval blijft de marker van RGS-070; de
+  waarschuwing citeert nu alle selecties van de vouw (`dimensionOrConditionSource`).
+- **Register en catalogi.** RGS-370 `dimension-cell-label-missing`, RGS-371 `dimension-cell-ambiguous`, RGS-372
+  `dimension-selection-missing`, RGS-373 `dimension-selection-repeated`, RGS-374 `dimension-interval-ambiguous`, alle
+  ERROR, nl en en; register 355 → 360 codes.
+- **`grammar/DIVERGENCES.md`**: nieuwe sectie "§3.6 / §13.4.17.51 More dimensions" (wat v2.3.0 en ALEF zeggen,
+  syntaxis, inertheid, verlaging, weigeringen, grenzen).
+- **Spec (voorstel).** IR-SPEC bij WF-040: "the restriction of the frontend's folds to the subject's own
+  single-dimension attributes" → "… own dimensioned attributes" (een noot, niet normatief). Verder normeert de
+  frontendvorm niets wat niet al in IR-SPEC ch. 2.7/4.3 staat; de schrijfwijze staat in `DIVERGENCES.md`.
+
+#### De golden
+
+`corpus/golden/jutterswet-strandseizoen` (bron, `ir.json` van de frontend, `NOTE.md`): `vondstgewicht` met de
+dimensies `seizoen` (in; voorjaar, zomer, najaar) en `strand` (op; noord, zuid). Zes regels: twee cellen (`in voorjaar
+op zuid`; `op noord in najaar`, strand eerst geschreven), een som over alle seizoenen met strand `noord` vast, een
+maximum over `voorjaar`–`zomer` met strand `zuid` vast (strand eerst geschreven), een minimum over `zomer`–`najaar` en
+beide stranden (de afsplitsing), een som over alles. Cases met de hand:
+
+- `case1-twee-stranden.json` (7 verwachtingen): J1 met (voorjaar, noord) 2.00, (najaar, noord) 1.00, (voorjaar, zuid)
+  5.00, (zomer, zuid) 0.50 → 5.00, 1.00, 3.00, 5.00, 0.50, 8.50, `consistent`.
+- `case2-lege-cellen.json` (13 verwachtingen): J2 met alleen (zomer, noord) 4.00 → beide cellen leeg (lege cel),
+  noordgewicht 4.00, zuidpiekgewicht leeg (geheel lege selectie), dalgewicht 4.00, jaargewicht 4.00; J3 zonder cel →
+  alle zes leeg; `consistent`.
+
+Gemeten: verifier `PASS`, `--dependency-edges` leeg; ref `oracle: PASS (7 expectations)` en `(13 expectations)`;
+clingo idem; Drools `PLAYED 2` op beide branches; beide cases vallen onder `--noop` (gate 7). Gate 10 houdt `ir.json`
+byte-gelijk; gate 17 vergelijkt de lezingen; gate 13 twist de vier vouwen (61 → 65 annotaties).
+
+#### Rood en mutaties
+
+Rood op `6c397de93`: de golden (de frontend van die commit geeft vijf syntaxfouten, vier RGS-070-WARNINGs, vier
+emitterweigeringen en twee `onopgelost`-WARNINGs, exit 1, geen `ir.json`; `logs/stap5-red-golden-1.log`); de nieuwe
+tests in een `git worktree add --detach` van `6c397de93` met de twee testklassen erin (`logs/stap5-red-tests-2.log`):
+15 van de 15 nieuwe tests rood (`DimensionCellTest` 6, `DimensionFoldTest` 9), de 5 bestaande van `DimensionFoldTest`
+groen. Op de branch alle 20 groen, de hele suite 1379 tests groen.
+
+Mutaties, elk apart in een `git worktree add --detach` van `fdb11c812` (opgeruimd), recept
+`/Users/yeb/Developer/uchar-dev/werk/dimensions-executed/mutants/stap5-mutate.py`, uitkomst `logs/stap5-mutants-1.log` en
+`-2.log`; niet gecommit:
+
+| | bewaking | mutatie | rood |
+|---|---|---|---|
+| g | een selectie per dimensie | grammatica terug naar `dimensieSelectie?` (beide alternatieven, accessor mee) | 7 vouwtests (syntaxfout) |
+| b | vóórvorm | geen label vóór het attribuut | `a_label_before…`, `a_cell_mixes…`, `a_cell_without…` (`zijn natte buit`) |
+| o | volgorde vrij | labels achter het attribuut alleen in gedeclareerde volgorde | `the_labels_may_be_written_in_any_order`, `a_cell_mixes…`, `a_cell_that_fits_two_ways…` |
+| p | RGS-370 | een gedeeltelijke lezing is geen cel | `a_cell_without_a_label…` (WARNING onopgelost) |
+| a | RGS-371 | bij twee cellen wint de eerste | `a_cell_that_fits_two_ways…` (geen diagnose) |
+| w | gedeclareerde volgorde van de selecties | selecties in geschreven volgorde | `the_selections_go_out…`, `a_bare_interval_takes…` |
+| f | kaal interval neemt de vrije dimensie | neemt de eerste dimensie | `a_bare_interval_takes…` (strand), `a_bare_interval_skips…` |
+| n | kaal interval slaat een genoemde dimensie over | genoemde dimensies tellen mee | `a_bare_interval_skips…` (RGS-374) |
+| r | RGS-373 | tweede selectie vervangt de eerste | `a_dimension_selected_twice…` |
+| m | RGS-372 | geen toets op een ontbrekende dimensie | `a_fold_without_a_selection…` (NullPointerException) |
+| i | RGS-374 | bij twee passende dimensies de eerste | `a_bare_interval_that_fits_two…` (RGS-372 in plaats van 374) |
+| s | afsplitsing bij meer dimensies | alleen bij een attribuut met één dimensie | `an_explicit_interval_absorbed…` (RGS-070) |
+| q | RGS-070 citeert alle selecties | alleen de eerste | `an_unlowered_selection_warns…` |
+
+De eerste run van g was een bouwfout (de accessor typt een lijst); in de tweede run is de accessor mee-gemuteerd.
+
+#### Aangepaste tests, pins en vloeren (oud → nieuw)
+
+- `IrTest.dimension_selection_over_multidimensional_attribute_stays_a_marker` →
+  `dimension_selection_over_one_of_two_dimensions_is_refused`, door de kaart omgedraaid. Oud: een som over één van
+  twee dimensies werd een `FunctionCall` zonder selecties met een `Condition.Unresolved`-filter en een WARNING met
+  "dimensieselectie". Nieuw: de waarde is een `Expr.Unresolved` en de enige diagnose is ERROR RGS-372 met
+  `dimension=brutonettodimensie`. De bewaking (nooit over één as vouwen) blijft, nu als ERROR.
+- `MarkerReasonPinTest.SANCTIONED`: `ExpressionBuilder.buildFold` 3 → 4 null-markers (de weigering van RGS-372 tot en
+  met 374), nieuw `ExpressionBuilder.dimensionCell` 2 (RGS-370, RGS-371), met reden; `MarkerReportTest.CLASSIFICATION`
+  volgt (ERROR-route, geen document).
+- Gate 12 (`scripts/check-drools.sh`, voorstel): `EXPECTED_PLAYED` 303 → 304 met naam en reden; DRL-teksttak 303 →
+  304; `EXPECTED_CHANNEL` ongewijzigd (48).
+- Geen vloer veranderd. Tellingen (oud uit de runs van stap 1 en 4a): gate 4 1046 → 1048 cases; gate 5 976 → 978
+  cases; gate 6 976 → 978 cases (2277 checks); gate 7 931 → 933 weerleggende cases, 45 overlevers; gate 10 1364 → 1379
+  tests, 161 → 162 rgs-goldens, 355 → 360 codes; gate 13 61 → 65 annotaties over 30 → 31 goldens, 160 → 166 replays,
+  DRL-tak 29 → 30; gate 15 313 → 314 van 351 → 352 goldens vergeleken, route-leg 161 → 162, 273 afhankelijkheden;
+  gate 17 303 → 304 goldens, 846 → 848 case-bestanden, 6832 → 6850 lezingen, 22361 → 22379 knoopregels, afwijkingen 0.
+
+#### Voorgestelde tekst voor CONSTRUCTS (hoofdsessie)
+
+Rij 28, achter de noten van stap 1 tot en met 4:
+
+> **Landed (stap 5 van `dimensions-executed`, 2026-11-02, `5c93c45f5`, `e4ed381db`):** de RegelSpraak-frontend leest een
+> cel met een label van elke dimensie, ervoor (een dimensie zonder voorzetsel) of erachter na het voorzetsel van de
+> dimensie, in elke volgorde, en een vouw met één selectie per dimensie zoals ALEF haar schrijft, een vaste dimensie
+> als verzameling van één label (`grammar/DIVERGENCES.md`, "§3.6 / §13.4.17.51 More dimensions"); RGS-370 tot en met
+> RGS-374 weigeren een cel of vouw die een dimensie overslaat, twee keer noemt of dubbelzinnig is. Golden
+> `jutterswet-strandseizoen` speelt in ref, clingo en beide Drools-branches.
+
+#### Voorlopige besluiten
+
+1. **De vouw zoals ALEF**: een selectie per dimensie achter het operand, elke dimensie verplicht, een vaste dimensie
+   als `over de <meervoud> in {<label>}`; het operand draagt geen label. De vorm die uit §3.6 en §5.8 af te leiden is
+   (een vaste dimensie als label op het operand, `zijn vondstgewicht op noord over alle seizoenen`) leest de frontend
+   niet: ALEF verbiedt labels op het argument van een dimensievouw, en het operand is dan een cel zonder label van
+   `seizoen` (RGS-370).
+2. **Labels naast elkaar, niet met "en"**: `in voorjaar op zuid`. ALEF zet "en" tussen de labels achter het attribuut;
+   `EN` beëindigt hier een naam (de lijsten van §13.4.17), en een grammaticaregel `ZIJN kaleNaam (EN …)*` zou die
+   lijsten raken. Gemeten: `in voorjaar en op zuid` is een syntaxfout.
+3. **Volgorde vrij, dubbelzinnigheid is een fout**: een label hoort bij een dimensie door voorzetsel en lidmaatschap;
+   past een naam op twee cellen, dan RGS-371 in plaats van een keuze.
+4. **Een kaal interval** neemt de ene dimensie die geen over-vorm noemt en waar het in past; past het alleen in een
+   genoemde dimensie, dan RGS-373; in twee vrije, dan RGS-374.
+5. **Eén diagnose per ontbrekende dimensie** (RGS-370, RGS-372), met één parameter `dimension`, zodat geen
+   taalafhankelijke opsomming in een parameter staat.
+6. **Codenummers vanaf RGS-370** (gat 364–369): stap 3 werkt tegelijk in hetzelfde register; zo botsen de nummers niet
+   bij de samenvoeging. Het register laat gaten toe.
+7. **`ExpressionBuilder.cellReadings` is package-private static**: de doelroute van stap 3 (`RuleChecker.cellAsName`,
+   nog één dimensie) kan een cel als doel op dezelfde manier lezen. Niet door mij aangeroepen.
+
+#### Wat niet lukte of buiten stap 5 bleef
+
+- Geen poging die mislukte, behalve de eerste run van mutant g (bouwfout, zie boven).
+- Niet gelezen (grenzen in `DIVERGENCES.md`): ALEF's "en" tussen labels; een cel of vouw van een attribuut over een
+  rol; `de eerste van`/`de laatste van`/`het aantal` over cellen (B5). Niet in de frontend geweigerd, wel door de
+  verifier: een herhaald label in een verzameling (WF-040) en een kale lezing van een gedimensioneerd attribuut
+  buiten een vouw (WF-125).
+- Een cel als regeldoel is van stap 3 (`RuleChecker`, `DimensionTargetTest`); niet aangeraakt.
+- RUNTIME-SEMANTICS ch. 5.8c "Where the executors stand" noemt de nieuwe golden niet; de lijst daar is niet
+  uitputtend en stap 3 schrijft in dezelfde alinea. `CLAUDE.md` niet aangeraakt.
+- Te verwachten conflicten bij de samenvoeging met stap 3: deze kaart, `corpus/golden/README.md`,
+  `scripts/check-drools.sh` (`EXPECTED_PLAYED`: met `jutterswet-seizoenboeking` erbij 305 als die speelt),
+  `grammar/DIVERGENCES.md`, het register en de catalogi, mogelijk `MarkerReasonPinTest`.
+
+#### `make gates`
+
+Eén run op `fdb11c812` (dit Result is geen invoer van een gate), `logs/stap5-gates-1.log`,
+`out/gates/20261102-155718/summary.txt`:
+
+```
+start 2026-11-02 15:57:18 fdb11c812 card/dimensions-frontend
+ocaml rc=0 0s ocaml-build: fresh (stamp newer than 217 source files)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 3s drools-jar: rebuilt (3 source path(s) newer than the jar, e.g. frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/message; 3s)
+01-self-contained rc=0 1s
+02-ir-schema rc=0 137s
+04-case-schema rc=0 7s
+03-verifier rc=0 40s
+05-oracle rc=0 23s
+06-clingo rc=0 275s
+07-noop rc=0 12s
+08-red rc=0 167s
+09-catala rc=0 5s
+10-regelspraak rc=0 229s
+11-toka-parity rc=0 230s
+12-drools rc=0 326s
+13-reftype rc=0 275s
+14-flogic rc=0 1s
+15-graph rc=0 48s
+16-scenario rc=0 40s
+17-readings rc=0 248s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 16:02:47 329s red=0
+```
+
+Uit de gate-logs: gate 2 409 bestanden, 54659 objecten in 977 documenten; gate 3 409 golden schoon, 568 negatief;
+gate 8 70 rode gevallen, Drools-leg 50 met fout; gate 10 1379 tests, 162 rgs-goldens, 360 codes en 378 plaatsen;
+gate 11 29 PASS in ref en clingo; gate 12 304 gespeeld op beide takken, 48 niet-gespeelde goldens met naam, JUnit 1752;
+gate 16 38 scenario-goldens, 131 case-bestanden; gate 17 978 getraceerd, 304 goldens en 848 case-bestanden
+vergeleken, afwijkingen 0. Niet gemerged, niet gepusht.
