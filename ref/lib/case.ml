@@ -430,6 +430,55 @@ let resolve_role doc ~otype ~key =
   let _, far, _ = resolve_role_ft doc ~otype ~key in
   far
 
+(* The cells variant of an attribute input, or None for any other value form *)
+let cells_json j = match j with `Assoc [ ("cells", c) ] -> Some c | _ -> None
+
+(* The cells of a dimensioned attribute's input (RUNTIME-SEMANTICS ch. 5.8c):
+   each cell names one label of each dimension of the attribute, label i a
+   label of dimension i (EF-034), the case names no cell twice (EF-035), and
+   a cell's value has the attribute's datatype. The labels are positional,
+   as on the wire (IR-SPEC ch. 4.3), so a case spells one cell one way. *)
+let cells_of_json (doc : document) ~label ~attr ~(dims : string list) (decl : datatype option) ~at
+    (cj : Yojson.Safe.t) =
+  let declared dn =
+    match Ir_v0.Checks.find_ci doc.dimensions dn with
+    | Some (d : dimension) -> Ir_v0.Checks.some_names d.dim_values
+    | None -> []
+  in
+  let cells =
+    List.mapi
+      (fun i c ->
+        let cat = Printf.sprintf "%s.cells[%d]" at i in
+        let kvs = obj ~at:cat c in
+        let labels =
+          List.mapi (fun k l -> str ~at:(Printf.sprintf "%s.labels[%d]" cat k) l) (list_field ~at:cat kvs "labels")
+        in
+        let fits =
+          List.length labels = List.length dims
+          && List.for_all2 (fun l dn -> Ir_v0.Checks.mem_ci (declared dn) l) labels dims
+        in
+        if not fits then
+          failc
+            ~params:[ ("label", label); ("attribute", attr); ("labels", String.concat ", " labels) ]
+            "EF-034"
+            "%s: the labels [%s] name no cell of %S, whose dimensions are %s: a cell names one label \
+             of each dimension, in declared order"
+            cat (String.concat ", " labels) attr (String.concat ", " dims);
+        (labels, value_of_json ~at:(cat ^ ".value") decl (field ~at:cat kvs "value")))
+      (list_ ~at:(child at "cells") cj)
+  in
+  ignore
+    (List.fold_left
+       (fun seen (labels, _) ->
+         let key = List.map norm labels in
+         if List.mem key seen then
+           failc
+             ~params:[ ("label", label); ("attribute", attr); ("labels", String.concat ", " labels) ]
+             "EF-035" "%s: the cell [%s] of %S is supplied twice" at (String.concat ", " labels) attr;
+         key :: seen)
+       [] cells);
+  cells
+
 let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
   let kvs = obj ~at j in
   let label = str_field ~at kvs "label" in
@@ -450,6 +499,21 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
         match Ir_v0.Checks.find_ci ot.attributes name with
         | Some decl -> (
             let at = label ^ "." ^ name in
+            (* a dimensioned attribute has a value per cell and none of its own
+               (IR-SPEC ch. 2.7), so its input is the cells variant and nothing
+               else; a scalar there would load as a value the document cannot
+               read (measured: ref and clingo both returned it to an
+               attributeValue expectation) *)
+            match (Ir_v0.Checks.attr_dimensions ot name, cells_json vj) with
+            | Some dims, Some cj ->
+                ignore (cells_of_json doc ~label ~attr:name ~dims decl ~at cj);
+                fail "%s: a cells input is checked and then refused: neither executor that shares this \
+                      reader evaluates a cell" at
+            | Some _, None ->
+                fail "%s: a dimensioned attribute takes its input per cell (\"cells\"), never a scalar \
+                      or a timeline" at
+            | None, Some _ -> fail "%s: a cells input on an undimensioned attribute" at
+            | None, None ->
             match timeline_json vj with
             | Some t -> (
               match Ir_v0.Checks.find_ci ot.attribute_granularity name with
@@ -768,6 +832,13 @@ let check_link_cycles (doc : document) (world : World.t) =
             (String.concat " -> " (c @ [ List.hd c ])))
     walks
 
+(* An expectation on the whole of a dimensioned attribute asks for a value it
+   does not have: its values are its cells (IR-SPEC ch. 2.7). *)
+let not_dimensioned ~at ot attr =
+  if Ir_v0.Checks.attr_dimensions ot attr <> None then
+    fail "%s: %S is a dimensioned attribute, whose values are its cells: an expectation on it names a \
+          cell" at attr
+
 let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) : expectation =
   let kvs = obj ~at j in
   let get_instance () =
@@ -782,6 +853,7 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
       let i = get_instance () in
       let attr = str_field ~at kvs "attribute" in
       let ot = find_object_type doc i.otype in
+      not_dimensioned ~at ot attr;
       let decl =
         match Ir_v0.Checks.find_ci ot.attributes attr with
         | Some d -> d
@@ -799,11 +871,13 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
       let ot = find_object_type doc i.otype in
       if not (Ir_v0.Checks.has_attr ot attr) then
         fail "expected attribute %S is not declared on %S" attr i.otype;
+      not_dimensioned ~at ot attr;
       Attribute_empty { label = i.label; attr }
   | "attributeTimeline" ->
       let i = get_instance () in
       let attr = str_field ~at kvs "attribute" in
       let ot = find_object_type doc i.otype in
+      not_dimensioned ~at ot attr;
       let decl =
         match Ir_v0.Checks.find_ci ot.attributes attr with
         | Some d -> d

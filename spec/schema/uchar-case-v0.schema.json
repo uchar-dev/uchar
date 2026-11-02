@@ -61,9 +61,9 @@
         },
         "objectType": { "type": "string", "minLength": 1 },
         "attributes": {
-          "description": "Attribute name (as declared) to value, in the attribute's declared unit. Absence means empty (leeg); an input never carries an explicit empty. A temporal attribute carries either the asOfDate-bucket scalar or its full timeline (the timeline variant) — never both meanings at once.",
+          "description": "Attribute name (as declared) to value, in the attribute's declared unit. Absence means empty (leeg); an input never carries an explicit empty. A temporal attribute carries either the asOfDate-bucket scalar or its full timeline (the timeline variant) — never both meanings at once. A dimensioned attribute carries its cells (the cells variant) and nothing else; which attributes are dimensioned is the IR's, so the case readers hold that rule (RUNTIME-SEMANTICS ch. 5.8c).",
           "type": "object",
-          "additionalProperties": { "oneOf": [ { "$ref": "#/$defs/value" }, { "$ref": "#/$defs/timelineValue" } ] }
+          "additionalProperties": { "oneOf": [ { "$ref": "#/$defs/value" }, { "$ref": "#/$defs/timelineValue" }, { "$ref": "#/$defs/cellsValue" } ] }
         },
         "roles": {
           "description": "Role name (as declared) to the labels of the linked instances; a to-one role carries exactly one label.",
@@ -177,6 +177,23 @@
         }
       }
     },
+    "cellsValue": {
+      "description": "The cells of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c): per cell its labels, one label of each dimension of the attribute in the declared order of the attribute's dimensions (positional, as a DimensionCellRead's labels, IR-SPEC ch. 4.3), and its value. A cell the list does not name is empty. That the labels name a cell and that no cell occurs twice are the case readers' checks (EF-034, EF-035): the schema does not see the IR.",
+      "type": "object", "additionalProperties": false, "required": ["cells"],
+      "properties": {
+        "cells": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["labels", "value"],
+            "properties": {
+              "labels": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+              "value": { "$ref": "#/$defs/value" }
+            }
+          }
+        }
+      }
+    },
     "expectation": {
       "oneOf": [
         {
@@ -260,6 +277,29 @@
             }
           },
           "dependentRequired": { "label": ["rule"] }
+        },
+        {
+          "description": "The value of one cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c); the labels as in cellsValue.",
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "label", "attribute", "labels", "value"],
+          "properties": {
+            "kind": { "const": "cellValue" },
+            "label": { "type": "string", "minLength": 1 },
+            "attribute": { "type": "string", "minLength": 1 },
+            "labels": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "value": { "$ref": "#/$defs/value" }
+          }
+        },
+        {
+          "description": "One cell of a dimensioned attribute is empty (RUNTIME-SEMANTICS ch. 5.8c).",
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "label", "attribute", "labels"],
+          "properties": {
+            "kind": { "const": "cellEmpty" },
+            "label": { "type": "string", "minLength": 1 },
+            "attribute": { "type": "string", "minLength": 1 },
+            "labels": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+          }
         }
       ]
     }

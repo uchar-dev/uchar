@@ -1,0 +1,47 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "j1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar",
+                  "zuid"
+                ],
+                "value": {
+                  "number": "12.50"
+                }
+              },
+              {
+                "labels": [
+                  "voorjaar",
+                  "zuid"
+                ],
+                "value": {
+                  "number": "4.00"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-035",
+    "params": {
+      "label": "j1",
+      "attribute": "vondstgewicht",
+      "labels": "voorjaar, zuid"
+    }
+  }
+}

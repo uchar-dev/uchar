@@ -67,27 +67,25 @@ cell read.
 
 ## Why no replay case — measured, per executor
 
-A cell read is not executable by the v0 corpus toolchain, and the case
-format has no way to supply one cell of a dimensioned attribute (the
-`uchar-case-v0` value variants are number / date / dateTime / boolean /
-text / enumeration / constructor / list / struct — there is no per-label
-map). Each executor was run on this exact shape with a case supplying a
-scalar `vondstgewicht`, and each declined, in its own words (re-measured at
-L2, 2026-09-24, for the verifier, `ref` and `clingo`; the Drools row is from
-before L2):
+`uchar-case-v0` carries the cells of a dimensioned attribute (the `cells`
+input, the `cellValue` and `cellEmpty` expectations, RUNTIME-SEMANTICS
+ch. 5.8c), and no executor evaluates a cell read. Each executor was run on
+this document with three scratch cases (2026-11-02): one without input that
+asserts only consistency, one that supplies the cells `voorjaar` 12.50 and
+`najaar` 4.00, and one that supplies `vondstgewicht` as a scalar.
 
-| executor | verdict |
-|---|---|
-| verifier (gate 3) | `verifier: PASS` — the well-formedness arm is the point of this document |
-| `ref` (gate 5) | `EVALUATION FAULT: expression kind not implemented in this card` |
-| `clingo` (gate 6) | `TRANSLATION FAULT: expression kind not translated (no corpus case exercises it)` |
-| Drools (gate 12) | `EXCLUDE dimensioned attribute input 'vondstgewicht' (§3.6, a Map bean member) is not carried by the v0 backend` |
+| executor | without input | with cells | with a scalar |
+|---|---|---|---|
+| verifier (gate 3) | `verifier: PASS` — the well-formedness arm is the point of this document | | |
+| `ref` (gate 5) | `EVALUATION FAULT: REF-002: expression kind not implemented in this card` | `CASE ERROR: j1.vondstgewicht: a cells input is checked and then refused: neither executor that shares this reader evaluates a cell` | `CASE ERROR: j1.vondstgewicht: a dimensioned attribute takes its input per cell ("cells"), never a scalar or a timeline` |
+| `clingo` (gate 6) | `TRANSLATION FAULT: CLINGO-008: expression kind not translated (no corpus case exercises it)` | the case error of `ref` (one case reader) | the case error of `ref` |
+| Drools (gate 12) | `PLAYED 1` | `EXCLUDE DROOLS-047: dimensioned attribute input 'vondstgewicht' (§3.6, a Map bean member) is not carried by the v0 backend` | the same `EXCLUDE DROOLS-047` |
 
 So a case here could pin nothing and would turn gates 5 and 6 red: it is
 exactly the manufactured "make the report go away" case the witness
-cabinet must not carry. When the cell read becomes executable — a case
-format that carries cells, plus the `ref`/ASP arms — this witness moves
-into an executing document and this NOTE goes with it.
+cabinet must not carry. When the cell read becomes executable in `ref` and
+the ASP backend, this witness moves into an executing document and this
+NOTE goes with it.
 
 Gate 10 still applies in full: `source.rgs` re-emits byte-identically to
 the checked-in `ir.json`, so the source-level shape is pinned too.

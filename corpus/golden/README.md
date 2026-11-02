@@ -94,7 +94,8 @@ an executing document and the cabinet shrinks — it is scaffolding for
 the WF index, never a place for semantics.
 
 The cabinet holds **four** rows: the dimensioned attribute with its cell
-read (WF-004/014/040), the variable-start timeline with its start point
+reads (WF-004/014/040; one of them over two dimensions that share a label,
+the positional reading of WF-040), the variable-start timeline with its start point
 (WF-016/032), the time window (WF-042), and the two day kinds with their
 plurals — WF-017's positive side, which reads the declaration table and
 needs no executor at all. The time window executes (`RUNTIME-SEMANTICS.md`
@@ -115,22 +116,31 @@ definition (WF-031) in `jutterswet-schouwkalender`. The cabinet's own
 only other carrier, `jutterswet-seizoenvondst`, is itself case-less, so
 that row has no *executing* successor.
 
-Gate 5 currently lists **three** goldens as not replayed: the cabinet,
-`jutterswet-seizoenvondst` and `jutterswet-seizoenvouw`.
+Gate 5 currently lists **four** goldens as not replayed: the cabinet,
+`jutterswet-seizoenvondst`, `jutterswet-seizoenvouw` and
+`jutterswet-seizoenkopie`.
 
 `jutterswet-seizoenvondst` is a UNIT-bearing dimensioned attribute read
 through a dimension cell (`DimensionCellRead`). It carries no case for the same measured reason the cabinet does —
-`ref`, clingo and the Drools backend each decline a cell read in their own
-words, and `uchar-case-v0` has no per-cell input variant. Its `NOTE.md`
-carries the three refusals verbatim.
+`ref` and clingo decline a cell read, and the case reader they share checks
+a cell input (`cells`) and then refuses it, and the Drools backend refuses
+the input. Its `NOTE.md` carries the refusals verbatim.
 
 `jutterswet-seizoenvouw` is the dimension fold on the same kind of
-attribute: a sum, a maximum and a minimum whose `dimensionSelection` picks
-the labels they fold, emitted by the RegelSpraak frontend (card
-frontend-emitterrestanten). It carries no case for the same reason, measured
-per executor in its `NOTE.md`: `ref` faults on the selection, clingo has no
-arm for the fold, and the Drools backend, which does carry the fold, refuses
-any case that supplies the dimensioned attribute.
+attribute: a sum, a maximum and a minimum whose `dimensionSelections` pick
+the labels they fold, emitted by the RegelSpraak frontend. It carries no
+case for the same reason, measured per executor in its `NOTE.md`: `ref`
+faults on the selection, clingo has no arm for the fold, and the Drools
+backend, which does carry the fold, refuses any case that supplies the
+dimensioned attribute.
+
+`jutterswet-seizoenkopie` is the cell as a write position: two rules that
+each write one cell of `vondstgewicht` from another cell of it, and an
+object creation whose member writes one cell of the created object
+(`IR-SPEC.md` ch. 3.1, 3.3), hand-written. It witnesses the dependency graph
+per cell (ch. 5.1) and WF-079 per cell. `ref` and clingo refuse the cell
+target, the Drools loader refuses the document (DROOLS-298); its `NOTE.md`
+carries the refusals.
 
 `jutterswet-tempototaal` is the route-split witness of `het totaal van`:
 the set reading and the temporal reading of one operator over one unit

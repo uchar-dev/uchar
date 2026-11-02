@@ -237,6 +237,54 @@ for doc, want_ok, why in EXPECTED_FAULT_ROWS:
         selftest_bad += 1
         sys.stderr.write("FAIL: expectedFault self-test, %r: schema %s it, expected %s\n  %s\n"
                          % (doc, "accepts" if got_ok else "refuses", "accept" if want_ok else "refuse", why))
+# The shape of a cell (card dimensions-executed, 2026-11-02): the cells input of a dimensioned attribute and the two
+# expectations on one cell. No golden case carries a cell yet, so the shape is held HERE, through the same validator;
+# that the labels name a cell of the attribute, positionally, is the case readers' (EF-034), which see the IR.
+CELL_ROWS = [
+    ("#/$defs/instance/properties/attributes/additionalProperties",
+     {"cells": [{"labels": ["voorjaar"], "value": {"number": "3.00"}}]}, True, "a cell: its labels and its value"),
+    ("#/$defs/instance/properties/attributes/additionalProperties",
+     {"cells": [{"labels": ["voorjaar", "zuid"], "value": {"number": "5"}},
+                {"labels": ["najaar", "zuid"], "value": {"number": "2"}}]}, True,
+     "two cells of an attribute with two dimensions"),
+    ("#/$defs/instance/properties/attributes/additionalProperties",
+     {"cells": []}, False, "no cell: absence is the one spelling of an attribute whose cells are all empty"),
+    ("#/$defs/instance/properties/attributes/additionalProperties",
+     {"cells": [{"labels": [], "value": {"number": "1"}}]}, False, "a cell names at least one label"),
+    ("#/$defs/instance/properties/attributes/additionalProperties",
+     {"cells": [{"labels": ["voorjaar"]}]}, False, "a cell of the input carries its value"),
+    ("#/$defs/instance/properties/attributes/additionalProperties",
+     {"cells": [{"labels": ["voorjaar"], "value": None}]}, False, "no explicit empty in the input"),
+    ("#/$defs/instance/properties/attributes/additionalProperties",
+     {"cells": [{"labels": {"seizoen": "voorjaar"}, "value": {"number": "1"}}]}, False,
+     "the labels are positional, never an object keyed by dimension"),
+    ("#/$defs/instance/properties/attributes/additionalProperties",
+     {"cells": [{"labels": ["voorjaar"], "value": {"number": "1"}}], "number": "1"}, False,
+     "the cells variant beside a scalar is no value"),
+    ("#/$defs/expectation",
+     {"kind": "cellValue", "label": "j1", "attribute": "vondstgewicht", "labels": ["najaar"],
+      "value": {"number": "4.50"}}, True, "the value of one cell"),
+    ("#/$defs/expectation",
+     {"kind": "cellEmpty", "label": "j1", "attribute": "vondstgewicht", "labels": ["zomer"]}, True,
+     "one cell empty"),
+    ("#/$defs/expectation",
+     {"kind": "cellValue", "label": "j1", "attribute": "vondstgewicht", "value": {"number": "4.50"}}, False,
+     "a cell expectation names its cell"),
+    ("#/$defs/expectation",
+     {"kind": "cellEmpty", "label": "j1", "attribute": "vondstgewicht", "labels": ["zomer"],
+      "value": {"number": "1"}}, False, "an empty cell carries no value"),
+    ("#/$defs/expectation",
+     {"kind": "attributeValue", "label": "j1", "attribute": "vondstgewicht", "labels": ["najaar"],
+      "value": {"number": "4.50"}}, False, "labels belong to the cell kinds, never to attributeValue"),
+]
+for ref_, doc, want_ok, why in CELL_ROWS:
+    n_selftest += 1
+    probe = CaseValidator({"properties": schema["properties"], "$defs": schema["$defs"], "$ref": ref_})
+    got_ok = not list(probe.iter_errors(doc))
+    if got_ok != want_ok:
+        selftest_bad += 1
+        sys.stderr.write("FAIL: cell self-test, %r: schema %s it, expected %s\n  %s\n"
+                         % (doc, "accepts" if got_ok else "refuses", "accept" if want_ok else "refuse", why))
 if selftest_bad:
     sys.stderr.write("check-case-schema: FAIL (%d self-test row(s) bad)\n" % selftest_bad)
     sys.exit(1)

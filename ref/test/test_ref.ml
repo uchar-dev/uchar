@@ -10903,6 +10903,116 @@ let () =
     (case_of ~attrs:[] ~chars:[]
        (expected [ value "toeslag" 5; on_channel "standaardtoeslag" "EF-031" ]))
 
+(* The case reader at a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c):
+   the attribute has a value per cell and none of its own, so a scalar or a
+   timeline input on it, and an attributeValue, attributeEmpty or
+   attributeTimeline expectation on it, are refused at load; a cells input
+   on an undimensioned attribute too. A cells input on a dimensioned
+   attribute is checked cell by cell — labels positional (EF-034), no cell
+   twice (EF-035) — and then refused, since neither executor that shares the
+   reader evaluates a cell. Measured before the reader carried the boundary:
+   a scalar 3.00 on the dimensioned vondstgewicht and an attributeValue 3.00
+   on it gave `oracle: PASS (1 expectations)` and `clingo: PASS (1
+   expectations)`. The whole sentence is pinned, and the code and the
+   parameters where the kind has one. *)
+let () =
+  let kg : Ir_v0.Ast.datatype =
+    Number { whole_part = false; decimal_places = 2; sign_char = None; measure_unit = None }
+  in
+  let jutter =
+    let ident, o = ot "Jutter" [ ("vondstgewicht", Some kg); ("voorjaarsgewicht", Some kg) ] [] in
+    (ident, { o with attribute_dimensions = [ ("vondstgewicht", [ Some "seizoen"; Some "strand" ]) ] })
+  in
+  let dimension name labels : string * Ir_v0.Ast.dimension =
+    ( name,
+      { dim_name = Some name; dim_name_plural = None; preposition = None;
+        dim_values = List.map (fun l -> Some l) labels } )
+  in
+  let doc =
+    { empty_doc with
+      object_types = [ jutter ];
+      dimensions = [ dimension "seizoen" [ "voorjaar"; "najaar" ]; dimension "strand" [ "noord"; "zuid" ] ] }
+  in
+  let load ~attributes ~expected =
+    let f = Filename.temp_file "ref-cells" ".json" in
+    let oc = open_out f in
+    Printf.fprintf oc
+      {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "j1", "objectType": "Jutter", "attributes": { %s },
+    "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ %s ] }|}
+      attributes expected;
+    close_out oc;
+    let r =
+      try Ok (Case.load_file doc f) with Case.Error { code; params; text } -> Error (code, params, text)
+    in
+    Sys.remove f;
+    r
+  in
+  let consistent = {|{ "kind": "consistent" }|} in
+  let refused ident ~attributes ~expected ~code ~params ~text =
+    match load ~attributes ~expected with
+    | Error (c, p, t) ->
+        check (ident ^ " (got: " ^ t ^ ")") (c = code && p = params && t = text)
+    | Ok _ -> check (ident ^ " (loaded)") false
+  in
+  let cells body = Printf.sprintf {|"vondstgewicht": { "cells": [ %s ] }|} body in
+  let cell labels v =
+    Printf.sprintf {|{ "labels": [ %s ], "value": { "number": "%s" } }|}
+      (String.concat ", " (List.map (Printf.sprintf "%S") labels)) v
+  in
+  refused "WV-5.8c-caselezer-weigert-scalar-op-gedimensioneerd"
+    ~attributes:{|"vondstgewicht": { "number": "3.00" }|} ~expected:consistent ~code:None ~params:[]
+    ~text:
+      "j1.vondstgewicht: a dimensioned attribute takes its input per cell (\"cells\"), never a scalar or a \
+       timeline";
+  refused "WV-5.8c-caselezer-weigert-tijdlijn-op-gedimensioneerd"
+    ~attributes:
+      {|"vondstgewicht": { "timeline": [ { "from": "2026-01-01", "to": "2027-01-01", "value": { "number": "3.00" } } ] }|}
+    ~expected:consistent ~code:None ~params:[]
+    ~text:
+      "j1.vondstgewicht: a dimensioned attribute takes its input per cell (\"cells\"), never a scalar or a \
+       timeline";
+  refused "WV-5.8c-caselezer-weigert-attributeValue-op-gedimensioneerd" ~attributes:""
+    ~expected:{|{ "kind": "attributeValue", "label": "j1", "attribute": "vondstgewicht", "value": { "number": "3.00" } }|}
+    ~code:None ~params:[]
+    ~text:
+      "expected[0]: \"vondstgewicht\" is a dimensioned attribute, whose values are its cells: an expectation \
+       on it names a cell";
+  refused "WV-5.8c-caselezer-weigert-attributeEmpty-op-gedimensioneerd" ~attributes:""
+    ~expected:{|{ "kind": "attributeEmpty", "label": "j1", "attribute": "vondstgewicht" }|}
+    ~code:None ~params:[]
+    ~text:
+      "expected[0]: \"vondstgewicht\" is a dimensioned attribute, whose values are its cells: an expectation \
+       on it names a cell";
+  refused "WV-5.8c-caselezer-weigert-cellen-op-scalair"
+    ~attributes:{|"voorjaarsgewicht": { "cells": [ { "labels": [ "voorjaar" ], "value": { "number": "1.00" } } ] }|}
+    ~expected:consistent ~code:None ~params:[]
+    ~text:"j1.voorjaarsgewicht: a cells input on an undimensioned attribute";
+  refused "WV-5.8c-caselezer-weigert-omgekeerde-labels"
+    ~attributes:(cells (cell [ "zuid"; "voorjaar" ] "1.00")) ~expected:consistent ~code:(Some "EF-034")
+    ~params:[ ("label", "j1"); ("attribute", "vondstgewicht"); ("labels", "zuid, voorjaar") ]
+    ~text:
+      "j1.vondstgewicht.cells[0]: the labels [zuid, voorjaar] name no cell of \"vondstgewicht\", whose \
+       dimensions are seizoen, strand: a cell names one label of each dimension, in declared order";
+  refused "WV-5.8c-caselezer-weigert-te-weinig-labels"
+    ~attributes:(cells (cell [ "voorjaar" ] "1.00")) ~expected:consistent ~code:(Some "EF-034")
+    ~params:[ ("label", "j1"); ("attribute", "vondstgewicht"); ("labels", "voorjaar") ]
+    ~text:
+      "j1.vondstgewicht.cells[0]: the labels [voorjaar] name no cell of \"vondstgewicht\", whose dimensions \
+       are seizoen, strand: a cell names one label of each dimension, in declared order";
+  refused "WV-5.8c-caselezer-weigert-dubbele-cel"
+    ~attributes:(cells (cell [ "voorjaar"; "zuid" ] "1.00" ^ ", " ^ cell [ "Voorjaar"; "zuid" ] "2.00"))
+    ~expected:consistent ~code:(Some "EF-035")
+    ~params:[ ("label", "j1"); ("attribute", "vondstgewicht"); ("labels", "Voorjaar, zuid") ]
+    ~text:"j1.vondstgewicht: the cell [Voorjaar, zuid] of \"vondstgewicht\" is supplied twice";
+  refused "WV-5.8c-caselezer-weigert-geldige-cellen"
+    ~attributes:(cells (cell [ "voorjaar"; "zuid" ] "1.00" ^ ", " ^ cell [ "najaar"; "zuid" ] "2.00"))
+    ~expected:consistent ~code:None ~params:[]
+    ~text:
+      "j1.vondstgewicht: a cells input is checked and then refused: neither executor that shares this \
+       reader evaluates a cell"
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
