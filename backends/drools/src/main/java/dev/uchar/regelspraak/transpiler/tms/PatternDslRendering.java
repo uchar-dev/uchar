@@ -425,13 +425,17 @@ final class PatternDslRendering {
         for (Consequence.Construction.Setting z : construction.settings())
             setters.add(Accessors.eigenschapSetter(z.field().javaClass(), z.field().property()));
         Consequence.CreationDepth d = g.depth();
+        // an initialisation that stands as an exact Value keeps its exact value; one set on the bean gets its decimal
+        Set<Integer> exact = new HashSet<>();
+        for (Consequence.Insert i : g.insertions()) if (i instanceof Consequence.Insert.Exact e) exact.add(e.initialisation());
         return consequenceItem(g.subject(), g.slots(), g.size(), (drools, subject, w) -> {
             int depth = ComputeHelpers.creationDepth(g.creation(), d.stratum(), d.type(), (List<?>) w[d.origin()],
                     d.budget());
             Object[] v = new Object[values.size()];
             for (int i = 0; i < v.length; i++) {
                 try {
-                    v[i] = ComputeHelpers.collapse(values.get(i).of(w));
+                    Object x = values.get(i).of(w);
+                    v[i] = exact.contains(i) ? x : ComputeHelpers.collapse(x);
                 } catch (RuntimeException e) {
                     if (!ComputeHelpers.isEvaluationFault(e)) throw e;
                     insert(drools, g.faultInsertion(),
@@ -460,6 +464,11 @@ final class PatternDslRendering {
                         if (Boolean.TRUE.equals(v[k.initialisation()]))
                             insert(drools, k.insertion(),
                                     new HasCharacteristic(fresh, g.initialisations().get(k.initialisation()).member()));
+                    }
+                    case Consequence.Insert.Exact e -> {
+                        if (v[e.initialisation()] != null)
+                            insert(drools, e.insertion(), new Value(fresh,
+                                    g.initialisations().get(e.initialisation()).member(), v[e.initialisation()], e.writer()));
                     }
                 }
         });

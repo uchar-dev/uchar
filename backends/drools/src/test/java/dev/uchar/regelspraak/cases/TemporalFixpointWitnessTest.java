@@ -61,6 +61,8 @@ class TemporalFixpointWitnessTest {
         // borgdeel (MAAND) and jaardeel (JAAR) both prorate an own JAAR base over the same kenmerk-tijdlijn on
         // one Jutter, and NEITHER rides a startpunt-anker: this is exactly the pair the anchored-only guard let
         // ping-pong. A non-terminating fire yields "geen fixpunt"; the consistent expectation is the mere carrier.
+        // A jaartarief of 366 gives the jaardeel 366 × 60/366 = 60, which fits its 2 decimals (RUNTIME-SEMANTICS
+        // ch. 2.4, 3.7: the write boundary holds per segment).
         String c = """
                 { "format": "uchar-case-v0", "asOfDate": null,
                   "input": { "instances": [
@@ -69,7 +71,7 @@ class TemporalFixpointWitnessTest {
                             "borgtarief": { "timeline": [
                                 { "from": "2024-01-01", "to": "2025-01-01", "value": { "number": "12" } } ] },
                             "jaartarief": { "timeline": [
-                                { "from": "2024-01-01", "to": "2025-01-01", "value": { "number": "36" } } ] } },
+                                { "from": "2024-01-01", "to": "2025-01-01", "value": { "number": "366" } } ] } },
                         "roles": {}, "characteristics": [],
                         "characteristicTimelines": { "borgplichtig": [
                             { "from": "2024-01-01", "to": "2024-03-01" } ] } } ],

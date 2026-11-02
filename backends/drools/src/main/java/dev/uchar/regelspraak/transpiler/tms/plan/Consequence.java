@@ -5,7 +5,9 @@ import dev.uchar.regelspraak.ir.ResolvedAllocation;
 import dev.uchar.regelspraak.transpiler.tms.Outcome.Kind;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * What a rule does when it fires, as the analysis plans it, in a closed vocabulary: which fact it inserts about which
@@ -425,6 +427,12 @@ public sealed interface Consequence {
                                     + initialisations.get(k.initialisation()).member());
                         time[k.initialisation()]++;
                     }
+                    case Insert.Exact e -> {
+                        if (initialisations.get(e.initialisation()).member().characteristic())
+                            throw new IllegalArgumentException("een kenmerkinitialisatie heeft geen exacte waarde: "
+                                    + initialisations.get(e.initialisation()).member());
+                        time[e.initialisation()]++;
+                    }
                 }
             if (insertions.stream().filter(i -> i instanceof Insert.New).count() != 1 || marks != 1
                     || left != 1)
@@ -436,17 +444,21 @@ public sealed interface Consequence {
                             + time[i] + " keer in de constructie of de invoegingen, niet één keer");
             // the order of the consequence before step 1c-C1, which a rendering carries out as the plan lists it: a
             // rendering into DRL text has no other source for the order of the facts the agenda then sees
-            List<Integer> attributes = new ArrayList<>(), characteristics = new ArrayList<>();
+            Set<Integer> exact = new HashSet<>();
+            for (Insert i : insertions) if (i instanceof Insert.Exact e) exact.add(e.initialisation());
+            List<Integer> attributes = new ArrayList<>();
+            List<String> order = new ArrayList<>(List.of("New", "Mark", "Link"));
             for (int i = 0; i < initialisations.size(); i++)
-                (initialisations.get(i).member().characteristic() ? characteristics : attributes).add(i);
+                if (initialisations.get(i).member().characteristic()) order.add("Kenmerk " + i);
+                else if (exact.contains(i)) order.add("Exact " + i);
+                else attributes.add(i);
             List<Integer> setInitialisations = construction.settings().stream().map(Construction.Setting::initialisation).toList();
             if (!setInitialisations.equals(attributes))
                 throw new IllegalArgumentException("een creatie zet haar attribuutinitialisaties in hun volgorde "
                         + attributes + ", niet " + setInitialisations);
-            List<String> order = new ArrayList<>(List.of("New", "Mark", "Link"));
-            for (int k : characteristics) order.add("Kenmerk " + k);
             List<String> given = insertions.stream().map(i -> i instanceof Insert.Characteristic k
-                    ? "Kenmerk " + k.initialisation() : i.getClass().getSimpleName()).toList();
+                    ? "Kenmerk " + k.initialisation() : i instanceof Insert.Exact e ? "Exact " + e.initialisation()
+                    : i.getClass().getSimpleName()).toList();
             if (!given.equals(order))
                 throw new IllegalArgumentException("een creatie voegt het nieuwe object, zijn merk, zijn koppeling en"
                         + " dan haar kenmerkinitialisaties in hun volgorde in, " + order + ", niet " + given);
@@ -500,6 +512,11 @@ public sealed interface Consequence {
         /** The {@code HasCharacteristic} of the characteristic of the initialisation at index {@code initialisatie} on the
          *  new object, where its value is true. */
         record Characteristic(int initialisation, Insertion insertion) implements Insert {}
+
+        /** The exact value of the initialisation at index {@code initialisation}, an attribute of the unbounded form, as
+         *  the {@code Value} of the new object written by {@code writer}, the creation, where it is not leeg: working
+         *  memory holds the exact value, and the write-back puts its decimal on the bean. */
+        record Exact(int initialisation, String writer, Insertion insertion) implements Insert {}
     }
 
     /** The link of the relation {@code relation} whose first end is the object the variable {@code first} binds and

@@ -1616,11 +1616,17 @@ final class DrlRendering {
                     .append(", ").append(d.stratum()).append(", ").append(str(d.type())).append(", (java.util.List) ")
                     .append(slot(d.origin(), c)).append(", ").append(d.budget()).append(");\n");
             if (!values.isEmpty()) {
+                // an initialisation that stands as an exact Value keeps its exact value; one set on the bean its decimal
+                Set<Integer> exact = new HashSet<>();
+                for (Consequence.Insert i : x.insertions())
+                    if (i instanceof Consequence.Insert.Exact e) exact.add(e.initialisation());
                 StringBuilder tryBody = new StringBuilder();
                 for (int i = 0; i < values.size(); i++) {
                     f.append("    Object i").append(i).append(" = null;\n");
+                    String v = value(values.get(i), c).text();
                     tryBody.append("        i").append(i).append(" = ")
-                            .append(call(StaticFunction.COLLAPSE, List.of(value(values.get(i), c))).text()).append(";\n");
+                            .append(exact.contains(i) ? v : call(StaticFunction.COLLAPSE, List.of(value(values.get(i), c))).text())
+                            .append(";\n");
                 }
                 f.append(tryCatch(tryBody.toString(), "        return " + route(Route.CAUGHT) + "(e);\n"));
             }
@@ -1645,6 +1651,9 @@ final class DrlRendering {
                     case Consequence.Insert.Characteristic k -> "Boolean.TRUE.equals(i" + k.initialisation() + ") ? new "
                             + typeName(HasCharacteristic.class) + "(nieuw, "
                             + key(x.initialisations().get(k.initialisation()).member()) + ") : null";
+                    case Consequence.Insert.Exact e -> "i" + e.initialisation() + " == null ? null : new "
+                            + typeName(Value.class) + "(nieuw, " + key(x.initialisations().get(e.initialisation()).member())
+                            + ", i" + e.initialisation() + ", " + str(e.writer()) + ")";
                 }).append(");\n");
             f.append("    return feiten;\n");
             fill(place, sources.isEmpty() ? null : String.join("; ", sources),
@@ -1656,7 +1665,7 @@ final class DrlRendering {
             b.append("    } else {\n        java.util.List feiten = (java.util.List) v;\n");
             for (int i = 0; i < x.insertions().size(); i++) {
                 Consequence.Insert s = x.insertions().get(i);
-                if (s instanceof Consequence.Insert.Characteristic) {
+                if (s instanceof Consequence.Insert.Characteristic || s instanceof Consequence.Insert.Exact) {
                     b.append("        if (feiten.get(").append(i).append(") != null) {\n");
                     insert(b, "            ", s.insertion(), "feiten.get(" + i + ")");
                     b.append("        }\n");

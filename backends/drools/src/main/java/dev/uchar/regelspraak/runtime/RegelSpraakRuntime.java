@@ -158,7 +158,8 @@ public final class RegelSpraakRuntime {
     /** Coerce a Drools accumulate result (a Long count, a BigDecimal sum, a min/max BigDecimal) to BigDecimal for
      *  assignment into a Numeriek attribute — mirrors the mvel widening the DRL consequence does. null stays null.
      *  A {@link Breuk} (an exact rational produced by the Precisie-clause ops) COLLAPSES via {@link Breuk#naarDecimal()}
-     *  (exact when terminating, DECIMAL64 defensively otherwise); it must be handled BEFORE the generic Number arm,
+     *  (exact when terminating, sixteen significant digits otherwise, the decimal of a bean); it must be handled BEFORE
+     *  the generic Number arm,
      *  because {@code new BigDecimal("1/3")} (Breuk.toString) would throw. */
     public static BigDecimal toBd(Object o) {
         if (o == null) return null;

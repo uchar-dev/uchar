@@ -255,6 +255,8 @@ public final class TmsTranspiler {
     private final EffectiveUnit eff;
     /** Every member a form of the document writes, lowered or not. A member that no form writes is input. */
     private Map<ElementKey, Set<String>> writers = Map.of();
+    /** The members of the unbounded form whose one writer is an object creation ({@link #createdExactValues}). */
+    private Set<ElementKey> createdExactValues = Set.of();
     /** Per attribute, and per cell of a dimensioned attribute, the assignments and computations of the document that
      *  write it. */
     private final Map<ElementKey, List<ResolvedRule>> computeRules = new LinkedHashMap<>();
@@ -1524,6 +1526,39 @@ public final class TmsTranspiler {
         return member;
     }
 
+    /**
+     * The attributes of the unbounded form whose one writer is an object creation, among {@code producers}, the writers
+     * of each member: the creation puts the exact value of such a member in working memory as a {@link Value} of the new
+     * object ({@link Consequence.Insert.Exact}), which every reader reads through the member's standing, since the bean
+     * holds a decimal (RUNTIME-SEMANTICS ch. 2.1, 2.4 point 3). A member that another form writes as well stays the
+     * input of the new object. A creation or a member that does not resolve adds nothing here; its creation is refused
+     * by name where it is lowered.
+     */
+    private Set<ElementKey> createdExactValues(Map<ElementKey, Set<String>> producers) {
+        Set<ElementKey> out = new HashSet<>();
+        for (ResolvedObjectCreation oc : model.objectCreations) {
+            if (oc.name() == null || oc.createdType() == null) continue;
+            for (ResolvedObjectCreation.MemberInit t : oc.initialisations()) {
+                if (t.characteristic() || t.attribute() == null || !unboundedAttribute(oc.createdType(), t.attribute()))
+                    continue;
+                ElementKey key = t.labels() == null ? ProducerConsumer.elementOf(oc.createdType(), t.attribute(), false)
+                        : ProducerConsumer.cellOf(oc.createdType(), t.attribute(), t.labels());
+                if (Set.of(ProducerConsumer.baseName(oc.name())).equals(producers.get(key))) out.add(key);
+            }
+        }
+        return out;
+    }
+
+    /** Whether the attribute {@code name} that {@code holder}'s chain declares is a number of the unbounded form that
+     *  holds one value, not a timeline. */
+    private static boolean unboundedAttribute(ObjectType holder, String name) {
+        for (ObjectType t : holder.chain())
+            for (Map.Entry<String, Datatype> e : t.attributes.entrySet())
+                if (Namen.norm(e.getKey()).equals(Namen.norm(name)))
+                    return e.getValue() != null && e.getValue().unbounded() && !t.attributeGranularity.containsKey(e.getKey());
+        return false;
+    }
+
     /** The fault of RUNTIME-SEMANTICS ch. 5.7 for the {@code waarden} that writers put on attribute {@code key} of
      *  {@code subjectType}: the writers as {@link WritersConflict#inDocumentOrder} ranks them over the document's
      *  rules {@link #documentOrder}, the attribute as declared, and the object's own type. */
@@ -1541,6 +1576,7 @@ public final class TmsTranspiler {
 
     private Modelplan run() {
         writers = ProducerConsumer.producerIndex(model, defaults);
+        createdExactValues = createdExactValues(writers);
         standingTargets = StandingTargets.of(model, defaults);
         for (ResolvedRule r : model.resolvedRules)
             if (r.name() != null && !documentOrder.contains(r.name())) documentOrder.add(r.name());
@@ -2989,6 +3025,9 @@ public final class TmsTranspiler {
             Member member = inits.get(i).member();
             initialisations.add(new Consequence.Initialisation(member.key(), inits.get(i).value()));
             if (member.characteristic()) insertions.add(new Consequence.Insert.Characteristic(i, Consequence.Insertion.STATED));
+            // a member of the unbounded form that no form writes stands as the creation's exact Value, not on the bean
+            else if (createdExactValues.contains(member.key()))
+                insertions.add(new Consequence.Insert.Exact(i, oc.name(), Consequence.Insertion.STATED));
             else settings.add(new Consequence.Construction.Setting(i, new Binding.Field(member.javaClass(), member.name()),
                     member.cell()));
         }

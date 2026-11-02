@@ -7,25 +7,21 @@ import java.math.MathContext;
 
 /**
  * An EXACT rational number — {@code teller/noemer} over {@link BigInteger}, kept normalized (positive
- * denominator, gcd-reduced). It is the computation-time carrier for the typeringen <b>Precisie</b> clauses
- * (§389 gedeeld door, §486 percentage van, §845 tijdsevenredig deel), which state that a division / percentage
- * result is "altijd een geheel getal of een breuk … dit zal dan altijd het exacte getal zijn": the engine
- * computes in {@link BigDecimal} (DECIMAL64) which loses a non-terminating quotient (1/3 → 0.3333…16 digits),
- * so a chain like {@code 9 maal 1/3} diverges to 2.9999999999999997 instead of the exact 3.
+ * denominator, gcd-reduced). It carries a number whose exact value does not terminate (RUNTIME-SEMANTICS ch. 2.1):
+ * a quotient, a percentage, a power with a negative exponent, and every result of {@code +, −, ×} with such an
+ * operand. A number that terminates is carried as the {@link BigDecimal} it is, so the {@code rs*} arithmetic helpers
+ * accept either wherever they accept a number and return a {@link Breuk} exactly where the result does not terminate.
  *
- * <p>The design keeps <b>bean fields as {@link BigDecimal}</b>: a value written into a target that bounds its decimals
- * fits them or is a fault (RUNTIME-SEMANTICS ch. 2.4 point 1), so it is an exact decimal there; a value of the
- * unbounded form stays a {@link Breuk} in working memory where it does not terminate, and becomes its decimal on the
- * bean ({@link #naarDecimal()}). Exactness lives in the <b>computation</b>: the {@code rs*} arithmetic
- * helpers accept a {@link Breuk} wherever they accept a number, return a {@link Breuk} when the exact result
- * does not terminate (division/percentage) or when any input was a {@link Breuk} and the op is {@code +,-,×,÷},
- * and collapse to {@link BigDecimal} at an {@code afronding} ({@link #naarDecimal(int, java.math.RoundingMode)})
- * or at a naturally-terminating boundary ({@link #naarDecimal()}).
+ * <p>Bean fields are {@link BigDecimal}: a value written into a target that bounds its decimals fits them or is a
+ * fault (RUNTIME-SEMANTICS ch. 2.4 point 1), so it is an exact decimal there; a value of the unbounded form stays a
+ * {@link Breuk} in working memory where it does not terminate, and becomes a decimal only on the bean, at the
+ * write-back ({@link #naarDecimal()}). An {@code afronding} rounds the exact value once
+ * ({@link #naarDecimal(int, java.math.RoundingMode)}).
  *
- * <p>Extends {@link Number} so it flows through the existing {@code Object}-typed value plumbing (the exec
- * back-end's {@code BiFunction<Object,…,Object>} values, the DRL mvel {@code Object}); the {@code Number}
- * methods evaluate the quotient at double/long precision (used only where a numeric primitive is genuinely
- * wanted, never on the exact path).
+ * <p>Extends {@link Number} so it flows through the {@code Object}-typed value plumbing (the exec back-end's
+ * {@code BiFunction<Object,…,Object>} values, the DRL mvel {@code Object}); the {@code Number} methods evaluate the
+ * quotient at double/long precision, used only where a numeric primitive is genuinely wanted, never on the exact
+ * path.
  */
 public final class Breuk extends Number implements Comparable<Breuk> {
     private static final long serialVersionUID = 1L;
