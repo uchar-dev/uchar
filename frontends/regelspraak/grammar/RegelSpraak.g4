@@ -693,9 +693,13 @@ kaleNaamWoord
 // a dimensioned attribute as an enumeration, "in voorjaar en op zuid", "op noord, in zomer en bij vloed"; a segment
 // takes ',' or 'en' followed by a preposition of §3.6 as part of the name. The loop is NON-GREEDY: where the text also
 // reads with the name ending before the ',' or 'en' (an operand list, "de maximale waarde van zijn a en in te houden
-// gewicht"), that reading wins, so every text that parsed before parses the same way.
-kaleNaamDeel : kaleNaamWoord+ labelOpsomming*? ;
-labelOpsomming : ( COMMA | EN ) ( VAN | OP | IN | VOOR | OVER | BIJ ) kaleNaamWoord+ ;
+// gewicht"), that reading wins, so every text that parsed before parses the same way. 'uit', the seventh preposition of
+// §3.6, is a keyword of its own and no name word, so its label is an alternative of the loop, joined or not: in a text
+// that parsed before, 'uit' stands after the unit word of a part function ("de maand uit …", §13.4.17.18-24), never
+// after a name, and where a name could take "<unit> uit …", the function is primaireExpressie's first alternative.
+kaleNaamDeel : kaleNaamWoord+ ( labelOpsomming | uitLabel )*? ;
+labelOpsomming : ( COMMA | EN ) ( VAN | OP | IN | VOOR | OVER | BIJ | UIT ) kaleNaamWoord+ ;
+uitLabel : UIT kaleNaamWoord+ ;
 kaleNaam     : kaleNaamDeel ( VAN kaleNaamDeel )* ;
 
 rangtelwoord // §13.2.12

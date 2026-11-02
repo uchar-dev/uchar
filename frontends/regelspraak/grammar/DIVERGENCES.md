@@ -1032,6 +1032,8 @@ Het zuidvoorjaarsgewicht van een Jutter moet berekend worden als
     zijn vondstgewicht in voorjaar op zuid.
 Het noordnajaarsgewicht van een Jutter moet berekend worden als
     zijn vondstgewicht op noord en in najaar.
+Het noordriviergewicht van een Jutter moet berekend worden als
+    zijn aanvoer uit rivier op noord.
 ```
 
 The fold: `somFunc` and `minMaxFunc` take `dimensieSelectie*` where
@@ -1041,12 +1043,18 @@ order. The cell is a name run read as the attribute with labels before it
 (dimensions with one), each dimension once, in any order. Behind the
 attribute the labels stand side by side ("in voorjaar op zuid") or joined as
 ALEF's editor joins them: "en" before the last, "," before each earlier one
-("in voorjaar en op zuid", "op noord, in zomer en bij vloed"). For that one
-production is new: a name segment (`kaleNaamDeel`) takes `labelOpsomming*?`,
-a "," or `EN` followed by one of the §3.6 prepositions `van`, `op`, `in`,
-`voor`, `over`, `bij` and name words. `EN` is otherwise no name word (it
-separates the operands of the §13.4.17 lists, see `naamWoordLower`), and the
-loop is non-greedy so that it does not take that role from it (below). The
+("in voorjaar en op zuid", "op noord, in zomer en bij vloed"). Two
+productions are new for that: a name segment (`kaleNaamDeel`) takes
+`( labelOpsomming | uitLabel )*?`, where `labelOpsomming` is a "," or `EN`
+followed by one of the seven §3.6 prepositions `van`, `op`, `in`, `voor`,
+`over`, `bij`, `uit` and name words, and `uitLabel` is `uit` and name words.
+`EN` is otherwise no name word (it separates the operands of the §13.4.17
+lists, see `naamWoordLower`), and the loop is non-greedy so that it does not
+take that role from it (below). `uit` is no name word either: it is a keyword
+of its own (`UIT`, the part functions "het jaar uit …" of §13.4.17.18-24), so
+a label after it needs the production of its own, joined or not. The other
+six stand in the name as they are: `op`, `in`, `voor`, `over` and `bij` as name
+words, `van` as the separator of the name's segments. The
 resolver accepts "en" or "," between any two labels behind the attribute; it
 does not demand ALEF's exact pattern, since the separators carry no meaning.
 
@@ -1084,6 +1092,24 @@ side by side, it is the cell; where the list reading does not parse ("de
 maximale waarde van zijn vondstgewicht in voorjaar en op zuid en zijn
 bonus"), the cell is read as well.
 
+The label after `uit`: in a text that parsed before, `uit` stands in a
+declaration (the preposition of a dimension), in a free name (rule, fact type,
+scenario) or after the unit word of a part function ("de maand uit de
+peildatum"), and never after a name, so a segment did not end before it.
+Where a name could now take "`<unit> uit …`" ("maand uit de peildatum" as the
+name of an onderwerp), the part function competes with it at
+`primaireExpressie`, whose first alternative it is, and ANTLR resolves the
+ambiguity to it: "de maand uit de peildatum" stays the function, also where
+the model has an attribute `maand` with a dimension declared with `uit`
+(`DimensionCellTest.a_part_function_keeps_its_uit`). Measured: the parse tree
+under both entry rules (`regelSpraakDocument`, `testDocument`) is the same
+before and after this production for every `.rgs` file of the repository
+(255, the parity zone of gate 11 included), for the fragments of that zone
+read as one document, and for a probe of 16 rules that write the part
+functions in every position an expression takes (operand, operand list,
+condition, comparison, consistency, `datum met`), "de dag uit de dag" and "de
+maand uit zee van de vondst" with `zee` a label among them.
+
 ### Lowering (resolver)
 
 - **The cell** (`ExpressionBuilder.cellReadings`, `dimensionCell`): every
@@ -1097,7 +1123,11 @@ bonus"), the cell is read as well.
   the fold names and whose labels it fits. The selections go out in the
   declared order of the attribute's dimensions. The operand of the first
   selection may take `over de <meervoud>` as name words; it is split off by
-  the declared plural, as for one dimension.
+  the declared plural, as for one dimension. A fold names a dimension by its
+  plural and never by its preposition, so one declared with `uit` is
+  selected like any other; a label on the operand ("de som van zijn aanvoer
+  uit zee over alle stranden") makes the operand a cell without a label of
+  the other dimension, refused with RGS-364, whatever its preposition.
 
 ### Fail-fast refusals (resolver, loud diagnostics)
 
@@ -1139,9 +1169,11 @@ selections as the resolver built them.
   misplaced "en" became part of a name instead of a syntax error, and in an
   operand list such a cell would split at its "en" into two operands
   ("de maximale waarde van zijn natte en zware buit").
-- A dimension whose preposition is `uit` is not read: `uit` is a keyword of
-  its own (`UIT`, "het jaar uit …") and no name word, so no cell names its
-  label, joined or not.
+- An attribute named after a unit word of a part function (`jaar`, `maand`,
+  `dag`, `uur`, `minuut`, `seconde`, `milliseconde`) with a dimension
+  declared with `uit` is not read as a cell after an article: "de maand uit
+  zee" is the part function over `zee` (above). "zijn maand uit zee" reads
+  the cell, and so does a target "De maand uit zee van een Jutter".
 - A cell as a rule target, and as a member of an object creation, is read the
   same way (see "A cell of a dimensioned attribute as the target" under
   §13.4.2).

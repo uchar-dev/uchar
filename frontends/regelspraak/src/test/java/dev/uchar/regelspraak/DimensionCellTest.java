@@ -43,12 +43,17 @@ class DimensionCellTest {
             1. vorig boekjaar
             2. dit boekjaar
 
+        Dimensie de herkomst, bestaande uit de herkomsten (na het attribuut met voorzetsel uit):
+            1. zee
+            2. rivier
+
         Objecttype de Jutter (mv: Jutters) (bezield)
             het vondstgewicht Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met seizoen en strand;
             de vangst Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met soort;
             de buit Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met seizoen en soort;
             de stand Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met seizoen en strand en getij;
             de winst Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met boekjaar en strand;
+            de aanvoer Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met strand en herkomst;
             de uitkomst Numeriek (niet-negatief getal met 2 decimalen);
 
         Regel uitkomst van een jutter
@@ -107,6 +112,58 @@ class DimensionCellTest {
         String second = emitCompact("zijn winst van vorig boekjaar en op noord.");
         assertTrue(second.contains(cell("winst", "zijnwinstvanvorigboekjaarenopnoord", "vorigboekjaar", "noord")),
                 () -> "de cel (vorig boekjaar, noord):\n" + second);
+    }
+
+    /** §3.6 names "uit" among the prepositions of a dimension; its label stands behind the attribute after it, side
+     *  by side with another label, before or after it. */
+    @Test void a_label_after_uit_names_its_cell() {
+        String c = emitCompact("zijn aanvoer uit zee op noord.");
+        assertTrue(c.contains(cell("aanvoer", "zijnaanvoeruitzeeopnoord", "noord", "zee")), () -> "de cel (noord, zee):\n" + c);
+        String d = emitCompact("zijn aanvoer op zuid uit rivier.");
+        assertTrue(d.contains(cell("aanvoer", "zijnaanvoeropzuiduitrivier", "zuid", "rivier")),
+                () -> "de cel (zuid, rivier):\n" + d);
+    }
+
+    @Test void a_label_after_uit_joins_with_en_either_way() {
+        String first = emitCompact("zijn aanvoer op noord en uit rivier.");
+        assertTrue(first.contains(cell("aanvoer", "zijnaanvoeropnoordenuitrivier", "noord", "rivier")),
+                () -> "de cel (noord, rivier):\n" + first);
+        String second = emitCompact("zijn aanvoer uit zee en op zuid.");
+        assertTrue(second.contains(cell("aanvoer", "zijnaanvoeruitzeeenopzuid", "zuid", "zee")),
+                () -> "de cel (zuid, zee):\n" + second);
+    }
+
+    @Test void a_cell_with_a_label_after_uit_only_is_refused() {
+        assertOneError(resolve("zijn aanvoer uit zee."), "RGS-364",
+                Map.of("written", "zijn aanvoer uit zee", "attribute", "aanvoer", "dimension", "strand"));
+    }
+
+    /** "uit" keeps the readings it had: "de maand uit …" is the function of §13.4.17.19, also where the words after
+     *  "uit" could be read as a name ("maand uit de peildatum") and the model has an attribute "maand" with a dimension
+     *  declared with "uit". The possessive "zijn maand uit zee" is that attribute's cell. */
+    @Test void a_part_function_keeps_its_uit() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Parameter de peildatum : Datum in dagen;
+
+            Dimensie de herkomst, bestaande uit de herkomsten (na het attribuut met voorzetsel uit):
+                1. zee
+                2. rivier
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de maand Numeriek (geheel getal) gedimensioneerd met herkomst;
+                de uitkomst Numeriek (geheel getal);
+
+            Regel uitkomst van een jutter
+                geldig altijd
+                    De uitkomst van een Jutter moet berekend worden als zijn maand uit zee plus de maand uit de peildatum.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(c.contains("{\"node\":\"BuiltinCall\",\"kind\":\"monthOf\",\"arguments\":[{\"node\":\"ParameterReference\","
+                + "\"parameter\":\"peildatum\""), () -> "de maand uit de peildatum:\n" + c);
+        assertTrue(c.contains("{\"node\":\"DimensionCellRead\",\"attribute\":{\"node\":\"AttributeReference\",\"attribute\":"
+                + "\"maand\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"zijnmaanduitzee\"}},\"labels\":[\"zee\"],"),
+                () -> "de cel (zee):\n" + c);
     }
 
     /** Where "en" can end the name, it does: in an operand list a name after "en" that opens with a preposition

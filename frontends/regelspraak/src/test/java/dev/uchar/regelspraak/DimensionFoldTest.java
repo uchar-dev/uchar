@@ -124,8 +124,13 @@ class DimensionFoldTest {
             1. noord
             2. zuid
 
+        Dimensie de herkomst, bestaande uit de herkomsten (na het attribuut met voorzetsel uit):
+            1. zee
+            2. rivier
+
         Objecttype de Jutter (mv: Jutters) (bezield)
             het vondstgewicht Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met seizoen en strand;
+            de aanvoer Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met strand en herkomst;
             het jaargewicht Numeriek (niet-negatief getal met 2 decimalen);
 
         Regel jaargewicht van een jutter
@@ -215,6 +220,25 @@ class DimensionFoldTest {
                 + "in {voorjaar} over alle stranden."), "RGS-367",
                 Map.of("expression", "de som van zijn vondstgewicht over alle seizoenen over de seizoenen in {voorjaar} "
                         + "over alle stranden", "dimension", "seizoen"));
+    }
+
+    /** A fold names a dimension by its plural, so one declared with "uit" is selected like any other. */
+    @Test void a_fold_selects_in_a_dimension_declared_with_uit() {
+        String c = emitTwo("de som van zijn aanvoer over alle stranden over de herkomsten in {zee}.");
+        assertTrue(c.contains("\"kind\":\"sum\",\"arguments\":[{\"node\":\"AttributeReference\",\"attribute\":\"aanvoer\","
+                + "\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"zijnaanvoer\"}}],\"dimensionSelections\":["
+                + selection("strand", "overallestranden", "noord", "zuid") + ","
+                + selection("herkomst", "overdeherkomstenin{zee}", "zee") + "],"), () -> "twee selecties:\n" + c);
+    }
+
+    /** The operand of a fold carries no label (ALEF); a label after "uit" on it makes the operand a cell without a label
+     *  of the other dimension, refused as one after any other preposition. */
+    @Test void a_label_after_uit_on_the_operand_is_a_cell_without_its_other_label() {
+        RegelSpraakModel m = resolveTwo("de som van zijn aanvoer uit zee over alle stranden.");
+        assertTrue(m.diagnostics.stream().noneMatch(d -> "RGS-091".equals(d.code())), () -> "een syntaxfout: " + m.diagnostics);
+        assertTrue(m.diagnostics.stream().anyMatch(d -> "RGS-364".equals(d.code()) && d.args().equals(Map.of(
+                        "written", "zijn aanvoer uit zee", "attribute", "aanvoer", "dimension", "strand"))),
+                () -> "RGS-364 voor de dimensie strand: " + m.diagnostics);
     }
 
     /** Two dimensions with the same labels. */

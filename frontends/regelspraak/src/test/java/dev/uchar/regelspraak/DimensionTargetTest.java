@@ -33,14 +33,21 @@ class DimensionTargetTest {
             1. noord
             2. zuid
 
+        Dimensie de herkomst, bestaande uit de herkomsten (na het attribuut met voorzetsel uit):
+            1. zee
+            2. rivier
+
         Objecttype de Jutter (mv: Jutters) (bezield)
             de premie Numeriek (geheel getal) gedimensioneerd met seizoen;
             de bonus Numeriek (geheel getal);
             de strandpremie Numeriek (geheel getal) gedimensioneerd met seizoen en strand;
+            de herkomstpremie Numeriek (geheel getal) gedimensioneerd met herkomst;
+            de zeepremie Numeriek (geheel getal) gedimensioneerd met strand en herkomst;
 
         Objecttype de Vangst (mv: Vangsten)
             de vangstpremie Numeriek (geheel getal) gedimensioneerd met seizoen;
             de strandvangst Numeriek (geheel getal) gedimensioneerd met seizoen en strand;
+            de zeevangst Numeriek (geheel getal) gedimensioneerd met strand en herkomst;
 
         Feittype vangstboeking
             de boeker Jutter
@@ -141,6 +148,45 @@ class DimensionTargetTest {
         assertEquals(List.of("najaar", "zuid"), t.labels());
         assertTrue(compactIr(m).contains("{\"node\":\"MemberInit\",\"member\":\"strandvangst\",\"labels\":[\"najaar\",\"zuid\"],"),
                 compactIr(m));
+    }
+
+    /** A dimension declared with "uit" (§3.6): its label stands after "uit", in a target as in a cell read. */
+    @Test void a_cell_target_names_a_label_after_uit() {
+        RegelSpraakModel m = Resolver.resolve(rule("De zeepremie uit zee op noord van een Jutter moet gesteld worden op 4."));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertCellTarget(m.resolvedRules.get(0), "zeepremie", "noord", "zee");
+    }
+
+    @Test void a_cell_target_joins_a_label_after_uit_with_en() {
+        RegelSpraakModel m = Resolver.resolve(rule(
+                "De zeepremie op zuid en uit rivier van een Jutter moet berekend worden als zijn zeepremie uit zee en op zuid."));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertCellTarget(m.resolvedRules.get(0), "zeepremie", "zuid", "rivier");
+        assertTrue(compactIr(m).contains("\"labels\":[\"zuid\",\"rivier\"],\"source\":{\"snippet\":"
+                + "\"Dezeepremieopzuidenuitriviervaneen"), compactIr(m));
+        assertTrue(compactIr(m).contains("\"snippet\":\"zijnzeepremieuitzeeenopzuid\"}},\"labels\":[\"zuid\",\"zee\"]"),
+                compactIr(m));
+    }
+
+    @Test void a_creation_member_names_a_label_after_uit() {
+        RegelSpraakModel m = Resolver.resolve(rule(
+                "Een Jutter heeft een geboekte vangst met zeevangst uit rivier en op noord gelijk aan zijn premie in najaar."));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        ResolvedObjectCreation.MemberInit t = m.objectCreations.get(0).initialisations().get(0);
+        assertEquals("zeevangst", t.attribute());
+        assertEquals(List.of("noord", "rivier"), t.labels());
+    }
+
+    @Test void a_label_after_uit_behind_the_subject_is_refused_with_the_cell() {
+        RegelSpraakModel m = Resolver.resolve(rule("De herkomstpremie van een Jutter uit zee moet gesteld worden op 10."));
+        List<Diagnostic> faults = m.errors();
+        assertEquals(1, faults.size(), () -> "verwachtte precies één fout, kreeg: " + m.diagnostics);
+        assertEquals("RGS-308", faults.get(0).code());
+        assertEquals("regeldoel 'De herkomstpremie van een Jutter uit zee': het doel is een cel van het gedimensioneerde "
+                + "attribuut 'herkomstpremie' (dimensie herkomst, label 'zee') met de labels achter het onderwerp: een "
+                + "celdoel noemt zijn labels direct achter het attribuut, vóór het onderwerp, zoals ALEF een cel "
+                + "schrijft; zonder dit hek schreef de zin het hele attribuut (WF-022, IR-SPEC ch. 3.1)",
+                faults.get(0).message());
     }
 
     @Test void labels_after_the_subject_are_refused_with_the_cell() {
