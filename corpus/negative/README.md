@@ -15,7 +15,11 @@ is the arm key `WF-###.<slug>` of the declared rule and each further line a
 `name=value` pair that must be among the parameters the verifier reports for
 that key (`verifier --arms`; card `verifier-arm-keys`), so a case that moves to
 another arm of its rule turns the gate red too, and a rewording of a message
-does not. The rows of the registers below that speak of the fragment of an
+does not. A directory may hold a case file as well (`case1.json`): the case on
+which an executor's own suite holds the evaluation fault that stands behind a
+static rule (the write boundary of RUNTIME-SEMANTICS ch. 2.4 point 1 behind the
+precision gate of WF-023); no gate replays it, and gate 4 validates the case
+files of `corpus/golden` and `corpus/red` only. The rows of the registers below that speak of the fragment of an
 `expect.txt` were written when the file held one literal fragment of the
 message.
 

@@ -1489,7 +1489,10 @@ EXPECTED_CHANNEL=(
 # beside it (-omgekeerd): a value, a characteristic and a target of two writers that a form wrote on a state between and
 # that stand at the fixpoint only where a form decides there (RUNTIME-SEMANTICS ch. 5.3, 5.7, 6.1). The branch withdraws
 # them already (truth maintenance). They play on both with PLAYED 4, 4, 4, 4, 6 and 6.
-EXPECTED_PLAYED=315
+# 316 since the card static-precision-gate (2026-11-02): the golden jutterswet-precisiepoort, the writes the precision
+# gate of WF-023 admits (RUNTIME-SEMANTICS ch. 2.3, 2.4 point 4), a quotient into the unbounded form among them. It plays
+# on both with PLAYED 2. The goldens the gate refused carry a rounding now and play as before.
+EXPECTED_PLAYED=316
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
