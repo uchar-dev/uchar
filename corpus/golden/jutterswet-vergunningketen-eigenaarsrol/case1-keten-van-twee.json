@@ -1,0 +1,131 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "stopdag": {
+            "date": "2026-10-01"
+          },
+          "basiseinddag": {
+            "date": "2026-11-15"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "V1"
+          ],
+          "termijn": [
+            "T2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "T2",
+        "objectType": "Termijn",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "stopdag": {
+            "date": "2026-02-10"
+          },
+          "basiseinddag": {
+            "date": "2026-05-20"
+          }
+        },
+        "roles": {
+          "termijn": [
+            "T1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "T1",
+        "objectType": "Termijn",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "einddag",
+      "value": {
+        "date": "2026-05-20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "restant",
+      "value": {
+        "number": "99"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2026-05-20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "T1",
+      "attribute": "overschot",
+      "value": {
+        "number": "99"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "einddag",
+      "value": {
+        "date": "2027-02-22"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "restant",
+      "value": {
+        "number": "144"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2027-02-22"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "T2",
+      "attribute": "overschot",
+      "value": {
+        "number": "144"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

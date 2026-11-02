@@ -1464,7 +1464,10 @@ EXPECTED_CHANNEL=(
 # 299 since the card unit-factors: the goldens jutterswet-oppervlak (m^2), jutterswet-sleeptarief (€/dg/m, €/dg^2, €·m and
 # the value 2/dg) and jutterswet-kadetarief (a fold over months of a unit with two negative factors, ch. 2.6, rule 8).
 # They play on both with PLAYED 3, 2 and 1.
-EXPECTED_PLAYED=299
+# 300 since the card instance-depth-owner-hop (2026-11-02): the golden jutterswet-vergunningketen-eigenaarsrol, the
+# instance-ordered chain whose satellite relation names its owner's role like the switch relation's sister role. It plays on
+# both with PLAYED 2.
+EXPECTED_PLAYED=300
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

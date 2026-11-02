@@ -1,0 +1,173 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "middelste",
+        "objectType": "Vergunning",
+        "attributes": {
+          "stopdag": {
+            "date": "2026-07-01"
+          },
+          "basiseinddag": {
+            "date": "2026-09-30"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "oudste"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "jongste",
+        "objectType": "Vergunning",
+        "attributes": {
+          "stopdag": {
+            "date": "2027-01-15"
+          },
+          "basiseinddag": {
+            "date": "2027-03-31"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "middelste"
+          ],
+          "termijn": [
+            "termijn jongste"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "termijn jongste",
+        "objectType": "Termijn",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "oudste",
+        "objectType": "Vergunning",
+        "attributes": {
+          "stopdag": {
+            "date": "2026-01-05"
+          },
+          "basiseinddag": {
+            "date": "2026-04-01"
+          }
+        },
+        "roles": {
+          "termijn": [
+            "termijn oudste"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "termijn oudste",
+        "objectType": "Termijn",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "oudste",
+      "attribute": "einddag",
+      "value": {
+        "date": "2026-04-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "oudste",
+      "attribute": "restant",
+      "value": {
+        "number": "86"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "oudste",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2026-04-01"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "termijn oudste",
+      "attribute": "overschot",
+      "value": {
+        "number": "86"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "middelste",
+      "attribute": "einddag",
+      "value": {
+        "date": "2026-12-25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "middelste",
+      "attribute": "restant",
+      "value": {
+        "number": "177"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "middelste",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2026-12-25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "jongste",
+      "attribute": "einddag",
+      "value": {
+        "date": "2027-09-24"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "jongste",
+      "attribute": "restant",
+      "value": {
+        "number": "252"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "jongste",
+      "attribute": "verlengde einddag",
+      "value": {
+        "date": "2027-03-31"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "termijn jongste",
+      "attribute": "overschot",
+      "value": {
+        "number": "75"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
