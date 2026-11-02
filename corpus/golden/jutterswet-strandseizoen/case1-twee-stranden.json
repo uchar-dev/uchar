@@ -1,0 +1,110 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar",
+                  "noord"
+                ],
+                "value": {
+                  "number": "2.00"
+                }
+              },
+              {
+                "labels": [
+                  "najaar",
+                  "noord"
+                ],
+                "value": {
+                  "number": "1.00"
+                }
+              },
+              {
+                "labels": [
+                  "voorjaar",
+                  "zuid"
+                ],
+                "value": {
+                  "number": "5.00"
+                }
+              },
+              {
+                "labels": [
+                  "zomer",
+                  "zuid"
+                ],
+                "value": {
+                  "number": "0.50"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "zuidvoorjaarsgewicht",
+      "value": {
+        "number": "5.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "noordnajaarsgewicht",
+      "value": {
+        "number": "1.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "noordgewicht",
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "zuidpiekgewicht",
+      "value": {
+        "number": "5.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "dalgewicht",
+      "value": {
+        "number": "0.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "8.50"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

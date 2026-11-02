@@ -1,0 +1,44 @@
+Eenheidsysteem Gewicht
+    het kilogram (mv: kilogrammen) kg
+
+Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+    1. voorjaar
+    2. zomer
+    3. najaar
+
+Dimensie het strand, bestaande uit de stranden (na het attribuut met voorzetsel op):
+    1. noord
+    2. zuid
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het vondstgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg gedimensioneerd met seizoen en strand;
+    het zuidvoorjaarsgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het noordnajaarsgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het noordgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het zuidpiekgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het dalgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het jaargewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+
+Regel zuidvoorjaarsgewicht van een jutter
+    geldig altijd
+        Het zuidvoorjaarsgewicht van een Jutter moet berekend worden als zijn vondstgewicht in voorjaar op zuid.
+
+Regel noordnajaarsgewicht van een jutter
+    geldig altijd
+        Het noordnajaarsgewicht van een Jutter moet berekend worden als zijn vondstgewicht op noord in najaar.
+
+Regel noordgewicht van een jutter
+    geldig altijd
+        Het noordgewicht van een Jutter moet berekend worden als de som van zijn vondstgewicht over alle seizoenen over de stranden in {noord}.
+
+Regel zuidpiekgewicht van een jutter
+    geldig altijd
+        Het zuidpiekgewicht van een Jutter moet berekend worden als de maximale waarde van zijn vondstgewicht over de stranden in {zuid} over de seizoenen vanaf voorjaar t/m zomer.
+
+Regel dalgewicht van een jutter
+    geldig altijd
+        Het dalgewicht van een Jutter moet berekend worden als de minimale waarde van zijn vondstgewicht over de seizoenen vanaf zomer t/m najaar over alle stranden.
+
+Regel jaargewicht van een jutter
+    geldig altijd
+        Het jaargewicht van een Jutter moet berekend worden als de som van zijn vondstgewicht over alle seizoenen over alle stranden.

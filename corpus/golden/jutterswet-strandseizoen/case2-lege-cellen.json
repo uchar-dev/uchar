@@ -1,0 +1,111 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "zomer",
+                  "noord"
+                ],
+                "value": {
+                  "number": "4.00"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "zuidvoorjaarsgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "noordnajaarsgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "noordgewicht",
+      "value": {
+        "number": "4.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "zuidpiekgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "dalgewicht",
+      "value": {
+        "number": "4.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "4.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "zuidvoorjaarsgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "noordnajaarsgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "noordgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "zuidpiekgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "dalgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "jaargewicht"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
