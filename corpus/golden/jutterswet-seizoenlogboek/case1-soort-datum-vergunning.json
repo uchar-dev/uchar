@@ -127,7 +127,7 @@
         "najaar"
       ],
       "value": {
-        "text": "barnsteen"
+        "text": "wrakhout"
       }
     },
     {
@@ -201,12 +201,15 @@
       }
     },
     {
-      "kind": "cellEmpty",
+      "kind": "cellValue",
       "label": "J2",
       "attribute": "vondstsoort",
       "labels": [
         "najaar"
-      ]
+      ],
+      "value": {
+        "text": "touw"
+      }
     },
     {
       "kind": "attributeEmpty",
@@ -226,7 +229,7 @@
       "label": "J2",
       "attribute": "aantal soortseizoenen",
       "value": {
-        "number": "1"
+        "number": "2"
       }
     },
     {

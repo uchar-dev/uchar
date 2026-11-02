@@ -15,7 +15,7 @@ A dimension `seizoen` with the labels `voorjaar`, `zomer`, `najaar`; on the
 
 | rule | target | value |
 |---|---|---|
-| `najaarssoort` | the cell `najaar` of `vondstsoort` | the cell `voorjaar` of `vondstsoort` |
+| `najaarssoort` | the cell `najaar` of `vondstsoort` | the cell `zomer` of `vondstsoort` |
 | `voorjaarssoort` | `voorjaarssoort` (Tekst) | the cell `voorjaar` of `vondstsoort` |
 | `eerste soort` | `eerste soort` (Tekst) | the first of `vondstsoort` over all seasons |
 | `aantal soortseizoenen` | a whole number | the number of filled cells of `vondstsoort` ("het aantal voorkomens van") |
@@ -24,8 +24,9 @@ A dimension `seizoen` with the labels `voorjaar`, `zomer`, `najaar`; on the
 | `zomertarief` | `zomertarief`, 2 | where the cell `zomer` of `vergunning` is equal to waar |
 
 A first and a last over cells pick by position and order nothing, so they
-take a text cell (WF-038 admits it there); `eerste soort` reads the cell
-`najaar` the rule `najaarssoort` writes.
+take a text cell (WF-038 admits it there). The cell `najaar` the rule
+`najaarssoort` writes is a copy of `zomer`, so J1's first text cell,
+"barnsteen", differs from its last, "wrakhout".
 
 ## The case — measured, per executor
 
@@ -37,10 +38,10 @@ J2: `vondstsoort` `zomer` "touw"; `meldingsdatum` `zomer` 2026-07-30;
 
 | expectation | J1 | J2 |
 |---|---|---|
-| cell `najaar` of `vondstsoort` | "barnsteen" | empty |
+| cell `najaar` of `vondstsoort` | "wrakhout" | "touw" |
 | `voorjaarssoort` | "barnsteen" | leeg |
 | `eerste soort` | "barnsteen" | "touw" |
-| `aantal soortseizoenen` | 3 | 1 |
+| `aantal soortseizoenen` | 3 | 2 |
 | `najaarsmelding` | 2026-10-03 | leeg |
 | `laatste melding` | 2026-10-03 | 2026-07-30 |
 | `zomertarief` | 2 | leeg |
@@ -48,7 +49,7 @@ J2: `vondstsoort` `zomer` "touw"; `meldingsdatum` `zomer` 2026-07-30;
 J1 also pins two input cells, `meldingsdatum` `voorjaar` 2026-04-12 and
 `vergunning` `najaar` onwaar, so that a cell expectation of a date and of a
 boolean is read; the other expectations do not hold on the input, so the case
-fails under `--noop` (gate 7). J1's `aantal soortseizoenen` counts the cell
+fails under `--noop` (gate 7). The `aantal soortseizoenen` counts the cell
 `najaar` the rule writes.
 
 | executor | outcome (2026-11-02) |

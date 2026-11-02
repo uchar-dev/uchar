@@ -147,14 +147,14 @@
                 "attribute": "vondstsoort",
                 "subjectType": "Jutter",
                 "source": {
-                  "snippet": "zijn vondstsoort in voorjaar"
+                  "snippet": "zijn vondstsoort in zomer"
                 }
               },
               "labels": [
-                "voorjaar"
+                "zomer"
               ],
               "source": {
-                "snippet": "zijn vondstsoort in voorjaar"
+                "snippet": "zijn vondstsoort in zomer"
               }
             },
             "initialisation": false,
