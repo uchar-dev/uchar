@@ -130,9 +130,11 @@ empty or all-empty source differs per aggregation — this is the
 | aantal | 0 (a count, never empty) | aantal over {} = 0 |
 | aantal gevulde | 0 (a count, never empty) | aantal gevulde over {leeg} = 0; over {} = 0 (ch. 3.4c) |
 | minimum/maximum, eerste/laatste | **empty**; no fallback form exists | min(5, leeg, 3) = 3; min(leeg, leeg) = leeg |
-| dimension folds (§5.8.5; ch. 5.8c) | empty cells skipped; all-empty selection = empty (som may use its fallback); over the product of one selection per dimension | cells {Q1: 3, Q2: leeg, Q3: 2}: som over Q1–Q3 = 5; som over {Q2} = leeg; over two dimensions, ch. 5.8c |
+| dimension folds (§5.8.5; ch. 5.8c) | empty cells skipped; all-empty selection = empty (som may use its fallback), but the filled count, which is 0; over the product of one selection per dimension; eerste/laatste by position | cells {Q1: 3, Q2: leeg, Q3: 2}: som over Q1–Q3 = 5; som over {Q2} = leeg; eerste over Q1–Q3 = 3, laatste = 2; aantal gevulde = 2; over two dimensions, ch. 5.8c |
 
-**Eerste/laatste are ordering folds.** The articulated value fold
+**Eerste/laatste are ordering folds** over instances and over listed
+operands; over the cells of a dimensioned attribute they pick by position
+(ch. 5.8c, 3). The articulated value fold
 "de eerste van A en B [en C …]" (§5.8.3/§4.14–.15, ≥ 2 listed operands)
 keeps the least/earliest operand and "de laatste van" the
 greatest/latest — a "<"/">" fold over the operand *values*, never a
@@ -4986,20 +4988,30 @@ chapter follows ALEF (IR-SPEC ch. 2.7, the norm source).
    rule that is the only writer of its cell displaces the input of that cell
    when its value is gevuld and leaves it standing when it is leeg, and a
    computing rule beside an initialisation on one cell decides like the
-   default above the initialisation default. The desugaring does not rewrite
-   the pair on a cell into a defaults group, which names its attribute whole
-   (WF-125): the two forms stay as written and keep that reading.
+   default above the initialisation default. On the wire the two forms stay
+   as written, since a defaults group names its attribute whole (WF-125); an
+   executor that lowers them into a defaults chain does so on the cell.
 3. **Folding cells.** An aggregation with `dimensionSelections` — a `sum`,
-   a `minimum` or a `maximum` (WF-037) — folds the cells of the product of
-   its selections on the object its argument reaches. The tuples are formed
-   with the first selection outermost, each selection in its own label
-   order, and the cells are read in that order (ch. 5.11). Empty cells are
-   skipped (ch. 1.2e); where every selected cell is empty the fold is
-   empty, and a sum then takes its `emptyFallback`, which is evaluated after
-   the cells (ch. 1.2, the table of the aggregations). A dimension the fold
-   does not range over is selected with one label, which stands in every
-   tuple. No cell read faults, so the order of the cells is stated and has
-   no witness.
+   a `minimum`, a `maximum`, a `first`, a `last` or a `filledCount`
+   (WF-037) — folds the cells of the product of its selections on the
+   object its argument reaches. The tuples are formed with the first
+   selection outermost, each selection in its own label order, and the
+   cells are read in that order (ch. 5.11). Empty cells are skipped
+   (ch. 1.2e); where every selected cell is empty the fold is empty, and a
+   sum then takes its `emptyFallback`, which is evaluated after the cells
+   (ch. 1.2, the table of the aggregations). A dimension the fold does not
+   range over is selected with one label, which stands in every tuple. The
+   sum, the minimum and the maximum read the values; a `first` and a `last`
+   pick by position, the value of the first and of the last filled cell in
+   that order, over cells of any type, so a set selection written
+   `{najaar, voorjaar}` reads `najaar` first; a `filledCount` is the number
+   of filled cells, a whole number, 0 where none is filled. This is ALEF's
+   eerste, laatste and tel (IR-SPEC ch. 2.7, the norm source). ALEF lets a
+   first and a last range over one dimension with more than one label only;
+   the dialect admits more, read in the order of the product as every
+   dimension fold reads them (the worked example below). No cell read
+   faults, so no fault witnesses the order of the cells; the first and the
+   last do.
 4. **The dependency graph** has a node per cell (IR-SPEC ch. 5.1): a cell
    read reads its cell, a cell target and a member with `labels` write
    theirs, and a dimension fold reads every cell of the product of its
@@ -5066,6 +5078,39 @@ case reader refuses, while it reads the case (ch. 5.7 step 3):
   cells (`voorjaar`, `noord`) 2.00 and (`najaar`, `noord`) 2.00 the sum over
   `strand`: `noord` gives **4.00**, the minimum over all cells **2.00**, and
   the cell read `voorjaar`, `zuid` **leeg**.
+- **First, last and the filled count** (ALEF's two tests of the fold): a
+  dimension `kustvak` with the labels `texel`, `vlieland`, `terschelling`,
+  `ameland`, `schiermonnikoog`, `rottumeroog` and a whole `vondstaantal`
+  dimensioned by it; `eerste vondstaantal` and `laatste vondstaantal` the
+  first and the last over all kustvakken, `vondstvakken` the filled count
+  over them, and `oosteerste` and `oostlaatste` the first and the last over
+  the set `schiermonnikoog`, `ameland`, `terschelling` in that order. J1 with
+  the cells 1, leeg, 0, 0, 6, 7 in label order gives **eerste vondstaantal 1,
+  laatste vondstaantal 7, vondstvakken 5, oosteerste 6, oostlaatste 0**; J2
+  with the cells leeg, leeg, 0, leeg, 6, leeg gives **0, 6, 2, 6, 0**; J3
+  without a cell gives **leeg, leeg, 0, leeg, leeg**. A fold by value would
+  give J1 a first of 0, and the declared order of the set an oosteerste of
+  0. Over two dimensions, on the cells (`voorjaar`, `noord`) 2.00,
+  (`najaar`, `noord`) 1.00 and (`voorjaar`, `zuid`) 5.00, the first over all
+  seasons and both stranden reads (`voorjaar`, `noord`), (`voorjaar`,
+  `zuid`), (`zomer`, `noord`), (`zomer`, `zuid`), (`najaar`, `noord`),
+  (`najaar`, `zuid`) and gives **2.00**, the last **1.00** and the filled
+  count **3**; with `strand` outermost the last would be 5.00. In
+  `jutterswet-seizoenvouw` J1 (`voorjaar` 3.00, `najaar` 2.00) has the
+  first over all seasons **3.00**, the last **2.00**, the first over
+  `{najaar en voorjaar}` **2.00** and the filled count **2**; J4 (`zomer`
+  0.00, `najaar` 1.50) the first **0.00**, a filled cell of 0, and the
+  filled count **2**; and the sum "of 0,50 kg als die er niet zijn" is
+  **0.50** for J2 without a cell.
+- **Cells of a text, a date and a boolean** (`jutterswet-seizoenlogboek`):
+  J1 with `vondstsoort` `voorjaar` "barnsteen" and `zomer` "wrakhout",
+  `meldingsdatum` `voorjaar` 2026-04-12 and `najaar` 2026-10-03, and
+  `vergunning` `zomer` waar: the rule "De vondstsoort in najaar van een Jutter
+  moet gesteld worden op zijn vondstsoort in zomer" gives the cell `najaar`
+  **"wrakhout"**, the first of `vondstsoort` over all seasons **"barnsteen"**,
+  its filled count **3**, the last of `meldingsdatum` **2026-10-03**, and
+  "Het zomertarief van een Jutter moet berekend worden als 2 indien zijn
+  vergunning in zomer gelijk is aan waar" gives **zomertarief 2**.
 - **Writing**: "Het vondstgewicht in najaar van een Jutter moet berekend
   worden als zijn vondstgewicht in voorjaar maal 2", "Het vondstgewicht in
   zomer van een Jutter moet geïnitialiseerd worden op 0 kg" and the sum
@@ -5095,6 +5140,11 @@ case reader refuses, while it reads the case (ch. 5.7 step 3):
   `najaar`, J1 with `voorjaar` 2.00 gives **najaar 2.00**, J2 without input
   **najaar 0.00** (the copy evaluates leeg and does not decide, so the
   initialisation does), and J3 with `najaar` 5.00 alone **najaar 5.00**.
+  `jutterswet-seizoenaanvang` writes the pair with an initialisation on 1 kg
+  and the sum over all seasons: J1 with `voorjaar` 2.00 gives **najaar 2.00,
+  jaargewicht 4.00**, J2 without input **1.00, 1.00**, J3 with `najaar` 5.00
+  alone **5.00, 5.00**, and J4 with `voorjaar` 3.00 and `najaar` 5.00 **3.00,
+  6.00**.
 - **The case**: on `vondstgewicht` dimensioned by `seizoen` and `strand`, the
   cell `zuid`, `voorjaar` — two declared labels in the reversed order — is
   refused with **EF-034** {`label`: j1, `attribute`: vondstgewicht,
@@ -5109,37 +5159,44 @@ case reader refuses, while it reads the case (ch. 5.7 step 3):
 interpreter and the ASP backend share the case reader, which holds the
 refusals of the case above and lays a valid cell input down cell by cell.
 Both read a cell, of the subject and over a path, fold over one dimension
-and over more, and write a cell by a rule, an initialisation and an object
-creation's member, and both refuse a read of a dimensioned attribute outside
-a cell in WF-125's sentence. A cell is a member of its own in either
+and over more with each of the six kinds, and write a cell by a rule, an
+initialisation and an object creation's member, and both refuse a read of a
+dimensioned attribute outside a cell in WF-125's sentence. A cell is a member of its own in either
 executor: `ref` holds it in its fact base under the attribute's name with
 the cell's labels, `vondstgewicht[najaar]`, and the ASP backend reads and
 writes it with the `val/3` of an attribute under the same name, its
-declaration the attribute's (`spec/ASP-TRANSLATION.md`). The ASP backend
-refuses by name an initialisation beside a computing rule on one cell, whose
-defaults reading `ref` answers. The worked examples replay in both: the
-goldens `jutterswet-seizoenvondst`, `jutterswet-seizoenvouw`,
-`jutterswet-vormenkabinet` (a cell over two dimensions that share a label),
-`jutterswet-seizoenboeking`, `jutterswet-seizoenkopie` and
-`jutterswet-strandseizoen` (cells over two dimensions, read, written and
-folded, written in RegelSpraak), the `ref/test`
-rows `WV-5.8c-*` and the frames of `backends/clingo/test/test_clingo.ml` for
-two dimensions, a path and the write boundary of a cell; the red witnesses
+declaration the attribute's (`spec/ASP-TRANSLATION.md`); a cell of a text,
+an enumeration or a boolean of the subject is read there as such an
+attribute is. The pair of a computing rule and an initialisation on one cell
+reads in the defaults reading in both: `ref` natively, the ASP backend
+through the ch. 7.7 lowering on the cell. The worked examples replay in both:
+the goldens `jutterswet-seizoenvondst`, `jutterswet-seizoenvouw` (the six
+kinds and a sum with a fallback), `jutterswet-vormenkabinet` (a cell over two
+dimensions that share a label), `jutterswet-seizoenboeking`,
+`jutterswet-seizoenkopie`, `jutterswet-strandseizoen` (cells over two
+dimensions, read, written and folded, written in RegelSpraak),
+`jutterswet-seizoenaanvang` (the pair on a cell) and
+`jutterswet-seizoenlogboek` (cells of a text, a date and a boolean), the
+`ref/test` rows `WV-5.8c-*` and the frames of
+`backends/clingo/test/test_clingo.ml` for two dimensions, a path, first,
+last and the filled count, the pair on a cell and the write boundary of a
+cell; the red witnesses
 `corpus/red/jutterswet-cel-overprecisie` and `jutterswet-cel-schrijfgrens`
 carry the input precision and the write boundary of a cell. The Drools
 backend holds the same refusals of the case in a case reader of its own and
 keeps a dimensioned attribute as a map of its cells; it reads a cell and
-folds over one dimension and over more, of an attribute of the subject, and
-refuses a cell over a path (DROOLS-189). A cell a form writes is a member of
+folds over one dimension and over more with each of the six kinds, of an
+attribute of the subject, and refuses a cell over a path (DROOLS-189). A cell a form writes is a member of
 its own there as well, under the key of its node (IR-SPEC ch. 5.1): the
 rule, the initialisation and the object creation's member write it, a read
 and a fold take it through its standing, and the write-back puts it into the
-map. The six goldens replay in all three executors (gate 12), the red
+map. The nine goldens replay in all three executors (gate 12), the red
 witnesses of the input precision and of the write boundary fault in all
 three with their pinned code and parameters (gate 8), the Drools backend
 naming the place of the write boundary as `ref` does,
 `j1.vondstgewicht[najaar]`, and the backend's `DimensionCellWitnessTest`
-replays the example over two dimensions on its cells 2.00, 1.00 and 5.00.
+replays the examples over two dimensions on its cells 2.00, 1.00 and 5.00,
+the first, the last and the filled count among them.
 The worked example of reading over a path has no replay in it.
 
 ### 5.9 Uniqueness: the union and the scope
@@ -5477,7 +5534,7 @@ name its kinds the same way.
 | `duration` / `absoluteDuration` (tijdsduur / absolute tijdsduur) | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
 | `dateWith` / `dateTimeWith` (datum met / datum-tijd met) | the `arguments` list: year, month, day, and for `dateTimeWith` hour, minute, second, millisecond (WF-037 leaves its arity open; ch. 3.8 fixes it) | **visible** | argument order; every part runs before the leeg test, so a leeg part costs its successors nothing |
 | aggregation (`sum` (som), `total` (totaal), `count` (aantal), `minimum`, `maximum`, `first` (eerste), `last` (laatste), `filledCount`) | the contributors — the listed `arguments`, or the instance fold's members each gated by the `filter` — then the `emptyFallback` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `emptyFallback` (WF-037 confines it to `sum`) |
-| aggregation over `dimensionSelections` (the third contributor source; WF-037 admits it on `sum`, `minimum`, `maximum`) | the selected cells, then the `emptyFallback` | **visible** | the cells of the product of the selections, the first selection outermost and each in its own label order (ch. 5.8c), then the `emptyFallback`. *All three executors evaluate the form; the order is stated and has no witness, as no cell read faults* |
+| aggregation over `dimensionSelections` (the third contributor source; WF-037 admits it on `sum`, `minimum`, `maximum`, `first`, `last`, `filledCount`) | the selected cells, then the `emptyFallback` | **visible** | the cells of the product of the selections, the first selection outermost and each in its own label order (ch. 5.8c), then the `emptyFallback`. *All three executors evaluate the form; no cell read faults, and the first and the last over cells witness the order, which they pick by* |
 | `concatenation` (concatenatie), `TextComposition` | the inserted parts | **visible** | part order |
 | `ListLiteral` | `elements` | **visible** | element order |
 | `StructLiteral` | `fields` | **visible** | declared field order (WF-073) |
@@ -7397,8 +7454,9 @@ serve the old forms through the new machinery:
 | plus at most one version-free computing rule (Gelijkstelling/Berekening) | plus one default above it: justification = its condition (an unconditional rule gets the vacuously true empty `all`), consequence = its value |
 
 A cell of a dimensioned attribute is a target of its own here (ch. 5.8c,
-2); the pair on a cell keeps its two forms, since a defaults group names its
-attribute whole (WF-125), and reads as the table says.
+2), and the pair on a cell reads as the table says. On the wire it keeps its
+two forms, since a defaults group names its attribute whole (WF-125); a
+backend that lowers the pair into a defaults group names the cell in it.
 
 The initialisation is what the desugaring exists for — and what keeps
 the two readings extensionally equal on the confluent domain. A **bare

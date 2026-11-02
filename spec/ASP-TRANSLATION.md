@@ -241,10 +241,14 @@ datatype, the decimals, the unit — is the attribute's (`find_decl`). The
 cell is a target of its own in the ch. 7.8 standing domain and in the
 initialisation arm, so its input enters as `inputval/3` where the cell is a
 standing target and as `inputfilled/2` where an initialisation writes it.
-An initialisation beside a computing rule on one cell is refused by name:
-the ch. 7.7 desugaring leaves the pair on a cell as written (a defaults group
-names its attribute whole), and this arm does not encode its defaults
-reading, which `ref` answers.
+The pair of a computing rule and an initialisation on one cell is in the
+ch. 7.7 desugaring's domain as on an attribute: `Ir_v0.Desugar.document`
+rewrites it into a defaults group on the cell's name, which only this backend
+reads, so the cell takes the defaults reading `ref` answers
+(`jutterswet-seizoenaanvang`); outside the domain, an initialisation with a
+condition, the native initialisation arm reads a cell as it reads an
+attribute. A default's consequence is fitted to the target's scale as a
+rule's value is (below).
 
 **The write boundary** (`fitted`): the term's scale is fitted to the
 target's declared scale. Equal — unchanged; coarser — exact upscale
@@ -375,7 +379,9 @@ it. **Cell read** (`DimensionCellRead`, RUNTIME-SEMANTICS ch. 5.8c): the
 `val/3` atom of the attribute reference under it, own or over a path, with
 the cell's name in place of the attribute's, `val(S,"vondstgewicht[voorjaar]",A)`,
 at the attribute's scale; an empty cell, like an absent link, leaves the
-body underivable. **evaluationDate** (ch. 8.2): the session's evaluation date
+body underivable. A cell of a text, an enumeration or a boolean of the
+subject is read in a symbolic position as such an attribute is, its value
+the ground term of the case input (`jutterswet-seizoenlogboek`). **evaluationDate** (ch. 8.2): the session's evaluation date
 as a compile-time civil day number; a case without `asOfDate` faults.
 **Temporal point read** (ch. 3.3): a `tl/5`/`param_tl/4` atom with
 `F <= D, D < T` — the gap and the empty-index corner are the
@@ -1342,23 +1348,31 @@ and that form is not listed: it has an arm of its own, the dimension fold
 below. So the named arm demands absent `dimensionSelections` too.
 
 **Dimension fold** (an `Aggregation` with `dimensionSelections`, a `sum`,
-`minimum` or `maximum`; RUNTIME-SEMANTICS ch. 5.8c): one helper atom per
+`minimum`, `maximum`, `first`, `last` or `filledCount`; RUNTIME-SEMANTICS
+ch. 5.8c): one helper atom per
 selected cell that holds a value, `dimN(S,I,A) :- isa(S,T), val(S,c_I,A).`,
 where `c_I` is the name of cell I of the product of the selections (the
 first selection outermost, `Ir_v0.Checks.selected_cells`, the cells the
 dependency graph gives the fold) and the `val/3` read is that of the cell
 read above, own or over a path. The fold is `#sum { A,I : dimN(S,I,A) }`,
 `#min` or `#max` over the helper, at the argument attribute's scale; the
-cell index keeps two cells of one value apart in the `#sum`. An empty cell
-derives no helper atom and drops out; the definedness atom
-`dimN_def(S) :- dimN(S,_,_).` keeps a fold whose every cell is empty
-underivable, `ref`'s leeg, and a `sum` with the `emptyFallback` 0 has it
-on every subject, so the bare `#sum` answers 0 there; a fallback other than
-0 is refused, as on the set folds. Each cell of a `sum` carries the range
-fence of a sum of n terms, `|A| > 2^31 / n`. Witnesses: gate 6 on
-`jutterswet-seizoenvouw` (one dimension, a selection whose every cell is
-empty) and the frames of the backend's suite (two dimensions, two cells of
-one value, a path, the range fence).
+cell index keeps two cells of one value apart in the `#sum`. A `first` and
+a `last` take the value at the least and the greatest index,
+`I = #min { C : dimN(S,C,_) }, dimN(S,I,V)`, over a cell of any type (a text,
+an enumeration or a boolean in a symbolic position), and a `filledCount` is
+`#count { C : dimN(S,C,_) }` at scale 1. An empty cell derives no helper
+atom and drops out; the definedness atom `dimN_def(S) :- dimN(S,_,_).` keeps
+a fold whose every cell is empty underivable, `ref`'s leeg, and a filled
+count has it on every subject, so it answers 0 there. A `sum` with an
+`emptyFallback` takes its value from a helper with two rules, the `#sum`
+where a cell is filled and the fallback's term where none is, both lifted to
+the finer of the two scales. Each cell of a `sum` carries the range fence of
+a sum of n terms, `|A| > 2^31 / n`. Witnesses: gate 6 on
+`jutterswet-seizoenvouw` (one dimension, the six kinds, a selection whose
+every cell is empty, a fallback of 0.50 kg) and `jutterswet-seizoenlogboek`
+(the first of text cells, the last of date cells, the filled count of text
+cells), and the frames of the backend's suite (two dimensions, two cells of
+one value, a path, first, last and the filled count, the range fence).
 
 Witnesses (gate 6): count by `jutterswet-erflijn`,
 `jutterswet-maatschap`, `jutterswet-kustregister`, the self-denoting
@@ -2592,11 +2606,7 @@ within 9 decimals`) — ref computes it exactly and both Drools branches
 play it (measured 2026-09-26 on "zijn taxatie maal 1/3 naar beneden
 afgerond op 2 decimalen" over a taxatie of 10: ref `oracle: PASS` on
 3.33, the exec-model and the DRL-text branch `PLAYED 1`), while this
-encoding holds a number only as an integer at a power-of-ten scale; an
-initialisation beside a computing rule on one cell of a dimensioned
-attribute (S3, `the ch. 7.7 defaults reading of the pair is not translated
-for a cell`), which ref answers in the defaults reading (RUNTIME-SEMANTICS
-ch. 5.8c, `WV-5.8c-initialisatie-naast-berekening`). And
+encoding holds a number only as an integer at a power-of-ten scale. And
 one decided delta, executed 2026-10-19 in both executors at once:
 ch. 1.4 point 4 routes numeric-zero division into the §9.5 channel in
 v1 (goldens `division-by-numeric-zero`, `division-abs-by-numeric-zero`),
@@ -2782,9 +2792,9 @@ re-falsify the sentence by exercising the catch-all again. What keeps
 the catch-all keeps it truthfully: `total`'s temporal subject-own arms
 carry an absent `elementType`, so absence does not mean "listed"
 there; the `count` listed form is no som; and a dimension fold on another
-kind than `sum`, `minimum` and `maximum` stands in no document of any zone
-but the negative witness `wf037-filled-count-dimension-selection`, on a
-`filledCount` that WF-037 refuses;
+kind than the six of S8 stands in no document of any zone but the negative
+witness `wf037-total-dimension-selection`, on a `total` that WF-037
+refuses;
 what remains under it for composites is the member-less
 counting list (`a counting composite without members is not
 translated (no corpus case)`) and every member kind that keeps its
