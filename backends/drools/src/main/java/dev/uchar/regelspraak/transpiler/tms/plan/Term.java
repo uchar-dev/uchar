@@ -103,8 +103,9 @@ public sealed interface Term {
     record Division(StaticFunction function, Term left, Term right, int depositFlag, String source) implements Term {}
 
     /**
-     * A square root of {@code radicand} through {@code function} ({@link StaticFunction#SQUARE_ROOT} under a rounding,
-     * {@link StaticFunction#EXACT_SQUARE_ROOT} without one) with the probe of the rule's §6.6 deposit: where the radicand is
+     * A square root of {@code radicand} through {@code function} ({@link StaticFunction#RADICAND} under a rounding, the
+     * radicand that {@link StaticFunction#ROUNDED_SQUARE_ROOT} rounds the root of, {@link StaticFunction#EXACT_SQUARE_ROOT}
+     * without one) with the probe of the rule's §6.6 deposit: where the radicand is
      * negative the probe in slot {@code depositFlag} hears it, and with {@code depositFlag} -1 the place does not deposit.
      */
     record SquareRoot(StaticFunction function, Term radicand, int depositFlag, String source) implements Term {}

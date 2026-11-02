@@ -86,14 +86,105 @@ public final class ComputeHelpers {
         return q != null && q.isNul();
     }
 
-    /** A square root under its rounding (§13.4.17.13): the runtime's root at 34 digits ({@code rsWortel}), which the
-     *  rounding above it collapses; a leeg radicand leeg, and a negative one leeg with the §6.6 deposit to
-     *  {@code depositFlag} (RUNTIME-SEMANTICS ch. 1.2). */
-    public static Object squareRoot(Object radicand, Object depositFlag) {
-        BigDecimal number = RegelSpraakRuntime.toBd(radicand);
-        // the §6.6 deposit has no code: no golden can witness it while the ASP backend has no square root (ch. 5.7b)
-        if (number != null && number.signum() < 0) DepositFlag.report(depositFlag, List.of());
-        return RegelSpraakRuntime.rsWortel(radicand);
+    /** The radicand of a square root under its rounding (§13.4.17.13), which {@link #roundedSquareRoot} takes: a leeg
+     *  radicand leeg, a negative one leeg with the §6.6 deposit to {@code depositFlag} (RUNTIME-SEMANTICS ch. 1.2), any
+     *  other the exact value it is. */
+    public static Object radicand(Object radicand, Object depositFlag) {
+        Breuk q = Breuk.van(radicand);
+        if (q == null) return null;
+        if (q.signum() < 0) {
+            // the §6.6 deposit has no code: no golden can witness it while the ASP backend has no square root (ch. 5.7b)
+            DepositFlag.report(depositFlag, List.of());
+            return null;
+        }
+        return radicand;
+    }
+
+    /** The square root of {@code radicand}, of at least 0, rounded once to {@code decimals} decimals by {@code mode}
+     *  (RUNTIME-SEMANTICS ch. 2.2, 2.5): the true root, irrational or not, decided with whole numbers, the way the
+     *  reference interpreter decides it; leeg leeg. */
+    public static Object roundedSquareRoot(Object radicand, Integer decimals, java.math.RoundingMode mode) {
+        return radicand == null ? null : roundedRoot(Breuk.van(radicand), 2, decimals, mode);
+    }
+
+    /**
+     * The {@code degree}-th root of {@code q}, of at least 0, rounded once to {@code decimals} decimals by {@code mode}
+     * (RUNTIME-SEMANTICS ch. 2.2, 2.5). With {@code s = 10^decimals} the rounded root is {@code k/s} for a whole
+     * {@code k} next to the root of {@code q·s^degree}: {@code k} is that root rounded down, the root is exact where
+     * {@code k^degree} is that number, and the half-way point {@code k + 1/2} is passed where {@code 2^degree} times the
+     * number reaches {@code (2k+1)^degree}. No step approximates, so the result is the true value rounded once.
+     */
+    static BigDecimal roundedRoot(Breuk q, int degree, int decimals, java.math.RoundingMode mode) {
+        BigInteger s = BigInteger.TEN.pow(decimals).pow(degree);
+        BigInteger numerator = q.teller().multiply(s), denominator = q.noemer();
+        BigInteger k = wholeRoot(numerator.divide(denominator), degree);
+        boolean exact = k.pow(degree).multiply(denominator).equals(numerator);
+        BigInteger chosen = switch (mode) {
+            case FLOOR, DOWN -> k;
+            case CEILING, UP -> exact ? k : k.add(BigInteger.ONE);
+            case HALF_UP -> exact || BigInteger.TWO.pow(degree).multiply(numerator)
+                    .compareTo(denominator.multiply(k.shiftLeft(1).add(BigInteger.ONE).pow(degree))) < 0
+                    ? k : k.add(BigInteger.ONE);
+            default -> throw new IllegalArgumentException("no rounding mode of RUNTIME-SEMANTICS ch. 2.5: " + mode);
+        };
+        return new BigDecimal(chosen, decimals);
+    }
+
+    /** The {@code degree}-th root of {@code a}, of at least 0, rounded down: Newton's iteration over the whole numbers
+     *  from above, which stops at the root rounded down. */
+    static BigInteger wholeRoot(BigInteger a, int degree) {
+        if (a.signum() == 0 || degree == 1) return a;
+        BigInteger n = BigInteger.valueOf(degree), m = BigInteger.valueOf(degree - 1);
+        BigInteger x = BigInteger.ONE.shiftLeft(a.bitLength() / degree + 1);
+        while (true) {
+            BigInteger y = x.multiply(m).add(a.divide(x.pow(degree - 1))).divide(n);
+            if (y.compareTo(x) >= 0) return x;
+            x = y;
+        }
+    }
+
+    /** The most a numerator or a denominator of a fractional exponent may be in this branch: the rounded power raises
+     *  the base to the numerator and takes the root of the denominator over whole numbers of that many times the
+     *  digits of the base and the decimals, which past this bound the branch refuses by name instead of computing. */
+    public static final int EXPONENT_BOUND = 1000;
+
+    /** A power of {@code base} to the fractional exponent {@code numerator/denominator} in lowest terms, the denominator
+     *  above 1, that is no base of a rounding (RUNTIME-SEMANTICS ch. 2.2): the exact root where the power is rational,
+     *  and otherwise the fault the reference interpreter gives, since the real power exists only under the rounding
+     *  §6.7 mandates; a leeg base leeg (ch. 1.2). */
+    public static Object exactPower(Object base, Integer numerator, Integer denominator) {
+        Breuk q = powerRadicand(base, numerator, denominator);
+        if (q == null) return null;
+        BigInteger t = wholeRoot(q.teller(), denominator), n = wholeRoot(q.noemer(), denominator);
+        if (!t.pow(denominator).equals(q.teller()) || !n.pow(denominator).equals(q.noemer()))
+            throw irrationalPower(base, numerator, denominator);
+        Breuk r = Breuk.van(t, n);
+        return r.isTerminerend() ? r.naarDecimal() : r;
+    }
+
+    /** As {@link #exactPower}, under its rounding to {@code decimals} decimals by {@code mode}: the true power rounded
+     *  once ({@link #roundedRoot}). */
+    public static Object roundedPower(Object base, Integer numerator, Integer denominator, Integer decimals,
+                                      java.math.RoundingMode mode) {
+        Breuk q = powerRadicand(base, numerator, denominator);
+        return q == null ? null : roundedRoot(q, denominator, decimals, mode);
+    }
+
+    /** {@code base} to the whole power {@code numerator}, of which a fractional exponent takes its root: leeg for a leeg
+     *  base, and the fault of the reference interpreter for a negative one, which it gives no real power. */
+    private static Breuk powerRadicand(Object base, int numerator, int denominator) {
+        Breuk b = Breuk.van(base);
+        if (b == null) return null;
+        int e = Math.abs(numerator);
+        Breuk p = Breuk.van(b.teller().pow(e), b.noemer().pow(e));
+        if (numerator < 0) p = Breuk.van(p.noemer(), p.teller());
+        if (p.signum() < 0) throw irrationalPower(base, numerator, denominator);
+        return p;
+    }
+
+    private static ComputeFault irrationalPower(Object base, int numerator, int denominator) {
+        return new ComputeFault("fractional power " + numberText(Breuk.van(base)) + "^" + numerator + "/" + denominator
+                + " is not exactly representable without an explicit rounding (§6.7 mandates one)");
     }
 
     /** A square root that is not the base of a rounding, exact as the reference interpreter computes it: the root of
@@ -453,12 +544,10 @@ public final class ComputeHelpers {
 
     /** The fold of the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9) as the runtime folds it
      *  ({@code rsGeheelPeriode}): over {@code timeline}, a list of segments or null, on the grid {@code grid}
-     *  ("JAAR" or "MAAND"), with the test of code {@code testCode} and the bound {@code bound} of a comparison read as a
-     *  decimal, null where the test has none; complemented where the qualifier is negated ({@code niet}). */
+     *  ("JAAR" or "MAAND"), with the test of code {@code testCode} and the bound {@code bound} of a comparison as the exact
+     *  value it is, null where the test has none; complemented where the qualifier is negated ({@code niet}). */
     public static boolean wholePeriod(Object timeline, Object bound, String grid, int testCode, boolean wholePeriodNegated) {
-        List<?> tl = (List<?>) timeline;
-        BigDecimal g = RegelSpraakRuntime.toBd(bound);
-        return RegelSpraakRuntime.rsGeheelPeriode(tl, grid, testCode, g) != wholePeriodNegated;
+        return RegelSpraakRuntime.rsGeheelPeriode((List<?>) timeline, grid, testCode, bound) != wholePeriodNegated;
     }
 
     /** The stop triggers of a composite and of a quantifier fold (RUNTIME-SEMANTICS ch. 5.10): the verdict once
@@ -777,13 +866,14 @@ public final class ComputeHelpers {
      *  skipped (ch. 1.2). Where {@code total} is not null the value is the member's timeline and contributes its total
      *  over time per that unit (ch. 3.6, the per-element fold), and nothing where the case gives the timeline as the
      *  asOfDate-bucket scalar ({@link BucketScalar}), since the member's {@link MemberFault} stands instead. Where
-     *  {@code filled}, the contribution counts the member and carries no value; otherwise it carries the value, an exact
-     *  rational collapsed to a decimal. */
+     *  {@code filled}, the contribution counts the member and carries no value; otherwise it carries the exact value,
+     *  a decimal or a rational that does not terminate, which the exact folds add and compare
+     *  ({@link ExactSumFunction}, {@link ExactMinimumFunction}, {@link ExactMaximumFunction}). */
     public static Contribution contribution(String fold, Object subject, Object member, Object value, String total,
                                     boolean filled) {
         if (total != null && value instanceof BucketScalar) return null;
         Object v = total == null ? value : RegelSpraakRuntime.rsTijdTotaal((List<?>) value, total);
-        return v == null ? null : new Contribution(fold, subject, member, filled ? null : collapse(v));
+        return v == null ? null : new Contribution(fold, subject, member, filled ? null : v);
     }
 
     /**

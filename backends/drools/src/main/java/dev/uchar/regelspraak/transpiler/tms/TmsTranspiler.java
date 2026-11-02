@@ -67,6 +67,7 @@ import org.kie.api.runtime.ClassObjectFilter;
 import org.kie.api.runtime.KieSession;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
@@ -4529,32 +4530,41 @@ public final class TmsTranspiler {
         return timesFactor(t, from, destination, factor.inverted());
     }
 
-    /** A power with a whole exponent of at least 0 written as a literal, exact (RUNTIME-SEMANTICS ch. 2.2), a leeg base
-     *  leeg (ch. 1.2), through the runtime's {@code rsMacht}. Any other exponent is refused: a
-     *  negative or fractional literal, or a value read while the session fires, reaches the real power, which ch. 2.1
-     *  leaves OPEN, where the reference interpreter answers an exact root or faults. */
+    /** A power with a whole exponent written as a literal, exact (RUNTIME-SEMANTICS ch. 2.2), a negative one inverting,
+     *  a leeg base leeg (ch. 1.2), through the runtime's {@code rsMacht}; with a fractional exponent written as a literal
+     *  the exact root where the power is rational, and otherwise the fault of an irrational power without its rounding
+     *  ({@link ComputeHelpers#exactPower}). An exponent read while the session fires is refused, and so is a fractional
+     *  one whose numerator or denominator passes {@link ComputeHelpers#EXPONENT_BOUND}, a limit of this branch. */
     private Term power(Expr.Binary b, Reads reads) {
-        Integer n = b.right() instanceof Expr.Literal lit && lit.type().isNumberLike() ? wholeExponent(lit.valueText()) : null;
-        if (n == null)
-            throw new Refusal(DroolsCode.POWER_NON_INTEGER_EXPONENT.reason("snippet", snippet(b.source())));
+        Breuk e = literalExponent(b);
         Term base = value(b.left(), reads);
-        Term exponent = constant(n);
-        note(b.right(), exponent);
-        return new Term.Call(StaticFunction.RS_POWER, List.of(base, exponent), source(b.source()));
+        if (e.noemer().equals(BigInteger.ONE)) {
+            Term exponent = constant(e.teller().intValueExact());
+            note(b.right(), exponent);
+            return new Term.Call(StaticFunction.RS_POWER, List.of(base, exponent), source(b.source()));
+        }
+        Term numerator = constant(e.teller().intValueExact()), denominator = constant(e.noemer().intValueExact());
+        note(b.right(), constant(e.isTerminerend() ? e.naarDecimal() : e));
+        return new Term.Call(StaticFunction.EXACT_POWER, List.of(base, numerator, denominator), source(b.source()));
     }
 
-    /** The whole exponent of at least 0 the lexeme writes, or null. */
-    private static Integer wholeExponent(String lexeme) {
-        BigDecimal[] r = RationalParser.of(lexeme);
-        if (r == null || r[1].signum() == 0) return null;
-        try {
-            BigDecimal v = r[0].divide(r[1]);
-            if (v.signum() < 0 || v.stripTrailingZeros().scale() > 0) return null;
-            int n = v.intValueExact();
-            return n <= 999_999_999 ? n : null;
-        } catch (ArithmeticException noWholeNumber) {
-            return null;
-        }
+    /** The exponent of the power {@code b} as the literal writes it, a rational in lowest terms; refused where it is no
+     *  literal, where it is whole and past the range of an {@code int}, and where it is fractional and its numerator
+     *  or its denominator passes {@link ComputeHelpers#EXPONENT_BOUND}. */
+    private static Breuk literalExponent(Expr.Binary b) {
+        BigDecimal[] r = b.right() instanceof Expr.Literal lit && lit.type().isNumberLike() ? RationalParser.of(lit.valueText())
+                : null;
+        if (r == null || r[1].signum() == 0)
+            throw new Refusal(DroolsCode.POWER_NON_INTEGER_EXPONENT.reason("snippet", snippet(b.source())));
+        Breuk e = Breuk.van(r[0]).delen(Breuk.van(r[1]));
+        if (e.noemer().equals(BigInteger.ONE)) {
+            if (e.teller().abs().compareTo(BigInteger.valueOf(999_999_999)) > 0)
+                throw new Refusal(DroolsCode.POWER_NON_INTEGER_EXPONENT.reason("snippet", snippet(b.source())));
+        } else if (e.teller().abs().compareTo(BigInteger.valueOf(ComputeHelpers.EXPONENT_BOUND)) > 0
+                || e.noemer().compareTo(BigInteger.valueOf(ComputeHelpers.EXPONENT_BOUND)) > 0)
+            throw new Refusal(DroolsCode.POWER_EXPONENT_PAST_BOUND.reason("exponent", e.teller() + "/" + e.noemer(),
+                    "bound", ComputeHelpers.EXPONENT_BOUND, "snippet", snippet(b.source())));
+        return e;
     }
 
     /** A date plus or minus a duration with a calendar or clock unit: no date minus date, no duration minus a date, a
@@ -4681,13 +4691,23 @@ public final class TmsTranspiler {
     private Term rounding(Expr.Rounding a, Reads reads) {
         java.math.RoundingMode mode = roundingMode(a.mode());
         int decimals = a.decimals();
-        Term base;
-        if (a.base() instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.WORTEL) {
-            base = squareRootValue(f, reads);
-            note(f, base);
-        } else base = value(a.base(), reads);
-        return new Term.Call(StaticFunction.RS_ROUNDING, List.of(base, constant(decimals), constant(mode)),
-                source(a.source()));
+        // a root and a fractional power under their rounding are the true value rounded once, which has no exact value
+        // of its own before the rounding, so their node has no reading, as in the reference interpreter
+        if (a.base() instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.WORTEL)
+            return new Term.Call(StaticFunction.ROUNDED_SQUARE_ROOT, List.of(squareRootValue(f, reads),
+                    constant(decimals), constant(mode)), source(a.source()));
+        if (a.base() instanceof Expr.Binary b && b.op() == Expr.BinOp.TOT_DE_MACHT && !eff.typeOf(b.left()).isDate()) {
+            Breuk e = literalExponent(b);
+            if (!e.noemer().equals(BigInteger.ONE)) {
+                Term base = value(b.left(), reads);
+                Term exponent = constant(e.isTerminerend() ? e.naarDecimal() : e);
+                note(b.right(), exponent);
+                return new Term.Call(StaticFunction.ROUNDED_POWER, List.of(base, constant(e.teller().intValueExact()),
+                        constant(e.noemer().intValueExact()), constant(decimals), constant(mode)), source(a.source()));
+            }
+        }
+        return new Term.Call(StaticFunction.RS_ROUNDING, List.of(value(a.base(), reads), constant(decimals),
+                constant(mode)), source(a.source()));
     }
 
     private static java.math.RoundingMode roundingMode(Expr.RoundingMode m) {
@@ -4700,16 +4720,15 @@ public final class TmsTranspiler {
         };
     }
 
-    /** A square root under its rounding (§13.4.17.13): the runtime's root at 34
-     *  digits ({@code rsWortel}), which the rounding above it collapses; a leeg radicand leeg, and a negative one leeg
-     *  with the §6.6 deposit where the radicand qualifies and the evaluation reaches it (RUNTIME-SEMANTICS ch. 1.2,
-     *  {@link DepositFlag}). */
+    /** The radicand of a square root under its rounding (§13.4.17.13), which {@link ComputeHelpers#roundedSquareRoot}
+     *  rounds: a leeg radicand leeg, and a negative one leeg with the §6.6 deposit where the radicand qualifies and the
+     *  evaluation reaches it (RUNTIME-SEMANTICS ch. 1.2, {@link DepositFlag}). */
     private Term squareRootValue(Expr.FunctionCall f, Reads reads) {
         if (f.arguments().size() != 1)
             throw new Refusal(DroolsCode.SQUARE_ROOT_ARGUMENT_COUNT.reason("argumentCount", f.arguments().size(), "snippet", snippet(f.source())));
         Term radicand = value(f.arguments().get(0), reads);
         int depositFlag = depositSite(f) ? reads.depositFlag() : -1;
-        return new Term.SquareRoot(StaticFunction.SQUARE_ROOT, radicand, depositFlag, source(f.source()));
+        return new Term.SquareRoot(StaticFunction.RADICAND, radicand, depositFlag, source(f.source()));
     }
 
     /** A clamp (RUNTIME-SEMANTICS ch. 2.7): its base, then its minimum, then its maximum, in the order of ch. 5.11 and
@@ -4839,12 +4858,6 @@ public final class TmsTranspiler {
             keys.add(key);
             if (!writers.containsKey(ProducerConsumer.cellOf(holder, a.attribute(), t))) continue;
             Member cell = cellMember(holder, a.attribute(), t, description, f.source());
-            // a cell a form writes on the unbounded form holds an exact rational in working memory (RUNTIME-SEMANTICS
-            // ch. 2.4 point 3), and the runtime's folds over cells fold decimals; an input cell is a decimal. A first, a
-            // last and a filled count compute nothing with the value
-            if (arithmetic && cell.datatype().unbounded())
-                throw new Refusal(DroolsCode.FOLD_OVER_UNBOUNDED_VALUE.reason("attribute", cell.spelled(), "objectType",
-                        cell.declarant().name));
             map = new Term.Call(StaticFunction.WITH_CELL, List.of(map, constant(key),
                     new Term.SlotValue(dimensionedRead(path, cell, reads), null)), null);
         }
@@ -5549,8 +5562,7 @@ public final class TmsTranspiler {
                 + "\" per segment and needs its full timeline; ", subjectType,
                 " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", source(a.source()));
         note(a, whole);
-        Term periods = new Term.Call(StaticFunction.RS_TIME_CONDITION, List.of(whole,
-                constant(testCode), new Term.Call(StaticFunction.COLLAPSE, List.of(bound), bound.source()),
+        Term periods = new Term.Call(StaticFunction.RS_TIME_CONDITION, List.of(whole, constant(testCode), bound,
                 constant(Period.class)), null);
         // the segments of the compared timeline where the comparison holds, cut where the clipped timeline's segments
         // are cut (ch. 3.6: the comparison is read per period of their common cuts)
@@ -5811,11 +5823,6 @@ public final class TmsTranspiler {
         } else memberValue = arg == null ? null : declared(elem, arg.attribute(), false).time() == null
                 ? member(elem, arg.attribute(), false) : integrable(timeMember(elem, arg.attribute(), false,
                         Msg.drools("PART.desc.member-total", "snippet", snippet(arg.source()))), Msg.drools("PART.desc.member-total-plain"));
-        // a value of the unbounded form is an exact rational in working memory (RUNTIME-SEMANTICS ch. 2.4 point 3), and
-        // the accumulates of this branch fold decimals; a filled count reads no value, and an input cell is a decimal
-        if (memberValue != null && memberValue.time() == null && memberValue.datatype().unbounded()
-                && kind != Expr.FunctionKind.AANTAL_GEVULDE && cellKey == null)
-            throw new Refusal(DroolsCode.FOLD_OVER_UNBOUNDED_VALUE.reason("attribute", memberValue.spelled(), "objectType", elem.name));
         int value = memberValue == null ? -1 : memberValue.time() == null ? reads.own(memberValue) : reads.timeline(memberValue);
         String total = memberValue == null || memberValue.time() == null ? null : memberValue.time().name();
         reads.stop();

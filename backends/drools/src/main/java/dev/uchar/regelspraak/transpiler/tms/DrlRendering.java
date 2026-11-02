@@ -733,13 +733,20 @@ final class DrlRendering {
                 String over = x.source() == null ? a.source().name() : x.source();
                 f.add(x.target() + " : " + switch (x.kind()) {
                     case COUNT -> "count()";
-                    case SUM -> "sumBD(" + over + ")";
-                    case MINIMUM -> "min(" + over + ")";
-                    case MAXIMUM -> "max(" + over + ")";
+                    case SUM -> exactFold(ExactSumFunction.class, ExactSumFunction.NAME) + "(" + over + ")";
+                    case MINIMUM -> exactFold(ExactMinimumFunction.class, ExactMinimumFunction.NAME) + "(" + over + ")";
+                    case MAXIMUM -> exactFold(ExactMaximumFunction.class, ExactMaximumFunction.NAME) + "(" + over + ")";
                     case LIST -> "collectList(" + over + ")";
                 });
             }
             return "accumulate( " + source + "; " + String.join(", ", f) + " )";
+        }
+
+        /** {@code name}, the name under which the text imports the accumulate function {@code function} of this branch:
+         *  the sum, the least and the greatest of a fold over exact values. */
+        private String exactFold(Class<?> function, String name) {
+            imports.add("accumulate " + function.getName() + " " + name);
+            return name;
         }
 
         /** An identity join, which meets nothing where a side reads null ({@link Join}): where the pattern's side is a

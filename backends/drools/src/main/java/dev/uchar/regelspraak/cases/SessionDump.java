@@ -493,7 +493,7 @@ final class SessionDump {
      * object and the status, and per node one line with the form, the object, the number and the kind of the node and
      * what the evaluation found there. An object is named as in the dump, an input bean by its case label quoted and a
      * made object as {@code «"creation"»(subject)#k}; a value without its Java class, as a case writes it: a number as
-     * its decimal without trailing zeros, a date and a date-time in the ISO form of the cases, a text quoted, a truth
+     * its decimal without trailing zeros where it terminates and as {@code t/n} where it does not, a date and a date-time in the ISO form of the cases, a text quoted, a truth
      * value as {@code true} or {@code false}, leeg as {@code empty}, a timeline as its periods {@code [from to value]};
      * a unit by its rendering; a fault by the EF code of its kind (RUNTIME-SEMANTICS ch. 5.7b), {@code -} where it has
      * none, and never by its sentence, which differs between executors; after the value of a node that reads a member
@@ -550,6 +550,8 @@ final class SessionDump {
         if (v == null) return "empty";
         if (v instanceof Boolean b) return b.toString();
         if (v instanceof BigDecimal d) return d.signum() == 0 ? "0" : d.stripTrailingZeros().toPlainString();
+        // a rational that does not terminate as its numerator and denominator in lowest terms (RUNTIME-SEMANTICS ch. 5.12)
+        if (v instanceof dev.uchar.regelspraak.runtime.Breuk b) return b.teller() + "/" + b.noemer();
         if (v instanceof java.time.LocalDate d) return d.toString();
         if (v instanceof java.time.LocalDateTime d)
             return DATE_TIME.format(d) + (d.getNano() == 0 ? "" : String.format(".%03d", d.getNano() / 1_000_000));

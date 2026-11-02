@@ -20,7 +20,6 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The exact value at rest on the unbounded form (RUNTIME-SEMANTICS ch. 2.1, 2.4 point 3), through both branches: a value
@@ -47,8 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       greater. The reference interpreter plays the case (RUNTIME-SEMANTICS ch. 2.4, the worked example of the
  *       unbounded form at rest, {@code WV-2.4-p} in {@code ref/test}); the ASP backend refuses the unbounded form where
  *       a value is not whole.</li>
- *   <li>a fold over the value of an attribute of the unbounded form is refused by name (DROOLS-296): the accumulates of
- *       this branch fold decimals, and three times 1/3 would sum to 0.9999999999999999.</li>
+ *   <li>a fold over the value of an attribute of the unbounded form adds and compares the exact values: three times 1/3
+ *       sums to 1, where decimals of sixteen digits sum to 0.9999999999999999.</li>
  * </ul>
  *
  * <p><b>Red</b> on {@code a0e0fa0ee}, before the card, with the shaded jar of that commit (the outcomes are in the
@@ -106,31 +105,40 @@ class RationalAtRestWitnessTest {
         assertEquals("gespeeld", TmsFaultWitnessTest.playBoth(ir, caseDocument));
     }
 
-    @Test void a_fold_over_a_value_of_the_unbounded_form_is_refused_by_name() throws Exception {
+    @Test void a_fold_over_values_of_the_unbounded_form_adds_and_compares_them_exactly() throws Exception {
         String model = TmsDocuments.model(List.of(
-                TmsDocuments.objectType("Ploeg", List.of(attribute("ploegsom", WHOLE)), List.of()),
+                TmsDocuments.objectType("Ploeg", List.of(attribute("ploegsom", WHOLE), attribute("kleinste", UNBOUNDED),
+                        attribute("grootste", UNBOUNDED), attribute("klein", WHOLE), attribute("groot", WHOLE)), List.of()),
                 TmsDocuments.objectType("Jutter", List.of(attribute("som", WHOLE), attribute("deel", UNBOUNDED)),
                         List.of())),
                 List.of(TmsDocuments.factTypeOneToMany("ploegdeelname", "ploeg", "Ploeg", "lid", "Jutter", "leden")));
         Path ir = TmsDocuments.document(model, List.of(
                 computingRule("deel van een jutter", "BEREKENING", "Jutter", "deel",
                         binary("dividedBy", ownRead("som", "Jutter"), number("3"), UNBOUNDED), "null"),
-                computingRule("ploegsom van een ploeg", "BEREKENING", "Ploeg", "ploegsom",
-                        TmsDocuments.aggregation("sum", ownRead("deel", "Jutter"), "Jutter",
-                                TmsDocuments.sourceRole("ploegdeelname", "lid"), "null", "null", UNBOUNDED,
-                                "de som van de delen van zijn leden"), "null")));
-        JsonNode c = TmsDocuments.caseDocument(List.of(
-                TmsDocuments.instanceWithRoles("P1", "Ploeg", Map.of(), List.of(), Map.of("leden", List.of("J1", "J2", "J3"))),
-                instance("J1", "Jutter", Map.of("som", "1"), List.of(), Map.of()),
-                instance("J2", "Jutter", Map.of("som", "1"), List.of(), Map.of()),
-                instance("J3", "Jutter", Map.of("som", "1"), List.of(), Map.of())),
-                List.of(value("P1", "ploegsom", "1"), consistent()));
-        for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
-            String verdict = TmsFaultWitnessTest.play(ir, c, branch);
-            assertTrue(verdict.startsWith("Excluded: ") && verdict.contains("'deel'"), branch + ": " + verdict);
+                computingRule("ploegsom van een ploeg", "BEREKENING", "Ploeg", "ploegsom", fold("sum"), "null"),
+                computingRule("kleinste van een ploeg", "BEREKENING", "Ploeg", "kleinste", fold("minimum"), "null"),
+                computingRule("grootste van een ploeg", "BEREKENING", "Ploeg", "grootste", fold("maximum"), "null"),
+                computingRule("klein van een ploeg", "BEREKENING", "Ploeg", "klein",
+                        binary("times", ownRead("kleinste", "Ploeg"), number("3"), UNBOUNDED), "null"),
+                computingRule("groot van een ploeg", "BEREKENING", "Ploeg", "groot",
+                        binary("times", ownRead("grootste", "Ploeg"), number("3"), UNBOUNDED), "null")));
+        // three thirds sum to one; with a member of 3 the sum mixes a decimal and the rationals 1/3 and 2/3
+        for (List<String> soms : List.of(List.of("1", "1", "1"), List.of("1", "3", "2"))) {
+            JsonNode c = TmsDocuments.caseDocument(List.of(
+                    TmsDocuments.instanceWithRoles("P1", "Ploeg", Map.of(), List.of(), Map.of("leden", List.of("J1", "J2", "J3"))),
+                    instance("J1", "Jutter", Map.of("som", soms.get(0)), List.of(), Map.of()),
+                    instance("J2", "Jutter", Map.of("som", soms.get(1)), List.of(), Map.of()),
+                    instance("J3", "Jutter", Map.of("som", soms.get(2)), List.of(), Map.of())),
+                    List.of(value("P1", "ploegsom", soms.get(1).equals("1") ? "1" : "2"), value("P1", "klein", "1"),
+                            value("P1", "groot", soms.get(1)), consistent()));
+            assertEquals("gespeeld", TmsFaultWitnessTest.playBoth(ir, c), () -> "soms " + soms);
         }
-        CaseRunner.Result r = CaseRunner.viaExecModel(ir, List.of());
-        assertEquals("DROOLS-296", r.code().id(), r.reason());
+    }
+
+    /** The {@code kind} of the deel of the leden of a Ploeg. */
+    private static String fold(String kind) {
+        return TmsDocuments.aggregation(kind, ownRead("deel", "Jutter"), "Jutter",
+                TmsDocuments.sourceRole("ploegdeelname", "lid"), "null", "null", UNBOUNDED, "de " + kind + " van de delen");
     }
 
     /** A binary operation in its wire spelling, of the type {@code type}. */

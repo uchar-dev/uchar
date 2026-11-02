@@ -333,8 +333,8 @@ final class ClosureRendering {
             case RS_TIME_CLIP -> x -> RegelSpraakRuntime.rsTijdKnip((List<?>) x[0], (List<?>) x[1], (Class<?>) x[2]);
             case RS_TIME_CLIP_NOT -> x -> RegelSpraakRuntime.rsTijdKnipNiet((List<?>) x[0], (List<?>) x[1],
                     (Class<?>) x[2]);
-            case RS_TIME_CONDITION -> x -> RegelSpraakRuntime.rsTijdConditie((List<?>) x[0], (Integer) x[1],
-                    (BigDecimal) x[2], (Class<?>) x[3]);
+            case RS_TIME_CONDITION -> x -> RegelSpraakRuntime.rsTijdConditie((List<?>) x[0], (Integer) x[1], x[2],
+                    (Class<?>) x[3]);
             case RS_TIME_PROPORTIONAL -> x -> RegelSpraakRuntime.rsTijdsevenredig((List<?>) x[0], (List<?>) x[1],
                     (String) x[2], (Class<?>) x[3]);
             case RS_DAY_COUNT -> x -> RegelSpraakRuntime.rsAantalDagenIn((List<?>) x[0], (String) x[1],
@@ -344,7 +344,11 @@ final class ClosureRendering {
             case PERIOD_LIST -> x -> Period.list((List<?>) x[0]);
             case DIVIDED -> x -> ComputeHelpers.divided(x[0], x[1], x[2]);
             case DIVIDED_ABS -> x -> ComputeHelpers.dividedAbs(x[0], x[1], x[2]);
-            case SQUARE_ROOT -> x -> ComputeHelpers.squareRoot(x[0], x[1]);
+            case RADICAND -> x -> ComputeHelpers.radicand(x[0], x[1]);
+            case ROUNDED_SQUARE_ROOT -> x -> ComputeHelpers.roundedSquareRoot(x[0], (Integer) x[1], (RoundingMode) x[2]);
+            case EXACT_POWER -> x -> ComputeHelpers.exactPower(x[0], (Integer) x[1], (Integer) x[2]);
+            case ROUNDED_POWER -> x -> ComputeHelpers.roundedPower(x[0], (Integer) x[1], (Integer) x[2], (Integer) x[3],
+                    (RoundingMode) x[4]);
             case EXACT_SQUARE_ROOT -> x -> ComputeHelpers.exactSquareRoot(x[0], x[1]);
             case DATE_STEP -> x -> ComputeHelpers.dateStep(x[0], x[1], (String) x[2], (Boolean) x[3]);
             case DAY_KIND_STEP -> x -> ComputeHelpers.dayKindStep(x[0], x[1], (Predicate<LocalDate>) x[2],

@@ -485,22 +485,37 @@ class DimensionCellWitnessTest {
     }
 
     /** A cell a form writes on the unbounded form (IR-SPEC ch. 2.4 (c)) holds an exact rational in working memory, and
-     *  the runtime's folds over cells fold decimals: jutterswet-seizoenboeking with its vondstgewicht of that form is
-     *  refused by name where the sum over all seasons reads the written cells (DROOLS-296), never folded to a decimal or
-     *  stopped by a cast. */
-    @Test void a_fold_over_a_written_cell_of_the_unbounded_form_is_refused_by_name() throws Exception {
-        JsonNode ir = golden("jutterswet-seizoenboeking");
-        ObjectNode datatype = (ObjectNode) IrPath.attribute(IrPath.objectType(ir, "Jutter"), "vondstgewicht").get("datatype");
-        datatype.put("whole", false).put("decimals", 0);
-        Path p = document(ir);
-        Path c = GOLDEN.resolve("jutterswet-seizoenboeking").resolve("case2-zonder-invoer.json");
-        for (DroolsBackend.Branch branch : BRANCHES) {
-            CaseRunner.Result r = replay(p, List.of(c), branch);
-            assertEquals("EXCLUDE", r.status(), () -> branch + ": " + r);
-            assertEquals(DroolsCode.FOLD_OVER_UNBOUNDED_VALUE, r.code(), () -> branch + ": " + r);
-            // the first written cell of the selection, zomer, which the initialisation writes
-            assertTrue(r.reason().contains("'vondstgewicht[zomer]'"), () -> branch + ": " + r);
+     *  the fold over the cells adds the exact values (RUNTIME-SEMANTICS ch. 2.1, 5.8c): three cells each written as
+     *  "zijn som gedeeld door 3", with a som of 1, sum to 1, which fits the whole jaartotaal; on cells of sixteen
+     *  digits the sum is 0.9999999999999999, which does not. */
+    @Test void a_fold_over_written_cells_of_the_unbounded_form_adds_their_exact_values() throws Exception {
+        String unbounded = "{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"}";
+        String model = TmsDocuments.model(List.of(TmsDocuments.objectType("Jutter", List.of(
+                TmsDocuments.attribute("som", TmsDocuments.WHOLE),
+                "{\"node\":\"Attribute\",\"name\":\"vondst\",\"datatype\":" + unbounded + ",\"dimensions\":[\"seizoen\"]}",
+                TmsDocuments.attribute("jaartotaal", TmsDocuments.WHOLE)), List.of())), List.of())
+                .replace("\"dimensions\":[]", "\"dimensions\":[{\"node\":\"Dimension\",\"name\":\"seizoen\",\"plural\":"
+                        + "\"seizoenen\",\"preposition\":\"in\",\"labels\":[\"voorjaar\",\"zomer\",\"najaar\"]}]");
+        String third = "{\"node\":\"Binary\",\"op\":\"dividedBy\",\"left\":" + TmsDocuments.ownRead("som", "Jutter")
+                + ",\"right\":" + TmsDocuments.number("3") + ",\"type\":" + unbounded + ",\"source\":{\"snippet\":"
+                + "\"zijn som gedeeld door 3\"}}";
+        List<String> rules = new ArrayList<>();
+        for (String season : List.of("voorjaar", "zomer", "najaar")) {
+            String cell = "{\"node\":\"DimensionCellRead\",\"attribute\":{\"node\":\"AttributeReference\",\"attribute\":"
+                    + "\"vondst\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":\"De vondst in " + season
+                    + " van een Jutter\"}},\"labels\":[\"" + season + "\"],\"source\":{\"snippet\":\"De vondst in " + season
+                    + " van een Jutter\"}}";
+            rules.add(IrPath.rule(season + "svondst van een jutter", "BEREKENING", cell, third, "null"));
         }
+        String sum = "{\"node\":\"Aggregation\",\"kind\":\"sum\",\"arguments\":[" + TmsDocuments.ownRead("vondst", "Jutter")
+                + "],\"dimensionSelections\":[{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\",\"labels\":"
+                + "[\"voorjaar\",\"zomer\",\"najaar\"],\"source\":{\"snippet\":\"over alle seizoenen\"}}],\"type\":"
+                + unbounded + ",\"source\":{\"snippet\":\"de som van zijn vondst over alle seizoenen\"}}";
+        rules.add(TmsDocuments.computingRule("jaartotaal van een jutter", "BEREKENING", "Jutter", "jaartotaal", sum, "null"));
+        Path ir = TmsDocuments.document(model, rules);
+        JsonNode c = TmsDocuments.caseDocument(List.of(TmsDocuments.instance("J1", "Jutter", Map.of("som", "1"), List.of(),
+                Map.of())), List.of(TmsDocuments.value("J1", "jaartotaal", "1"), TmsDocuments.consistent()));
+        assertEquals("gespeeld", TmsFaultWitnessTest.playBoth(ir, c));
     }
 
     /** IR-SPEC ch. 5.1: a cell is a node of the graph whose cycles the exec-model branch refuses (WF-045), as the

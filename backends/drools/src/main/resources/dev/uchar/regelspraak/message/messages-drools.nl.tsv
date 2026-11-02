@@ -200,7 +200,7 @@ DROOLS-169	een getal dat niet te lezen is ('{valueText}')
 DROOLS-170	een datum die niet te lezen is ('{valueText}')
 DROOLS-171	een datum-tijd die niet te lezen is ('{valueText}')
 DROOLS-172	een Literal van type {datatype}: deze tak draagt deze vorm nog niet
-DROOLS-173	een macht met een exponent die geen geheel getal van ten minste 0 als literal is ('{snippet}'): de reële macht is OPEN (RUNTIME-SEMANTICS ch. 2.1), waar de referentie-interpreter een exacte wortel geeft of faalt
+DROOLS-173	een macht met een exponent die geen literal is, of een geheel literal buiten ±999999999 ('{snippet}'): deze tak rekent een macht alleen met een exponent die het document schrijft
 DROOLS-174	een Binary {operator} met een datum ('{snippet}')
 DROOLS-175	een rekensom van twee datums of een duur min een datum ('{snippet}')
 DROOLS-176	een duur zonder tijdseenheid ('{snippet}')
@@ -334,6 +334,7 @@ DROOLS-296	een vouw over de waarde van het attribuut '{attribute}' van {objectTy
 DROOLS-297	een dimensievouw over {dimensionCount} dimensies ('{snippet}'): deze tak vouwt alleen over een attribuut met één dimensie
 DROOLS-298	het schrijven van een cel van het gedimensioneerde attribuut '{attribute}' door '{form}': deze tak schrijft geen cel
 DROOLS-299	{description} over het attribuut '{attribute}' ('{snippet}'): de labels [{labels}] noemen geen cel van zijn dimensies {dimensions}; een cel noemt één label van elke dimensie, label i een van dimensie i (WF-040)
+DROOLS-300	een macht met de gebroken exponent {exponent} ('{snippet}'): deze tak rekent een gebroken exponent waarvan teller en noemer ten hoogste {bound} zijn; daarboven zijn de gehele getallen van de macht en haar wortel te groot
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)

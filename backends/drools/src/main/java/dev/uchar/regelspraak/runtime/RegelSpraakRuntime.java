@@ -168,6 +168,12 @@ public final class RegelSpraakRuntime {
         throw new IllegalStateException("kan accumulate-resultaat niet naar BigDecimal omzetten: " + o.getClass());
     }
 
+    /** The order of a segment's value {@code w} and a bound {@code grens}, a decimal or an exact {@link Breuk}: exact, so
+     *  that a value of 0.3333333333333333 is less than a bound of 1/3 (RUNTIME-SEMANTICS ch. 2.1). */
+    private static int exactCompare(BigDecimal w, Object grens) {
+        return grens instanceof Breuk b ? Breuk.van(w).compareTo(b) : w.compareTo((BigDecimal) grens);
+    }
+
     /** Whether any of the operands is already an exact {@link Breuk} — the trigger for exactness to PROPAGATE
      *  through +,-,×,÷ (a Breuk-tainted operand keeps the result exact even for an otherwise-terminating op). */
     private static boolean enigeBreuk(Object a, Object b) { return a instanceof Breuk || b instanceof Breuk; }
@@ -211,22 +217,22 @@ public final class RegelSpraakRuntime {
     // single-runtime principle holds and no host-language infix ever sees a Breuk. Each returns Object (a BigDecimal
     // on the fast/terminating path, else a Breuk); leegwaarde per §6.2-6.4 Tabel: an empty operand counts as 0. ----
 
-    /** §6.2 "plus": leeg counts as 0; exact when either operand is a Breuk (else the DECIMAL128 BigDecimal add,
-     *  byte-identical to the former mvel infix). */
+    /** §6.2 "plus": leeg counts as 0; exact, a field operation on the exact rationals (RUNTIME-SEMANTICS ch. 2.1): in
+     *  {@link Breuk} when either operand is one, else the exact {@code BigDecimal} sum, which no context rounds. */
     public static Object rsPlus(Object links, Object rechts) {
         if (enigeBreuk(links, rechts)) return verklein(nulBreuk(links).optellen(nulBreuk(rechts)));
-        return rsNul(links).add(rsNul(rechts), java.math.MathContext.DECIMAL128);
+        return rsNul(links).add(rsNul(rechts));
     }
-    /** §6.2 "min" (both empties -> 0, unlike "verminderd met"): exact when either operand is a Breuk. */
+    /** §6.2 "min" (both empties -> 0, unlike "verminderd met"): exact, as {@link #rsPlus}. */
     public static Object rsMin(Object links, Object rechts) {
         if (enigeBreuk(links, rechts)) return verklein(nulBreuk(links).aftrekken(nulBreuk(rechts)));
-        return rsNul(links).subtract(rsNul(rechts), java.math.MathContext.DECIMAL128);
+        return rsNul(links).subtract(rsNul(rechts));
     }
-    /** §6.4 Tabel 10 "maal": any empty operand -> 0; exact when either operand is a Breuk (so 9 maal 1/3 = 3 exactly,
-     *  not 2.9999999999999997). The single implementation (single-runtime principle). */
+    /** §6.4 Tabel 10 "maal": any empty operand -> 0; exact, as {@link #rsPlus} (so 9 maal 1/3 = 3 exactly, not
+     *  2.9999999999999997). The single implementation (single-runtime principle). */
     public static Object rsMaal(Object links, Object rechts) {
         if (enigeBreuk(links, rechts)) return verklein(nulBreuk(links).vermenigvuldigen(nulBreuk(rechts)));
-        return rsNul(links).multiply(rsNul(rechts), java.math.MathContext.DECIMAL128);
+        return rsNul(links).multiply(rsNul(rechts));
     }
     /** §6.8/§486 "percentage van": {@code l/100 · r}, leeg counts as 0. The exact fraction is always kept as a Breuk
      *  when it does not terminate ((1/3)% van 600 = 2 exactly, not 1.9999…998), and whenever either operand is a
@@ -258,14 +264,6 @@ public final class RegelSpraakRuntime {
         return verklein(Breuk.van(links).delen(Breuk.van(rechts)));   // §389 exact rational; verklein keeps the fast path when it terminates
     }
 
-    /** §13.4.17.13/§6.6 square root: a leeg OR negative radicand -> leeg (the negative is a Fout surfaced by the
-     *  companion rule, never a session-aborting sqrt throw); else the 34-digit sqrt (NOT Math.sqrt double-noise,
-     *  which can flip a directional afronding). The single implementation (single-runtime principle). */
-    public static BigDecimal rsWortel(Object x) {
-        BigDecimal b = toBd(x);   // sqrt is a natural DECIMAL128 collapse; a Breuk radicand reduces exactly first
-        return (b == null || b.signum() < 0) ? null : b.sqrt(java.math.MathContext.DECIMAL128);
-    }
-
     /** §13.4.17.25/§6.1.2 afronding — THE collapse point: round to {@code scale} decimals; a leeg (null) value
      *  rounds to leeg (so a wortel/macht/division leeg result propagates instead of NPE-ing .setScale). A
      *  {@link Breuk} is rounded on its EXACT value ({@link Breuk#naarDecimal(int,java.math.RoundingMode)} — the true
@@ -287,11 +285,13 @@ public final class RegelSpraakRuntime {
     }
 
     /** §13.4.17.14 "tot de macht" with an INTEGER exponent: BigDecimal.pow(int) (exact, unlike Math.pow's double
-     *  noise above 2^53); §6.7 a leeg base -> leeg. A {@link Breuk} base stays exact (teller^n / noemer^n), so an
-     *  exact rational raised to an integer power keeps its precision. The single implementation (single-runtime principle). */
+     *  noise above 2^53); §6.7 a leeg base -> leeg. A {@link Breuk} base stays exact (teller^n / noemer^n), and so does a
+     *  negative exponent, which inverts the base first (RUNTIME-SEMANTICS ch. 2.2). The single implementation
+     *  (single-runtime principle). */
     public static Object rsMacht(Object basis, int exponent) {
         if (basis == null) return null;
-        if (basis instanceof Breuk b) {
+        if (basis instanceof Breuk || exponent < 0) {
+            Breuk b = Breuk.van(basis);
             if (exponent >= 0) return verklein(Breuk.van(b.teller().pow(exponent), b.noemer().pow(exponent)));
             return verklein(Breuk.van(b.noemer().pow(-exponent), b.teller().pow(-exponent)));   // x^-n = (1/x)^n
         }
@@ -849,7 +849,7 @@ public final class RegelSpraakRuntime {
      *  satisfies the toets (0..5 = KLEINER..ONGELIJK) against the scalar grens — the periods where the comparison
      *  holds. A leeg (null) value or a null grens is onwaar (§5.1 ordering leegwaarde). The single implementation
      *  (single-runtime principle); the caller then rsTijdKnips the value timeline by this result. */
-    public static List<Object> rsTijdConditie(List<?> reeks, int toets, BigDecimal grens, Class<?> segCls) {
+    public static List<Object> rsTijdConditie(List<?> reeks, int toets, Object grens, Class<?> segCls) {
         List<Object> uit = new ArrayList<>();
         if (reeks == null || grens == null) return uit;
         for (Object o : reeks) {
@@ -860,7 +860,7 @@ public final class RegelSpraakRuntime {
                 if (toets == 5) uit.add(newSegment(segCls, van, tot, w));   // §5.6 Tabel 44: leeg ONGELIJK een gevulde grens = WAAR
                 continue;
             }
-            int c = w.compareTo(grens);
+            int c = exactCompare(w, grens);
             boolean ok;
             if (toets == 0) ok = c < 0;
             else if (toets == 1) ok = c <= 0;
@@ -1039,7 +1039,7 @@ public final class RegelSpraakRuntime {
      *  waarde never satisfies), 6 = GEVULD (any non-leeg waarde), 7 = covered (a §8.2 kenmerk true-period — any
      *  covering segment), 8 = LEEG (a leeg waarde). The single implementation (single-runtime
      *  principle). */
-    public static boolean rsGeheelPeriode(List<?> tijdlijn, String granulariteit, int toets, BigDecimal grens) {
+    public static boolean rsGeheelPeriode(List<?> tijdlijn, String granulariteit, int toets, Object grens) {
         if (tijdlijn == null) return true;
         boolean jaar = "JAAR".equals(granulariteit);
         TreeMap<LocalDate, Long> geraaktDagen = new TreeMap<>();   // calendar buckets the timeline touches
@@ -1084,13 +1084,13 @@ public final class RegelSpraakRuntime {
     /** Whether one timeline segment's value satisfies the §8.2 per-moment check ({@code toets} encoding per
      *  {@link #rsGeheelPeriode}). A leeg (null) value satisfies only the "covered" check (toets 7); every value
      *  comparison treats leeg as not-holding. */
-    private static boolean segmentVoldoet(int toets, BigDecimal w, BigDecimal grens) {
+    private static boolean segmentVoldoet(int toets, BigDecimal w, Object grens) {
         if (toets == 7) return true;       // §8.2 kenmerk: a covering segment = the kenmerk holds here
         if (toets == 8) return w == null;  // §8.2 leeg: this moment carries NO value (the inverse of gevuld)
         if (w == null) return false;       // leeg: no value at this moment -> the check does not hold
         if (toets == 6) return true;       // §8.2 gevuld: a non-leeg value
         if (grens == null) return false;   // §5.1 a comparison with a leeg grens is onwaar (never crash on compareTo(null))
-        int c = w.compareTo(grens);
+        int c = exactCompare(w, grens);
         switch (toets) {
             case 0:  return c < 0;
             case 1:  return c <= 0;
@@ -1105,31 +1105,34 @@ public final class RegelSpraakRuntime {
     // ---- §13.4.17.51-.54 dimensie folds (a gedimensioneerd attribuut is a Map of its cells by their labels) ----
     /** §5.8.5 fold a dimensioned attribute's cell values over the SELECTED cell keys, null-skipping empties
      *  (an absent label / null value is skipped, NOT 0) and returning null for an all-empty selection (§5.8.2 an
-     *  empty sum is a leegwaarde). Exact add (no MathContext); the single implementation (single-runtime principle). */
-    public static BigDecimal rsDimSom(Map<?, ?> m, List<?> keys) {
-        BigDecimal acc = null;
+     *  empty sum is a leegwaarde). Exact: a decimal cell adds as the decimal it is, and a cell a form wrote on the
+     *  unbounded form as the {@link Breuk} it is where it does not terminate (RUNTIME-SEMANTICS ch. 2.1); the single
+     *  implementation (single-runtime principle). */
+    public static Object rsDimSom(Map<?, ?> m, List<?> keys) {
+        Object acc = null;
         for (Object k : keys) {
-            BigDecimal v = m == null ? null : (BigDecimal) m.get(k);
-            if (v != null) acc = acc == null ? v : acc.add(v);
+            Object v = m == null ? null : m.get(k);
+            if (v != null) acc = acc == null ? v : rsPlus(acc, v);
         }
         return acc;
     }
     /** §5.8.5 minimum of a dimensioned attribute's per-label values over the selected keys (null-skipping; null when
-     *  all-empty). The single implementation (single-runtime principle). */
-    public static BigDecimal rsDimMin(Map<?, ?> m, List<?> keys) {
-        BigDecimal acc = null;
+     *  all-empty), compared exactly ({@link #rsDimSom}). The single implementation (single-runtime principle). */
+    public static Object rsDimMin(Map<?, ?> m, List<?> keys) {
+        Object acc = null;
         for (Object k : keys) {
-            BigDecimal v = m == null ? null : (BigDecimal) m.get(k);
-            if (v != null && (acc == null || v.compareTo(acc) < 0)) acc = v;
+            Object v = m == null ? null : m.get(k);
+            if (v != null && (acc == null || Breuk.van(v).compareTo(Breuk.van(acc)) < 0)) acc = v;
         }
         return acc;
     }
-    /** §5.8.5 maximum of a dimensioned attribute's per-label values over the selected keys. The single implementation (single-runtime principle). */
-    public static BigDecimal rsDimMax(Map<?, ?> m, List<?> keys) {
-        BigDecimal acc = null;
+    /** §5.8.5 maximum of a dimensioned attribute's per-label values over the selected keys, compared exactly. The single
+     *  implementation (single-runtime principle). */
+    public static Object rsDimMax(Map<?, ?> m, List<?> keys) {
+        Object acc = null;
         for (Object k : keys) {
-            BigDecimal v = m == null ? null : (BigDecimal) m.get(k);
-            if (v != null && (acc == null || v.compareTo(acc) > 0)) acc = v;
+            Object v = m == null ? null : m.get(k);
+            if (v != null && (acc == null || Breuk.van(v).compareTo(Breuk.van(acc)) > 0)) acc = v;
         }
         return acc;
     }

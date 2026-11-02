@@ -661,16 +661,21 @@ final class PatternDslRendering {
         return DSL.accumulate(source.def(), f[0], Arrays.copyOfRange(f, 1, f.length));
     }
 
-    /** Drools' own accumulate function of each fold of the plan: the sum over a statically typed {@code BigDecimal},
-     *  since the plain sum over an {@code Object}-bound value gives a {@code Double}. */
+    /** The accumulate function of each fold of the plan: the count and the list Drools' own, the sum, the least and
+     *  the greatest this branch's exact ones ({@link ExactSumFunction}, {@link ExactMinimumFunction},
+     *  {@link ExactMaximumFunction}), since a value of the unbounded form is a rational that Drools' functions do not
+     *  add or compare to a decimal. */
     private static Class<?> function(Accumulation.Kind kind) {
-        String name = switch (kind) {
-            case COUNT -> "CountAccumulateFunction";
-            case SUM -> "BigDecimalSumAccumulateFunction";
-            case MINIMUM -> "MinAccumulateFunction";
-            case MAXIMUM -> "MaxAccumulateFunction";
-            case LIST -> "CollectListAccumulateFunction";
+        return switch (kind) {
+            case SUM -> ExactSumFunction.class;
+            case MINIMUM -> ExactMinimumFunction.class;
+            case MAXIMUM -> ExactMaximumFunction.class;
+            case COUNT -> droolsFunction("CountAccumulateFunction");
+            case LIST -> droolsFunction("CollectListAccumulateFunction");
         };
+    }
+
+    private static Class<?> droolsFunction(String name) {
         try {
             return Class.forName("org.drools.core.base.accumulators." + name);
         } catch (ClassNotFoundException e) {

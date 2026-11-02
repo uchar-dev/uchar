@@ -88,10 +88,10 @@ public record ConditionReading(Object object, String form, Status status, List<N
      * @param node         the number of the node
      * @param kind         the kind of the node as the wire spells it, {@code Comparison}, {@code Aggregation}, …
      * @param reached      whether the evaluation reached the node
-     * @param value        a condition's truth value, an expression's value in the form {@code Fixpoint.DerivedValue}
-     *                     gives a value (a number as a {@code BigDecimal}, an exact rational collapsed to its decimal
-     *                     as the write boundary collapses it, a date, a text, a truth value, a timeline as a list of
-     *                     periods), or null: leeg, or no value where the node was not reached or faulted
+     * @param value        a condition's truth value, an expression's exact value (a number as a {@code BigDecimal}
+     *                     where it terminates and as a {@code Breuk} where it does not, a date, a text, a truth value, a
+     *                     timeline as a list of periods), or null: leeg, or no value where the node was not reached or
+     *                     faulted
      * @param unit         the unit of an expression by the effective-type law (RUNTIME-SEMANTICS ch. 2.10), null for a
      *                     condition and for a value without one
      * @param fault        the evaluation fault the node raised or passed on, null where it raised none: a

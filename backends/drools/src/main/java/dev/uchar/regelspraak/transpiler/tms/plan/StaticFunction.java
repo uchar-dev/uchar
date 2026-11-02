@@ -25,8 +25,16 @@ public enum StaticFunction {
     RS_TIMES(RegelSpraakRuntime.class, "rsMaal", false),
     /** A percentage of a value, exact. */
     RS_PERCENTAGE_OF(RegelSpraakRuntime.class, "rsPercentageVan", false),
-    /** A power with a whole exponent of at least 0, exact (ch. 2.2); the exponent an {@code Integer} constant. */
+    /** A power with a whole exponent, exact (ch. 2.2), a negative exponent inverting; the exponent an {@code Integer}
+     *  constant. */
     RS_POWER(RegelSpraakRuntime.class, "rsMacht", false),
+    /** A power with a fractional exponent that is no base of a rounding, its numerator and its denominator in lowest
+     *  terms {@code Integer} constants: the exact root where the power is rational, else the fault (ch. 2.2). */
+    EXACT_POWER(ComputeHelpers.class, "exactPower", true),
+    /** A power with a fractional exponent under its rounding (§6.7), the exponent as for {@link #EXACT_POWER}, the
+     *  decimals an {@code Integer} and the mode a {@code RoundingMode} constant: the true power rounded once (ch. 2.2,
+     *  2.5). */
+    ROUNDED_POWER(ComputeHelpers.class, "roundedPower", true),
     /** A rounding (ch. 2.5) to a number of decimals, an {@code Integer} constant, by a {@code RoundingMode} constant. */
     RS_ROUNDING(RegelSpraakRuntime.class, "rsAfronding", false),
     /** A clamp (ch. 2.7) of a value by a minimum and a maximum, an absent or leeg bound no bound. */
@@ -59,7 +67,7 @@ public enum StaticFunction {
     /** A timeline clipped to the periods outside the true periods of a characteristic, within its segments. */
     RS_TIME_CLIP_NOT(RegelSpraakRuntime.class, "rsTijdKnipNiet", false),
     /** The true periods of a comparison of a timeline with a value, the comparison an {@code Integer} code of
-     *  {@code TimeCalculation.test}, the value a {@code BigDecimal}. */
+     *  {@code TimeCalculation.test}, the value a decimal or an exact rational, compared exactly. */
     RS_TIME_CONDITION(RegelSpraakRuntime.class, "rsTijdConditie", false),
     /** The pro-rata part of a base timeline per bucket of a grid over the true periods of a characteristic (ch. 3.7). */
     RS_TIME_PROPORTIONAL(RegelSpraakRuntime.class, "rsTijdsevenredig", false),
@@ -75,9 +83,12 @@ public enum StaticFunction {
     DIVIDED(ComputeHelpers.class, "divided", true),
     /** As {@link #DIVIDED}, the quotient truncated toward zero at 5 decimals. */
     DIVIDED_ABS(ComputeHelpers.class, "dividedAbs", true),
-    /** The square root at 34 digits under the rounding §13.4.17.13 mandates, a negative radicand leeg with the §6.6
-     *  deposit to the probe. The function of a {@link Term.SquareRoot}. */
-    SQUARE_ROOT(ComputeHelpers.class, "squareRoot", false),
+    /** The radicand of a square root under the rounding §13.4.17.13 mandates, a negative one leeg with the §6.6 deposit
+     *  to the probe. The function of a {@link Term.SquareRoot}, which {@link #ROUNDED_SQUARE_ROOT} takes. */
+    RADICAND(ComputeHelpers.class, "radicand", false),
+    /** The square root of a radicand ({@link #RADICAND}) rounded once to a number of decimals, an {@code Integer}
+     *  constant, by a {@code RoundingMode} constant (ch. 2.2, 2.5). */
+    ROUNDED_SQUARE_ROOT(ComputeHelpers.class, "roundedSquareRoot", false),
     /** The exact square root of a rational square, a negative radicand leeg with the §6.6 deposit to the probe, and
      *  any other radicand the fault of an irrational root without a rounding (ch. 2.2). The function of a
      *  {@link Term.SquareRoot}. */

@@ -49,8 +49,8 @@ final class FormsPlan {
     private FormsPlan() {}
 
     /** Fragments of the text that show the forms the plan holds, one per form. */
-    static final List<String> FORMS = List.of("not( ", " and ", "exists( ", "accumulate( ", "count()", "sumBD(",
-            "min(", "max(", "collectList(", "eval( ", "agenda-group \"proefgroep\"", "ComputeHelpers.classIs(this",
+    static final List<String> FORMS = List.of("not( ", " and ", "exists( ", "accumulate( ", "count()", "exactSum(",
+            "exactMin(", "exactMax(", "import accumulate ", "collectList(", "eval( ", "agenda-group \"proefgroep\"", "ComputeHelpers.classIs(this",
             "ComputeHelpers.isA(this", "ComputeHelpers.classNotIn(this", "ComputeHelpers.inside(date",
             "ComputeHelpers.readProperty(this, \"hoogte\")", "ComputeHelpers.holds(", "ComputeHelpers.periods(", "ComputeHelpers.isSet(",
             "pad1_alleTermen(", "beta_alleTermen(", "samengesteld_alleTermen(", "zonderfout1_alleTermen(",
@@ -59,7 +59,7 @@ final class FormsPlan {
             "rsDagsoort_Werkdag", "second != null, second == $onderwerp.post", "first == $onderwerp", " >= 1", " < 3",
             "Outcome.Kind.DECIDED", "insert(", "insertLogical(", "ComputeHelpers.depositFlag()", "ComputeHelpers.fail(",
             "ComputeHelpers.required(", "ComputeHelpers.textComposition(", "ComputeHelpers.restateExact(",
-            "ComputeHelpers.divided(", "ComputeHelpers.squareRoot(", "ComputeHelpers.largest(", "Breuk.van(",
+            "ComputeHelpers.divided(", "ComputeHelpers.radicand(", "ComputeHelpers.largest(", "Breuk.van(",
             "java.time.LocalDateTime.parse(", "java.math.RoundingMode.HALF_UP", "Period.class",
             "dev.uchar.regelspraak.ir.Condition.Operator.LATER", "ComputeHelpers.contractBreach(", "ComputeHelpers.computeFault(",
             "ComputeHelpers.inconsistency(", "ComputeHelpers.writersConflict(", "new ParameterState(", "new EvaluationDate(",
@@ -606,7 +606,7 @@ final class FormsPlan {
         Term test = new Term.Compound(Condition.Quantifier.ALLE, 0, List.of(
                 new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.Division(StaticFunction.DIVIDED, readOf(0), number("2"), 14,
                         "de uitkijkbonus gedeeld door 2"), number("1"), text(">")), "de helft groter dan 1"),
-                new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.SquareRoot(StaticFunction.SQUARE_ROOT, readOf(0), 14,
+                new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.SquareRoot(StaticFunction.RADICAND, readOf(0), 14,
                         "de wortel"), number("1"), text(">=")), "de wortel minstens 1"),
                 new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.FoldRead(readOf(9), 15, 14, 10, 11,
                         "de som van de bijdragen"), number("0"), text("<")), "de som onder 0"),

@@ -1075,9 +1075,8 @@ class FilterFaultWitnessTest {
         String power = TmsFaultWitnessTest.play(vondsttal(filters.get("macht")), TmsDocuments.caseDocument(List.of(),
                 List.of(consistent())), EXEC);
         if (!(power.startsWith("Excluded: ") && power.endsWith("regel: vondsttal — een macht met een exponent die geen"
-                + " geheel getal van ten minste 0 als literal is ('zijn gewicht tot de macht zijn deelnemers'): de reële"
-                + " macht is OPEN (RUNTIME-SEMANTICS ch. 2.1), waar de referentie-interpreter een exacte wortel geeft of"
-                + " faalt")))
+                + " literal is, of een geheel literal buiten ±999999999 ('zijn gewicht tot de macht zijn deelnemers'): deze"
+                + " tak rekent een macht alleen met een exponent die het document schrijft")))
             deviating.add("macht " + EXEC + ": " + power);
         assertEquals(List.of(), deviating);
     }

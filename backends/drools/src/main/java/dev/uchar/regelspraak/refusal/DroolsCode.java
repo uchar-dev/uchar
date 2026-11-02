@@ -317,10 +317,11 @@ public enum DroolsCode {
     ANCHOR_FORM_SUBJECT_UNBOUND("DROOLS-293", Kind.REFUSAL, "anchor-form-subject-unbound", "snippet", null),
     ANCHORED_FORM_NOT_CARRIED("DROOLS-294", Kind.REFUSAL, "anchored-form-not-carried", "snippet", null),
     NARROWING_HOST_NOT_CARRIED("DROOLS-295", Kind.LIMIT, "narrowing-host-not-carried", "snippet", null),
-    FOLD_OVER_UNBOUNDED_VALUE("DROOLS-296", Kind.LIMIT, "fold-over-unbounded-value", "attribute,objectType", null),
+    FOLD_OVER_UNBOUNDED_VALUE("DROOLS-296", Kind.RETIRED, "fold-over-unbounded-value", "attribute,objectType", null),
     DIMENSION_FOLD_MULTI_DIMENSION("DROOLS-297", Kind.RETIRED, "dimension-fold-multi-dimension", "dimensionCount,snippet", null),
     DIMENSION_CELL_WRITE("DROOLS-298", Kind.RETIRED, "dimension-cell-write", "attribute,form", null),
-    DIMENSION_LABELS_NAME_NO_CELL("DROOLS-299", Kind.CONTRACT, "dimension-labels-name-no-cell", "description,attribute,labels,dimensions,snippet", null);
+    DIMENSION_LABELS_NAME_NO_CELL("DROOLS-299", Kind.CONTRACT, "dimension-labels-name-no-cell", "description,attribute,labels,dimensions,snippet", null),
+    POWER_EXPONENT_PAST_BOUND("DROOLS-300", Kind.LIMIT, "power-exponent-past-bound", "exponent,bound,snippet", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */
