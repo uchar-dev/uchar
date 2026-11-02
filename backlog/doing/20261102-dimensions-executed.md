@@ -486,3 +486,129 @@ Uit de gate-logs: gate 5 1834 voorbeelden, 976 cases, één golden zonder case; 
 met fout, 23 met reden; gate 12 300 gespeeld op beide takken, 51 niet-gespeelde goldens met naam; gate 13 61
 annotaties over 30 goldens, 160 replays; gate 17 976 getraceerd, 300 goldens en 842 case-bestanden vergeleken,
 afwijkingen 0.
+
+### Stap 4a (Drools lezen)
+
+Branch `card/dimensions-drools`, worktree `/Users/yeb/Developer/uchar-dev/wt/dimensions-drools`, vanaf `574faa1a7`
+(stap 1). Commits vóór de rebase op stap 2:
+
+- `c5fd49f58` het leesdeel: gedeeld model, loader, bean, case-lezer, teruglezen, transpiler (beide branches uit één
+  plan), lezingen, regelgraaf, codes, catalogi, witnesses, README van de Drools-backend, de Drools-lijst van gate 8;
+- het commit van dit Result.
+
+#### Wat er veranderde
+
+- **Gedeeld model.** `Expr.FunctionCall.dimensionSelection` is `dimensionSelections`, een lijst van
+  `DimensionSelection`, null zonder selectie en nooit leeg (de compacte constructor weigert een lege lijst). De
+  frontend alleen voor naam en type: `IrEmitter` schrijft elke selectie van de lijst, `ExpressionBuilder` verpakt zijn
+  ene selectie in een lijst, `RuleChecker` leest de lijst; meer dimensies in de frontend blijft stap 5. Gate 10 houdt
+  `seizoenvouw/ir.json` byte-gelijk.
+- **Loader.** Leest alle selecties; de weigering DROOLS-297 vervalt.
+- **Bean.** Een gedimensioneerd attribuut is `Map<List<String>, Object>`: per cel de waarde onder haar sleutel, de
+  labels per positie in hun gedeclareerde spelling (`FactModelGenerator.cellKey`; een label vergeleken als naam,
+  `Namen.norm`), zodat case-invoer, verwachting en lezing van het document één cel treffen, en een cel van een ander
+  type dan getal een plaats heeft.
+- **Case-lezer** (`CaseInput`). `cells` op een gedimensioneerd attribuut: eerst per cel de labels (EF-034), dan
+  dubbele cellen (EF-035, ook in twee spellingen van een label), dan per cel EF-004 (place
+  `J1.vondstgewicht[voorjaar, zuid]`) en de variant van de waarde; dezelfde volgorde als ref (laadfouten vóór de
+  evaluatiegrens). Nieuwe foutsoort `CaseInput.CellFault` in `CaseRunner.faultKinds`, parameters `label`,
+  `attribute`, `labels`. Een scalar of tijdlijn op een gedimensioneerd attribuut, `cells` op een ongedimensioneerd en
+  een celwaarde van een andere variant: `IllegalArgumentException` zonder code. DROOLS-047 vervalt.
+- **Teruglezen** (`CaseRunner`). `cellValue` en `cellEmpty`; `attributeValue`/`attributeEmpty` op een gedimensioneerd
+  attribuut, een celverwachting op een ongedimensioneerd en labels die geen cel noemen: fout zonder code (voorstel 2
+  van stap 1). DROOLS-040 vervalt.
+- **Transpiler.** Een cel over n dimensies is `CELL(map, [labels])` (`ComputeHelpers.cell(Object, List<?>)`;
+  DROOLS-184 vervalt); een vouw is `rsDimSom/Min/Max` over de lijst van celsleutels van het product van de selecties,
+  de eerste selectie buitenste lus (`ProducerConsumer.selectedCells`, dezelfde volgorde als de verifier). Nieuw
+  **DROOLS-299** (CONTRACT, `dimension-labels-name-no-cell`): labels van een cel, of selecties die niet per positie de
+  dimensies van het argument noemen, breken WF-040 en worden met naam geweigerd in plaats van als lege cel gelezen.
+- **Lezingen** (ch. 5.12, besluit 7). De `DimensionCellRead` en de dimensievouw zijn de knoop; de verwijzing eronder
+  en het argument van de vouw krijgen geen regel en houden hun nummer (`readingRule`, `withoutReading`); de vouw draagt
+  geen bijdragers. Het object van een cellezing is het subject (eigen lid; de tekst schrijft het niet).
+- **Regelgraaf** (besluit 6). `ProducerConsumer.cellOf`: een cel is een lid `vondstgewicht[voorjaar, zuid]` op het
+  declarerende type; een vouw leest elke cel van het product.
+- **DROOLS-191 blijft.** Een gedimensioneerd attribuut wordt alleen per cel geschreven (WF-125), en elke celschrijving
+  weigert de loader al (DROOLS-298) voordat de transpiler loopt; 191 is daarmee onbereikbaar tot het schrijfdeel en is
+  daar de wacht voor het lezen van een cel die een vorm schrijft (de TMS-`Value` per cel).
+- Catalogi nl/en: DROOLS-299, EF-034, EF-035. `backends/drools/README.md`: invoer, vergelijking, berekening en
+  weigeringen voor cellen.
+
+`RETIRED`: DROOLS-040, DROOLS-047, DROOLS-184, DROOLS-297 (register 298 → 299 codes, 5 → 9 retired).
+
+#### Rood en groen
+
+Witness `backends/drools/src/test/java/dev/uchar/regelspraak/cases/DimensionCellWitnessTest.java`, negen rijen op
+beide branches, over de goldens `jutterswet-seizoenvondst` en `jutterswet-seizoenvouw` en een tweedimensionaal document
+(het uitgewerkte voorbeeld van ch. 5.8c: 5.00, 3.00, 5.00, 8.00, minimum 1.00). Op `574faa1a7` met alleen de nieuwe
+tests (`logs/stap4a-red-2.log`, `stap4a-red-3.log`): alle negen rood — elke case met cellen `EXCLUDE DROOLS-047`
+("invoer van een attribuut met dimensie 'vondstgewicht' …"), ook waar een lezing of een fout zonder code verwacht
+werd; het tweedimensionale document door de loader geweigerd met DROOLS-297 waar een play, EF-034/EF-035/EF-004 of
+DROOLS-299 verwacht werd; de regelgraaf van `seizoenvouw` met `[vondstgewicht]` waar
+`[vondstgewicht[voorjaar], vondstgewicht[zomer]]` verwacht werd. De omgedraaide `TmsBuiltinWitnessTest`-rijen rood:
+`a_cell_over_two_dimensions_reads_its_cell` (DROOLS-184 bij de bouw), `a_dimension_cell_and_a_dimension_fold_…`
+(tweede kwartaal 1 in plaats van 21: de kaart met lijstsleutels werd met één label gelezen). Op de branch alle
+groen.
+
+Mutaties, elk apart, niet gecommit (`mutants/stap4a-mutate.py`, `logs/stap4a-mutants-1.log`), elk rood:
+
+| mutatie | rode rij |
+|---|---|
+| M1 EF-034 weg | `the_case_reader_refuses…`: NOFAULT |
+| M2 EF-035 weg | idem, EF-035-rij: NOFAULT |
+| M3 EF-004 per cel weg | idem, EF-004-rij: EF-006 van de schrijfgrens in plaats van EF-004 |
+| M4 label exact i.p.v. als naam | `a_label_compares_as_a_name` en de EF-035-rij met `Voorjaar, ZUID` (EF-034) |
+| M5 selectie-dimensietoets weg | `labels_that_name_no_cell…`: verwisselde selecties PLAYED |
+| M6 verwijzing onder de cel krijgt een lezing | `the_cell_and_the_fold…`: "noteerde geen term voor knoop 2" |
+| M7a celknoop wordt attribuutknoop | `the_rule_graph…`: `[vondstgewicht]` |
+| M7b vouw leest het hele attribuut | idem, `seizoenvouw` |
+| M8 cellEmpty leest niet terug | `a_cell_of_one_dimension…`: PLAYED waar FAIL verwacht |
+| M9 attributeValue op gedimensioneerd toegelaten | `a_case_that_does_not_fit…` |
+| M10 variant van een celwaarde niet getoetst | idem: ConsequenceException |
+| M11 scalar op gedimensioneerd toegelaten | idem: NullPointerException |
+| M12 `cells` op ongedimensioneerd toegelaten | idem: geen fout |
+
+#### Aangepaste tests, pins en vloeren (oud → nieuw)
+
+- `TmsBuiltinWitnessTest.a_cell_over_two_dimensions_is_refused_by_name` (pinde de zin van DROOLS-184) →
+  `a_cell_over_two_dimensions_reads_its_cell` (de cel k2, noord: 20): door de kaart omgedraaid.
+- `TmsBuiltinWitnessTest.a_dimension_cell_and_a_dimension_fold_beside_a_later_derived_toeslag`: de met de hand gezette
+  kaart `Map<String, BigDecimal>` met sleutel `"k1"` → `Map<List<String>, Object>` met sleutel `List.of("k1")`; de
+  verwachtingen (21, 36, 120 volgordes) ongewijzigd.
+- Naam `dimensionSelection()` → `dimensionSelections()`: `RuleAndExpressionLayerRefusalWitnessTest`,
+  `FilledCountDialectTest`, `SubtypeDialectTest`, `IrTest` (daar nu `get(0)` met een assert dat er één selectie is).
+- `ReadingsCorpusWitnessTest` uitgebreid: een `DimensionCellRead` is een lidlezing; zijn object en zijn waarde (de cel in
+  de kaart van de bean) worden gehouden zoals bij een `AttributeReference`.
+- Plandump- en DRL-tekstpins: geen veranderd (de synthetische `FormsPlan` gebruikt `RS_DIM_SUM` met een lijstconstante,
+  waarvan de handtekening niet veranderde).
+- Gate 8 (`scripts/check-red.sh`, voorstel): `jutterswet-cel-onbekend-label` en `jutterswet-cel-dubbel` uit de
+  Drools-lijst (waren `EXCLUDE DROOLS-184`); Drools-leg 47 → 49 met fout, 70 → 76 parameterchecks, 22 → 20 met reden,
+  20 → 18 EXCLUDE met code (vloer `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=18` ongewijzigd).
+- Gate 12: suite 1743 → 1752 tests; `EXPECTED_PLAYED` 300 en `EXPECTED_CHANNEL` ongewijzigd tot de rebase (geen golden
+  met cellen had een case).
+
+#### Voorlopige besluiten
+
+1. **Het model draagt de selectielijst** (null zonder selectie, nooit leeg), in afwijking van besluit 4 van stap 1,
+   dat de lijst naar stap 4 en 5 verschoof.
+2. **De celsleutel spelt de labels zoals gedeclareerd**; een label uit case of document wordt als naam vergeleken, en
+   EF-035 vergelijkt de genormaliseerde sleutel, zoals ref.
+3. **DROOLS-299 is een CONTRACT-code** voor labels of selecties die geen cel noemen, zoals DROOLS-185 en -188 andere
+   WF-garanties bewaken.
+4. **Volgorde in de case-lezer**: alle labels (EF-034), dan dubbele cellen (EF-035), dan per cel EF-004 en de variant.
+5. **Een cel met waarde `null` is een lege cel** (niet in de kaart).
+6. **EF-034 en EF-035 zonder regel in `EF_PLACES`** van `check-drools-codes.sh`, zoals EF-033.
+7. **`Cycles` leest een cel nog per attribuut**: zonder celschrijver geen waarneembaar verschil; per cel hoort bij het
+   schrijfdeel, met DROOLS-298 en -191.
+
+Gevolg buiten uchar: de distributie leest de bean; een gedimensioneerd lid is `Map<List<String>, Object>`, voor de
+service-JSON bij de pin-bump.
+
+#### Gates vóór de rebase
+
+`make gates` op de werkboom van `c5fd49f58` zonder de laatste twee rijen van de witness (`out/gates/20261102-145129`):
+alle zeventien groen, `red=0`, 322 s; gate 12 299 codes, 300 gespeeld op beide takken, JUnit 1752; gate 8 Drools-leg
+49 met fout; gate 15 313 van 351 vergeleken; gate 17 300 goldens, afwijkingen 0. De rijen kwamen daarna in de witness
+(groen, 9 tests). Proef op `card/dimensions-executed` `6022b6fe2` (een cherry-pick in een losse werkboom, opgeruimd):
+`seizoenvondst` PLAYED 1, `seizoenvouw` PLAYED 2, `vormenkabinet` PLAYED 1 op beide takken; `runner --trace` en
+`--readings` gelijk op alle vier case-bestanden en beide takken; de drie rode cellen `FAULT EF-034`, `EF-035`, `EF-004`
+met de gepinde parameters; één conflict, in `scripts/check-red.sh` (de drie regels van de cellen vervallen).
