@@ -1414,9 +1414,11 @@ final class ExpressionBuilder {
         // laxer reading, and a silent marker would leave the author with a fold over nothing.
         // "het aantal voorkomens van" counts the filled cells of a dimensioned attribute, no set reading: its
         // selections resolve below
-        if (kind == Expr.FunctionKind.AANTAL_GEVULDE && !(f instanceof AantalVoorkomensFuncContext)
-                && !(arguments.size() == 1
-                     && arguments.get(0) instanceof Expr.AttributeReference zb && zb.set())) {
+        // a set reading, also of a cell of each member
+        Expr.AttributeReference setRead = arguments.size() == 1
+                ? dev.uchar.regelspraak.emit.IrEmitter.foldSourceReference(arguments.get(0)) : null;
+        if (setRead != null && !setRead.set()) setRead = null;
+        if (kind == Expr.FunctionKind.AANTAL_GEVULDE && !(f instanceof AantalVoorkomensFuncContext) && setRead == null) {
             // written, the fold carries no element type, which the verifier refuses in these words
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
                     "RGS-067", params("expression", source.snippet()),
@@ -1425,17 +1427,16 @@ final class ExpressionBuilder {
             // well-formed marker (IR-SPEC ch. 2.4), exactly as checkFoldSource's three refusals do
             return new Expr.Unresolved(type, source, null);   // the ERROR above is this marker's diagnosis
         }
-        if (aggregationKind && arguments.size() == 1
-                && arguments.get(0) instanceof Expr.AttributeReference sa && sa.set()
-                && sa.objectType() != null && !sa.objectType().hasMember(sa.attribute())) {
+        if (aggregationKind && setRead != null && setRead.objectType() != null
+                && !setRead.objectType().hasMember(setRead.attribute())) {
+            Expr.AttributeReference sa = setRead;
             model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                     "RGS-068", params("attribute", sa.attribute(), "objectType", sa.objectType().name, "expression", source(f)),
                     f.getStart().getLine()));
             return unresolvedMarker(f, null);   // the WARNING above is this marker's diagnosis
         }
-        if (aggregationKind && arguments.size() == 1
-                && arguments.get(0) instanceof Expr.AttributeReference vb && vb.set()) {
-            Expr refused = checkFoldSource(f, vb, type);
+        if (aggregationKind && setRead != null) {
+            Expr refused = checkFoldSource(f, setRead, type);
             if (refused != null) return refused;
         }
         Condition filter = aggregationFilter(f, elem, arguments);
@@ -1754,7 +1755,8 @@ final class ExpressionBuilder {
             }
         }
         if (!(arguments.get(0) instanceof Expr.AttributeReference a) || a.objectType() == null) return null;
-        if (a.objectType() != currentSubject) return null;   // only the subject's OWN dimensioned attribuut folds; a navigated read is deferred
+        // the subject's own dimensioned attribute folds, and that of the object a path of to-one roles reaches
+        if (a.objectType() != currentSubject && (a.navigationRole() == null || a.set())) return null;
         List<RegelSpraakModel.Dimension> attrDims = new ArrayList<>();
         for (String dn : a.objectType().dimensionsOf(a.attribute())) {
             RegelSpraakModel.Dimension d = model.dimensionByName(dn);
@@ -2931,7 +2933,8 @@ final class ExpressionBuilder {
      * counted element type is that role resolved to its object type.
      */
     private ObjectType aggregationElement(Expr.FunctionKind kind, List<Expr> args) {
-        if (args.isEmpty() || !(args.get(0) instanceof Expr.AttributeReference a)) return null;
+        Expr.AttributeReference a = args.isEmpty() ? null : dev.uchar.regelspraak.emit.IrEmitter.foldSourceReference(args.get(0));
+        if (a == null) return null;
         return switch (kind) {
             // AANTAL_GEVULDE rides the VALUE-fold derivation, not the count's: its argument is an
             // ATTRIBUTE read over a set, so the element type is the attribute's owner — the very
@@ -3420,8 +3423,31 @@ final class ExpressionBuilder {
                         if (navRole == null) navRole = noun;   // invariant: a chain always reads as navigated
                         break;
                     }
+                    // §3.6 the prefix names a cell of a dimensioned attribute of the type reached, with a label of
+                    // every dimension or of some: the chain ends there, and the cell is read below, or refused for
+                    // the labels it leaves out
+                    ObjectType reached = cur;
+                    if (!cellReadings(model, reached, prefix).isEmpty()) {
+                        attr = prefix; ot = reached;
+                        navigationPath = java.util.List.copyOf(path);
+                        if (navRole == null) navRole = noun;
+                        break;
+                    }
                 }
             }
+        }
+        if (dt == null && ot != null && (navRole != null || isSetSubject(subjectType))) {
+            // §3.6 a cell of a dimensioned attribute of the object the reference reaches ("het vondstgewicht in voorjaar
+            // van de leider van de Ploeg"), or of each member of a set ("van alle leden van de Ploeg"), read as a cell
+            // of the subject's own is, the reference carrying the walk in the place of the written name; a target
+            // names its cell on the universal subject, which the rule's own route reads
+            ObjectType holder = ot;
+            String role = navRole;
+            java.util.List<String> chain = navigationPath;
+            Expr cell = dimensionCell(attr, holder, source, a -> new Expr.AttributeReference(a, holder, subjectSource, role,
+                    holder.attribute(a), source, isSetSubject(subjectType), chain, rangePath(subjectType),
+                    writtenQuantifier(subjectType), writtenThreshold(subjectType)));
+            if (cell != null) return cell;
         }
         if (dt == null) dt = unknown();
         return new Expr.AttributeReference(attr, ot, subjectSource, navRole, dt, source, isSetSubject(subjectType),
@@ -3927,6 +3953,15 @@ final class ExpressionBuilder {
      *  name is not shadowed by a shorter one inside it. A cell written as a target or as a member of an object
      *  creation reads the same way ({@link RuleChecker}). */
     Expr dimensionCell(String bareName, ObjectType ot, String navRole, String subjectSource, Source source) {
+        return dimensionCell(bareName, ot, source,
+                attribute -> new Expr.AttributeReference(attribute, ot, subjectSource, navRole, ot.attribute(attribute), source));
+    }
+
+    /** As {@link #dimensionCell(String, ObjectType, String, String, Source)}, the reference under the cell made by
+     *  {@code reference} from the attribute's declared name: a read over a path of roles or over a set carries its
+     *  walk there ({@link #attributeRefAt}). */
+    private Expr dimensionCell(String bareName, ObjectType ot, Source source,
+                               java.util.function.Function<String, Expr.AttributeReference> reference) {
         if (ot == null || bareName == null) return null;
         List<CellReading> readings = cellReadings(model, ot, bareName);
         if (readings.isEmpty()) return null;
@@ -3945,9 +3980,7 @@ final class ExpressionBuilder {
                 return new Expr.Unresolved(ot.attribute(cells.get(0).attribute()), source, null);   // the ERROR above is this marker's diagnosis
             }
             CellReading cell = cells.get(0);
-            Datatype dt = ot.attribute(cell.attribute());
-            Expr.AttributeReference ref = new Expr.AttributeReference(cell.attribute(), ot, subjectSource, navRole, dt, source);
-            return new Expr.DimensionCellRead(ref, cell.labels(), source);
+            return new Expr.DimensionCellRead(reference.apply(cell.attribute()), cell.labels(), source);
         }
         // §3.6 every use of a dimensioned attribute names a label of each of its dimensions
         CellReading partial = readings.get(0);

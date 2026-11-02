@@ -36,9 +36,72 @@ public final class Resolver {
     /** A parsed document: the tree, the token stream it was parsed from, and the syntax diagnostics the parse raised. */
     private record Parsed(RegelSpraakDocumentContext doc, CommonTokenStream tokens, java.util.List<Diagnostic> syntax) {}
 
+    /** A document whose dimensions declare a label with the word 'en' ("eb en vloed") is parsed a second time, with
+     *  every 'en' inside such a label a name word ({@link #labelWords}), so that a name can carry the label (§3.6,
+     *  "zijn getijgewicht bij eb en vloed"); the first parse, which reads the declarations, is the only one of every
+     *  other document. */
     private static Parsed parse(String source, String fileName) {
+        Parsed first = parse(source, fileName, java.util.List.of());
+        java.util.List<java.util.List<String>> labels = labelsWithEn(first.doc());
+        return labels.isEmpty() ? first : parse(source, fileName, labels);
+    }
+
+    /** The labels {@code tree} declares in its dimensions that contain the word 'en', each as its words in lower
+     *  case. */
+    static java.util.List<java.util.List<String>> labelsWithEn(org.antlr.v4.runtime.tree.ParseTree tree) {
+        java.util.List<java.util.List<String>> out = new java.util.ArrayList<>();
+        if (tree instanceof RegelSpraak.LabelWaardeSpecificatieContext l && l.dimensieWaarde() != null) {
+            java.util.List<String> words = new java.util.ArrayList<>();
+            for (RegelSpraak.DimensieWaardeWoordContext w : l.dimensieWaarde().dimensieWaardeWoord())
+                words.add(w.getText().toLowerCase());
+            if (words.contains("en") && !out.contains(words)) out.add(words);
+        }
+        for (int i = 0; i < tree.getChildCount(); i++)
+            for (java.util.List<String> w : labelsWithEn(tree.getChild(i))) if (!out.contains(w)) out.add(w);
+        return out;
+    }
+
+    /** Every 'en' of {@code tokens} whose neighbours spell one of {@code labels} around it, compared
+     *  case-insensitively, becomes a name word ({@code LOWER_ID}): "en" separates the operands of a list and joins
+     *  labels after a preposition, and inside a declared label it is a word of the label. A member of a set selection
+     *  between braces keeps its 'en', which joins the labels of the member there and which the resolution groups
+     *  itself; a text without such a label keeps its tokens. */
+    static void labelWords(CommonTokenStream tokens, java.util.List<java.util.List<String>> labels) {
+        if (labels.isEmpty()) return;
+        tokens.fill();
+        java.util.List<Token> words = new java.util.ArrayList<>();
+        for (Token t : tokens.getTokens())
+            if (t.getChannel() == Token.DEFAULT_CHANNEL && t.getType() != Token.EOF) words.add(t);
+        java.util.List<CommonToken> inside = new java.util.ArrayList<>();
+        int braces = 0;
+        for (int k = 0; k < words.size(); k++) {
+            int type = words.get(k).getType();
+            if (type == RegelSpraakLexer.LBRACE) braces++;
+            else if (type == RegelSpraakLexer.RBRACE) braces--;
+            else if (type == RegelSpraakLexer.EN && braces == 0 && inLabel(words, k, labels))
+                inside.add((CommonToken) words.get(k));
+        }
+        for (CommonToken t : inside) t.setType(RegelSpraakLexer.LOWER_ID);
+    }
+
+    /** Whether the 'en' at {@code words[k]} stands inside one of {@code labels}: the words before and after it are the
+     *  label's. */
+    private static boolean inLabel(java.util.List<Token> words, int k, java.util.List<java.util.List<String>> labels) {
+        for (java.util.List<String> label : labels)
+            for (int p = 0; p < label.size(); p++) {
+                if (!label.get(p).equals("en") || k - p < 0 || k - p + label.size() > words.size()) continue;
+                boolean fits = true;
+                for (int i = 0; i < label.size() && fits; i++)
+                    fits = words.get(k - p + i).getText().equalsIgnoreCase(label.get(i));
+                if (fits) return true;
+            }
+        return false;
+    }
+
+    private static Parsed parse(String source, String fileName, java.util.List<java.util.List<String>> labels) {
         RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source, fileName));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
+        labelWords(tokens, labels);
         RegelSpraak parser = new RegelSpraak(tokens);
 
         var syntax = new java.util.ArrayList<Diagnostic>();

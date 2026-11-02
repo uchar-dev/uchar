@@ -109,8 +109,18 @@ public final class ScenarioResolver {
     }
 
     static Read read(String source) {
+        Read first = read(source, List.of());
+        List<List<String>> labels = Resolver.labelsWithEn(first.test());
+        return labels.isEmpty() ? first : read(source, labels);
+    }
+
+    /** {@link #read} with the declared labels that contain the word 'en' ({@link Resolver#labelsWithEn}): a test
+     *  document whose dimensions declare one is read a second time with each 'en' inside such a label a name word
+     *  ({@link Resolver#labelWords}), as the production route reads it. */
+    private static Read read(String source, List<List<String>> labels) {
         RegelSpraakLexer lexer = new RegelSpraakLexer(CharStreams.fromString(source));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
+        Resolver.labelWords(tokens, labels);
         RegelSpraak parser = new RegelSpraak(tokens);
         List<Diagnostic> syntax = new ArrayList<>();
         BaseErrorListener listener = new BaseErrorListener() {

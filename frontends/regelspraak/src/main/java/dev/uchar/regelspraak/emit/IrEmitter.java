@@ -1037,7 +1037,11 @@ public final class IrEmitter {
         // type would demand a range the fold does not have. Any other element type would be a fold this
         // reading does not describe.
         boolean dimensionFold = aggregation && f.dimensionSelections() != null;
-        if (dimensionFold && f.elementObjectType() != null && f.elementObjectType() != currentSubject)
+        // the attribute of the object a to-one path reaches folds over its cells as the subject's own does
+        boolean overPath = dimensionFold && f.arguments().size() == 1
+                && f.arguments().get(0) instanceof Expr.AttributeReference a && a.navigationRole() != null && !a.set()
+                && a.objectType() == f.elementObjectType();
+        if (dimensionFold && f.elementObjectType() != null && f.elementObjectType() != currentSubject && !overPath)
             throw foldRefusal(f, "haar dimensieselectie loopt over een attribuut van "
                     + f.elementObjectType().name + ", en een dimensievouw leest het eigen attribuut van "
                     + (currentSubject == null ? "het onderwerp" : currentSubject.name));
@@ -1050,7 +1054,7 @@ public final class IrEmitter {
         w.key("arguments").beginArray();
         Expr previousFoldSource = foldSource;
         String previousName = foldSourceName;
-        foldSource = range == null ? null : f.arguments().get(0);
+        foldSource = range == null ? null : foldSourceReference(f.arguments().get(0));
         foldSourceName = range == null ? null : range.sourceName();
         for (Expr a : f.arguments()) expr(a);
         foldSource = previousFoldSource;
@@ -1695,7 +1699,7 @@ public final class IrEmitter {
      */
     private FoldRange foldRange(Expr.FunctionCall f) {
         if (!isFoldSource(f)) return null;
-        Expr.AttributeReference arg = (Expr.AttributeReference) f.arguments().get(0);
+        Expr.AttributeReference arg = foldSourceReference(f.arguments().get(0));
         FoldRefusal refusal = foldRefusalOf(m, currentSubject, f);
         if (refusal != null) throw foldRefusal(f, switch (refusal) {
             case WRITTEN_PATH -> "haar bron draagt een geschreven pad; de relatie van een vouwbron is het bereik";
@@ -1739,7 +1743,7 @@ public final class IrEmitter {
      *  never reaches the refusal here. */
     public static FoldRefusal foldRefusalOf(RegelSpraakModel m, ObjectType subject, Expr.FunctionCall f) {
         if (!isFoldSource(f)) return null;
-        Expr.AttributeReference arg = (Expr.AttributeReference) f.arguments().get(0);
+        Expr.AttributeReference arg = foldSourceReference(f.arguments().get(0));
         boolean countSource = arg.type() instanceof Datatype.Unknown;
         if (arg.navigationPath() != null && !arg.navigationPath().isEmpty()) return FoldRefusal.WRITTEN_PATH;
         if (arg.navigationRole() != null && !(countSource && selfDenoting(m, subject, arg.navigationRole())))
@@ -1781,7 +1785,15 @@ public final class IrEmitter {
     public static boolean isFoldSource(Expr.FunctionCall f) {
         return kindFamily(f.kind()) == Spelling.AGGREGATION_KIND && f.dimensionSelections() == null
                 && f.elementObjectType() != null && f.arguments().size() == 1
-                && f.arguments().get(0) instanceof Expr.AttributeReference;
+                && foldSourceReference(f.arguments().get(0)) != null;
+    }
+
+    /** The attribute reference the single argument {@code e} of an instance fold reads through the fold's range: the
+     *  argument itself, or the reference under a cell of each member (ALEF's fold of one cell over a role, IR-SPEC
+     *  ch. 4.3); null for any other node. */
+    public static Expr.AttributeReference foldSourceReference(Expr e) {
+        if (e instanceof Expr.AttributeReference a) return a;
+        return e instanceof Expr.DimensionCellRead c ? c.attribute() : null;
     }
 
     private static IllegalStateException foldRefusal(Expr.FunctionCall f, String reason) {

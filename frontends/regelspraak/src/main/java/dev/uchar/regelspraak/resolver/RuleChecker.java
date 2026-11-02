@@ -3238,9 +3238,9 @@ final class RuleChecker {
      *  argument of a VALUE-folding kind that carries an {@code elementObjectType} — the source the fold
      *  consumes. That is the boundary the verifier draws (arity, kind AND a resolved element type):
      *  narrower here would refuse a legitimate fold source, wider would let the frontend emit a
-     *  document the verifier rejects. A {@link Expr.DimensionCellRead} wrapping the source is NOT that
-     *  position — the verifier's fold branch matches the bare reference — so the exemption stops at
-     *  the wrapper, exactly as it does there.
+     *  document the verifier rejects. A {@link Expr.DimensionCellRead} wrapping the source of a value fold is
+     *  that position too, a cell of each member (IR-SPEC ch. 4.3): the exemption reaches the reference under it,
+     *  as the verifier's fold branch reaches it, and stops at the cell under a count, which counts instances.
      *
      *  <p>The switch is EXHAUSTIVE over the sealed union — no {@code default} arm — for the reason
      *  {@link Expr#contains} states: the next node the union grows must be a compile error here rather
@@ -3283,7 +3283,7 @@ final class RuleChecker {
                 for (Expr.TextComposition.Part d : t.parts())
                     if (d instanceof Expr.TextComposition.EmbeddedExpression i) checkSetRead(i.expr(), subject, false);
             }
-            case Expr.DimensionCellRead c -> checkSetRead(c.attribute(), subject, false);
+            case Expr.DimensionCellRead c -> checkSetRead(c.attribute(), subject, foldSource && countSource == null);
             case Expr.Let l -> { checkSetRead(l.value(), subject, false); checkSetRead(l.body(), subject, false); }
             case Expr.IfThenElse k -> {
                 checkSetRead(k.then(), subject, false); checkSetRead(k.otherwise(), subject, false);

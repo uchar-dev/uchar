@@ -1038,6 +1038,14 @@ Het openingsgewicht van een Jutter moet berekend worden als
     de eerste van zijn vondstgewicht over alle seizoenen.
 Het aantal vondstseizoenen van een Jutter moet berekend worden als
     het aantal voorkomens van zijn vondstgewicht over alle seizoenen.
+Het leidersvoorjaarsgewicht van een Ploeg moet berekend worden als
+    het vondstgewicht in voorjaar van de leider van de Ploeg.
+Het leidersjaargewicht van een Ploeg moet berekend worden als
+    de som van het vondstgewicht van de leider van de Ploeg over alle seizoenen.
+Het ploegvoorjaarsgewicht van een Ploeg moet berekend worden als
+    de som van het vondstgewicht in voorjaar van alle leden van de Ploeg.
+Het springgewicht van een Jutter moet berekend worden als
+    zijn getijgewicht bij eb en vloed op noord.
 ```
 
 The fold: `somFunc`, `minMaxFunc` and `eersteLaatsteFunc` take
@@ -1066,6 +1074,27 @@ six stand in the name as they are: `op`, `in`, `voor`, `over` and `bij` as name
 words, `van` as the separator of the name's segments. The
 resolver accepts "en" or "," between any two labels behind the attribute; it
 does not demand ALEF's exact pattern, since the separators carry no meaning.
+
+A cell of another object is written as ALEF writes it, the cell before
+"van" and the object after it: "het vondstgewicht in voorjaar van de leider
+van de Ploeg" over a to-one role, also over a chain of them, and "het
+vondstgewicht in voorjaar van alle leden van de Ploeg" as the source of a
+value fold or of "het aantal gevulde waarden van" over a to-many role
+(ALEF's `Aggregatie` over a `DimAttribuutSelector` of the members). A
+dimension fold over the cells of the object a to-one role reaches writes its
+selections after that object: "de som van het vondstgewicht van de leider van
+de Ploeg over alle seizoenen". No production is new for these forms: the name
+run before "van" and the navigation after it are those of every read over a
+role.
+
+A label may itself contain "en" ("eb en vloed"). Behind the attribute it is
+read as one label: a document whose dimensions declare such a label is parsed
+a second time, and there every "en" whose neighbouring words spell a declared
+label around it is a name word of that label (`Resolver.labelWords`); an "en"
+in a set selection between braces keeps its token, since the resolution groups
+the labels of a member there itself (below). A text without such a label is
+parsed once, as before, so no other text changes; an "en" that no declared
+label holds and no preposition follows stays the syntax error it was.
 
 ### Inertness — measured, not assumed
 
@@ -1134,7 +1163,22 @@ but for the one golden that writes the new forms.
   reading of the run as one dimensioned attribute of the subject with its
   labels. One reading of every dimension is the `DimensionCellRead`, its
   labels in the declared order of the dimensions; the longest attribute name
-  wins.
+  wins. A label is one of the dimension's declared labels word for word, so a
+  label with "en" is read whole, and an "en" between two labels needs the
+  preposition of the second.
+- **A cell of another object** (`ExpressionBuilder.attributeRefAt`): where the
+  name before "van" is no attribute of the object the navigation reaches, it is
+  read as a cell of that object, the `AttributeReference` under the cell
+  carrying the path, or, over a set, the set reading. A chain of to-one roles
+  ends at the first type whose cell the prefix names, also with labels of some
+  dimensions only (RGS-364 then). Under a value fold and the filled count the
+  set reading of a cell is the fold source: the fold's element type is the
+  attribute's type, its range the fold's own, and the reference under the cell
+  carries no path (`IrEmitter.foldSourceReference`, IR-SPEC ch. 4.3); a count
+  takes no cell.
+- **The fold over the cells of another object**: a dimension fold whose
+  argument is read over a path of to-one roles (`resolveDimensionSelections`);
+  the wire carries the path on the argument and no element type.
 - **First, last and the number of filled cells.** "de eerste van" and "de
   laatste van" with selections are the `first` and the `last` over the cells,
   "het aantal voorkomens van" the `filledCount` over them (IR-SPEC ch. 4.3,
@@ -1183,9 +1227,22 @@ selections as the resolver built them.
 
 ### Scope / limitations
 
-- The subject's own attribute only (`zijn …`). A cell or a fold of an
-  attribute reached over a role is not read; the executors carry the cell
-  over a path (RUNTIME-SEMANTICS ch. 5.8c).
+- A dimension fold over the cells of every member of a to-many role ("de
+  som van het vondstgewicht van alle leden van de Ploeg over alle seizoenen")
+  is not read: the wire has no such fold (a dimension fold has no element
+  type, WF-037), and ALEF writes none. A cell target over a role ("Het
+  vondstgewicht in najaar van de leider van een Ploeg") is not read either;
+  ALEF writes a cell target on its own subject only.
+- A cell of the subject written as a definite back-reference ("het
+  vondstgewicht in voorjaar van de Jutter" in a rule on a Jutter) is not read;
+  the subject's own cell is written with "zijn".
+- An "en" whose neighbouring words spell a declared label is a word of that
+  label wherever it stands outside braces, also where those words are meant as
+  two operands of a list ("de maximale waarde van eb en vloed" over two
+  parameters `eb` and `vloed` in a document that declares the label "eb en
+  vloed"): there the list is written with parentheses or the operands in
+  another order. A decision table's cells are parsed without the declared
+  labels, so a label with "en" is not read there.
 - "het aantal" followed by a cell and a selection, the form of
   §13.4.17.50, is not read: it counts instances (`aantalFunc`). The number of
   filled cells is "het aantal voorkomens van".
