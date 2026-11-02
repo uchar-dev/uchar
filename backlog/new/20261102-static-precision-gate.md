@@ -43,7 +43,7 @@ Een Catala-`decimal` is exact en staat nu op een vaste schaal van 4 decimalen (c
 Catala-deling naar zo'n veld, want een Catala-bron heeft daar geen afronding. Geen van de 12 Catala-goldens raakt het nu. Opties:
 (a) een Catala-`decimal` wordt de onbegrensde vorm, en clingo weigert dan een waarde die niet geheel is met naam; (b) de Catala-route
 valt buiten de regel, en dat is een uitzondering per frontend op een norm van de IR. Beslissen vóór de bouw (naar Fable als Yeb er
-niet is).
+niet is). **Besloten door Yeb op 2026-11-02: (a), een Catala-`decimal` wordt de onbegrensde vorm.**
 
 ## Wat er verandert
 
