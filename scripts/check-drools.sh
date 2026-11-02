@@ -328,12 +328,9 @@ EXPECTED_CHANNEL=(
   "jutterswet-postenheffing|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-premiespelling|EXCLUDE DROOLS-070|bean name collision: the object types 'RechtOpPremie' and 'Recht op premie' fall on one fact class, dev.uchar.regelspraak.facts.RechtOpPremie. Measured 2026-09-28 before the refusal: both branches crashed compiling the generated beans (cyclic inheritance), so its pins are a ref = clingo pair"
   "jutterswet-seizoenkopie|NOCASE|a golden with no case file — nothing to replay"
-  "jutterswet-seizoenvondst|EXCLUDE DROOLS-047|case-input refusal: the cells input of the dimensioned 'vondstgewicht' is not carried, the bean holds a cell of one dimension and no input fills it (measured 2026-11-02, card dimensions-executed, both branches). ref and clingo read the cell (RUNTIME-SEMANTICS ch. 5.8c), so its pins are a ref = clingo pair"
-  "jutterswet-seizoenvouw|EXCLUDE DROOLS-047|case-input refusal: the cells input of the dimensioned 'vondstgewicht' is not carried (measured 2026-11-02, card dimensions-executed, both branches). ref and clingo fold the cells (RUNTIME-SEMANTICS ch. 5.8c), so its pins are a ref = clingo pair"
   "jutterswet-vaarwaterspelling|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
-  "jutterswet-vormenkabinet|EXCLUDE DROOLS-184|transpiler SKIP: regel 'zeecijfer uit voorjaarsaanspoeling' reads a cell over two dimensions, and the branch reads a cell of one dimension only; refused when the KieBase is built, before the cells input is read (measured 2026-11-02, card dimensions-executed, both branches). ref and clingo read both cells, so its pins are a ref = clingo pair"
   "jutterswet-waarderingsinvoer|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "synth3-armlichaam|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
   "synth3-besluitschakel|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
@@ -1468,7 +1465,11 @@ EXPECTED_CHANNEL=(
 # 300 since the card instance-depth-owner-hop (2026-11-02): the golden jutterswet-vergunningketen-eigenaarsrol, the
 # instance-ordered chain whose satellite relation names its owner's role like the switch relation's sister role. It plays on
 # both with PLAYED 2.
-EXPECTED_PLAYED=300
+# 303 since the card dimensions-executed (2026-11-02): the goldens jutterswet-seizoenvondst, jutterswet-seizoenvouw and
+# jutterswet-vormenkabinet, whose cases fill cells of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c). The case reader
+# lays the cells down in the bean's map per cell (DROOLS-047 retired), the transpiler reads a cell over any number of
+# dimensions (DROOLS-184 retired) and folds over the product of the selections. They play on both with PLAYED 1, 2 and 1.
+EXPECTED_PLAYED=303
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
