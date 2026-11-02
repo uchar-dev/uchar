@@ -356,11 +356,16 @@ EF-006; 2,00 into a whole-number attribute is **2**.
 *v0 mirror notes:* v0 computes rational-free chains of +, −, × and the
 square root at 34 significant decimal digits (IEEE 754-2008 decimal128);
 the fractional-exponent power is computed at binary double precision.
-These are implementation approximations of the exact semantics above; the
-reference interpreter implements the exact semantics, and backends must
-agree on the corpus (the differential gate is the arbiter). The
-double-precision power is the weakest spot — **OPEN:** whether v1 narrows
-the fractional-exponent domain or mandates a decimal-precision minimum.
+These are approximations of the exact semantics above, which is normative:
++, − and × are exact on every number, however many digits it has, and a
+square root and a power with a fractional exponent exist only under their
+rounding, which rounds the true value once (ch. 2.2). An executor that
+cannot compute such a value exactly refuses its form by name, as a limit of
+its own; it does not approximate it. Worked example (`ref/` tests
+`WV-2.1-exact-a` and `-b`, and the Drools backend's
+`ExactArithmeticWitnessTest`): (10^31 + 0,001) − 10^31 is **0,001**, and
+100000000000000001 × 100000000000000001 is
+**10000000000000000200000000000000001**.
 
 ### 2.2 Operators
 
@@ -371,12 +376,21 @@ the fractional-exponent domain or mandates a decimal-precision minimum.
 | gedeeld door | exact quotient; result may be non-terminating and stays exact until a collapse point | 10 ÷ 4 = 5/2 = 2,5; 2 ÷ 3 = 2/3 (exact) |
 | gedeeld door (abs-variant) | quotient truncated **toward zero at 5 decimals** — a defined collapse point, dialect operator | 10 ÷abs 3 = 3,33333; −10 ÷abs 3 = −3,33333 |
 | tot de macht (integer exponent) | exact integer power; negative exponent inverts first | 7¹⁹ = 11398895185373143 (exact); (1/3)⁻¹ = 3 |
-| tot de macht (fractional/derived exponent) | real power — see the ch. 2.1 OPEN | 4^0,5 = 2 |
+| tot de macht (fractional exponent) | the exact root where the power is rational; else the real power exists only under its mandatory rounding (§6.7), which rounds the true power once; without a rounding it is a fault, and so is a negative base | 4^0,5 = 2; 8^(2/3) = 4; 10^(1/3) afgerond op 10 naar beneden = 2,1544346900, naar boven = 2,1544346901; 10^(1/3) without a rounding: fault |
 | percentage van | `l/100 × r`, exactly | (1/3)% van 600 = 2 (exact, not 1,999…); 50% van 4,00 = 2 |
-| wortel | principal square root; mandatory explicit rounding follows (§13.4.17.13) | √9 = 3; √2 afgerond op 2 (rekenkundig) = 1,41 |
+| wortel | principal square root; mandatory explicit rounding follows (§13.4.17.13), which rounds the true root once | √9 = 3; √2 afgerond op 2 (rekenkundig) = 1,41; √(1/9) afgerond op 20 naar beneden = 0,33333333333333333333 |
 | absolute waarde | magnitude; type (unit, precision, sign) passes through | \|−3/7\| = 3/7 |
 | datum ± duur (plus/min over a date and a duration) | **calendar arithmetic, not field arithmetic** — ch. 3.8: the count truncates toward zero, months/quarters/years clamp to the month end; the date stands on the left of plus and min (duration ± date is ill-formed) | 2024-01-31 + 2 weken = 2024-02-14; 2024-01-31 + 1 maand = 2024-02-29 |
 | tijdsduur van A tot B (in hele *eenheid*) | whole declared units between two dates, signed; the packed-month rule of ch. 3.8; the absolute variant drops the sign | tijdsduur van 29-02-2004 tot 28-02-2026 in jaren = 21 |
+
+A root and a fractional power under their rounding are rounded once, on the
+true value, with whole numbers: with s = 10^d for d decimals and q the
+denominator of the exponent, the rounded value is k/s for the whole k next
+to the q-th root of x^p·s^q, decided by comparing k^q and, for the half-way
+point of *rekenkundig*, (2k + 1)^q with that number. Worked examples (`ref/`
+tests `WV-2.2-p` to `WV-2.2-v`): √2 afgerond op 40 naar beneden is
+**1,4142135623730950488016887242096980785696**, and 2 tot de macht 0,5
+afgerond op 20 richting nul is **1,41421356237309504880**.
 
 Division by numeric zero: hard fault in v0; in v1 it routes into the
 §9.5 channel (ch. 1.4 point 4). Worked example (`ref/` test
@@ -457,9 +471,11 @@ its working memory, in both branches, so that a reader and a condition
 compute with the value the form wrote, and writes it onto the bean of the
 attribute as a decimal: exact where it terminates, and at 16 significant
 digits rounded half to even where it does not (the 1/3 above is
-0,3333333333333333 on the bean). It refuses by name a fold over the value of
-such an attribute, since its folds sum decimals, and a case value written as
-a rational (`1/6`).
+0,3333333333333333 on the bean). Its folds add and compare the exact
+values, and a value of that form that an object creation initialises
+stands exactly in its working memory too. It refuses by name a case value
+written as a rational (`1/6`), and a time-proportional part into a timeline
+of that form (ch. 3.7), since a segment of its timelines holds a decimal.
 
 Worked example — the exact value at rest (`ref/` test `WV-2.4-p`; the Drools
 backend's `RationalAtRestWitnessTest`): a Jutter with `begrensde opbrengst`,
@@ -475,6 +491,11 @@ factor is **2/3**, the vrijgelaten inkomen **4567,50**, and the Jutter is
 at 16 digits, 0,6666666666666667, the product is 4567,500000000000228,
 which faults at the gate of the vrijgelaten inkomen and is greater than the
 grens.
+
+On a timeline target the gate holds per segment (ch. 3.7): a segment whose
+value does not fit the declared decimals is EF-006, with the parameters of
+a scalar write, and a segment that fits is written as the exact value it
+is.
 
 Worked example — the exact value 2/3 into a 2-decimal attribute: with
 `afgerond op 2 decimalen` rekenkundig → **0,67**; with `naar beneden` →
@@ -493,8 +514,9 @@ not fit. Verifier/corpus artifacts: OPEN.
 
 ### 2.5 Rounding
 
-Five modes; the default when no mode is written is *rekenkundig*. No
-banker's rounding exists.
+Five modes. A rounding always writes its mode: the RegelSpraak source
+names it (§6.1.3), and the wire's `Rounding.mode` is required (IR-SPEC
+ch. 4), so there is no default. No banker's rounding exists.
 
 | Mode (RegelSpraak) | Meaning |
 |---|---|
@@ -502,7 +524,7 @@ banker's rounding exists.
 | naar boven | toward +∞ (ceiling) |
 | richting nul | toward zero (truncate) |
 | weg van nul | away from zero |
-| rekenkundig | half away from zero (default) |
+| rekenkundig | half away from zero |
 
 Worked tables — these are `ref/` tests verbatim. To **2 decimals**:
 
@@ -645,8 +667,9 @@ Per granularity bucket: result = base × days-true/days-in-bucket, as an
 exact fraction. Example: base 1200, 90 of 365 days → 1200 × 90/365 =
 21600/73 — non-terminating, and rounded only by an explicit rounding:
 afgerond op 2 rekenkundig = **295,89**. The assignment gate rounds nothing
-(ch. 2.4); whether it holds on a timeline target is OPEN (ch. 3.7). Full
-timeline algebra: ch. 3.
+and holds per segment of a timeline target (ch. 2.4, 3.7): 21600/73 written
+unrounded into a target of 2 decimals is EF-006. Full timeline algebra:
+ch. 3.
 
 ### 2.9 The pinned decimal scale — Catala decimals (Phase-5c, vraag 4-A)
 
@@ -2107,17 +2130,18 @@ deel on bucket B = read(base, start(B)) × trueDays(B) / days(B)
   executors until a corpus case lands — a unit-carrying base or target
   faults loudly, never prorates factor-free.
 - The fraction is exact and is **never auto-rounded** to the target's
-  declared decimals — rounding happens only at an explicit rounding; the
-  assignment gate (ch. 2.4) faults on a value that does not fit and
-  rounds nothing. **OPEN:** whether the gate holds on a timeline target.
-  The reference interpreter writes every segment exactly as computed,
-  without the gate; the ASP translation derives only outcomes exact at
-  the target scale and fences a remainder with a loud witness, so a
-  non-terminating pro-rata cannot enter the differential corpus
-  un-rounded. *v0 mirror note (residual, same class as ch. 2.1):* v0, and
-  the Drools backend, store a non-terminating pro-rata at 16 significant
-  digits (DECIMAL64); the exact fraction is normative, the store is the
-  v0 approximation.
+  declared decimals — rounding happens only at an explicit rounding. The
+  assignment gate (ch. 2.4 point 1) holds per segment: a segment whose
+  value does not fit the target's declared decimals is EF-006, with the
+  place of the attribute, the exact value and the decimals as for a scalar
+  write, and the rule writes no timeline; a segment that fits is written
+  as the exact value it is, and the unbounded form has no ceiling. The ASP
+  translation derives only outcomes exact at the target scale and fences
+  a remainder with the witness of EF-006, which names no parameter, and
+  holds the unbounded form as a whole number (ch. 2.4); the Drools backend
+  computes the part exactly and refuses by name a part into a timeline of
+  the unbounded form, whose segment holds a decimal. *v0 mirror note:* v0
+  stores a non-terminating pro-rata at 16 significant digits (DECIMAL64).
 
 Worked examples (absolute): base per year €12 (2024) / €18 (2025),
 condition true [2024-01-01, 2025-02-08), monthly target: twelve months of
@@ -2130,6 +2154,19 @@ mirrored). Yearly target, base €18, 38 true days in 2025 → 18 × 38/365 =
 Rate base 120 €/jr into a monthly target → 10 €/mnd; 5 €/jr → **5/12
 €/mnd** exact (v0: 0,4166666666666667 at its 16-digit store — the exact
 division by 12, never a pre-rounded ×0,0833 reciprocal).
+
+Worked example — the gate per segment (absolute; `ref/` tests
+`WV-3.7-schrijfgrens-maand`, `-jaar` and `-onbegrensd`): a Jutter with a
+`borgtarief` of 18 per year and `borgplichtig` from 2025-01-01 up to
+2025-02-08, and "het borgdeel moet berekend worden als het tijdsevenredig
+deel van zijn borgtarief gedurende de tijd dat hij borgplichtig is". Into a
+monthly `borgdeel` of 2 decimals the segments are **18** in January and
+18 × 7/28 = **4,50** in February, which fit. Into a yearly `borgdeel` of 2
+decimals the one segment is 18 × 38/365 = 684/365, which does not fit:
+**EF-006**, place `J1.borgdeel`, value 684/365, decimals 2. Into a yearly
+`borgdeel` of the unbounded form it is **684/365**. The red case
+`corpus/red/jutterswet-tijdsevenredig-past-niet` pins the fault in the three
+executors.
 
 ### 3.8 Day counting and day-kind durations
 
@@ -4517,7 +4554,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-003 | a date lexeme of the case input names no calendar day | case input | `field`, `lexeme` | ch. 5.7 step 3 | `corpus/red/as-of-date-calendar`, `corpus/red/input-date-calendar` |
 | EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 5.8c; ch. 11.3 | `corpus/red/input-overprecision`, `corpus/red/input-overprecision-param`, `corpus/red/list-element-overprecision`, `corpus/red/struct-field-overprecision`, `corpus/red/jutterswet-cel-overprecisie` |
 | EF-005 | a filled dividend is divided by a numeric zero | §9.5 | `rule`, `label` | ch. 1.4 point 4; ch. 2.2 | `corpus/golden/division-by-numeric-zero`, `corpus/golden/division-abs-by-numeric-zero`, `corpus/golden/filled-count-unguarded-division`, `corpus/golden/at-most-reads-until-settled`, `corpus/golden/closed-runtime-division-by-zero`, `corpus/golden/fold-filter-divides-by-zero`, `corpus/golden/jutterswet-initialisatie-naast-regel`, `corpus/golden/jutterswet-lezer-van-initialisatie` |
-| EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4; ch. 5.8c | `corpus/red/closed-nonexact-division`, `corpus/red/closed-runtime-nonexact-division`, `corpus/red/decimal-nonterminating`, `corpus/red/jutterswet-fout-aan-fixpunt`, `corpus/red/jutterswet-verdeling-past-niet`, `corpus/red/jutterswet-halvering-past-niet`, `corpus/red/jutterswet-kopie-past-niet`, `corpus/red/jutterswet-vast-bergloon-past-niet`, `corpus/red/jutterswet-cel-schrijfgrens` |
+| EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4; ch. 5.8c | `corpus/red/closed-nonexact-division`, `corpus/red/closed-runtime-nonexact-division`, `corpus/red/decimal-nonterminating`, `corpus/red/jutterswet-fout-aan-fixpunt`, `corpus/red/jutterswet-verdeling-past-niet`, `corpus/red/jutterswet-halvering-past-niet`, `corpus/red/jutterswet-kopie-past-niet`, `corpus/red/jutterswet-vast-bergloon-past-niet`, `corpus/red/jutterswet-cel-schrijfgrens`, `corpus/red/jutterswet-tijdsevenredig-past-niet` |
 | EF-007 | a datum-tijd step or construction leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range`, `corpus/red/date-time-with-outside-range` |
 | EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/red/date-time-step-outside-range` |
 | EF-009 | a day-kind walk passes the reach fence without a day of the kind | fault | `from`, `reach` | ch. 3.8 | `corpus/red/day-kind-unsatisfiable-walk`, `corpus/red/day-kind-scope-outside-table` |
@@ -6079,9 +6116,10 @@ creation, the object it was made for and its number among the objects that
 creation made for it, which is 1, since a creation makes one object per
 subject (ch. 5.5). `<found>` is `unreached`; `true` or `false`; `fault`
 with the EF code, or `fault -` for a fault without one; or the value: a
-number as its exact decimal where it terminates and else as its quotient to
-16 significant digits rounded half to even (IEEE 754 decimal64), without
-trailing zeros; a date and a date-time as the case format writes them,
+number as its exact decimal without trailing zeros where it terminates, and
+else as its numerator and denominator in lowest terms, `t/n`, the sign on the
+numerator (`-1/3`), so that a rational and a decimal of many digits never
+write alike; a date and a date-time as the case format writes them,
 and a year the case format cannot write — below 0000 or above 9999, which
 the date construction reaches (ch. 3.8) — with its sign and at least four
 digits, `+12026-03-01`, `-0005-03-01` (ISO 8601's expanded form;
@@ -6141,7 +6179,7 @@ and, after the condition, 10 `Literal` (the value 1). The version is
 | 3 `Literal` | 0 | 0 | 0 |
 | 4 `Comparison` | *unreached* | true | false |
 | 5 `Rounding` | *unreached* | 25 | 0 |
-| 6 `Binary` | *unreached* | 25 | 3/7, written `0.4285714285714286` |
+| 6 `Binary` | *unreached* | 25 | 3/7 |
 | 7 `AttributeReference` | *unreached* | 100 | 3 |
 | 8 `AttributeReference` | *unreached* | 4 | 7 |
 | 9 `Literal` | *unreached* | 0 | 0 |

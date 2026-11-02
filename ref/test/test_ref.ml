@@ -251,6 +251,13 @@ let () =
   expect_num "WV-2.2-m" (Arith.sqrt_ ~err:no_err (n "9")) "3";
   expect_num "WV-2.2-n" (Arith.sqrt_rounded ~err:no_err Half_away_from_zero 2 (n "2")) "1.41";
   expect_num "WV-2.2-o" (Arith.abs_ (n "-3/7")) "3/7";
+  (* ch. 2.1: plus, min and maal are exact on every number, past the 34
+     digits of decimal128 *)
+  expect_num "WV-2.1-exact-a"
+    (Arith.sub_min (Arith.add (n "10000000000000000000000000000000") (n "0.001")) (n "10000000000000000000000000000000"))
+    "0.001";
+  expect_num "WV-2.1-exact-b" (Arith.mul (n "100000000000000001") (n "100000000000000001"))
+    "10000000000000000200000000000000001";
   (* a fractional exponent: the exact root where the power is rational, and
      under its rounding (§6.7) the true power rounded once, as the root under
      its rounding is *)
