@@ -253,4 +253,38 @@ limits"): "gesloten door WF-125 en WF-040 (stap 1 van `dimensions-executed`)".
 #### `make gates`
 
 Eerste run (op `cf981a3cf` plus de spectekst die daarna in `a60668183` landde): alle zeventien gates groen,
-`red=0`, 317 s.
+`red=0`, 317 s. Laatste run op `acf766830` (dit Result zonder deze alinea; de kaart is geen invoer van een gate),
+`out/gates/20261102-141929/summary.txt`:
+
+```
+ocaml rc=0 0s ocaml-build: fresh (stamp newer than 217 source files)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 0s drools-jar: fresh (jar newer than 536 source files)
+01-self-contained rc=0 2s
+02-ir-schema rc=0 127s
+04-case-schema rc=0 7s
+03-verifier rc=0 37s
+05-oracle rc=0 22s
+06-clingo rc=0 260s
+07-noop rc=0 13s
+08-red rc=0 157s
+09-catala rc=0 5s
+10-regelspraak rc=0 216s
+11-toka-parity rc=0 219s
+12-drools rc=0 313s
+13-reftype rc=0 255s
+14-flogic rc=0 2s
+15-graph rc=0 46s
+16-scenario rc=0 39s
+17-readings rc=0 234s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 14:24:42 313s red=0
+```
+
+Uit de gate-logs: gate 2 527 vormrijen, 407 bestanden, 54515 objecten in 975 documenten in schemavolgorde; gate 3
+407 golden schoon, 568 negatief op hun regel, 411 op hun arm, 239 armsleutels, 686 parameterregels, 340 sleutels,
+442 sleutelplaatsen, 706 wijzers (alle op hun vloer); gate 4 134 zelftestrijen, 1041 cases; gate 5 1816 voorbeelden,
+972 cases, vier goldens zonder case; gate 6 2267 checks, 972 cases; gate 8 69 rode gevallen, 129 codechecks, 203
+parameterchecks, 35 soorten in ch. 5.7b, Drools-leg 47 met fout, 22 met reden; gate 10 1364 tests, 161 rgs-goldens;
+gate 12 298 codes, 300 gespeeld op beide takken; gate 15 313 van 351 goldens vergeleken, 38 door de loader geweigerd;
+gate 17 300 goldens, 842 case-bestanden, afwijkingen 0.
