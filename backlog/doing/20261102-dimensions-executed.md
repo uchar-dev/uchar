@@ -1355,3 +1355,206 @@ gate 8 70 rode gevallen, Drools-leg 50 met fout; gate 10 1379 tests, 162 rgs-gol
 gate 11 29 PASS in ref en clingo; gate 12 304 gespeeld op beide takken, 48 niet-gespeelde goldens met naam, JUnit 1752;
 gate 16 38 scenario-goldens, 131 case-bestanden; gate 17 978 getraceerd, 304 goldens en 848 case-bestanden
 vergeleken, afwijkingen 0. Niet gemerged, niet gepusht.
+
+### Stap 5b (stap 5 op stap 3, labels met "en")
+
+Branch `card/dimensions-frontend`, worktree `/Users/yeb/Developer/uchar-dev/wt/dimensions-frontend`, gerebased op
+`2e07be6b2` (stap 3 op stap 1, 2 en 4a). Commits:
+
+- na de rebase (oud → nieuw): `5c93c45f5` → `8308d5521` frontend; `e4ed381db` → `f57069cf9` golden
+  `jutterswet-strandseizoen`; `fdb11c812` → `832eec0b6` voorstel pin gate 12 en noot WF-040; `1f9aee6f4` → `1139f5c89`
+  Result stap 5;
+- `c1c863d8f` register: RGS-370 tot en met 374 → RGS-364 tot en met 368;
+- `8486bc1c3` frontend: labels achter het attribuut met "en" en ",", celdoel en lid over meer dimensies;
+- `ff86f8f9f` golden `jutterswet-strandseizoen` met de vorm;
+- het commit van dit Result.
+
+Beschermde paden (voorstel, niet gemerged): ongewijzigd ten opzichte van stap 3 en 5 (`scripts/check-drools.sh`,
+`spec/IR-SPEC.md` uit stap 5); deze stap raakt geen beschermd pad. `backends/drools/` niet aangeraakt.
+
+#### De rebase
+
+Conflicten en hoe ze zijn opgelost:
+
+- `corpus/golden/README.md`: beide alinea's gehouden, `jutterswet-strandseizoen` (stap 5) vóór
+  `jutterswet-seizoenboeking`/`-seizoenkopie` (stap 3). De alinea van stap 5 over `jutterswet-seizoenkopie` ("ref en
+  clingo weigeren het celdoel") is vervallen: stap 3 beschrijft dezelfde golden zoals ze nu draait.
+- de kaart: Result "Stap 3" en daarna "Stap 5", beide ongewijzigd.
+
+Zonder conflict samengevoegd en daarna nagelezen: `scripts/check-drools.sh` (`EXPECTED_CHANNEL` van stap 3 met
+`jutterswet-seizoenboeking` en `-seizoenkopie` op `EXCLUDE DROOLS-298`, 49 niet-gespeelde goldens; `EXPECTED_PLAYED=304`
+van stap 5 met de reden van 303 en die van 304 erboven), `grammar/DIVERGENCES.md` (de sectie "More dimensions" van
+stap 5 en de celdoel-alinea van stap 3 onder §13.4.2), het register en de catalogi (RGS-307 weg uit stap 3, vijf codes
+uit stap 5), `spec/IR-SPEC.md`. `Dependencies.java` en `RuleChecker.java` gaven geen conflict: stap 5 raakte ze niet.
+Na de rebase: frontendsuite 1384 tests groen (`logs/stap5b-suite-1.log`), de vier dimensiegoldens
+(`-strandseizoen`, `-seizoenboeking`, `-seizoenvondst`, `-seizoenvouw`) re-emitteren byte-gelijk.
+
+**Codenummers.** Stap 5 nummerde vanaf RGS-370 om niet te botsen met stap 3 (voorlopig besluit 6 van stap 5); na de
+rebase botst er niets, dus de vijf codes sluiten aan op RGS-363, zodat het register geen gat heeft dat niet van een
+ingetrokken code is (gate 10 eist oplopend en uniek): RGS-370 → 364 `dimension-cell-label-missing`, 371 → 365
+`dimension-cell-ambiguous`, 372 → 366 `dimension-selection-missing`, 373 → 367 `dimension-selection-repeated`,
+374 → 368 `dimension-interval-ambiguous`. Mee hernummerd: catalogi nl/en, `ExpressionBuilder`, `DIVERGENCES.md` en
+de pins in `IrTest`, `DimensionCellTest`, `DimensionFoldTest`, `MarkerReportTest`, `MarkerReasonPinTest`. Geen van de
+codes was geland. In de Result van stap 5 hierboven staan de oude nummers.
+
+#### Wat ALEF schrijft (gelezen)
+
+ALEF op `872b859`. De editor van `DimAttribuutSelector` (de cel, links en rechts van een gelijkstelling;
+`languages/regelspraak/languageModels/editor.mps:13476-13660`) en die van `EigenschapInitialisatie` (het lid van een
+objectcreatie; dezelfde editor rond `:3600-3690`) zetten de componenten `attributive_labels` en `predicatieve_labels`
+voor en achter de naam van het attribuut. Die componenten (`languages/objecten/languageModels/gegevensspraak/editor.mps:
+7246-7337` en `:7961-8050`) scheiden de labels met "en" vóór het laatste label en "," vóór elk eerder
+(`isLaatstePredicatieveLabel`, `gegevensspraak/behavior.mps:29628-29673`); vóór de naam van een label staat zijn
+`voorvoegsel`, een `DimensieVoorzetsel` (`gegevensspraak/structure.mps:1304-1308`). `predicatieveLabelsAsText`
+(`behavior.mps:30828-30918`), gebruikt door de testtaal, zet " en " tussen
+elk paar. ALEF schrijft de vorm dus voor een cel, een celdoel en een lid van een objectcreatie; ook de labels vóór het
+attribuut krijgen "en" en ",". `Dimensies_Test` en de documentatie (`docs/gegevens/dimensies.md`, één dimensie) tonen
+geen tekst met twee labels; de modellen bewaren een boom, geen tekst. Het rapport
+`research/dimensies-2026-11-02/` behandelt "en" niet.
+
+#### Wat er veranderde
+
+- **Grammatica.** `kaleNaamDeel : kaleNaamWoord+ labelOpsomming*? ;` met `labelOpsomming : ( COMMA | EN ) ( VAN | OP |
+  IN | VOOR | OVER | BIJ ) kaleNaamWoord+ ;`. De lus is niet-gulzig: waar de tekst ook leest met het einde van de naam
+  vóór de "," of "en", kiest ANTLR die lezing (bij een dubbelzinnigheid het laagste alternatief, in een niet-gulzige
+  lus de uitgang). Daardoor parseert elke tekst die eerder parseerde hetzelfde; nieuw is alleen een lezing waar de tekst
+  eerder een syntaxfout gaf.
+- **Cel** (`ExpressionBuilder.cellReadings`). Komma's worden losse woorden; tussen twee labels achter het attribuut mag
+  "en" of "," staan, niet vóór het eerste en niet na het laatste.
+- **Celdoel en lid** (`RuleChecker.cellTarget`, `makeMemberInit`). Beide lezen de naam via
+  `ExpressionBuilder.dimensionCell`, dus zoals een cellezing: alle dimensies, vóór- en voorzetselvorm, met en zonder
+  "en". `namedCell` (één dimensie, alleen voorzetselvorm) is weg. Een naam met labels van een deel van de dimensies
+  geeft RGS-364, een naam die op twee cellen past RGS-365, ook als doel of lid.
+- **`DIVERGENCES.md`.** "More dimensions": de vorm, de nieuwe productie, waarom niet-gulzig, de prijs in een
+  operandenlijst (hieronder), de grenzen (labels vóór het attribuut met "en", voorzetsel `uit`); de celdoel-alinea
+  onder §13.4.2 zegt dat doel en lid lezen zoals een cel.
+- **Golden.** `jutterswet-strandseizoen`: `noordnajaarsgewicht` leest nu `zijn vondstgewicht op noord en in najaar`
+  (was `op noord in najaar`); `zuidvoorjaarsgewicht` houdt de vorm zonder "en". Draad en cases gelijk, alleen de twee
+  snippets in `ir.json` (`git diff`: 2 regels); de absolute verwachtingen van die regel (1.00 in case1, leeg voor J2 en
+  J3 in case2) dekken de vorm. `NOTE.md` en `corpus/golden/README.md` noemen de vorm.
+
+**De prijs in een operandenlijst** (gemeten met `make ir`): "de maximale waarde van zijn bonus, zijn vondstgewicht in
+voorjaar en op zuid" en "de maximale waarde van zijn vondstgewicht in voorjaar, op zuid en zijn bonus" lezen de "en"
+of "," van de cel als scheiding van de lijst: RGS-364 (geen label van `strand`) plus een WARNING voor de naam
+`op zuid`, geen document. Tussen haakjes, of met de labels naast elkaar, is het de cel; "… in voorjaar en op zuid en
+zijn bonus" leest de cel ook, omdat de lijstlezing daar niet parseert. Dit is de keerzijde van het niet-gulzige
+besluit; een gulzige lus zou "de maximale waarde van zijn a en in te houden gewicht" (een parameter zonder lidwoord)
+anders lezen (mutant G1).
+
+#### Rood en mutaties
+
+Rood: de acht nieuwe tests op de code van `c1c863d8f` met de nieuwe testbestanden (`logs/stap5b-red-tests-1.log`): zeven
+rood (syntaxfout bij "en" en ",", RGS-113 voor het doel over twee dimensies en het gedeeltelijke doel), en
+`an_operand_list_keeps_its_en` groen, zoals bedoeld: die test pint de bestaande lezing. De golden-bron op de frontend van
+`c1c863d8f` (losse werkboom, opgeruimd): `syntaxfout: no viable alternative at input 'zijnvondstgewichtopnoorden'`,
+exit 2 (`logs/stap5b-red-golden-1.log`). Groen: dezelfde klassen 20/20, met `DimensionFoldTest`, `CellEdgesTest`,
+`IrTest` en de markertests 64/64; de hele suite 1392.
+
+Nieuwe tests: `DimensionCellTest` `the_labels_behind_the_attribute_may_be_joined_with_en`,
+`three_labels_behind_the_attribute_are_an_enumeration` (`op noord, in late zomer en bij vloed`),
+`a_label_after_van_joins_with_en_either_way`, `an_operand_list_keeps_its_en`; `DimensionTargetTest`
+`a_cell_target_joins_its_labels_with_en`, `a_cell_target_over_two_dimensions_names_a_label_of_each`,
+`a_cell_target_without_a_label_of_every_dimension_is_refused`, `a_creation_member_joins_its_labels_with_en`.
+
+Mutaties, elk apart in een `git worktree add --detach` van `ff86f8f9f` (opgeruimd), recept
+`/Users/yeb/Developer/uchar-dev/werk/dimensions-executed/mutants/stap5b/mutate5b.py`, uitkomst
+`logs/stap5b-mutants-1.log`; niet gecommit:
+
+| | bewaking | mutatie | rood |
+|---|---|---|---|
+| G1 | niet-gulzige lus | `labelOpsomming*` | `an_operand_list_keeps_its_en` ("value fold with fewer than two operands") |
+| G2 | "," in de opsomming | alleen `EN` | `three_labels…` (syntaxfout) |
+| G3 | "en van" | geen `VAN` na het verbindingswoord | `a_label_after_van…` (syntaxfout) |
+| R1 | resolver verbindt | nooit | 5 tests (cel onopgelost, doel RGS-113, lid RGS-189) |
+| R2 | komma als los woord | niet gesplitst | `three_labels…` |
+| T1 | gedeeltelijk doel geweigerd als cel | marker genegeerd | `a_cell_target_without…` (naast RGS-364 een tweede diagnose) |
+| T2 | doel leest als cel | nooit | 6 doeltests (RGS-113) |
+| M1 | lid leest als cel | nooit | beide lidtests (RGS-189) |
+
+#### Aangepaste tests, pins en vloeren (oud → nieuw)
+
+- Geen bestaande verwachting veranderd. `DimensionTargetTest.assertCellTarget` neemt de labels nu als varargs; de
+  bestaande aanroepen met één label zijn gelijk gebleven.
+- Hernummerd (zie boven): de pins RGS-370 … 374 in vijf testklassen → RGS-364 … 368.
+- Gedrag dat verandert zonder bestaande test: een doel over meer dimensies of in vóórvorm was RGS-113 ("geen
+  gedeclareerd attribuut") en is nu de cel; een gedeeltelijk doel was RGS-113 en is RGS-364; een gedeeltelijk lid was
+  RGS-189 en is RGS-364.
+- Geen pin of vloer veranderd. Tellingen (oud: de laatste run van stap 3, `out/gates/20261102-162255` in de andere
+  werkboom): gate 2 410 → 411 bestanden, 54682 → 54801 objecten in 978 → 979 documenten; gate 3 410 → 411 golden
+  schoon, 568 negatief; gate 4 1051 → 1053 cases; gate 5 1850 voorbeelden, 980 → 982 cases; gate 6 2280 checks, 980 →
+  982 cases; gate 7 935 → 937 weerleggende cases, 45 overlevers; gate 8 71 rode gevallen; gate 10 1369 → 1392 tests,
+  162 → 163 rgs-goldens, 354 → 359 codes; gate 12 303 → 304 gespeeld op beide takken, 49 niet-gespeelde goldens met
+  naam, JUnit 1754; gate 13 64 → 68 annotaties over 31 → 32 goldens, 168 → 174 replays; gate 15 315 → 316 van 352 →
+  353 vergeleken, 279 afhankelijkheden, route 162 → 163; gate 17 980 → 982 getraceerd, 303 → 304 goldens en 846 →
+  848 case-bestanden vergeleken, afwijkingen 0.
+
+#### Voorgestelde tekst voor CONSTRUCTS (hoofdsessie)
+
+Rij 28, de noot van stap 5 aangevuld:
+
+> **Landed (stap 5b van `dimensions-executed`, 2026-11-02, `8486bc1c3`, `ff86f8f9f`):** de labels achter het attribuut
+> staan naast elkaar of als opsomming zoals ALEF ze schrijft ("in voorjaar en op zuid", "op noord, in zomer en bij
+> vloed"); een celdoel en een lid van een objectcreatie lezen als een cellezing, over meer dimensies. De dimensiecodes
+> van de frontend zijn RGS-364 tot en met RGS-368.
+
+#### Voorlopige besluiten
+
+1. **Niet-gulzige lus** in plaats van gulzig: geen bestaande lezing verandert; de prijs is de cel met "en" of "," op
+   een plaats waar een operandenlijst dat woord ook als scheiding leest (gemeten, in `DIVERGENCES.md`).
+2. **Elke "en" of "," tussen twee labels achter het attribuut**, niet alleen ALEF's patroon ("," en dan "en" voor het
+   laatste): de scheiders dragen geen betekenis, en `predicatieveLabelsAsText` van ALEF schrijft zelf "en" tussen elk
+   paar.
+3. **Voorzetsels na het verbindingswoord**: `van`, `op`, `in`, `voor`, `over`, `bij`; niet `uit`, dat een eigen token
+   is en ook zonder "en" geen label leest (bestaande grens, nu genoemd).
+4. **Labels vóór het attribuut met "en" niet gebouwd**: de opdracht noemt de labels achter het attribuut; zonder
+   voorzetsel als merkteken zou de productie elke "en" gevolgd door een naamwoord in een naam opnemen waar de tekst
+   anders niet parseert, en zou zo'n cel in een operandenlijst splitsen ("de maximale waarde van zijn natte en zware
+   buit"). Grens in `DIVERGENCES.md`.
+5. **Celdoel en lid via `dimensionCell`**: nodig om "en" in een doel te lezen (dat vraagt twee dimensies met voorzetsel),
+   en het houdt één lezing van een celnaam voor lezen en schrijven, zoals ALEF één editor heeft. Dit breidt het doel van
+   stap 3 uit naar meer dimensies en de vóórvorm.
+6. **Geen golden met een celdoel met "en"**: een celschrijving in een golden geeft een pin `EXCLUDE DROOLS-298` in
+   `scripts/check-drools.sh`, het bestand en de regels die stap 4b nu verandert. De frontendtests pinnen doel en lid; een
+   golden kan volgen na 4b.
+7. **Hernummering naar RGS-364 … 368** (zie boven).
+
+#### Wat niet lukte of buiten stap 5b bleef
+
+- Niets mislukt. De cel met "en" of "," in een operandenlijst splitst waar de lijst het woord ook leest (besluit 1).
+- Labels vóór het attribuut met "en", en het voorzetsel `uit`: niet gelezen (besluiten 3 en 4).
+- De scenariolaag (RGS-237) leest geen cel; ongewijzigd.
+
+#### `make gates`
+
+Eén run op `ff86f8f9f` (dit Result is geen invoer van een gate), `logs/stap5b-gates-1.log`,
+`out/gates/20261102-164715/summary.txt`:
+
+```
+start 2026-11-02 16:47:15 ff86f8f9f card/dimensions-frontend
+ocaml rc=0 4s ocaml-build: rebuilt (15 source path(s) newer than the stamp, e.g. backends/clingo; 4s)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 7s drools-jar: rebuilt (21 source path(s) newer than the jar, e.g. backends/drools/src/main/java/dev/uchar/regelspraak/cases; 7s)
+01-self-contained rc=0 2s
+02-ir-schema rc=0 142s
+04-case-schema rc=0 7s
+03-verifier rc=0 38s
+05-oracle rc=0 22s
+06-clingo rc=0 309s
+07-noop rc=0 13s
+08-red rc=0 175s
+09-catala rc=0 5s
+10-regelspraak rc=0 242s
+11-toka-parity rc=0 241s
+12-drools rc=0 426s
+13-reftype rc=0 325s
+14-flogic rc=0 2s
+15-graph rc=0 48s
+16-scenario rc=0 39s
+17-readings rc=0 262s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 16:54:29 434s red=0
+```
+
+Uit de gate-logs: de tellingen hierboven; gate 8 Drools-leg 50 met fout, 21 met reden, 19 EXCLUDE met code; gate 11
+29 PASS in ref en clingo; gate 12 299 codes; gate 16 38 scenario-goldens, 131 case-bestanden. Niet gemerged, niet
+gepusht.
