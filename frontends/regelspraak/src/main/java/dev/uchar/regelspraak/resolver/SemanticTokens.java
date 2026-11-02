@@ -665,15 +665,66 @@ public final class SemanticTokens {
         return d == null ? null : d.name();
     }
 
+    /** A label of a selection of {@code dimension} (any dimension for null). The grammar admits "en" inside a label, so
+     *  a set of two labels "{najaar en voorjaar}" is the one member "najaar en voorjaar"; a member that is no declared
+     *  label is read as labels joined by "en" where exactly one grouping of its runs gives labels of the dimension, as
+     *  the resolution reads a member ({@code ExpressionBuilder.memberLabels}). Each label is then a name of its own
+     *  and "en" keeps its lexical kind. */
     private void labelReference(String dimension, DimensieWaardeContext w) {
-        String label = src(w);
-        Decl decl = null;
+        int[] r = range(w);
+        Decl decl = label(dimension, src(w));
+        if (decl == null && dimension != null && r != null) {
+            List<int[]> labels = labelGrouping(dimension, r[0], r[1]);
+            if (labels != null) {
+                for (int[] l : labels) claimFree(l, Kind.DIMENSION_LABEL, label(dimension, text(l[0], l[1])));
+                return;
+            }
+        }
+        claimFree(r, Kind.DIMENSION_LABEL, decl);
+    }
+
+    private Decl label(String dimension, String written) {
         for (RegelSpraakModel.Dimension d : model.dimensions.values()) {
             if (dimension != null && !d.name().equals(dimension)) continue;
-            for (String v : d.values()) if (v.equalsIgnoreCase(label)) { decl = lookup(Kind.DIMENSION_LABEL, d.name(), v); break; }
-            if (decl != null) break;
+            for (String v : d.values()) if (v.equalsIgnoreCase(written)) return lookup(Kind.DIMENSION_LABEL, d.name(), v);
         }
-        claimFree(range(w), Kind.DIMENSION_LABEL, decl);
+        return null;
+    }
+
+    /** The piece ranges of the labels of {@code dimension} that pieces {@code first}..{@code last} write joined by
+     *  "en", or null unless exactly one grouping of the runs between the "en"s gives labels only. */
+    private List<int[]> labelGrouping(String dimension, int first, int last) {
+        List<int[]> runs = new ArrayList<>();
+        int start = -1, end = -1;
+        for (int i = first; i <= last; i++) {
+            if (pieces.get(i).hidden()) continue;
+            if (pieces.get(i).type() != RegelSpraakLexer.EN) {
+                if (start < 0) start = i;
+                end = i;
+                continue;
+            }
+            if (start < 0) return null;
+            runs.add(new int[]{start, end});
+            start = -1;
+        }
+        if (start < 0) return null;
+        runs.add(new int[]{start, end});
+        if (runs.size() < 2) return null;
+        List<List<int[]>> readings = new ArrayList<>();
+        labelGroupings(dimension, runs, 0, new ArrayList<>(), readings);
+        return readings.size() == 1 ? readings.get(0) : null;
+    }
+
+    private void labelGroupings(String dimension, List<int[]> runs, int from, List<int[]> until,
+                                List<List<int[]>> result) {
+        if (from == runs.size()) { result.add(List.copyOf(until)); return; }
+        for (int to = from; to < runs.size(); to++) {
+            int[] l = {runs.get(from)[0], runs.get(to)[1]};
+            if (label(dimension, text(l[0], l[1])) == null) continue;
+            until.add(l);
+            labelGroupings(dimension, runs, to + 1, until, result);
+            until.remove(until.size() - 1);
+        }
     }
 
     private Decl formReference(String written) {

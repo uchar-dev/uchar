@@ -197,6 +197,93 @@ class SemanticTokensTest {
         }
     }
 
+    /** The grammar admits "en" inside a label, so a set of two labels joined by "en" parses as one member
+     *  ("{najaar en voorjaar}"), which the resolution reads as two labels; each is a label of its own then, and "en"
+     *  stays a keyword. A member that is a declared label stays one span, also where it holds "en" ("eb en vloed"),
+     *  and a member of three runs is grouped as the resolution groups it ("{eb en vloed en springtij}"). */
+    @Test void a_set_member_of_labels_joined_by_en_names_each_label() {
+        String source = """
+                Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+                    1. voorjaar
+                    2. zomer
+                    3. najaar
+                Dimensie het getij, bestaande uit de getijden (na het attribuut met voorzetsel bij):
+                    1. eb en vloed
+                    2. springtij
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                    het vondstgewicht Numeriek (getal met 2 decimalen) gedimensioneerd met seizoen;
+                    het getijgewicht Numeriek (getal met 2 decimalen) gedimensioneerd met getij;
+                    het najaarsvoorrangsgewicht Numeriek (getal met 2 decimalen);
+                    het getijtotaal Numeriek (getal met 2 decimalen);
+                    het ebgewicht Numeriek (getal met 2 decimalen);
+                Regel najaarsvoorrangsgewicht
+                    geldig altijd
+                        Het najaarsvoorrangsgewicht van een Jutter moet berekend worden als de eerste van zijn vondstgewicht over de seizoenen in {najaar en voorjaar}.
+                Regel getijtotaal
+                    geldig altijd
+                        Het getijtotaal van een Jutter moet berekend worden als de som van zijn getijgewicht over de getijden in {eb en vloed en springtij}.
+                Regel ebgewicht
+                    geldig altijd
+                        Het ebgewicht van een Jutter moet berekend worden als de som van zijn getijgewicht over de getijden in {eb en vloed}.
+                """;
+        List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("getij.rgs", source));
+        SemanticTokens.Document d = Resolver.tokens(files);
+        SemanticTokensCheck.check(files, d);
+        List<Span> spans = d.files().get(0).spans();
+        for (Span s : spans)
+            assertNotEquals(Kind.UNRESOLVED, s.kind(), () -> "unresolved: '" + s.text() + "' at line " + s.line());
+        String[][] sets = {
+                {"{najaar en voorjaar}", "najaar", "en", "voorjaar"},
+                {"{eb en vloed en springtij}", "eb en vloed", "en", "springtij"},
+                {"{eb en vloed}.", "eb en vloed"}};
+        for (String[] set : sets) {
+            int[] p = place(source, set[0], 0);
+            int column = p[1] + 1;
+            for (int k = 1; k < set.length; k++) {
+                int c = column;
+                Span s = spans.stream().filter(x -> x.line() == p[0] && x.column() == c).findFirst()
+                        .orElseGet(() -> fail("no span at " + p[0] + ":" + c + " in " + set[0]));
+                assertEquals(set[k], s.text(), set[0]);
+                if (set[k].equals("en")) {
+                    assertEquals(Kind.KEYWORD, s.kind(), set[0]);
+                } else {
+                    assertEquals(Kind.DIMENSION_LABEL, s.kind(), () -> "'" + s.text() + "' in " + set[0]);
+                    assertArrayEquals(new int[]{place(source, set[k] + "\n", 0)[0], 7},
+                            new int[]{s.declaredAt().line(), s.declaredAt().column()}, () -> "'" + s.text() + "' in " + set[0]);
+                }
+                column += set[k].length() + 1;
+            }
+        }
+    }
+
+    /** A member that two groupings read as labels ("eb en vloed en springtij" beside the labels eb, vloed and
+     *  "eb en vloed") is refused by the resolution, and stays one unresolved name. */
+    @Test void a_set_member_with_two_groupings_stays_one_unresolved_name() {
+        String source = """
+                Dimensie het getij, bestaande uit de getijden (na het attribuut met voorzetsel bij):
+                    1. eb
+                    2. vloed
+                    3. eb en vloed
+                    4. springtij
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                    het getijgewicht Numeriek (getal met 2 decimalen) gedimensioneerd met getij;
+                    het getijtotaal Numeriek (getal met 2 decimalen);
+                Regel getijtotaal
+                    geldig altijd
+                        Het getijtotaal van een Jutter moet berekend worden als de som van zijn getijgewicht over de getijden in {eb en vloed en springtij}.
+                """;
+        List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("getij.rgs", source));
+        SemanticTokens.Document d = Resolver.tokens(files);
+        SemanticTokensCheck.check(files, d);
+        int[] p = place(source, "eb en vloed en springtij", 0);
+        Span s = d.files().get(0).spans().stream().filter(x -> x.line() == p[0] && x.column() == p[1]).findFirst()
+                .orElseGet(() -> fail("no span at the member"));
+        assertEquals("eb en vloed en springtij", s.text());
+        assertEquals(Kind.UNRESOLVED, s.kind());
+        assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-070".equals(x.code()) && x.line() == p[0]),
+                () -> "the resolution refuses the selection: " + d.diagnostics());
+    }
+
     @Test void every_kind_of_name_is_declared_where_it_is_written() {
         SemanticTokens.Document d = document();
         declaration(d, "jutters.rgs", "handboek (taal", "handboek", Kind.VOCABULARY);

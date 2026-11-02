@@ -4238,8 +4238,10 @@ re-split against the model, a multi-word characteristic is put together from two
 per" + "trein") — and often tries a reading and falls back, so a token position would have to travel through every one
 of those string operations. A declaration and a name the parse places (an object type in a head, a domain as a
 datatype, a unit expression, a timeline, a dimension and its labels in a selection, a form, an enumeration value) are
-taken from their parse node. In rule text, at each word the longest run of words the model declares is one name. Its
-kind follows its place, as the resolution reads the place: the first step of a navigation ("DE LEEFTIJD van de
+taken from their parse node. The grammar admits "en" inside a label, so a set of two labels "{najaar en voorjaar}"
+is one member; where the member is no declared label and exactly one grouping of its words gives labels of the
+dimension, as the resolution reads a member, each label is a `dimensionLabel` and "en" keeps its lexical kind. In
+rule text, at each word the longest run of words the model declares is one name. Its kind follows its place, as the resolution reads the place: the first step of a navigation ("DE LEEFTIJD van de
 Jutter") names a member before anything else; a step inside one ("van DE MAST van de post") a role; the subject a
 navigation ends in ("van DE JUTTER") and a name after `een`, `alle` or a numeral a type before a role, a member last;
 anywhere else a variable of the rule shadows a parameter, and both go before the members and types. A navigation is
@@ -4316,9 +4318,10 @@ A span with `"declaration": true` takes the modifier `declaration`.
 **Witnesses.** `SemanticTokensTest`: a Jutterswet model of two files with every kind of name, a name over two lines, a
 name that names nothing, a `// Bron:` comment, a reference across the file boundary, and a character outside the Basic
 Multilingual Plane before a name on its line (a `//` comment runs to the end of its line, so the character stands in a
-designation and in a text literal, and once in a comment, whose end column it moves); the JSON; and the CLI with an
-error and with wrong usage. `SemanticTokensCorpusTest`: every `corpus/golden/**/source.rgs` as one document — the
-coverage and the positions (`SemanticTokensCheck`, which lexes the files again itself), every reference pointing at a
+designation and in a text literal, and once in a comment, whose end column it moves); the JSON; the CLI with an
+error and with wrong usage; and a set member of labels joined by "en", a label that holds "en", and a member with two
+groupings, which stays one `unresolved` name. `SemanticTokensCorpusTest`: every `corpus/golden/**/source.rgs` as one
+document — the coverage and the positions (`SemanticTokensCheck`, which lexes the files again itself), every reference pointing at a
 declaration of its kind, every reference whose kind has declarations carrying one, no `unresolved` in a document
 without diagnostics (a reason-carrying list, stale-failing, is empty), and a `word` only in a document with a syntax
 error; floors on the files, the spans and the name spans per kind. `SemanticTokensRecoveryTest`: the seven broken
