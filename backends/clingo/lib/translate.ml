@@ -3371,6 +3371,12 @@ let non_source_fold kind el (a : expr) =
     (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
     el (Ir_v0.Spelling.a_node a)
 
+(* The reference interpreter's environment over the document alone: its
+   resolvers below read the document and nothing of a session. *)
+let doc_env ctx =
+  { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
+    locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
+
 (* a text/enum/boolean operand → (body atoms binding a ground term, the
    term): an own-subject attribute read binds its val atom's value, a literal
    is a bare ground term with no atom. Both are positive, so a leeg attribute
@@ -3405,6 +3411,56 @@ let rec symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string
       sourceless_fold kind el ~list_literal:false
   | Function_call { kind; call_arguments = [ a ]; element_object_type = Some el; _ } when non_source kind a ->
       non_source_fold kind el a
+  (* a cell of a text, enumeration or boolean attribute of the subject
+     (RUNTIME-SEMANTICS ch. 5.8c, 1): the val/3 of the cell's member, as the
+     own read above binds the attribute's *)
+  | Dimension_cell_read
+      { attribute_ref = Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ });
+        labels; _ }
+    when norm ot = norm subject_ot && attr_symbolic_datatype ctx ~otype:ot ~attr:a <> None ->
+      let member = Eval.cell_member (doc_env ctx) ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let v = fresh ctx "V" in
+      ([ Printf.sprintf "val(%s,%s,%s)" subject (str member) v ], v)
+  (* the first and the last filled cell of a text, enumeration or boolean
+     attribute of the subject (ch. 5.8c, 3), by position: one helper atom per
+     selected cell that holds a value, keyed by its index in the order of the
+     product, and the value at the least or the greatest index; where no cell
+     holds one the definedness atom keeps the fold underivable, ref's leeg *)
+  | Function_call
+      { kind = (First | Last) as kind; call_arguments = [ argument ]; dimension_selections = Some selections;
+        element_object_type = None; source_role = None; source_path = None; filter = None; _ }
+    when (match Option.value (Ir_v0.Checks.unanchored_expr argument) ~default:argument with
+          | Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ } ->
+              norm ot = norm subject_ot && attr_symbolic_datatype ctx ~otype:ot ~attr:a <> None
+          | _ -> false) ->
+      let a, ot =
+        match Option.value (Ir_v0.Checks.unanchored_expr argument) ~default:argument with
+        | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (a, ot)
+        | _ -> fault "a dimension fold names an attribute reference (IR-SPEC ch. 4.3)"
+      in
+      (match Ir_v0.Checks.attr_dimensions (object_type ctx ot) a with
+      | Some dims when List.length dims = List.length selections -> ()
+      | Some dims ->
+          fault "dimension fold carries %d selections for the %d dimensions of its argument" (List.length selections)
+            (List.length dims)
+      | None -> fault "dimension fold over undimensioned attribute '%s'" a);
+      let members = List.map (Eval.cell_member (doc_env ctx) ~ot ~attr:a) (Ir_v0.Checks.selected_cells selections) in
+      let reads =
+        List.map (fun m -> let v = fresh ctx "V" in ([ Printf.sprintf "val(%s,%s,%s)" subject (str m) v ], v)) members
+      in
+      ctx.fresh <- ctx.fresh + 1;
+      let pred = Printf.sprintf "dim%d" ctx.fresh in
+      let key, opening =
+        helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) (List.concat_map fst reads)
+      in
+      List.iteri (fun i (atoms, t) -> emit ctx "%s(%s,%d,%s) :- %s." pred key i t (String.concat ", " (opening @ atoms))) reads;
+      emit ctx "%s_def(%s) :- %s(%s,_,_)." pred key pred key;
+      let v = fresh ctx "D" in
+      let c = "C" ^ v and i = "I" ^ v in
+      ( [ Printf.sprintf "%s_def(%s)" pred key;
+          Printf.sprintf "%s = #%s { %s : %s(%s,%s,_) }" i (if kind = First then "min" else "max") c pred key c;
+          Printf.sprintf "%s(%s,%s,%s)" pred key i v ],
+        v )
   | _ ->
       faultc "CLINGO-002"
         "a text/enum/boolean operand here is an own-subject attribute read or a literal (no \
@@ -4270,12 +4326,6 @@ let unshadow_payload (lets : (string * expr * datatype option * string option) l
 let bucketing = function Time_proportional_part | Day_count -> true | _ -> false
 
 let foreign_granularity () = fault "granularity facet on a non-bucketing kind"
-
-(* The reference interpreter's environment over the document alone: its
-   resolvers below read the document and nothing of a session. *)
-let doc_env ctx =
-  { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
-    locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
 
 (* The read of [member] on the object the attribute reference [e] reaches
    (ch. 5.8): its val/3 atom, the value variable and the scale of the

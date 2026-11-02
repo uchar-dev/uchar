@@ -349,9 +349,10 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                 (Printf.sprintf "%s.%s = [%s], expected leeg" label attr
                    (String.concat ";" (List.map render_arg got))))
       (* a cell (RUNTIME-SEMANTICS ch. 5.8c) is the val/3 member World.cell
-         names, scaled by its attribute's declaration; a cell of a number is
-         the one this encoding carries *)
-      | Cell_value { label; attr; labels; value = Value.Num _ as value } -> (
+         names, its value encoded as an attribute's of its declaration: a
+         number or a date scaled by it, a text, an enumeration label or a
+         boolean as the same ground term the translator writes *)
+      | Cell_value { label; attr; labels; value = (Value.Num _ | Value.Date _) as value } -> (
           let member = Uchar_ref.World.cell attr labels in
           let because = scaled_expect ~label ~attr value in
           match val_of model label member with
@@ -362,8 +363,21 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                 (Printf.sprintf "%s.%s = [%s], expected %d" label member
                    (String.concat ";" (List.map string_of_int got))
                    because))
+      | Cell_value { label; attr; labels; value = (Value.Text _ | Value.Enum _ | Value.Bool _) as value } -> (
+          let member = Uchar_ref.World.cell attr labels in
+          let because = arg_of_term (parse_term (Translate.symbolic_value_term value)) in
+          match val_present model label member with
+          | [ got ] when got = because -> None
+          | [] -> Some (Printf.sprintf "%s.%s is underived (leeg), expected %s" label member (render_arg because))
+          | got ->
+              Some
+                (Printf.sprintf "%s.%s = [%s], expected %s" label member
+                   (String.concat ";" (List.map render_arg got))
+                   (render_arg because)))
       | Cell_value { value; _ } ->
-          fault "a cellValue expectation of %s is not checked here: this encoding carries a cell of a number"
+          fault
+            "a cellValue expectation of %s is not checked here: this encoding carries a cell of a number, a date, a \
+             text, an enumeration or a boolean"
             (Value.to_string value)
       | Cell_empty { label; attr; labels } -> (
           let member = Uchar_ref.World.cell attr labels in

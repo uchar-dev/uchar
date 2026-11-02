@@ -1,0 +1,493 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstsoort",
+            "datatype": {
+              "node": "Text"
+            },
+            "dimensions": [
+              "seizoen"
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "meldingsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            },
+            "dimensions": [
+              "seizoen"
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "vergunning",
+            "datatype": {
+              "node": "Boolean"
+            },
+            "dimensions": [
+              "seizoen"
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "voorjaarssoort",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "eerste soort",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal soortseizoenen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "najaarsmelding",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "laatste melding",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zomertarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [
+      {
+        "node": "Dimension",
+        "name": "seizoen",
+        "plural": "seizoenen",
+        "preposition": "in",
+        "labels": [
+          "voorjaar",
+          "zomer",
+          "najaar"
+        ]
+      }
+    ],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "najaarssoort van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "vondstsoort",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "De vondstsoort in najaar van een Jutter"
+                }
+              },
+              "labels": [
+                "najaar"
+              ],
+              "source": {
+                "snippet": "De vondstsoort in najaar van een Jutter"
+              }
+            },
+            "value": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "vondstsoort",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn vondstsoort in voorjaar"
+                }
+              },
+              "labels": [
+                "voorjaar"
+              ],
+              "source": {
+                "snippet": "zijn vondstsoort in voorjaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "voorjaarssoort van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "voorjaarssoort",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De voorjaarssoort van een Jutter"
+              }
+            },
+            "value": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "vondstsoort",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn vondstsoort in voorjaar"
+                }
+              },
+              "labels": [
+                "voorjaar"
+              ],
+              "source": {
+                "snippet": "zijn vondstsoort in voorjaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "eerste soort van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "eerste soort",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De eerste soort van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "first",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondstsoort",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstsoort"
+                  }
+                }
+              ],
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "seizoen",
+                  "labels": [
+                    "voorjaar",
+                    "zomer",
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "over alle seizoenen"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Text"
+              },
+              "source": {
+                "snippet": "de eerste van zijn vondstsoort over alle seizoenen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal soortseizoenen van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal soortseizoenen",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal soortseizoenen van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "filledCount",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondstsoort",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstsoort"
+                  }
+                }
+              ],
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "seizoen",
+                  "labels": [
+                    "voorjaar",
+                    "zomer",
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "over alle seizoenen"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal voorkomens van zijn vondstsoort over alle seizoenen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "najaarsmelding van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "najaarsmelding",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De najaarsmelding van een Jutter"
+              }
+            },
+            "value": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "meldingsdatum",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn meldingsdatum in najaar"
+                }
+              },
+              "labels": [
+                "najaar"
+              ],
+              "source": {
+                "snippet": "zijn meldingsdatum in najaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "laatste melding van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "laatste melding",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De laatste melding van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "last",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "meldingsdatum",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn meldingsdatum"
+                  }
+                }
+              ],
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "seizoen",
+                  "labels": [
+                    "voorjaar",
+                    "zomer",
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "over alle seizoenen"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de laatste van zijn meldingsdatum over alle seizoenen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zomertarief van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zomertarief",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het zomertarief van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "2"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "2"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "DimensionCellRead",
+                "attribute": {
+                  "node": "AttributeReference",
+                  "attribute": "vergunning",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vergunning in zomer"
+                  }
+                },
+                "labels": [
+                  "zomer"
+                ],
+                "source": {
+                  "snippet": "zijn vergunning in zomer"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "boolean": true
+                },
+                "type": {
+                  "node": "Boolean"
+                },
+                "source": {
+                  "snippet": "waar"
+                }
+              },
+              "source": {
+                "snippet": "zijn vergunning in zomer gelijk is aan waar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

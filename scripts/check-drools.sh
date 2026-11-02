@@ -1479,7 +1479,9 @@ EXPECTED_CHANNEL=(
 # 307 since the card dimensions-remaining (2026-11-02): the golden jutterswet-seizoenaanvang, a computing rule and an
 # initialisation on one cell, which the backend reads in the defaults reading of RUNTIME-SEMANTICS ch. 7.7 as ref does,
 # and which the ASP backend now translates as well. It plays on both with PLAYED 1.
-EXPECTED_PLAYED=307
+# 308 since the same card (2026-11-02): the golden jutterswet-seizoenlogboek, cells of a text, a date and a boolean, read,
+# written, folded by position and compared. It plays on both with PLAYED 1.
+EXPECTED_PLAYED=308
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

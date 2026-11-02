@@ -1,0 +1,44 @@
+Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+    1. voorjaar
+    2. zomer
+    3. najaar
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de vondstsoort Tekst gedimensioneerd met seizoen;
+    de meldingsdatum Datum in dagen gedimensioneerd met seizoen;
+    de vergunning Boolean gedimensioneerd met seizoen;
+    de voorjaarssoort Tekst;
+    de eerste soort Tekst;
+    het aantal soortseizoenen Numeriek (niet-negatief geheel getal);
+    de najaarsmelding Datum in dagen;
+    de laatste melding Datum in dagen;
+    het zomertarief Numeriek (geheel getal);
+
+Regel najaarssoort van een jutter
+    geldig altijd
+        De vondstsoort in najaar van een Jutter moet gesteld worden op zijn vondstsoort in voorjaar.
+
+Regel voorjaarssoort van een jutter
+    geldig altijd
+        De voorjaarssoort van een Jutter moet gesteld worden op zijn vondstsoort in voorjaar.
+
+Regel eerste soort van een jutter
+    geldig altijd
+        De eerste soort van een Jutter moet gesteld worden op de eerste van zijn vondstsoort over alle seizoenen.
+
+Regel aantal soortseizoenen van een jutter
+    geldig altijd
+        Het aantal soortseizoenen van een Jutter moet berekend worden als het aantal voorkomens van zijn vondstsoort over alle seizoenen.
+
+Regel najaarsmelding van een jutter
+    geldig altijd
+        De najaarsmelding van een Jutter moet gesteld worden op zijn meldingsdatum in najaar.
+
+Regel laatste melding van een jutter
+    geldig altijd
+        De laatste melding van een Jutter moet gesteld worden op de laatste van zijn meldingsdatum over alle seizoenen.
+
+Regel zomertarief van een jutter
+    geldig altijd
+        Het zomertarief van een Jutter moet berekend worden als 2
+        indien zijn vergunning in zomer gelijk is aan waar.

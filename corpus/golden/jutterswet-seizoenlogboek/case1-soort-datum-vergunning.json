@@ -1,0 +1,254 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstsoort": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "text": "barnsteen"
+                }
+              },
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "text": "wrakhout"
+                }
+              }
+            ]
+          },
+          "meldingsdatum": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "date": "2026-04-12"
+                }
+              },
+              {
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "date": "2026-10-03"
+                }
+              }
+            ]
+          },
+          "vergunning": {
+            "cells": [
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "boolean": true
+                }
+              },
+              {
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "boolean": false
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstsoort": {
+            "cells": [
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "text": "touw"
+                }
+              }
+            ]
+          },
+          "meldingsdatum": {
+            "cells": [
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "date": "2026-07-30"
+                }
+              }
+            ]
+          },
+          "vergunning": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "boolean": true
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "cellValue",
+      "label": "J1",
+      "attribute": "vondstsoort",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "text": "barnsteen"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "voorjaarssoort",
+      "value": {
+        "text": "barnsteen"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "eerste soort",
+      "value": {
+        "text": "barnsteen"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal soortseizoenen",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "najaarsmelding",
+      "value": {
+        "date": "2026-10-03"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J1",
+      "attribute": "meldingsdatum",
+      "labels": [
+        "voorjaar"
+      ],
+      "value": {
+        "date": "2026-04-12"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "laatste melding",
+      "value": {
+        "date": "2026-10-03"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "zomertarief",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J1",
+      "attribute": "vergunning",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "boolean": false
+      }
+    },
+    {
+      "kind": "cellEmpty",
+      "label": "J2",
+      "attribute": "vondstsoort",
+      "labels": [
+        "najaar"
+      ]
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "voorjaarssoort"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "eerste soort",
+      "value": {
+        "text": "touw"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "aantal soortseizoenen",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "najaarsmelding"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "laatste melding",
+      "value": {
+        "date": "2026-07-30"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "zomertarief"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

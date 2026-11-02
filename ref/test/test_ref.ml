@@ -11044,7 +11044,9 @@ let () =
    on the subject and over a path of roles, the fold over one dimension and
    over two, the input precision of a cell, and the reading of a cell at the
    fixpoint (ch. 5.12). The examples of one dimension are the goldens
-   `jutterswet-seizoenvondst` and `jutterswet-seizoenvouw`; the others are
+   `jutterswet-seizoenvondst` and `jutterswet-seizoenvouw`, those of the pair
+   on one cell and of cells of a text, a date and a boolean the goldens
+   `jutterswet-seizoenaanvang` and `jutterswet-seizoenlogboek`; the others are
    written here. A refusal while the case is read is reported by name, so a
    red run says which example it stopped. *)
 let () =
@@ -11126,7 +11128,10 @@ let () =
       plays_named ~ident ~ir:(read_corpus (g ^ "ir.json")) ~case_data:(read_corpus (g ^ case)))
     [ ("WV-5.8c-lezen", "jutterswet-seizoenvondst", "case1-voorjaarscel.json");
       ("WV-5.8c-vouw-een-dimensie-J1", "jutterswet-seizoenvouw", "case1-twee-seizoenen.json");
-      ("WV-5.8c-vouw-een-dimensie-J2-J3", "jutterswet-seizoenvouw", "case2-leeg-en-zomer.json") ];
+      ("WV-5.8c-vouw-een-dimensie-J2-J3", "jutterswet-seizoenvouw", "case2-leeg-en-zomer.json");
+      ("WV-5.8c-vouw-een-nulcel", "jutterswet-seizoenvouw", "case3-nul-in-zomer.json");
+      ("WV-5.8c-paar-op-een-cel", "jutterswet-seizoenaanvang", "case1-berekening-en-aanvang.json");
+      ("WV-5.8c-cellen-van-andere-typen", "jutterswet-seizoenlogboek", "case1-soort-datum-vergunning.json") ];
   (* folding over two dimensions *)
   let strand = dimension "strand" "stranden" "op" [ "noord"; "zuid" ] in
   let two =
