@@ -1558,3 +1558,234 @@ end 2026-11-02 16:54:29 434s red=0
 Uit de gate-logs: de tellingen hierboven; gate 8 Drools-leg 50 met fout, 21 met reden, 19 EXCLUDE met code; gate 11
 29 PASS in ref en clingo; gate 12 299 codes; gate 16 38 scenario-goldens, 131 case-bestanden. Niet gemerged, niet
 gepusht.
+
+### Stap 6 (samenvoegen, voorzetsel `uit`, celdoel met "en" in een golden)
+
+Branch `card/dimensions-frontend`, worktree `/Users/yeb/Developer/uchar-dev/wt/dimensions-frontend`, gerebased op
+`card/dimensions-executed` `4282b3d7b` (stap 4b). Commits:
+
+- na de rebase (oud → nieuw): `8308d5521` → `247b3a71f` frontend (stap 5); `f57069cf9` → `fc9ee155a` golden
+  `jutterswet-strandseizoen`; `832eec0b6` → `9316e5d1c` voorstel pin gate 12 en noot WF-040; `1139f5c89` → `accf0ecf3`
+  Result stap 5; `c1c863d8f` → `7aaaa96ce` register; `8486bc1c3` → `3359e1198` frontend "en"; `ff86f8f9f` → `98a54626d`
+  golden "en"; `9ee7803d9` → `afbd4d757` Result stap 5b;
+- `b3fe3fea0` frontend: een label na `uit` (grammatica, `grammar/DIVERGENCES.md`, tests);
+- `35cde2794` golden `jutterswet-strandseizoen` met een dimensie met `uit` en twee celdoelen met "en",
+  `corpus/golden/README.md`;
+- `10a6d135a` voorstel spec: RUNTIME-SEMANTICS ch. 5.8c noemt `jutterswet-strandseizoen`;
+- het commit van dit Result.
+
+Beschermde paden (voorstel, niet gemerged): die van stap 1 tot en met 5b; deze stap raakt `scripts/check-drools.sh`
+alleen in het conflict en `spec/RUNTIME-SEMANTICS.md` in één zin van ch. 5.8c. Buiten de may-touch-set: niets.
+
+#### De rebase
+
+- `scripts/check-drools.sh`: `EXPECTED_PLAYED` 305 (4b) tegen 304 (5) → 306. De redenen staan alle drie: 303 (4a),
+  305 (4b) en die van stap 5, nu als "306 since the same card (2026-11-02, step 5)". `EXPECTED_CHANNEL` zonder conflict:
+  47 `EXCLUDE` met naam (4b haalde `jutterswet-seizoenboeking` en `-seizoenkopie` eruit, stap 5 raakte de lijst niet).
+- De kaart: Result "Stap 4b" vóór "Stap 5" en "Stap 5b", alle drie ongewijzigd.
+- Zonder conflict, nagelezen: `corpus/golden/README.md` (de alinea van `jutterswet-strandseizoen` vóór die van
+  `-seizoenboeking`/`-seizoenkopie`, waar 4b schreef dat Drools ze speelt); de NOTEs (4b: `-seizoenboeking`,
+  `-seizoenkopie`, `corpus/red/jutterswet-cel-schrijfgrens`; stap 5 en 5b alleen `-strandseizoen`: geen overlap); de spec
+  (4b: RUNTIME-SEMANTICS ch. 5.8c en 5.12; stap 5: IR-SPEC bij WF-040: geen overlap). Eén zin volgde niet uit de
+  samenvoeging: ch. 5.8c "Where the executors stand" (4b) noemde vijf goldens met cellen die in alle drie spelen, zonder
+  `jutterswet-strandseizoen` (stap 5 schreef dat de lijst niet uitputtend was); nu zes, met die golden (`10a6d135a`).
+- Na de rebase is de Drools-jar herbouwd (33 bronpaden nieuwer); frontend en OCaml waren vers.
+
+#### Wat er veranderde: het voorzetsel `uit`
+
+- **Grammatica.** `kaleNaamDeel : kaleNaamWoord+ ( labelOpsomming | uitLabel )*? ;`, `labelOpsomming` neemt na "," of
+  `EN` ook `UIT`, en de nieuwe regel `uitLabel : UIT kaleNaamWoord+ ;`. `UIT` is een eigen token (de deelfuncties
+  §13.4.17.18-24) en geen naamwoord, dus het label na `uit` kreeg een eigen alternatief in de niet-gulzige lus van 5b; de
+  andere zes voorzetsels staan al in een naam (`op`, `in`, `voor`, `over`, `bij` als naamwoord, `van` als scheiding).
+- **`ExpressionBuilder`: geen verandering nodig** (afwijking van de opdracht, die grammatica en `ExpressionBuilder`
+  noemt). `cellReadings` vergelijkt het geschreven woord met het gedeclareerde voorzetsel van elke dimensie
+  (`labelsAfter`), dus `uit` leest als de andere zes zodra de grammatica het in de naam laat. Celdoel
+  (`RuleChecker.cellTarget`) en lid (`makeMemberInit`) lezen via `dimensionCell` (5b); RGS-308 (labels achter het
+  onderwerp, `cellAfterSubject`) leest het gedeclareerde voorzetsel ook. Mutant U5 hieronder laat zien dat de resolver
+  het label na `uit` zelf leest.
+- **Vouw: geen verandering nodig.** Een vouw noemt haar dimensie bij het meervoud, nooit bij het voorzetsel. Gemeten op
+  de frontend van `afbd4d757`: `de som van zijn aanvoer over alle stranden over de herkomsten in {zee}` lowert al naar
+  twee selecties (`a_fold_selects_in_a_dimension_declared_with_uit`, groen vóór en na: een pin). Wat wel veranderde: een
+  label na `uit` op het operand (`de som van zijn aanvoer uit zee over alle stranden`) was een syntaxfout en is nu
+  RGS-364 (geen label van `strand`), zoals een label na `op` (besluit 1 van stap 5).
+- **Bestaande lezingen.** In een tekst die al parseerde staat `UIT` in een declaratie, in een vrije naam (regel, feittype,
+  scenario) of na het eenheidswoord van een deelfunctie, nooit achter een naam. Waar een naam nu "`<eenheid> uit …`" zou
+  kunnen nemen ("maand uit de peildatum"), is `functieAanroep` het eerste alternatief van `primaireExpressie` en kiest
+  ANTLR de functie. Gemeten met een parseboomvergelijking: de parser van vóór en na de wijziging naast elkaar gegenereerd,
+  `toStringTree` onder `regelSpraakDocument` en `testDocument` per bestand, gelijk voor alle 255 `.rgs`-bestanden van de
+  werkboom (`corpus/`, `toka/`, `frontends/`), voor de TOKA-fragmenten als één document en voor een probe van 16 regels
+  met de deelfuncties in elke positie van een expressie (operand, operandenlijst, voorwaarde, vergelijking, consistentie,
+  `datum met`, "de dag uit de dag", "de maand uit zee van de vondst" met `zee` een label van een dimensie met `uit`);
+  514 regels uitvoer, `diff` leeg (gereedschap en probe in de scratchpad van de sessie, niet bewaard). Gates 10, 11 en 16
+  houden elke bron byte-gelijk.
+- **Grens** (`DIVERGENCES.md`). Een attribuut met de naam van een eenheidswoord (`jaar`, `maand`, `dag`, …) en een
+  dimensie met `uit` leest na een lidwoord als deelfunctie: "de maand uit zee" is `monthOf` van de parameter `zee`;
+  "zijn maand uit zee" en het doel "De maand uit zee van een Jutter" lezen de cel (beide gemeten).
+- **`DIVERGENCES.md`**, "§3.6 / §13.4.17.51 More dimensions": de productie, de inertheid met de meting, de vouw, de
+  grens; de grens "A dimension whose preposition is `uit` is not read" vervalt.
+
+#### Wat er veranderde: de golden
+
+`jutterswet-strandseizoen` kreeg de dimensie `herkomst` (`uit`; `zee`, `rivier`), het attribuut `aanvoer` [strand,
+herkomst] en vier regels: het celdoel `De aanvoer op zuid en uit zee` := (`voorjaar`, `zuid`) plus (`zomer`, `zuid`)
+van `vondstgewicht`; de initialisatie `De aanvoer uit rivier en op zuid` op 0 kg; `noordriviergewicht` := `zijn aanvoer
+uit rivier op noord`; `zeeaanvoergewicht` := de som over alle stranden en herkomst {`zee`}. Beide celdoelen verbinden
+hun labels met "en" (punt 3 van de opdracht) en noemen een label na `uit` (punt 2). Cases met de hand (rekensom in de
+NOTE):
+
+- `case1-twee-stranden.json` (7 → 11 verwachtingen): J1 krijgt de cellen van `aanvoer` (`noord`, `zee`) 1.50 en
+  (`noord`, `rivier`) 0.75 → cel (`zuid`, `zee`) 5.50, cel (`zuid`, `rivier`) 0.00, `noordriviergewicht` 0.75,
+  `zeeaanvoergewicht` 7.00.
+- `case2-lege-cellen.json` (13 → 21): J2 krijgt (`zuid`, `rivier`) 2.00 → (`zuid`, `zee`) 0.00 (leeg plus leeg is 0,
+  RUNTIME-SEMANTICS ch. 1.2), (`zuid`, `rivier`) 2.00 (de invoer blijft staan naast de initialisatie),
+  `noordriviergewicht` leeg, `zeeaanvoergewicht` 0.00; J3 zonder cel → 0.00, 0.00, leeg, 0.00.
+
+Gemeten (`logs/stap6-golden-1.log`): verifier `PASS`, `--dependency-edges` één rand (`zuidzeeaanvoer` →
+`zeeaanvoergewicht` over `attr:jutter:aanvoer[zuid, zee]`); ref en clingo `PASS (11 expectations)` en `PASS (21
+expectations)`; Drools `PLAYED 2` op beide takken; beide cases vallen onder `--noop`. De bestaande verwachtingen bleven
+gelijk: geen regel over `aanvoer` schrijft een cel van `vondstgewicht`. Een celdoel met "en" tussen labels van alleen
+`in` en `op` pinnen de frontendtests van 5b (`DimensionTargetTest.a_cell_target_joins_its_labels_with_en`), niet de
+golden.
+
+#### Rood en mutaties
+
+Nieuwe tests: `DimensionCellTest` `a_label_after_uit_names_its_cell`, `a_label_after_uit_joins_with_en_either_way`,
+`a_cell_with_a_label_after_uit_only_is_refused`, `a_part_function_keeps_its_uit`; `DimensionTargetTest`
+`a_cell_target_names_a_label_after_uit`, `a_cell_target_joins_a_label_after_uit_with_en`,
+`a_creation_member_names_a_label_after_uit`, `a_label_after_uit_behind_the_subject_is_refused_with_the_cell`;
+`DimensionFoldTest` `a_fold_selects_in_a_dimension_declared_with_uit`,
+`a_label_after_uit_on_the_operand_is_a_cell_without_its_other_label`.
+
+Rood: de drie testklassen met de nieuwe tests op de frontend van `afbd4d757` (`git worktree add --detach`, opgeruimd;
+`logs/stap6-red-tests-2.log`): 9 van de 10 nieuwe tests rood, elk op een syntaxfout bij `uit` (RGS-091 waar een cel,
+RGS-364 of RGS-308 verwacht werd); `a_fold_selects_in_a_dimension_declared_with_uit` groen (de pin hierboven). De nieuwe
+bron van de golden op die frontend: drie syntaxfouten, exit 1, geen `ir.json` (`logs/stap6-red-golden-1.log`). Groen:
+de drie klassen 44/44, de hele frontendsuite 1402 tests (`logs/stap6-fe-suite-1.log`).
+
+Mutaties, één voor één in een `git worktree add --detach` van `35cde2794`, met `git checkout -- .` tussen twee
+mutanten (opgeruimd), recept
+`/Users/yeb/Developer/uchar-dev/werk/dimensions-executed/mutants/stap6/mutate6.py` en `run6.sh`, uitkomst
+`logs/stap6-mutants-1.log`; niet gecommit:
+
+| | bewaking | mutatie | rood |
+|---|---|---|---|
+| U1 | label na `uit` zonder verbindingswoord | `uitLabel` uit de lus van `kaleNaamDeel` | 9 tests (syntaxfout); golden: twee syntaxfouten, geen `ir.json` |
+| U2 | "en uit", ", uit" | `UIT` uit `labelOpsomming` | `a_label_after_uit_joins_with_en_either_way`, `a_cell_target_joins_a_label_after_uit_with_en`; golden: syntaxfout in `zuidzeeaanvoer` |
+| U4 | voorrang van de deelfunctie op een naam | `functieAanroep` na `onderwerp` in `primaireExpressie` | `a_part_function_keeps_its_uit` ("de maand uit de peildatum" een onopgeloste naam); de golden blijft byte-gelijk (ze draagt geen deelfunctie) |
+| U5 | de resolver leest het label na `uit` | `labelsAfter` slaat een dimensie met `uit` over | 8 tests (onopgelost, RGS-113, RGS-189; RGS-308 blijft groen, `cellAfterSubject` leest zelf); golden: twee doelen RGS-113 en een onopgeloste cellezing, geen `ir.json` |
+
+#### Aangepaste verwachtingen, pins en vloeren (oud → nieuw)
+
+- `scripts/check-drools.sh` (voorstel): `EXPECTED_PLAYED` 305 (4b) en 304 (5) → 306, met de drie redenen; DRL-teksttak
+  306; `EXPECTED_CHANNEL` 47 `EXCLUDE`, gelijk aan 4b.
+- `jutterswet-strandseizoen`: case1 7 → 11 verwachtingen, case2 13 → 21; alleen toegevoegd, geen bestaande invoer of
+  verwachting veranderd. `ir.json`: 347 regels toegevoegd, geen veranderd. NOTE: titel, de bron-tabel, de cases, de
+  tellingen van ref en clingo, en "`--dependency-edges` prints no edge" → één rand.
+- Testmodellen uitgebreid, geen bestaande assertie veranderd: `DimensionCellTest.MODEL` + `herkomst`, `aanvoer`;
+  `DimensionTargetTest.MODEL` + `herkomst`, `herkomstpremie`, `zeepremie`, `zeevangst`; `DimensionFoldTest.TWO` +
+  `herkomst`, `aanvoer`.
+- RUNTIME-SEMANTICS ch. 5.8c (voorstel): "The five goldens replay in all three executors" → "The six goldens", met
+  `jutterswet-strandseizoen` in de lijst.
+- Geen vloer veranderd. Tellingen (oud: de laatste runs van 4b `out/gates/20261102-170805` en 5b
+  `out/gates/20261102-164715`, elk in zijn eigen werkboom): gate 2 411 bestanden, 54801 (5b) → 54872 objecten in 979
+  documenten; gate 3 411 golden schoon, 568 negatief; gate 4 1053 cases; gate 5 1850 voorbeelden, 982 cases; gate 6
+  2280 checks, 982 cases; gate 7 937 weerleggende cases, 45 overlevers; gate 8 71 rode gevallen, 133 codechecks, 209
+  parameterchecks, Drools-leg 51 met fout, 79 parameterchecks, 20 met reden, 18 `EXCLUDE` met code (vloer 18); gate 10
+  1392 (5b) → 1402 tests, 163 rgs-goldens, 359 codes; gate 11 29 cases; gate 12 305 (4b) / 304 (5b) → 306 gespeeld op
+  beide takken, 47 niet-gespeelde goldens met naam, JUnit 1759, 299 codes (11 retired); gate 13 68 (5b) → 70 getwiste
+  annotaties over 32 goldens, 174 replays, 31 gespeeld door de DRL-teksttak; gate 15 316 van 353 vergeleken, 279 → 280
+  afhankelijkheden (de nieuwe rand), route 163 goldens, 75 unit tests; gate 16 38 scenario-goldens, 131 case-bestanden;
+  gate 17 982 getraceerd, 305 (4b) → 306 goldens en 850 → 852 case-bestanden vergeleken, 6861 → 6891 lezingen, 22399 →
+  22434 knoopregels, 3800 `unreached`, 808 met het object van een lezing, afwijkingen 0.
+
+#### Voorgestelde tekst voor CONSTRUCTS (hoofdsessie)
+
+Rij 28, na de noot van stap 5b:
+
+> **Landed (stap 6 van `dimensions-executed`, 2026-11-02, `b3fe3fea0`, `35cde2794`):** de RegelSpraak-frontend leest een
+> label na het voorzetsel `uit` (§3.6) zoals na de andere zes, los of in een opsomming met "en" of ",", in een
+> cellezing, een celdoel en een lid van een objectcreatie; de deelfuncties "het jaar uit …" houden hun lezing. Golden
+> `jutterswet-strandseizoen` draagt een dimensie met `uit` en twee celdoelen met "en" in het vierkant ref ≡ clingo ≡
+> Drools.
+
+#### Voorlopige besluiten
+
+1. **`uitLabel` als alternatief van de lus en `UIT` in `labelOpsomming`**, niet `UIT` als `kaleNaamWoord`:
+   `kaleNaamWoord` staat ook in `meervoudsvorm` en in de naamregels van de scenariolaag (`naamVervolgDeel`), waar geen
+   label staat; zo komt `uit` alleen in een naam waar een label kan staan.
+2. **Na een lidwoord wint de deelfunctie** bij een attribuut met de naam van een eenheidswoord en een dimensie met `uit`
+   (grens in `DIVERGENCES.md`); geen weigering of waarschuwing, want de tekst heeft een geldige lezing die al bestond.
+3. **Geen eigen vorm voor de vouw**; de pin legt vast dat een dimensie met `uit` een selectie krijgt zoals elke andere.
+4. **De golden is een uitbreiding van `jutterswet-strandseizoen` met een tweede attribuut**, in plaats van een cel van
+   `vondstgewicht` te schrijven (dat verandert de verwachtingen van de vier bestaande vouwen) of een nieuwe golden
+   (`EXPECTED_PLAYED` 307). Punt 2 en punt 3 van de opdracht delen daardoor de twee celdoelen.
+5. **Eén invoercel als verwachting** (J2 (`zuid`, `rivier`) 2.00): zij legt vast dat de initialisatie invoer laat staan;
+   de case valt door haar andere verwachtingen onder `--noop`, zoals J2 `zomer` in `jutterswet-seizoenkopie`.
+6. **RUNTIME-SEMANTICS ch. 5.8c noemt de zesde golden** bij de samenvoeging (voorstel, `10a6d135a`).
+
+#### Wat buiten de kaart blijft (stap 1 tot en met 6, voor de hoofdsessie)
+
+- **`eerste`, `laatste` en `aantal` over cellen** (ook `filledCount` met een selectie): vervolgkaart met een normkeuze;
+  de typering van de specificatie spreekt ALEF tegen (advies §4, B5); WF-037 weigert ze.
+- **Een cel of vouw over een rol**: ref en clingo lezen een cel over een pad (stap 2); Drools weigert het lezen met
+  DROOLS-189 en een celdoel met een pad met DROOLS-100 (4b); de frontend leest alleen het eigen attribuut van het
+  onderwerp (`DIVERGENCES.md`, "Scope / limitations"); geen golden.
+- **Een vouw over een geschreven cel van onbegrensde vorm**: Drools DROOLS-296 (LIMIT), ruim genomen (mutant D14 van 4b:
+  ook waar de waarde eindig is).
+- **Het paar initialisatie plus berekening op één cel**: ref en Drools antwoorden in de defaults-lezing, clingo weigert
+  met naam; een ontwerpdivergentie zonder corpusgeval en zonder Drools-getuige (stap 3, 4b).
+- **Een cel van een ander type dan getal**: ref draagt elk type, clingo leest een cel als getal (`Model.check` weigert
+  een andere `cellValue` met naam, een symbolische cellezing valt op CLINGO-002); geen corpusgeval (stap 2, besluit 6).
+- **`emptyFallback` van een dimensiesom**: clingo draagt alleen 0 (stap 2, besluit 5).
+- **Frontend**: labels vóór het attribuut met "en" (5b, besluit 4); een cel met "en" of "," in een operandenlijst
+  splitst waar de lijst het woord ook leest (5b, besluit 1); labels achter het onderwerp blijven RGS-308 (stap 3); een
+  attribuut met de naam van een eenheidswoord na een lidwoord (stap 6, besluit 2); een herhaald label in een verzameling
+  en een kale lezing weigert alleen de verifier (WF-040, WF-125; stap 5); de scenariolaag leest geen cel (RGS-237, gate
+  16; advies §4).
+- **`GedimensioneerdeLiteral`** van ALEF en een cel in de werkbank: geen aanleiding (advies §4).
+- **Distributie** (`regelspraak-toolchain`, bij de pin-bump): de bean van een gedimensioneerd lid is
+  `Map<List<String>, Object>` (4a); `Fixpoint.DerivedValue.labels` is nieuw en `FixpointGivens` van de distributie faalt
+  luid zodra twee cellen van één attribuut afgeleid zijn (4b, besluit 4); de lader geeft een `DimensionCellRead` als doel
+  en `MemberInit.labels` door (stap 3, besluit 3); samen de service-JSON.
+- **`CLAUDE.md`** (beschermd): gate 3 noemt de vloeren van 2026-10-19 (nu `EXPECTED_MIN_NEGATIVE` 568, `_EXPECT` 411,
+  `_ARMS` 239, `_PARAM_LINES` 686, `_REPORT_KEYS` 340, `_ARM_SITES` 442, `_POINTERS` 706; stap 1); gate 12 noemt bij de
+  retired codes DROOLS-040, -047, -184, -297 (4a) en -191, -298 (4b) niet. Gemeten, niet van deze kaart: gate 12 zegt
+  "each of the 46 `EXCLUDE` pins"; `EXPECTED_CHANNEL` heeft er 47, ook op main `b906f78ba`.
+- **CONSTRUCTS**: de voorgestelde noten van stap 1, 2, 3, 4b, 5, 5b en 6 (rij 28, `DimensieSelectie`, `DimensieCel`,
+  :204). Bij de landing vervallen de zin van stap 2 "Drools weigert de celinvoer (DROOLS-047) en de cel over twee
+  dimensies (DROOLS-184), dus die pins zijn een ref = clingo-paar tot stap 4" en die van stap 3 "Drools laadt de vormen en
+  weigert bij de bouw (DROOLS-298), dus die pins zijn een ref = clingo-paar tot het schrijfdeel van stap 4".
+
+#### `make gates`
+
+Eén run op `35cde2794` (`logs/stap6-gates-1.log`, `out/gates/20261102-173750/summary.txt`):
+
+```
+start 2026-11-02 17:37:50 35cde2794 card/dimensions-frontend
+ocaml rc=0 0s ocaml-build: fresh (stamp newer than 217 source files)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 0s drools-jar: fresh (jar newer than 537 source files)
+01-self-contained rc=0 1s
+02-ir-schema rc=0 124s
+04-case-schema rc=0 6s
+03-verifier rc=0 37s
+05-oracle rc=0 21s
+06-clingo rc=0 269s
+07-noop rc=0 11s
+08-red rc=0 159s
+09-catala rc=0 4s
+10-regelspraak rc=0 219s
+11-toka-parity rc=0 221s
+12-drools rc=0 322s
+13-reftype rc=0 273s
+14-flogic rc=0 1s
+15-graph rc=0 45s
+16-scenario rc=0 38s
+17-readings rc=0 241s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 17:43:12 322s red=0
+```
+
+Na de run kwam alleen `10a6d135a` (proza in RUNTIME-SEMANTICS ch. 5.8c, buiten de tabel van ch. 5.7b die gate 8 en de
+codetoetsen lezen) en dit Result (de kaart is geen invoer van een gate); gate 1, de enige gate die die tekst leest,
+daarop apart groen (`logs/stap6-gate1-3.log`). Niet gemerged, niet gepusht.
