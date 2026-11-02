@@ -38,7 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * initialisation overwritten, a reader withdrawn, an initialisation displaced, a chain); the input precision fence EF-004
  * on an attribute, a parameter and a timeline; the exact distribution of an allocation with one fault per allocation and
  * source; and a default whose decision does not fit decides, so the lower default of its chain is displaced, as the
- * reference interpreter lets it decide (RUNTIME-SEMANTICS ch. 7.1).
+ * reference interpreter lets it decide (RUNTIME-SEMANTICS ch. 7.1), in the general form of a stack and in its simple form
+ * ({@code src/test/resources/write-boundary/simple-default}, the toeslag of {@code jutterswet-afwijking-past-niet}
+ * without its exception).
  *
  * <p><b>Red</b> on {@code a0e0fa0ee}, before the card, with the shaded jar of that commit (the outcomes are in the card's
  * Result): every fault case ran to a model without faulting ({@code NOFAULT}), the exact allocation wrote
@@ -257,6 +259,22 @@ class WriteBoundaryWitnessTest {
                     && r.contains("kind=Kind.DECIDED, value=Breuk(\"25/3\")")), () -> name + ":\n" + dump);
             assertEquals(1, faultFacts(ir, c).size(), () -> name + ":\n" + dump);
         }
+        // the simple form of the same stack, without the exception: the control fact of the deviation, its Decides,
+        // stands beside the fault and displaces the rule beneath it
+        Path ir = Path.of("src", "test", "resources", "write-boundary", "simple-default", "ir.json");
+        JsonNode c = redCase("jutterswet-afwijking-past-niet");
+        ((ObjectNode) c.get("input").get("instances").get(0)).putObject("attributes").set("geschatte gewicht",
+                TmsDocuments.JSON.readTree("{\"number\":\"30.00\"}"));
+        ((ObjectNode) c.get("input").get("instances").get(0).get("attributes")).set("toeslaggrond",
+                TmsDocuments.JSON.readTree("{\"number\":\"100.00\"}"));
+        fault(red(ir, c), "V6.toeslag", "25/3", "2");
+        String dump = dumpOnBothBranches(ir, c);
+        List<String> facts = dump.lines().filter(r -> r.startsWith("fact ") && !r.startsWith("fact bean")
+                && !r.startsWith("fact Fired")).toList();
+        assertEquals(2, facts.size(), () -> "het besluit en de fout:\n" + dump);
+        assertTrue(facts.stream().anyMatch(r -> r.startsWith("fact Decides(subject=\"V6\"") && r.contains("toeslag")
+                && r.contains("index=Integer(0)")), () -> "de afwijking besliste:\n" + dump);
+        assertTrue(facts.stream().anyMatch(r -> r.startsWith("fact Fault(subject=\"V6\"")), () -> dump);
     }
 
     // ---------------- helpers ----------------

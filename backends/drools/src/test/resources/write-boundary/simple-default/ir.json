@@ -1,0 +1,190 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "geschatte gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslaggrond",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslag",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gemerkt",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "toeslag",
+        "subject": "Vondst",
+        "attribute": "toeslag",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "gewogen toeslag",
+            "justification": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "toeslaggrond",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn toeslaggrond"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn toeslaggrond gevuld is"
+              }
+            },
+            "consequence": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "toeslaggrond",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn toeslaggrond"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "geschatte gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn geschatte gewicht"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn toeslaggrond gedeeld door zijn geschatte gewicht"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5,00"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "(zijn toeslaggrond gedeeld door zijn geschatte gewicht) plus 5,00"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "name": "toeslag",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "1.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "1,00"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}
