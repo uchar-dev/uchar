@@ -11389,9 +11389,13 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
       (* a consequence is read only under its holding justification, on a default
          that is reached *)
       ctx.rule_guard <- reached n @ just @ extra;
+      (* a bare division that is not whole names the unbounded form, as in a
+         rule's write, and no EF-006 *)
+      ctx.write_unbounded <- target_unbounded;
       let bindings, term, scale =
         expr_term ctx ~subject ~subject_ot:(ot_at n) (req "default consequence" r.default_consequence)
       in
+      ctx.write_unbounded <- false;
       ctx.param_reach <- saved_r;
       ctx.rule_guard <- saved_g;
       (* the write boundary of ch. 2.4 on the consequence, as on a rule's

@@ -15250,6 +15250,23 @@ let () =
     ~needle:
       "result of jutter.toeslag is not a whole number, and this encoding holds a number declared \
        without decimals (the unbounded form) as a whole number";
+  (* a bare division as such a consequence, in a document where nothing else
+     divides: not whole, it names the form too *)
+  let quotient =
+    pf_doc ~object_types:[ jutter ]
+      ~defaults:
+        [ replace_first ~needle:(pf_bin ~typ:unbounded "times" (pf_a "aandeel") (pf_l ~typ:unbounded "3/2"))
+            ~by:(pf_bin ~typ:unbounded "dividedBy" (pf_a "inkomen") (pf_a "deler"))
+            toeslag ]
+      ()
+  in
+  ref_matches ~name:"a quotient as a defaults consequence into the unbounded form, 7/2" ~ir:quotient
+    ~case_text:(case_data "7" "2" [ pf_is ~attr:"toeslag" "7/2"; pf_cons ]);
+  translates_carrying ~name:"a quotient as a defaults consequence into the unbounded form held whole" ~ir:quotient
+    ~case_text:(case_data "7" "2" [ pf_is ~attr:"toeslag" "7/2"; pf_cons ])
+    ~needle:
+      "a division into a number declared without decimals is not whole, and this encoding holds the \
+       unbounded form as a whole number";
   check "a defaults consequence into the unbounded form: the witness has no fault kind"
     (Translate.viol_code
        "viol(\"result of jutter.toeslag is not a whole number, and this encoding holds a number declared \
