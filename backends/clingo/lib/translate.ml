@@ -10827,15 +10827,6 @@ let translate_rule ctx (r : resolved_rule) =
                    creation or a defaults group of its own level: ch. 5.4 places an \
                    initialisation beside ordinary rules only (no corpus case)"
                   a;
-              (* on an attribute the pair is the ch. 7.7 desugaring's, whose
-                 defaults group this backend translates; a cell keeps its two
-                 forms (Ir_v0.Desugar.document), and ref answers them in the
-                 defaults reading, which this arm does not encode *)
-              if a <> declared && comps <> [] then
-                fault
-                  "the initialisation of the cell %S sits beside a computing rule on that cell: the \
-                   ch. 7.7 defaults reading of the pair is not translated for a cell (no corpus case)"
-                  a;
               if attr_temporal ctx ~otype:ot ~attr:a then
                 fault "temporal attribute %S as a target: temporal writes are not implemented" a;
               (match find_decl ctx ~otype:ot ~attr:a with
@@ -11292,10 +11283,12 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
       in
       ctx.param_reach <- saved_r;
       ctx.rule_guard <- saved_g;
-      if scale <> target_scale then
-        fault "default value scale %d does not match target scale %d" scale target_scale;
-      head_body ctx (Printf.sprintf "%s(%s,%s)" (dec n) subject term)
-        ((base :: just) @ bindings @ extra)
+      (* the write boundary of ch. 2.4 on the consequence, as on a rule's
+         value: a coarser one is lifted exactly, a finer one held to the
+         target's decimals *)
+      let body = (base :: just) @ bindings @ extra in
+      let term, fit_guards = fitted ctx ~subject ~what:target_form ~body term scale target_scale in
+      head_body ctx (Printf.sprintf "%s(%s,%s)" (dec n) subject term) (body @ fit_guards)
     end;
     ctx.rule_name <- saved_name;
     ctx.deposit_guard <- saved_d

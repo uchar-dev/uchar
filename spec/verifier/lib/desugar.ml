@@ -34,8 +34,6 @@ let target_of (r : resolved_rule) =
       Some (ot, Checks.cell_member a (Checks.written_labels r.objective))
   | _ -> None
 
-let cell_target (r : resolved_rule) = Checks.written_labels r.objective <> None
-
 (* Is this rule inside the desugaring's domain for its target? *)
 let is_computing (r : resolved_rule) =
   (match r.rr_presentation with Some (Equation | Calculation) -> true | _ -> false)
@@ -89,12 +87,14 @@ let desugared_targets (doc : document) : (string * string) list =
   List.map (fun (_, ((ot, a), _)) -> (norm ot, norm a)) (chosen_targets doc)
 
 (* Desugar every target carried entirely by domain forms; leave every
-   other rule untouched. Returns the rewritten document. *)
+   other rule untouched. Returns the rewritten document. A cell is a target
+   of its own here as in the domain: the group made for it names the cell by
+   the member name [target_of] gives it, `vondstgewicht[najaar]`, under which
+   a consumer of this lowering holds the cell (RUNTIME-SEMANTICS ch. 5.8c).
+   The rewritten document is no wire document: on the wire a defaults group
+   names an attribute whole and never a dimensioned one (WF-125). *)
 let document (doc : document) : document =
-  (* a cell keeps its forms: the rewrite makes a defaults group, and a defaults
-     group names its attribute whole (WF-125), so the pair on a cell is
-     replayed as written, by ref/ in the defaults reading of this domain *)
-  let chosen = List.filter (fun (_, (_, rs)) -> not (List.exists cell_target rs)) (chosen_targets doc) in
+  let chosen = chosen_targets doc in
   if chosen = [] then doc
   else
     let in_chosen r =

@@ -16597,8 +16597,9 @@ let () =
    its attribute, and each frame is held to ref and to the solver at once. The
    golden jutterswet-seizoenboeking replays the rule, the initialisation and
    the object creation through gate 6; these frames carry what it does not:
-   the write boundary of a cell, and the two forms this backend refuses by
-   name. *)
+   the write boundary of a cell, the pair of a computing rule and an
+   initialisation on one cell, and a characteristic attributed to a cell,
+   which this backend refuses by name. *)
 let () =
   let unit_kg =
     {|{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}|}
@@ -16655,16 +16656,83 @@ let () =
                 (fun w -> Uchar_ref.Case.contains ~needle:"result of vondstgewicht[najaar] does not fit its declared decimals" w)
                 ws)
        | _, _ -> check (label ^ " (clingo answered)") false));
-  (* an initialisation beside a computing rule on one cell: ref answers the
-     pair in the ch. 7.7 defaults reading, which this backend does not encode
-     for a cell *)
-  faults_with ~name:"the initialisation of a cell beside a computing rule on that cell"
-    ~ir:
-      (doc
-         [ ("najaarskopie", version ~initialisation:false (cell [ "najaar" ]) (cell [ "voorjaar" ]));
-           ("najaarsbegin", version ~presentation:"" ~initialisation:true (cell [ "najaar" ]) (number ~whole:true ~decimals:0 "0")) ])
-    ~case_text:(case_of [ ("voorjaar", "2.00") ] {|"expected": [{"kind": "consistent"}]|})
-    ~needle:"the ch. 7.7 defaults reading of the pair is not translated for a cell";
+  (* an initialisation beside a computing rule on one cell: the ch. 7.7
+     defaults reading, as on an attribute, the computed value above the
+     initialisation's 0 and the input of the cell standing where neither
+     decides; the 0 is lifted to the 2 decimals of the cell *)
+  let pair =
+    doc
+      [ ("najaarskopie", version ~initialisation:false (cell [ "najaar" ]) (cell [ "voorjaar" ]));
+        ("najaarsbegin", version ~presentation:"" ~initialisation:true (cell [ "najaar" ]) (number ~whole:true ~decimals:0 "0")) ]
+  in
+  let jutter label cells =
+    Printf.sprintf {|{"label": "%s", "objectType": "Jutter", "attributes": {%s}, "roles": {}, "characteristics": []}|} label
+      (if cells = [] then ""
+       else
+         Printf.sprintf {|"vondstgewicht": {"cells": [%s]}|}
+           (String.concat ", "
+              (List.map (fun (l, v) -> Printf.sprintf {|{"labels": ["%s"], "value": {"number": "%s"}}|} l v) cells)))
+  in
+  let najaar label v =
+    Printf.sprintf
+      {|{"kind": "cellValue", "label": "%s", "attribute": "vondstgewicht", "labels": ["najaar"], "value": {"number": "%s"}}|}
+      label v
+  in
+  (try
+     let case_text =
+       Printf.sprintf
+         {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [%s], "parameters": {}}, "expected": [%s, {"kind": "consistent"}]}|}
+         (String.concat ", "
+            [ jutter "J1" [ ("voorjaar", "2.00") ]; jutter "J2" []; jutter "J3" [ ("najaar", "5.00") ];
+              jutter "J4" [ ("voorjaar", "3.00"); ("najaar", "5.00") ] ])
+         (String.concat ", " [ najaar "J1" "2.00"; najaar "J2" "0.00"; najaar "J3" "5.00"; najaar "J4" "3.00" ])
+     in
+     let name = "the initialisation of a cell beside a computing rule on that cell (ch. 7.7)" in
+     ref_matches ~name ~ir:pair ~case_text;
+     clingo_matches ~name ~ir:pair ~case_text
+   with Uchar_ref.Case.Error { text; _ } -> check ("the pair on one cell (case refused: " ^ text ^ ")") false);
+  (* outside the ch. 7.7 domain, an initialisation with a condition, the pair
+     on a cell reads natively, as on an attribute: where the computing rule
+     evaluates leeg and the initialisation writes, the two writers disagree
+     and the session has no fixpoint, in ref (EF-016) and here (the no-fixpoint
+     witness) *)
+  let conditional =
+    doc
+      [ ("najaarskopie", version ~initialisation:false (cell [ "najaar" ]) (cell [ "voorjaar" ]));
+        ("najaarsbegin",
+         Printf.sprintf
+           {|{"validity": {"node": "Validity"}, "target": %s, "value": %s, "condition": {"node": "Comparison", "op": "greater", "left": %s, "right": %s}, "initialisation": true}|}
+           (cell [ "najaar" ]) (number ~whole:true ~decimals:0 "0") (cell [ "zomer" ]) (number ~whole:true ~decimals:0 "1")) ]
+  in
+  let one_case cells expected =
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [%s], "parameters": {}}, %s}|}
+      (jutter "J1" cells) expected
+  in
+  (try
+     let name = "an initialisation with a condition beside a computing rule on one cell" in
+     let case_text = one_case [ ("voorjaar", "2.00") ] (Printf.sprintf {|"expected": [%s, {"kind": "consistent"}]|} (najaar "J1" "2.00")) in
+     ref_matches ~name ~ir:conditional ~case_text;
+     clingo_matches ~name ~ir:conditional ~case_text;
+     let label = name ^ ": no fixpoint where the computed value is leeg" in
+     let doc, case = load_pair ~ir:conditional ~case_text:(one_case [ ("zomer", "2.00") ] {|"expectedFault": {"code": "EF-016", "params": {}}|}) in
+     let env =
+       { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
+         locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None; form = None }
+     in
+     (match Uchar_ref.Eval.evaluate env case.world with
+      | _ -> check (label ^ " (ref answered)") false
+      | exception Uchar_ref.Value.Fault { code; _ } -> check (label ^ ": ref faults with EF-016") (code = Some "EF-016"));
+     match Solve.run_clingo (translate doc case) with
+     | _, Unix.WEXITED 20 ->
+         check (label ^ ": clingo's witness fires")
+           (List.exists
+              (fun w -> Uchar_ref.Case.contains ~needle:"no fixpoint: a computing rule evaluating leeg erases what the initialisation of vondstgewicht[najaar] writes" w)
+              (Solve.diagnostic (translate doc case)))
+     | _, _ -> check (label ^ ": clingo answered") false
+   with
+   | Uchar_ref.Case.Error { text; _ } -> check ("the conditional pair on one cell (case refused: " ^ text ^ ")") false
+   | Uchar_ref.Value.Fault { text; _ } -> check ("the conditional pair on one cell (translation fault: " ^ text ^ ")") false);
   (* a version that attributes a characteristic names a characteristic, never a
      cell (WF-022), in ref's words *)
   faults_with ~name:"a characteristic attributed to a cell"

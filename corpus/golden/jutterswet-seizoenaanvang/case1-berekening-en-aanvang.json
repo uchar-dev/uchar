@@ -1,0 +1,165 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "number": "2.00"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "number": "5.00"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "number": "3.00"
+                }
+              },
+              {
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "number": "5.00"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "cellValue",
+      "label": "J1",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "2.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "4.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J2",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J3",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "5.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "5.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J4",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "6.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
