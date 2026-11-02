@@ -6599,10 +6599,11 @@ characteristic, ch. 5.3, and on two writers, ch. 5.7). A value, a
 timeline or a characteristic that a form wrote stands at the fixpoint
 only where that form decides there. A rule whose condition is false on a
 later evaluation, or whose value is leeg on a standing or desugared
-target (ch. 7.7, 7.8), and a defaults group that decides nothing or
-conflicts (ch. 7.1, 7.2), give the target back what it held before the
-form wrote it: its input value, or what the creation that made the object
-gave it; a characteristic goes where no other attribution that grants it
+target (ch. 7.7, 7.8), a defaults group that decides nothing or
+conflicts (ch. 7.1, 7.2), and an allocation whose condition is false or
+that leaves a recipient out (ch. 4.1), give the target back what it held
+before the form wrote it: its input value, or what the creation that made
+the object gave it; a characteristic goes where no other attribution that grants it
 decides and the input did not set it. Conditions on attribute-writing
 forms therefore read positively here: a value they acted on in a
 transient window is replaced at the fixpoint. A leeg/gevuld predicate
@@ -6623,7 +6624,15 @@ the first two cases, the value it had written on the input 3; the ASP
 backend and both Drools branches answered as above in both orders. A
 timeline reads the same: the jaardeel of `TmsTimelineWitnessTest` B2,
 written where the teller is below 5 on its input, gives back the input
-timeline once the teller is 10 (`WV-6.1-written-timeline`).
+timeline once the teller is 10 (`WV-6.1-written-timeline`), and so does
+an allocation: in the model of the golden `jutterswet-voorwaardedeling`,
+with its vrijgavescore computed from a tussenscore that a second rule
+replaces by a bergscore 5, the bergopbrengst 100 is distributed 25 and 75
+over berggewichten 1 and 3 on the input tussenscore 12, and the shares go
+back to **leeg** at the fixpoint, in
+either order of the two rules (`WV-6.1-written-allocation`; measured
+2026-11-02, the reference interpreter answered 25 and 75 with the
+vrijgavescore first, the ASP backend and both Drools branches leeg).
 
 Since that day a characteristic attribution withdraws what it set where it
 no longer decides (ch. 5.3), so its write is no longer irrevocable within
