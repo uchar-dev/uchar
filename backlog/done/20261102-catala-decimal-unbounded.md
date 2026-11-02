@@ -215,3 +215,5 @@ jar rc=0 0s drools-jar: fresh (jar newer than 547 source files)
 after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
 end 2026-11-03 00:32:33 313s red=0
 ```
+
+**Landing (hoofdsessie, 2026-11-03).** Zelf nagemeten: `jutterswet-tariefrecht-catala` geeft met de clingo van `3d4676b88` op alle vier cases `TRANSLATION FAULT: default value scale …` en nu `clingo: PASS`, ref PASS. Ff op main `f3d4cff41`; `make gates` groen op `fee3b6065`, daarna alleen het Result. In dezelfde landing: CONSTRUCTS rij 2 (de Catala-route is uitgevoerd) en rij 10, en de verouderde zin in IR-SPEC (rond regel 3783) over de vaste Catala-schaal.

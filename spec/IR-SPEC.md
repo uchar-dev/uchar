@@ -3780,7 +3780,8 @@ priced before it was taken.
   needs both numbers stated, because they are not the same measurement.
   ch. 2.3's rule is "the SUM of the operands' decimals, never whole", and
   the frontend follows it, while this corpus's other producers do not — the
-  Catala plugin writes the pinned ch. 2.9 decimal scale instead. *Measured
+  Catala plugin then wrote a pinned ch. 2.9 decimal scale instead (a Catala
+  `decimal` is the unbounded form since 2026-11-02). *Measured
   2026-09-04, against that rule:* 9 decimals and 9 wholeness divergences
   over the four zones, and crossing it turns **11** golden+red documents
   red (3 on decimals, 8 on wholeness, disjoint). The *implementation* holds
