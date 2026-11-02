@@ -223,12 +223,28 @@ backend carries a case input beside two writers; both Drools branches already re
 7. **Fixtures**: de B2-documenten en de verdelingsvariant staan onder `ref/test/fixtures/written-timeline/` en
    `written-allocation/`, de B2-documenten letterlijk zoals `TmsTimelineWitnessTest.main` ze schrijft.
 
+### Restpunten op verzoek van de hoofdsessie
+
+- **IR-SPEC (voorstel).** Ch. 5.2, de randsoorten: een kenmerktoekenning heet niet meer onherroepelijk en "monotone"; ze
+  trekt in waar ze niet meer beslist, en haar stratum-strikte lezingen zetten haar na haar producenten, zodat ze niet op
+  een tussenstand beslist. Onherroepelijk blijven consistentie, uniciteit en creatie. Ook "a later monotone write" (twee
+  keer) wordt "a later write", en de vrijstelling van kenmerktoekenningen in WF-079 zegt "many grounds, one truth: the
+  characteristic holds while one of them decides". RUNTIME-SEMANTICS ch. 6.1 krijgt dezelfde tekst in de randsoorten;
+  de aparte alinea die ik daar eerder over dit punt schreef, vervalt. Gezocht in beide documenten op `irrevocable`,
+  `monotone`, `only ever set`, `never retract`: wat blijft gaat over consistentie en uniciteit ("channel facts are never
+  retracted"), over de tijdlijn van een temporeel kenmerk (ch. 3.11, "the monotone reading; no complement is seeded":
+  het doel geldt precies waar de voorwaarde geldt) en over de monotonie van een vouw ("monotone in the matrix"); die
+  spreken het besluit niet tegen en zijn niet aangeraakt.
+- **Javadoc "Measured"** van `TmsTimelineWitnessTest` en `TmsWholePeriodWitnessTest` beschrijft de stand van 2026-11-02:
+  opnieuw gemeten op elk document van de `main` van beide klassen met ref en clingo van deze branch en de verifier
+  (`logs/step13-witness-now.log`, `step13-witness-verifier.log`): de verifier PASS op alle 133 + 95 documenten; B2 en A in
+  ref in elke volgorde PASS; clingo zoals de alinea's zeggen (C en de attribuutgrens geweigerd). De variant van A met de
+  grens als letterlijke 20 is niet opnieuw gemeten en staat er niet meer in.
+- Daarna gate 1 (`check-self-contained: PASS`) en de Drools-suite (`mvn -o test`: `Tests run: 1764, Failures: 0, Errors:
+  0, Skipped: 0`, BUILD SUCCESS, `logs/step14-drools-suite.log`); de rest is alleen tekst, dus geen volle `make gates`.
+
 ### Wat bleef liggen
 
-- `IR-SPEC.md` ch. 5 (de randsoorten, regels rond 9066 en 9073) noemt een kenmerktoekenning nog onherroepelijk en
-  "monotone"; RUNTIME-SEMANTICS ch. 6.1 zegt nu dat haar lezingen stratum-strikt blijven. IR-SPEC viel buiten de opdracht.
-- De Javadoc-alinea's "Measured" van `TmsTimelineWitnessTest` en `TmsWholePeriodWitnessTest` (2026-10-09) beschrijven de
-  volgordeafhankelijkheid van ref die nu weg is; `backends/drools` viel buiten de opdracht.
 - A3 `J5.ongelijkpremie = 10`: kaart `20261009-ref-gehele-periode-lege-grens`.
 - De residuen op een toelaatbare cyclus (ch. 6.1, "conditions that hold on absence", "a value that grows") zijn niet
   aangeraakt.
