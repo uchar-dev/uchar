@@ -5098,7 +5098,7 @@ case reader refuses, while it reads the case (ch. 5.7 step 3):
   count **3**; with `strand` outermost the last would be 5.00. In
   `jutterswet-seizoenvouw` J1 (`voorjaar` 3.00, `najaar` 2.00) has the
   first over all seasons **3.00**, the last **2.00**, the first over
-  `{najaar, zomer en voorjaar}` **2.00** and the filled count **2**; J4 (`zomer`
+  `{najaar en voorjaar}` **2.00** and the filled count **2**; J4 (`zomer`
   0.00, `najaar` 1.50) the first **0.00**, a filled cell of 0, and the
   filled count **2**; and the sum "of 0,50 kg als die er niet zijn" is
   **0.50** for J2 without a cell.
