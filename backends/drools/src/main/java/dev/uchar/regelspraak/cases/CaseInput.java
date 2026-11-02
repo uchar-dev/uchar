@@ -251,6 +251,7 @@ public final class CaseInput {
             Datatype dt = ot.attribute(e.getKey());
             if (dt == null) throw new CaseRunner.Excluded(DroolsCode.CASE_UNDECLARED_ATTRIBUTE.reason("attribute", e.getKey(), "objectType", ot.name));
             reader.ownField(ot, e.getKey(), false, "sets");
+            CaseRunner.inputFits(e.getValue(), dt, i.get("label").asText() + "." + e.getKey());
             if (reader.dimensioned(ot, e.getKey()))
                 throw new CaseRunner.Excluded(DroolsCode.DIMENSIONED_ATTRIBUTE_INPUT.reason("attribute", e.getKey()));
             if (reader.temporal(ot, e.getKey())) {

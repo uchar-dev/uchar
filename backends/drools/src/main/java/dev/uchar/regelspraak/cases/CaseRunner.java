@@ -24,6 +24,7 @@ import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.ComputeFault;
 import dev.uchar.regelspraak.transpiler.tms.EvaluationFaults;
+import dev.uchar.regelspraak.transpiler.tms.WriteBoundaryFault;
 import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
 
 import org.kie.api.KieBase;
@@ -586,6 +587,8 @@ public final class CaseRunner {
             if (c instanceof ComputeFault f && f.code() != null) kind = new FaultKind(f.code(), f.params());
             else if (c instanceof WritersConflict w) kind = new FaultKind(w.code(), w.params());
             else if (c instanceof CaseDateFault d) kind = new FaultKind(d.code(), d.params());
+            else if (c instanceof InputPrecisionFault d) kind = new FaultKind(d.code(), d.params());
+            else if (c instanceof WriteBoundaryFault w) kind = new FaultKind(w.code(), w.params());
             else if (c instanceof CaseInput.LinkCycleFault l) kind = new FaultKind(l.code(), l.params());
             if (kind != null) {
                 String code = kind.code();
@@ -738,6 +741,8 @@ public final class CaseRunner {
         if (params != null) for (Map.Entry<String, JsonNode> e : params.properties()) {
             if (e.getValue().has("timeline"))
                 throw new Excluded(DroolsCode.GRANULAR_PARAMETER_TIMELINE.reason("parameter", e.getKey()));
+            RegelSpraakModel.Parameter declared = Namen.byName(model.parameters, e.getKey());
+            inputFits(e.getValue(), declared == null ? null : declared.datatype(), "parameter " + e.getKey());
             setGlobalSafe(session, Namen.ident(e.getKey(), false), valueToArg(e.getValue(), e.getKey()));
         }
         if (evaluationDate != null) setGlobalSafe(session, "rekendatum", evaluationDate);
@@ -1248,6 +1253,63 @@ public final class CaseRunner {
         /** The parameters of the kind (ch. 5.7b): the field of the case input and the lexeme it holds. */
         java.util.Map<String, String> params() {
             return java.util.Map.of("field", field, "lexeme", lexeme);
+        }
+    }
+
+    /**
+     * The input-precision fence (RUNTIME-SEMANTICS ch. 2.4, 5.7 step 3, EF-004): a case value {@code w} on the place
+     * {@code place}, an attribute or a parameter of datatype {@code dt}, whose exact value its declared decimals do not
+     * hold is refused while the case is read, as the reference interpreter refuses it, so that a bounded attribute holds
+     * a decimal that fits its declaration wherever the session reads it. A timeline is held to it segment by segment. A
+     * value of another datatype, the unbounded form, which holds every value (ch. 2.4 point 3), and leeg pass; a rational
+     * lexeme is held to it too, before the refusal of a rational value ({@link #valueToArg}).
+     */
+    static void inputFits(JsonNode w, Datatype dt, String place) {
+        if (w == null || w.isNull() || dt == null || !dt.isNumberLike() || dt.unbounded()) return;
+        if (w.has("timeline")) {
+            for (JsonNode segment : w.get("timeline")) inputFits(segment.get("value"), dt, place);
+            return;
+        }
+        if (!w.has("number")) return;
+        String lexeme = w.get("number").asText();
+        int slash = lexeme.indexOf('/');
+        Breuk q = slash < 0 ? Breuk.van(new BigDecimal(lexeme))
+                : Breuk.van(new java.math.BigInteger(lexeme.substring(0, slash)), new java.math.BigInteger(lexeme.substring(slash + 1)));
+        int decimals = dt instanceof Datatype.Numeric n ? n.decimals() : ((Datatype.Percentage) dt).decimals();
+        if (!q.vermenigvuldigen(Breuk.van(java.math.BigInteger.TEN.pow(decimals), java.math.BigInteger.ONE)).noemer()
+                .equals(java.math.BigInteger.ONE))
+            throw new InputPrecisionFault(place, q.isTerminerend() ? q.naarDecimal().stripTrailingZeros().toPlainString()
+                    : q.teller() + "/" + q.noemer(), decimals);
+    }
+
+    /** The refusal of a case value its declaration cannot hold (RUNTIME-SEMANTICS ch. 5.7b, EF-004): a defect of the
+     *  case, so a hard error and never an {@link Excluded}, as {@link CaseDateFault} is; a type of its own so that the
+     *  red path can name its kind ({@link #faultKinds}). */
+    static final class InputPrecisionFault extends IllegalArgumentException {
+        private static final long serialVersionUID = 1L;
+
+        private final String place;
+        private final String value;
+        private final int decimals;
+
+        InputPrecisionFault(String place, String value, int decimals) {
+            super(Msg.drools("EF-004", "place", place, "value", value, "decimals", decimals).text());
+            this.place = place;
+            this.value = value;
+            this.decimals = decimals;
+        }
+
+        String code() {
+            return "EF-004";
+        }
+
+        /** The parameters of the kind (ch. 5.7b): the place of the input, its exact value and the declared decimals. */
+        java.util.Map<String, String> params() {
+            java.util.Map<String, String> p = new LinkedHashMap<>();
+            p.put("place", place);
+            p.put("value", value);
+            p.put("decimals", Integer.toString(decimals));
+            return p;
         }
     }
 

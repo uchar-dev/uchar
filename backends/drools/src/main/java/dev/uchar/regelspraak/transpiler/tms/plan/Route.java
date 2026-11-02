@@ -112,6 +112,9 @@ public enum Route {
     END_VERDICT(ComputeHelpers.class, "endVerdict"),
     /** The verdict of a matrix as a member's contribution, 1 or 0 ({@link Consequence.Input.Verdict}). */
     VERDICT(ComputeHelpers.class, "verdict"),
+    /** A decision of a defaults stack on a target with declared decimals: the decision where it fits them, as a
+     *  decimal, else the fault of the write boundary as its outcome ({@link Consequence.StackFact.Value}). */
+    FITTED(ComputeHelpers.class, "fitted"),
     /** A broken contract, thrown: no evaluation fault. */
     CONTRACT_BREACH(ComputeHelpers.class, "contractBreach"),
     /** The fault of writers that disagree, as the {@link Consequence.WritersConflict} plans it. */

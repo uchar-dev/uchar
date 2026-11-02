@@ -156,8 +156,12 @@ class CreationPlanWitnessTest {
                         + " gerechtigde jutter], faultInsertion=STATED, phase=2, slots=[1, 2, 3], size=4]",
                 "    construction Penning settings [0 Penning.bedrag]",
                 "    initialisation 0 ElementKey[objectType=penning, name=bedrag, characteristic=false]:"
-                        + " Read 1",
-                "      value 0 SlotValue source 'de vondstwaarde van de Jutter'",
+                        + " FIT_TARGET(Read 1, Const 0, Const bedrag, Const penning voor een gerechtigde jutter)",
+                "      value 0 Call source 'de vondstwaarde van de Jutter'",
+                "      value 0.0 SlotValue source 'de vondstwaarde van de Jutter'",
+                "      value 0.1 Const Integer",
+                "      value 0.2 Const String",
+                "      value 0.3 Const String",
                 "    initialisation 1 ElementKey[objectType=penning, name=uitgereikt, characteristic=true]:"
                         + " Const true",
                 "      value 0 Const Boolean type BooleanType[] source 'waar'",
@@ -240,8 +244,13 @@ class CreationPlanWitnessTest {
                         + " faultInsertion=STATED, phase=2, slots=[1, 2, 3], size=4]",
                 "    construction Penningbesluit settings [0 Penningbesluit.besluitbedrag]",
                 "    initialisation 0 ElementKey[objectType=penningbesluit, name=besluitbedrag,"
-                        + " characteristic=false]: Read 1",
-                "      value 0 SlotValue source 'het penningbedrag'",
+                        + " characteristic=false]: FIT_TARGET(Read 1, Const 0, Const besluitbedrag, Const stel het"
+                        + " penningbesluit vast)",
+                "      value 0 Call source 'het penningbedrag'",
+                "      value 0.0 SlotValue source 'het penningbedrag'",
+                "      value 0.1 Const Integer",
+                "      value 0.2 Const String",
+                "      value 0.3 Const String",
                 "    insertions [New[insertion=STATED], Mark[insertion=STATED],"
                         + " Link[relation=penningtoekenning, newIsFirst=false, insertion=STATED]]"),
                 plans(golden("jutterswet-penningbesluit"), p -> p.consequence() instanceof Consequence.Creation));

@@ -667,14 +667,16 @@ public final class RegelSpraakRuntime {
      *  whole distribution and return an identity-keyed share map. Recipients are partitioned into groups of equal
      *  criterium and processed in sort order; every member of a tie-group splits the SAME group-entry pot (§9.7.2,
      *  Wilma 3/4·1200 and Hans 1/4·1200 both off 1200), naar rato of {@code gewicht} or in gelijke delen when no
-     *  weight is present. The §9.7.3 cap and §9.7.4 floor are applied per share, the pot is then depleted by the group
-     *  total, so the undistributed remainder carries to the next group (§9.7.5 Tabel 18: 1800 → 500/500/433/250/91,
-     *  rest 26). A leeg/negative cap degrades to uncapped; a null ordering criterium sorts last; a leeg plafond yields
-     *  an empty map (§9.7.6 row 1); a zero weight-sum gives that group ZERO; recipients past an empty pot get an
-     *  assigned ZERO (never null). The single implementation (single-runtime principle). */
-    public static java.util.Map<Object, BigDecimal> rsVerdeelOpVolgorde(BigDecimal totaal, java.util.List<Object> facts,
+     *  weight is present. The §9.7.3 cap and §9.7.4 floor are applied per share on the exact rational, the floor once,
+     *  the pot is then depleted by the group total, so the undistributed remainder carries to the next group (§9.7.5
+     *  Tabel 18: 1800 → 500/500/433/250/91, rest 26). A leeg/negative cap degrades to uncapped; a null ordering
+     *  criterium sorts last; a leeg plafond yields an empty map (§9.7.6 row 1); a zero weight-sum gives that group
+     *  ZERO; recipients past an empty pot get an assigned ZERO (never null). The numbers are any number the runtime
+     *  carries, a {@link Breuk} among them; a share is a {@link BigDecimal} where it terminates and a {@link Breuk}
+     *  where it does not. The single implementation (single-runtime principle). */
+    public static java.util.Map<Object, Object> rsVerdeelOpVolgorde(Object totaal, java.util.List<Object> facts,
             java.util.List<Object> groep, boolean toenemend, java.util.List<Object> gewicht, java.util.List<Object> max, Integer decimals) {
-        java.util.IdentityHashMap<Object, BigDecimal> result = new java.util.IdentityHashMap<>();
+        java.util.IdentityHashMap<Object, Object> result = new java.util.IdentityHashMap<>();
         if (totaal == null) return result;                       // §9.7.6 row 1: leeg verdeelplafond -> niet toegepast
         int aantal = facts.size();
         java.util.List<Integer> idx = new java.util.ArrayList<>();
@@ -694,48 +696,50 @@ public final class RegelSpraakRuntime {
             }
             idx.set(b + 1, cur);
         }
-        BigDecimal pot = totaal;
+        Breuk zero = Breuk.van(java.math.BigInteger.ZERO, java.math.BigInteger.ONE);
+        Breuk pot = Breuk.van(totaal);
         int p = 0;
         while (p < aantal) {
             int q = p;
             Object key = groep.get(idx.get(p));
             while (q < aantal && java.util.Objects.equals(key, groep.get(idx.get(q)))) q++;
-            BigDecimal groepPot = pot;                            // §9.7.2: every member of the group splits this same pot
-            BigDecimal som = BigDecimal.ZERO;
+            Breuk groepPot = pot;                                 // §9.7.2: every member of the group splits this same pot
+            Breuk som = zero;
             boolean naarRato = false;
             for (int k = p; k < q; k++) {
                 Object w = gewicht == null ? null : gewicht.get(idx.get(k));
-                if (w != null) { naarRato = true; som = som.add(((BigDecimal) w).max(BigDecimal.ZERO)); }
+                if (w != null) { naarRato = true; som = som.optellen(nonNegative(Breuk.van(w), zero)); }
             }
             int n = q - p;
-            BigDecimal groepSom = BigDecimal.ZERO;
+            Breuk groepSom = zero;
             for (int k = p; k < q; k++) {
                 int i = idx.get(k);
-                BigDecimal aandeel;
+                Breuk aandeel;
                 if (naarRato) {
                     Object wo = gewicht == null ? null : gewicht.get(i);
                     // a negative weight is no proportional basis: clamp it to 0 so it cannot shrink the weight-sum and
                     // over-allocate the others past the pot (-> a negative rest, §9.7.6).
-                    BigDecimal w = wo == null ? BigDecimal.ZERO : ((BigDecimal) wo).max(BigDecimal.ZERO);
-                    aandeel = som.signum() == 0 ? BigDecimal.ZERO
-                            : groepPot.multiply(w).divide(som, java.math.MathContext.DECIMAL64);
+                    Breuk w = wo == null ? zero : nonNegative(Breuk.van(wo), zero);
+                    aandeel = som.signum() == 0 ? zero : groepPot.vermenigvuldigen(w).delen(som);
                 } else {
-                    aandeel = groepPot.divide(BigDecimal.valueOf(n), java.math.MathContext.DECIMAL64);
+                    aandeel = groepPot.delen(Breuk.van(java.math.BigInteger.valueOf(n), java.math.BigInteger.ONE));
                 }
-                Object cap = max == null ? null : max.get(i);
-                if (cap != null && ((BigDecimal) cap).signum() >= 0
-                        && aandeel.compareTo((BigDecimal) cap) > 0) aandeel = (BigDecimal) cap;   // §9.7.3 cap
-                if (decimals != null) aandeel = aandeel.setScale(decimals, java.math.RoundingMode.FLOOR);   // §9.7.4 floor
-                if (aandeel.signum() < 0) aandeel = BigDecimal.ZERO;
-                result.put(facts.get(i), aandeel);
-                groepSom = groepSom.add(aandeel);
+                Breuk cap = max == null ? null : Breuk.van(max.get(i));
+                if (cap != null && cap.signum() >= 0 && aandeel.compareTo(cap) > 0) aandeel = cap;   // §9.7.3 cap
+                if (decimals != null) aandeel = Breuk.van(aandeel.naarDecimal(decimals, java.math.RoundingMode.FLOOR));   // §9.7.4 floor
+                if (aandeel.signum() < 0) aandeel = zero;
+                result.put(facts.get(i), verklein(aandeel));
+                groepSom = groepSom.optellen(aandeel);
             }
-            pot = pot.subtract(groepSom);                         // §9.7.5: carry the undistributed remainder to the next group
-            if (pot.signum() < 0) pot = BigDecimal.ZERO;
+            pot = pot.aftrekken(groepSom);                        // §9.7.5: carry the undistributed remainder to the next group
+            if (pot.signum() < 0) pot = zero;
             p = q;
         }
         return result;
     }
+
+    /** {@code x}, or {@code zero} where it is negative. */
+    private static Breuk nonNegative(Breuk x, Breuk zero) { return x.signum() < 0 ? zero : x; }
 
     // ---- §7 temporal (Tijdreeks / List<Segment>) helpers (ported from the DRL helper bodies for Phase F) ----
     // A temporal attribute is a piecewise-constant timeline held as an ordered List of Segment beans

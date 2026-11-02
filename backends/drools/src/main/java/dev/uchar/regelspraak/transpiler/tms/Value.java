@@ -9,8 +9,10 @@ import java.util.Objects;
  * object, inserted logically: it stands as long as the condition of the rule and every value the rule read hold, and is
  * replaced when one of them changes. {@code writer} is the name of the rule's form, so a write-back that meets two
  * different values on one attribute of one object can name both writers, and an initialisation's guard tells another
- * writer's value from its own write (RUNTIME-SEMANTICS ch. 5.4). The value is the one the write boundary leaves: an
- * exact rational collapsed to its decimal. It is null, leeg, only for a computing rule outside the standing domain,
+ * writer's value from its own write (RUNTIME-SEMANTICS ch. 5.4). The value is the one the write boundary leaves: on a
+ * target that bounds its decimals a decimal that fits them, since a value that does not is a fault in its place
+ * (ch. 2.4 point 1); on the unbounded form the exact value, a decimal where it terminates and an exact rational where
+ * it does not (ch. 2.4 point 3), which the write-back puts on the bean as a decimal. It is null, leeg, only for a computing rule outside the standing domain,
  * which writes a computed leeg (ch. 1.2g): it empties the target, input included, and is a value that can differ from
  * another writer's (ch. 5.7). A standing writer writes nothing for a computed leeg (ch. 7.8), and an initialisation
  * that computes leeg writes nothing either, since its target is empty where it fires.

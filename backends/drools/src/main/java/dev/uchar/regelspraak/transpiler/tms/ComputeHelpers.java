@@ -556,9 +556,35 @@ public final class ComputeHelpers {
         return (List<?>) timeline;
     }
 
-    /** §6.1.2: a value at rest is a decimal, so an exact rational that survived the computation collapses here. */
+    /** A value as a bean holds it: an exact rational as its decimal, exact where it terminates and at sixteen
+     *  significant digits rounded half to even where it does not ({@link Breuk#naarDecimal()}), any other value as it
+     *  is. The write-back puts a value on its bean so, and a reading prints it so (RUNTIME-SEMANTICS ch. 2.4, 5.12). */
     public static Object collapse(Object v) {
         return v instanceof Breuk b ? b.naarDecimal() : v;
+    }
+
+    /**
+     * The write boundary of a target with {@code decimals} declared decimals (RUNTIME-SEMANTICS ch. 2.4 point 1): the
+     * value {@code v} where its exact value fits them, as a decimal, a terminating exact rational as its exact decimal
+     * and a decimal at the scale it has; else the {@link WriteBoundaryFault} of the attribute {@code attribute}, of the
+     * new object of the object creation {@code creation} where that is not null. Leeg and a value that is no number
+     * pass unchanged. On a target that holds every value, the unbounded form, the plan writes the value without it.
+     */
+    public static Object fitTarget(Object v, Integer decimals, String attribute, String creation) {
+        WriteBoundaryFault.Misfit m = WriteBoundaryFault.misfit(null, creation, attribute, v, decimals);
+        if (m != null) throw new WriteBoundaryFault(List.of(m));
+        return v instanceof Breuk b ? b.naarDecimal() : v;
+    }
+
+    /** {@link #fitTarget} of a decision of a defaults stack on its target, with the fault as its outcome instead of
+     *  thrown: the decision stands where its write does not, so the consequence inserts the control facts of the
+     *  decision beside the fault (RUNTIME-SEMANTICS ch. 7.1). */
+    public static Object fitted(Object v, Integer decimals, String attribute) {
+        try {
+            return fitTarget(v, decimals, attribute, null);
+        } catch (WriteBoundaryFault e) {
+            return e;
+        }
     }
 
     // ---------------- the routes of a test and a consequence (plan.Route) ----------------
@@ -653,17 +679,35 @@ public final class ComputeHelpers {
      *  {@code form} on each recipient a degradation surfaces on; the share of every recipient that receives one, a
      *  {@link Value} of {@code share} written by {@code writer}; and where the allocation writes a rest
      *  ({@code rest} not null) and something is distributed, that rest, a {@link Value} of {@code rest} on the
-     *  source. */
+     *  source. Where the share declares {@code shareDecimals} or the rest {@code restDecimals} (null: it holds every
+     *  value), a share or the rest that does not fit them (RUNTIME-SEMANTICS ch. 2.4 point 1) makes the distribution
+     *  of the source one fault and nothing else: the {@link Fault} of the form on the source, named in the rule
+     *  {@code fault}, a {@link WriteBoundaryFault} of every share and the rest that does not fit, in place of every
+     *  share, the rest and the deposits, as the reference interpreter writes all of a distribution or none of it. */
     public static List<Object> payout(String form, Object source, ResolvedAllocation.Method method, Object pot,
                                          Object recipients, boolean weighted, boolean capped, boolean descending,
-                                         Integer decimals, ElementKey share, ElementKey rest, String writer) {
+                                         Integer decimals, ElementKey share, ElementKey rest, String writer,
+                                         Integer shareDecimals, Integer restDecimals, String fault) {
         List<Recipient> list = new ArrayList<>();
         for (Object o : (List<?>) recipients) list.add((Recipient) o);
         Allocation.Result u = Allocation.compute(method, pot, list, weighted, capped, decimals, descending);
+        List<WriteBoundaryFault.Misfit> misfits = new ArrayList<>();
+        if (shareDecimals != null)
+            for (Map.Entry<Object, Object> e : u.shares().entrySet()) {
+                WriteBoundaryFault.Misfit m = WriteBoundaryFault.misfit(e.getKey(), null, share.name(), e.getValue(),
+                        shareDecimals);
+                if (m != null) misfits.add(m);
+            }
+        if (rest != null && u.rest() != null && restDecimals != null) {
+            WriteBoundaryFault.Misfit m = WriteBoundaryFault.misfit(source, null, rest.name(), u.rest(), restDecimals);
+            if (m != null) misfits.add(m);
+        }
+        if (!misfits.isEmpty())
+            return List.of(new Fault(source, form, new WriteBoundaryFault(misfits).inRule(fault)));
         List<Object> out = new ArrayList<>();
         for (Map.Entry<Object, Set<String>> d : u.depositors().entrySet())
             out.add(inconsistency(form, d.getKey(), List.copyOf(d.getValue())));
-        for (Map.Entry<Object, BigDecimal> e : u.shares().entrySet())
+        for (Map.Entry<Object, Object> e : u.shares().entrySet())
             out.add(new Value(e.getKey(), share, e.getValue(), writer));
         if (rest != null && u.rest() != null) out.add(new Value(source, rest, u.rest(), writer));
         return out;

@@ -143,10 +143,12 @@ public final class ComputeFault extends RuntimeException {
     }
 
     /** Whether {@code t} is an evaluation fault this branch turns into a {@link Fault}: a division by a numeric zero, a
-     *  fault of this class, or an input in the other convention of an attribute on a timeline ({@link InputFormFault}).
-     *  Every other exception is a broken contract or a bug and leaves the fire as it is. */
+     *  fault of this class, an input in the other convention of an attribute on a timeline ({@link InputFormFault}), or
+     *  a value that does not fit the declared decimals of its target ({@link WriteBoundaryFault}). Every other exception
+     *  is a broken contract or a bug and leaves the fire as it is. */
     static boolean isEvaluationFault(Throwable t) {
-        return t instanceof Breuk.DelingDoorNul || t instanceof ComputeFault || t instanceof InputFormFault;
+        return t instanceof Breuk.DelingDoorNul || t instanceof ComputeFault || t instanceof InputFormFault
+                || t instanceof WriteBoundaryFault;
     }
 
     /** The evaluation fault {@code fault} named after the rule {@code rule} it ran in. */
@@ -154,6 +156,7 @@ public final class ComputeFault extends RuntimeException {
         if (fault instanceof Breuk.DelingDoorNul zero) return zero.inDeRegel(rule, zero);
         if (fault instanceof ComputeFault r) return r.inRule(rule);
         if (fault instanceof InputFormFault i) return i.inRule(rule);
+        if (fault instanceof WriteBoundaryFault w) return w.inRule(rule);
         throw new IllegalArgumentException("geen evaluatiefout: " + fault, fault);
     }
 }

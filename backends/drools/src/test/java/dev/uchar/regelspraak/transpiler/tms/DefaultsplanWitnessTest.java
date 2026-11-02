@@ -106,10 +106,10 @@ class DefaultsplanWitnessTest {
                 "    test 0 Call source 'hij erkend is'",
                 "    test 0.0 SlotValue",
                 "    test 0.1 Const Boolean",
-                "  consequence Decision [subject=$onderwerp, value=Read 1, slots=[1], size=2,"
-                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.waardering, rule=defaults"
-                        + " A:Jutter.waardering], deposit=null, facts=[Value[target=ElementKey[objectType=jutter,"
-                        + " name=waardering, characteristic=false], writer=defaults A:Jutter.waardering],"
+                "  consequence Decision [subject=$onderwerp, value=Read 1, slots=[1], size=2, collapse=false,"
+                        + " fault=FaultName[form=defaults A:Jutter.waardering, rule=defaults A:Jutter.waardering],"
+                        + " deposit=null, facts=[Value[target=ElementKey[objectType=jutter, name=waardering,"
+                        + " characteristic=false], writer=defaults A:Jutter.waardering, decimals=0],"
                         + " Decides[stack=defaults A:Jutter.waardering, index=0]], insertion=LOGICAL]",
                 "    value 0 SlotValue source 'zijn basisbedrag'",
                 "rule defaults A:Jutter.waardering: default 1 | form defaults A:Jutter.waardering |"
@@ -129,10 +129,10 @@ class DefaultsplanWitnessTest {
                 "    test 0 Call source 'hij kandidaat is'",
                 "    test 0.0 SlotValue",
                 "    test 0.1 Const Boolean",
-                "  consequence Decision [subject=$onderwerp, value=Read 1, slots=[1], size=2,"
-                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.waardering, rule=defaults"
-                        + " A:Jutter.waardering], deposit=null, facts=[Value[target=ElementKey[objectType=jutter,"
-                        + " name=waardering, characteristic=false], writer=defaults A:Jutter.waardering],"
+                "  consequence Decision [subject=$onderwerp, value=Read 1, slots=[1], size=2, collapse=false,"
+                        + " fault=FaultName[form=defaults A:Jutter.waardering, rule=defaults A:Jutter.waardering],"
+                        + " deposit=null, facts=[Value[target=ElementKey[objectType=jutter, name=waardering,"
+                        + " characteristic=false], writer=defaults A:Jutter.waardering, decimals=0],"
                         + " Decides[stack=defaults A:Jutter.waardering, index=1]], insertion=LOGICAL]",
                 "    value 0 SlotValue source 'zijn kandidaatbedrag'",
                 "rule defaults A:Jutter.waardering: default 2 | form defaults A:Jutter.waardering |"
@@ -145,10 +145,10 @@ class DefaultsplanWitnessTest {
                         + " [[] stack VALUE GELIJK defaults A:Jutter.waardering {String}, [] index VALUE UNDER"
                         + " 2 {Integer}]] join [hoger-beslist-onderwerp_9: subject = $onderwerp] beta [] na []"
                         + " bind []]",
-                "  consequence Decision [subject=$onderwerp, value=Const 25, slots=[], size=0,"
-                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.waardering, rule=defaults"
-                        + " A:Jutter.waardering], deposit=null, facts=[Value[target=ElementKey[objectType=jutter,"
-                        + " name=waardering, characteristic=false], writer=defaults A:Jutter.waardering],"
+                "  consequence Decision [subject=$onderwerp, value=Const 25, slots=[], size=0, collapse=false,"
+                        + " fault=FaultName[form=defaults A:Jutter.waardering, rule=defaults A:Jutter.waardering],"
+                        + " deposit=null, facts=[Value[target=ElementKey[objectType=jutter, name=waardering,"
+                        + " characteristic=false], writer=defaults A:Jutter.waardering, decimals=0],"
                         + " Decides[stack=defaults A:Jutter.waardering, index=2]], insertion=LOGICAL]",
                 "    value 0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '25'"), plans(golden("anchor/jutterswet-vondstwaardering")));
@@ -263,8 +263,8 @@ class DefaultsplanWitnessTest {
                 "    test 0 Call source 'hij grondP heeft'",
                 "    test 0.0 SlotValue",
                 "    test 0.1 Const Boolean",
-                "  consequence Decision [subject=$onderwerp, value=RS_PLUS(Read 1, Const 20), slots=[1],"
-                        + " size=2, collapse=true, fault=FaultName[form=defaults A:Jutter.korting, rule=defaults"
+                "  consequence Decision [subject=$onderwerp, value=RS_PLUS(Read 1, Const 20), slots=[1], size=2,"
+                        + " collapse=false, fault=FaultName[form=defaults A:Jutter.korting, rule=defaults"
                         + " A:Jutter.korting], deposit=null, facts=[Outcome[stack=defaults A:Jutter.korting, chain=1,"
                         + " position=0, kind=DECIDED]], insertion=LOGICAL]",
                 "    value 0 Call source 'de grondslag plus 20.00'",
@@ -283,8 +283,8 @@ class DefaultsplanWitnessTest {
                 "    test 0 Call source 'hij grondQ heeft'",
                 "    test 0.0 SlotValue",
                 "    test 0.1 Const Boolean",
-                "  consequence Decision [subject=$onderwerp, value=RS_PLUS(Read 1, Const 35), slots=[1],"
-                        + " size=2, collapse=true, fault=FaultName[form=defaults A:Jutter.korting, rule=defaults"
+                "  consequence Decision [subject=$onderwerp, value=RS_PLUS(Read 1, Const 35), slots=[1], size=2,"
+                        + " collapse=false, fault=FaultName[form=defaults A:Jutter.korting, rule=defaults"
                         + " A:Jutter.korting], deposit=null, facts=[Outcome[stack=defaults A:Jutter.korting, chain=2,"
                         + " position=0, kind=DECIDED]], insertion=LOGICAL]",
                 "    value 0 Call source 'de grondslag plus 35.00'",
@@ -303,10 +303,10 @@ class DefaultsplanWitnessTest {
                 "    test 0 Call source 'hij grondR heeft'",
                 "    test 0.0 SlotValue",
                 "    test 0.1 Const Boolean",
-                "  consequence Decision [subject=$onderwerp, value=RS_PLUS(RS_PLUS(Read 1, Const 15), Const"
-                        + " 5), slots=[1], size=2, collapse=true, fault=FaultName[form=defaults A:Jutter.korting,"
-                        + " rule=defaults A:Jutter.korting], deposit=null, facts=[Outcome[stack=defaults A:Jutter.korting,"
-                        + " chain=3, position=0, kind=DECIDED]], insertion=LOGICAL]",
+                "  consequence Decision [subject=$onderwerp, value=RS_PLUS(RS_PLUS(Read 1, Const 15), Const 5),"
+                        + " slots=[1], size=2, collapse=false, fault=FaultName[form=defaults A:Jutter.korting,"
+                        + " rule=defaults A:Jutter.korting], deposit=null, facts=[Outcome[stack=defaults"
+                        + " A:Jutter.korting, chain=3, position=0, kind=DECIDED]], insertion=LOGICAL]",
                 "    value 0 Call source 'die som plus 5.00'",
                 "    value 0.0 Call source 'de grondslag plus 15.00'",
                 "    value 0.0.0 SlotValue source 'de grondslag van de Jutter'",
@@ -371,8 +371,8 @@ class DefaultsplanWitnessTest {
                 "    test 0 Call source 'hij rechtA heeft'",
                 "    test 0.0 SlotValue",
                 "    test 0.1 Const Boolean",
-                "  consequence Decision [subject=$onderwerp, value=RS_PLUS(Read 1, Const 90), slots=[1],"
-                        + " size=2, collapse=true, fault=FaultName[form=defaults A:Jutter.korting, rule=defaults"
+                "  consequence Decision [subject=$onderwerp, value=RS_PLUS(Read 1, Const 90), slots=[1], size=2,"
+                        + " collapse=false, fault=FaultName[form=defaults A:Jutter.korting, rule=defaults"
                         + " A:Jutter.korting], deposit=null, facts=[Outcome[stack=defaults A:Jutter.korting, chain=0,"
                         + " position=0, kind=DECIDED]], insertion=LOGICAL]",
                 "    value 0 Call source 'de grondslag plus 90.00'",
@@ -388,10 +388,10 @@ class DefaultsplanWitnessTest {
                         + " [hoger-uitkomst_26: [[] stack VALUE GELIJK defaults A:Jutter.korting {String}, []"
                         + " chain VALUE GELIJK 0 {Integer}, [] position VALUE UNDER 1 {Integer}]] join"
                         + " [hoger-uitkomst-onderwerp_27: subject = $onderwerp] beta [] na [] bind []]",
-                "  consequence Decision [subject=$onderwerp, value=Const 5, slots=[], size=0,"
-                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.korting, rule=defaults"
-                        + " A:Jutter.korting], deposit=null, facts=[Outcome[stack=defaults A:Jutter.korting, chain=0,"
-                        + " position=1, kind=DECIDED]], insertion=LOGICAL]",
+                "  consequence Decision [subject=$onderwerp, value=Const 5, slots=[], size=0, collapse=false,"
+                        + " fault=FaultName[form=defaults A:Jutter.korting, rule=defaults A:Jutter.korting],"
+                        + " deposit=null, facts=[Outcome[stack=defaults A:Jutter.korting, chain=0, position=1,"
+                        + " kind=DECIDED]], insertion=LOGICAL]",
                 "    value 0 Const BigDecimal type Numeric[wholeNumber=false, decimals=2, sign=ONBEPAALD,"
                         + " unit=null] source '5.00'",
                 "rule defaults A:Jutter.korting: doorgeven wortel | form defaults A:Jutter.korting |"
@@ -411,9 +411,9 @@ class DefaultsplanWitnessTest {
                         + " A:Jutter.korting {String}, [] kind VALUE GELIJK DECIDED {Kind}, [] chain VALUE"
                         + " AT_LEAST 0 {Integer}, [] chain VALUE UNDER 1 {Integer}]] join [] beta [] na [] bind"
                         + " [$onderwerp = [] Outcome.subject VALUE, $waarde = [] Outcome.value VALUE]",
-                "  consequence Decision [subject=$onderwerp, value=Read 0, slots=[0], size=1,"
-                        + " collapse=false, fault=null, deposit=null, facts=[Value[target=ElementKey[objectType=jutter,"
-                        + " name=korting, characteristic=false], writer=defaults A:Jutter.korting]], insertion=LOGICAL]",
+                "  consequence Decision [subject=$onderwerp, value=Read 0, slots=[0], size=1, collapse=false,"
+                        + " fault=null, deposit=null, facts=[Value[target=ElementKey[objectType=jutter, name=korting,"
+                        + " characteristic=false], writer=defaults A:Jutter.korting, decimals=2]], insertion=LOGICAL]",
                 "    value 0 SlotValue"), plans(golden("synth3-nestkorting")));
     }
 
@@ -554,10 +554,10 @@ class DefaultsplanWitnessTest {
                 "    test 0 Call source 'hij kustwacht is'",
                 "    test 0.0 SlotValue",
                 "    test 0.1 Const Boolean",
-                "  consequence Decision [subject=$onderwerp, value=Const 30, slots=[], size=1,"
-                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.wachtgeld, rule=defaults"
-                        + " A:Jutter.wachtgeld], deposit=null, facts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=0,"
-                        + " position=0, kind=DECIDED]], insertion=LOGICAL]",
+                "  consequence Decision [subject=$onderwerp, value=Const 30, slots=[], size=1, collapse=false,"
+                        + " fault=FaultName[form=defaults A:Jutter.wachtgeld, rule=defaults A:Jutter.wachtgeld],"
+                        + " deposit=null, facts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=0, position=0,"
+                        + " kind=DECIDED]], insertion=LOGICAL]",
                 "    value 0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '30'",
                 "rule defaults A:Jutter.wachtgeld: default 1:0 | form defaults A:Jutter.wachtgeld |"
@@ -571,10 +571,10 @@ class DefaultsplanWitnessTest {
                 "    test 0 Call source 'hij havenmeester is'",
                 "    test 0.0 SlotValue",
                 "    test 0.1 Const Boolean",
-                "  consequence Decision [subject=$onderwerp, value=Const 45, slots=[], size=1,"
-                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.wachtgeld, rule=defaults"
-                        + " A:Jutter.wachtgeld], deposit=null, facts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=1,"
-                        + " position=0, kind=DECIDED]], insertion=LOGICAL]",
+                "  consequence Decision [subject=$onderwerp, value=Const 45, slots=[], size=1, collapse=false,"
+                        + " fault=FaultName[form=defaults A:Jutter.wachtgeld, rule=defaults A:Jutter.wachtgeld],"
+                        + " deposit=null, facts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=1, position=0,"
+                        + " kind=DECIDED]], insertion=LOGICAL]",
                 "    value 0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '45'",
                 "rule defaults A:Jutter.wachtgeld: default 2:0 | form defaults A:Jutter.wachtgeld |"
@@ -588,10 +588,10 @@ class DefaultsplanWitnessTest {
                 "    test 0 Call source 'hij strandvoogd is'",
                 "    test 0.0 SlotValue",
                 "    test 0.1 Const Boolean",
-                "  consequence Decision [subject=$onderwerp, value=Const 30, slots=[], size=1,"
-                        + " collapse=true, fault=FaultName[form=defaults A:Jutter.wachtgeld, rule=defaults"
-                        + " A:Jutter.wachtgeld], deposit=null, facts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=2,"
-                        + " position=0, kind=DECIDED]], insertion=LOGICAL]",
+                "  consequence Decision [subject=$onderwerp, value=Const 30, slots=[], size=1, collapse=false,"
+                        + " fault=FaultName[form=defaults A:Jutter.wachtgeld, rule=defaults A:Jutter.wachtgeld],"
+                        + " deposit=null, facts=[Outcome[stack=defaults A:Jutter.wachtgeld, chain=2, position=0,"
+                        + " kind=DECIDED]], insertion=LOGICAL]",
                 "    value 0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '30'",
                 "rule defaults A:Jutter.wachtgeld: verschil wortel | form defaults A:Jutter.wachtgeld |"
@@ -631,9 +631,9 @@ class DefaultsplanWitnessTest {
                         + " VALUE AT_LEAST 0 {Integer}, [] chain VALUE UNDER 3 {Integer}, [] kind VALUE GELIJK"
                         + " DECIDED {Kind}]] join [uitkomst-onderwerp_18: subject = $onderwerp] beta"
                         + " [ander-besluit_19: OTHER_DECISION $besluit] na [] bind []]",
-                "  consequence Decision [subject=$onderwerp, value=Read 0, slots=[0], size=1,"
-                        + " collapse=false, fault=null, deposit=null, facts=[Value[target=ElementKey[objectType=jutter,"
-                        + " name=wachtgeld, characteristic=false], writer=defaults A:Jutter.wachtgeld]],"
+                "  consequence Decision [subject=$onderwerp, value=Read 0, slots=[0], size=1, collapse=false,"
+                        + " fault=null, deposit=null, facts=[Value[target=ElementKey[objectType=jutter,"
+                        + " name=wachtgeld, characteristic=false], writer=defaults A:Jutter.wachtgeld, decimals=0]],"
                         + " insertion=LOGICAL]",
                 "    value 0 SlotValue"), plans(golden("jutterswet-wachtgeld")));
     }
@@ -645,7 +645,7 @@ class DefaultsplanWitnessTest {
      */
     @Test void a_decision_and_a_conflict_each_insert_their_own_facts() {
         ElementKey target = ElementKey.of("Jutter", "korting", false);
-        Consequence.StackFact value = new Consequence.StackFact.Value(target, "defaults A:Jutter.korting");
+        Consequence.StackFact value = new Consequence.StackFact.Value(target, "defaults A:Jutter.korting", null);
         Consequence.StackFact decides = new Consequence.StackFact.Outcome("defaults A:Jutter.korting", 0, 0,
                 Outcome.Kind.DECIDED);
         Consequence.StackFact conflict = new Consequence.StackFact.Outcome("defaults A:Jutter.korting", 0, 0,

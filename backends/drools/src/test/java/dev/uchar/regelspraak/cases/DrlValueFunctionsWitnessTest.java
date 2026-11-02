@@ -23,14 +23,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The functions of a value in the DRL text (card drl-no-trivial-value-functions, acceptance (b)): the value of a
  * decision ({@code afloop}) and of a value consequence ({@code waarde}) that computes nothing, a constant or the variable
- * a binding binds, with or without {@code ComputeHelpers.collapse}, has no function. The consequence carries its
- * expression, {@code Object v = …;}, with the sentence of the term as a comment line above it, and asks no evaluation
- * fault of {@code v}, since that expression cannot fault; a probe of the plan stays. A value that computes something,
- * also one call, keeps its function. On goldens where the corpus shows the form, the forms the analysis makes: a
- * decision over a constant without a fault in the plan and over a collapsed one with it, over a bound variable
- * without a fault and over a collapsed one with it, a value consequence, always collapsed and with its fault, over a
- * constant, a bound variable and a text with a quote, and one with a probe in the plan; on documents written here a
- * text that Drools's preparation of a consequence and MVEL would read otherwise. Per rule the table of its piece
+ * a binding binds, has no function. The consequence carries its expression, {@code Object v = …;}, with the sentence of
+ * the term as a comment line above it, and asks no evaluation fault of {@code v}, since that expression cannot fault; a
+ * probe of the plan stays. A value that computes something, also one call, keeps its function, and so does a value
+ * consequence into a number that bounds its decimals, whose value goes through the write boundary
+ * ({@code ComputeHelpers.fitTarget}, RUNTIME-SEMANTICS ch. 2.4 point 1), which can fault; a decision into such a number
+ * is carried, and its consequence tests its write ({@code ComputeHelpers.fitted}). On goldens where the corpus shows the
+ * form, the forms the analysis makes: a decision over a constant without a fault in the plan and over one with it,
+ * over a bound variable without a fault and over one with it, a value consequence with its fault over a constant and a
+ * bound variable into a bounded number and over a text with a quote, and one with a probe in the plan; on documents
+ * written here a text that Drools's preparation of a consequence and MVEL would read otherwise. Per rule the table of its piece
  * ({@link DrlPiecesWitnessTest#table}) and its consequence; the cases of each play on both branches.
  * {@code transpiler.tms.DrlCarriedValueWitnessTest} holds every class of constant and the forms the analysis does not
  * make.
@@ -81,14 +83,14 @@ class DrlValueFunctionsWitnessTest {
                 + "end\n\n", consequence(b, p));
         plays("jutterswet-uitsluiting-rgs");
 
-        // a collapsed constant, with its fault in the plan: the decision of an attribute default; and a bound variable,
-        // without a fault: the agreement of a reconciliation, which hands the decision of a member on
+        // a constant, with its fault in the plan: the decision of an attribute default; and a bound variable, without a
+        // fault: the agreement of a reconciliation, which hands the decision of a member on
         b = build("anchor/jutterswet-nestdiepte");
         p = piece(b, "defaults A:Jutter.heffing: default 0.0.0");
         assertEquals(List.of("toets_defaultsAJutterHeffingDefault000 | // hij grondY heeft | roept []",
                 "regel | roept [toets_defaultsAJutterHeffingDefault000]"), table(b.drl(), p));
         assertEquals("    // 10.00\n"
-                + "    Object v = ComputeHelpers.collapse(new java.math.BigDecimal(\"10\"));\n"
+                + "    Object v = new java.math.BigDecimal(\"10\");\n"
                 + "    if (v != null) {\n"
                 + "        insertLogical(new Outcome($onderwerp, \"defaults A:Jutter.heffing\", 1, 0,"
                 + " dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));\n"
@@ -107,55 +109,71 @@ class DrlValueFunctionsWitnessTest {
                 + "end\n\n", consequence(b, p));
         plays("anchor/jutterswet-nestdiepte");
 
-        // a collapsed bound variable, with its fault in the plan
+        // a bound variable, with its fault in the plan, into a number of 2 decimals: the consequence tests the write
         b = build("anchor/jutterswet-strandrechtketen");
         p = piece(b, "defaults A:Strandrecht.uitkering: default 1");
         assertEquals(List.of("regel | roept []"), table(b.drl(), p));
         assertEquals("    // zijn grondslag\n"
-                + "    Object v = ComputeHelpers.collapse($grondslag);\n"
+                + "    Object v = $grondslag;\n"
                 + "    if (v != null) {\n"
-                + "        insertLogical(new Value($onderwerp, ElementKey.of(\"strandrecht\", \"uitkering\", false), v,"
-                + " \"defaults A:Strandrecht.uitkering\"));\n"
-                + "        insertLogical(new Decides($onderwerp, \"defaults A:Strandrecht.uitkering\", 1));\n"
+                + "        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(2), \"uitkering\");\n"
+                + "        if (ComputeHelpers.isEvaluationFault(passend)) {\n"
+                + "            insertLogical(new Fault($onderwerp, \"defaults A:Strandrecht.uitkering\","
+                + " ComputeHelpers.designate(passend, \"defaults A:Strandrecht.uitkering\")));\n"
+                + "            insertLogical(new Decides($onderwerp, \"defaults A:Strandrecht.uitkering\", 1));\n"
+                + "        } else {\n"
+                + "            insertLogical(new Value($onderwerp, ElementKey.of(\"strandrecht\", \"uitkering\", false),"
+                + " passend, \"defaults A:Strandrecht.uitkering\"));\n"
+                + "            insertLogical(new Decides($onderwerp, \"defaults A:Strandrecht.uitkering\", 1));\n"
+                + "        }\n"
                 + "    }\n"
                 + "end\n\n", consequence(b, p));
         plays("anchor/jutterswet-strandrechtketen");
     }
 
     @Test void a_value_that_computes_nothing_is_carried_by_its_consequence() throws Exception {
-        // a collapsed constant
+        // a constant into a number of 2 decimals goes through the write boundary, a function of the value
         DroolsBackend.Build b = build("anchor/jutterswet-strandrechtketen");
         DrlPiece p = piece(b, "registratiekosten van een strandrecht");
-        assertEquals(List.of("regel | roept []"), table(b.drl(), p));
-        assertEquals("    // 5.00\n"
-                + "    Object v = ComputeHelpers.collapse(new java.math.BigDecimal(\"5\"));\n"
-                + "    if (!ComputeHelpers.isEmpty(v)) {\n"
-                + "        insertLogical(new Value($onderwerp, ElementKey.of(\"strandrecht\", \"registratiekosten\", false),"
-                + " v, \"registratiekosten van een strandrecht\"));\n"
+        assertEquals(List.of("waarde_registratiekostenVanEenStrandrecht | // 5.00 | roept []",
+                "regel | roept [waarde_registratiekostenVanEenStrandrecht]"), table(b.drl(), p));
+        assertEquals("function Object waarde_registratiekostenVanEenStrandrecht() {\n"
+                + "    try {\n"
+                + "        return ComputeHelpers.fitTarget(new java.math.BigDecimal(\"5\"), Integer.valueOf(2),"
+                + " \"registratiekosten\", null);\n"
+                + "    } catch (RuntimeException e) {\n"
+                + "        return ComputeHelpers.caught(e);\n"
+                + "    }\n"
+                + "}\n\n", b.drl().substring(p.functions().get(0).declaration(), p.functions().get(0).end()));
+        assertEquals("    Object v = waarde_registratiekostenVanEenStrandrecht();\n"
+                + "    if (ComputeHelpers.isEvaluationFault(v)) {\n"
+                + "        insertLogical(new Fault($onderwerp, \"registratiekosten van een strandrecht\","
+                + " ComputeHelpers.designate(v, \"registratiekosten van een strandrecht\")));\n"
+                + "    } else {\n"
+                + "        if (!ComputeHelpers.isEmpty(v)) {\n"
+                + "            insertLogical(new Value($onderwerp, ElementKey.of(\"strandrecht\", \"registratiekosten\","
+                + " false), v, \"registratiekosten van een strandrecht\"));\n"
+                + "        }\n"
                 + "    }\n"
                 + "end\n\n", consequence(b, p));
 
-        // a collapsed bound variable, read along a path
+        // a bound variable, read along a path, into a whole number: as the constant
         b = build("anchor/jutterswet-kustwacht");
         p = piece(b, "uitkijkbonus van een wachter");
         assertEquals(List.of("pad_uitkijkbonusVanEenWachter | - | roept []",
-                "regel | roept [pad_uitkijkbonusVanEenWachter]"), table(b.drl(), p));
-        assertEquals("    // de hoogte van zijn post\n"
-                + "    Object v = ComputeHelpers.collapse($postHoogte);\n"
-                + "    if (!ComputeHelpers.isEmpty(v)) {\n"
-                + "        insertLogical(new Value($onderwerp, ElementKey.of(\"wachter\", \"uitkijkbonus\", false), v,"
-                + " \"uitkijkbonus van een wachter\"));\n"
-                + "    }\n"
-                + "end\n\n", consequence(b, p));
+                "waarde_uitkijkbonusVanEenWachter | // de hoogte van zijn post | roept []",
+                "regel | roept [pad_uitkijkbonusVanEenWachter, waarde_uitkijkbonusVanEenWachter]"), table(b.drl(), p));
+        assertTrue(consequence(b, p).startsWith("    Object v = waarde_uitkijkbonusVanEenWachter($postHoogte);\n"
+                + "    if (ComputeHelpers.isEvaluationFault(v)) {\n"), consequence(b, p));
         plays("anchor/jutterswet-kustwacht");
 
-        // a collapsed text with a quote, under a sentence with quotes
+        // a text with a quote, under a sentence with quotes: no number, so no write boundary
         b = build("jutterswet-keurmerk");
         p = piece(b, "afslag van een gekeurde vondst");
         assertEquals(List.of("toets_afslagVanEenGekeurdeVondst | // de Vondst is gekeurd | roept []",
                 "regel | roept [toets_afslagVanEenGekeurdeVondst]"), table(b.drl(), p));
         assertEquals("    // 'veiling \"Zee\"'\n"
-                + "    Object v = ComputeHelpers.collapse(\"veiling \\\"Zee\\\"\");\n"
+                + "    Object v = \"veiling \\\"Zee\\\"\";\n"
                 + "    if (!ComputeHelpers.isEmpty(v)) {\n"
                 + "        insertLogical(new Value($onderwerp, ElementKey.of(\"vondst\", \"afslag\", false), v,"
                 + " \"afslag van een gekeurde vondst\"));\n"
@@ -166,22 +184,29 @@ class DrlValueFunctionsWitnessTest {
 
     @Test void a_value_with_a_probe_that_computes_nothing_keeps_its_probe() throws Exception {
         // the condition divides, so the rule has a probe, and the plan gives it to the value consequence as well; a
-        // constant reports nothing to it, and the consequence keeps it as the plan says
+        // constant reports nothing to it, and the consequence keeps it as the plan says, around the function of the write
+        // boundary of its whole-number target
         DroolsBackend.Build b = build("jutterswet-ploegaandeel");
         DrlPiece p = piece(b, "bergingsaandeel van een jutter");
         assertEquals(List.of("toets_bergingsaandeelVanEenJutter | // hij aan alle volgende voorwaarden voldoet: - zijn"
                         + " ploegomvang is ongelijk aan 0 - het aandeel is groter dan 0 | roept []",
-                "regel | roept [toets_bergingsaandeelVanEenJutter]"), table(b.drl(), p));
+                "waarde_bergingsaandeelVanEenJutter | // 1 | roept []",
+                "regel | roept [toets_bergingsaandeelVanEenJutter, waarde_bergingsaandeelVanEenJutter]"),
+                table(b.drl(), p));
         assertEquals("    Object sonde = ComputeHelpers.depositFlag();\n"
-                + "    // 1\n"
-                + "    Object v = ComputeHelpers.collapse(new java.math.BigDecimal(\"1\"));\n"
-                + "    if (ComputeHelpers.reported(sonde)) {\n"
-                + "        insertLogical(ComputeHelpers.inconsistency(\"bergingsaandeel van een jutter\", $onderwerp,"
+                + "    Object v = waarde_bergingsaandeelVanEenJutter(sonde);\n"
+                + "    if (ComputeHelpers.isEvaluationFault(v)) {\n"
+                + "        insertLogical(new Fault($onderwerp, \"bergingsaandeel van een jutter\","
+                + " ComputeHelpers.designate(v, \"bergingsaandeel van een jutter\")));\n"
+                + "    } else {\n"
+                + "        if (ComputeHelpers.reported(sonde)) {\n"
+                + "            insertLogical(ComputeHelpers.inconsistency(\"bergingsaandeel van een jutter\", $onderwerp,"
                 + " ComputeHelpers.depositCodes(sonde)));\n"
-                + "    }\n"
-                + "    if (!ComputeHelpers.isEmpty(v)) {\n"
-                + "        insertLogical(new Value($onderwerp, ElementKey.of(\"jutter\", \"bergingsaandeel\", false), v,"
+                + "        }\n"
+                + "        if (!ComputeHelpers.isEmpty(v)) {\n"
+                + "            insertLogical(new Value($onderwerp, ElementKey.of(\"jutter\", \"bergingsaandeel\", false), v,"
                 + " \"bergingsaandeel van een jutter\"));\n"
+                + "        }\n"
                 + "    }\n"
                 + "end\n\n", consequence(b, p));
         plays("jutterswet-ploegaandeel");
@@ -202,7 +227,8 @@ class DrlValueFunctionsWitnessTest {
                 "regel | roept [waarde_brutoVanEenVondst]"), table(b.drl(), p));
         assertEquals("function Object waarde_brutoVanEenVondst(Object $gewicht) {\n"
                 + "    try {\n"
-                + "        return ComputeHelpers.collapse(RegelSpraakRuntime.rsPlus($gewicht, new java.math.BigDecimal(\"5\")));\n"
+                + "        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($gewicht, new java.math.BigDecimal(\"5\")),"
+                + " Integer.valueOf(0), \"bruto\", null);\n"
                 + "    } catch (RuntimeException e) {\n"
                 + "        return ComputeHelpers.caught(e);\n"
                 + "    }\n"
@@ -251,11 +277,11 @@ class DrlValueFunctionsWitnessTest {
         String comment = "    // zin met 'apostrof', \"aanhalingsteken\", {accolade, (haakje, \\u005c, \\u12, end, then, #,"
                 + " // en /* en * / nog een regel\n";
         assertEquals(List.of(
-                comment + "    Object v = ComputeHelpers.collapse(\"eindigt op een backslash \\u005C\");\n",
-                comment + "    Object v = ComputeHelpers.collapse(\"n\" + \"\0\" + \"\\\"z\");\n",
-                comment + "    Object v = ComputeHelpers.collapse(\"a\" + \"\0\" + \"\\u005C\");\n",
-                comment + "    Object v = ComputeHelpers.collapse(\"\\u005Cu0041\");\n",
-                comment + "    Object v = ComputeHelpers.collapse(\"h//x #y /*z*/ end\");\n"), consequences);
+                comment + "    Object v = \"eindigt op een backslash \\u005C\";\n",
+                comment + "    Object v = \"n\" + \"\0\" + \"\\\"z\";\n",
+                comment + "    Object v = \"a\" + \"\0\" + \"\\u005C\";\n",
+                comment + "    Object v = \"\\u005Cu0041\";\n",
+                comment + "    Object v = \"h//x #y /*z*/ end\";\n"), consequences);
     }
 
     /** The case of {@code instances} with {@code expectations} plays on the exec-model branch and on the DRL-text

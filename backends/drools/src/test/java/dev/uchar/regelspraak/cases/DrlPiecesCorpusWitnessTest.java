@@ -145,7 +145,10 @@ class DrlPiecesCorpusWitnessTest {
      *  drl-no-passthrough-functions; before it 2499, 1944, 481 and with readings 3456); the names with a number of
      *  their kind measured 2026-10-25 (card drl-function-names-from-rule); the functions, those with a comment, the
      *  pieces without functions and the consequences that carry their value measured 2026-10-25 (card
-     *  drl-no-trivial-value-functions; before it 2201, 1680, 763 and with readings 3158, 763). */
+     *  drl-no-trivial-value-functions; before it 2201, 1680, 763 and with readings 3158, 763); the consequences that
+     *  carry their value measured 2026-11-02, 241 and 165 with the sentence above it, since a value consequence into a
+     *  number that bounds its decimals goes through the write boundary, a function (ComputeHelpers.fitTarget), and a
+     *  carried decision tests its write (330 and 258 before it). */
     static final Map<String, Integer> EXPECTED_MIN = Map.ofEntries(
             Map.entry("stukken", 2124), Map.entry("stukken zonder functies", 879), Map.entry("functies", 1871),
             Map.entry("functies met commentaar", 1422),
@@ -154,9 +157,9 @@ class DrlPiecesCorpusWitnessTest {
             Map.entry("stukken zonder functies met lezingen", 879),
             Map.entry("functienamen met een nummer van hun soort", 261),
             Map.entry("functienamen met een nummer van hun soort met lezingen", 265),
-            Map.entry("gevolgen die hun waarde dragen", 330), Map.entry("gevolgen die hun waarde dragen met lezingen", 330),
-            Map.entry("gevolgen die hun waarde dragen, met de zin erboven", 258),
-            Map.entry("gevolgen die hun waarde dragen, met de zin erboven met lezingen", 258));
+            Map.entry("gevolgen die hun waarde dragen", 241), Map.entry("gevolgen die hun waarde dragen met lezingen", 241),
+            Map.entry("gevolgen die hun waarde dragen, met de zin erboven", 165),
+            Map.entry("gevolgen die hun waarde dragen, met de zin erboven met lezingen", 165));
 
     /** The kinds of the functions of the text, the word of what a function computes, the first part of its name. */
     static final Set<String> KINDS = Set.of("afloop", "beta", "binder", "componenten", "conflict", "creatie",

@@ -330,10 +330,13 @@ DROOLS-292	exec-model: {cycles}, en buiten de afbakening van de per object geord
 DROOLS-293	een geankerde knoop ('{snippet}', IR-SPEC ch. 4.1a) in het filter of de toets van een vouw waarvan het onderwerp een lid van een andere vouw is: de regels van die vouw binden het onderwerp van de vorm niet, en deze tak leest een geankerde knoop alleen in een vouw op het onderwerp van de vorm; deze tak draagt deze vorm nog niet
 DROOLS-294	een geankerde knoop ('{snippet}', IR-SPEC ch. 4.1a) in een vorm die deze tak alleen van het onderwerp van zijn eigen regel leest: de kwalificatie over de gehele periode, het totaal over de eigen tijdlijn, een rolcheck, een relatie, een verdeling of de herkomst van een creatie; deze tak draagt deze vorm nog niet
 DROOLS-295	een CharacteristicCheck ('{snippet}') met een host strikt onder het onderwerp die deze tak niet draagt: een versmallende host leest hij alleen op een check zonder navigatie en zonder kwalificatie over de gehele periode, en alleen waar de host het type is dat het kenmerk declareert (WF-109, RUNTIME-SEMANTICS ch. 5.8b regel 4)
+DROOLS-296	een vouw over de waarde van het attribuut '{attribute}' van {objectType}, dat de onbegrensde vorm heeft: een waarde van die vorm is in het werkgeheugen een exacte breuk, en deze tak vouwt decimalen, zodat een som van drie keer 1/3 0.9999999999999999 zou geven; deze tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch. 2.4)
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
+EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)
 EF-005.bare	Breuk deling door 0
 EF-005.in-rule	deling door nul in de regel "{rule}": {dividend} gedeeld door 0 — een numerieke nul als deler is een fout, geen leeg (RUNTIME-SEMANTICS ch. 1.4, punt 4)
+EF-006	{place}: de waarde {value} past niet in de gedeclareerde {decimals} decimalen — een expliciete afronding is verplicht (RUNTIME-SEMANTICS ch. 2.4)
 EF-007	datum-tijd arithmetic leaves the representable millisecond range
 EF-008	duration count {count} is out of range
 EF-009	day-kind walk: no day of the kind within {reach} calendar days of {from} (the walk reaches no further; a day kind whose next occurrence lies beyond the reach is refused, not diagnosed)

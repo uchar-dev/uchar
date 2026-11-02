@@ -123,8 +123,12 @@ public enum StaticFunction {
     /** The full timeline a form reads whole, the fault where the case gives the asOfDate-bucket scalar (ch. 8.4), in
      *  a sentence that names the object. */
     COMPLETE(ComputeHelpers.class, "complete", true),
-    /** A value at rest: an exact rational as a decimal (§6.1.2), any other value as it is. */
+    /** A value as a bean holds it: an exact rational as a decimal, any other value as it is. */
     COLLAPSE(ComputeHelpers.class, "collapse", false),
+    /** The write boundary of RUNTIME-SEMANTICS ch. 2.4 point 1 on a target with declared decimals, an {@code Integer}
+     *  constant: the value where it fits, as a decimal; else the fault of the attribute, a {@code String} constant, of
+     *  the new object of an object creation, a {@code String} constant or null. */
+    FIT_TARGET(ComputeHelpers.class, "fitTarget", true),
 
     // the functions of a condition below give a truth value
 

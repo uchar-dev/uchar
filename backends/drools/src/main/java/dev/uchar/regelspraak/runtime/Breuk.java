@@ -13,10 +13,10 @@ import java.math.MathContext;
  * computes in {@link BigDecimal} (DECIMAL64) which loses a non-terminating quotient (1/3 → 0.3333…16 digits),
  * so a chain like {@code 9 maal 1/3} diverges to 2.9999999999999997 instead of the exact 3.
  *
- * <p>The design keeps <b>fact fields at rest as {@link BigDecimal}</b> (values are decimal-typed per the
- * declared datatypes; the resolver's §6.1.2 write-precision guard already rejects a write of a value with more
- * decimals than the doel unless it was explicitly rounded — so a non-terminating exact value only ever reaches
- * an afronding or terminates). Exactness therefore lives in the <b>computation</b>: the {@code rs*} arithmetic
+ * <p>The design keeps <b>bean fields as {@link BigDecimal}</b>: a value written into a target that bounds its decimals
+ * fits them or is a fault (RUNTIME-SEMANTICS ch. 2.4 point 1), so it is an exact decimal there; a value of the
+ * unbounded form stays a {@link Breuk} in working memory where it does not terminate, and becomes its decimal on the
+ * bean ({@link #naarDecimal()}). Exactness lives in the <b>computation</b>: the {@code rs*} arithmetic
  * helpers accept a {@link Breuk} wherever they accept a number, return a {@link Breuk} when the exact result
  * does not terminate (division/percentage) or when any input was a {@link Breuk} and the op is {@code +,-,×,÷},
  * and collapse to {@link BigDecimal} at an {@code afronding} ({@link #naarDecimal(int, java.math.RoundingMode)})
@@ -145,12 +145,13 @@ public final class Breuk extends Number implements Comparable<Breuk> {
         return n.equals(BigInteger.ONE);
     }
 
-    /** The EXACT decimal when the fraction terminates, else the DECIMAL64 quotient — the collapse used at a
-     *  naturally-terminating boundary or a defensive write. Never throws on a non-terminating value. */
+    /** The EXACT decimal when the fraction terminates, else the DECIMAL64 quotient, sixteen significant digits rounded
+     *  half to even: the decimal a bean holds of a value of the unbounded form that does not terminate. Never throws on
+     *  a non-terminating value. */
     public BigDecimal naarDecimal() {
         BigDecimal t = new BigDecimal(teller), n = new BigDecimal(noemer);
         if (isTerminerend()) return t.divide(n);           // exact
-        return t.divide(n, MathContext.DECIMAL64);          // defensive: DECIMAL64 (impossible-by-resolver-guard)
+        return t.divide(n, MathContext.DECIMAL64);
     }
 
     /** The §6.1.2 collapse point: round the EXACT rational at {@code scale} decimals with {@code mode} — an

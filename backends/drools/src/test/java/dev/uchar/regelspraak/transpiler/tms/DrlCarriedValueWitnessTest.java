@@ -180,7 +180,7 @@ class DrlCarriedValueWitnessTest {
                                                  String name) {
         return new Consequence.Decision(O, t, slots, size, collapse,
                 fault ? new Consequence.FaultName("proef", name) : null,
-                List.of(new Consequence.StackFact.Value(TARGET, name), new Consequence.StackFact.Decides(name, 0)),
+                List.of(new Consequence.StackFact.Value(TARGET, name, null), new Consequence.StackFact.Decides(name, 0)),
                 Consequence.Insertion.LOGICAL);
     }
 

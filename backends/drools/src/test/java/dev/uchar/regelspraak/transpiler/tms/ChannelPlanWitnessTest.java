@@ -371,7 +371,8 @@ class ChannelPlanWitnessTest {
                         + " decimals=0, share=ElementKey[objectType=wachter, name=penningtoewijzing,"
                         + " characteristic=false], rest=ElementKey[objectType=penningkas, name=onuitgekeerd budget,"
                         + " characteristic=false], writer=verdeel het penningbudget van een penningkas,"
-                        + " insertion=LOGICAL]"),
+                        + " shareDecimals=0, restDecimals=0, fault=FaultName[form=verdeel het penningbudget van een"
+                        + " penningkas, rule=verdeel het penningbudget van een penningkas], insertion=LOGICAL]"),
                 plans(golden("jutterswet-rangmaximering"),
                         List.of("verdeel het penningbudget van een penningkas")));
     }
@@ -398,7 +399,9 @@ class ChannelPlanWitnessTest {
                         + " method=GELIJKE_DELEN, pot=0, list=1, weighted=false, capped=false, descending=false,"
                         + " decimals=0, share=ElementKey[objectType=berger, name=bergingsaandeel,"
                         + " characteristic=false], rest=ElementKey[objectType=berging, name=onverdeelde rest,"
-                        + " characteristic=false], writer=verdeel de opbrengst van een berging, insertion=LOGICAL]"),
+                        + " characteristic=false], writer=verdeel de opbrengst van een berging, shareDecimals=0,"
+                        + " restDecimals=0, fault=FaultName[form=verdeel de opbrengst van een berging, rule=verdeel de"
+                        + " opbrengst van een berging], insertion=LOGICAL]"),
                 plans(sourcePointsToRecipient(), List.of("verdeel de opbrengst van een berging")));
     }
 
@@ -463,7 +466,9 @@ class ChannelPlanWitnessTest {
                         + " pot=0, list=1, weighted=false, capped=false, descending=false, decimals=0,"
                         + " share=ElementKey[objectType=berger, name=bergingsaandeel, characteristic=false],"
                         + " rest=ElementKey[objectType=berging, name=onverdeelde rest, characteristic=false],"
-                        + " writer=verdeel de opbrengst gelijk, insertion=LOGICAL]"),
+                        + " writer=verdeel de opbrengst gelijk, shareDecimals=0, restDecimals=0,"
+                        + " fault=FaultName[form=verdeel de opbrengst gelijk, rule=verdeel de opbrengst gelijk],"
+                        + " insertion=LOGICAL]"),
                 plans(recipientFromCreation(), List.of("verdeel de opbrengst gelijk")));
     }
 

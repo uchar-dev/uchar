@@ -173,7 +173,7 @@ class DrlConditionFunctionsWitnessTest {
         DrlPiece p = piece(b, "defaults A:Jutter.bergingstoeslag: default 1");
         assertEquals(List.of("regel | roept []"), table(b.drl(), p));
         assertFalse(rule(b, p).contains("eval("), rule(b, p));
-        assertTrue(rule(b, p).contains("then\n    // 0.00\n    Object v = ComputeHelpers.collapse(new java.math.BigDecimal(\"0\"));\n"),
+        assertTrue(rule(b, p).contains("then\n    // 0.00\n    Object v = new java.math.BigDecimal(\"0\");\n"),
                 rule(b, p));
         // the same in the default whose binder its rule does not reach: its functions are those of its value
         assertEquals(List.of(

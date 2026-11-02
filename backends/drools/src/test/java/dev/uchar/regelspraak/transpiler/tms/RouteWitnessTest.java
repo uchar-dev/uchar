@@ -75,7 +75,7 @@ class RouteWitnessTest {
                 "INPUT_FORM_FAULT: InputFormFault ComputeHelpers.inputFormFault[String, Object, String, String]",
                 "UNIQUENESS_KEYS: List ComputeHelpers.uniquenessKeys[String, int, Object, Object, List, int]",
                 "PAYOUT: List ComputeHelpers.payout[String, Object, Method, Object, Object, boolean, boolean,"
-                        + " boolean, Integer, ElementKey, ElementKey, String]",
+                        + " boolean, Integer, ElementKey, ElementKey, String, Integer, Integer, String]",
                 "CONTRIBUTION: Contribution ComputeHelpers.contribution[String, Object, Object, Object, String, boolean]",
                 "FOLD_PLACE: List ComputeHelpers.foldPlace[PlaceReason, String, Object, int, List, List, List]",
                 "CREATION_DEPTH: int ComputeHelpers.creationDepth[String, int, String, List, int]",
@@ -104,6 +104,7 @@ class RouteWitnessTest {
                 "ESTABLISHED: Boolean ComputeHelpers.established[Quantifier, int, int, int, int]",
                 "END_VERDICT: boolean ComputeHelpers.endVerdict[Quantifier, int, long, long]",
                 "VERDICT: BigDecimal ComputeHelpers.verdict[boolean]",
+                "FITTED: Object ComputeHelpers.fitted[Object, Integer, String]",
                 "CONTRACT_BREACH: Object ComputeHelpers.contractBreach[String]",
                 "WRITERS_CONFLICT: Fault ComputeHelpers.writersConflict[Object, Object, String, List, List, List]",
                 "LIST0: List ComputeHelpers.list0[]",

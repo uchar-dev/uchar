@@ -1486,10 +1486,13 @@ final class DrlRendering {
             Consequence.Deposit d = x.deposit();
             if (d != null && computesNothing(x.value()))
                 throw new IllegalStateException("een besluit dat niets uitrekent, deponeert niet");
+            Consequence.StackFact.Value write = PatternDslRendering.fittedWrite(x);
             if (computesNothing(x.value())) {
                 carried(x.value(), x.collapse(), x.slots(), b);
                 b.append("    if (v != null) {\n");
-                for (Consequence.StackFact f : x.facts()) insert(b, "        ", x.insertion(), stackFact(f, x.subject()));
+                if (write != null) misfit(x, write, b, "        ");
+                for (Consequence.StackFact f : x.facts()) insert(b, write == null ? "        " : "            ", x.insertion(), stackFact(f, x.subject()));
+                if (write != null) b.append("        }\n");
                 b.append("    }\n");
                 return;
             }
@@ -1511,14 +1514,34 @@ final class DrlRendering {
             } else {
                 b.append("    if (v != null) {\n");
             }
+            String in = write == null ? "        " : "            ";
+            if (write != null) misfit(x, write, b, "        ");
             if (d != null) {
-                b.append("        if (").append(route(Route.REPORTED)).append("(").append(DEPOSIT_FLAG).append(")) {\n");
-                insert(b, "            ", x.insertion(), route(Route.INCONSISTENCY) + "(" + str(d.form()) + ", "
+                b.append(in).append("if (").append(route(Route.REPORTED)).append("(").append(DEPOSIT_FLAG).append(")) {\n");
+                insert(b, in + "    ", x.insertion(), route(Route.INCONSISTENCY) + "(" + str(d.form()) + ", "
                         + x.subject() + ", " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + "))");
-                b.append("        }\n");
+                b.append(in).append("}\n");
             }
-            for (Consequence.StackFact f : x.facts()) insert(b, "        ", x.insertion(), stackFact(f, x.subject()));
+            for (Consequence.StackFact f : x.facts()) insert(b, in, x.insertion(), stackFact(f, x.subject()));
+            if (write != null) b.append("        }\n");
             b.append("    }\n");
+        }
+
+        /** The write boundary of the decision of {@code x} on its target ({@link Consequence.StackFact.Value}), at
+         *  {@code indentation} inside the test that the decision is not null: the local {@code passend} holds the
+         *  decision as the target holds it, or the fault, through the route {@link Route#FITTED}; on the fault the fault
+         *  under the stack's name and the control facts of the decision, and an {@code else} opened for the write. */
+        private void misfit(Consequence.Decision x, Consequence.StackFact.Value write, StringBuilder b,
+                            String indentation) {
+            b.append(indentation).append("Object passend = ").append(route(Route.FITTED)).append("(v, Integer.valueOf(")
+                    .append(write.decimals()).append("), ").append(str(write.target().name())).append(");\n");
+            b.append(indentation).append("if (").append(route(Route.IS_EVALUATION_FAULT)).append("(passend)) {\n");
+            insert(b, indentation + "    ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
+                    + str(write.writer()) + ", " + route(Route.DESIGNATE) + "(passend, " + str(write.writer()) + "))");
+            for (Consequence.StackFact f : x.facts())
+                if (!(f instanceof Consequence.StackFact.Value))
+                    insert(b, indentation + "    ", x.insertion(), stackFact(f, x.subject()));
+            b.append(indentation).append("} else {\n");
         }
 
         /** The conflict of {@link Consequence.Conflict}: a function of the rule gives its key, a constant or the key of the
@@ -1538,7 +1561,7 @@ final class DrlRendering {
         private String stackFact(Consequence.StackFact f, String subject) {
             return switch (f) {
                 case Consequence.StackFact.Value x -> "new " + typeName(Value.class) + "(" + subject + ", "
-                        + key(x.target()) + ", v, " + str(x.writer()) + ")";
+                        + key(x.target()) + ", " + (x.decimals() == null ? "v" : "passend") + ", " + str(x.writer()) + ")";
                 case Consequence.StackFact.Characteristic x -> "new " + typeName(HasCharacteristic.class) + "(" + subject + ", "
                         + key(x.characteristic()) + ")";
                 case Consequence.StackFact.Decides x -> "new " + typeName(Decides.class) + "(" + subject + ", "
@@ -1634,18 +1657,24 @@ final class DrlRendering {
         }
 
         /** The distribution of {@link Consequence.Payout}: the facts of the route, each inserted. The method stands as its
-         *  enumeration label, which MVEL reads in the argument of a call (FABLE-3 §2.2), the decimals as an
-         *  {@code Integer} or null, and the keys as {@link ElementKey#of}. */
+         *  enumeration label, which MVEL reads in the argument of a call (FABLE-3 §2.2), each number of decimals as an
+         *  {@code Integer} or null ({@link #boxed}), and the keys as {@link ElementKey#of}. */
         private void payout(Consequence.Payout x, StringBuilder b) {
             b.append("    for (Object feit : ").append(route(Route.PAYOUT)).append("(").append(str(x.form()))
                     .append(", ").append(x.subject()).append(", ").append(enumlabel(x.method())).append(", ")
                     .append(variable(x.pot())).append(", ").append(variable(x.list())).append(", ").append(x.weighted())
                     .append(", ").append(x.capped()).append(", ").append(x.descending()).append(", ")
-                    .append(x.decimals() == null ? "null" : "Integer.valueOf(" + x.decimals() + ")").append(", ")
+                    .append(boxed(x.decimals())).append(", ")
                     .append(key(x.share())).append(", ").append(x.rest() == null ? "null" : key(x.rest()))
-                    .append(", ").append(str(x.writer())).append(")) {\n");
+                    .append(", ").append(str(x.writer())).append(", ").append(boxed(x.shareDecimals())).append(", ")
+                    .append(boxed(x.restDecimals())).append(", ").append(str(x.fault().rule())).append(")) {\n");
             insert(b, "        ", x.insertion(), "feit");
             b.append("    }\n");
+        }
+
+        /** {@code n} as an argument of a call in a consequence: an {@code Integer}, or null. */
+        private static String boxed(Integer n) {
+            return n == null ? "null" : "Integer.valueOf(" + n + ")";
         }
 
         /** The fault of {@link Consequence.FilterFault}: the filter evaluated again over the same bound values, its

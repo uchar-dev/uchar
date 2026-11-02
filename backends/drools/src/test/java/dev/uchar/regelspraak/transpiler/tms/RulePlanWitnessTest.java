@@ -134,12 +134,17 @@ class RulePlanWitnessTest {
                         + " unit=null] source '0'",
                 "    test 0.1.2 Const String",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=jutter, name=bergingsaandeel,"
-                        + " characteristic=false], writer=bergingsaandeel van een jutter, value=Const 1, slots=[],"
-                        + " size=3, collapse=true, writesEmpty=false, deposit=Deposit[depositFlag=2,"
-                        + " form=bergingsaandeel van een jutter], fault=FaultName[form=bergingsaandeel van een jutter,"
-                        + " rule=bergingsaandeel van een jutter], insertion=LOGICAL]",
-                "    value 0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD, unit=null]"
-                        + " source '1'",
+                        + " characteristic=false], writer=bergingsaandeel van een jutter, value=FIT_TARGET(Const 1,"
+                        + " Const 0, Const bergingsaandeel, Const null), slots=[], size=3, collapse=false,"
+                        + " writesEmpty=false, deposit=Deposit[depositFlag=2, form=bergingsaandeel van een jutter],"
+                        + " fault=FaultName[form=bergingsaandeel van een jutter, rule=bergingsaandeel van een jutter],"
+                        + " insertion=LOGICAL]",
+                "    value 0 Call source '1'",
+                "    value 0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '1'",
+                "    value 0.1 Const Integer",
+                "    value 0.2 Const String",
+                "    value 0.3 Const null",
                 "rule bergingsaandeel van een jutter: fout in de voorwaarde | form bergingsaandeel van een jutter |"
                         + " group null",
                 "  readings [0 INPUT $ploegomvang (eigen ElementKey[objectType=jutter, name=ploegomvang,"
@@ -258,13 +263,18 @@ class RulePlanWitnessTest {
                         + " until=2026-12-31]]] join [] bind []",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondstmelding,"
                         + " name=vensterheffing, characteristic=false], writer=vensterheffing in 2026,"
-                        + " value=RS_PLUS(Read 0, Const 25), slots=[0], size=1, collapse=true, writesEmpty=true,"
-                        + " deposit=null, fault=FaultName[form=vensterheffing in 2026, rule=vensterheffing in"
-                        + " 2026], insertion=LOGICAL]",
+                        + " value=FIT_TARGET(RS_PLUS(Read 0, Const 25), Const 0, Const vensterheffing, Const null),"
+                        + " slots=[0], size=1, collapse=false, writesEmpty=true, deposit=null,"
+                        + " fault=FaultName[form=vensterheffing in 2026, rule=vensterheffing in 2026],"
+                        + " insertion=LOGICAL]",
                 "    value 0 Call source 'de meldwaarde van de Vondstmelding vermeerderd met 25'",
-                "    value 0.0 SlotValue source 'de meldwaarde van de Vondstmelding'",
-                "    value 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                "    value 0.0 Call source 'de meldwaarde van de Vondstmelding vermeerderd met 25'",
+                "    value 0.0.0 SlotValue source 'de meldwaarde van de Vondstmelding'",
+                "    value 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '25'",
+                "    value 0.1 Const Integer",
+                "    value 0.2 Const String",
+                "    value 0.3 Const null",
                 "rule vensterheffing in 2026: geen rekendatum | form vensterheffing in 2026 | group null",
                 "  readings []",
                 "  pattern EvaluationDate $rekendatum alpha [geen-rekendatum_1: [date LEEG]] join [] bind []",
@@ -279,13 +289,18 @@ class RulePlanWitnessTest {
                         + " until=2025-12-31]]] join [] bind []",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondstmelding,"
                         + " name=overgangsheffing, characteristic=false], writer=overgangsheffing tot en met 2025,"
-                        + " value=RS_PLUS(Read 0, Const 40), slots=[0], size=1, collapse=true, writesEmpty=true,"
-                        + " deposit=null, fault=FaultName[form=overgangsheffing tot en met 2025,"
-                        + " rule=overgangsheffing tot en met 2025], insertion=LOGICAL]",
+                        + " value=FIT_TARGET(RS_PLUS(Read 0, Const 40), Const 0, Const overgangsheffing, Const null),"
+                        + " slots=[0], size=1, collapse=false, writesEmpty=true, deposit=null,"
+                        + " fault=FaultName[form=overgangsheffing tot en met 2025, rule=overgangsheffing tot en met"
+                        + " 2025], insertion=LOGICAL]",
                 "    value 0 Call source 'de meldwaarde van de Vondstmelding vermeerderd met 40'",
-                "    value 0.0 SlotValue source 'de meldwaarde van de Vondstmelding'",
-                "    value 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                "    value 0.0 Call source 'de meldwaarde van de Vondstmelding vermeerderd met 40'",
+                "    value 0.0.0 SlotValue source 'de meldwaarde van de Vondstmelding'",
+                "    value 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '40'",
+                "    value 0.1 Const Integer",
+                "    value 0.2 Const String",
+                "    value 0.3 Const null",
                 "rule overgangsheffing tot en met 2025: geen rekendatum | form overgangsheffing tot en met 2025 |"
                         + " group null",
                 "  readings []",
@@ -320,7 +335,7 @@ class RulePlanWitnessTest {
                 "    test 0.1.2 Const String",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=bergingszaak, name=status,"
                         + " characteristic=false], writer=vrijgave zonder beletsel, value=Const vrijgegeven, slots=[],"
-                        + " size=2, collapse=true, writesEmpty=true, deposit=null, fault=FaultName[form=vrijgave"
+                        + " size=2, collapse=false, writesEmpty=true, deposit=null, fault=FaultName[form=vrijgave"
                         + " zonder beletsel, rule=vrijgave zonder beletsel], insertion=LOGICAL]",
                 "    value 0 Const String type Text[] source ''vrijgegeven''",
                 "rule aanhouding bij beletsel | form aanhouding bij beletsel | group null",
@@ -342,9 +357,8 @@ class RulePlanWitnessTest {
                 "    test 0.1.2 Const String",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=bergingszaak, name=status,"
                         + " characteristic=false], writer=aanhouding bij beletsel, value=Const aangehouden, slots=[],"
-                        + " size=2, collapse=true, writesEmpty=true, deposit=null,"
-                        + " fault=FaultName[form=aanhouding bij beletsel, rule=aanhouding bij beletsel],"
-                        + " insertion=LOGICAL]",
+                        + " size=2, collapse=false, writesEmpty=true, deposit=null, fault=FaultName[form=aanhouding"
+                        + " bij beletsel, rule=aanhouding bij beletsel], insertion=LOGICAL]",
                 "    value 0 Const String type Text[] source ''aangehouden''",
                 "rule schrijvers Bergingszaak.status: verschil | form null | group null",
                 "  readings [0 VALUES $waarden (waarden)]",
@@ -370,14 +384,19 @@ class RulePlanWitnessTest {
                 "  subject Strandrecht $onderwerp alpha [niet-in-een-stapel_0: [null CLASS_NOT_IN [Wrakrecht]]]"
                         + " bind [$grondslag = [].grondslag VALUE]",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=strandrecht, name=uitkering,"
-                        + " characteristic=false], writer=uitkering van een strandrecht, value=RS_TIMES(Read 0, Const 2),"
-                        + " slots=[0], size=1, collapse=true, writesEmpty=false, deposit=null,"
+                        + " characteristic=false], writer=uitkering van een strandrecht,"
+                        + " value=FIT_TARGET(RS_TIMES(Read 0, Const 2), Const 2, Const uitkering, Const null),"
+                        + " slots=[0], size=1, collapse=false, writesEmpty=false, deposit=null,"
                         + " fault=FaultName[form=uitkering van een strandrecht, rule=uitkering van een strandrecht],"
                         + " insertion=LOGICAL]",
                 "    value 0 Call source 'zijn grondslag maal 2'",
-                "    value 0.0 SlotValue source 'zijn grondslag'",
-                "    value 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
-                        + " unit=null] source '2'"),
+                "    value 0.0 Call source 'zijn grondslag maal 2'",
+                "    value 0.0.0 SlotValue source 'zijn grondslag'",
+                "    value 0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                        + " unit=null] source '2'",
+                "    value 0.1 Const Integer",
+                "    value 0.2 Const String",
+                "    value 0.3 Const null"),
                 rules(golden("jutterswet-wrakerfbasis"), p -> !RulePlanWitnessTest.ofStack(p)));
     }
 
@@ -399,13 +418,18 @@ class RulePlanWitnessTest {
                         + " ElementKey[objectType=vondst, name=bergloon, characteristic=false], writer NOT_EQUAL"
                         + " standaardbergloon]] join [andere-schrijver-onderwerp_3: subject = $onderwerp] bind []",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
-                        + " characteristic=false], writer=standaardbergloon, value=RS_TIMES(Const 2, Read 0), slots=[0],"
-                        + " size=1, collapse=true, writesEmpty=false, deposit=null,"
-                        + " fault=FaultName[form=standaardbergloon, rule=standaardbergloon], insertion=LOGICAL]",
+                        + " characteristic=false], writer=standaardbergloon, value=FIT_TARGET(RS_TIMES(Const 2, Read"
+                        + " 0), Const 2, Const bergloon, Const null), slots=[0], size=1, collapse=false,"
+                        + " writesEmpty=false, deposit=null, fault=FaultName[form=standaardbergloon,"
+                        + " rule=standaardbergloon], insertion=LOGICAL]",
                 "    value 0 Call source '2 maal zijn gewicht'",
-                "    value 0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                "    value 0.0 Call source '2 maal zijn gewicht'",
+                "    value 0.0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '2'",
-                "    value 0.1 SlotValue source 'zijn gewicht'"),
+                "    value 0.0.1 SlotValue source 'zijn gewicht'",
+                "    value 0.1 Const Integer",
+                "    value 0.2 Const String",
+                "    value 0.3 Const null"),
                 rules(golden("jutterswet-voorwaardelijke-initialisatie")));
     }
 
@@ -438,13 +462,18 @@ class RulePlanWitnessTest {
                 "    test 0.1 Input",
                 "    test 0.1.0 SlotValue",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
-                        + " characteristic=false], writer=standaardbergloon, value=RS_TIMES(Const 2, Read 0), slots=[0],"
-                        + " size=3, collapse=true, writesEmpty=false, deposit=null,"
-                        + " fault=FaultName[form=standaardbergloon, rule=standaardbergloon], insertion=LOGICAL]",
+                        + " characteristic=false], writer=standaardbergloon, value=FIT_TARGET(RS_TIMES(Const 2, Read"
+                        + " 0), Const 2, Const bergloon, Const null), slots=[0], size=3, collapse=false,"
+                        + " writesEmpty=false, deposit=null, fault=FaultName[form=standaardbergloon,"
+                        + " rule=standaardbergloon], insertion=LOGICAL]",
                 "    value 0 Call source '2 maal zijn gewicht'",
-                "    value 0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                "    value 0.0 Call source '2 maal zijn gewicht'",
+                "    value 0.0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '2'",
-                "    value 0.1 SlotValue source 'zijn gewicht'",
+                "    value 0.0.1 SlotValue source 'zijn gewicht'",
+                "    value 0.1 Const Integer",
+                "    value 0.2 Const String",
+                "    value 0.3 Const null",
                 "rule zwaar bergloon | form zwaar bergloon | group null",
                 "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
                         + " characteristic=false])]",
@@ -457,13 +486,17 @@ class RulePlanWitnessTest {
                         + " unit=null] source '10'",
                 "    test 0.2 Const String",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
-                        + " characteristic=false], writer=zwaar bergloon, value=RS_TIMES(Const 2, Read 0), slots=[0],"
-                        + " size=1, collapse=true, writesEmpty=true, deposit=null, fault=FaultName[form=zwaar"
-                        + " bergloon, rule=zwaar bergloon], insertion=LOGICAL]",
+                        + " characteristic=false], writer=zwaar bergloon, value=FIT_TARGET(RS_TIMES(Const 2, Read 0),"
+                        + " Const 2, Const bergloon, Const null), slots=[0], size=1, collapse=false, writesEmpty=true,"
+                        + " deposit=null, fault=FaultName[form=zwaar bergloon, rule=zwaar bergloon], insertion=LOGICAL]",
                 "    value 0 Call source '2 maal zijn gewicht'",
-                "    value 0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                "    value 0.0 Call source '2 maal zijn gewicht'",
+                "    value 0.0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '2'",
-                "    value 0.1 SlotValue source 'zijn gewicht'",
+                "    value 0.0.1 SlotValue source 'zijn gewicht'",
+                "    value 0.1 Const Integer",
+                "    value 0.2 Const String",
+                "    value 0.3 Const null",
                 "rule licht bergloon | form licht bergloon | group null",
                 "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
                         + " characteristic=false])]",
@@ -476,13 +509,17 @@ class RulePlanWitnessTest {
                         + " unit=null] source '10'",
                 "    test 0.2 Const String",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
-                        + " characteristic=false], writer=licht bergloon, value=RS_TIMES(Const 2, Read 0), slots=[0],"
-                        + " size=1, collapse=true, writesEmpty=true, deposit=null, fault=FaultName[form=licht"
-                        + " bergloon, rule=licht bergloon], insertion=LOGICAL]",
+                        + " characteristic=false], writer=licht bergloon, value=FIT_TARGET(RS_TIMES(Const 2, Read 0),"
+                        + " Const 2, Const bergloon, Const null), slots=[0], size=1, collapse=false, writesEmpty=true,"
+                        + " deposit=null, fault=FaultName[form=licht bergloon, rule=licht bergloon], insertion=LOGICAL]",
                 "    value 0 Call source '2 maal zijn gewicht'",
-                "    value 0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
+                "    value 0.0 Call source '2 maal zijn gewicht'",
+                "    value 0.0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '2'",
-                "    value 0.1 SlotValue source 'zijn gewicht'",
+                "    value 0.0.1 SlotValue source 'zijn gewicht'",
+                "    value 0.1 Const Integer",
+                "    value 0.2 Const String",
+                "    value 0.3 Const null",
                 "rule schrijvers Vondst.bergloon: verschil | form null | group null",
                 "  readings [0 VALUES $waarden (waarden)]",
                 "  subject Vondst $onderwerp alpha [] bind []",

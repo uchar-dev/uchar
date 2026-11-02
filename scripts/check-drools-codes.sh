@@ -122,7 +122,8 @@ DUTCH_EXCEPTIONS = {("DROOLS-257", "de"): "'DE' is the quantifier of the wire, w
 # case pins; a sentence may print others, such as the type of the creation budget or the detail of a calendar fault)
 EF_PLACES = {
     "EF-003.malformed": {"lexeme", "field"}, "EF-003.calendar": {"lexeme", "field", "detail"},
-    "EF-005.bare": set(), "EF-005.in-rule": {"rule", "dividend"}, "EF-007": set(), "EF-008": {"count"},
+    "EF-004": {"place", "value", "decimals"}, "EF-005.bare": set(), "EF-005.in-rule": {"rule", "dividend"},
+    "EF-006": {"place", "value", "decimals"}, "EF-007": set(), "EF-008": {"count"},
     "EF-009": {"reach", "from"}, "EF-010": set(), "EF-011.date": set(), "EF-011.year": set(), "EF-012": set(),
     "EF-015": {"creation", "stratum", "depth", "type", "parentDepth"},
     "EF-016": {"count", "enumeration", "attribute", "object"}, "EF-019.expression": set(), "EF-019.condition": set(),

@@ -1,10 +1,10 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.ir.ResolvedAllocation;
+import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
-import java.math.BigDecimal;
-import java.math.MathContext;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -16,11 +16,12 @@ import java.util.TreeSet;
 /**
  * The distribution of one allocation over the recipients of one source (RUNTIME-SEMANTICS ch. 4.2 to 4.4), as a
  * function of the values the allocation's rule binds: the pot and the {@link Recipient} facts of the source, which
- * carry every recipient's weight, ordering key and cap. It computes with the runtime's helpers ({@code rsPlafond},
- * {@code rsAfronding} and, for the ordered method, {@code rsVerdeelOpVolgorde}), so a share is the quotient at 16
- * significant digits, capped and then floored, the v0 residual ch. 4.2 records beside the exact fractions; the edge
- * rows of ch. 4.4 are the reference interpreter's ({@code ref/lib/alloc.ml}), save the two that ch. 4.4 decides
- * otherwise for v1 (below).
+ * carry every recipient's weight, ordering key and cap. It computes on the exact rationals ({@link Breuk}): a share is
+ * the exact quotient, capped, and floored once at the rounding's decimals, and the rest is the pot less every share,
+ * exactly (ch. 4.2); a value is a decimal where it terminates and an exact rational where it does not, as the runtime's
+ * arithmetic gives it. The ordered method computes with the runtime's helper {@code rsVerdeelOpVolgorde}, on the same
+ * terms. The edge rows of ch. 4.4 are the reference interpreter's ({@code ref/lib/alloc.ml}), save the two that ch. 4.4
+ * decides otherwise for v1 (below).
  *
  * <p>Where the spec and the v0 mirror differ, the spec decides. An empty pot distributes nothing in every method, as
  * ch. 4.4 decides for v1, so nothing is written and nothing deposited; in the equal-shares and the proportional method
@@ -42,9 +43,10 @@ public final class Allocation {
      * the pot less every share, or null where nothing is distributed and nothing written (ch. 4.4: no recipients, an
      * empty pot, eligible weights that sum to 0); and the recipients on which a degradation surfaces the §9.5 deposit
      * of the allocation (ch. 4.3, 4.4), each once, by identity, with the EF codes of its degradations (ch. 5.7b),
-     * ascending: none for a negative weight in the proportional method, a kind without a code.
+     * ascending: none for a negative weight in the proportional method, a kind without a code. A share and the rest are
+     * a {@code BigDecimal} where they terminate and a {@link Breuk} where they do not.
      */
-    public record Result(Map<Object, BigDecimal> shares, BigDecimal rest, Map<Object, Set<String>> depositors) {}
+    public record Result(Map<Object, Object> shares, Object rest, Map<Object, Set<String>> depositors) {}
 
     /**
      * The distribution by {@code method} of {@code pot} over {@code recipients}, the recipients of one source:
@@ -55,7 +57,7 @@ public final class Allocation {
      */
     public static Result compute(ResolvedAllocation.Method method, Object pot, List<Recipient> recipients, boolean weighted,
                            boolean capped, Integer decimals, boolean descending) {
-        Map<Object, BigDecimal> shares = new IdentityHashMap<>();
+        Map<Object, Object> shares = new IdentityHashMap<>();
         Map<Object, Set<String>> depositors = new IdentityHashMap<>();
         // ch. 4.4: zero recipients write nothing and raise nothing, whatever the pot
         if (recipients.isEmpty()) return new Result(shares, null, depositors);
@@ -74,16 +76,16 @@ public final class Allocation {
 
     /** One group, every recipient, unweighted (ch. 4.2); a cap is ill-formed here (WF-025) and refused before. */
     private static Result equalShares(Object pot, List<Recipient> recipients, Integer decimals,
-                                        Map<Object, BigDecimal> shares, Map<Object, Set<String>> depositors) {
-        BigDecimal a = RegelSpraakRuntime.toBd(pot);
-        BigDecimal n = BigDecimal.valueOf(recipients.size());
-        BigDecimal sum = BigDecimal.ZERO;
+                                        Map<Object, Object> shares, Map<Object, Set<String>> depositors) {
+        Breuk a = Breuk.van(pot);
+        Breuk n = Breuk.van(BigInteger.valueOf(recipients.size()), BigInteger.ONE);
+        Breuk sum = ZERO;
         for (Recipient o : recipients) {
-            BigDecimal share = floor(a.divide(n, MathContext.DECIMAL64), decimals);
-            shares.put(o.recipient(), share);
-            sum = sum.add(share);
+            Breuk share = floor(a.delen(n), decimals);
+            shares.put(o.recipient(), atRest(share));
+            sum = sum.optellen(share);
         }
-        return new Result(shares, a.subtract(sum), depositors);
+        return new Result(shares, atRest(a.aftrekken(sum)), depositors);
     }
 
     /**
@@ -94,40 +96,41 @@ public final class Allocation {
      * split that distributes, as the reference interpreter reads it (ch. 4.3).
      */
     private static Result proportional(Object pot, List<Recipient> recipients, boolean capped, Integer decimals,
-                                    Map<Object, BigDecimal> shares, Map<Object, Set<String>> depositors) {
-        BigDecimal a = RegelSpraakRuntime.toBd(pot);
+                                    Map<Object, Object> shares, Map<Object, Set<String>> depositors) {
+        Breuk a = Breuk.van(pot);
         List<Recipient> eligible = new ArrayList<>();
-        List<BigDecimal> weights = new ArrayList<>();
-        BigDecimal weightSum = BigDecimal.ZERO;
+        List<Breuk> weights = new ArrayList<>();
+        Breuk weightSum = ZERO;
         for (Recipient o : recipients) {
             if (o.weight() == null) {
                 deposit(depositors, o.recipient(), "EF-028");
                 continue;
             }
-            BigDecimal w = RegelSpraakRuntime.toBd(o.weight());
+            Breuk w = Breuk.van(o.weight());
             if (w.signum() < 0) {
                 deposit(depositors, o.recipient(), null);
-                w = BigDecimal.ZERO;
+                w = ZERO;
             }
             eligible.add(o);
             weights.add(w);
-            weightSum = weightSum.add(w);
+            weightSum = weightSum.optellen(w);
         }
         if (weightSum.signum() == 0) return new Result(shares, null, depositors);
-        BigDecimal sum = BigDecimal.ZERO;
+        Breuk sum = ZERO;
         for (int i = 0; i < eligible.size(); i++) {
             Recipient o = eligible.get(i);
-            BigDecimal share = a.multiply(weights.get(i)).divide(weightSum, MathContext.DECIMAL64);
+            Breuk share = a.vermenigvuldigen(weights.get(i)).delen(weightSum);
             if (capped) {
-                BigDecimal max = RegelSpraakRuntime.toBd(o.maximum());
+                Breuk max = Breuk.van(o.maximum());
                 if (max == null || max.signum() < 0) deposit(depositors, o.recipient(), "EF-030");
-                share = RegelSpraakRuntime.rsPlafond(share, max);
+                // a leeg or negative cap degrades to uncapped (ch. 4.3), as rsPlafond reads it
+                else if (share.compareTo(max) > 0) share = max;
             }
             share = floor(share, decimals);
-            shares.put(o.recipient(), share);
-            sum = sum.add(share);
+            shares.put(o.recipient(), atRest(share));
+            sum = sum.optellen(share);
         }
-        return new Result(shares, a.subtract(sum), depositors);
+        return new Result(shares, atRest(a.aftrekken(sum)), depositors);
     }
 
     /**
@@ -138,37 +141,40 @@ public final class Allocation {
      * member of every group.
      */
     private static Result ordered(Object pot, List<Recipient> recipients, boolean weighted, boolean capped,
-                                      Integer decimals, boolean descending, Map<Object, BigDecimal> shares,
+                                      Integer decimals, boolean descending, Map<Object, Object> shares,
                                       Map<Object, Set<String>> depositors) {
-        BigDecimal a = RegelSpraakRuntime.toBd(pot);
+        Breuk a = Breuk.van(pot);
         List<Object> facts = new ArrayList<>(), orderKeys = new ArrayList<>();
         List<Object> weights = weighted ? new ArrayList<>() : null, maxima = capped ? new ArrayList<>() : null;
         for (Recipient o : recipients) {
             facts.add(o.recipient());
-            orderKeys.add(o.key() instanceof BigDecimal d ? d.stripTrailingZeros() : o.key());
+            // a number by its exact value, so that two keys of one value are one group whatever their scale
+            orderKeys.add(o.key() instanceof Number n ? Breuk.van(n) : o.key());
             if (weighted) {
                 if (o.weight() == null) deposit(depositors, o.recipient(), "EF-029");
                 // a weighted tie group always splits by weight, so an empty weight is the real 0 it counts as
-                weights.add(o.weight() == null ? BigDecimal.ZERO : RegelSpraakRuntime.toBd(o.weight()));
+                weights.add(o.weight() == null ? ZERO : Breuk.van(o.weight()));
             }
             if (capped) {
-                BigDecimal max = RegelSpraakRuntime.toBd(o.maximum());
+                Breuk max = Breuk.van(o.maximum());
                 if (max == null || max.signum() < 0) deposit(depositors, o.recipient(), "EF-030");
                 maxima.add(max);
             }
         }
-        Map<Object, BigDecimal> out = RegelSpraakRuntime.rsVerdeelOpVolgorde(a, facts, orderKeys, !descending, weights,
+        Map<Object, Object> out = RegelSpraakRuntime.rsVerdeelOpVolgorde(a, facts, orderKeys, !descending, weights,
                 maxima, decimals);
-        BigDecimal sum = BigDecimal.ZERO;
+        Breuk sum = ZERO;
         for (Object f : facts) {
-            BigDecimal share = out.get(f);
+            Object share = out.get(f);
             if (share == null)
                 throw new IllegalStateException("rsVerdeelOpVolgorde gaf geen aandeel voor " + FactNames.object(f));
             shares.put(f, share);
-            sum = sum.add(share);
+            sum = sum.optellen(Breuk.van(share));
         }
-        return new Result(shares, a.subtract(sum), depositors);
+        return new Result(shares, atRest(a.aftrekken(sum)), depositors);
     }
+
+    private static final Breuk ZERO = Breuk.van(BigInteger.ZERO, BigInteger.ONE);
 
     /** The §9.5 deposit of a degradation on {@code recipient}, with {@code code}, the EF code of its kind, or none (null)
      *  for a negative weight in the proportional method, decided for v1 in ch. 4.4 and witnessed by no golden. */
@@ -177,8 +183,15 @@ public final class Allocation {
         if (code != null) codes.add(code);
     }
 
-    /** The floor at {@code decimals} decimals (ch. 4.3), the identity without them. */
-    private static BigDecimal floor(BigDecimal x, Integer decimals) {
-        return decimals == null ? x : RegelSpraakRuntime.rsAfronding(x, decimals, RoundingMode.FLOOR);
+    /** The floor of the exact {@code x} at {@code decimals} decimals (ch. 4.3), rounded once; the identity without
+     *  them. */
+    private static Breuk floor(Breuk x, Integer decimals) {
+        return decimals == null ? x : Breuk.van(x.naarDecimal(decimals, RoundingMode.FLOOR));
+    }
+
+    /** {@code x} as the branch carries a number: its decimal where it terminates, the exact rational where it does
+     *  not. */
+    private static Object atRest(Breuk x) {
+        return x.isTerminerend() ? x.naarDecimal() : x;
     }
 }

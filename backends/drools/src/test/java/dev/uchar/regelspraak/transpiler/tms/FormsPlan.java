@@ -143,11 +143,13 @@ final class FormsPlan {
             "    for (Object feit : ComputeHelpers.payout(\"proefverdeling\", $onderwerp,"
                     + " dev.uchar.regelspraak.ir.ResolvedAllocation.Method.NAAR_RATO, $pot, $ontvangers, true, true, false,"
                     + " Integer.valueOf(2), ElementKey.of(\"wachter\", \"uitkijkbonus\", false),"
-                    + " ElementKey.of(\"post\", \"hoogte\", false), \"proefverdeling\")) {\n"
+                    + " ElementKey.of(\"post\", \"hoogte\", false), \"proefverdeling\", Integer.valueOf(2),"
+                    + " Integer.valueOf(0), \"uitdeling naar rato\")) {\n"
                     + "        insertLogical(feit);\n    }",
             "ComputeHelpers.payout(\"proefverdeling\", $onderwerp,"
                     + " dev.uchar.regelspraak.ir.ResolvedAllocation.Method.OP_VOLGORDE, $pot, $ontvangers, false, false, true,"
-                    + " null, ElementKey.of(\"wachter\", \"uitkijkbonus\", false), null, \"proefverdeling\")",
+                    + " null, ElementKey.of(\"wachter\", \"uitkijkbonus\", false), null, \"proefverdeling\", null, null,"
+                    + " \"uitdeling op volgorde\")",
             "dev.uchar.regelspraak.ir.ResolvedAllocation.Method.GELIJKE_DELEN");
 
     /**
@@ -178,13 +180,16 @@ final class FormsPlan {
         ElementKey share = ElementKey.of("wachter", "uitkijkbonus", false);
         rules.add(new RulePlan("uitdeling naar rato", "proefverdeling", null, payout, List.of(pot, recipients),
                 new Consequence.Payout(O, "proefverdeling", ResolvedAllocation.Method.NAAR_RATO, 0, 1, true, true, false, 2,
-                        share, ElementKey.of("post", "hoogte", false), "proefverdeling", Consequence.Insertion.LOGICAL)));
+                        share, ElementKey.of("post", "hoogte", false), "proefverdeling", 2, 0,
+                        new Consequence.FaultName("proefverdeling", "uitdeling naar rato"), Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("uitdeling op volgorde", "proefverdeling", null, payout, List.of(pot, recipients),
                 new Consequence.Payout(O, "proefverdeling", ResolvedAllocation.Method.OP_VOLGORDE, 0, 1, false, false, true,
-                        null, share, null, "proefverdeling", Consequence.Insertion.LOGICAL)));
+                        null, share, null, "proefverdeling", null, null,
+                        new Consequence.FaultName("proefverdeling", "uitdeling op volgorde"), Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("uitdeling in gelijke delen", "proefverdeling", null, payout, List.of(pot, recipients),
                 new Consequence.Payout(O, "proefverdeling", ResolvedAllocation.Method.GELIJKE_DELEN, 0, 1, false, false,
-                        false, 0, share, null, "proefverdeling", Consequence.Insertion.LOGICAL)));
+                        false, 0, share, null, "proefverdeling", 0, null,
+                        new Consequence.FaultName("proefverdeling", "uitdeling in gelijke delen"), Consequence.Insertion.LOGICAL)));
         return new Modelplan(List.of(), rules);
     }
 
@@ -373,7 +378,7 @@ final class FormsPlan {
                 table(new Read(0, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus")), List.of(withBonus),
                 new Consequence.Decision(O, readOf(0), List.of(0), 1, true, new Consequence.FaultName("proefstapel", "proefstapel"),
                         List.of(new Consequence.StackFact.Value(ElementKey.of("wachter", "uitkijkbonus", false),
-                                "proefstapel"), new Consequence.StackFact.Decides("proefstapel", 0)),
+                                "proefstapel", null), new Consequence.StackFact.Decides("proefstapel", 0)),
                         Consequence.Insertion.LOGICAL)));
         Subject subject = new Subject(wachter, O, List.of(), List.of(), List.of());
         rules.add(new RulePlan("default 1", "proefstapel", null, table(), List.of(subject),
@@ -391,7 +396,7 @@ final class FormsPlan {
                 new Consequence.Decision(O, new Term.Call(StaticFunction.FALLBACK, List.of(readOf(0), number("0")),
                         "zijn uitkijkbonus of 0"), List.of(0), 1, true, new Consequence.FaultName("proefstapel", "proefstapel"),
                         List.of(new Consequence.StackFact.Value(ElementKey.of("wachter", "uitkijkbonus", false),
-                                "proefstapel"), new Consequence.StackFact.Decides("proefstapel", 3)),
+                                "proefstapel", null), new Consequence.StackFact.Decides("proefstapel", 3)),
                         Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("eens 0", "proefstapel", null, table(new Read(0, ReadKind.DECISION, "besluit",
                 "$waarde")), List.of(decision), new Consequence.Decision(O, readOf(0), List.of(0), 1, false, null,

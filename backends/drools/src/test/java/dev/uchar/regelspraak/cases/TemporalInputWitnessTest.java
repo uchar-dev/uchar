@@ -74,14 +74,14 @@ class TemporalInputWitnessTest {
                       { "label": "J1", "objectType": "Jutter",
                         "attributes": { "wachtvergoeding per maand": { "timeline": [
                             { "from": "2023-01-01", "to": "2024-01-01", "value": { "number": "10" } },
-                            { "from": "2024-01-01", "to": "2024-07-01", "value": { "number": "11.50" } } ] } },
+                            { "from": "2024-01-01", "to": "2024-07-01", "value": { "number": "11.00" } } ] } },
                         "roles": {}, "characteristics": [] } ],
                     "parameters": {} } }
                 """;
         List<?> tl = timelineSegments("jutterswet-getijdenwacht", c, "J1", "wachtvergoeding per maand");
         assertEquals(2, tl.size(), "both segments land, in the written order");
         pinSegment(tl.get(0), "2023-01-01", "2024-01-01", "10");
-        pinSegment(tl.get(1), "2024-01-01", "2024-07-01", "11.50");
+        pinSegment(tl.get(1), "2024-01-01", "2024-07-01", "11.00");
     }
 
     @Test void a_bound_beside_the_grid_fails_loudly() throws Exception {

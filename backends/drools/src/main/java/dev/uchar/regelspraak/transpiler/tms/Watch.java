@@ -123,6 +123,13 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
         this.input = Set.copyOf(kinds);
     }
 
+    /** The place of {@code bean} among the beans of the input, in the order they came in, counted from 0; the number
+     *  after the last for an object that is no bean of the input. */
+    int inputPlace(Object bean) {
+        for (int i = 0; i < inputBeans.size(); i++) if (inputBeans.get(i) == bean) return i;
+        return inputBeans.size();
+    }
+
     /** The watch on {@code session}, or null where the entry put none there. */
     public static Watch of(KieSession session) {
         for (RuleRuntimeEventListener l : session.getRuleRuntimeEventListeners())

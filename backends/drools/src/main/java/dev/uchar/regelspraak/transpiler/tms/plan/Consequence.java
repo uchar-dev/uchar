@@ -235,11 +235,15 @@ public sealed interface Consequence {
      * method's direction, {@code decimals} the floor's decimals (null: none). Each share is a value of {@code share}
      * on its recipient and the rest a value of {@code rest} on the source (null: the allocation writes no rest), both
      * written by {@code writer}; each degradation is the §9.5 inconsistency of the form {@code form} on its
-     * recipient.
+     * recipient. Where the share declares {@code shareDecimals} or the rest {@code restDecimals} (null: it holds every
+     * value), a share or the rest that does not fit them makes the distribution of the source the fault of the write
+     * boundary under {@code fault}, in place of every share, the rest and the deposits (RUNTIME-SEMANTICS ch. 2.4
+     * point 1, ch. 4.2).
      */
     record Payout(String subject, String form, ResolvedAllocation.Method method, int pot, int list,
                      boolean weighted, boolean capped, boolean descending, Integer decimals, ElementKey share,
-                     ElementKey rest, String writer, Insertion insertion) implements Consequence {}
+                     ElementKey rest, String writer, Integer shareDecimals, Integer restDecimals, FaultName fault,
+                     Insertion insertion) implements Consequence {}
 
     /**
      * A member's place in the order of a fold, as a rule of the fold binds it, computed by the route
@@ -567,8 +571,11 @@ public sealed interface Consequence {
     sealed interface StackFact {
 
         /** The value of the stack's target attribute {@code target}, the decision, written by {@code writer}, the
-         *  stack: a {@code Value}. */
-        record Value(ElementKey target, String writer) implements StackFact {}
+         *  stack: a {@code Value}. Where the target declares {@code decimals} (null: it holds every value), a decision
+         *  that does not fit them is the fault of the write boundary under the stack's name in place of the value
+         *  (RUNTIME-SEMANTICS ch. 2.4 point 1, through the route {@link Route#FITTED}), and the decision stands: its
+         *  control facts go in beside the fault, and the deposit of its consequence does not. */
+        record Value(ElementKey target, String writer, Integer decimals) implements StackFact {}
 
         /** The attribution of the stack's target characteristic {@code characteristic}: a {@code HasCharacteristic}. The analysis
          *  plans it only where the decision is an attribution, true. */

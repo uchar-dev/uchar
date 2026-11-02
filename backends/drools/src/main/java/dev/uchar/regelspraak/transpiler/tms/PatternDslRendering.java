@@ -249,7 +249,8 @@ final class PatternDslRendering {
                             x.speculative() ? Reading.Kind.SPECULATIVE : Reading.Kind.TURN)));
             case Consequence.Payout x -> consequenceItem(x.subject(), slotsOf(x.pot(), x.list()), (drools, source, w) -> {
                 for (Object fact : ComputeHelpers.payout(x.form(), source, x.method(), w[x.pot()], w[x.list()],
-                        x.weighted(), x.capped(), x.descending(), x.decimals(), x.share(), x.rest(), x.writer()))
+                        x.weighted(), x.capped(), x.descending(), x.decimals(), x.share(), x.rest(), x.writer(),
+                        x.shareDecimals(), x.restDecimals(), x.fault().rule()))
                     insert(drools, x.insertion(), fact);
             });
         };
@@ -460,11 +461,13 @@ final class PatternDslRendering {
     }
 
     /** The decision of {@link Consequence.Decision}: its value from the bound values, with its fault where the plan names
-     *  one; nothing where the value is null; else its deposit where the probe heard one, and the facts of the decision, in
-     *  order. */
+     *  one; nothing where the value is null; where the write of the decision does not fit its target
+     *  ({@link Consequence.StackFact.Value}), the fault of the write boundary and the control facts of the decision;
+     *  else its deposit where the probe heard one, and the facts of the decision, in order. */
     private RuleItemBuilder<?> decisionOf(Consequence.Decision g) {
         ValueFunction value = ClosureRendering.valueFunction(g.value());
         Consequence.Deposit deposit = g.deposit();
+        Consequence.StackFact.Value write = fittedWrite(g);
         return consequenceItem(g.subject(), g.slots(), g.size(), (drools, subject, w) -> {
             Object s = deposit == null ? null : ComputeHelpers.depositFlag();
             if (s != null) w[deposit.depositFlag()] = s;
@@ -479,11 +482,27 @@ final class PatternDslRendering {
                 return;
             }
             if (v == null) return;
+            Object at = write == null ? v : ComputeHelpers.fitted(v, write.decimals(), write.target().name());
+            if (ComputeHelpers.isEvaluationFault(at)) {
+                insert(drools, g.insertion(), new Fault(subject, write.writer(), ComputeHelpers.designate(at, write.writer())));
+                for (Consequence.StackFact f : g.facts())
+                    if (!(f instanceof Consequence.StackFact.Value)) insert(drools, g.insertion(), stackFact(f, subject, v));
+                return;
+            }
             if (ComputeHelpers.reported(s))
                 insert(drools, g.insertion(), ComputeHelpers.inconsistency(deposit.form(), subject,
                         ComputeHelpers.depositCodes(s)));
-            for (Consequence.StackFact f : g.facts()) insert(drools, g.insertion(), stackFact(f, subject, v));
+            for (Consequence.StackFact f : g.facts())
+                insert(drools, g.insertion(), stackFact(f, subject, f instanceof Consequence.StackFact.Value ? at : v));
         });
+    }
+
+    /** The write of the decision {@code g} under the write boundary of its target, null where it has none
+     *  ({@link Consequence.StackFact.Value#decimals}). */
+    static Consequence.StackFact.Value fittedWrite(Consequence.Decision g) {
+        for (Consequence.StackFact f : g.facts())
+            if (f instanceof Consequence.StackFact.Value x && x.decimals() != null) return x;
+        return null;
     }
 
     /** The fact {@code f} of a defaults stack on {@code subject}, with {@code v}: the decision, or the key of a

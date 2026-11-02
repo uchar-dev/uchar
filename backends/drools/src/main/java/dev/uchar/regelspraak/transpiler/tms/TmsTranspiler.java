@@ -1032,12 +1032,19 @@ public final class TmsTranspiler {
             perStack.computeIfAbsent(c.stack(), k -> new IdentityHashMap<>())
                     .computeIfAbsent(c.subject(), k -> new ArrayList<>()).add(c);
         }
-        // the value an attribute stack in the simple form wrote, by stack and object: the decision of its default
+        // the value an attribute stack in the simple form wrote, by stack and object: the decision of its default; and
+        // where that decision did not fit its target, the fault the stack stated in place of the value
         Map<String, Map<Object, List<Value>>> written = new HashMap<>();
         for (Object f : session.getObjects(o -> o instanceof Value w && layouts.containsKey(w.writer()))) {
             Value w = (Value) f;
             written.computeIfAbsent(w.writer(), k -> new IdentityHashMap<>())
                     .computeIfAbsent(w.subject(), k -> new ArrayList<>()).add(w);
+        }
+        Map<String, Map<Object, WriteBoundaryFault>> misfits = new HashMap<>();
+        for (Object f : session.getObjects(o -> o instanceof Fault x && x.fault() instanceof WriteBoundaryFault
+                && layouts.containsKey(x.rule()))) {
+            Fault x = (Fault) f;
+            misfits.computeIfAbsent(x.rule(), k -> new IdentityHashMap<>()).put(x.subject(), (WriteBoundaryFault) x.fault());
         }
         List<DefaultsDecision> out = new ArrayList<>();
         Map<String, List<List<String>>> rootChains = new HashMap<>();
@@ -1048,11 +1055,15 @@ public final class TmsTranspiler {
                 Map<Object, List<ControlFact>> perSubject = perStack.get(name);
                 List<ControlFact> facts = perSubject == null ? null : perSubject.remove(subject);
                 Settling settled = facts == null ? null : s.general() ? settledInGeneralForm(name, s, subject, facts)
-                        : settledInSimpleForm(name, s, subject, facts, written.getOrDefault(name, Map.of()));
+                        : settledInSimpleForm(name, s, subject, facts, written.getOrDefault(name, Map.of()),
+                                misfits.getOrDefault(name, Map.of()));
                 List<List<String>> chains = rootChains.computeIfAbsent(name, n -> s.roots().stream()
                         .map(chain -> chain.stream().map(k -> pointerOf(k.d())).toList()).toList());
                 out.add(new DefaultsDecision(subject, s.member().name(), s.member().characteristic(), chains,
-                        settled == null ? null : settled.decider(), settled == null ? null : settled.conflict()));
+                        settled == null ? null : atRest(settled.decider()),
+                        settled == null || settled.conflict() == null ? null : new DefaultsDecision.Conflict(
+                                settled.conflict().pointer(), settled.conflict().key(),
+                                settled.conflict().deciders().stream().map(TmsTranspiler::atRest).toList())));
             }
         perStack.forEach((name, rest) -> {
             if (!rest.isEmpty())
@@ -1072,9 +1083,16 @@ public final class TmsTranspiler {
     /** How a chain or a reconciliation came out: a default that decided, or a conflict. */
     private record Settling(DefaultsDecision.Decider decider, DefaultsDecision.Conflict conflict) {}
 
-    /** The one {@link Decides} of the simple form, on the default it names. */
+    /** {@code d} with its decision as the write-back puts a number on a bean ({@link ComputeHelpers#collapse}), the
+     *  form {@link Fixpoint.DerivedValue} gives it; null for none. */
+    private static DefaultsDecision.Decider atRest(DefaultsDecision.Decider d) {
+        return d == null ? null : new DefaultsDecision.Decider(d.pointer(), ComputeHelpers.collapse(d.decision()));
+    }
+
+    /** The one {@link Decides} of the simple form, on the default it names; where its decision did not fit the target,
+     *  the value in {@code misfits}, the fault the stack stated in place of its write. */
     private Settling settledInSimpleForm(String name, StackLayout s, Object subject, List<ControlFact> facts,
-                                         Map<Object, List<Value>> written) {
+                                         Map<Object, List<Value>> written, Map<Object, WriteBoundaryFault> misfits) {
         if (facts.size() != 1 || !(facts.get(0) instanceof Decides d))
             throw new IllegalStateException("de eenvoudige vorm van " + name + " laat per object één Beslist staan, en"
                     + " op " + FactNames.object(subject) + " staan " + facts);
@@ -1083,6 +1101,9 @@ public final class TmsTranspiler {
         if (s.member().characteristic()) decision = k.d().decision();
         else {
             List<Value> values = written.getOrDefault(subject, List.of());
+            WriteBoundaryFault misfit = misfits.get(subject);
+            if (values.isEmpty() && misfit != null)
+                return new Settling(new DefaultsDecision.Decider(pointerOf(k.d()), misfit.misfits().get(0).value()), null);
             if (values.size() != 1)
                 throw new IllegalStateException(d + " in de sessie, en " + name + " schreef op "
                         + FactNames.object(subject) + " " + values + " in plaats van één waarde");
@@ -1336,12 +1357,17 @@ public final class TmsTranspiler {
         // a set: the fault of two writers that the rule of verschilregel stated and the one read off the values below
         // are one fault, equal as facts are
         Set<Fault> faults = new LinkedHashSet<>();
+        Watch watch = Watch.of(session);
         for (Object f : session.getObjects(o -> o instanceof Fault)) {
             Fault fault = (Fault) f;
             faults.add(label != null && fault.fault() instanceof WritersConflict c
                     ? new Fault(fault.subject(), fault.rule(), c.named(label))
                     : label != null && fault.fault() instanceof InputFormFault i
-                    ? new Fault(fault.subject(), fault.rule(), i.named(label)) : fault);
+                    ? new Fault(fault.subject(), fault.rule(), i.named(label))
+                    // the place of a value that does not fit is the object of the fact where the fault had none
+                    : fault.fault() instanceof WriteBoundaryFault w
+                    ? new Fault(fault.subject(), fault.rule(), w.named(fault.subject(), label, watch::inputPlace))
+                    : fault);
         }
         List<Fixpoint.DerivedCharacteristic> characteristics = new ArrayList<>();
         for (Object f : session.getObjects(o -> o instanceof HasCharacteristic)) {
@@ -1374,9 +1400,11 @@ public final class TmsTranspiler {
                     continue;
                 }
                 Member member = memberOf(earliest, earliest.attribute());
-                // a timeline goes onto the bean as the bean model's segments, which carry no value equality
+                // a number goes onto the bean as a decimal, which a value of the unbounded form that does not terminate
+                // is not exactly (RUNTIME-SEMANTICS ch. 2.4); a timeline as the bean model's segments, which carry no
+                // value equality
                 @SuppressWarnings("unchecked")
-                Object v = member.time() == null ? earliest.value()
+                Object v = member.time() == null ? ComputeHelpers.collapse(earliest.value())
                         : Period.beans((List<Period>) earliest.value(), segmentClass());
                 values.add(new Fixpoint.DerivedValue(earliest.subject(), member.name(), v));
                 BiConsumer<Object, Object> setter = Accessors.eigenschapSetter(member.javaClass(),
@@ -2087,12 +2115,13 @@ public final class TmsTranspiler {
         boolean canFail = reads.canFail();
         reads.stop();
         Set<Integer> use = reads.follow();
-        // the write boundary: the value restated into the target's declared unit (RUNTIME-SEMANTICS ch. 2.4, 2.6); a
+        // the write boundary: the value restated into the target's declared unit (RUNTIME-SEMANTICS ch. 2.4, 2.6), and
+        // where the declaration bounds the decimals, the fault of a value that does not fit them (ch. 2.4 point 1); a
         // timeline is written as its producer computes it, as in the reference interpreter (ch. 3.7)
         Term value = member.time() != null
                 ? timelineValue((Expr.FunctionCall) r.value(), member, subject, reads)
-                : restated(value(r.value(), reads), eff.unitOf(r.value()), member.datatype().unitOf(),
-                        "een §4 schrijfgrens naar het doel");
+                : fitted(restated(value(r.value(), reads), eff.unitOf(r.value()), member.datatype().unitOf(),
+                        "een §4 schrijfgrens naar het doel"), member, null);
         if (member.time() != null) note(r.value(), value);
         Noted noted = endReading();
         reads.stop();
@@ -2102,7 +2131,9 @@ public final class TmsTranspiler {
         items.addAll(blockadeItems);
         String name = r.name();
         String ruleName = model.emittedRuleName(name);
-        Consequence consequence = new Consequence.Value(SUBJECT, key, name, value, List.copyOf(use), reads.size(), true,
+        // the value stays exact in working memory, so a reader of the unbounded form computes with the value the form
+        // wrote (ch. 2.1, 2.4 point 3); the write-back puts it on the bean as a decimal (readFixpoint)
+        Consequence consequence = new Consequence.Value(SUBJECT, key, name, value, List.copyOf(use), reads.size(), false,
                 writesEmpty, depositFlag < 0 ? null : new Consequence.Deposit(depositFlag, name), new Consequence.FaultName(name, ruleName),
                 Consequence.Insertion.LOGICAL);
         derived.put(key, member);
@@ -2694,7 +2725,8 @@ public final class TmsTranspiler {
         reads.recorder();
         out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, new Consequence.Payout(SUBJECT, name, method,
                 p, list, weight != null, maximum != null, v.descending(), v.roundingDecimals(), shareKey, restKey,
-                name, Consequence.Insertion.LOGICAL))));
+                name, ceiling(share.datatype()), rest == null ? null : ceiling(rest.datatype()),
+                new Consequence.FaultName(name, ruleName), Consequence.Insertion.LOGICAL))));
         if (noted != null && testTerm != null)
             readingRule(ruleName, positions.versionOf(v), reads, reads.readingPlan(List.of(), false), testTerm, null,
                     v.condition(), null, noted, v.validity(), false);
@@ -2874,7 +2906,8 @@ public final class TmsTranspiler {
             Member member = member(fresh, t.attribute(), t.characteristic());
             Term w = value(t.value(), reads);
             if (!t.characteristic())
-                w = restated(w, eff.unitOf(t.value()), member.datatype().unitOf(), "een §4 schrijfgrens naar het lid");
+                w = fitted(restated(w, eff.unitOf(t.value()), member.datatype().unitOf(),
+                        "een §4 schrijfgrens naar het lid"), member, name);
             inits.add(new Initialisation(member, w));
         }
         reads.stop();
@@ -3472,7 +3505,7 @@ public final class TmsTranspiler {
             // the target: an attribute's value, or the attribution of a characteristic, whose decision the default
             // declares; a do-not-attribute decision writes nothing and only displaces the defaults below it
             List<Consequence.StackFact> facts = new ArrayList<>();
-            if (!b.characteristic) facts.add(new Consequence.StackFact.Value(key, name));
+            if (!b.characteristic) facts.add(new Consequence.StackFact.Value(key, name, ceiling(b.member.datatype())));
             else if (Boolean.TRUE.equals(k.d().decision())) facts.add(new Consequence.StackFact.Characteristic(key));
             facts.add(new Consequence.StackFact.Decides(name, i));
             out.addAll(ownRule(b, k, RuleOrigin.Role.OWN, name + ": default " + k.label(),
@@ -3497,7 +3530,7 @@ public final class TmsTranspiler {
         // at the root the reconciliation writes the target and deposits a conflict as the §9.5 inconsistency; on a
         // characteristic only an attribution reaches the write (onlyTrue), so the attribution is planned as such
         Consequence.StackFact target = b.characteristic ? new Consequence.StackFact.Characteristic(key)
-                : new Consequence.StackFact.Value(key, b.name);
+                : new Consequence.StackFact.Value(key, b.name, ceiling(b.member.datatype()));
         int root = out.size();
         reconciliation(b, 0, squareRoot.size(), squareRoot.stream().anyMatch(TmsTranspiler::canConflict), b.targetForm, "wortel",
                 List::of, new Consequence.StackFact.Inconsistency(), target, b.characteristic, false, out);
@@ -3752,7 +3785,7 @@ public final class TmsTranspiler {
             noted = endReading();
             control = guard.get();
             items = reads.plan(conditionRole(canFail), testTerm, read, control);
-            decision = new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), true,
+            decision = new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), false,
                     new Consequence.FaultName(name, name),
                     deposits(d.consequence()) ? new Consequence.Deposit(reads.depositFlagSlot(), b.targetForm) : null,
                     facts, Consequence.Insertion.LOGICAL);
@@ -4298,6 +4331,23 @@ public final class TmsTranspiler {
     /** A constant of the analysis, which an argument of a function of the plan takes ({@link Term.Const}). */
     private static Term.Const constant(Object value) {
         return new Term.Const(value, null, null);
+    }
+
+    /** {@code t}, the value a form writes into {@code member}, under the write boundary of the member's declaration
+     *  (RUNTIME-SEMANTICS ch. 2.4 point 1) where it bounds the decimals, the member an attribute of the new object of
+     *  the object creation {@code creation} where that is not null; unchanged where the declaration holds every value,
+     *  the unbounded form and a datatype that is no number (ch. 2.4 point 3). */
+    private static Term fitted(Term t, Member member, String creation) {
+        Integer d = ceiling(member.datatype());
+        return d == null ? t : new Term.Call(StaticFunction.FIT_TARGET,
+                List.of(t, constant(d), constant(member.name()), constant(creation)), t.source());
+    }
+
+    /** The decimals {@code t} declares where it bounds them, a number or a percentage that is not of the unbounded form;
+     *  null for any other datatype. */
+    private static Integer ceiling(Datatype t) {
+        if (t == null || !t.isNumberLike() || t.unbounded()) return null;
+        return t instanceof Datatype.Numeric n ? n.decimals() : ((Datatype.Percentage) t).decimals();
     }
 
     /** A test a form composes itself ({@link TestItem.Role#VORM}) of the checks {@code members}: their conjunction,
@@ -5612,6 +5662,11 @@ public final class TmsTranspiler {
         Member memberValue = arg == null ? null : declared(elem, arg.attribute(), false).time() == null
                 ? member(elem, arg.attribute(), false) : integrable(timeMember(elem, arg.attribute(), false,
                         Msg.drools("PART.desc.member-total", "snippet", snippet(arg.source()))), Msg.drools("PART.desc.member-total-plain"));
+        // a value of the unbounded form is an exact rational in working memory (RUNTIME-SEMANTICS ch. 2.4 point 3), and
+        // the accumulates of this branch fold decimals; a filled count reads no value
+        if (memberValue != null && memberValue.time() == null && memberValue.datatype().unbounded()
+                && kind != Expr.FunctionKind.AANTAL_GEVULDE)
+            throw new Refusal(DroolsCode.FOLD_OVER_UNBOUNDED_VALUE.reason("attribute", memberValue.name(), "objectType", elem.name));
         int value = memberValue == null ? -1 : memberValue.time() == null ? reads.own(memberValue) : reads.timeline(memberValue);
         String total = memberValue == null || memberValue.time() == null ? null : memberValue.time().name();
         reads.stop();

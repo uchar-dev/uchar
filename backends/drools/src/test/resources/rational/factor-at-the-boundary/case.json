@@ -1,0 +1,47 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "begrensde opbrengst": {
+            "number": "240.00"
+          },
+          "volle opbrengst": {
+            "number": "360.00"
+          },
+          "strandinkomen": {
+            "number": "6851.25"
+          },
+          "vrijlatingsgrens": {
+            "number": "4567.50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vrijgelaten inkomen",
+      "value": {
+        "number": "4567.50"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "boven de grens"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
