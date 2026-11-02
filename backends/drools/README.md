@@ -459,7 +459,8 @@ longer reads deposits nothing (ch. 5.10). Witness `TmsDepositWitnessTest`. Round
 clamp, the builtins outside the folds, a text composition of texts, percentages and `percentageOf`, a power with a
 whole exponent, the exact restatement of units at every operand boundary (ch. 2.6), the eleven and exact-digit tests,
 a cell of a dimensioned attribute over any number of dimensions and a sum, minimum or maximum over the cells of the
-product of its selections (ch. 5.8c) compute through the runtime's helpers from bound values; the two tests and the
+product of its selections (ch. 5.8c) compute through the runtime's helpers from bound values, and a first, a last and a
+filled count over them, by position, through the branch's (`ComputeHelpers.firstCell`, `lastCell`, `filledCells`); the two tests and the
 sub-day extractors, dateWith and dateTimeWith, the reference interpreter declines (ch. 5.11), so only this backend
 computes them. The
 evaluation date is the fact `EvaluationDate`, put in working memory once per session from the global `evaluationDate` the case

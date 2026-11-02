@@ -212,7 +212,7 @@ DROOLS-181	the definition of the 'dagsoort' '{dayKind}' has a condition ('{snipp
 DROOLS-182	a squareRoot with {argumentCount} arguments ('{snippet}'): the root takes one (WF-037)
 DROOLS-183	a text part of type {datatype} in a {where} ('{snippet}'): RUNTIME-SEMANTICS ch. 1.2 only fixes that an empty part reads ""; the text of a number, a truth value or a date is not decided by the spec, and the reference interpreter and the runtime helper rsTekst give a different one
 DROOLS-184	a DimensionCellRead over {dimensionCount} dimensions ('{snippet}'): this branch reads only a cell of one dimension
-DROOLS-185	an Aggregation {kind} over a dimension selection ('{snippet}'): only a sum, a minimum and a maximum fold a dimension selection (WF-037)
+DROOLS-185	an Aggregation {kind} over a dimension selection ('{snippet}'): only a sum, a minimum, a maximum, a first, a last and a filled count fold a dimension selection (WF-037)
 DROOLS-186	an emptyFallback on an Aggregation {kind} ('{snippet}'): only a sum has one (WF-037)
 DROOLS-187	an Aggregation over a dimension selection over something else than one member ('{snippet}')
 DROOLS-188	an unresolved AttributeReference in {description} ('{snippet}')

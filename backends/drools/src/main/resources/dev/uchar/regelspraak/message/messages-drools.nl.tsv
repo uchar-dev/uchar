@@ -212,7 +212,7 @@ DROOLS-181	de definitie van de dagsoort '{dayKind}' heeft een voorwaarde ('{snip
 DROOLS-182	een squareRoot met {argumentCount} argumenten ('{snippet}'): de wortel heeft er één (WF-037)
 DROOLS-183	een tekstdeel van type {datatype} in een {where} ('{snippet}'): RUNTIME-SEMANTICS ch. 1.2 legt alleen vast dat een leeg deel "" leest; de tekst van een getal, een waarheidswaarde of een datum beslist de spec niet, en de referentie-interpreter en de runtimehulp rsTekst geven er een verschillende
 DROOLS-184	een DimensionCellRead over {dimensionCount} dimensies ('{snippet}'): deze tak leest alleen een cel van één dimensie
-DROOLS-185	een Aggregation {kind} over een dimensieselectie ('{snippet}'): alleen een som, een minimum en een maximum vouwen een dimensieselectie (WF-037)
+DROOLS-185	een Aggregation {kind} over een dimensieselectie ('{snippet}'): alleen een som, een minimum, een maximum, een eerste, een laatste en een aantal gevulde vouwen een dimensieselectie (WF-037)
 DROOLS-186	een emptyFallback op een Aggregation {kind} ('{snippet}'): alleen een som heeft er een (WF-037)
 DROOLS-187	een Aggregation over een dimensieselectie over iets anders dan één attribuut ('{snippet}')
 DROOLS-188	een onopgeloste AttributeReference in {description} ('{snippet}')

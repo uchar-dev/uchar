@@ -172,9 +172,11 @@ faults with file/position context — never a silent fallback.
   declared order (`World.cell`, `vondstgewicht[voorjaar]`), so it is read,
   held to its declared decimals at input (EF-004) and compared as an
   attribute is. A `DimensionCellRead` reads its cell on the subject or on
-  the object a path of roles reaches, and a dimension fold (sum, minimum,
-  maximum) folds the cells of the product of its selections, an empty cell
-  skipped and a fold whose every cell is empty leeg. The case reader lays
+  the object a path of roles reaches, and a dimension fold folds the cells
+  of the product of its selections, an empty cell skipped and a fold whose
+  every cell is empty leeg: a sum, a minimum and a maximum over the values, a
+  first and a last by position, the first and the last filled cell in that
+  order, and a filled count over the filled cells, 0 where none is. The case reader lays
   the `cells` input down cell by cell (EF-034, EF-035) and reads the
   `cellValue` and `cellEmpty` expectations. A rule or an initialisation
   whose target is a cell writes that cell, and an object creation's member

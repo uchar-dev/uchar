@@ -122,8 +122,9 @@ Gate 5 currently lists **no** golden as not replayed.
 `jutterswet-seizoenvondst` is a UNIT-bearing dimensioned attribute read
 through a dimension cell (`DimensionCellRead`), and
 `jutterswet-seizoenvouw` the dimension fold on the same kind of attribute: a
-sum, a maximum and a minimum whose `dimensionSelections` pick the labels they
-fold, emitted by the RegelSpraak frontend. Both carry cases that `ref`,
+sum, a maximum, a minimum, a first, a last and a filled count whose
+`dimensionSelections` pick the labels they fold, and a sum with a fallback,
+emitted by the RegelSpraak frontend. Both carry cases that `ref`,
 clingo and the Drools backend replay (`RUNTIME-SEMANTICS.md` ch. 5.8c), and
 each `NOTE.md` carries the outcome per executor.
 
@@ -144,6 +145,13 @@ writes one cell of the created object (`IR-SPEC.md` ch. 3.1, 3.3).
 one cell into two others, and it witnesses WF-079 per cell. Both witness the
 dependency graph per cell (ch. 5.1), and their cases replay in `ref`,
 clingo and the Drools backend (`RUNTIME-SEMANTICS.md` ch. 5.8c). Each
+`NOTE.md` carries the outcome per executor.
+
+`jutterswet-seizoenaanvang` is the pair of a computing rule and an
+initialisation on one cell, written in RegelSpraak, which every executor reads
+in the defaults reading of ch. 7.7. `jutterswet-seizoenlogboek` carries cells
+of a text, a date and a boolean, read, written, folded by position and
+compared. Both replay in `ref`, clingo and the Drools backend, and each
 `NOTE.md` carries the outcome per executor.
 
 `jutterswet-tempototaal` is the route-split witness of `het totaal van`:

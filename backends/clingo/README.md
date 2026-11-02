@@ -286,12 +286,11 @@ spec bug.
   ch. 7.7 desugaring (`Ir_v0.Desugar`) before translation, so the
   defaults machinery carries them — while `ref/` replays the v0 forms
   natively; the gate-6 differential thereby witnesses the desugaring
-  itself. A cell of a dimensioned attribute keeps its forms: the
-  desugaring makes a defaults group, which names its attribute whole, so
-  an initialisation of a cell is translated natively, and an
-  initialisation beside a computing rule on one cell is refused by name,
-  where `ref/` answers the pair in the defaults reading (RUNTIME-SEMANTICS
-  ch. 5.8c). On attribute defaults
+  itself. A cell of a dimensioned attribute is a target of its own there:
+  the desugaring makes the defaults group on the cell's name, so the pair
+  on one cell takes the defaults reading `ref/` answers (RUNTIME-SEMANTICS
+  ch. 5.8c). A default's consequence is fitted to the target's declared
+  decimals, as a rule's value is. On attribute defaults
   the consequence bindings sit inside `decides_n`, so a leeg
   consequence leaves it underivable — the gevuld gate for free — and
   the input value of a defaults target enters as `inputval/3`, standing
