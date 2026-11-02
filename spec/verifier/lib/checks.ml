@@ -9556,6 +9556,394 @@ let wf054 ctx =
               else []))
     ctx.doc.uniquenesses
 
+(* --- the precision bound (RUNTIME-SEMANTICS ch. 2.3) ---------------------- *)
+
+(* The most decimals the value of an expression can carry, as a bound read
+   from the declarations and the shape of the expression; [Unbounded] where no
+   finite number bounds it. It is never read from a [type] annotation (ch.
+   2.10): the decimals an annotation writes on a composite are a claim of their
+   own, which WF-091 crosses where it claims them. *)
+type precision = Finite of int | Unbounded
+
+let precision_text = function Finite d -> string_of_int d | Unbounded -> "unbounded"
+
+let widest a b =
+  match (a, b) with Unbounded, _ | _, Unbounded -> Unbounded | Finite x, Finite y -> Finite (max x y)
+
+let added a b =
+  match (a, b) with Unbounded, _ | _, Unbounded -> Unbounded | Finite x, Finite y -> Finite (x + y)
+
+(* The precision of a declaration (IR-SPEC ch. 2.4): 0 for a whole number, the
+   declared decimals, and no bound for the unbounded form. *)
+let declared_precision = function
+  | Number { whole_part = true; _ } | Percentage { whole_part = true; _ } -> Some (Finite 0)
+  | Number { decimal_places = 0; _ } | Percentage { decimal_places = 0; _ } -> Some Unbounded
+  | Number { decimal_places; _ } | Percentage { decimal_places; _ } -> Some (Finite decimal_places)
+  | _ -> None
+
+let rec powers_of p n k = if Z.(equal (rem n (of_int p)) zero) then powers_of p Z.(div n (of_int p)) (k + 1) else (n, k)
+
+(* The decimals of an exact rational: the larger power of 2 and of 5 in its
+   reduced denominator, and no bound where another prime divides it. *)
+let rational_precision (q : Q.t) =
+  let rest, twos = powers_of 2 (Q.den q) 0 in
+  let rest, fives = powers_of 5 rest 0 in
+  if Z.equal rest Z.one then Finite (max twos fives) else Unbounded
+
+(* A value of [p] decimals times the exact factor [f]: [p] plus the decimals of
+   [f], less the powers of ten in the numerator of [f], and never below 0 — the
+   rule the ALEF typing applies to a unit conversion and to a literal operand of
+   maal and gedeeld door. A factor 0 makes every value 0. *)
+let scaled p (f : Q.t) =
+  match p with
+  | Unbounded -> Unbounded
+  | Finite d -> (
+      if Q.equal f Q.zero then Finite 0
+      else
+        match rational_precision f with
+        | Unbounded -> Unbounded
+        | Finite fd ->
+            let n = Z.abs (Q.num f) in
+            let _, twos = powers_of 2 n 0 and _, fives = powers_of 5 n 0 in
+            Finite (max 0 (d + fd - min twos fives)))
+
+(* The value of a product of powers of declared units (ch. 2.6), [None] where a
+   factor carries half a conversion pair, which is WF-092's. *)
+let factor_value (fs : measure_unit) =
+  List.fold_left
+    (fun acc (f : unit_factor) ->
+      Option.bind acc (fun q ->
+          match (f.factor_to_canonical, f.canonical_form) with
+          | Some { num; den }, _ ->
+              let e = Units.exponent f in
+              let base = Q.make (Z.of_int num) (Z.of_int den) in
+              let rec pow b k = if k = 0 then Q.one else Q.mul b (pow b (k - 1)) in
+              Some (Q.mul q (if e >= 0 then pow base e else Q.inv (pow base (-e))))
+          | None, None -> Some q
+          | None, Some _ -> None))
+    (Some Q.one) fs
+
+(* [p] of a value in the unit [from], restated into the unit [into]. Where either
+   side carries no unit there is nothing to restate (a unitless literal adopts
+   its sibling's unit). *)
+let restated p ~from ~into =
+  match (from, into) with
+  | Some u, Some w -> Option.map (scaled p) (factor_value (Units.factor u w))
+  | _ -> Some p
+
+let lexeme_value s = try Some (Q.of_string s) with Invalid_argument _ | Division_by_zero -> None
+
+let literal_value = function
+  | Literal { variant = Lv_number s; _ } -> lexeme_value s
+  | _ -> None
+
+(* The bound of an expression, [None] where it makes no claim: a value that is
+   no number, or a node whose operands nothing declares. [env] carries the
+   enclosing binders with their bound and declared datatype; [calls] the
+   function definitions being entered, so a cycle (WF-067's) ends in no claim. *)
+let rec precision ctx ?(calls = []) ~env (e : expr) : precision option =
+  let ( let* ) = Option.bind in
+  let binders = List.map (fun (n, (_, dt)) -> (n, dt)) env in
+  let ty x = expr_type ctx ~binders x in
+  let unit x = Option.bind (ty x) unit_of in
+  let p x = precision ctx ~calls ~env x in
+  let restate x ~into =
+    let* b = p x in
+    restated b ~from:(unit x) ~into
+  in
+  let widest_of = function
+    | [] -> None
+    | x :: rest -> List.fold_left (fun acc y -> let* a = acc in let* b = y in Some (widest a b)) x rest
+  in
+  match e with
+  | Literal { variant = Lv_number s; _ } -> Option.map rational_precision (lexeme_value s)
+  | Literal _ | Text_composition _ | Construct _ | Struct_literal _ | List_literal _ | Lambda _
+  | Instance_set_union _ | Bound_day _ | Expr_unresolved _ | Variable_reference _ | Map_list _
+  | Filter_list _ ->
+      None
+  | Context_value { typ; _ } -> Option.bind typ declared_precision
+  | Attribute_reference _ | Dimension_cell_read _ | Parameter_ref _ -> Option.bind (ty e) declared_precision
+  | Temporal_read { base_expr; _ } -> p base_expr
+  | Binder_ref { ident; _ } -> (
+      match List.find_opt (fun (b, _) -> norm b = norm ident) env with
+      | Some (_, (bound, _)) -> bound
+      | None -> None)
+  | Let { binder; value; body; _ } -> precision ctx ~calls ~env:((binder, (p value, ty value)) :: env) body
+  | If_then_else { then_; else_; _ } -> widest_of [ p then_; p else_ ]
+  | Match { scrutinee; arms; _ } ->
+      (* an arm binder holds the payload of its constructor, of the precision
+         its declaration gives (WF-062 holds the argument to that type) *)
+      let payloads =
+        match ty scrutinee with Some (Sum_type { domain_spec; _ }) -> sum_decl ctx domain_spec | _ -> None
+      in
+      widest_of
+        (List.map
+           (fun (c, binder, body) ->
+             let env =
+               match binder with
+               | Some b ->
+                   let pdt =
+                     Option.bind payloads (fun cs ->
+                         Option.join (Option.map snd (List.find_opt (fun (n, _) -> norm n = norm c) cs)))
+                   in
+                   (b, (Option.bind pdt declared_precision, pdt)) :: env
+               | None -> env
+             in
+             precision ctx ~calls ~env body)
+           arms)
+  | Field_access { base; field_name; _ } -> (
+      match ty base with
+      | Some (Struct_type { domain_spec; _ }) -> (
+          match struct_decl ctx domain_spec with
+          | Some decl ->
+              Option.bind (List.find_opt (fun (n, _) -> norm n = norm field_name) decl) (fun (_, fdt) ->
+                  declared_precision fdt)
+          | None -> None)
+      | _ -> None)
+  | Rounding { decimal_places; _ } -> Some (Finite decimal_places)
+  | Clamp { base_expr = Some b; minimum; maximum; _ } ->
+      (* the value is the base or one of its bounds, restated into the base's
+         unit *)
+      widest_of (p b :: List.map (fun x -> restate x ~into:(unit b)) (Option.to_list minimum @ Option.to_list maximum))
+  | Clamp { base_expr = None; _ } -> None
+  | Binary { op; left_side = Some l; right_side = Some r; _ } -> (
+      match op with
+      | Plus | Min | Reduced_by ->
+          (* the right operand is restated into the left unit (ch. 2.6) *)
+          widest_of [ p l; restate r ~into:(unit l) ]
+      | Times -> (
+          let* f = factor_value (snd (Units.times (unit l) (unit r))) in
+          match (literal_value l, literal_value r) with
+          | Some a, Some b -> Some (rational_precision (Q.mul (Q.mul a b) f))
+          | Some c, None -> Option.map (fun b -> scaled b (Q.mul c f)) (p r)
+          | None, Some c -> Option.map (fun a -> scaled a (Q.mul c f)) (p l)
+          | None, None ->
+              let* a = p l in
+              let* b = p r in
+              Some (scaled (added a b) f))
+      | Divided_by -> (
+          (* a quotient by anything but a literal has no finite bound; by a
+             literal it is a product with its reciprocal *)
+          match literal_value r with
+          | Some c when not (Q.equal c Q.zero) -> (
+              let* f = factor_value (snd (Units.divide (unit l) (unit r))) in
+              match literal_value l with
+              | Some a -> Some (rational_precision (Q.mul (Q.div a c) f))
+              | None -> Option.map (fun a -> scaled a (Q.mul (Q.inv c) f)) (p l))
+          | _ -> Some Unbounded)
+      | Divided_by_abs -> Some (Finite 5)
+      | Power -> Some Unbounded
+      | Percentage_of -> (
+          (* l/100 × r: the hundred adds two decimals to the left operand *)
+          let hundredth x = Q.div x (Q.of_int 100) in
+          match (literal_value l, literal_value r) with
+          | Some a, Some b -> Some (rational_precision (Q.mul (hundredth a) b))
+          | Some c, None -> Option.map (fun b -> scaled b (hundredth c)) (p r)
+          | None, Some c -> Option.map (fun a -> scaled (added a (Finite 2)) c) (p l)
+          | None, None ->
+              let* a = p l in
+              let* b = p r in
+              Some (added (added a (Finite 2)) b)))
+  | Binary _ -> None
+  | Function_call { kind; call_arguments; empty_fallback; source_role; source_path; _ } -> (
+      (* a fold over its operands: each restated into the unit of operand 0,
+         the empty fallback among them *)
+      let over_operands () =
+        match call_arguments with
+        | [] -> None
+        | a0 :: rest ->
+            widest_of (p a0 :: List.map (fun x -> restate x ~into:(unit a0)) (rest @ Option.to_list empty_fallback))
+      in
+      match kind with
+      | Count | Filled_count | Day_count | Duration | Absolute_duration | Year_of | Month_of | Day_of
+      | Hour_of | Minute_of | Second_of | Millisecond_of ->
+          Some (Finite 0)
+      | Sum_function | Minimum | Maximum | First | Last -> over_operands ()
+      | Total -> (
+          match set_reading ctx ~ranged:(source_role <> None || source_path <> None) call_arguments with
+          | None -> None
+          | Some true -> over_operands ()
+          | Some false -> (
+              (* the temporal total adds whole periods of the grid (ch. 3.6);
+                 a rate whose period is not the grid's own atom is restated
+                 into it (ch. 2.6, rule 8) *)
+              match call_arguments with
+              | [ a0 ] ->
+                  let grid_factor =
+                    match (unit a0, fold_grid ctx call_arguments) with
+                    | Some u, Some g -> (
+                        match Units.negative_of_grid g u with
+                        | Some f when not (Units.same_atom g f) ->
+                            factor_value [ Units.with_exponent g 1; Units.with_exponent f (-1) ]
+                        | _ -> Some Q.one)
+                    | _ -> Some Q.one
+                  in
+                  let* f = grid_factor in
+                  widest_of
+                    (Option.map (fun b -> scaled b f) (p a0)
+                    :: List.map (fun x -> restate x ~into:(unit e)) (Option.to_list empty_fallback))
+              | _ -> None))
+      | Square_root | Time_proportional_part -> Some Unbounded
+      | Absolute_value -> ( match call_arguments with [ a ] -> p a | _ -> None)
+      | Concatenation | Easter_sunday | Date_with | Date_time_with -> None)
+  | Invoke { function_name; arguments; _ } -> (
+      (* a closed body over its own parameters, each holding its argument *)
+      match List.find_opt (fun (fd : function_def) -> norm fd.fd_name = norm function_name) ctx.doc.function_defs with
+      | Some fd
+        when List.length fd.fd_parameters = List.length arguments && not (List.mem (norm fd.fd_name) calls) ->
+          let env = List.map2 (fun (n, dt) a -> (n, (p a, Some dt))) fd.fd_parameters arguments in
+          precision ctx ~calls:(norm fd.fd_name :: calls) ~env fd.fd_body
+      | _ -> None)
+  | Fold { list; function_name; init; _ } -> (
+      (* the accumulator, widened until a step adds nothing; a fold that keeps
+         widening has no finite bound *)
+      let lambda =
+        match function_name with
+        | Fn_lambda { parameters; body; _ } -> Some (parameters, body, calls)
+        | Fn_name n -> (
+            match List.find_opt (fun (fd : function_def) -> norm fd.fd_name = norm n) ctx.doc.function_defs with
+            | Some fd when not (List.mem (norm fd.fd_name) calls) -> Some (fd.fd_parameters, fd.fd_body, norm fd.fd_name :: calls)
+            | _ -> None)
+      in
+      match lambda with
+      | Some ([ (acc, acc_dt); (x, x_dt) ], body, calls) ->
+          let element = element_precision ctx ~calls ~env list in
+          let step b = precision ctx ~calls ~env:[ (acc, (Some b, Some acc_dt)); (x, (element, Some x_dt)) ] body in
+          let rec widen b n =
+            if n = 0 then Some Unbounded
+            else
+              let* b' = step b in
+              let w = widest b b' in
+              if w = b then Some b else widen w (n - 1)
+          in
+          let* b0 = p init in
+          widen b0 8
+      | _ -> None)
+  | List_length _ -> Some (Finite 0)
+
+(* The bound of the elements of a list-valued expression. *)
+and element_precision ctx ~calls ~env (l : expr) : precision option =
+  let binders = List.map (fun (n, (_, dt)) -> (n, dt)) env in
+  match l with
+  | List_literal { elements = []; _ } -> Some (Finite 0)
+  | List_literal { elements = x :: rest; _ } ->
+      List.fold_left
+        (fun acc y -> Option.bind acc (fun a -> Option.map (widest a) (precision ctx ~calls ~env y)))
+        (precision ctx ~calls ~env x) rest
+  | Filter_list { list; _ } -> element_precision ctx ~calls ~env list
+  | Map_list { list; function_name = Fn_lambda { parameters = [ (x, x_dt) ]; body; _ }; _ } ->
+      precision ctx ~calls ~env:[ (x, (element_precision ctx ~calls ~env list, Some x_dt)) ] body
+  | Map_list _ -> None
+  | _ -> (
+      match expr_type ctx ~binders l with
+      | Some (List_type { element }) -> declared_precision element
+      | _ -> None)
+
+(* WF-023's precision gate (RUNTIME-SEMANTICS ch. 2.4): a write whose value's
+   bound, restated into the target's unit, exceeds the target's declared
+   decimals, where the target is not of the unbounded form. [write] names what
+   is written, a value or the share of an allocation. A value that makes no
+   claim defers, as elsewhere in this rule. *)
+let precision_gate at ~write (dt : datatype) ~(value_unit : measure_unit option) (bound : precision option) =
+  match (declared_precision dt, bound) with
+  | Some (Finite td), Some b -> (
+      match restated b ~from:value_unit ~into:(unit_of dt) with
+      | Some Unbounded ->
+          [ v ~params:[ ("write", write); ("targetDecimals", string_of_int td) ] "WF-023.precision-unbounded" at
+              (Printf.sprintf
+                 "the %s has no finite precision bound (RUNTIME-SEMANTICS ch. 2.3) and its target declares %d \
+                  decimals: it is written through an explicit rounding, or into the unbounded form"
+                 write td) ]
+      | Some (Finite d) when d > td ->
+          [ v
+              ~params:[ ("write", write); ("valueDecimals", string_of_int d); ("targetDecimals", string_of_int td) ]
+              "WF-023.precision-exceeds" at
+              (Printf.sprintf
+                 "the %s can carry %d decimals (RUNTIME-SEMANTICS ch. 2.3), more than the %d its target \
+                  declares: it is written through an explicit rounding"
+                 write d td) ]
+      | _ -> [])
+  | _ -> []
+
+(* The four write positions of the gate: a rule version (a cell target reads its
+   attribute's declaration), an object creation's attribute member, a defaults
+   consequence with its exception groups, and the share of an allocation, whose
+   bound is its rounding or the declaration of its pot (the ALEF form: the
+   division by the recipients is not typed, and a share that does not fit stays
+   the evaluation fault EF-006). *)
+let wf023_precision ctx =
+  let value_gate at dt w =
+    let unit = Option.bind (expr_type ctx ~binders:[] w) unit_of in
+    precision_gate at ~write:"value" dt ~value_unit:unit (precision ctx ~env:[] w)
+  in
+  List.concat_map
+    (fun (r : resolved_rule) ->
+      match (r.rr_presentation, r.objective, r.value_node) with
+      | Some (Equation | Calculation | Initialisation), Some objective, Some w -> (
+          let target =
+            match objective with
+            | Dimension_cell_read { attribute_ref = Some inner; _ } -> resolved_attr_datatype ctx inner
+            | o -> resolved_attr_datatype ctx o
+          in
+          match target with Some dt -> value_gate (r.rr_pointer ^ "/value") dt w | None -> [])
+      | _ -> [])
+    ctx.doc.resolved_rules
+  @ List.concat_map
+      (fun (r : resolved_object_creation) ->
+        match Option.bind r.created_type (object_type ctx) with
+        | None -> []
+        | Some ot ->
+            List.concat
+              (List.mapi
+                 (fun j (t : assignment) ->
+                   match (t.to_characteristic, t.to_attribute, t.to_value) with
+                   | false, Some m, Some w -> (
+                       match attr_of ot m with
+                       | Some (Some dt) -> value_gate (Printf.sprintf "%s/initialisations/%d/value" r.oc_pointer j) dt w
+                       | _ -> [])
+                   | _ -> [])
+                 r.assignments))
+      ctx.doc.object_creations
+  @ List.concat
+      (List.mapi
+         (fun i (l : prioritized_defaults) ->
+           match
+             Option.bind l.pd_attribute (fun a -> Option.bind (object_type ctx l.pd_subject) (fun ot -> attr_of ot a))
+           with
+           | Some (Some dt) ->
+               let rec walk prefix (d : default) =
+                 (match d.default_consequence with Some e -> value_gate (prefix ^ "/consequence") dt e | None -> [])
+                 @
+                 match d.default_exceptions with
+                 | Some egs ->
+                     List.concat
+                       (List.mapi
+                          (fun k (eg : exception_group) ->
+                            List.concat
+                              (List.mapi
+                                 (fun m d -> walk (Printf.sprintf "%s/exceptions/members/%d/defaults/%d" prefix k m) d)
+                                 eg.eg_defaults))
+                          egs.egs_members)
+                 | None -> []
+               in
+               List.concat (List.mapi (fun j d -> walk (Printf.sprintf "/prioritizedDefaults/%d/defaults/%d" i j) d) l.defaults)
+           | _ -> [])
+         ctx.doc.prioritized_defaults)
+  @ List.concat_map
+      (fun (r : resolved_allocation) ->
+        let declared tn a = Option.bind (object_type ctx tn) (fun ot -> Option.join (attr_of ot a)) in
+        match (r.objective_type_name, r.target_attribute, r.source_type, r.source_attribute) with
+        | Some tt, Some ta, Some st, Some sa -> (
+            match (declared tt ta, declared st sa) with
+            | Some dt, Some pot ->
+                let bound =
+                  match r.rounding_decimals with Some n -> Some (Finite n) | None -> declared_precision pot
+                in
+                precision_gate r.vd_pointer ~write:"share" dt ~value_unit:(unit_of pot) bound
+            | _ -> [])
+        | _ -> [])
+      ctx.doc.allocations
+
 (* WF-023 (the shallow slice), at every attribute WRITE position — a rule's
    target, an object creation's attribute member, a defaults consequence:
    assignment typing between the target's DECLARED type and the value's
@@ -9571,9 +9959,9 @@ let wf054 ctx =
    without it a Literal or Construct of another domain, a ghost-domain
    literal and a list of another domain entered the read declaration
    verifier-clean at all three positions, and the object-creation and
-   defaults positions crossed no soort at all). The precision gate needs
-   expression-shape analysis and stays OPEN (the WF index records the
-   reason). [target]/[value] are the expressions, for literal unit adoption
+   defaults positions crossed no soort at all). The precision gate is
+   [wf023_precision] above, over the bound of ch. 2.3 rather than the static
+   type. [target]/[value] are the expressions, for literal unit adoption
    (a defaults consequence and a member initialisation have no target
    expression). *)
 let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype) =
@@ -11630,7 +12018,7 @@ let all (doc : document) : violation list =
       wf007_model ctx; wf007_presentation ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx;
       wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf115 ctx; wf017 ctx; wf018 ctx; wf107 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
-      wf022 ctx; wf023 ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
+      wf022 ctx; wf023 ctx; wf023_precision ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
       wf034_allocations ctx; wf034_allocation_names ctx; wf034_allocation_types ctx;
       wf034_allocation_name_resolution ctx; wf034_object_creation_subject ctx;

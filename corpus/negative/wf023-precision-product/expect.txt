@@ -1,0 +1,4 @@
+WF-023.precision-exceeds
+write=value
+valueDecimals=4
+targetDecimals=2

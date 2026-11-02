@@ -1,0 +1,4 @@
+WF-023.precision-exceeds
+write=share
+valueDecimals=2
+targetDecimals=0
