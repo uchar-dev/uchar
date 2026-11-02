@@ -1079,17 +1079,24 @@ A target that navigates from an implied subject ("De premie van zijn vakhouder
 characteristic of the subject type decides no member and is refused in WF-022's
 sentence (`StructureSentenceTest`). Witness: `RuleTargetTest`.
 
-**A cell of a dimensioned attribute as the target** (fix round 3). The wire has
-no cell assignment: a rule's target is an attribute reference, which WF-022
-demands, and the dimension-cell node is a read (IR-SPEC ch. 4.3). "De premie
-van een Jutter in voorjaar moet gesteld worden op 10", read as written, puts
-the label into the subject text and writes the WHOLE attribute — verifier PASS
-on a different document than the one written. It is refused with the cell named
-(attribute, dimension, label), and so is "De premie in voorjaar van een Jutter
-…". A whole-attribute write of a dimensioned attribute, with no label at
-all, stays unfenced: the verifier admits it, `ref` and clingo write the value as
-a scalar, and the Drools exec branch fails at fire time — a norm question for
-the verifier line, recorded in the card. Witness: `DimensionTargetTest`.
+**A cell of a dimensioned attribute as the target.** The specification
+describes no write of a cell (§3.6 says only that every use names every
+dimension); ALEF writes one, with the cell on either side of an assignment,
+and is the norm source there (IR-SPEC ch. 2.7). A rule or an initialisation
+whose target names a label between the attribute and the subject, "Het
+vondstgewicht in najaar van een Jutter moet berekend worden als …", writes
+that cell: the target is a `DimensionCellRead` over the attribute (IR-SPEC
+ch. 3.1). An object creation's member written the same way, "met
+vangstgewicht in najaar gelijk aan …", writes that cell of the made object, a
+`MemberInit` with `labels` (ch. 3.3). The scope is the cell read's: an
+attribute of one dimension that has a preposition, the label behind it. "De
+premie van een Jutter in voorjaar moet gesteld worden op 10", with the label
+after the subject, puts the label into the subject text and would write the
+whole attribute; it is refused with the cell named (attribute, dimension,
+label; RGS-308). A target that names a dimensioned attribute without a label
+writes the whole attribute, which the verifier refuses (WF-125). Witnesses:
+`DimensionTargetTest`, `CellEdgesTest` (the dependency graph per cell, as the
+verifier's), and the golden `jutterswet-seizoenboeking`.
 
 ---
 

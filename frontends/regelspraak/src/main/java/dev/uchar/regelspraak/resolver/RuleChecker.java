@@ -860,7 +860,10 @@ final class RuleChecker {
      *  verifier's WF-022 — no card has taken that one yet. */
     private void checkRuleTargets() {
         for (ResolvedRule r : model.resolvedRules) {
-            if (!(r.target() instanceof Expr.AttributeReference a)) continue;
+            // a cell target is judged on the attribute reference under it, as the verifier judges it (WF-022)
+            Expr.AttributeReference a = r.target() instanceof Expr.DimensionCellRead c ? c.attribute()
+                    : r.target() instanceof Expr.AttributeReference x ? x : null;
+            if (a == null) continue;
             int line = a.source() == null ? 0 : a.source().line();
             String written = a.source() == null ? a.attribute() : a.source().snippet();
             // a name that is both an attribute and a characteristic of the subject decides no member, and so no rule
@@ -875,10 +878,6 @@ final class RuleChecker {
             Typing.Coded error = null;
             if (a.objectType() == null)
                 error = new Typing.Coded("RGS-306", params("written", written, "subjectSource", a.subjectSource()));
-            else if (r.kind() != ResolvedRule.Kind.KENMERKTOEKENNING && a.objectType().attribute(a.attribute()) == null
-                    && cellAsName(a.objectType(), a.attribute()) != null)
-                error = new Typing.Coded("RGS-307",
-                        params("written", written, "attribute", a.attribute(), "cell", cellAsName(a.objectType(), a.attribute())));
             else if (r.kind() != ResolvedRule.Kind.KENMERKTOEKENNING && a.objectType().attribute(a.attribute()) != null
                     && cellAfterSubject(a.objectType(), a.attribute(), a.subjectSource()) != null)
                 error = new Typing.Coded("RGS-308",
@@ -901,20 +900,36 @@ final class RuleChecker {
         }
     }
 
-    /** "cel van het gedimensioneerde attribuut 'premie' (dimensie seizoen, label 'voorjaar')" when {@code name} is
-     *  a dimensioned attribute of {@code ot} with its preposition and one of its labels written behind it as one
-     *  name ("premie in voorjaar"), else null. Single-dimension attributes, the suffix form — the shape
+    /** A cell of a dimensioned attribute of {@code ot} written as one name: the attribute with its preposition and
+     *  one of its labels behind it ("vondstgewicht in najaar"), the label in its declared spelling. Null when
+     *  {@code name} is no such cell. Single-dimension attributes, the suffix form — the shape
      *  {@link ExpressionBuilder#dimensionCell} reads. */
-    private Msg cellAsName(ObjectType ot, String name) {
+    private record NamedCell(String attribute, String label) {}
+
+    private NamedCell namedCell(ObjectType ot, String name) {
         for (var e : ot.dimensionedMembers().entrySet()) {
             if (e.getValue().size() != 1) continue;
             RegelSpraakModel.Dimension d = model.dimensionByName(e.getValue().get(0));
             if (d == null || d.preposition() == null) continue;
             for (String label : d.values())
                 if ((e.getKey() + " " + d.preposition() + " " + label).equalsIgnoreCase(name.trim()))
-                    return cellText(e.getKey(), d, label);
+                    return new NamedCell(e.getKey(), label);
         }
         return null;
+    }
+
+    /** A target that names a cell of a dimensioned attribute of its subject ("Het vondstgewicht in najaar van een
+     *  Jutter", the labels between the attribute and its subject, as ALEF writes a cell on either side of an
+     *  assignment) writes that cell: a {@link Expr.DimensionCellRead} over the attribute (IR-SPEC ch. 3.1,
+     *  RUNTIME-SEMANTICS ch. 5.8c). Any other target is returned as built. */
+    private Expr cellTarget(Expr target) {
+        if (!(target instanceof Expr.AttributeReference a) || a.objectType() == null || a.attribute() == null
+                || a.objectType().attribute(a.attribute()) != null) return target;
+        NamedCell c = namedCell(a.objectType(), a.attribute());
+        if (c == null) return target;
+        Expr.AttributeReference attribute = new Expr.AttributeReference(c.attribute(), a.objectType(), a.subjectSource(),
+                a.navigationRole(), a.objectType().attribute(c.attribute()), a.source());
+        return new Expr.DimensionCellRead(attribute, List.of(c.label()), a.source());
     }
 
     /** The same cell written after the SUBJECT ("De premie van een Jutter in voorjaar"): the parse left the
@@ -4261,7 +4276,7 @@ final class RuleChecker {
                 // type's declared datatype is this enumeratiewaarde's domain — promoted in place, like register.
                 Expr promoted = ExpressionBuilder.enumAgainstContext(t.value(), targetType);
                 if (promoted != t.value()) {
-                    t = new ResolvedObjectCreation.MemberInit(t.attribute(), promoted, t.characteristic());
+                    t = new ResolvedObjectCreation.MemberInit(t.attribute(), promoted, t.characteristic(), t.labels());
                     assignments.set(i, t);
                 }
                 // §13.3.4.2 enum-label membership, like registreer
@@ -4315,6 +4330,10 @@ final class RuleChecker {
         Expr value = builder.build(valueCtx);
         if (createdType == null || createdType.attribute(name) != null)
             return new ResolvedObjectCreation.MemberInit(name, value);
+        // "met vangstgewicht in najaar gelijk aan …": the cell of the made object (IR-SPEC ch. 3.3, MemberInit.labels)
+        NamedCell cell = namedCell(createdType, name);
+        if (cell != null)
+            return new ResolvedObjectCreation.MemberInit(cell.attribute(), value, false, List.of(cell.label()));
         // through the chain, exactly as the attribute branch above: an INHERITED kenmerk of the created
         // type is as much a member of it as its own, and reading the own list alone made one sentence's
         // two branches disagree about what the type has (a binding on the left, an ERROR on the right).
@@ -4768,7 +4787,7 @@ final class RuleChecker {
 
     private void register(String name, ResolvedRule.Kind category, AttribuutVanOnderwerpContext targetName,
                             ExpressieContext value, int line, Condition condition, Validity validity) {
-        Expr targetExpr = builder.buildAttribute(targetName);
+        Expr targetExpr = cellTarget(builder.buildAttribute(targetName));
         // §11 the RESULT-part value: variable reads become BinderRefs under the variabelendeel's ch. 4.10 Let chain.
         // This is the ONE slot the chain is BUILT for — a rule's `waarde` — and it reaches the wire in two shapes:
         // as the ResolvedRule's own value, and (when the §4 defaults pass lifts this rule) as a Default's

@@ -301,7 +301,6 @@ RGS-303	table-row-conclusion-computed-as	WARNING	row,table
 RGS-304	table-row-false-characteristic-conclusion	WARNING	row,table
 RGS-305	table-row-conclusion-kind-not-allowed	WARNING	row,table
 RGS-306	target-subject-unresolved	ERROR	subjectSource,written
-RGS-307	target-is-cell-name	ERROR	attribute,cell,written
 RGS-308	target-is-cell-after-subject	ERROR	cell,written
 RGS-309	navigation-not-laid	ERROR	attribute,expression,fillerType,name,objectType,role
 RGS-310	subtype-block-written-before-supertype-block	ERROR	designation,head,laterDesignation,laterName,name,root,subtype,supertype

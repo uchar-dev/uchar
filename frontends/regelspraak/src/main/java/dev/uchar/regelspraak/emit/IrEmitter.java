@@ -1436,16 +1436,18 @@ public final class IrEmitter {
     /** A rule version writes its kind as its structure: a version with a presentation tag is a gelijkstelling or a
      *  berekening, an initialisation is initialisation true without a tag, and a version with neither writes a
      *  characteristic — which member its target names is the declaration's (IR-SPEC ch. 3.1). The target is an
-     *  attribute reference, and a name that is both an attribute and a characteristic of the subject type decides
-     *  no member, so such a target is refused (WF-022). */
+     *  attribute reference or a cell over one, and a name that is both an attribute and a characteristic of the
+     *  subject type decides no member, so such a target is refused (WF-022). */
     private void ruleVersion(ResolvedRule r) {
         if (r.kind() == null)
             throw new IllegalStateException("IrEmitter: regel '" + r.name() + "' heeft geen soort; de wire schrijft "
                     + "een versie als initialisatie of niet, met of zonder presentatie");
-        if (!(r.target() instanceof Expr.AttributeReference d))
+        Expr.AttributeReference d = r.target() instanceof Expr.DimensionCellRead c ? c.attribute()
+                : r.target() instanceof Expr.AttributeReference a ? a : null;
+        if (d == null)
             throw new IllegalStateException("IrEmitter: het doel van regel '" + r.name() + "' is "
                     + (r.target() == null ? "afwezig" : "een " + r.target().getClass().getSimpleName())
-                    + "; de wire schrijft als doel een attribuutreferentie");
+                    + "; de wire schrijft als doel een attribuutreferentie of een cel");
         if (r.value() == null)
             throw new IllegalStateException("IrEmitter: regel '" + r.name() + "' heeft geen waarde; de wire eist er een");
         if (d.objectType() != null && d.attribute() != null && isAttribute(d.objectType(), d.attribute())
@@ -1460,7 +1462,7 @@ public final class IrEmitter {
                     + d.source().snippet() + "') navigeert; het doel legt het onderwerp vast");
         w.beginObject();
         w.key("validity"); validity(r.validity());
-        w.key("target"); expr(d);
+        w.key("target"); expr(r.target());
         w.key("value"); expr(r.value());
         if (r.condition() != null) { w.key("condition"); condition(r.condition()); }
         w.key("initialisation").value(r.kind() == ResolvedRule.Kind.INITIALISATIE);
@@ -1518,6 +1520,7 @@ public final class IrEmitter {
             w.beginObject();
             w.key("node").value("MemberInit");
             w.key("member").value(t.attribute());
+            if (t.labels() != null) { w.key("labels"); stringList(t.labels()); }
             w.key("value"); expr(t.value());
             w.key("characteristic").value(t.characteristic());
             w.endObject();

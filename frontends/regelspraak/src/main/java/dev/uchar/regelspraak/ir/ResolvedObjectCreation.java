@@ -35,8 +35,15 @@ public record ResolvedObjectCreation(String name, ObjectType createdType, Object
      *  §13.4.6.4 kenmerkwaardetoekenning ("&lt;kenmerknaam&gt; gelijk aan waar|onwaar" — {@code attribute}
      *  then holds the DECLARED kenmerk name and {@code value} a Booleaan literal, resolver-enforced)
      *  from the §13.4.6.3 attribuutwaardetoekenning (generic expressie RHS). Both back-ends set the
-     *  same-named property either way; the flag keeps the IR honest about which spec form it carries. */
-    public record MemberInit(String attribute, Expr value, boolean characteristic) {
+     *  same-named property either way; the flag keeps the IR honest about which spec form it carries.
+     *  {@code labels} name the cell of a dimensioned attribute that the toekenning writes, one label per dimension
+     *  in declared order (IR-SPEC ch. 3.3, {@code MemberInit.labels}); null for a member without dimensions. */
+    public record MemberInit(String attribute, Expr value, boolean characteristic, List<String> labels) {
+        public MemberInit {
+            if (labels != null && labels.isEmpty())
+                throw new IllegalArgumentException("MemberInit '" + attribute + "': a cell names at least one label");
+        }
+        public MemberInit(String attribute, Expr value, boolean characteristic) { this(attribute, value, characteristic, null); }
         /** An attribuutwaardetoekenning (§13.4.6.3). */
         public MemberInit(String attribute, Expr value) { this(attribute, value, false); }
     }

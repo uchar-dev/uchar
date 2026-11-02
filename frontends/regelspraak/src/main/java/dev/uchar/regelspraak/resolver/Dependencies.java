@@ -652,6 +652,13 @@ final class Dependencies {
         }
 
         static String attrNode(String ot, String a) { return "attr:" + norm(ot) + ":" + norm(a); }
+        /** {@code n_cell}: a cell of a dimensioned attribute is a node of its own (IR-SPEC ch. 5.1), its labels in
+         *  declared order behind the member. */
+        static String cellNode(String ot, String a, List<String> labels) {
+            List<String> normed = new ArrayList<>();
+            for (String l : labels) normed.add(norm(l));
+            return attrNode(ot, a) + "[" + String.join(", ", normed) + "]";
+        }
         static String charNode(String ot, String k) { return "char:" + norm(ot) + ":" + norm(k); }
         static String chanNode(String rule) { return "chan:" + norm(withoutVersion(rule)); }
         static String popNode(String ot) { return "pop:" + norm(ot); }
@@ -708,6 +715,11 @@ final class Dependencies {
         /** {@code member_writes}: the member on {@code ot} and on every type whose instances the write reaches that
          *  carries it — a form that iterates a type reaches the comparable types, a creation its type and the ancestors. */
         List<String> memberWrites(String ot, String member, boolean characteristic, boolean minted) {
+            return memberWrites(ot, member, null, characteristic, minted);
+        }
+
+        /** {@code member_writes ?labels}: with {@code labels} the write of that cell (IR-SPEC ch. 5.1). */
+        List<String> memberWrites(String ot, String member, List<String> labels, boolean characteristic, boolean minted) {
             List<String> reached = new ArrayList<>();
             if (minted) {
                 Map<String, Object> o = objectType(ot);
@@ -719,9 +731,13 @@ final class Dependencies {
                 }
             }
             TreeSet<String> result = new TreeSet<>();
-            result.add(characteristic ? charNode(ot, member) : attrNode(ot, member));
-            for (String n : reached) if (carries(n, member, characteristic)) result.add(characteristic ? charNode(n, member) : attrNode(n, member));
+            result.add(writeNode(ot, member, labels, characteristic));
+            for (String n : reached) if (carries(n, member, characteristic)) result.add(writeNode(n, member, labels, characteristic));
             return new ArrayList<>(result);
+        }
+
+        private static String writeNode(String ot, String member, List<String> labels, boolean characteristic) {
+            return characteristic ? charNode(ot, member) : labels != null ? cellNode(ot, member, labels) : attrNode(ot, member);
         }
 
         /** {@code pop_writes}: a creation grows the population of its type and of every ancestor. */
@@ -830,6 +846,22 @@ final class Dependencies {
                 }
                 case "Binary" -> { return readExpr(subject, at, readExpr(subject, at, acc, n.get("left")), n.get("right")); }
                 case "Aggregation", "BuiltinCall" -> {
+                    List<Object> foldArguments = raw(n, "arguments");
+                    if (n.get("dimensionSelections") != null && foldArguments.size() == 1
+                            && "AttributeReference".equals(text(obj(foldArguments.get(0)), "node"))
+                            && text(obj(foldArguments.get(0)), "attribute") != null
+                            && text(obj(foldArguments.get(0)), "subjectType") != null) {
+                        // a dimension fold reads every cell its selections pick, the first selection outermost, and
+                        // then its fallback
+                        Map<String, Object> ref = obj(foldArguments.get(0));
+                        List<NodeRead> result = new ArrayList<>();
+                        for (Map<String, Object> hop : listOrEmpty(ref, "path")) result.add(new NodeRead(relNode(text(hop, "factType")), POS));
+                        List<Hop> path = then(at, hops(listOrEmpty(ref, "path")));
+                        for (List<String> cell : selectedCells(list(n, "dimensionSelections")))
+                            result.add(new NodeRead(cellNode(text(ref, "subjectType"), text(ref, "attribute"), cell), POS, path));
+                        result.addAll(acc);
+                        return readExpr(subject, at, result, n.get("emptyFallback"));
+                    }
                     String el = text(n, "elementType");
                     if (el != null) acc = before(new NodeRead(popNode(el), POS), acc);
                     for (Map<String, Object> rb : listOrEmpty(n, "sourcePath")) acc = before(new NodeRead(relNode(text(rb, "factType")), POS), acc);
@@ -867,7 +899,18 @@ final class Dependencies {
                     return readExpr(subject, at, readExpr(subject, at, readExpr(subject, at, acc, n.get("base")), n.get("minimum")),
                             n.get("maximum"));
                 }
-                case "DimensionCellRead" -> { return readExpr(subject, at, acc, n.get("attribute")); }
+                case "DimensionCellRead" -> {
+                    // the cell is the node, reached over the reference's own hops
+                    Map<String, Object> ref = obj(n.get("attribute"));
+                    String a = text(ref, "attribute"), ot = text(ref, "subjectType");
+                    if (!"AttributeReference".equals(text(ref, "node")) || a == null || ot == null)
+                        return readExpr(subject, at, acc, n.get("attribute"));
+                    List<NodeRead> result = new ArrayList<>();
+                    for (Map<String, Object> hop : listOrEmpty(ref, "path")) result.add(new NodeRead(relNode(text(hop, "factType")), POS));
+                    result.add(new NodeRead(cellNode(ot, a, strings(n, "labels")), POS, then(at, hops(listOrEmpty(ref, "path")))));
+                    result.addAll(acc);
+                    return result;
+                }
                 case "TemporalRead" -> { return readExpr(subject, at, readExpr(subject, at, acc, n.get("base")), n.get("date")); }
                 case "Construct" -> { return readExpr(subject, at, acc, n.get("argument")); }
                 case "Match" -> {
@@ -1061,10 +1104,13 @@ final class Dependencies {
             // the rule versions
             for (Version v : versions("rules")) {
                 Map<String, Object> target = obj(v.irNode().get("target"));
+                // a cell target writes its cell, named by the reference under it
+                List<String> labels = "DimensionCellRead".equals(text(target, "node")) ? strings(target, "labels") : null;
+                if (labels != null) target = obj(target.get("attribute"));
                 String a = text(target, "attribute"), ot = text(target, "subjectType");
                 if (a == null || ot == null) continue;
                 boolean characteristic = !Boolean.TRUE.equals(v.irNode().get("initialisation")) && v.irNode().get("presentation") == null;
-                List<String> writes = memberWrites(ot, a, characteristic, false);
+                List<String> writes = memberWrites(ot, a, labels, characteristic, false);
                 // a rule writes per subject of its type: its reads carry their paths from the subject (ch. 5.3)
                 formSubject = ot;
                 List<NodeRead> uses = readExpr(ot, List.of(), condition(ot, List.of(), v.irNode().get("condition")),
@@ -1141,7 +1187,8 @@ final class Dependencies {
                 }
                 for (Map<String, Object> t : list(k, "initialisations"))
                     if (text(t, "member") != null)
-                        writes.addAll(memberWrites(nt, text(t, "member"), Boolean.TRUE.equals(t.get("characteristic")), true));
+                        writes.addAll(memberWrites(nt, text(t, "member"), t.get("labels") == null ? null : strings(t, "labels"),
+                                Boolean.TRUE.equals(t.get("characteristic")), true));
                 List<NodeRead> uses = new ArrayList<>();
                 if (subject != null) uses.add(new NodeRead(popNode(subject), POS));
                 formSubject = subject;
@@ -1247,6 +1294,31 @@ final class Dependencies {
             List<Map<String, Object>> result = new ArrayList<>();
             for (Object x : raw(m, field)) result.add(obj(x));
             return result;
+        }
+
+        /** A list of names, such as the labels of a cell. */
+        static List<String> strings(Map<String, Object> m, String field) {
+            List<String> result = new ArrayList<>();
+            for (Object x : raw(m, field)) result.add(x instanceof String s ? s : "");
+            return result;
+        }
+
+        /** {@code selected_cells}: the label tuples of the product of a fold's selections, the first selection
+         *  outermost. */
+        static List<List<String>> selectedCells(List<Map<String, Object>> selections) {
+            List<List<String>> tails = List.of(List.of());
+            for (int i = selections.size() - 1; i >= 0; i--) {
+                List<List<String>> next = new ArrayList<>();
+                for (String l : strings(selections.get(i), "labels"))
+                    for (List<String> t : tails) {
+                        List<String> cell = new ArrayList<>();
+                        cell.add(l);
+                        cell.addAll(t);
+                        next.add(cell);
+                    }
+                tails = next;
+            }
+            return tails;
         }
     }
 
