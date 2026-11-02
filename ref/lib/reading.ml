@@ -754,9 +754,8 @@ let plain ~negative m s =
   if negative then "-" ^ body else body
 
 (* A number as the canonical text writes it: its exact decimal where the
-   rational terminates, else its quotient to 16 significant digits rounded
-   half to even, as the write boundary of the Drools backend collapses a
-   rational that does not terminate (IEEE 754 decimal64) *)
+   rational terminates, else its numerator and denominator in lowest terms,
+   t/n, the sign on the numerator (RUNTIME-SEMANTICS ch. 5.12) *)
 let decimal (q : Q.t) =
   if Q.sign q = 0 then "0"
   else
@@ -768,21 +767,7 @@ let decimal (q : Q.t) =
       let k = max (strip b (Z.of_int 2)) (strip b (Z.of_int 5)) in
       let m = Z.div (Z.mul a (Z.pow (Z.of_int 10) k)) b in
       plain ~negative m k
-    else
-      let ten = Z.of_int 10 in
-      (* E with 10^E <= a/b < 10^(E+1) *)
-      let ge p = if p >= 0 then Z.geq a (Z.mul b (Z.pow ten p)) else Z.geq (Z.mul a (Z.pow ten (-p))) b in
-      let e = ref (String.length (Z.to_string a) - String.length (Z.to_string b)) in
-      while not (ge !e) do decr e done;
-      while ge (!e + 1) do incr e done;
-      let s = 15 - !e in
-      let num, den = if s >= 0 then (Z.mul a (Z.pow ten s), b) else (a, Z.mul b (Z.pow ten (-s))) in
-      let quo, rem = Z.div_rem num den in
-      let twice = Z.mul rem (Z.of_int 2) in
-      let c = Z.compare twice den in
-      let m = if c > 0 || (c = 0 && Z.is_odd quo) then Z.succ quo else quo in
-      let m, s = if Z.equal m (Z.pow ten 16) then (Z.pow ten 15, s - 1) else (m, s) in
-      plain ~negative m s
+    else Q.to_string q
 
 let rec canonical (v : Value.t) =
   match v with

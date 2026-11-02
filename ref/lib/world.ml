@@ -235,10 +235,9 @@ let write_attr_init w ~form ~label ~attr:name ~decl v =
   in
   ({ w with owners }, changed)
 
-(* a timeline write (ch. 3.11, the pro-rata target): idempotence
-   compares segment lists exactly — same bounds, value-equal payloads.
-   Values land exactly as computed (v0 writes the fold's fraction
-   without a target rounding; the §6.1.2 discipline is downstream). *)
+(* a timeline store (ch. 3.11, the pro-rata target): the segments land
+   exactly as computed; idempotence compares segment lists exactly — same
+   bounds, value-equal payloads. *)
 let write_timeline w ~label ~attr:name (tl : Timeline.t) =
   let i = get w label in
   let same (a : Timeline.t) (b : Timeline.t) =
@@ -252,8 +251,13 @@ let write_timeline w ~label ~attr:name (tl : Timeline.t) =
   | Some old when same old tl -> (w, false)
   | _ -> (update w { i with tls = SMap.add (norm name) tl i.tls }, true)
 
-(* the timeline write of [form], held as [write_attr_by] holds a value *)
-let write_timeline_by w ~form ~label ~attr:name (tl : Timeline.t) =
+(* the timeline write of [form], held as [write_attr_by] holds a value: the
+   write boundary holds per segment (ch. 2.4, 3.7) — a segment whose value
+   does not fit the declared decimals faults as a scalar write does, before
+   anything is stored. [release] restores what the target held before, which
+   no form wrote, without it. *)
+let write_timeline_by w ~form ~label ~attr:name ~decl (tl : Timeline.t) =
+  List.iter (fun (sg : Timeline.segment) -> ignore (collapse ~at:(label ^ "." ^ name) decl sg.s_value)) tl;
   let key = (label, norm name) in
   let base = base_of w key ~now:(Held_timeline (timeline (get w label) name)) in
   let w, changed = write_timeline w ~label ~attr:name tl in

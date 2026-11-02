@@ -274,9 +274,33 @@ let sqrt_rounded ~err mode decimals = function
         in
         Num (Q.make chosen s, Unitless)
 
+(* round(q^(1/k), d, mode) computed exactly, as [sqrt_rounded] does for
+   k = 2: candidate n = ⌊(q·10^(dk))^(1/k)⌋ via integer roots, the tie decided
+   by comparing 2^k·q·10^(dk) against (2n+1)^k — no approximation anywhere *)
+let root_rounded mode decimals k q =
+  let s = Z.pow (Z.of_int 10) decimals in
+  let target = Q.mul q (Q.of_bigint (Z.pow s k)) in
+  let n = Z.root (Z.div (Q.num target) (Q.den target)) k in
+  let le z = Q.leq (Q.of_bigint (Z.pow z k)) target in
+  let n = if le (Z.succ n) then Z.succ n else n in
+  let n = if le n then n else Z.pred n in
+  let exact = Q.equal (Q.of_bigint (Z.pow n k)) target in
+  let chosen =
+    match (mode : Ir_v0.Ast.rounding_mode_kind) with
+    | Floor | Toward_zero -> n
+    | Ceiling | Away_from_zero -> if exact then n else Z.succ n
+    | Half_away_from_zero ->
+        if exact then n
+        else
+          let two_n1 = Z.succ (Z.mul n (Z.of_int 2)) in
+          if Q.geq (Q.mul target (Q.of_bigint (Z.pow (Z.of_int 2) k))) (Q.of_bigint (Z.pow two_n1 k)) then Z.succ n
+          else n
+  in
+  Q.make chosen s
+
 (* tot de macht: exact integer power (negative exponent inverts first);
-   a fractional exponent must denote an exact root, else it faults (the
-   ch. 2.1 OPEN — v0 approximates in binary double; ref/ refuses) *)
+   a fractional exponent must denote an exact root, else it faults: the real
+   power exists only under the rounding §6.7 mandates ([pow_rounded]) *)
 let pow_ l r =
   match (l, r) with
   | Empty, _ | _, Empty -> Empty (* base and runtime exponent both propagate *)
@@ -298,8 +322,34 @@ let pow_ l r =
         (match root_exact base b with
         | Some r -> Num (r, Unitless)
         | None ->
-            fault "fractional power %s^%s is not exactly representable (ch. 2.1 OPEN)"
+            fault
+              "fractional power %s^%s is not exactly representable without an explicit rounding \
+               (§6.7 mandates one)"
               (Q.to_string lq) (Q.to_string rq))
+
+(* a power with a fractional exponent under its rounding (§6.7, ch. 2.2):
+   the true power rounded once — the base raised to the numerator, its root of
+   the denominator rounded by [root_rounded]; a negative radicand has no real
+   power here, as in [pow_] *)
+let pow_rounded mode decimals l r =
+  match (l, r) with
+  | Empty, _ | _, Empty -> Empty
+  | _ ->
+      let lq, _ = num_exn "tot de macht" l and rq, _ = num_exn "tot de macht" r in
+      let to_int_exp z =
+        match Z.to_int z with
+        | e -> e
+        | exception Z.Overflow -> fault "exponent %s is out of range" (Z.to_string z)
+      in
+      let a = to_int_exp (Z.abs (Q.num rq)) and b = to_int_exp (Q.den rq) in
+      let base = Q.make (Z.pow (Q.num lq) a) (Z.pow (Q.den lq) a) in
+      let base = if Z.sign (Q.num rq) < 0 then Q.inv base else base in
+      if Q.sign base < 0 then
+        fault
+          "fractional power %s^%s is not exactly representable without an explicit rounding \
+           (§6.7 mandates one)"
+          (Q.to_string lq) (Q.to_string rq)
+      else Num (root_rounded mode decimals b base, Unitless)
 
 let abs_ = function
   | Empty -> Empty

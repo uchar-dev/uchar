@@ -1207,6 +1207,13 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
              true irrational, exactly *)
           numeric_builtin_operand env Square_root arg;
           Arith.sqrt_rounded ~err mode_kind decimal_places (eval_expr env world self ~err arg)
+      | Some (Binary { op = Power; left_side; right_side = Some (Literal { variant; typ; _ } as exponent); _ })
+        when match literal_value variant typ with Num (q, _) -> not (Z.equal (Q.den q) Z.one) | _ -> false ->
+          (* the mandatory rounding after a power (§6.7) with a fractional
+             exponent rounds the true power, exactly (ch. 2.2) *)
+          let l = eval_expr env world self ~err (req "Binary.left" left_side) in
+          let r = eval_expr env world self ~err exponent in
+          Arith.pow_rounded mode_kind decimal_places l r
       | _ ->
           Arith.round_v mode_kind decimal_places (eval_expr env world self ~err (req "Rounding.base" base_expr)))
   | Clamp { base_expr; minimum; maximum; _ } ->
@@ -3032,7 +3039,7 @@ let run_pro_rata ?window env w (self : World.instance) ~form ~ot ~attr value_nod
         && List.mem (norm ot, norm attr)
              (Ir_v0.Desugar.standing_temporal_targets env.doc)
       then World.release w ~form ~label:self.label ~attr
-      else World.write_timeline_by w ~form ~label:self.label ~attr result
+      else World.write_timeline_by w ~form ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr) result
   | Function_call
       { kind = Day_count; call_arguments = [];
         filter = Some c; grain = Some g; empty_fallback = None; dimension_selections = None; _ }
@@ -3075,7 +3082,7 @@ let run_pro_rata ?window env w (self : World.instance) ~form ~ot ~attr value_nod
         && List.mem (norm ot, norm attr)
              (Ir_v0.Desugar.standing_temporal_targets env.doc)
       then World.release w ~form ~label:self.label ~attr
-      else World.write_timeline_by w ~form ~label:self.label ~attr result
+      else World.write_timeline_by w ~form ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr) result
   | _ ->
       Value.faultc "REF-011"
         "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a \

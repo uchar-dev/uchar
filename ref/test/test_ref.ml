@@ -251,6 +251,17 @@ let () =
   expect_num "WV-2.2-m" (Arith.sqrt_ ~err:no_err (n "9")) "3";
   expect_num "WV-2.2-n" (Arith.sqrt_rounded ~err:no_err Half_away_from_zero 2 (n "2")) "1.41";
   expect_num "WV-2.2-o" (Arith.abs_ (n "-3/7")) "3/7";
+  (* a fractional exponent: the exact root where the power is rational, and
+     under its rounding (§6.7) the true power rounded once, as the root under
+     its rounding is *)
+  expect_num "WV-2.2-p" (Arith.pow_ (n "8") (n "2/3")) "4";
+  expect_fault "WV-2.2-q" (fun () -> Arith.pow_ (n "10") (n "1/3"));
+  expect_num "WV-2.2-r" (Arith.pow_rounded Floor 10 (n "10") (n "1/3")) "2.1544346900";
+  expect_num "WV-2.2-s" (Arith.pow_rounded Ceiling 10 (n "10") (n "1/3")) "2.1544346901";
+  expect_num "WV-2.2-t" (Arith.pow_rounded Toward_zero 20 (n "2") (n "0.5")) "1.41421356237309504880";
+  expect_num "WV-2.2-u" (Arith.sqrt_rounded ~err:no_err Floor 20 (n "1/9")) "0.33333333333333333333";
+  expect_num "WV-2.2-v"
+    (Arith.sqrt_rounded ~err:no_err Floor 40 (n "2")) "1.4142135623730950488016887242096980785696";
   (* division by numeric zero: leeg plus one §9.5 deposit of the kind EF-005
      (ch. 1.4 point 4; the v0 mirror faults) *)
   (let codes = ref [] in
@@ -1009,6 +1020,34 @@ let () =
       expect_num "WV-2.4-p-factor" (World.attr (World.get final "J1") "factor") "2/3";
       check "WV-2.4-p" (Case.check c final = [])
   | Error (_, _, text) -> check ("WV-2.4-p (" ^ text ^ ")") false);
+  (* ch. 2.4 and 3.7, the write boundary on a timeline target, per segment: a
+     base of 18 per year, borgplichtig from 2025-01-01 up to 2025-02-08 *)
+  let prorata_doc ~gran ~datatype =
+    Printf.sprintf
+      {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"borgtarief","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"timeline":{"node":"TimelineFacet","granularity":"year","count":1}},{"node":"Attribute","name":"borgdeel","datatype":%s,"timeline":{"node":"TimelineFacet","granularity":"%s","count":1}}],"characteristics":[{"node":"Characteristic","name":"borgplichtig","kind":"adjectival","timeline":{"node":"TimelineFacet","granularity":"day","count":1}}]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"borgdeel van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"borgdeel","subjectType":"Jutter","source":{"snippet":"Het borgdeel van een Jutter"}},"value":{"node":"BuiltinCall","kind":"timeProportionalPart","arguments":[{"node":"AttributeReference","attribute":"borgtarief","subjectType":"Jutter","source":{"snippet":"zijn borgtarief"}}],"filter":{"node":"CharacteristicCheck","characteristic":"borgplichtig","negated":false,"source":{"snippet":"gedurende de tijd dat hij borgplichtig is"}},"granularity":"%s","type":%s,"source":{"snippet":"het tijdsevenredig deel van zijn borgtarief gedurende de tijd dat hij borgplichtig is"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+      datatype gran gran datatype
+  in
+  let prorata_case =
+    {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"J1","objectType":"Jutter","attributes":{"borgtarief":{"timeline":[{"from":"2025-01-01","to":"2026-01-01","value":{"number":"18"}}]}},"roles":{},"characteristics":[],"characteristicTimelines":{"borgplichtig":[{"from":"2025-01-01","to":"2025-02-08"}]}}],"parameters":{}},"expected":[{"kind":"consistent"}]}|}
+  in
+  let two = {|{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}|}
+  and unbounded = {|{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}|} in
+  let segments = function
+    | Ok (_, final) -> (
+        match World.timeline (World.get final "J1") "borgdeel" with
+        | Some tl -> List.map (fun (sg : Timeline.segment) -> Value.to_string sg.s_value) tl
+        | None -> [ "no timeline" ])
+    | Error (_, _, text) -> [ text ]
+  in
+  (* per month every segment fits: 18 in January, 18 × 7/28 = 4,50 in February *)
+  check "WV-3.7-schrijfgrens-maand"
+    (segments (write_boundary_session (prorata_doc ~gran:"month" ~datatype:two) prorata_case) = [ "18"; "4.5" ]);
+  (* per year 18 × 38/365 = 684/365 does not fit 2 decimals *)
+  one_write_boundary_fault "WV-3.7-schrijfgrens-jaar" ~place:"J1.borgdeel" ~value:"684/365" ~decimals:"2"
+    (write_boundary_session (prorata_doc ~gran:"year" ~datatype:two) prorata_case);
+  (* the unbounded form has no ceiling, so the exact segment lands *)
+  check "WV-3.7-schrijfgrens-onbegrensd"
+    (segments (write_boundary_session (prorata_doc ~gran:"year" ~datatype:unbounded) prorata_case) = [ "684/365" ]);
   (* ch. 4.6: exact before the floor *)
   let s, r =
     alloc Equal_shares ~decimals:2 "2999999999999999.97" [ rcp "a"; rcp "b"; rcp "c" ]
@@ -9612,7 +9651,7 @@ let () =
             "8 AttributeReference 4"; "9 Literal 0"; "10 Literal 1" ]
       @ row "J3"
           [ "FAILS"; "0 Compound false"; "1 Comparison true"; "2 AttributeReference 7"; "3 Literal 0";
-            "4 Comparison false"; "5 Rounding 0"; "6 Binary 0.4285714285714286"; "7 AttributeReference 3";
+            "4 Comparison false"; "5 Rounding 0"; "6 Binary 3/7"; "7 AttributeReference 3";
             "8 AttributeReference 7"; "9 Literal 0"; "10 Literal unreached" ])
   in
   check "WV-5.12-ploegaandeel" (got = expected);
