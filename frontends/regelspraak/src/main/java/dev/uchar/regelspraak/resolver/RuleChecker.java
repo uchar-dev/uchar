@@ -900,36 +900,17 @@ final class RuleChecker {
         }
     }
 
-    /** A cell of a dimensioned attribute of {@code ot} written as one name: the attribute with its preposition and
-     *  one of its labels behind it ("vondstgewicht in najaar"), the label in its declared spelling. Null when
-     *  {@code name} is no such cell. Single-dimension attributes, the suffix form — the shape
-     *  {@link ExpressionBuilder#dimensionCell} reads. */
-    private record NamedCell(String attribute, String label) {}
-
-    private NamedCell namedCell(ObjectType ot, String name) {
-        for (var e : ot.dimensionedMembers().entrySet()) {
-            if (e.getValue().size() != 1) continue;
-            RegelSpraakModel.Dimension d = model.dimensionByName(e.getValue().get(0));
-            if (d == null || d.preposition() == null) continue;
-            for (String label : d.values())
-                if ((e.getKey() + " " + d.preposition() + " " + label).equalsIgnoreCase(name.trim()))
-                    return new NamedCell(e.getKey(), label);
-        }
-        return null;
-    }
-
     /** A target that names a cell of a dimensioned attribute of its subject ("Het vondstgewicht in najaar van een
-     *  Jutter", the labels between the attribute and its subject, as ALEF writes a cell on either side of an
-     *  assignment) writes that cell: a {@link Expr.DimensionCellRead} over the attribute (IR-SPEC ch. 3.1,
-     *  RUNTIME-SEMANTICS ch. 5.8c). Any other target is returned as built. */
+     *  Jutter", "Het vondstgewicht in voorjaar en op zuid van een Jutter": the labels between the attribute and its
+     *  subject, as ALEF writes a cell on either side of an assignment) writes that cell: a
+     *  {@link Expr.DimensionCellRead} over the attribute (IR-SPEC ch. 3.1, RUNTIME-SEMANTICS ch. 5.8c), read as a
+     *  cell read is ({@link ExpressionBuilder#dimensionCell}). A name that writes labels of some dimensions only, or
+     *  fits two cells, is the marker whose ERROR that read records. Any other target is returned as built. */
     private Expr cellTarget(Expr target) {
         if (!(target instanceof Expr.AttributeReference a) || a.objectType() == null || a.attribute() == null
                 || a.objectType().attribute(a.attribute()) != null) return target;
-        NamedCell c = namedCell(a.objectType(), a.attribute());
-        if (c == null) return target;
-        Expr.AttributeReference attribute = new Expr.AttributeReference(c.attribute(), a.objectType(), a.subjectSource(),
-                a.navigationRole(), a.objectType().attribute(c.attribute()), a.source());
-        return new Expr.DimensionCellRead(attribute, List.of(c.label()), a.source());
+        Expr cell = builder.dimensionCell(a.attribute(), a.objectType(), a.navigationRole(), a.subjectSource(), a.source());
+        return cell == null ? target : cell;
     }
 
     /** The same cell written after the SUBJECT ("De premie van een Jutter in voorjaar"): the parse left the
@@ -4330,10 +4311,12 @@ final class RuleChecker {
         Expr value = builder.build(valueCtx);
         if (createdType == null || createdType.attribute(name) != null)
             return new ResolvedObjectCreation.MemberInit(name, value);
-        // "met vangstgewicht in najaar gelijk aan …": the cell of the made object (IR-SPEC ch. 3.3, MemberInit.labels)
-        NamedCell cell = namedCell(createdType, name);
-        if (cell != null)
-            return new ResolvedObjectCreation.MemberInit(cell.attribute(), value, false, List.of(cell.label()));
+        // "met vangstgewicht in najaar gelijk aan …": the cell of the made object (IR-SPEC ch. 3.3, MemberInit.labels),
+        // read as a cell read is; a name with labels of some dimensions only, or that fits two cells, has its ERROR
+        Expr cell = builder.dimensionCell(name, createdType, null, null, Source.of(oc, name));
+        if (cell instanceof Expr.DimensionCellRead c)
+            return new ResolvedObjectCreation.MemberInit(c.attribute().attribute(), value, false, c.labels());
+        if (cell != null) return new ResolvedObjectCreation.MemberInit(name, value);
         // through the chain, exactly as the attribute branch above: an INHERITED kenmerk of the created
         // type is as much a member of it as its own, and reading the own list alone made one sentence's
         // two branches disagree about what the type has (a binding on the left, an ERROR on the right).

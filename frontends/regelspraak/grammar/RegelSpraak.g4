@@ -689,7 +689,13 @@ kaleNaamWoord
     | JAAR | MAAND | DAG | WEEK | KWARTAAL | UUR | MINUUT | SECONDE | MILLISECONDE
     | PERIODE | DAGEN | WEKEN | MAANDEN | KWARTALEN | JAREN
     ;
-kaleNaamDeel : kaleNaamWoord+ ;
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "§3.6 / §13.4.17.51 More dimensions"): ALEF writes the labels behind
+// a dimensioned attribute as an enumeration, "in voorjaar en op zuid", "op noord, in zomer en bij vloed"; a segment
+// takes ',' or 'en' followed by a preposition of §3.6 as part of the name. The loop is NON-GREEDY: where the text also
+// reads with the name ending before the ',' or 'en' (an operand list, "de maximale waarde van zijn a en in te houden
+// gewicht"), that reading wins, so every text that parsed before parses the same way.
+kaleNaamDeel : kaleNaamWoord+ labelOpsomming*? ;
+labelOpsomming : ( COMMA | EN ) ( VAN | OP | IN | VOOR | OVER | BIJ ) kaleNaamWoord+ ;
 kaleNaam     : kaleNaamDeel ( VAN kaleNaamDeel )* ;
 
 rangtelwoord // §13.2.12

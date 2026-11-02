@@ -35,10 +35,20 @@ class DimensionCellTest {
             1. natte
             2. droge
 
+        Dimensie het getij, bestaande uit de getijden (na het attribuut met voorzetsel bij):
+            1. eb
+            2. vloed
+
+        Dimensie het boekjaar, bestaande uit de boekjaren (na het attribuut met voorzetsel van):
+            1. vorig boekjaar
+            2. dit boekjaar
+
         Objecttype de Jutter (mv: Jutters) (bezield)
             het vondstgewicht Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met seizoen en strand;
             de vangst Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met soort;
             de buit Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met seizoen en soort;
+            de stand Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met seizoen en strand en getij;
+            de winst Numeriek (niet-negatief getal met 2 decimalen) gedimensioneerd met boekjaar en strand;
             de uitkomst Numeriek (niet-negatief getal met 2 decimalen);
 
         Regel uitkomst van een jutter
@@ -72,6 +82,44 @@ class DimensionCellTest {
         String c = emitCompact("zijn vondstgewicht op zuid in late zomer.");
         assertTrue(c.contains(cell("vondstgewicht", "zijnvondstgewichtopzuidinlatezomer", "latezomer", "zuid")),
                 () -> "de cel (late zomer, zuid):\n" + c);
+    }
+
+    /** ALEF joins the labels behind the attribute with "en". */
+    @Test void the_labels_behind_the_attribute_may_be_joined_with_en() {
+        String c = emitCompact("zijn vondstgewicht in voorjaar en op zuid.");
+        assertTrue(c.contains(cell("vondstgewicht", "zijnvondstgewichtinvoorjaarenopzuid", "voorjaar", "zuid")),
+                () -> "de cel (voorjaar, zuid):\n" + c);
+    }
+
+    /** Three labels behind the attribute as ALEF enumerates them: a comma, then "en" before the last. */
+    @Test void three_labels_behind_the_attribute_are_an_enumeration() {
+        String c = emitCompact("zijn stand op noord, in late zomer en bij vloed.");
+        assertTrue(c.contains(cell("stand", "zijnstandopnoord,inlatezomerenbijvloed", "latezomer", "noord", "vloed")),
+                () -> "de cel (late zomer, noord, vloed):\n" + c);
+    }
+
+    /** "en" before a label of a dimension whose preposition is "van", and after one: the name's own "van" splits it
+     *  in the parse, the cell reads the same. */
+    @Test void a_label_after_van_joins_with_en_either_way() {
+        String first = emitCompact("zijn winst op zuid en van dit boekjaar.");
+        assertTrue(first.contains(cell("winst", "zijnwinstopzuidenvanditboekjaar", "ditboekjaar", "zuid")),
+                () -> "de cel (dit boekjaar, zuid):\n" + first);
+        String second = emitCompact("zijn winst van vorig boekjaar en op noord.");
+        assertTrue(second.contains(cell("winst", "zijnwinstvanvorigboekjaarenopnoord", "vorigboekjaar", "noord")),
+                () -> "de cel (vorig boekjaar, noord):\n" + second);
+    }
+
+    /** Where "en" can end the name, it does: in an operand list a name after "en" that opens with a preposition
+     *  stays the next operand, as it was before a cell could carry "en". */
+    @Test void an_operand_list_keeps_its_en() {
+        RegelSpraakModel m = Resolver.resolve(
+                "Parameter het in te houden gewicht : Numeriek (niet-negatief getal met 2 decimalen);\n\n" + MODEL
+                + "de maximale waarde van zijn vondstgewicht in voorjaar op zuid en in te houden gewicht.\n");
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(c.contains("{\"node\":\"ParameterReference\",\"parameter\":\"intehoudengewicht\""), c);
+        assertTrue(c.contains(cell("vondstgewicht", "zijnvondstgewichtinvoorjaaropzuid", "voorjaar", "zuid")
+                .substring("\"value\":".length())), c);
     }
 
     @Test void a_label_before_the_attribute_is_the_preceding_form() {

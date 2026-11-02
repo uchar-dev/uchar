@@ -1030,17 +1030,25 @@ Het noordgewicht van een Jutter moet berekend worden als
     de som van zijn vondstgewicht over alle seizoenen over de stranden in {noord}.
 Het zuidvoorjaarsgewicht van een Jutter moet berekend worden als
     zijn vondstgewicht in voorjaar op zuid.
+Het noordnajaarsgewicht van een Jutter moet berekend worden als
+    zijn vondstgewicht op noord en in najaar.
 ```
 
 The fold: `somFunc` and `minMaxFunc` take `dimensieSelectie*` where
 §13.4.17.51 has one, so a fold writes one selection per dimension, in any
-order. The cell needs no new production: the possessive's name run is read as
-the attribute with labels before it (dimensions without a preposition) and
-"`<voorzetsel> <label>`" behind it (dimensions with one), each dimension once,
-in any order. ALEF joins the labels behind the attribute with "en" ("in
-voorjaar en op zuid"); here `EN` ends a name (the §13.4.17 lists, see
-`naamWoordLower`), so the labels are written side by side ("in voorjaar op
-zuid") and the "en" form is a syntax error.
+order. The cell is a name run read as the attribute with labels before it
+(dimensions without a preposition) and "`<voorzetsel> <label>`" behind it
+(dimensions with one), each dimension once, in any order. Behind the
+attribute the labels stand side by side ("in voorjaar op zuid") or joined as
+ALEF's editor joins them: "en" before the last, "," before each earlier one
+("in voorjaar en op zuid", "op noord, in zomer en bij vloed"). For that one
+production is new: a name segment (`kaleNaamDeel`) takes `labelOpsomming*?`,
+a "," or `EN` followed by one of the §3.6 prepositions `van`, `op`, `in`,
+`voor`, `over`, `bij` and name words. `EN` is otherwise no name word (it
+separates the operands of the §13.4.17 lists, see `naamWoordLower`), and the
+loop is non-greedy so that it does not take that role from it (below). The
+resolver accepts "en" or "," between any two labels behind the attribute; it
+does not demand ALEF's exact pattern, since the separators carry no meaning.
 
 ### Inertness — measured, not assumed
 
@@ -1054,6 +1062,27 @@ some dimensions only is refused (RGS-364); a fold over some dimensions of its
 attribute only is refused (RGS-366). Every `source.rgs` golden re-emits
 byte-identically (gate 10), as do the documents of the parity zone (gate 11)
 and every scenario golden (gate 16).
+
+The labels joined by "en" or ",": a "," or `EN` followed by a preposition
+after a name segment was a syntax error wherever the text had no other
+reading, and that is where the segment now takes it. Where the text has
+another reading, the name ends before the "en" or "," as before: ANTLR
+resolves an ambiguity to the lowest alternative, and in a non-greedy loop
+that is the exit. The case is an operand list whose next operand is a name
+without an article that opens with a preposition, which a parameter or a
+"Daarbij geldt" variable may be: "de maximale waarde van zijn vondstgewicht
+in voorjaar op zuid en in te houden gewicht" keeps its two operands
+(`DimensionCellTest.an_operand_list_keeps_its_en`). The price is in that same
+position: where an "en" or "," of a cell inside such a list can also be read
+as the list's own separator, the list reading wins and the cell splits ("de
+maximale waarde van zijn bonus, zijn vondstgewicht in voorjaar en op zuid"
+and "de maximale waarde van zijn vondstgewicht in voorjaar, op zuid en zijn
+bonus" each read `zijn vondstgewicht in voorjaar`, refused with RGS-364 for
+the missing label of `strand`, and `op zuid` as an operand, an unresolved
+name with its WARNING; measured). Written in parentheses, or with the labels
+side by side, it is the cell; where the list reading does not parse ("de
+maximale waarde van zijn vondstgewicht in voorjaar en op zuid en zijn
+bonus"), the cell is read as well.
 
 ### Lowering (resolver)
 
@@ -1102,7 +1131,20 @@ selections as the resolver built them.
 - A read of a dimensioned attribute without any label outside a fold
   (`zijn vondstgewicht`) is not refused here; the verifier refuses it
   (WF-125).
-- A cell as a rule target is not this section's.
+- ALEF joins the labels BEFORE the attribute with "en" and "," as well
+  ("de natte en zware buit"). That form is not read; the labels before the
+  attribute stand side by side. Without a preposition after the "en" to
+  mark it, a production for it would take every "en" followed by a name word
+  into a name segment wherever the text has no other reading, so that a
+  misplaced "en" became part of a name instead of a syntax error, and in an
+  operand list such a cell would split at its "en" into two operands
+  ("de maximale waarde van zijn natte en zware buit").
+- A dimension whose preposition is `uit` is not read: `uit` is a keyword of
+  its own (`UIT`, "het jaar uit …") and no name word, so no cell names its
+  label, joined or not.
+- A cell as a rule target, and as a member of an object creation, is read the
+  same way (see "A cell of a dimensioned attribute as the target" under
+  §13.4.2).
 
 ---
 
@@ -1195,8 +1237,13 @@ vondstgewicht in najaar van een Jutter moet berekend worden als …", writes
 that cell: the target is a `DimensionCellRead` over the attribute (IR-SPEC
 ch. 3.1). An object creation's member written the same way, "met
 vangstgewicht in najaar gelijk aan …", writes that cell of the made object, a
-`MemberInit` with `labels` (ch. 3.3). The scope is the cell read's: an
-attribute of one dimension that has a preposition, the label behind it. "De
+`MemberInit` with `labels` (ch. 3.3). Both read the name as a cell read
+reads it (§3.6 / §13.4.17.51 More dimensions): a label of every dimension,
+before or behind the attribute, those behind it side by side or joined by
+"en" and "," ("De strandpremie op zuid en in najaar van een Jutter", "met
+strandvangst in najaar en op zuid gelijk aan …"); a name with labels of some
+dimensions only is refused with RGS-364, one that fits two cells with
+RGS-365. "De
 premie van een Jutter in voorjaar moet gesteld worden op 10", with the label
 after the subject, puts the label into the subject text and would write the
 whole attribute; it is refused with the cell named (attribute, dimension,

@@ -3916,8 +3916,9 @@ final class ExpressionBuilder {
      *  {@link Expr.DimensionCellRead} with the labels per position in the declared order of the dimensions (WF-040);
      *  null when {@code bareName} is no cell; and a marker whose ERROR is recorded when it writes labels of some
      *  dimensions only (RGS-364) or fits two cells (RGS-365). The longest matching attribute wins, so a dimensioned
-     *  name is not shadowed by a shorter one inside it. */
-    private Expr dimensionCell(String bareName, ObjectType ot, String navRole, String subjectSource, Source source) {
+     *  name is not shadowed by a shorter one inside it. A cell written as a target or as a member of an object
+     *  creation reads the same way ({@link RuleChecker}). */
+    Expr dimensionCell(String bareName, ObjectType ot, String navRole, String subjectSource, Source source) {
         if (ot == null || bareName == null) return null;
         List<CellReading> readings = cellReadings(model, ot, bareName);
         if (readings.isEmpty()) return null;
@@ -3971,12 +3972,13 @@ final class ExpressionBuilder {
      *  attribute's name with, before it, labels of dimensions declared "voor het attribuut zonder voorzetsel", and
      *  behind it, for a dimension declared "na het attribuut met voorzetsel", that preposition and a label; each
      *  dimension at most once and in any order, names and labels compared case-insensitively, labels returned in their
-     *  declared spelling. ALEF writes the labels the same way, before and behind the attribute, but joins those behind
-     *  it with "en", which ends a name in this grammar (grammar/DIVERGENCES.md, "§3.6 / §13.4.17.51 More
-     *  dimensions"). A reading may leave dimensions without a label; the attribute alone is no reading. */
+     *  declared spelling. Behind the attribute the labels stand side by side ("in voorjaar op zuid") or joined as ALEF
+     *  joins them, by "en" and "," ("in voorjaar en op zuid", "op noord, in zomer en bij vloed"; grammar/DIVERGENCES.md,
+     *  "§3.6 / §13.4.17.51 More dimensions"). A reading may leave dimensions without a label; the attribute alone is no
+     *  reading. */
     static List<CellReading> cellReadings(RegelSpraakModel model, ObjectType ot, String written) {
         List<CellReading> result = new ArrayList<>();
-        String[] words = written.trim().split("\\s+");
+        String[] words = written.replace(",", " , ").trim().split("\\s+");
         for (var e : ot.dimensionedMembers().entrySet()) {
             String[] name = e.getKey().trim().split("\\s+");
             List<RegelSpraakModel.Dimension> dims = new ArrayList<>();
@@ -3985,7 +3987,7 @@ final class ExpressionBuilder {
             for (int at = 0; at + name.length <= words.length; at++) {
                 if (!wordsAt(words, at, name) || (at == 0 && name.length == words.length)) continue;
                 int after = at + name.length;
-                labelsBefore(words, 0, at, dims, new String[dims.size()], labels -> labelsAfter(words, after, dims, labels,
+                labelsBefore(words, 0, at, dims, new String[dims.size()], labels -> labelsAfter(words, after, false, dims, labels,
                         complete -> result.add(new CellReading(e.getKey(), List.copyOf(dims),
                                 java.util.Collections.unmodifiableList(java.util.Arrays.asList(complete.clone()))))));
             }
@@ -4010,18 +4012,20 @@ final class ExpressionBuilder {
     }
 
     /** Every way {@code words[from..]} is a run of "&lt;preposition&gt; &lt;label&gt;" of distinct dimensions declared
-     *  with that preposition. */
-    private static void labelsAfter(String[] words, int from, List<RegelSpraakModel.Dimension> dims, String[] labels,
-                                    java.util.function.Consumer<String[]> done) {
+     *  with that preposition; where {@code joinable}, after such a label, one "en" or "," may stand before the next. */
+    private static void labelsAfter(String[] words, int from, boolean joinable, List<RegelSpraakModel.Dimension> dims,
+                                    String[] labels, java.util.function.Consumer<String[]> done) {
         if (from == words.length) { done.accept(labels); return; }
+        int at = joinable && (words[from].equalsIgnoreCase("en") || words[from].equals(",")) ? from + 1 : from;
+        if (at == words.length) return;   // a joining word ends no enumeration
         for (int k = 0; k < dims.size(); k++) {
             RegelSpraakModel.Dimension d = dims.get(k);
-            if (labels[k] != null || d.preposition() == null || !d.preposition().equalsIgnoreCase(words[from])) continue;
+            if (labels[k] != null || d.preposition() == null || !d.preposition().equalsIgnoreCase(words[at])) continue;
             for (String label : d.values()) {
                 String[] lw = label.trim().split("\\s+");
-                if (!wordsAt(words, from + 1, lw)) continue;
+                if (!wordsAt(words, at + 1, lw)) continue;
                 labels[k] = label;
-                labelsAfter(words, from + 1 + lw.length, dims, labels, done);
+                labelsAfter(words, at + 1 + lw.length, true, dims, labels, done);
                 labels[k] = null;
             }
         }

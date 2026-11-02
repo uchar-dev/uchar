@@ -29,12 +29,18 @@ class DimensionTargetTest {
             1. voorjaar
             2. najaar
 
+        Dimensie het strand, bestaande uit de stranden (na het attribuut met voorzetsel op):
+            1. noord
+            2. zuid
+
         Objecttype de Jutter (mv: Jutters) (bezield)
             de premie Numeriek (geheel getal) gedimensioneerd met seizoen;
             de bonus Numeriek (geheel getal);
+            de strandpremie Numeriek (geheel getal) gedimensioneerd met seizoen en strand;
 
         Objecttype de Vangst (mv: Vangsten)
             de vangstpremie Numeriek (geheel getal) gedimensioneerd met seizoen;
+            de strandvangst Numeriek (geheel getal) gedimensioneerd met seizoen en strand;
 
         Feittype vangstboeking
             de boeker Jutter
@@ -56,11 +62,11 @@ class DimensionTargetTest {
         return IrEmitter.emit(m).replaceAll("\\s+", "");
     }
 
-    private static void assertCellTarget(ResolvedRule r, String attribute, String label) {
+    private static void assertCellTarget(ResolvedRule r, String attribute, String... labels) {
         Expr.DimensionCellRead cell = assertInstanceOf(Expr.DimensionCellRead.class, r.target());
         assertEquals(attribute, cell.attribute().attribute());
         assertEquals("Jutter", cell.attribute().objectType().name);
-        assertEquals(List.of(label), cell.labels());
+        assertEquals(List.of(labels), cell.labels());
     }
 
     @Test void a_cell_target_is_written_as_the_cell() {
@@ -99,6 +105,42 @@ class DimensionTargetTest {
         assertFalse(t.characteristic());
         assertTrue(compactIr(m).contains("{\"node\":\"MemberInit\",\"member\":\"vangstpremie\",\"labels\":[\"najaar\"],"
                 + "\"value\":{\"node\":\"DimensionCellRead\""), compactIr(m));
+    }
+
+    /** A cell target over two dimensions with its labels joined by "en", as ALEF writes it; the labels go out in the
+     *  declared order of the dimensions whatever order the target writes them in. */
+    @Test void a_cell_target_joins_its_labels_with_en() {
+        RegelSpraakModel m = Resolver.resolve(rule(
+                "De strandpremie op zuid en in najaar van een Jutter moet berekend worden als zijn premie in najaar."));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertCellTarget(m.resolvedRules.get(0), "strandpremie", "najaar", "zuid");
+        assertTrue(compactIr(m).contains("\"labels\":[\"najaar\",\"zuid\"],\"source\":{\"snippet\":"
+                + "\"Destrandpremieopzuideninnajaarvaneen"), compactIr(m));
+    }
+
+    /** The same target with its labels side by side, the form a cell read takes too. */
+    @Test void a_cell_target_over_two_dimensions_names_a_label_of_each() {
+        RegelSpraakModel m = Resolver.resolve(rule("De strandpremie in voorjaar op noord van een Jutter moet gesteld worden op 4."));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        assertCellTarget(m.resolvedRules.get(0), "strandpremie", "voorjaar", "noord");
+    }
+
+    /** A target that names a label of one of two dimensions is refused as a cell read is, naming the dimension. */
+    @Test void a_cell_target_without_a_label_of_every_dimension_is_refused() {
+        RegelSpraakModel m = Resolver.resolve(rule("De strandpremie in voorjaar van een Jutter moet gesteld worden op 4."));
+        DimensionCellTest.assertOneError(m, "RGS-364", java.util.Map.of("written", "De strandpremie in voorjaar van een Jutter",
+                "attribute", "strandpremie", "dimension", "strand"));
+    }
+
+    @Test void a_creation_member_joins_its_labels_with_en() {
+        RegelSpraakModel m = Resolver.resolve(rule(
+                "Een Jutter heeft een geboekte vangst met strandvangst in najaar en op zuid gelijk aan zijn premie in najaar."));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        ResolvedObjectCreation.MemberInit t = m.objectCreations.get(0).initialisations().get(0);
+        assertEquals("strandvangst", t.attribute());
+        assertEquals(List.of("najaar", "zuid"), t.labels());
+        assertTrue(compactIr(m).contains("{\"node\":\"MemberInit\",\"member\":\"strandvangst\",\"labels\":[\"najaar\",\"zuid\"],"),
+                compactIr(m));
     }
 
     @Test void labels_after_the_subject_are_refused_with_the_cell() {
