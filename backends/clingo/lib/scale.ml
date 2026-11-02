@@ -232,25 +232,26 @@ let writes (doc : document) : (place * (Checks.ctx -> Checks.precision)) list =
   let allocations =
     List.concat_map
       (fun (r : resolved_allocation) ->
-        match r.objective_type_name with
-        | None -> []
-        | Some tt ->
-            let share = match r.rounding_decimals with Some n -> Checks.Finite n | None -> Checks.Unbounded in
-            (* the remainder is the pot less the rounded shares *)
-            let remainder ctx =
-              match (r.rounding_decimals, r.source_type, r.source_attribute) with
-              | Some n, Some st, Some sa -> (
-                  match Checks.effective_ot ctx.Checks.doc st with
-                  | Some ot -> (
-                      match Option.bind (Option.join (Checks.find_ci ot.attributes sa)) Checks.declared_precision with
-                      | Some b -> widest (Checks.Finite n) b
-                      | None -> Checks.Unbounded)
+        let at owner attr f =
+          match (owner, attr) with
+          | Some t, Some a -> Option.to_list (Option.map (fun p -> (p, f)) (attribute_place doc ~from:t ~member:a))
+          | _ -> []
+        in
+        (* a share has the decimals of its rounding; the remainder, written on
+           the source, is the pot less the rounded shares *)
+        let share _ = match r.rounding_decimals with Some n -> Checks.Finite n | None -> Checks.Unbounded in
+        let remainder ctx =
+          match (r.rounding_decimals, r.source_type, r.source_attribute) with
+          | Some n, Some st, Some sa -> (
+              match Checks.effective_ot ctx.Checks.doc st with
+              | Some ot -> (
+                  match Option.bind (Option.join (Checks.find_ci ot.attributes sa)) Checks.declared_precision with
+                  | Some b -> widest (Checks.Finite n) b
                   | None -> Checks.Unbounded)
-              | _ -> Checks.Unbounded
-            in
-            List.filter_map
-              (fun (attr, f) -> Option.bind attr (fun a -> Option.map (fun p -> (p, f)) (attribute_place doc ~from:tt ~member:a)))
-              [ (r.target_attribute, fun _ -> share); (r.remainder_attribute, remainder) ])
+              | None -> Checks.Unbounded)
+          | _ -> Checks.Unbounded
+        in
+        at r.objective_type_name r.target_attribute share @ at r.source_type r.remainder_attribute remainder)
       doc.allocations
   in
   rules @ creations @ defaults @ allocations

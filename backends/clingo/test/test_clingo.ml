@@ -15264,7 +15264,68 @@ let () =
   in
   both_answer ~name:"a parameter of the unbounded form at the decimals of its case value" ~ir:rate
     ~case_text:(pf_case ~params:[ pf_bind "tarief" "0.25" ] [ pf_is "5.25"; pf_cons ]
-                |> replace_first ~needle:{|"inkomen": { "number": "20" }|} ~by:{|"inkomen": { "number": "21" }|})
+                |> replace_first ~needle:{|"inkomen": { "number": "20" }|} ~by:{|"inkomen": { "number": "21" }|});
+  (* an object creation's member of the form takes the bound of its value,
+     and a rule that reads it back the bound of that member: lengte / 8 has
+     three decimals more than the whole lengte *)
+  let werf = pf_ot ~ident:"Werf" ~plural:"Werven" [ ("lengte", pf_n0); ("keur", unbounded) ]
+  and report_line = pf_ot ~ident:"Rapport" ~plural:"Rapporten" [ ("bedrag", unbounded) ] in
+  let keuring =
+    {|{ "node": "FactType", "name": "keuring", "reciprocal": false, "roles": [
+      { "node": "Role", "name": "werf", "objectType": "Werf", "many": false },
+      { "node": "Role", "name": "rapport", "objectType": "Rapport", "many": false } ] }|}
+  in
+  let creation =
+    Printf.sprintf
+      {|{ "node": "ObjectCreation", "name": "keur een rapport", "versions": [ { "createdType": "Rapport",
+          "subject": "Werf", "initialisations": [ { "node": "MemberInit", "member": "bedrag",
+          "value": %s, "characteristic": false } ],
+          "validity": { "node": "Validity" },
+          "connectingRole": { "node": "RoleBinding", "factType": "keuring", "role": "rapport" } } ] }|}
+      (pf_bin ~typ:unbounded "dividedBy" (pf_a ~ot:"Werf" "lengte") (pf_l ~typ:pf_n0 "8"))
+  in
+  let back =
+    pf_rule ~ot:"Werf" ~objective:"keur"
+      {|{ "node": "AttributeReference", "attribute": "bedrag", "subjectType": "Rapport", "source": { "snippet": "het bedrag van zijn rapport" },
+          "path": [ { "node": "RoleBinding", "factType": "keuring", "role": "rapport" } ] }|}
+  in
+  both_answer ~name:"an object creation's member of the unbounded form at the scale of its bound"
+    ~ir:(pf_doc ~object_types:[ werf; report_line ] ~fact_types:keuring ~rule_defs:[ back ] ~creations:[ creation ] ())
+    ~case_text:
+      (pf_case
+         ~instances:
+           [ {|{ "label": "W1", "objectType": "Werf", "attributes": { "lengte": { "number": "20" } }, "roles": {}, "characteristics": [] }|} ]
+         [ pf_is ~label:"W1" ~attr:"keur" "2.5"; pf_cons ]);
+  (* the share of an allocation into the form takes the decimals of its
+     rounding, and the remainder those of the rounding or the pot *)
+  let veiling =
+    pf_ot ~ident:"Strandveiling" ~plural:"Strandveilingen"
+      [ ("veilingopbrengst", pf_n2); ("veilingrestant", unbounded) ]
+  and deelnemer = pf_ot [ ("veilingdeel", unbounded) ] in
+  let fact_types =
+    {|{ "node": "FactType", "name": "veilingdeelname", "reciprocal": false, "roles": [
+      { "node": "Role", "name": "strandveiling", "objectType": "Strandveiling", "many": false },
+      { "node": "Role", "name": "veilingjutter", "objectType": "Jutter", "plural": "veilingjutters", "many": true } ] }|}
+  in
+  let allocation =
+    {|{ "node": "Allocation", "name": "verdeel de veilingopbrengst", "versions": [ { "sourceType": "Strandveiling",
+        "sourceAttribute": "veilingopbrengst", "targetType": "Jutter", "targetAttribute": "veilingdeel",
+        "method": "equalShares", "roundingDecimals": 1, "remainderAttribute": "veilingrestant", "descending": false,
+        "validity": { "node": "Validity" },
+        "connectingRole": { "node": "RoleBinding", "factType": "veilingdeelname", "role": "veilingjutter" } } ] }|}
+  in
+  both_answer ~name:"an allocation into the unbounded form at the decimals of its rounding"
+    ~ir:(pf_doc ~object_types:[ veiling; deelnemer ] ~fact_types ~allocations:[ allocation ] ())
+    ~case_text:
+      (pf_case
+         ~instances:
+           ({|{ "label": "V1", "objectType": "Strandveiling", "attributes": { "veilingopbrengst": { "number": "100.05" } },
+               "roles": { "veilingjutters": [ "J1", "J2", "J3" ] }, "characteristics": [] }|}
+           :: List.map
+                (fun l -> Printf.sprintf {|{ "label": "%s", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [] }|} l)
+                [ "J1"; "J2"; "J3" ])
+         (List.map (fun l -> pf_is ~label:l ~attr:"veilingdeel" "33.3") [ "J1"; "J2"; "J3" ]
+         @ [ pf_is ~label:"V1" ~attr:"veilingrestant" "0.15"; pf_cons ]))
 
 (* RUNTIME-SEMANTICS ch. 5.5, Generations (card
    creatie-initialisatie-leest-groeiende-waarde, 2026-10-09). A member
