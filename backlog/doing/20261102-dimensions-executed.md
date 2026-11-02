@@ -933,3 +933,224 @@ Uit de gate-logs: de tellingen onder "Aangepaste verwachtingen" hierboven; gate 
 parameterchecks, 21 met reden, 19 EXCLUDE met code; gate 12 299 codes, 303 gespeeld op beide takken, 49 niet-gespeelde
 goldens met naam, JUnit 1754; gate 15 315 van 352 vergeleken, 279 afhankelijkheden, route 162 goldens, 75 unit tests;
 gate 17 980 getraceerd, 303 goldens en 846 case-bestanden vergeleken, afwijkingen 0. Niet gemerged, niet gepusht.
+
+### Stap 4b (Drools schrijven)
+
+Branch `card/dimensions-executed`, worktree op `2e07be6b2` (stap 1, 2, 4a en 3). Commits:
+
+- `61d0a2357` Drools schrijft een cel: `TmsTranspiler`, `Cycles`, `StandingTargets`, het plan (`Consequence.State.cell`,
+  `Consequence.Construction.Setting.cell`, functie `WITH_CELL`, routes `CELL` en `SET_CELL`), `ComputeHelpers`, beide
+  weergaven, `Fixpoint.DerivedValue.labels`, `DroolsBackend` (de weigering bij de bouw weg), `DroolsCode`, README,
+  `DimensionCellWitnessTest` en de pins van vier tests;
+- `b40626671` voorstel pins: gate 8 en gate 12 (hieronder);
+- `dfa67a328` voorstel spec en NOTEs: RUNTIME-SEMANTICS ch. 5.8c ("Where the executors stand") en ch. 5.12 (de grens
+  van gate 17), de NOTEs van `jutterswet-seizoenboeking`, `-seizoenkopie` en `corpus/red/jutterswet-cel-schrijfgrens`, de
+  getuigenkast van `corpus/golden/README.md`;
+- `f0a8b7f87` een vouw over een geschreven cel van onbegrensde vorm krijgt een benoemde weigering (DROOLS-296);
+- het commit van dit Result (en dat met de samenvatting van de laatste `make gates`).
+
+Beschermde paden (voorstel, niet gemerged): `spec/RUNTIME-SEMANTICS.md`, `scripts/check-drools.sh`,
+`scripts/check-red.sh`. Buiten de may-touch-set: niets.
+
+**Begintoets van het advies** (stap 4, het schrijfdeel). De graaf per cel (gate 15) en de lezingen van een cel (gate
+17) stonden er al: de regelgraaf schrijft per cel sinds stap 3 en gate 17 vergeleek de drie lezende goldens sinds 4a;
+hier kwamen de twee schrijvende goldens in die vergelijking. `RETIRED` uit het advies: 040, 047 en 184 gingen in 4a, 191
+gaat hier, plus 298 (de weigering van stap 1/3) en 297 (4a). Gemeten op de werkboom van `2e07be6b2`: beide goldens en
+het rode geval `EXCLUDE DROOLS-298` op beide takken (`logs/stap4b-red-witness-1.log`). Het advies klopt verder.
+
+#### Wat er veranderde
+
+- **Een cel is een lid van haar eigen.** `TmsTranspiler.Member` kreeg `cell`, de sleutel van de cel in de kaart van
+  haar attribuut (`FactModelGenerator.cellKey`, de labels in gedeclareerde spelling); de sleutel van het lid is die van
+  de regelgraaf (`ProducerConsumer.cellOf`, `vondstgewicht[najaar]` op het declarerende type). `cellMember` bouwt het
+  lid (weigert met naam wat `dimensionedMember` en `cellKey` weigeren); `writtenReference` en `writtenKey` lezen het doel
+  van een regel, ook een celdoel; `computeRules` en `initialisations` sleutelen per cel.
+- **Schrijven.** `rule` neemt een celdoel aan; `computeRule` en `initialisationRule` schrijven een `Value` met de
+  celsleutel, dus truth maintenance, de staande norm, het verschil van twee schrijvers en de schrijfgrens gelden per cel.
+  De wacht van een initialisatie leest de invoer van de cel in een test (`EMPTY_TEST(CELL(Term.Input(...)))`, en in de
+  variant naast een leegschrijver `TARGET_EMPTY` over hetzelfde), omdat de invoer een ingang van de kaart is en geen
+  veld van de bean. `fitted` noemt een cel met haar labels, dus EF-006 heeft `place` `j1.vondstgewicht[najaar]`, zoals
+  ref. Een objectcreatie met `MemberInit.labels` zet de cel in de kaart van de nieuwe bean vóór het invoegen
+  (`ComputeHelpers.setCell`, route `SET_CELL` in de DRL-tekst).
+- **Lezen.** Een `DimensionCellRead` van een cel die een vorm schrijft, leest haar `State` (`Reads.own`); de stand neemt
+  de afleiding of anders `ComputeHelpers.cell(kaart, sleutel)` (`Consequence.State.cell`, route `CELL`). Een
+  dimensievouw leest de kaart van de bean en elke geschreven cel via haar stand, die in een kopie van de kaart de plaats
+  van haar ingang neemt (`WITH_CELL`, `ComputeHelpers.withCell`); `rsDimSom/Min/Max` van de productieruntime bleven
+  ongewijzigd. De controle DROOLS-191 in `dimensionRead` (nu `dimensioned`) is weg.
+- **Terugleggen.** `readFixpoint` zet een afgeleide cel met `ComputeHelpers.setCell` in de kaart (een kaart waar de bean
+  er geen heeft; een geschreven leeg haalt de cel weg) en geeft haar in `Fixpoint.DerivedValue` met haar labels. Een
+  conflict en de regel van twee schrijvers noemen de cel (`vondstgewicht[najaar]`); de standregels en de verschilregel
+  heten per cel (`stand Jutter.vondstgewicht[najaar]: …`), anders botsen hun namen.
+- **Domeinen.** `StandingTargets.key` sleutelt een celdoel op de cel, zoals `Desugar.target_of` van ref, en
+  `otherWriter` kent een `MemberInit` met labels; de casts op `AttributeReference` zijn weg.
+- **Kringen en strata.** `Cycles` tekent een cel als eigen knoop, zoals `n_cell` van de verifier (labels zoals
+  geschreven): een celdoel schrijft de cel over de typeketen (`member_writes ~labels`), een `MemberInit` met labels de cel
+  van het gemaakte type en zijn voorouders, een cellezing leest haar cel over de eigen hops, een dimensievouw elke cel van
+  het product (geen populatie). Een regel met een celdoel viel tot nu toe helemaal uit de graaf.
+- **Weigeringen.** `DroolsBackend.refuseCellWrites` is weg. Een kenmerktoekenning op een cel: DROOLS-099 (WF-022, geen
+  nieuwe code). Een vouw over een cel die een vorm op de onbegrensde vorm schrijft: DROOLS-296, de grens van de setvouw
+  (`f0a8b7f87`). Een cel over een pad blijft DROOLS-189, een celdoel met een pad DROOLS-100.
+- **README** van de Drools-backend: nieuwe alinea "Cells", de weigeringenlijst en de zin over de weigering bij de bouw.
+
+`RETIRED`: DROOLS-191 (`dimension-read-written-attribute`) en DROOLS-298 (`dimension-cell-write`); register 299 codes,
+9 → 11 retired.
+
+#### Rood en groen
+
+`DimensionCellWitnessTest`, zes nieuwe rijen op beide takken (de rij `a_cell_write_is_refused_when_the_backend_builds`
+viel weg, zie hieronder): seizoenboeking met haar drie cases en seizoenkopie met haar case spelen, plus twee
+`FAIL`-rijen (een verkeerde celwaarde, `cellEmpty` op een geschreven cel); het rode geval geeft `FAULT EF-006` met
+`place` `j1.vondstgewicht[najaar]`, `value` `15/8`, `decimals` `2`; de lezingen van de regels 0 en 1 van case1 zoals
+`WV-5.12-celdoel` van ref (J2 `DISPLACED`); twee schrijvers per cel (`EF-016`, `attribute` `vondstgewicht[najaar]`, beide
+cellen in de zin); een vouw over een geschreven cel van onbegrensde vorm `EXCLUDE DROOLS-296`; de kringtoets (geen kring
+voor seizoenboeking en seizoenkopie, wel voor najaar uit najaar en voor najaar uit de som over alle seizoenen).
+
+Op `2e07be6b2` met alleen het nieuwe testbestand (`logs/stap4b-red-witness-1.log` met de eerste vier rijen,
+`-3.log` met alle zes): alle zes rood, vijf op `EXCLUDE DROOLS-298` waar een play, `FAULT EF-006`, lezingen of
+`EXCLUDE DROOLS-296` verwacht werd, en de kringtoets op een toegelaten najaar-uit-najaar ("expected: not <null>": `Cycles`
+liet een regel met een celdoel uit zijn graaf). Op de branch alle zestien groen.
+
+Mutaties, elk één vervanging in een `git worktree add --detach` (opgeruimd), D1–D13 op `dfa67a328`, D9b en D14 op
+`f0a8b7f87` (`mutants/stap4b/mutate4b.py`, `logs/stap4b-mutants-1.log`, `-2.log`), elk rood:
+
+| | bewaking | mutatie | rood |
+|---|---|---|---|
+| D1 | celsleutel | `cellMember` met de attribuutsleutel | 3 rijen: `cel vondstgewicht[najaar]: verwacht 0.00, werkelijk leeg`, een NPE in de lezingen |
+| D2 | invoer van een geschreven cel | `Consequence.State` zonder `cell` | 2 rijen: `ClassCastException` (de hele kaart als waarde) |
+| D3 | vouw over geschreven cellen | geen `WITH_CELL` | jaargewicht 1.50 voor 4.50, 3.50 voor 6.50, leeg voor 0.00 |
+| D4 | terugleggen | geen `setCell` | `cel vondstgewicht[najaar]: verwacht 3.00, werkelijk leeg` |
+| D5 | wacht van de initialisatie per cel | geen test op de invoer van de cel | J2 zomer 0 voor 2.00; lezing `HOLDS` voor `DISPLACED` |
+| D6 | plaats van EF-006 | `member.name()` | `place` `j1.vondstgewicht` |
+| D7 | celknoop in `Cycles` | knoop van het attribuut | seizoenboeking `EXCLUDE DROOLS-092` "kring … over het lid Jutter.vondstgewicht" (5 rijen) |
+| D8 | domein per cel | sleutel op het attribuut | seizoenkopie J2 zomer leeg voor 7.00 |
+| D9 | creatie zet een cel (exec-model) | zet de hele eigenschap | `ClassCastException: Cannot cast java.math.BigDecimal to java.util.Map` (3 rijen) |
+| D9b | idem (DRL-tekst) | idem | idem, op de DRL-teksttak |
+| D10 | standregels per cel | naam van het attribuut | `Duplicate rule name: stand Jutter.vondstgewicht: uit een afleiding` |
+| D11 | verschilregel per cel | naam van het attribuut | `Duplicate rule name: schrijvers Jutter.vondstgewicht: verschil` |
+| D12 | lezen van een geschreven cel | uit de kaart | geboekte gewicht leeg voor 3.00 |
+| D13 | EF-016 noemt de cel | naam van het attribuut | vier fouten in plaats van twee (de feit- en de leesfout verschillen) |
+| D14 | onbegrensde vorm | weigering weg | `PLAYED` voor `EXCLUDE DROOLS-296` |
+
+D14 laat zien dat de weigering ruim is: zonder haar speelt case2 (alle waarden eindig, 0); een breuk in de kaart zou
+pas bij een niet-eindige waarde op de cast van `rsDimSom` vallen.
+
+Losse proef (`logs/stap4b-cells-1.log`, `logs/stap4b-readings/`): de vijf goldens met cellen PLAYED 3, 1, 1, 2, 1 op
+beide takken; het rode geval `FAULT EF-006 {"place":"j1.vondstgewicht[najaar]","value":"15/8","decimals":"2"}`;
+`runner --trace` en `--readings` (beide takken) regel voor regel gelijk op de vier case-bestanden van de twee schrijvende
+goldens (23, 12, 24 en 8 regels).
+
+Verschil tussen de uitvoerders, gemeten (geen corpusgeval, niets te repareren in `backends/drools/`): het paar
+initialisatie plus berekening op één cel (seizoenkopie met `najaar` := `voorjaar` en een initialisatie van `najaar` op 0
+kg; J1 voorjaar 2.00, J2 zonder invoer, J3 najaar 5.00): verifier PASS; ref `oracle: PASS (4 expectations)` (2.00, 0.00,
+5.00); Drools `PLAYED 1` op beide takken, de lezingen gelijk aan de trace van ref (J1 en J3 `DISPLACED`); clingo
+`TRANSLATION FAULT: the case supplies input for computed target "vondstgewicht[najaar]"`. Dat is de ontwerpdivergentie
+van stap 3 (clingo weigert, ref antwoordt in de defaults-lezing), nu met Drools aan de kant van ref.
+
+#### Aangepaste verwachtingen, pins en vloeren (oud → nieuw)
+
+- `DimensionCellWitnessTest.a_cell_write_is_refused_when_the_backend_builds` (beide takken `EXCLUDE DROOLS-298`, ook
+  met lezingen) → `a_cell_written_by_a_rule_an_initialisation_and_a_creation_plays` (PLAYED) en de vijf andere nieuwe
+  rijen: door de kaart omgedraaid.
+- Plandumppin `StatePlanWitnessTest` (twee tests, zes regels): elke `consequence State […]` draagt nu `cell=null`; voorbeeld
+  `…source=INPUT, value=0, bucketScalar=false, insertion=LOGICAL]` → `…bucketScalar=false, cell=null,
+  insertion=LOGICAL]`.
+- Routepin `RouteWitnessTest.the_routes_with_their_signature`: + `CELL: Object ComputeHelpers.cell[Object, List]` en
+  + `SET_CELL: void ComputeHelpers.setCell[Object, String, List, Object]` (routes 50 → 52 in de pin).
+- `CreationPlanWitnessTest` (vijf plaatsen) en `FormsPlan` (twee) bouwen `Setting` en `State` met `null` voor `cell`;
+  geen verwachting veranderde. Geen DRL-tekstpin veranderde.
+- Gate 12 (`scripts/check-drools.sh`, voorstel): `jutterswet-seizoenboeking` en `jutterswet-seizoenkopie` (`EXCLUDE
+  DROOLS-298`) uit `EXPECTED_CHANNEL`, 49 → 47 niet-gespeelde goldens met naam; `EXPECTED_PLAYED` 303 → 305, met reden
+  (PLAYED 3 en 1 op beide takken); DRL-teksttak 303 → 305; JUnit 1754 → 1759 (vloer 1573); codes 299, retired 9 → 11.
+- Gate 8 (`scripts/check-red.sh`, voorstel): `jutterswet-cel-schrijfgrens|EXCLUDE DROOLS-298 …` uit de Drools-lijst; de
+  Drools-leg leest `FAULT EF-006`; 50 → 51 met fout, 78 → 79 parameterchecks (vloer 28), 21 → 20 met reden, 19 → 18
+  EXCLUDE met code (vloer `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=18`, ongewijzigd, nu precies gehaald).
+- Geen vloer veranderd. Tellingen (oud uit `out/gates/20261102-162255`, stap 3): gate 13 DRL-teksttak 29 → 30 gespeelde
+  getwiste goldens (64 annotaties over 31 goldens, 168 replays, ongewijzigd); gate 15 ongewijzigd (315 van 352, 279
+  afhankelijkheden, route 162 goldens, 75 unit tests); gate 17 303 → 305 goldens, 846 → 850 case-bestanden, 6832 →
+  6861 lezingen, 22361 → 22399 knoopregels, 3800 `unreached` (gelijk), 803 → 808 met het object van een lezing,
+  afwijkingen 0.
+- `CLAUDE.md` noemt bij gate 12 de retired codes per kaart; DROOLS-191 en -298 staan er niet bij (beschermd pad, voor de
+  hoofdsessie).
+
+#### Voorgestelde tekst voor CONSTRUCTS (hoofdsessie)
+
+Rij 28, achter de noot van stap 3:
+
+> **Landed (stap 4b van `dimensions-executed`, 2026-11-02, `61d0a2357` … `f0a8b7f87`):** de Drools-backend schrijft een
+> cel met een regel, een initialisatie en een objectcreatie (`MemberInit.labels`): een cel is daar een lid van haar
+> eigen met de sleutel van haar knoop, de `Value` draagt die sleutel, de stand neemt de afleiding of de invoer uit de
+> kaart, het terugleggen zet de cel in de kaart, de schrijfgrens noemt de cel (EF-006), en de kringtoets tekent de cel als
+> eigen knoop. Daarmee spelen de vijf goldens met cellen in het vierkant ref ≡ clingo ≡ Drools (gate 12) en vergelijkt
+> gate 17 hun lezingen; DROOLS-191 en DROOLS-298 vervallen. Blijft geweigerd: een cel over een pad (DROOLS-189) en een
+> vouw over een geschreven cel van onbegrensde vorm (DROOLS-296).
+
+De zin van stap 3 "Drools laadt de vormen en weigert bij de bouw (DROOLS-298), dus die pins zijn een ref = clingo-paar
+tot het schrijfdeel van stap 4" vervalt bij de landing.
+
+#### Voorlopige besluiten
+
+1. **Een cel is een `Member` met `cell`**, de sleutel `ProducerConsumer.cellOf` (zoals de regelgraaf, labels zoals
+   geschreven en genormaliseerd), de kaartsleutel uit `cellKey` (gedeclareerde spelling); `name` blijft de
+   bean-eigenschap van de kaart, `spelled()` geeft `vondstgewicht[najaar]` voor zinnen, regelnamen en de plaats van een
+   fout.
+2. **De invoer van een geschreven cel** komt in de stand via `Consequence.State.cell` en de route `CELL`, en in de wacht
+   van een initialisatie via een test in plaats van een alpha op het veld: een ingang van een kaart is geen veld.
+3. **De vouw rekent op een kopie van de kaart** met de staande waarden van de geschreven cellen (`WITH_CELL`); de
+   productieruntime (`rsDimSom/Min/Max`) bleef ongewijzigd.
+4. **`Fixpoint.DerivedValue` kreeg `labels`** (null voor een gewoon attribuut) in plaats van een attribuutnaam met
+   labels: een afnemer leest de cel zonder een spelling te ontleden. Gevolg buiten uchar: `FixpointGivens` van de
+   distributie sleutelt per attribuutnaam en faalt luid ("het fixpunt geeft het attribuut … twee keer") zodra twee cellen
+   van één attribuut afgeleid zijn; voor de service-JSON bij de pin-bump.
+5. **Een kenmerktoekenning op een cel is DROOLS-099** (CONTRACT, WF-022), een kenmerkinitialisatie met labels valt op de
+   weigering van `cellMember`; geen nieuwe code.
+6. **Een vouw over een geschreven cel van onbegrensde vorm is DROOLS-296** (de bestaande LIMIT van de setvouw), ruim
+   genomen: ook waar de waarde eindig is (D14).
+7. **De plaats van EF-006 op een cel** is `<label>.<attribuut>[<labels>]` met de labels in gedeclareerde spelling, gelijk
+   aan ref; de pin van het rode geval blijft `{}` (clingo spelt de plaats zonder instantie).
+8. **De celknoop van `Cycles`** volgt de verifier: labels zoals geschreven, genormaliseerd; een dimensievouw leest geen
+   populatie. Besluit 7 van 4a ("`Cycles` blijft per attribuut tot het schrijfdeel") is daarmee afgelost.
+
+#### Wat niet lukte of buiten stap 4b bleef
+
+- Geen poging die mislukte.
+- Een cel over een pad (DROOLS-189, lezen en schrijven) en de service-JSON van de distributie: buiten deze stap.
+- Geen Drools-getuige voor het paar initialisatie plus berekening op één cel; alleen de meting hierboven.
+
+#### `make gates`
+
+Drools-suite eerst (`mvn -o test`, `logs/stap4b-suite-1.log`, op de werkboom vóór `61d0a2357`): 1757 tests, drie rood,
+de pins van `RouteWitnessTest` en `StatePlanWitnessTest` (hierboven bijgewerkt). Eerste `make gates` op `dfa67a328`
+(`out/gates/20261102-165938`): alle zeventien groen, `red=0`, 310 s, JUnit 1758. Daarna kwam `f0a8b7f87`. Laatste run
+op `f0a8b7f87` (dit Result zonder deze alinea; de kaart is geen invoer van een gate; `logs/stap4b-gates-2.log`),
+`out/gates/20261102-170805/summary.txt`:
+
+```
+ocaml rc=0 0s ocaml-build: fresh (stamp newer than 217 source files)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 2s drools-jar: rebuilt (3 source path(s) newer than the jar, e.g. backends/drools/src/main/java/dev/uchar/regelspraak/transpiler/tms/TmsTranspiler.java; 2s)
+01-self-contained rc=0 1s
+02-ir-schema rc=0 127s
+04-case-schema rc=0 7s
+03-verifier rc=0 36s
+05-oracle rc=0 20s
+06-clingo rc=0 254s
+07-noop rc=0 12s
+08-red rc=0 160s
+09-catala rc=0 4s
+10-regelspraak rc=0 216s
+11-toka-parity rc=0 211s
+12-drools rc=0 312s
+13-reftype rc=0 259s
+14-flogic rc=0 1s
+15-graph rc=0 46s
+16-scenario rc=0 37s
+17-readings rc=0 234s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 17:13:19 314s red=0
+```
+
+Uit de gate-logs: gate 8 Drools-leg 51 met fout, 79 parameterchecks, 20 met reden, 18 EXCLUDE met code; gate 12 299
+codes (11 retired), 305 gespeeld op beide takken, 47 niet-gespeelde goldens met naam, JUnit 1759; gate 13 64
+annotaties over 31 goldens, 168 replays, 30 gespeeld door de DRL-teksttak; gate 15 315 van 352 vergeleken, 279
+afhankelijkheden; gate 17 980 getraceerd, 305 goldens en 850 case-bestanden vergeleken, 6861 lezingen, afwijkingen 0.
+Niet gemerged, niet gepusht.
