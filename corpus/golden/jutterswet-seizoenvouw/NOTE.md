@@ -79,7 +79,4 @@ the same reason no case pins an input cell.
 |---|---|
 | `ref` (gate 5) | `oracle: PASS (5 expectations)`, `oracle: PASS (9 expectations)` |
 | `clingo` (gate 6) | `clingo: PASS (5 expectations)`, `clingo: PASS (9 expectations)` |
-| Drools (gate 12) | `EXCLUDE DROOLS-047: dimensioned attribute input 'vondstgewicht' (§3.6, a Map bean member) is not carried by the v0 backend`, both branches |
-
-So the pins are a `ref` = clingo pair until the Drools backend carries a
-cells input.
+| Drools (gate 12) | `PLAYED 2`, both branches |

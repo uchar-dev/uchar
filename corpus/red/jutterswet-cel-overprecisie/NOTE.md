@@ -12,6 +12,5 @@ verifier-clean. Only the case is red.
 `ref` and the ASP backend lay the cells down and refuse the value before any
 rule fires, with EF-004 and the parameters `value` 1.005 and `decimals` 2;
 `ref` names the cell as the place, `j1.vondstgewicht[voorjaar]`, and the
-`ref/test` row `WV-5.8c-invoer-ef004` pins it. The Drools backend refuses the
-cells input itself (DROOLS-047), before a value is held to its decimals;
-gate 8 lists it.
+`ref/test` row `WV-5.8c-invoer-ef004` pins it. The Drools backend refuses
+the value with the same code and parameters, at the same place.

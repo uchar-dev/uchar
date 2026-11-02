@@ -74,10 +74,7 @@ holds on the input as well and the no-op guard (gate 7) would let it pass.
 |---|---|
 | `ref` (gate 5) | `oracle: PASS (7 expectations)` |
 | `clingo` (gate 6) | `clingo: PASS (7 expectations)` |
-| Drools (gate 12) | `EXCLUDE DROOLS-184: transpiler SKIP: regel: zeecijfer uit voorjaarsaanspoeling — a DimensionCellRead over 2 dimensions ('de aanspoeling in het voorjaar uit zee'): this branch reads only a cell of one dimension`, both branches |
-
-So the pins are a `ref` = clingo pair until the Drools backend reads a cell
-over two dimensions.
+| Drools (gate 12) | `PLAYED 1`, both branches |
 
 ## What stays, and the measurement that keeps it here
 

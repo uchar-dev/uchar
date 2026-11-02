@@ -75,10 +75,7 @@ one holds on the input as well and the no-op guard (gate 7) would let it pass.
 |---|---|
 | `ref` (gate 5) | `oracle: PASS (3 expectations)` |
 | `clingo` (gate 6) | `clingo: PASS (3 expectations)` |
-| Drools (gate 12) | `EXCLUDE DROOLS-047: dimensioned attribute input 'vondstgewicht' (§3.6, a Map bean member) is not carried by the v0 backend`, both branches |
-
-So the pins are a `ref` = clingo pair until the Drools backend carries a
-cells input.
+| Drools (gate 12) | `PLAYED 1`, both branches |
 
 Gate 10 still applies in full: `source.rgs` re-emits byte-identically to
 the checked-in `ir.json`, so the source-level shape is pinned too.

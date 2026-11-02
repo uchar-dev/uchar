@@ -13,5 +13,5 @@ second dimension `strand` (labels `noord`, `zuid`) and the cell read
 `ref` and the ASP backend refuse the case while they read it, before any
 rule fires, with EF-034 and the parameters `label`, `attribute` and
 `labels`: both read the case with the case reader of `ref`. The Drools
-backend refuses the cell read over two dimensions when it builds the
-document (DROOLS-184), before it reads the case; gate 8 lists it.
+backend refuses it with the same code and parameters in a case reader of
+its own.

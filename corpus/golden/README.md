@@ -124,10 +124,9 @@ Gate 5 currently lists **one** golden as not replayed:
 through a dimension cell (`DimensionCellRead`), and
 `jutterswet-seizoenvouw` the dimension fold on the same kind of attribute: a
 sum, a maximum and a minimum whose `dimensionSelections` pick the labels they
-fold, emitted by the RegelSpraak frontend. Both carry cases that `ref` and
-clingo replay (`RUNTIME-SEMANTICS.md` ch. 5.8c); the Drools backend refuses
-their cells input (DROOLS-047), and each `NOTE.md` carries the outcome per
-executor.
+fold, emitted by the RegelSpraak frontend. Both carry cases that `ref`,
+clingo and the Drools backend replay (`RUNTIME-SEMANTICS.md` ch. 5.8c), and
+each `NOTE.md` carries the outcome per executor.
 
 `jutterswet-seizoenkopie` is the cell as a write position: two rules that
 each write one cell of `vondstgewicht` from another cell of it, and an

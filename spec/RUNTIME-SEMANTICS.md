@@ -5095,12 +5095,16 @@ reading and folding replay in both: the goldens `jutterswet-seizoenvondst`,
 dimensions that share a label), the `ref/test` rows `WV-5.8c-*` and the
 frames of `backends/clingo/test/test_clingo.ml` for two dimensions and a
 path; the red witness `corpus/red/jutterswet-cel-overprecisie` carries the
-input precision of a cell. The Drools backend reads a cell and folds over
-one dimension, of an attribute of the subject without input, and refuses a
-cell input (DROOLS-047), a cell over two dimensions (DROOLS-184), a fold
-over more than one dimension (DROOLS-297) and a cell write (DROOLS-298), so
-the pins of those goldens are a `ref` = ASP pair. The worked example of
-writing has no replay.
+input precision of a cell. The Drools backend holds the same refusals of
+the case in a case reader of its own and keeps a dimensioned attribute as a
+map of its cells; it reads a cell and folds over one dimension and over
+more, of an attribute of the subject, and refuses a cell over a path
+(DROOLS-189) and a cell write (DROOLS-298). The three goldens replay in all
+three executors (gate 12), the three red witnesses of a cell fault in all
+three with their pinned code and parameters (gate 8), and the backend's
+`DimensionCellWitnessTest` replays the example over two dimensions on its
+cells 2.00, 1.00 and 5.00. The worked examples of reading over a path and
+of writing have no replay in it.
 
 ### 5.9 Uniqueness: the union and the scope
 
@@ -5437,7 +5441,7 @@ name its kinds the same way.
 | `duration` / `absoluteDuration` (tijdsduur / absolute tijdsduur) | argument 0 (`van`), argument 1 (`tot`) | **visible** | `van`, then `tot` |
 | `dateWith` / `dateTimeWith` (datum met / datum-tijd met) | the `arguments` list: year, month, day, and for `dateTimeWith` hour, minute, second, millisecond (WF-037 leaves its arity open; ch. 3.8 fixes it) | **visible** | argument order; every part runs before the leeg test, so a leeg part costs its successors nothing |
 | aggregation (`sum` (som), `total` (totaal), `count` (aantal), `minimum`, `maximum`, `first` (eerste), `last` (laatste), `filledCount`) | the contributors — the listed `arguments`, or the instance fold's members each gated by the `filter` — then the `emptyFallback` | **visible** | the contributors in wire order (an instance fold: the filter per member, members in fold order), then the `emptyFallback` (WF-037 confines it to `sum`) |
-| aggregation over `dimensionSelections` (the third contributor source; WF-037 admits it on `sum`, `minimum`, `maximum`) | the selected cells, then the `emptyFallback` | **visible** | the cells of the product of the selections, the first selection outermost and each in its own label order (ch. 5.8c), then the `emptyFallback`. *`ref` and the ASP backend evaluate the form; the order is stated and has no witness, as no cell read faults* |
+| aggregation over `dimensionSelections` (the third contributor source; WF-037 admits it on `sum`, `minimum`, `maximum`) | the selected cells, then the `emptyFallback` | **visible** | the cells of the product of the selections, the first selection outermost and each in its own label order (ch. 5.8c), then the `emptyFallback`. *All three executors evaluate the form; the order is stated and has no witness, as no cell read faults* |
 | `concatenation` (concatenatie), `TextComposition` | the inserted parts | **visible** | part order |
 | `ListLiteral` | `elements` | **visible** | element order |
 | `StructLiteral` | `fields` | **visible** | declared field order (WF-073) |
@@ -6234,13 +6238,13 @@ the value of the fixpoint; gate 17 compares their node lines as it
 compares every other, and counts them.
 
 Four boundaries, recorded rather than left implicit. The reading of a
-cell stays outside the comparison of gate 17 and outside that corpus
-witness: `ref`'s trace reads the cell on every case file of the goldens that
-read one (ch. 5.8c), and the Drools backend refuses those cases (DROOLS-047,
-DROOLS-184), so gate 17 holds its `EXCLUDE` line to that of the plain replay;
-`WV-5.12-cel` pins the reading of a cell in `ref`. The Drools backend reads a
-cell only of the subject's own attribute (a cell over a path it refuses,
-DROOLS-189), whose object the text does not write. The status `FAULTS`
+cell over a path stays outside gate 17 and outside that corpus witness: the
+Drools backend reads a cell only of the subject's own attribute (a cell over
+a path it refuses, DROOLS-189), and no golden with case files reads one over
+a path; `WV-5.12-cel-over-een-pad` pins it in `ref`. A cell of the subject
+is inside: gate 17 compares the readings of the goldens that read one
+(ch. 5.8c) on both branches, the cell read and the dimension fold as the
+nodes, and the text writes no object for the cell. The status `FAULTS`
 and a fault at a node stay outside that differential: a golden does not
 fault at its fixpoint, and `runner --trace` refuses a case that pins one.
 Neither does a displaced default of a golden fault in its reading
