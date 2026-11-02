@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.graph.ProducerConsumer;
+import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.loader.IrLoader;
+import dev.uchar.regelspraak.refusal.DroolsCode;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -34,7 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * cell expectation whose labels name no cell. A reading (ch. 5.12) has the cell read and the dimension fold as its
  * nodes and the reference under them without a line; the rule graph (IR-SPEC ch. 5.1) reads a cell as a member of its
  * own, spelled as the verifier spells the node. A cell read or a fold whose labels name no cell of the dimensions of
- * its attribute breaks the contract of WF-040 and is refused by name.
+ * its attribute breaks the contract of WF-040 and is refused by name. A cell written by a rule, an initialisation or an
+ * object creation ({@code jutterswet-seizoenboeking}) is carried by the loader and written per cell by the rule graph,
+ * and the build refuses it, since the beans and the rules write no cell yet (DROOLS-298).
  *
  * <p><b>Red before the change</b> (measured 2026-11-02 on {@code 574faa1a7}, all nine rows): every case with a cells
  * input {@code EXCLUDE DROOLS-047} ("invoer van een attribuut met dimensie 'vondstgewicht' (§3.6, een Map-beanlid)
@@ -251,6 +256,50 @@ class DimensionCellWitnessTest {
                 "vondstgewicht[najaar, zuid]"), members(forms.get(3)));
     }
 
+    // ---------------- writing cells ----------------
+
+    /** IR-SPEC ch. 3.1, ch. 3.3: the loader carries a cell target and a creation member with labels into the model, and
+     *  the rule graph writes each cell as a member of its own. In {@code jutterswet-seizoenboeking} the rule on najaar
+     *  writes vondstgewicht[najaar] from vondstgewicht[voorjaar], the initialisation vondstgewicht[zomer], and the object
+     *  creation vangstgewicht[najaar] of the Vangst it makes.
+     *
+     *  <p><b>Red before the change</b> (measured 2026-11-02 on {@code 6c397de93}): the loader refused the document,
+     *  {@code IrLoader.Refusal} DROOLS-298, so neither the model nor the graph existed. */
+    @Test void the_loader_carries_a_cell_write_and_the_graph_writes_the_cell() throws Exception {
+        IrLoader.Loaded boeking = IrLoader.loadAll(golden("jutterswet-seizoenboeking"));
+        Expr.DimensionCellRead target = assertInstanceOf(Expr.DimensionCellRead.class,
+                boeking.model().resolvedRules.get(0).target());
+        assertEquals("vondstgewicht", target.attribute().attribute());
+        assertEquals(List.of("najaar"), target.labels());
+        assertEquals(List.of("najaar"), boeking.model().objectCreations.get(0).initialisations().get(0).labels());
+        List<ProducerConsumer.Form> forms = ProducerConsumer.forms(boeking.model(), boeking.prioritizedDefaults(),
+                ProducerConsumer.wireNavigation(boeking));
+        assertEquals(List.of("vondstgewicht[najaar]"), writes(forms.get(0)));
+        assertEquals(List.of("vondstgewicht[voorjaar]"), members(forms.get(0)));
+        assertEquals(List.of("vondstgewicht[zomer]"), writes(forms.get(1)));
+        ProducerConsumer.Form creation = forms.stream()
+                .filter(f -> f.kind() == ProducerConsumer.FormKind.OBJECT_CREATION).findFirst().orElseThrow();
+        assertEquals(List.of("vangstgewicht[najaar]"), writes(creation));
+        assertEquals(List.of("vondstgewicht[najaar]"), members(creation));
+    }
+
+    /** The build refuses a document that writes a cell, on both branches and in a build with readings, before a bean or
+     *  a rule is built: DROOLS-298, which names the attribute and the form. */
+    @Test void a_cell_write_is_refused_when_the_backend_builds() throws Exception {
+        Path ir = GOLDEN.resolve("jutterswet-seizoenboeking").resolve("ir.json");
+        Path c = GOLDEN.resolve("jutterswet-seizoenboeking").resolve("case1-voorjaar-en-zomer.json");
+        for (DroolsBackend.Branch branch : BRANCHES) {
+            CaseRunner.Result r = replay(ir, List.of(c), branch);
+            assertEquals("EXCLUDE", r.status(), () -> branch + ": " + r);
+            assertEquals(DroolsCode.DIMENSION_CELL_WRITE, r.code(), () -> branch + ": " + r);
+            assertTrue(r.reason().contains("'vondstgewicht'") && r.reason().contains("'najaarsgewicht van een jutter'"),
+                    () -> branch + ": " + r);
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> CaseRunner.readings(ir, List.of(c), branch),
+                    branch::toString);
+            assertEquals(DroolsCode.DIMENSION_CELL_WRITE, e.code(), () -> branch + ": " + e.getMessage());
+        }
+    }
+
     // ---------------- the documents ----------------
 
     /** The two-dimensional document of the worked example of ch. 5.8c: jutterswet-seizoenvouw with a second dimension
@@ -413,5 +462,9 @@ class DimensionCellWitnessTest {
 
     private static List<String> members(ProducerConsumer.Form form) {
         return form.reads().stream().map(ProducerConsumer.ElementKey::name).toList();
+    }
+
+    private static List<String> writes(ProducerConsumer.Form form) {
+        return form.writes().stream().map(ProducerConsumer.ElementKey::name).toList();
     }
 }

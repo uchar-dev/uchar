@@ -438,7 +438,8 @@ public final class IrLoader {
      *  union). */
     private void checkSubjects() {
         for (ResolvedRule r : m.resolvedRules) {
-            ObjectType s = r.target() instanceof Expr.AttributeReference a ? a.objectType() : null;
+            ObjectType s = r.target() instanceof Expr.AttributeReference a ? a.objectType()
+                    : r.target() instanceof Expr.DimensionCellRead c ? c.attribute().objectType() : null;
             formSubject = s;
             checkValue(r.value(), s);
             checkCondition(r.condition(), s);
@@ -2439,14 +2440,15 @@ public final class IrLoader {
         ResolvedRule.Kind ruleKind = initialisation ? ResolvedRule.Kind.INITIALISATIE
                 : tagged == null ? ResolvedRule.Kind.KENMERKTOEKENNING : tagged;
         JsonNode t = n.get("target");
-        // IR-SPEC ch. 3.1: a version may write one cell of a dimensioned attribute, a form this backend does not carry
-        if (t.isObject() && "DimensionCellRead".equals(text(t, "node")))
-            throw new Refusal(DroolsCode.DIMENSION_CELL_WRITE.reason("attribute", cellAttribute(t), "form", version.name()),
-                    "RuleVersion.target");
-        if (!t.isObject() || !"AttributeReference".equals(text(t, "node")))
+        // IR-SPEC ch. 3.1: a version writes an attribute or characteristic, or one cell of a dimensioned attribute,
+        // named by the attribute reference under it; the model carries the cell, and the build refuses it
+        boolean cell = t.isObject() && "DimensionCellRead".equals(text(t, "node"));
+        JsonNode reference = cell ? t.get("attribute") : t;
+        if (!t.isObject() || reference == null || !reference.isObject() || !"AttributeReference".equals(text(reference, "node")))
             throw new DocumentError(path + "/target", TARGET_ATTRIBUTE_REFERENCE);
-        Expr.AttributeReference target = (Expr.AttributeReference) expr(t);
-        checkMembersKind(target, text(t, "subjectType"), ruleKind, path + "/target");
+        Expr target = expr(t);
+        Expr.AttributeReference written = target instanceof Expr.DimensionCellRead c ? c.attribute() : (Expr.AttributeReference) target;
+        checkMembersKind(written, text(reference, "subjectType"), ruleKind, path + (cell ? "/target/attribute" : "/target"));
         ResolvedRule r = new ResolvedRule(version.name(), ruleKind, target, expr(jsonNode(n, path, "value")),
                 condition(nodeField(n, "condition")), validity(n, path), annotations);
         positions.version(r, path);
@@ -2459,7 +2461,7 @@ public final class IrLoader {
                      && l.type() instanceof Datatype.BooleanType)) {
             String value = r.value() instanceof Expr.Literal l ? "'" + l.valueText() + "'"
                     : "een " + r.value().getClass().getSimpleName();
-            throw new Refusal(DroolsCode.CHARACTERISTIC_FALSE_OUTSIDE_DEFAULTS.reason("rule", r.name(), "characteristic", target.attribute(), "value", value), "RuleVersion.value");
+            throw new Refusal(DroolsCode.CHARACTERISTIC_FALSE_OUTSIDE_DEFAULTS.reason("rule", r.name(), "characteristic", written.attribute(), "value", value), "RuleVersion.value");
         }
         return r;
     }
@@ -2469,12 +2471,6 @@ public final class IrLoader {
             + " a computing version, never an initialisation";
     static final String TARGET_ATTRIBUTE_REFERENCE = "the target of a rule version is an AttributeReference or a"
             + " DimensionCellRead";
-
-    /** The attribute a cell target names, as the wire writes it; empty where its reference does not name one. */
-    private static String cellAttribute(JsonNode cell) {
-        JsonNode a = cell.get("attribute");
-        return a != null && a.isObject() && a.has("attribute") && a.get("attribute").isTextual() ? a.get("attribute").asText() : "";
-    }
 
     /** WF-022, the member-kind arm and the name that is both (IR-SPEC ch. 3.1): the verifier's sentences, which
      *  name the member and the type as the target writes them. A target whose type or member does not resolve is
@@ -2519,13 +2515,10 @@ public final class IrLoader {
             List<ResolvedObjectCreation.MemberInit> tk = new ArrayList<>();
             list(k, p, "initialisations", (tp, t) -> {
                 fields(t, tp, "MemberInit", List.of("node", "member", "value", "characteristic"), List.of("labels"));
-                // IR-SPEC ch. 3.3: a member with labels writes one cell of a dimensioned attribute, which this backend
-                // does not carry
-                if (t.has("labels"))
-                    throw new Refusal(DroolsCode.DIMENSION_CELL_WRITE.reason("attribute", text(t, "member"), "form", v.name()),
-                            "MemberInit.labels");
+                // IR-SPEC ch. 3.3: a member with labels writes one cell of a dimensioned attribute of the made object;
+                // the model carries the cell, and the build refuses it
                 tk.add(new ResolvedObjectCreation.MemberInit(text(t, "member"), expr(nodeField(t, "value")),
-                        bool(t, "characteristic")));
+                        bool(t, "characteristic"), t.has("labels") ? stringList(t.get("labels")) : null));
             });
             ResolvedObjectCreation oc = new ResolvedObjectCreation(v.name(), ot(textOrNull(k, p, "createdType")),
                     ot(textOrNull(k, p, "subject")), tk, condition(nodeField(k, "condition")), validity(k, p));

@@ -151,13 +151,18 @@ public final class ProducerConsumer {
             if (r.target() instanceof Expr.AttributeReference ref)
                 writes.add(elementOf(ref.objectType(), ref.attribute(),
                         r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING));
+            // a cell target writes its cell (IR-SPEC ch. 5.1)
+            else if (r.target() instanceof Expr.DimensionCellRead c)
+                writes.add(cellOf(c.attribute().objectType(), c.attribute().attribute(), c.labels()));
             out.add(new Form(FormKind.REGEL, baseName(r.name()), writes,
                     navigation == null ? Set.of() : consumed(r, navigation)));
         }
         for (ResolvedObjectCreation o : model.objectCreations) {
             Set<ElementKey> writes = new LinkedHashSet<>();
             for (ResolvedObjectCreation.MemberInit t : o.initialisations())
-                if (t.attribute() != null) writes.add(elementOf(o.createdType(), t.attribute(), t.characteristic()));
+                if (t.attribute() != null)
+                    writes.add(t.labels() != null ? cellOf(o.createdType(), t.attribute(), t.labels())
+                            : elementOf(o.createdType(), t.attribute(), t.characteristic()));
             Reader l = new Reader(navigation, new LinkedHashSet<>(), o.subject());
             l.condition(o.condition(), o.subject());
             for (ResolvedObjectCreation.MemberInit t : o.initialisations()) l.expr(t.value(), o.subject());
@@ -353,7 +358,8 @@ public final class ProducerConsumer {
      *  answer (see {@link Navigation}). */
     public static Set<ElementKey> consumed(ResolvedRule r, Navigation navigation) {
         Set<ElementKey> out = new LinkedHashSet<>();
-        RegelSpraakModel.ObjectType subject = r.target() instanceof Expr.AttributeReference ref ? ref.objectType() : null;
+        RegelSpraakModel.ObjectType subject = r.target() instanceof Expr.AttributeReference ref ? ref.objectType()
+                : r.target() instanceof Expr.DimensionCellRead c ? c.attribute().objectType() : null;
         Reader reader = new Reader(java.util.Objects.requireNonNull(navigation, "navigation"), out, subject);
         reader.condition(r.condition(), subject);
         reader.expr(r.value(), subject);

@@ -200,6 +200,7 @@ public final class DroolsBackend {
         IrLoader.Positioned positioned = IrLoader.loadWithPositions(document);
         IrLoader.Loaded loaded = positioned.loaded();
         RegelSpraakModel model = loaded.model();
+        refuseCellWrites(model);
         refuseBeanNameCollision(loaded);
 
         // A form the v0 backend cannot REPLAY is refused up front — a LOUD per-form exclusion, never a
@@ -250,6 +251,19 @@ public final class DroolsBackend {
      *  that nothing uses is left alone: its field is simply absent, and a case that names it is refused by the case
      *  reader. Here and not in the loader, because the rule graph and every other reading of the loaded model keep
      *  the two names apart; only the bean model does not. */
+    /** IR-SPEC ch. 3.1, ch. 3.3: a rule version that writes one cell of a dimensioned attribute, and an object
+     *  creation's member that writes one cell of the object it makes. The model and the rule graph carry both; the
+     *  beans and the rules of this backend write no cell, so the document is refused before either is built. */
+    private static void refuseCellWrites(RegelSpraakModel model) {
+        for (dev.uchar.regelspraak.ir.ResolvedRule r : model.resolvedRules)
+            if (r.target() instanceof Expr.DimensionCellRead c)
+                throw new Excluded(DroolsCode.DIMENSION_CELL_WRITE.reason("attribute", c.attribute().attribute(), "form", r.name()));
+        for (dev.uchar.regelspraak.ir.ResolvedObjectCreation o : model.objectCreations)
+            for (dev.uchar.regelspraak.ir.ResolvedObjectCreation.MemberInit t : o.initialisations())
+                if (t.labels() != null)
+                    throw new Excluded(DroolsCode.DIMENSION_CELL_WRITE.reason("attribute", t.attribute(), "form", o.name()));
+    }
+
     private static void refuseBeanNameCollision(IrLoader.Loaded loaded) {
         RegelSpraakModel model = loaded.model();
         Reason javaClass = FactModelGenerator.classCollision(model);

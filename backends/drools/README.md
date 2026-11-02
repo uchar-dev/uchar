@@ -866,7 +866,11 @@ never as a silent fall:
   that reads the reader's target, the verifier sees no cycle and the reference interpreter computes the document, while
   this branch refuses it. It refuses none of the goldens the loader loads (`TmsCycleVerifierWitnessTest`).
 
-The loader and the bean model refuse on both branches alike, before the analysis.
+The loader and the bean model refuse on both branches alike, before the analysis. So does the build, before a bean
+is generated, for a document that writes a cell of a dimensioned attribute, by a rule, an initialisation or an object
+creation's member (IR-SPEC ch. 3.1, 3.3; DROOLS-298): the loader carries those forms into the model and the rule graph
+writes each cell as a member of its own, but the beans and the rules write no cell yet (goldens
+`jutterswet-seizoenboeking` and `jutterswet-seizoenkopie`, witness `DimensionCellWitnessTest`).
 
 ## The rule graph and gate 15
 
