@@ -3686,15 +3686,18 @@ transient 5 is unobservable in the end state.
 
 ### 5.3 Negation at the fixpoint
 
-Characteristics are **monotone** within one evaluation: default false,
-only ever set true (the temporal analogue: ch. 3.11's no-complement
-rule). A condition that reads a **negated** characteristic is therefore
-sound only when evaluated *after* every producer of that characteristic
-— and the producers' own input chains — have quiesced: a negation
-consumer that fires in the transient window derives from "not yet true",
-and its write persists. The evaluation model requires: **negated reads
-of derived characteristics evaluate at the fixpoint of the positive
-part.** *v0 mirror note:* v0 realises exactly one such boundary (it
+Characteristics are default false. **A characteristic holds at the
+fixpoint where an attribution that grants it decides there, or where the
+case input sets it** (ch. 7.8; decided by the maintainer 2026-11-02, as
+for a written value, ch. 6.1): an attribution that does not decide on a
+later evaluation withdraws what it set, unless another attribution that
+grants the characteristic decides. The temporal analogue is ch. 3.11's
+no-complement rule. A condition that reads a **negated** characteristic
+is evaluated *after* every producer of that characteristic — and the
+producers' own input chains — have quiesced, so a negation consumer never
+acts on the "not yet true" of a transient window. The evaluation model
+requires: **negated reads of derived characteristics evaluate at the
+fixpoint of the positive part.** *v0 mirror note:* v0 realises exactly one such boundary (it
 sinks negation consumers below the entire positive computation — the
 "salience −1" of the founding review); that is sound precisely when one
 level suffices, i.e. when the negation dependencies are stratifiable
@@ -3709,9 +3712,28 @@ Jutter is bijdrageplichtig indien hij niet vrijgesteld is". Input:
 inkomen = 50. Required fixpoint: **vrijgesteld waar, bijdrageplichtig
 onwaar**. The transient-window failure this clause excludes: the
 consumer evaluated before the producer sees "not yet vrijgesteld", sets
-bijdrageplichtig true, and the monotone write persists — {waar, waar},
-wrong. With inkomen = 200: **vrijgesteld onwaar, bijdrageplichtig
+bijdrageplichtig true, and an executor that keeps that write answers
+{waar, waar}, wrong. With inkomen = 200: **vrijgesteld onwaar, bijdrageplichtig
 waar** (the negation legitimately holds at the fixpoint).
+
+Worked example of the withdrawal (absolute; the golden
+`jutterswet-kenmerk-aan-fixpunt` with the rules in the order below and in
+the reverse order, replayed by gates 5, 6 and 12, and
+`WV-6.1-written-characteristic` in `ref/test/`, which runs every order):
+"Een Vondst is spoedeisend indien zijn meldingsgetal kleiner is dan 5",
+"Een Vondst is spoedeisend indien zijn boete groter is dan 10", "De
+spoedpremie van een Vondst moet gesteld worden op 1 indien hij spoedeisend
+is" and "Het meldingsgetal van een Vondst moet berekend worden als zijn
+aantal getuigen". V with aantal getuigen 10 and input meldingsgetal 3:
+**meldingsgetal 10, not spoedeisend, spoedpremie leeg**; with boete 20 as
+well: **spoedeisend, spoedpremie 1**; with spoedeisend in the input:
+**spoedeisend, spoedpremie 1**. Both attributions read the meldingsgetal
+and the boete stratum-strictly (ch. 6.1), so neither decides on a state
+between in this document: measured 2026-11-02, the reference interpreter,
+the ASP backend and both Drools branches answered it in both orders before
+the decision as after it. Where an attribution has set a characteristic on
+a state between, the reference interpreter withdraws it once it does not
+decide (`WV-6.1-written-between`, on an input world no case can write).
 
 ### 5.4 Initialisation
 
@@ -4215,6 +4237,34 @@ is" beside the same rule on its aanspoeldatum; V with vinddatum 04-03-2026
 and aanspoeldatum 01-03-2026 faults, naming both rules and the values
 2026-03-04 and 2026-03-01; V with only one of the two dates gets that
 date; V with both dates on 02-03-2026 gets **02-03-2026**.
+
+**The writers that decide at the fixpoint** (decided by the maintainer
+2026-11-02). The value of a target with two or more writers is that of the
+writers that decide at the fixpoint, in every order of the rules: where
+none decides, the target keeps its input value or stays leeg; where one
+decides, it takes that writer's value, a leeg one included where the
+writer is not standing (ch. 1.2g, 7.8); where two decide with different
+values, the session faults as above. A value a writer wrote on a state
+between, where its condition held on a value another rule replaces, does
+not stand (ch. 6.1, "A write is read at the fixpoint"). Worked example
+(absolute; the golden `jutterswet-twee-schrijvers-aan-fixpunt` with the
+rules in the order below and in the reverse order, replayed by gates 5, 6
+and 12, and `WV-6.1-written-two` in `ref/test/`, which runs every order):
+"De spoedpremie van een Vondst moet gesteld worden op 1 indien zijn
+meldingsgetal kleiner is dan 5", "De spoedpremie van een Vondst moet
+berekend worden als zijn boete indien zijn meldingsgetal groter is dan 20"
+and "Het meldingsgetal van een Vondst moet berekend worden als zijn aantal
+getuigen". V with aantal getuigen 10 and input meldingsgetal 3 gives
+**meldingsgetal 10, spoedpremie leeg**, and with input spoedpremie 7
+**spoedpremie 7**; aantal getuigen 30, meldingsgetal 3 and boete 4 give
+**4**; aantal getuigen 2, meldingsgetal 30 and boete 4 give **1**; aantal
+getuigen 10, meldingsgetal 30, boete 4 and input spoedpremie 7 give **7**;
+aantal getuigen 30, meldingsgetal 3, no boete and input spoedpremie 7 give
+**leeg**. Measured 2026-11-02 before the decision: with the rules in this
+order the reference interpreter answered the first, second and fifth case
+with the value a writer had written on the input meldingsgetal (1, 1, 4),
+the ASP backend refused every case with an input spoedpremie, and both
+Drools branches answered as above in both orders.
 
 **Faults and deposits are read at the fixpoint.** An evaluation fault
 (ch. 1.4) and a §9.5 deposit are outcomes of one form's evaluation on one
@@ -6543,12 +6593,43 @@ negated; the hop relation itself is always a positive read (the
 asymmetry of ch. 5.8: an absent link fails the check, so no negative
 edge runs through the relation).
 
-*Recorded residuals (ch. 7 territory, mirrored):* a condition-guarded
-attribute write whose condition later turns false keeps its written
-value — the mirror has no retraction — so conditions on
-attribute-writing forms read positively here, except a leeg/gevuld
-predicate, which reads negatively in every position since 2026-09-23.
-It awaits the default model of ch. 7.
+*A write is read at the fixpoint* (2026-11-02, card
+`written-value-at-fixpoint`; the maintainer's decisions of that day on a
+characteristic, ch. 5.3, and on two writers, ch. 5.7). A value, a
+timeline or a characteristic that a form wrote stands at the fixpoint
+only where that form decides there. A rule whose condition is false on a
+later evaluation, or whose value is leeg on a standing or desugared
+target (ch. 7.7, 7.8), and a defaults group that decides nothing or
+conflicts (ch. 7.1, 7.2), give the target back what it held before the
+form wrote it: its input value, or what the creation that made the object
+gave it; a characteristic goes where no other attribution that grants it
+decides and the input did not set it. Conditions on attribute-writing
+forms therefore read positively here: a value they acted on in a
+transient window is replaced at the fixpoint. A leeg/gevuld predicate
+reads negatively in every position since 2026-09-23. Worked example
+(absolute; the golden `jutterswet-geschreven-waarde-aan-fixpunt` with the
+rules in the order below and in the reverse order, replayed by gates 5, 6
+and 12, and `WV-6.1-written` in `ref/test/`, which runs every order): "De
+spoedpremie van een Vondst moet gesteld worden op 1 indien zijn
+meldingsgetal kleiner is dan 5" and "Het meldingsgetal van een Vondst moet
+berekend worden als zijn aantal getuigen". V with aantal getuigen 10 and
+input meldingsgetal 3 gives **meldingsgetal 10, spoedpremie leeg**, and
+with input spoedpremie 7 as well **spoedpremie 7**; aantal getuigen 2 and
+meldingsgetal 8 give **spoedpremie 1**; meldingsgetal 3 without an aantal
+getuigen gives **meldingsgetal 3, spoedpremie 1** (the leeg evaluation
+writes nothing, ch. 7.8). Measured 2026-11-02 before the change: with the
+rule spoedpremie first the reference interpreter answered spoedpremie 1 in
+the first two cases, the value it had written on the input 3; the ASP
+backend and both Drools branches answered as above in both orders. A
+timeline reads the same: the jaardeel of `TmsTimelineWitnessTest` B2,
+written where the teller is below 5 on its input, gives back the input
+timeline once the teller is 10 (`WV-6.1-written-timeline`).
+
+Since that day a characteristic attribution withdraws what it set where it
+no longer decides (ch. 5.3), so its write is no longer irrevocable within
+an evaluation; its reads keep the stratum-strict kind above, which orders
+it after the producers of what it reads, as `IR-SPEC.md` ch. 5 states the
+edge kinds.
 
 *Recorded residual — conditions that hold on absence (measured
 2026-09-23, open).* The leeg/gevuld predicate, the range of a quantifier
@@ -6581,16 +6662,15 @@ and with X a quantifier fold over the successors under *alle* or *geen*
 een rang groter dan 0"): the reference interpreter mints the same chain,
 and WF-046 refuses those documents since 2026-09-23 (`IR-SPEC.md` ch. 5.2).
 
-The same classes also leave the reference interpreter order-dependent OFF
-a cycle, and that is the older residual above ("conditions on
-attribute-writing forms read positively here"). Measured on a Houder with
-one Ding whose a (5) another rule derives: with the reader listed first,
-"b = 1 indien de a van het ding ongelijk is aan 5" and "b = 1 indien het
-aantal dingen waarvan de a groter is dan 0 gelijk is aan 0" each give b = 1
-in the reference interpreter, which acted on the transient leeg and keeps
-its write, while the ASP backend answers leeg; with the writer first both
-answer leeg. The leeg/gevuld test is out of that residual because its reads
-are negative edges, which order the reader above the writer.
+Off a cycle the same classes leave no executor order-dependent: a write
+that acted on a transient leeg goes back once the condition is false ("A
+write is read at the fixpoint", above). Measured 2026-11-02 on a Houder
+with one Ding whose a (5) another rule derives, with the reader listed
+first: "b = 1 indien de a van het ding ongelijk is aan 5" and "b = 1
+indien het aantal dingen waarvan de a groter is dan 0 gelijk is aan 0"
+give b leeg in the reference interpreter, the ASP backend and both Drools
+branches, in both orders; before that day the reference interpreter kept
+the b = 1 it had written on the transient leeg.
 
 *Recorded residual — a value that grows (measured 2026-09-23, open).* The
 discharge of strictness on an admissible creation cycle fails for any read
@@ -6745,7 +6825,7 @@ k + 1 fires. A negated characteristic, and since
 fold (its range under every quantifier but *ten minste*, its matrix under
 *geen*, *ten hoogste* and *precies*), is then read only after every
 producer — and the producers' own input chains — have quiesced, so a
-monotone write cannot contradict it later; a channel
+later write cannot contradict it; a channel
 test reads a complete channel for the named rule. v0's single boundary
 is the two-stratum special case; nested and chained negation get as
 many strata as the chain is deep. Within the stratum of an
@@ -7260,8 +7340,8 @@ specialised by what the ASP hand-exercises established
     justified default therefore *always* decides (there is no leeg
     boolean); a do-not-attribute decision displaces lower defaults and
     makes the group derive nothing, which is not a retraction
-    (ch. 5.3's monotone write regime is untouched — the group decides
-    once, then at most one attribution happens).
+    (the group decides once, at the fixpoint of its justification
+    strata, then at most one attribution happens; ch. 5.3).
 
   At most one default decides, so a single group can never conflict — a
   property of the semantics, not a claim about authors.
@@ -7407,11 +7487,10 @@ embodying it.
   of all its justification producers). This is an **extension of the
   ch. 6.1 edge classes** (which today carry only negated
   characteristic reads and channel tests) that lands together with the
-  prioritized-defaults node. This is precisely the debt ch. 6.1's residual note ("conditions on
-  attribute-writing forms read positively here … await the default
-  model of ch. 7") assigns to this chapter: the defaults group is where a
+  prioritized-defaults node. The defaults group is where a
   condition's failure becomes observable displacement, so the group's
-  edges carry the negativity. WF-045/046's *principles* — no negative
+  edges carry the negativity; outside a group a write whose condition
+  fails is given back (ch. 6.1, "A write is read at the fixpoint"). WF-045/046's *principles* — no negative
   edge on any cycle; strata exist — apply to the extended graph;
   WF-051 states exactly that. A defaults group whose defaults cyclically
   depend on the group's own output is thereby ill-formed — no salience-like
