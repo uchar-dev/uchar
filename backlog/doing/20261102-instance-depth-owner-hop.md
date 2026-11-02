@@ -86,7 +86,7 @@ een eigen helper `with_depth_case`; 18 checks, de suite telt 1794):
 - `instance-depth-owner-cycle`: twee Bijlagen die elkaars eigenaar zijn, terwijl Bijlage ⊑ Ding en de eigenaarsrol
   door Ding gevuld wordt. Verifier-schoon; de diepte van b1, b2 en `evaluate` falen met het pad
   `b1 -(bijlagerelatie: eigenaar)-> b2 -(bijlagerelatie: eigenaar)-> b1` (resp. vanaf b2); clingo antwoordt
-  `PASS (1)` (`consistent`).
+  `PASS (1)` (`consistent`). Sinds de fix hieronder: diepte 0 en `consistent`.
 
 **Rode stand.**
 - Golden, op de code van `a0e0fa0ee` (de `_build` van de worktree vóór de wijziging),
@@ -118,7 +118,7 @@ met het ketentype, en een type heeft één supertype-keten). Een kring van allee
 (`check_link_cycles` leest dezelfde sleutels, op elk object). Over blijft een kring van alleen eigenaarsstappen: een
 satelliet die zelf eigenaar is, wat kan als het satelliettype onder de vuller van een eigenaarsrol ligt, en die vuller
 is dan een strikt supertype van het ketentype. `instance-depth-owner-cycle` is zo'n document; de verifier laat het
-toe. Daar meldt de markering de kring nu in < 0,1 s.
+toe. Daar meldde de markering de kring in < 0,1 s; sinds de fix hieronder staan die satellieten op 0.
 
 **Voorlopige besluiten.**
 1. Ook de stap naar de voorganger bewaakt, niet alleen die naar de eigenaar. Afweging: de kaart noemt alleen de
@@ -128,10 +128,15 @@ toe. Daar meldt de markering de kring nu in < 0,1 s.
    één regel: een stap alleen vanaf een object dat de verlaten rol vult.
 2. De diepte als `Eval.instance_depth` naar het hoofdniveau, zodat (b) de diepte zelf pint in plaats van alleen de
    uitkomst. Het lichaam is per regel gelijk aan het oude, plus de bewaking en de markering.
-3. Een kring van eigenaarslinks (`instance-depth-owner-cycle`) faalt in ref met een `failwith` van de interpreter,
-   geen EF-code: ch. 6.2 geeft zo'n satelliet geen diepte en EF-033 noemt alleen de schakelrelatie. Of dit een
-   EF-033-weigering bij het lezen van de case wordt (dan ook in clingo en Drools), een statische weigering, of een
-   definitie van de diepte, is een normvraag; de spec stond buiten deze kaart.
+3. Een satelliet waarvan de eigenaar geen object van de keten is (een eigenaar buiten de keten, een satelliet
+   daaronder) staat op diepte 0: optie (c), een definitie van de diepte, uit het advies
+   `/Users/yeb/Developer/uchar-dev/werk/instance-depth-owner-hop/fable/advies.md` (punt 2). Een kring van
+   eigenaarslinks (`instance-depth-owner-cycle`) is dan geen interpreterfout meer: b1 en b2 staan op 0 en ref
+   antwoordt `consistent`, zoals clingo. Het advies wees af: (a) een statische weigering (een arm van
+   `WF-045.instance-read-outside`), die een document met goede regels weigert om een geval dat misschien nooit
+   komt, en (b) een EF-033-weigering bij het lezen van de case, die een geval met één model weigert en `case.ml`,
+   `CaseInput.java`, ch. 5.7b en een rode case kost. De spec (ch. 6.2 en ch. 5.3) is bijgewerkt als voorstel op
+   deze branch.
 
 **Pinnen en vloeren.** `scripts/check-drools.sh` `EXPECTED_PLAYED` 299 → 300 (beschermd pad, voorstel). Geen vloer
 veranderd. Gemeten tellingen in `make gates`: ref-suite 1794 (+18), gate 5 972 cases, gate 12 played 300 op beide
@@ -161,9 +166,11 @@ per proces (`mut/measure.py`, `logs/werkbank-28.tsv`): 28 × `oracle: PASS`, min
 **Voorstel voor `spec/CONSTRUCTS.md`, rij 45** (achter "both goldens carry a `source.rgs` (gate 10)", in de cel
 v0→v1 delta): "**Depth over the own relation (2026-11-02, card `instance-depth-owner-hop`; voorlopig besluit):** ref
 takes a hop of the depth only from an object whose type fills the role the hop leaves — to the predecessor from an
-object of the chain, to the owner from a satellite — since the case input keys a link by role name alone; a cycle
-of owner links among satellites whose type lies below the filler of the owner's role, which EF-033 does not refuse
-and ch. 6.2 gives no depth, fails in ref with its path (norm question open). Witnesses: golden
+object of the chain, to the owner from a satellite — since the case input keys a link by role name alone. A
+satellite stands at the depth of its owner where the owner is an object of the chain and at 0 where it is not (an
+owner outside the chain, a satellite among them; RUNTIME-SEMANTICS ch. 6.2, IR-SPEC ch. 5.3): a cycle of owner links
+among satellites whose type lies below the filler of the owner's role, which EF-033 does not refuse, puts them at 0,
+and ref answers the case as the ASP backend does. Witnesses: golden
 `jutterswet-vergunningketen-eigenaarsrol` (gates 3, 5, 6, 10, 12, 17), `ref/` tests WV-6.4-n, WV-6.4-o and
 `instance-depth-owner-cycle`."
 
@@ -199,7 +206,7 @@ start liep de suite van `drools-schrijfgrens` (`mvn -o test`), die de `pgrep`-co
 niets meer liep. Vóór de volle set liepen apart groen: gates 1, 2, 3, 4, 5, 6, 7, 10, 12, 13, 15, 17 en de ref-suite.
 
 **Wat bleef liggen.**
-- De normvraag van besluit 3 (een kring van eigenaarslinks onder satellieten).
+- Besluit 3 is voorlopig (optie (c)); bevestigen of herzien is aan de maintainer.
 - `World.left_side` bleef zoals het is. Wat ik zag over andere lezingen: een lezing langs een pad is veilig zolang
   het object de rol vult die de stap verlaat (de EF-001-eis hierboven). Voor de lezingen van een vorm bewaakt de
   verifier dat: een eerdere versie van proef C weigerde hij met `WF-053.hop-near-side` ("the near side fills
@@ -208,3 +215,53 @@ niets meer liep. Vóór de volle set liepen apart groen: gates 1, 2, 3, 4, 5, 6,
   (`ref/lib/case.ml`, EF-033): de rol van de voorganger op elk object, van elk type. Een link van een andere relatie
   met die rolnaam doet dan mee in de wandeling; daardoor kan EF-033 een kring melden die geen kring van de
   schakelrelatie is (te streng, nooit te los). Niet gemeten, buiten de "May touch" van deze kaart.
+
+**Fix na het Fable-advies** (opdracht `/Users/yeb/Developer/uchar-dev/werk/instance-depth-owner-hop/fix-prompt.md`,
+advies `…/fable/advies.md`, logs `logs/fix-*`). Commit `d614df120`, gerebased op main `a6574fd4d` (de landing van
+`drools-schrijfgrens`; vóór de rebase `ea20461eb` op `b3e49849a`, zonder conflict). Ref (`instance_depth`): na de
+eigenaarsstap de diepte van de eigenaar alleen als `leaves_from q pred` (de eigenaar is een object van de keten),
+anders 0; de recursie loopt zo alleen over de schakelrelatie, die EF-033 kringvrij houdt, en de markering blijft als
+bewaking. Spec (voorstel): ch. 6.2 "Depth" met de nieuwe clausule en haar reden, ch. 6.4 een uitgewerkt voorbeeld "A
+satellite outside the chain" (diepte V1, b1, b2 0, `consistent`, letterlijk de test), IR-SPEC ch. 5.3 "a satellite of a
+satellite: it stands at 0". De test `instance-depth-owner-cycle` verandert met opzet: oud pinden `-b1`, `-b2` en
+`-evaluate` de markeringsfout `… depends on itself: b1 -(bijlagerelatie: eigenaar)-> b2 -(bijlagerelatie: eigenaar)->
+b1` (resp. vanaf b2); nieuw `-depth-b1` 0, `-depth-b2` 0 en `-evaluate` `consistent`, zoals clingo (los gedraaid:
+verifier `PASS`, ref `oracle: PASS (1 expectations)` in 0,14 s, clingo `PASS (1 expectations)`). Vijf checks als
+eerder, suite 1794 vóór de rebase. WV-6.4-n en WV-6.4-o ongewijzigd. Rood eerst: de nieuwe test op `b3e49849a` (`git worktree add
+--detach`, testdiff toegepast) gaf rc 1, `3 failure(s)`, de drie checks hierboven met de markeringsfout
+(`logs/fix-red-suite.log`). Mutatie: in die kopie op `ea20461eb` de nieuwe voorwaarde weg (`if leaves_from q pred then
+depth … else 0` → `depth …`): dezelfde drie FAIL, rc 1 (`logs/fix-mut-suite.log`); kopie verwijderd. Gemeten bij de
+reden in ch. 6.2: het advies laat zo'n satelliet zijn eigenaar lokaal lezen, maar ligt het satelliettype onder de
+vuller van de eigenaarsrol, dan heeft de satellietrelatie de vorm van een schakelrelatie, en de verifier weigert een
+lezing van een satelliet naar zijn eigenaar als `one-walk` (proeven D en D2: het document van
+`instance-depth-owner-cycle` met een Bijlage die met een leeg-toets de markdag, resp. de grensdag, van haar eigenaar
+leest; `/private/tmp/claude-501/-Users-yeb-Developer-uchar-dev-uchar/0f057885-693c-417d-8351-b7bfac514f31/scratchpad/depth-c/`,
+`gen_d.py`, D2 is D zonder markdag).
+Zonder die weigering had diepte 0 op een keten b1 → b2 → V2 (V2 op diepte 1) een leeg-toets van b1 op b2 vóór b2
+laten lezen. `make gates` op `d614df120` (`logs/fix-gates-1.log`, `out/gates/20261102-115406/`; ref-suite 1807 na de
+rebase, gate 5 972 cases, gate 12 played 300 op beide branches):
+
+```
+ocaml rc=0 3s ocaml-build: rebuilt (6 source path(s) newer than the stamp, e.g. backends/clingo/lib; 3s)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 6s drools-jar: rebuilt (50 source path(s) newer than the jar, e.g. backends/drools/src/main/java/dev/uchar/regelspraak/cases; 6s)
+01-self-contained rc=0 2s
+02-ir-schema rc=0 138s
+04-case-schema rc=0 7s
+03-verifier rc=0 37s
+05-oracle rc=0 22s
+06-clingo rc=0 277s
+07-noop rc=0 13s
+08-red rc=0 159s
+09-catala rc=0 5s
+10-regelspraak rc=0 228s
+11-toka-parity rc=0 232s
+12-drools rc=0 327s
+13-reftype rc=0 269s
+14-flogic rc=0 2s
+15-graph rc=0 47s
+16-scenario rc=0 38s
+17-readings rc=0 249s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 11:59:39 333s red=0
+```
