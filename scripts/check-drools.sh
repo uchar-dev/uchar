@@ -1484,7 +1484,12 @@ EXPECTED_CHANNEL=(
 # 309 since the card dimensions-remaining, step B (2026-11-02): the golden jutterswet-ploegseizoen, a cell over a to-one
 # role (input and written), a fold over the cells of the object the role reaches, and a fold of one cell of each member
 # of a to-many role (DROOLS-189 retired). It plays on both with PLAYED 2.
-EXPECTED_PLAYED=309
+# 315 since the card written-value-at-fixpoint (2026-11-02): the goldens jutterswet-geschreven-waarde-aan-fixpunt,
+# jutterswet-kenmerk-aan-fixpunt and jutterswet-twee-schrijvers-aan-fixpunt, each with the rules in the reverse order
+# beside it (-omgekeerd): a value, a characteristic and a target of two writers that a form wrote on a state between and
+# that stand at the fixpoint only where a form decides there (RUNTIME-SEMANTICS ch. 5.3, 5.7, 6.1). The branch withdraws
+# them already (truth maintenance). They play on both with PLAYED 4, 4, 4, 4, 6 and 6.
+EXPECTED_PLAYED=315
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

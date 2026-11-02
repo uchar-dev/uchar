@@ -1,0 +1,22 @@
+Objecttype de Vondst (mv: Vondsten)
+    het aantal getuigen Numeriek (geheel getal);
+    het meldingsgetal Numeriek (geheel getal);
+    de boete Numeriek (geheel getal);
+    de spoedpremie Numeriek (geheel getal);
+    is spoedeisend kenmerk (bijvoeglijk);
+
+Regel meldingsgetal
+    geldig altijd
+        Het meldingsgetal van een Vondst moet berekend worden als zijn aantal getuigen.
+
+Regel spoedeisendheid bij hoge boete
+    geldig altijd
+        Een Vondst is spoedeisend indien zijn boete groter is dan 10.
+
+Regel spoedeisendheid bij weinig meldingen
+    geldig altijd
+        Een Vondst is spoedeisend indien zijn meldingsgetal kleiner is dan 5.
+
+Regel spoedpremie
+    geldig altijd
+        De spoedpremie van een Vondst moet gesteld worden op 1 indien hij spoedeisend is.

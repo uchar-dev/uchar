@@ -1,0 +1,17 @@
+Objecttype de Vondst (mv: Vondsten)
+    het aantal getuigen Numeriek (geheel getal);
+    het meldingsgetal Numeriek (geheel getal);
+    de boete Numeriek (geheel getal);
+    de spoedpremie Numeriek (geheel getal);
+
+Regel spoedpremie bij weinig meldingen
+    geldig altijd
+        De spoedpremie van een Vondst moet gesteld worden op 1 indien zijn meldingsgetal kleiner is dan 5.
+
+Regel spoedpremie bij veel meldingen
+    geldig altijd
+        De spoedpremie van een Vondst moet berekend worden als zijn boete indien zijn meldingsgetal groter is dan 20.
+
+Regel meldingsgetal
+    geldig altijd
+        Het meldingsgetal van een Vondst moet berekend worden als zijn aantal getuigen.

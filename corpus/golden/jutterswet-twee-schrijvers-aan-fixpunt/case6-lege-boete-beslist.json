@@ -1,0 +1,44 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {
+          "aantal getuigen": {
+            "number": "30"
+          },
+          "meldingsgetal": {
+            "number": "3"
+          },
+          "spoedpremie": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V6",
+      "attribute": "meldingsgetal",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V6",
+      "attribute": "spoedpremie"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
