@@ -154,7 +154,10 @@ initialisation on one cell, written in RegelSpraak, which every executor reads
 in the defaults reading of ch. 7.7. `jutterswet-seizoenlogboek` carries cells
 of a text, a date and a boolean, read, written, folded by position and
 compared. Both replay in `ref`, clingo and the Drools backend, and each
-`NOTE.md` carries the outcome per executor.
+`NOTE.md` carries the outcome per executor. `jutterswet-ploegseizoen` reads
+cells of another object: a cell over a to-one role, a fold over the cells of
+the object that role reaches, and a fold of one cell of each member of a
+to-many role, in the forms ALEF writes; it replays in all three executors.
 
 `jutterswet-tempototaal` is the route-split witness of `het totaal van`:
 the set reading and the temporal reading of one operator over one unit

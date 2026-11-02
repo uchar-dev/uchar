@@ -1,0 +1,72 @@
+Eenheidsysteem Gewicht
+    het kilogram (mv: kilogrammen) kg
+
+Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+    1. voorjaar
+    2. zomer
+    3. najaar
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het vondstgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg gedimensioneerd met seizoen;
+    de vondstsoort Tekst gedimensioneerd met seizoen;
+
+Objecttype de Ploeg (mv: Ploegen)
+    het leidersvoorjaarsgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het leidersnajaarsgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het leidersjaargewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het laatste leidersgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het ploegvoorjaarsgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het zwaarste ledennajaarsgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het aantal voorjaarsleden Numeriek (niet-negatief geheel getal);
+    de leiderssoort Tekst;
+    de eerste leiderssoort Tekst;
+
+Feittype ploegleiding
+    de leider Jutter
+    de geleide ploeg Ploeg
+Eén leider heeft één geleide ploeg
+
+Feittype ploeglidmaatschap
+    de ploeg Ploeg
+    het lid (mv: leden) Jutter
+Eén ploeg heeft meerdere leden
+
+Regel najaarsgewicht van een jutter
+    geldig altijd
+        Het vondstgewicht in najaar van een Jutter moet berekend worden als zijn vondstgewicht in zomer maal 2.
+
+Regel leidersvoorjaarsgewicht van een ploeg
+    geldig altijd
+        Het leidersvoorjaarsgewicht van een Ploeg moet berekend worden als het vondstgewicht in voorjaar van de leider van de Ploeg.
+
+Regel leidersnajaarsgewicht van een ploeg
+    geldig altijd
+        Het leidersnajaarsgewicht van een Ploeg moet berekend worden als het vondstgewicht in najaar van de leider van de Ploeg.
+
+Regel leidersjaargewicht van een ploeg
+    geldig altijd
+        Het leidersjaargewicht van een Ploeg moet berekend worden als de som van het vondstgewicht van de leider van de Ploeg over alle seizoenen.
+
+Regel laatste leidersgewicht van een ploeg
+    geldig altijd
+        Het laatste leidersgewicht van een Ploeg moet berekend worden als de laatste van het vondstgewicht van de leider van de Ploeg over alle seizoenen.
+
+Regel ploegvoorjaarsgewicht van een ploeg
+    geldig altijd
+        Het ploegvoorjaarsgewicht van een Ploeg moet berekend worden als de som van het vondstgewicht in voorjaar van alle leden van de Ploeg.
+
+Regel zwaarste ledennajaarsgewicht van een ploeg
+    geldig altijd
+        Het zwaarste ledennajaarsgewicht van een Ploeg moet berekend worden als de maximale waarde van het vondstgewicht in najaar van alle leden van de Ploeg.
+
+Regel aantal voorjaarsleden van een ploeg
+    geldig altijd
+        Het aantal voorjaarsleden van een Ploeg moet berekend worden als het aantal gevulde waarden van het vondstgewicht in voorjaar van alle leden van de Ploeg.
+
+Regel leiderssoort van een ploeg
+    geldig altijd
+        De leiderssoort van een Ploeg moet gesteld worden op de vondstsoort in zomer van de leider van de Ploeg.
+
+Regel eerste leiderssoort van een ploeg
+    geldig altijd
+        De eerste leiderssoort van een Ploeg moet gesteld worden op de eerste van de vondstsoort van de leider van de Ploeg over alle seizoenen.

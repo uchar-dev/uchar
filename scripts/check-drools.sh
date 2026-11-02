@@ -1481,7 +1481,10 @@ EXPECTED_CHANNEL=(
 # and which the ASP backend now translates as well. It plays on both with PLAYED 1.
 # 308 since the same card (2026-11-02): the golden jutterswet-seizoenlogboek, cells of a text, a date and a boolean, read,
 # written, folded by position and compared. It plays on both with PLAYED 1.
-EXPECTED_PLAYED=308
+# 309 since the card dimensions-remaining, step B (2026-11-02): the golden jutterswet-ploegseizoen, a cell over a to-one
+# role (input and written), a fold over the cells of the object the role reaches, and a fold of one cell of each member
+# of a to-many role (DROOLS-189 retired). It plays on both with PLAYED 2.
+EXPECTED_PLAYED=309
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

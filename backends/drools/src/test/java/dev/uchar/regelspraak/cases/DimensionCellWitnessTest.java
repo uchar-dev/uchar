@@ -317,6 +317,60 @@ class DimensionCellWitnessTest {
                 "vondstgewicht[najaar, zuid]"), members(forms.get(3)));
     }
 
+    // ---------------- cells of another object ----------------
+
+    /** jutterswet-ploegseizoen (RUNTIME-SEMANTICS ch. 5.8c): a cell over the to-one role leider, input and written, the
+     *  sum and the last over the cells of the leader, and a sum, a maximum and a filled count of one cell of each member
+     *  of the to-many role lid; a text cell and the first text cell over the path. The two case files play, P3 without a
+     *  leader or members reads leeg, and a wrong value of a cell over the path fails.
+     *
+     *  <p><b>Red before the change</b> (measured 2026-11-02 on {@code 28df094fd}): {@code EXCLUDE DROOLS-189} on both
+     *  branches, the cell over a path refused. */
+    @Test void a_cell_over_a_path_and_a_cell_of_each_member_play() throws Exception {
+        Path ir = document(golden("jutterswet-ploegseizoen"));
+        Path dir = GOLDEN.resolve("jutterswet-ploegseizoen");
+        assertPlays(ir, List.of(dir.resolve("case1-twee-ploegen.json"), dir.resolve("case2-zonder-leider-en-leden.json")));
+        String team = "{\"label\":\"P1\",\"objectType\":\"Ploeg\",\"attributes\":{},\"roles\":{\"leider\":[\"J1\"],"
+                + "\"lid\":[\"J1\"]},\"characteristics\":[]}";
+        assertFails(ir, caseFile(List.of(jutter("J1", cell("2.50", "voorjaar")), team),
+                List.of(value("P1", "leidersvoorjaarsgewicht", "2.49"))), "2.49");
+        assertFails(ir, caseFile(List.of(jutter("J1", cell("2.50", "voorjaar")), team),
+                List.of(value("P1", "ploegvoorjaarsgewicht", "2.49"))), "2.49");
+    }
+
+    /** ch. 5.12: a cell read over a path names the object the path reaches, none where the link is absent; a dimension
+     *  fold over the path names no object; a fold of one cell of each member carries its contributors, a member whose
+     *  cell is leeg none. */
+    @Test void a_cell_over_a_path_names_its_object_and_a_cell_of_each_member_its_contributors() throws Exception {
+        Path ir = document(golden("jutterswet-ploegseizoen"));
+        Path dir = GOLDEN.resolve("jutterswet-ploegseizoen");
+        List<String> one = readings(ir, dir.resolve("case1-twee-ploegen.json"));
+        for (String line : List.of(
+                "/rules/rules/1/versions/0 \"P1\" 0 DimensionCellRead 2.5 \"kg\" on \"J1\"",
+                "/rules/rules/1/versions/0 \"P2\" 0 DimensionCellRead empty \"kg\" on \"J2\"",
+                "/rules/rules/2/versions/0 \"P2\" 0 DimensionCellRead 8 \"kg\" on \"J2\"",
+                "/rules/rules/3/versions/0 \"P1\" 0 Aggregation 6.25 \"kg\"",
+                "/rules/rules/5/versions/0 \"P1\" 0 Aggregation 5.5 \"kg\" contributors [\"J1\" 2.5 reached; \"J3\" 3 reached]",
+                "/rules/rules/6/versions/0 \"P1\" 0 Aggregation 4.2 \"kg\" contributors [\"J1\" 2.5 reached; \"J3\" 0 reached; \"J5\" 4.2 reached]"))
+            assertTrue(one.contains(line), () -> line + " in " + one);
+        List<String> two = readings(ir, dir.resolve("case2-zonder-leider-en-leden.json"));
+        assertTrue(two.contains("/rules/rules/1/versions/0 \"P3\" 0 DimensionCellRead empty \"kg\" on none"), two::toString);
+    }
+
+    /** IR-SPEC ch. 5.1: a cell over a path and a cell of each member are the nodes of their cells, on the type that
+     *  declares the attribute; a dimension fold over the path reads every cell of the product of its selections. */
+    @Test void the_rule_graph_reads_a_cell_of_another_object_as_a_member_of_its_own() throws Exception {
+        IrLoader.Loaded loaded = IrLoader.loadAll(golden("jutterswet-ploegseizoen"));
+        List<ProducerConsumer.Form> forms = ProducerConsumer.forms(loaded.model(), loaded.prioritizedDefaults(),
+                ProducerConsumer.wireNavigation(loaded));
+        assertEquals(List.of("vondstgewicht[voorjaar]"), members(forms.get(1)));
+        assertEquals(List.of("vondstgewicht[najaar]"), members(forms.get(2)));
+        assertEquals(List.of("vondstgewicht[voorjaar]", "vondstgewicht[zomer]", "vondstgewicht[najaar]"),
+                members(forms.get(3)));
+        assertEquals(List.of("vondstgewicht[voorjaar]"), members(forms.get(5)));
+        assertEquals(List.of("vondstgewicht[najaar]"), members(forms.get(6)));
+    }
+
     // ---------------- writing cells ----------------
 
     /** IR-SPEC ch. 3.1, ch. 3.3: the loader carries a cell target and a creation member with labels into the model, and
@@ -628,6 +682,19 @@ class DimensionCellWitnessTest {
                 if (l.startsWith("reading ")) lines.add(l.substring("reading ".length()));
             assertEquals(expected, lines, branch::toString);
         }
+    }
+
+    /** The reading lines of the case {@code c} of {@code ir}, without their head, the same on both branches. */
+    private static List<String> readings(Path ir, Path c) throws Exception {
+        List<String> first = null;
+        for (DroolsBackend.Branch branch : BRANCHES) {
+            List<String> lines = new ArrayList<>();
+            for (String l : CaseRunner.readings(ir, List.of(c), branch))
+                if (l.startsWith("reading ")) lines.add(l.substring("reading ".length()));
+            if (first == null) first = lines;
+            else assertEquals(first, lines, branch::toString);
+        }
+        return first;
     }
 
     private static List<String> members(ProducerConsumer.Form form) {

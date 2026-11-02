@@ -1,0 +1,120 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "number": "7.00"
+                }
+              },
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "number": "1.50"
+                }
+              }
+            ]
+          },
+          "vondstsoort": {
+            "cells": [
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "text": "schelp"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P3",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "cellValue",
+      "label": "J4",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P3",
+      "attribute": "leidersvoorjaarsgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P3",
+      "attribute": "leidersnajaarsgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P3",
+      "attribute": "leidersjaargewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P3",
+      "attribute": "laatste leidersgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P3",
+      "attribute": "ploegvoorjaarsgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P3",
+      "attribute": "zwaarste ledennajaarsgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P3",
+      "attribute": "aantal voorjaarsleden",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P3",
+      "attribute": "leiderssoort"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P3",
+      "attribute": "eerste leiderssoort"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

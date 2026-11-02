@@ -1,0 +1,343 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "number": "2.50"
+                }
+              },
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "number": "1.25"
+                }
+              }
+            ]
+          },
+          "vondstsoort": {
+            "cells": [
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "text": "barnsteen"
+                }
+              },
+              {
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "text": "wrakhout"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "number": "4.00"
+                }
+              }
+            ]
+          },
+          "vondstsoort": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "text": "touw"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "number": "3.00"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "number": "2.10"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P1",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {
+          "leider": [
+            "J1"
+          ],
+          "lid": [
+            "J1",
+            "J3",
+            "J5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "P2",
+        "objectType": "Ploeg",
+        "attributes": {},
+        "roles": {
+          "leider": [
+            "J2"
+          ],
+          "lid": [
+            "J2"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "cellValue",
+      "label": "J1",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "2.50"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J2",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "8.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J3",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J5",
+      "attribute": "vondstgewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "number": "4.20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "leidersvoorjaarsgewicht",
+      "value": {
+        "number": "2.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "leidersnajaarsgewicht",
+      "value": {
+        "number": "2.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "leidersjaargewicht",
+      "value": {
+        "number": "6.25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "laatste leidersgewicht",
+      "value": {
+        "number": "2.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "ploegvoorjaarsgewicht",
+      "value": {
+        "number": "5.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "zwaarste ledennajaarsgewicht",
+      "value": {
+        "number": "4.20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "aantal voorjaarsleden",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "leiderssoort",
+      "value": {
+        "text": "barnsteen"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P1",
+      "attribute": "eerste leiderssoort",
+      "value": {
+        "text": "barnsteen"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P2",
+      "attribute": "leidersvoorjaarsgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P2",
+      "attribute": "leidersnajaarsgewicht",
+      "value": {
+        "number": "8.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P2",
+      "attribute": "leidersjaargewicht",
+      "value": {
+        "number": "12.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P2",
+      "attribute": "laatste leidersgewicht",
+      "value": {
+        "number": "8.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P2",
+      "attribute": "ploegvoorjaarsgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P2",
+      "attribute": "zwaarste ledennajaarsgewicht",
+      "value": {
+        "number": "8.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P2",
+      "attribute": "aantal voorjaarsleden",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "P2",
+      "attribute": "leiderssoort"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "P2",
+      "attribute": "eerste leiderssoort",
+      "value": {
+        "text": "touw"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
