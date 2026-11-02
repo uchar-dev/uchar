@@ -135,7 +135,8 @@ as a selection of one label, as ALEF writes them. A second attribute has a
 dimension declared with the preposition `uit`; the document writes two of its
 cells with targets whose labels are joined by "en", reads one and folds it.
 Its two cases carry an empty cell and a wholly empty selection; `ref`, clingo
-and the Drools backend replay them.
+and the Drools backend replay them, and its `scenario.rgs` writes both in
+RegelSpraak, the cells as input and as expectation (gate 16).
 
 `jutterswet-seizoenboeking` is the cell as a write position written in
 RegelSpraak: a rule that computes one cell of `vondstgewicht` from another
@@ -144,8 +145,9 @@ writes one cell of the created object (`IR-SPEC.md` ch. 3.1, 3.3).
 `jutterswet-seizoenkopie` is its hand-written sibling, two rules that copy
 one cell into two others, and it witnesses WF-079 per cell. Both witness the
 dependency graph per cell (ch. 5.1), and their cases replay in `ref`,
-clingo and the Drools backend (`RUNTIME-SEMANTICS.md` ch. 5.8c). Each
-`NOTE.md` carries the outcome per executor.
+clingo and the Drools backend (`RUNTIME-SEMANTICS.md` ch. 5.8c). The three
+cases of `jutterswet-seizoenboeking` are written in RegelSpraak as well, in its
+`scenario.rgs` (gate 16). Each `NOTE.md` carries the outcome per executor.
 
 `jutterswet-seizoenaanvang` is the pair of a computing rule and an
 initialisation on one cell, written in RegelSpraak, which every executor reads

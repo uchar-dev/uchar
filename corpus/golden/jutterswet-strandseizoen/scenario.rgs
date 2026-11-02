@@ -1,0 +1,50 @@
+Scenario twee stranden
+Gegeven is de volgende situatie:
+een Jutter J1
+- het vondstgewicht in voorjaar op noord is 2,00 kg
+- het vondstgewicht op noord en in najaar is 1,00 kg
+- het vondstgewicht in voorjaar, op zuid is 5,00 kg
+- het vondstgewicht in zomer en op zuid is 0,50 kg
+- de aanvoer op noord uit zee is 1,50 kg
+- de aanvoer uit rivier en op noord is 0,75 kg
+Met als verwacht resultaat:
+- het zuidvoorjaarsgewicht van J1 is 5,00 kg
+- het noordnajaarsgewicht van J1 is 1,00 kg
+- het noordgewicht van J1 is 3,00 kg
+- het zuidpiekgewicht van J1 is 5,00 kg
+- het dalgewicht van J1 is 0,50 kg
+- het jaargewicht van J1 is 8,50 kg
+- de aanvoer op zuid en uit zee van J1 is 5,50 kg
+- de aanvoer uit rivier op zuid van J1 is 0,00 kg
+- het noordriviergewicht van J1 is 0,75 kg
+- het zeeaanvoergewicht van J1 is 7,00 kg
+- de gegevens zijn consistent
+
+Scenario lege cellen
+Gegeven is de volgende situatie:
+een Jutter J2
+- het vondstgewicht op noord in zomer is 4,00 kg
+- de aanvoer op zuid, uit rivier is 2,00 kg
+een Jutter J3
+Met als verwacht resultaat:
+- het zuidvoorjaarsgewicht van J2 is leeg
+- het noordnajaarsgewicht van J2 is leeg
+- het noordgewicht van J2 is 4,00 kg
+- het zuidpiekgewicht van J2 is leeg
+- het dalgewicht van J2 is 4,00 kg
+- het jaargewicht van J2 is 4,00 kg
+- het zuidvoorjaarsgewicht van J3 is leeg
+- het noordnajaarsgewicht van J3 is leeg
+- het noordgewicht van J3 is leeg
+- het zuidpiekgewicht van J3 is leeg
+- het dalgewicht van J3 is leeg
+- het jaargewicht van J3 is leeg
+- de aanvoer uit zee en op zuid van J2 is 0,00 kg
+- de aanvoer op zuid uit rivier van J2 is 2,00 kg
+- het noordriviergewicht van J2 is leeg
+- het zeeaanvoergewicht van J2 is 0,00 kg
+- de aanvoer op zuid en uit zee van J3 is 0,00 kg
+- de aanvoer op zuid en uit rivier van J3 is 0,00 kg
+- het noordriviergewicht van J3 is leeg
+- het zeeaanvoergewicht van J3 is 0,00 kg
+- de gegevens zijn consistent

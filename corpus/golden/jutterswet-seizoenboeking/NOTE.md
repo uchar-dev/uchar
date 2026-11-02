@@ -55,6 +55,16 @@ The `ref/test` rows `WV-5.8c-schrijven-*` replay the three cases and
 (`najaar` 3.00, `voorjaar` and `zomer` empty); `WV-5.12-celdoel` pins the
 reading of the two rules that write a cell.
 
+## The scenario document (`scenario.rgs`)
+
+The three cases written in RegelSpraak, one scenario each, the cells of
+`vondstgewicht` as input (`- het vondstgewicht in voorjaar is 1,50 kg`) and
+as expectation, a value (`cellValue`) or empty (`cellEmpty`). The
+expectations are the hand-computed ones above, transcribed; gate 16
+regenerates the three case files and `ir.json` from `source.rgs` and
+`scenario.rgs` byte for byte (`frontends/regelspraak/grammar/DIVERGENCES.md`,
+"Scenariotoetsen").
+
 ## Where the executors stand
 
 Measured 2026-11-02: `ref`, the ASP backend and the Drools backend replay all

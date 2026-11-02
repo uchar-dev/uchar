@@ -45,6 +45,18 @@ the bare interval; the frontend splits the operand off by the declared plural,
 so the operand's source snippet keeps those words and the selection's snippet
 is the interval alone.
 
+## The scenario document (`scenario.rgs`)
+
+The two cases written in RegelSpraak, one scenario each (`twee stranden`,
+`lege cellen`), with the cells as input and as expectation in the forms in
+which a rule reads a cell: side by side (`in voorjaar op noord`), in either
+order (`op noord in zomer`), joined by "en" (`op noord en in najaar`) and by
+"," (`in voorjaar, op zuid`), and after `uit` (`op noord uit zee`, `uit
+rivier en op noord`). The expectations are the hand-computed ones below,
+transcribed; gate 16 regenerates both case files and `ir.json` from
+`source.rgs` and `scenario.rgs` byte for byte
+(`frontends/regelspraak/grammar/DIVERGENCES.md`, "Scenariotoetsen").
+
 ## The cases — computed by hand
 
 Both cases also pin the four rules over `aanvoer`; the expectations of the

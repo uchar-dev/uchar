@@ -1,0 +1,45 @@
+Scenario voorjaar en zomer
+Gegeven is de volgende situatie:
+een Jutter J1
+- het vondstgewicht in voorjaar is 1,50 kg
+een Jutter J2
+- het vondstgewicht in voorjaar is 1,50 kg
+- het vondstgewicht in zomer is 2,00 kg
+Met als verwacht resultaat:
+- het vondstgewicht in najaar van J1 is 3,00 kg
+- het vondstgewicht in zomer van J1 is 0,00 kg
+- het jaargewicht van J1 is 4,50 kg
+- het geboekte gewicht van J1 is 3,00 kg
+- het vondstgewicht in zomer van J2 is 2,00 kg
+- het vondstgewicht in najaar van J2 is 3,00 kg
+- het jaargewicht van J2 is 6,50 kg
+- het geboekte gewicht van J2 is 3,00 kg
+- de gegevens zijn consistent
+
+Scenario zonder invoer
+Gegeven is de volgende situatie:
+een Jutter J3
+Met als verwacht resultaat:
+- het vondstgewicht in najaar van J3 is 0,00 kg
+- het vondstgewicht in zomer van J3 is 0,00 kg
+- het vondstgewicht in voorjaar van J3 is leeg
+- het jaargewicht van J3 is 0,00 kg
+- het geboekte gewicht van J3 is 0,00 kg
+- de gegevens zijn consistent
+
+Scenario invoer in een geschreven cel
+Gegeven is de volgende situatie:
+een Jutter J4
+- het vondstgewicht in najaar is 5,00 kg
+een Jutter J5
+- het vondstgewicht in voorjaar is 1,00 kg
+- het vondstgewicht in najaar is 5,00 kg
+Met als verwacht resultaat:
+- het vondstgewicht in najaar van J4 is 0,00 kg
+- het vondstgewicht in zomer van J4 is 0,00 kg
+- het jaargewicht van J4 is 0,00 kg
+- het geboekte gewicht van J4 is 0,00 kg
+- het vondstgewicht in najaar van J5 is 2,00 kg
+- het jaargewicht van J5 is 3,00 kg
+- het geboekte gewicht van J5 is 2,00 kg
+- de gegevens zijn consistent
