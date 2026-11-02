@@ -57,10 +57,11 @@ reading of the two rules that write a cell.
 
 ## Where the executors stand
 
-Measured 2026-11-02: `ref` and the ASP backend replay all three cases
-(gates 5 and 6). The Drools backend loads the document and refuses it when it
-builds, before a bean or a rule: `EXCLUDE DROOLS-298: a write of a cell of the
-dimensioned attribute 'vondstgewicht' by 'najaarsgewicht van een jutter':
-this branch writes no cell`, on both branches and with readings, so gate 12
-pins `EXCLUDE DROOLS-298` and the pins are a ref = clingo pair. Its rule graph
-carries the cells, and gate 15 compares it per cell with the verifier's.
+Measured 2026-11-02: `ref`, the ASP backend and the Drools backend replay all
+three cases (gates 5, 6 and 12; the Drools backend on both branches, `PLAYED
+3`), and gate 17 holds the readings of the Drools backend equal to the trace
+of `ref`. The Drools backend writes each cell as a member of its own: the
+rule, the initialisation and the creation's member write it, a read and a fold
+take it through its standing, and the write-back puts it into the map of the
+attribute on the bean. Its rule graph carries the cells, and gate 15 compares
+it per cell with the verifier's.

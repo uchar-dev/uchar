@@ -5128,15 +5128,17 @@ carry the input precision and the write boundary of a cell. The Drools
 backend holds the same refusals of the case in a case reader of its own and
 keeps a dimensioned attribute as a map of its cells; it reads a cell and
 folds over one dimension and over more, of an attribute of the subject, and
-refuses a cell over a path (DROOLS-189). It loads a cell write and its rule
-graph writes the cell, but it refuses the document when it builds
-(DROOLS-298). The three goldens that read replay in all three executors
-(gate 12), the two that write are a ref = clingo pair, the red witness of the
-input precision faults in all three with its pinned code and parameters and
-that of the write boundary in `ref` and the ASP backend (gate 8), and the
-backend's `DimensionCellWitnessTest` replays the example over two dimensions
-on its cells 2.00, 1.00 and 5.00. The worked examples of reading over a path
-and of writing have no replay in it.
+refuses a cell over a path (DROOLS-189). A cell a form writes is a member of
+its own there as well, under the key of its node (IR-SPEC ch. 5.1): the
+rule, the initialisation and the object creation's member write it, a read
+and a fold take it through its standing, and the write-back puts it into the
+map. The five goldens replay in all three executors (gate 12), the red
+witnesses of the input precision and of the write boundary fault in all
+three with their pinned code and parameters (gate 8), the Drools backend
+naming the place of the write boundary as `ref` does,
+`j1.vondstgewicht[najaar]`, and the backend's `DimensionCellWitnessTest`
+replays the example over two dimensions on its cells 2.00, 1.00 and 5.00.
+The worked example of reading over a path has no replay in it.
 
 ### 5.9 Uniqueness: the union and the scope
 
@@ -6281,9 +6283,10 @@ cell over a path stays outside gate 17 and outside that corpus witness: the
 Drools backend reads a cell only of the subject's own attribute (a cell over
 a path it refuses, DROOLS-189), and no golden with case files reads one over
 a path; `WV-5.12-cel-over-een-pad` pins it in `ref`. A cell of the subject
-is inside: gate 17 compares the readings of the goldens that read one
-(ch. 5.8c) on both branches, the cell read and the dimension fold as the
-nodes, and the text writes no object for the cell. The status `FAULTS`
+is inside: gate 17 compares the readings of the goldens that read or write
+one (ch. 5.8c) on both branches, the cell read and the dimension fold as the
+nodes, a rule whose target is a cell as a rule on an attribute, and the text
+writes no object for the cell. The status `FAULTS`
 and a fault at a node stay outside that differential: a golden does not
 fault at its fixpoint, and `runner --trace` refuses a case that pins one.
 Neither does a displaced default of a golden fault in its reading

@@ -133,10 +133,9 @@ cell of it, an initialisation of a cell and an object creation whose member
 writes one cell of the created object (`IR-SPEC.md` ch. 3.1, 3.3).
 `jutterswet-seizoenkopie` is its hand-written sibling, two rules that copy
 one cell into two others, and it witnesses WF-079 per cell. Both witness the
-dependency graph per cell (ch. 5.1), and their cases replay in `ref` and
-clingo (`RUNTIME-SEMANTICS.md` ch. 5.8c); the Drools backend refuses a cell
-write when it builds (DROOLS-298). Each `NOTE.md` carries the outcome per
-executor.
+dependency graph per cell (ch. 5.1), and their cases replay in `ref`,
+clingo and the Drools backend (`RUNTIME-SEMANTICS.md` ch. 5.8c). Each
+`NOTE.md` carries the outcome per executor.
 
 `jutterswet-tempototaal` is the route-split witness of `het totaal van`:
 the set reading and the temporal reading of one operator over one unit

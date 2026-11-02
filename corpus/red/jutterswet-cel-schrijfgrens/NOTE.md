@@ -19,5 +19,7 @@ more decimals than its target, so the document is IR without a source.
 pins all three); the ASP backend with EF-006 and `place` vondstgewicht[najaar]
 (its fence names the member, without the instance). The pin names no
 parameter, as the other EF-006 witnesses do: the two executors spell the place
-apart. The Drools backend refuses the document when it builds, before the
-write is reached (`EXCLUDE DROOLS-298`, the Drools list of gate 8).
+apart. The Drools backend faults with EF-006 and the parameters of `ref`,
+`place` j1.vondstgewicht[najaar], `value` 15/8 and `decimals` 2, on both
+branches (the Drools leg of gate 8; `DimensionCellWitnessTest` pins all
+three).

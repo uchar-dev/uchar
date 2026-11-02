@@ -48,10 +48,8 @@ a jutter, and `ref/test` reads them there.
 
 ## Where the executors stand
 
-Measured 2026-11-02: `ref` and the ASP backend replay the case (gates 5 and
-6; `ref/test` `WV-5.8c-schrijven-staande-invoer`). The Drools backend loads
-the document and refuses it when it builds, with `EXCLUDE DROOLS-298: a write
-of a cell of the dimensioned attribute 'vondstgewicht' by 'najaarsgewicht van
-een jutter': this branch writes no cell`, so gate 12 pins `EXCLUDE
-DROOLS-298`; its rule graph carries the cells, and gate 15 compares it with
-the verifier's.
+Measured 2026-11-02: `ref`, the ASP backend and the Drools backend replay the
+case (gates 5, 6 and 12; `ref/test` `WV-5.8c-schrijven-staande-invoer`; the
+Drools backend on both branches, `PLAYED 1`): a cell is a standing target of
+its own in all three. Its rule graph carries the cells, and gate 15 compares
+it with the verifier's.
