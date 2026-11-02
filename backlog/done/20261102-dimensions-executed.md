@@ -1789,3 +1789,5 @@ end 2026-11-02 17:43:12 322s red=0
 Na de run kwam alleen `10a6d135a` (proza in RUNTIME-SEMANTICS ch. 5.8c, buiten de tabel van ch. 5.7b die gate 8 en de
 codetoetsen lezen) en dit Result (de kaart is geen invoer van een gate); gate 1, de enige gate die die tekst leest,
 daarop apart groen (`logs/stap6-gate1-3.log`). Niet gemerged, niet gepusht.
+
+**Landing (hoofdsessie, 2026-11-02).** Zelf nagemeten: `jutterswet-seizoenvouw`, `-seizoenboeking` en `-strandseizoen` laden op ref en de jar van `3d4676b88` niet (onbekende velden `dimensionSelections` en `labels`, celdoel) en spelen op `f5c5d1afb` (ref PASS 5, 9 en 11 verwachtingen; Drools `PLAYED` op beide branches). Ff op main `b906f78ba`; de laatste `make gates` draaide op `35cde2794`, daarna veranderden alleen een spec-zin en het Result. In dezelfde landing: CONSTRUCTS rij 28, `DimensieSelectie`, `DimensieCel` en de markerrij; CLAUDE.md gate 3 (vloeren) en gate 12 (retired codes); de open punten in de nieuwe kaart `20261102-dimensions-remaining`. Pin-bump van de toolchain volgt (de bean per cel, `Fixpoint.DerivedValue.labels`, `FixpointGivens`).

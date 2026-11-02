@@ -222,10 +222,11 @@ missing line makes `make gates` exit non-zero. Current gates:
    parameters of one violation, so a rewording of a message breaks no pin
    (the fragment form above is history); gate 3 also refuses a key with two
    message templates over the negative reports and a violation built
-   without a key in `checks.ml`; floors `EXPECTED_MIN_ARMS=213`,
-   `EXPECTED_MIN_PARAM_LINES=572`, `EXPECTED_MIN_REPORT_KEYS=318` and
-   `EXPECTED_MIN_ARM_SITES=421` (measured 2026-10-19), `EXPECTED_MIN_EXPECT`
-   raised to 354 and `EXPECTED_MIN_POINTERS` to 619. Since 2026-10-21 (card
+   without a key in `checks.ml`; floors `EXPECTED_MIN_ARMS=239`,
+   `EXPECTED_MIN_PARAM_LINES=686`, `EXPECTED_MIN_REPORT_KEYS=340`,
+   `EXPECTED_MIN_ARM_SITES=442`, `EXPECTED_MIN_EXPECT=411`,
+   `EXPECTED_MIN_POINTERS=706` and `EXPECTED_MIN_NEGATIVE=568` (measured
+   2026-11-02, card `dimensions-executed`; first set 2026-10-19). Since 2026-10-21 (card
    `default-statute-annotations`) WF-082 judges the `statuteAnnotations` of a
    Default too (IR-SPEC ch. 6.1); the verifier reads those lists beside the
    document (`Loader.default_annotations`), and each of the three WF-082 keys
@@ -424,8 +425,8 @@ missing line makes `make gates` exit non-zero. Current gates:
     refusal carries a code `DROOLS-###` from one register
     (`backends/drools/.../refusal/DroolsCode.java`), beside its sentence
     and at the head of its report (`EXCLUDE DROOLS-014: <sentence>`); the
-    gate compares the code, not only the channel: each of the 46 `EXCLUDE`
-    pins of `EXPECTED_CHANNEL` names its code, and a changed or missing
+    gate compares the code, not only the channel: each `EXCLUDE`
+    pin of `EXPECTED_CHANNEL` names its code, and a changed or missing
     code fails by golden name with both codes.
     `scripts/check-drools-codes.sh`, called first, holds the register to
     the sources in both directions (every code raised but one of the
@@ -433,7 +434,9 @@ missing line makes `make gates` exit non-zero. Current gates:
     since the card `frontend-kwantor-over-een-pad` (2026-10-20)
     DROOLS-026 and DROOLS-258, since the card
     `test-beyond-thirteen-reads` (2026-10-27) DROOLS-264, since the card
-    `fout-op-tussenstand` (2026-11-01) DROOLS-120 and DROOLS-165; every raised code
+    `fout-op-tussenstand` (2026-11-01) DROOLS-120 and DROOLS-165, since the card
+    `dimensions-executed` (2026-11-02) DROOLS-040, DROOLS-047, DROOLS-184,
+    DROOLS-191, DROOLS-297 and DROOLS-298; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`
