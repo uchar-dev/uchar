@@ -696,6 +696,58 @@ public final class ComputeHelpers {
         return RegelSpraakRuntime.rsTijdTotaal(null, granularity);
     }
 
+    /**
+     * The pro-rata part of the timeline {@code base} per calendar bucket of the grid {@code grid} ("JAAR" or "MAAND")
+     * over the true periods {@code periods} of a characteristic (RUNTIME-SEMANTICS ch. 3.7): per bucket the base's value
+     * at the bucket's start times its true days over its days, as the exact rational it is, a base that is leeg there or
+     * absent giving no segment, adjacent equal buckets not coalesced. Each segment passes the write boundary of its
+     * target (ch. 2.4 point 1), the attribute {@code attribute} of {@code decimals} declared decimals: a value that does
+     * not fit is the {@link WriteBoundaryFault} of the first such bucket, and a value that fits lands as its exact
+     * decimal. Leeg periods or a leeg base give the empty timeline. A target of the unbounded form, whose segment of a
+     * part that does not terminate no {@link Period} holds, is refused while the model is built.
+     */
+    public static List<Period> proRata(Object periods, Object base, String grid, Integer decimals, String attribute) {
+        List<Period> out = new ArrayList<>();
+        if (periods == null || base == null) return out;
+        boolean year = "JAAR".equals(grid);
+        java.util.TreeMap<LocalDate, Long> trueDays = new java.util.TreeMap<>();
+        for (Object o : (List<?>) periods) {
+            Period p = (Period) o;
+            if (!p.from().isBefore(p.to())) continue;
+            LocalDate cursor = year ? p.from().withDayOfYear(1) : p.from().withDayOfMonth(1);
+            while (cursor.isBefore(p.to())) {
+                LocalDate next = year ? cursor.plusYears(1) : cursor.plusMonths(1);
+                LocalDate from = p.from().isAfter(cursor) ? p.from() : cursor, to = p.to().isBefore(next) ? p.to() : next;
+                long days = java.time.temporal.ChronoUnit.DAYS.between(from, to);
+                if (days > 0) trueDays.merge(cursor, days, Long::sum);
+                cursor = next;
+            }
+        }
+        for (Map.Entry<LocalDate, Long> e : trueDays.entrySet()) {
+            LocalDate start = e.getKey(), end = year ? start.plusYears(1) : start.plusMonths(1);
+            BigDecimal value = null;
+            for (Object o : (List<?>) base) {
+                Period b = (Period) o;
+                if (!b.from().isAfter(start) && b.to().isAfter(start)) {
+                    value = b.value();
+                    break;
+                }
+            }
+            if (value == null) continue;
+            Breuk part = Breuk.van(value).vermenigvuldigen(Breuk.van(BigInteger.valueOf(e.getValue()),
+                    BigInteger.valueOf(java.time.temporal.ChronoUnit.DAYS.between(start, end))));
+            if (decimals != null) {
+                WriteBoundaryFault.Misfit m = WriteBoundaryFault.misfit(null, null, attribute, part, decimals);
+                if (m != null) throw new WriteBoundaryFault(List.of(m));
+            }
+            if (!part.isTerminerend())
+                throw new IllegalStateException("het tijdsevenredig deel van " + attribute + " eindigt niet, en het doel"
+                        + " houdt elke waarde: de bouw weigert die vorm");
+            out.add(new Period(start, end, part.naarDecimal()));
+        }
+        return List.copyOf(out);
+    }
+
     /** {@code timeline}, the timeline of an attribute a form reads whole, or the fault where the case gives that input
      *  as the asOfDate-bucket scalar ({@link BucketScalar}, RUNTIME-SEMANTICS ch. 8.4), in the sentence {@code before},
      *  the object {@code object}, {@code after}. */

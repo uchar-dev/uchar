@@ -230,6 +230,11 @@ let unbounded_refusal ~what q =
 let non_exact_division_bounded =
   "non-exact division (an explicit rounding is mandated before precision is lost)"
 
+(* the viol/2 reason of a pro-rata part that does not fit the target scale of
+   its segment (EF-006, RUNTIME-SEMANTICS ch. 2.4, 3.7) *)
+let pro_rata_misfit =
+  "non-exact pro-rata part (an explicit rounding is mandated before precision is lost)"
+
 (* the viol/2 reason of an unrounded allocation share that does not fit its
    target scale (EF-006); the subject is the recipient *)
 let allocation_share_misfit =
@@ -765,6 +770,7 @@ let viol_code witness =
   (* the sentence names none of place, value and decimals; the subject is a
      label, which is no parameter of EF-006 *)
   else if opens (allocation_share_misfit ^ "\"") then Some ("EF-006", [])
+  else if opens (pro_rata_misfit ^ "\"") then Some ("EF-006", [])
   else if opens "result of " && holds " does not fit its declared decimals\"" then
     Some ("EF-006", found "place" (between "result of " " does not fit its declared decimals"))
   else if opens "day-kind walk: no day of the kind within " then
@@ -10351,11 +10357,17 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : grain) =
        ((base :: ctx.rule_guard) @ cond
         @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ctx ~subject ~ot clip)))
     p;
-  emit ctx
-    "viol(\"non-exact pro-rata part (an explicit rounding is mandated before precision is \
-     lost)\",S) :- %s, %s \\ %s != 0."
-    (String.concat ", " body)
-    numt dent;
+  (* a part that does not fit the target's scale is the write boundary of
+     ch. 2.4 on its segment (EF-006); the unbounded form fixes no scale, and a
+     part that is not whole there is this encoding's limit *)
+  (if unbounded_datatype (attr_datatype ctx ~otype:ot ~attr:a) then
+     emit ctx
+       "viol(\"a pro-rata part into a number declared without decimals is not whole, and this \
+        encoding holds the unbounded form as a whole number\",S) :- %s, %s \\ %s != 0."
+       (String.concat ", " body)
+       numt dent
+   else
+     emit ctx "viol(\"%s\",S) :- %s, %s \\ %s != 0." pro_rata_misfit (String.concat ", " body) numt dent);
   (* ch. 7.8, the timeline arm: on a standing temporal target the fold
      decides only when it derives at least one bucket — the case's
      input timeline (entered as inputtl/5) stands whole by NAF

@@ -335,6 +335,7 @@ DROOLS-297	a dimension fold over {dimensionCount} dimensions ('{snippet}'): this
 DROOLS-298	a write of a cell of the dimensioned attribute '{attribute}' by '{form}': this branch writes no cell
 DROOLS-299	{description} over the attribute '{attribute}' ('{snippet}'): the labels [{labels}] name no cell of its dimensions {dimensions}; a cell names one label of each dimension, label i one of dimension i (WF-040)
 DROOLS-300	a power with the fractional exponent {exponent} ('{snippet}'): this branch computes a fractional exponent whose numerator and denominator are at most {bound}; past that the whole numbers of the power and its root grow too large
+DROOLS-301	{description} into the attribute '{attribute}' of {objectType}, which is of the unbounded form: a segment of this branch holds a decimal, and a part that does not terminate would become a decimal of sixteen digits
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	input {place} = {value} does not fit {decimals} decimals: a case value whose exact value its declaration cannot hold is refused at the input (RUNTIME-SEMANTICS ch. 2.4, 5.7)

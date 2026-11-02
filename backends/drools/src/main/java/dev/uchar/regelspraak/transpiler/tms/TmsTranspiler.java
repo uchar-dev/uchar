@@ -1897,11 +1897,12 @@ public final class TmsTranspiler {
      * {@code subject} (RUNTIME-SEMANTICS ch. 3.7, 3.8), as a function of the values the rule binds: the true periods of
      * the subject's own characteristic in its gedurende clause and, for the pro-rata part, the timeline of the base, an
      * own attribute, each bound in the left-hand side ({@link Reads#timeline}), so a base that a rule derives later
-     * takes the result along. The runtime's helpers compute them, with {@link Period} as their
-     * segment class: {@code rsTijdsevenredig} per bucket of the target's grid, the base's
-     * value at the bucket's start times the share of true days, a base that is leeg there or absent giving no segment,
-     * and {@code rsAantalDagenIn} the true days per touched bucket, on the calendar or from the anchor of the target's
-     * fixed start point ({@code rsAantalDagenInVanaf}, ch. 3.2). Neither coalesces adjacent equal buckets (ch. 3.7). The
+     * takes the result along. They are computed with {@link Period} as the segment class: the pro-rata part per bucket
+     * of the target's grid, the base's value at the bucket's start times the share of true days, exact, a base that is
+     * leeg there or absent giving no segment, each segment under the write boundary of the target's decimals
+     * ({@link ComputeHelpers#proRata}, ch. 2.4); and the runtime's {@code rsAantalDagenIn} the true days per touched
+     * bucket, a whole number every target holds, on the calendar or from the anchor of the target's fixed start point
+     * ({@code rsAantalDagenInVanaf}, ch. 3.2). Neither coalesces adjacent equal buckets (ch. 3.7). The
      * pro-rata part reads its base whole, bucket by bucket, so a base the case gives as the asOfDate-bucket scalar
      * faults ({@link InputFormFault}, ch. 8.4), wherever the rule's evaluation reaches the value; the reference
      * interpreter and the ASP backend read such a base as no timeline today and write nothing.
@@ -1910,7 +1911,8 @@ public final class TmsTranspiler {
      * granularity (WF-056, WF-058); a clause that is not a check of an own characteristic on a timeline, or is negated
      * or navigated; a base that is not an own attribute on a timeline, is finer than the bucket or carries a unit, whose
      * rate the reference interpreter does not restate (ch. 3.7, fenced); and a pro-rata part onto or from a fixed start
-     * point ({@link Timelines#proRataFixedGrid}).
+     * point ({@link Timelines#proRataFixedGrid}). Refused by name as a limit of this branch: a pro-rata part into a
+     * target of the unbounded form, whose segment would hold a part that does not terminate.
      */
     private Term timelineValue(Expr.FunctionCall f, Member target, ObjectType subject, Reads reads) {
         boolean part = f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL;
@@ -1961,8 +1963,12 @@ public final class TmsTranspiler {
         Term whole = complete(baseValue, "the pro-rata base \"" + baseName + "\" needs the full timeline; ", subjectType,
                 " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", source(b.source()));
         note(b, whole);
-        Term proportional = new Term.Call(StaticFunction.RS_TIME_PROPORTIONAL, List.of(periods, whole,
-                constant(gran), constant(Period.class)), null);
+        // a segment of the unbounded form would hold the exact part, which no Period holds where it does not terminate
+        if (target.datatype().unbounded())
+            throw new Refusal(DroolsCode.PRO_RATA_UNBOUNDED_TARGET.reason("description", description, "attribute",
+                    target.name(), "objectType", target.declarant().name));
+        Term proportional = new Term.Call(StaticFunction.PRO_RATA, List.of(periods, whole, constant(gran),
+                constant(ceiling(target.datatype())), constant(target.spelled())), null);
         return new Term.Call(StaticFunction.PERIOD_LIST, List.of(proportional), source(f.source()));
     }
 

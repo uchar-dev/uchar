@@ -321,7 +321,8 @@ public enum DroolsCode {
     DIMENSION_FOLD_MULTI_DIMENSION("DROOLS-297", Kind.RETIRED, "dimension-fold-multi-dimension", "dimensionCount,snippet", null),
     DIMENSION_CELL_WRITE("DROOLS-298", Kind.RETIRED, "dimension-cell-write", "attribute,form", null),
     DIMENSION_LABELS_NAME_NO_CELL("DROOLS-299", Kind.CONTRACT, "dimension-labels-name-no-cell", "description,attribute,labels,dimensions,snippet", null),
-    POWER_EXPONENT_PAST_BOUND("DROOLS-300", Kind.LIMIT, "power-exponent-past-bound", "exponent,bound,snippet", null);
+    POWER_EXPONENT_PAST_BOUND("DROOLS-300", Kind.LIMIT, "power-exponent-past-bound", "exponent,bound,snippet", null),
+    PRO_RATA_UNBOUNDED_TARGET("DROOLS-301", Kind.LIMIT, "pro-rata-unbounded-target", "description,attribute,objectType", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

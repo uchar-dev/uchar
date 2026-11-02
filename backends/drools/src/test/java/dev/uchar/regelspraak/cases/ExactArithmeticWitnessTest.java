@@ -181,6 +181,39 @@ class ExactArithmeticWitnessTest {
         }
     }
 
+    /** corpus/red/jutterswet-tijdsevenredig-past-niet: the segment of February, 15 × 18/28 = 135/14, does not fit the 2
+     *  decimals of the monthly ligdeel (EF-006, RUNTIME-SEMANTICS ch. 2.4, 3.7), its place the attribute, as the
+     *  reference interpreter names it; the golden's own case, whose segments fit, plays. */
+    @Test void a_pro_rata_segment_passes_the_write_boundary_of_its_target() throws Exception {
+        Path red = Path.of("..", "..", "corpus", "red", "jutterswet-tijdsevenredig-past-niet");
+        for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
+            CaseRunner.RedResult r = CaseRunner.runRed(red.resolve("ir.json"), red.resolve("case1.json"), branch);
+            assertEquals("FAULT", r.status(), () -> branch + ": " + r);
+            assertEquals("EF-006", r.code(), () -> branch + ": " + r);
+            assertEquals(List.of(Map.of("place", "L1.ligdeel", "value", "135/14", "decimals", "2")), r.params(),
+                    () -> branch + ": " + r);
+        }
+    }
+
+    /** A pro-rata part into a timeline of the unbounded form is refused by name: a segment of this branch holds a
+     *  decimal, and 135/14 would hold sixteen digits of it. */
+    @Test void a_pro_rata_part_into_the_unbounded_form_is_refused_by_name() throws Exception {
+        Path red = Path.of("..", "..", "corpus", "red", "jutterswet-tijdsevenredig-past-niet");
+        String ir = Files.readString(red.resolve("ir.json"));
+        String bounded = "\"name\": \"ligdeel\",\n            \"datatype\": {\n              \"node\": \"Number\",\n"
+                + "              \"whole\": false,\n              \"decimals\": 2,";
+        assertTrue(ir.contains(bounded), "het ligdeel van het rode geval heeft 2 decimalen");
+        Path unbounded = Files.writeString(Files.createTempFile("exact-arithmetic", ".json"),
+                ir.replace(bounded, bounded.replace("\"decimals\": 2,", "\"decimals\": 0,")));
+        unbounded.toFile().deleteOnExit();
+        for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
+            CaseRunner.Result r = branch == DroolsBackend.Branch.EXEC_MODEL ? CaseRunner.viaExecModel(unbounded, List.of())
+                    : CaseRunner.viaDrlText(unbounded, List.of());
+            assertEquals("EXCLUDE", r.status(), () -> branch + ": " + r);
+            assertEquals("DROOLS-301", r.code() == null ? null : r.code().id(), () -> branch + ": " + r);
+        }
+    }
+
     private static Path caseFile(JsonNode caseDocument) throws Exception {
         Path tmp = Files.createTempFile("exact-arithmetic", ".json");
         tmp.toFile().deleteOnExit();

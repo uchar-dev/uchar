@@ -69,8 +69,10 @@ public enum StaticFunction {
     /** The true periods of a comparison of a timeline with a value, the comparison an {@code Integer} code of
      *  {@code TimeCalculation.test}, the value a decimal or an exact rational, compared exactly. */
     RS_TIME_CONDITION(RegelSpraakRuntime.class, "rsTijdConditie", false),
-    /** The pro-rata part of a base timeline per bucket of a grid over the true periods of a characteristic (ch. 3.7). */
-    RS_TIME_PROPORTIONAL(RegelSpraakRuntime.class, "rsTijdsevenredig", false),
+    /** The pro-rata part of a base timeline per bucket of a grid over the true periods of a characteristic (ch. 3.7),
+     *  exact, each segment under the write boundary of the target's decimals, an {@code Integer} constant, and its
+     *  attribute, a {@code String} constant; a segment that does not fit the fault (ch. 2.4). */
+    PRO_RATA(ComputeHelpers.class, "proRata", true),
     /** The true days per bucket of a grid on the calendar (ch. 3.8). */
     RS_DAY_COUNT(RegelSpraakRuntime.class, "rsAantalDagenIn", false),
     /** The true days per bucket of a grid from the anchor of a fixed start point, a {@code LocalDate} constant (ch. 3.2). */

@@ -1,0 +1,130 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Ligplaats",
+        "animate": false,
+        "plural": "Ligplaatsen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "jaarforfait",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "year",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ligdeel",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "bezet",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "ligdeel van een ligplaats",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "ligdeel",
+              "subjectType": "Ligplaats",
+              "source": {
+                "snippet": "Het ligdeel van een Ligplaats"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "timeProportionalPart",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "jaarforfait",
+                  "subjectType": "Ligplaats",
+                  "source": {
+                    "snippet": "haar jaarforfait"
+                  }
+                }
+              ],
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "bezet",
+                "negated": false,
+                "source": {
+                  "snippet": "gedurende de tijd dat zij bezet is"
+                }
+              },
+              "granularity": "month",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het tijdsevenredig deel per maand van haar jaarforfait gedurende de tijd dat zij bezet is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

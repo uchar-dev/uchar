@@ -335,8 +335,7 @@ final class ClosureRendering {
                     (Class<?>) x[2]);
             case RS_TIME_CONDITION -> x -> RegelSpraakRuntime.rsTijdConditie((List<?>) x[0], (Integer) x[1], x[2],
                     (Class<?>) x[3]);
-            case RS_TIME_PROPORTIONAL -> x -> RegelSpraakRuntime.rsTijdsevenredig((List<?>) x[0], (List<?>) x[1],
-                    (String) x[2], (Class<?>) x[3]);
+            case PRO_RATA -> x -> ComputeHelpers.proRata(x[0], x[1], (String) x[2], (Integer) x[3], (String) x[4]);
             case RS_DAY_COUNT -> x -> RegelSpraakRuntime.rsAantalDagenIn((List<?>) x[0], (String) x[1],
                     (Class<?>) x[2]);
             case RS_DAY_COUNT_FROM -> x -> RegelSpraakRuntime.rsAantalDagenInVanaf((List<?>) x[0],

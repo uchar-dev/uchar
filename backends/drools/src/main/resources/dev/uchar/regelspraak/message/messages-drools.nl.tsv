@@ -335,6 +335,7 @@ DROOLS-297	een dimensievouw over {dimensionCount} dimensies ('{snippet}'): deze 
 DROOLS-298	het schrijven van een cel van het gedimensioneerde attribuut '{attribute}' door '{form}': deze tak schrijft geen cel
 DROOLS-299	{description} over het attribuut '{attribute}' ('{snippet}'): de labels [{labels}] noemen geen cel van zijn dimensies {dimensions}; een cel noemt één label van elke dimensie, label i een van dimensie i (WF-040)
 DROOLS-300	een macht met de gebroken exponent {exponent} ('{snippet}'): deze tak rekent een gebroken exponent waarvan teller en noemer ten hoogste {bound} zijn; daarboven zijn de gehele getallen van de macht en haar wortel te groot
+DROOLS-301	{description} in het attribuut '{attribute}' van {objectType}, dat de onbegrensde vorm heeft: een segment van deze tak houdt een decimaal, en een deel dat niet eindigt zou een decimaal van zestien cijfers worden
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)

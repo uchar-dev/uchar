@@ -980,54 +980,6 @@ public final class RegelSpraakRuntime {
         return n;
     }
 
-    /** §7.3.2/§13.4.17.58 "het tijdsevenredig deel per <maand|jaar> van <basis> gedurende de tijd dat <conditie>":
-     *  per calendar bucket, value = baseValueInBucket × (true-days / total-days) at DECIMAL64 — §4.22 keeps the
-     *  exact fraction, NEVER auto-rounding to the doel's decimals (§6.1.2). The base value for a bucket is the basis
-     *  segment covering the bucket start; a leeg base there yields no segment. A null conditie/basis -> empty.
-     *  The single implementation (single-runtime principle). */
-    public static List<Object> rsTijdsevenredig(List<?> conditie, List<?> basis, String granulariteit, Class<?> segCls) {
-        return rsTijdsevenredig(conditie, basis, granulariteit, null, segCls);
-    }
-
-    private static List<Object> rsTijdsevenredig(List<?> conditie, List<?> basis, String granulariteit, LocalDate anker, Class<?> segCls) {
-        List<Object> uit = new ArrayList<>();
-        if (conditie == null || basis == null) return uit;
-        boolean jaar = "JAAR".equals(granulariteit);
-        TreeMap<LocalDate, Long> trueDagen = new TreeMap<>();
-        for (Object o : conditie) {
-            LocalDate sv = segVan(o), st = segTot(o);
-            if (sv == null || st == null || !sv.isBefore(st)) continue;
-            LocalDate cursor = bucketStart(anker, sv, jaar);
-            while (cursor.isBefore(st)) {
-                LocalDate next = bucketNext(anker, cursor, jaar);
-                LocalDate van = sv.isAfter(cursor) ? sv : cursor;
-                LocalDate tot = st.isBefore(next) ? st : next;
-                long dagen = ChronoUnit.DAYS.between(van, tot);
-                if (dagen > 0) trueDagen.merge(cursor, dagen, Long::sum);
-                cursor = next;
-            }
-        }
-        for (Map.Entry<LocalDate, Long> en : trueDagen.entrySet()) {
-            LocalDate start = en.getKey();
-            LocalDate eind = bucketNext(anker, start, jaar);
-            long totaal = ChronoUnit.DAYS.between(start, eind);
-            long dagen = en.getValue().longValue();
-            BigDecimal w = null;
-            for (Object o : basis) {
-                LocalDate bv = segVan(o), bt = segTot(o);
-                if (bv != null && bt != null && !bv.isAfter(start) && bt.isAfter(start)) { w = segWaarde(o); break; }
-            }
-            if (w == null) continue;
-            // §845 tijdsevenredig deel: keep the EXACT fraction w·(dagen/totaal). When it terminates the exact
-            // BigDecimal is stored (no DECIMAL64 truncation); a non-terminating pro-rata is stored at DECIMAL64
-            // (a Segment holds a BigDecimal, not a Breuk) — the §6.1.2 doel afronding then rounds the value the
-            // spec keeps exact. Never auto-rounds to the doel's decimals.
-            Breuk deelB = Breuk.van(w).vermenigvuldigen(Breuk.van(BigInteger.valueOf(dagen), BigInteger.valueOf(totaal)));
-            uit.add(newSegment(segCls, start, eind, deelB.naarDecimal()));
-        }
-        return uit;
-    }
-
     /** §8.2/§13.4.15.70 "gedurende de/het gehele &lt;periode&gt;": is the predicate {@code true at EVERY moment} of
      *  each calendar bucket (MAAND|JAAR) the timeline touches? Bucket the {@code List<Segment>} timeline by calendar
      *  period (like {@link #rsAantalDagenIn}); a bucket is "touched" if a segment overlaps it — for a value test only a
