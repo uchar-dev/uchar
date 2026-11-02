@@ -893,8 +893,6 @@ let init_member env ~created (t : assignment) =
   let m = req "MemberInit.member" t.to_attribute in
   match t.to_labels with
   | None -> m
-  | Some _ when t.to_characteristic ->
-      Value.fault "the characteristic initialisation of %S carries labels: a cell is a cell of an attribute" m
   | Some labels -> cell_member env ~ot:created ~attr:m (List.map (req "MemberInit.labels") labels)
 
 (* The attribute a member of an instance's [attrs] belongs to: the member
