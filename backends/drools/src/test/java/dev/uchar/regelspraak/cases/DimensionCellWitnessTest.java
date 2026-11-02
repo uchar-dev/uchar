@@ -380,6 +380,25 @@ class DimensionCellWitnessTest {
         }
     }
 
+    /** A cell a form writes on the unbounded form (IR-SPEC ch. 2.4 (c)) holds an exact rational in working memory, and
+     *  the runtime's folds over cells fold decimals: jutterswet-seizoenboeking with its vondstgewicht of that form is
+     *  refused by name where the sum over all seasons reads the written cells (DROOLS-296), never folded to a decimal or
+     *  stopped by a cast. */
+    @Test void a_fold_over_a_written_cell_of_the_unbounded_form_is_refused_by_name() throws Exception {
+        JsonNode ir = golden("jutterswet-seizoenboeking");
+        ObjectNode datatype = (ObjectNode) IrPath.attribute(IrPath.objectType(ir, "Jutter"), "vondstgewicht").get("datatype");
+        datatype.put("whole", false).put("decimals", 0);
+        Path p = document(ir);
+        Path c = GOLDEN.resolve("jutterswet-seizoenboeking").resolve("case2-zonder-invoer.json");
+        for (DroolsBackend.Branch branch : BRANCHES) {
+            CaseRunner.Result r = replay(p, List.of(c), branch);
+            assertEquals("EXCLUDE", r.status(), () -> branch + ": " + r);
+            assertEquals(DroolsCode.FOLD_OVER_UNBOUNDED_VALUE, r.code(), () -> branch + ": " + r);
+            // the first written cell of the selection, zomer, which the initialisation writes
+            assertTrue(r.reason().contains("'vondstgewicht[zomer]'"), () -> branch + ": " + r);
+        }
+    }
+
     /** IR-SPEC ch. 5.1: a cell is a node of the graph whose cycles the exec-model branch refuses (WF-045), as the
      *  verifier draws it. A rule that computes the cell najaar from the cell voorjaar of the same attribute closes no
      *  cycle; one that computes najaar from najaar does, and so does one that computes najaar from the sum over all

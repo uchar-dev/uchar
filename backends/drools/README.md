@@ -800,10 +800,12 @@ reaches a made object. Witnesses `TmsCreationWitnessTest`, `TmsConsumerWitnessTe
 never as a silent fall:
 
 - of dimensioned attributes, with no golden with cases: a read or a write outside a dimension cell and a fold over a
-  dimension selection, and in those two an attribute that lies on a timeline or is read over a path; and a cell or a
-  fold whose labels name no cell of the attribute's dimensions, which WF-040 refuses. Witness
+  dimension selection, and in those two an attribute that lies on a timeline or is read over a path; a fold over a cell
+  a form writes on the unbounded form, an exact rational in working memory where the runtime's folds over cells fold
+  decimals (DROOLS-296, as for a fold over a set); and a cell or a fold whose labels name no cell of the attribute's
+  dimensions, which WF-040 refuses. Witness
   `TmsTimelineRefusalWitnessTest` for a dimensioned attribute on a timeline, by its cell and by its total, and
-  `DimensionCellWitnessTest` for labels that name no cell;
+  `DimensionCellWitnessTest` for the unbounded form and for labels that name no cell;
 - of timelines, each with no golden with cases unless one is named: a second writer of a timeline target, which ch.
   7.8 keeps fenced, and an initialisation of one; a time window in the condition of a rule with a timeline target,
   which clips the timeline (ch. 3.10; golden `jutterswet-pachtvenster`); a

@@ -4817,10 +4817,15 @@ public final class TmsTranspiler {
         for (List<String> t : ProducerConsumer.selectedCells(f.dimensionSelections())) {
             List<String> key = cellKey(a.objectType(), a.attribute(), t, description, f.source());
             keys.add(key);
-            if (writers.containsKey(ProducerConsumer.cellOf(a.objectType(), a.attribute(), t)))
-                map = new Term.Call(StaticFunction.WITH_CELL, List.of(map, constant(key),
-                        new Term.SlotValue(reads.own(cellMember(a.objectType(), a.attribute(), t, description,
-                                f.source())), null)), null);
+            if (!writers.containsKey(ProducerConsumer.cellOf(a.objectType(), a.attribute(), t))) continue;
+            Member cell = cellMember(a.objectType(), a.attribute(), t, description, f.source());
+            // a cell a form writes on the unbounded form holds an exact rational in working memory (RUNTIME-SEMANTICS
+            // ch. 2.4 point 3), and the runtime's folds over cells fold decimals; an input cell is a decimal
+            if (cell.datatype().unbounded())
+                throw new Refusal(DroolsCode.FOLD_OVER_UNBOUNDED_VALUE.reason("attribute", cell.spelled(), "objectType",
+                        cell.declarant().name));
+            map = new Term.Call(StaticFunction.WITH_CELL, List.of(map, constant(key),
+                    new Term.SlotValue(reads.own(cell), null)), null);
         }
         Term fallback = f.emptyFallback() == null ? null : restated(value(f.emptyFallback(), reads),
                 eff.unitOf(f.emptyFallback()), eff.unitOf(a), "een §5.8.2 terugvalwaarde");
