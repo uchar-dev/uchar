@@ -1027,6 +1027,17 @@ let () =
       expect_num "WV-2.4-p-factor" (World.attr (World.get final "J1") "factor") "2/3";
       check "WV-2.4-p" (Case.check c final = [])
   | Error (_, _, text) -> check ("WV-2.4-p (" ^ text ^ ")") false);
+  (* ch. 2.2, the rounding of a fractional power in a session: 10 tot de macht
+     1/3 naar beneden afgerond op 10 decimalen *)
+  let power_doc =
+    {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Wrakkist","animate":false,"plural":"Wrakkisten","attributes":[{"node":"Attribute","name":"ribbe","datatype":{"node":"Number","whole":false,"decimals":10,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"ribbe","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"ribbe","subjectType":"Wrakkist","source":{"snippet":"De ribbe van een Wrakkist"}},"value":{"node":"Rounding","base":{"node":"Binary","op":"power","left":{"node":"Literal","value":{"number":"10"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"10"}},"right":{"node":"Literal","value":{"number":"1/3"},"type":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"},"source":{"snippet":"1/3"}},"type":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"},"source":{"snippet":"10 tot de macht 1/3"}},"mode":"floor","decimals":10,"type":{"node":"Number","whole":false,"decimals":10,"sign":"unspecified"},"source":{"snippet":"10 tot de macht 1/3 naar beneden afgerond op 10 decimalen"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+  in
+  let power_case =
+    {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"K1","objectType":"Wrakkist","attributes":{},"roles":{},"characteristics":[]}],"parameters":{}},"expected":[{"kind":"attributeValue","label":"K1","attribute":"ribbe","value":{"number":"2.1544346900"}}]}|}
+  in
+  (match write_boundary_session power_doc power_case with
+  | Ok (c, final) -> check "WV-2.2-w" (Case.check c final = [])
+  | Error (_, _, text) -> check ("WV-2.2-w (" ^ text ^ ")") false);
   (* ch. 2.4 and 3.7, the write boundary on a timeline target, per segment: a
      base of 18 per year, borgplichtig from 2025-01-01 up to 2025-02-08 *)
   let prorata_doc ~gran ~datatype =

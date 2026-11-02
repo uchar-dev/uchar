@@ -15093,7 +15093,11 @@ let () =
     = Some ("CLINGO-031", []));
   check "x/3: the witness is EF-006"
     (Translate.viol_code (Printf.sprintf "viol(\"%s\",\"V1\")" Translate.non_exact_division_bounded)
-    = Some ("EF-006", []))
+    = Some ("EF-006", []));
+  (* a pro-rata segment that does not fit its target is the write boundary
+     of ch. 2.4 on that segment (ch. 3.7) *)
+  check "a pro-rata part that does not fit: the witness is EF-006"
+    (Translate.viol_code (Printf.sprintf "viol(\"%s\",l1)" Translate.pro_rata_misfit) = Some ("EF-006", []))
 
 (* THE UNBOUNDED FORM (IR-SPEC ch. 2.4 (c): a Number that is not whole and
    has 0 decimals, a "getal" declared without decimals). It has no ceiling:
