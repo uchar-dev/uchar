@@ -19,6 +19,19 @@
                 }
               }
             ]
+          },
+          "aanvoer": {
+            "cells": [
+              {
+                "labels": [
+                  "zuid",
+                  "rivier"
+                ],
+                "value": {
+                  "number": "2.00"
+                }
+              }
+            ]
           }
         },
         "roles": {},
@@ -103,6 +116,80 @@
       "kind": "attributeEmpty",
       "label": "J3",
       "attribute": "jaargewicht"
+    },
+    {
+      "kind": "cellValue",
+      "label": "J2",
+      "attribute": "aanvoer",
+      "labels": [
+        "zuid",
+        "zee"
+      ],
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J2",
+      "attribute": "aanvoer",
+      "labels": [
+        "zuid",
+        "rivier"
+      ],
+      "value": {
+        "number": "2.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "noordriviergewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "zeeaanvoergewicht",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J3",
+      "attribute": "aanvoer",
+      "labels": [
+        "zuid",
+        "zee"
+      ],
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J3",
+      "attribute": "aanvoer",
+      "labels": [
+        "zuid",
+        "rivier"
+      ],
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "noordriviergewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "zeeaanvoergewicht",
+      "value": {
+        "number": "0.00"
+      }
     },
     {
       "kind": "consistent"

@@ -165,6 +165,76 @@
                 }
               ]
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "aanvoer",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            },
+            "dimensions": [
+              "strand",
+              "herkomst"
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "noordriviergewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zeeaanvoergewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
           }
         ],
         "characteristics": []
@@ -215,6 +285,16 @@
         "labels": [
           "noord",
           "zuid"
+        ]
+      },
+      {
+        "node": "Dimension",
+        "name": "herkomst",
+        "plural": "herkomsten",
+        "preposition": "uit",
+        "labels": [
+          "zee",
+          "rivier"
         ]
       }
     ],
@@ -614,6 +694,273 @@
               },
               "source": {
                 "snippet": "de som van zijn vondstgewicht over alle seizoenen over alle stranden"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zuidzeeaanvoer van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "aanvoer",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "De aanvoer op zuid en uit zee van een Jutter"
+                }
+              },
+              "labels": [
+                "zuid",
+                "zee"
+              ],
+              "source": {
+                "snippet": "De aanvoer op zuid en uit zee van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "DimensionCellRead",
+                "attribute": {
+                  "node": "AttributeReference",
+                  "attribute": "vondstgewicht",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstgewicht in voorjaar op zuid"
+                  }
+                },
+                "labels": [
+                  "voorjaar",
+                  "zuid"
+                ],
+                "source": {
+                  "snippet": "zijn vondstgewicht in voorjaar op zuid"
+                }
+              },
+              "right": {
+                "node": "DimensionCellRead",
+                "attribute": {
+                  "node": "AttributeReference",
+                  "attribute": "vondstgewicht",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstgewicht in zomer en op zuid"
+                  }
+                },
+                "labels": [
+                  "zomer",
+                  "zuid"
+                ],
+                "source": {
+                  "snippet": "zijn vondstgewicht in zomer en op zuid"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "zijn vondstgewicht in voorjaar op zuid plus zijn vondstgewicht in zomer en op zuid"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zuidrivieraanvoer van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "aanvoer",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "De aanvoer uit rivier en op zuid van een Jutter"
+                }
+              },
+              "labels": [
+                "zuid",
+                "rivier"
+              ],
+              "source": {
+                "snippet": "De aanvoer uit rivier en op zuid van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "0"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "0 kg"
+              }
+            },
+            "initialisation": true
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "noordriviergewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "noordriviergewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het noordriviergewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "aanvoer",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn aanvoer uit rivier op noord"
+                }
+              },
+              "labels": [
+                "noord",
+                "rivier"
+              ],
+              "source": {
+                "snippet": "zijn aanvoer uit rivier op noord"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zeeaanvoergewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zeeaanvoergewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het zeeaanvoergewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "aanvoer",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn aanvoer"
+                  }
+                }
+              ],
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "strand",
+                  "labels": [
+                    "noord",
+                    "zuid"
+                  ],
+                  "source": {
+                    "snippet": "over alle stranden"
+                  }
+                },
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "herkomst",
+                  "labels": [
+                    "zee"
+                  ],
+                  "source": {
+                    "snippet": "over de herkomsten in {zee}"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "nonNegative",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "de som van zijn aanvoer over alle stranden over de herkomsten in {zee}"
               }
             },
             "initialisation": false,

@@ -10,6 +10,10 @@ Dimensie het strand, bestaande uit de stranden (na het attribuut met voorzetsel 
     1. noord
     2. zuid
 
+Dimensie de herkomst, bestaande uit de herkomsten (na het attribuut met voorzetsel uit):
+    1. zee
+    2. rivier
+
 Objecttype de Jutter (mv: Jutters) (bezield)
     het vondstgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg gedimensioneerd met seizoen en strand;
     het zuidvoorjaarsgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
@@ -18,6 +22,9 @@ Objecttype de Jutter (mv: Jutters) (bezield)
     het zuidpiekgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
     het dalgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
     het jaargewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    de aanvoer Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg gedimensioneerd met strand en herkomst;
+    het noordriviergewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het zeeaanvoergewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
 
 Regel zuidvoorjaarsgewicht van een jutter
     geldig altijd
@@ -42,3 +49,19 @@ Regel dalgewicht van een jutter
 Regel jaargewicht van een jutter
     geldig altijd
         Het jaargewicht van een Jutter moet berekend worden als de som van zijn vondstgewicht over alle seizoenen over alle stranden.
+
+Regel zuidzeeaanvoer van een jutter
+    geldig altijd
+        De aanvoer op zuid en uit zee van een Jutter moet berekend worden als zijn vondstgewicht in voorjaar op zuid plus zijn vondstgewicht in zomer en op zuid.
+
+Regel zuidrivieraanvoer van een jutter
+    geldig altijd
+        De aanvoer uit rivier en op zuid van een Jutter moet geïnitialiseerd worden op 0 kg.
+
+Regel noordriviergewicht van een jutter
+    geldig altijd
+        Het noordriviergewicht van een Jutter moet berekend worden als zijn aanvoer uit rivier op noord.
+
+Regel zeeaanvoergewicht van een jutter
+    geldig altijd
+        Het zeeaanvoergewicht van een Jutter moet berekend worden als de som van zijn aanvoer over alle stranden over de herkomsten in {zee}.

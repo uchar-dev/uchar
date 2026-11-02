@@ -46,6 +46,28 @@
                 }
               }
             ]
+          },
+          "aanvoer": {
+            "cells": [
+              {
+                "labels": [
+                  "noord",
+                  "zee"
+                ],
+                "value": {
+                  "number": "1.50"
+                }
+              },
+              {
+                "labels": [
+                  "noord",
+                  "rivier"
+                ],
+                "value": {
+                  "number": "0.75"
+                }
+              }
+            ]
           }
         },
         "roles": {},
@@ -101,6 +123,46 @@
       "attribute": "jaargewicht",
       "value": {
         "number": "8.50"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J1",
+      "attribute": "aanvoer",
+      "labels": [
+        "zuid",
+        "zee"
+      ],
+      "value": {
+        "number": "5.50"
+      }
+    },
+    {
+      "kind": "cellValue",
+      "label": "J1",
+      "attribute": "aanvoer",
+      "labels": [
+        "zuid",
+        "rivier"
+      ],
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "noordriviergewicht",
+      "value": {
+        "number": "0.75"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "zeeaanvoergewicht",
+      "value": {
+        "number": "7.00"
       }
     },
     {

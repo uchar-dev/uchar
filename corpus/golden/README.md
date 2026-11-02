@@ -130,9 +130,11 @@ each `NOTE.md` carries the outcome per executor.
 `jutterswet-strandseizoen` is the same attribute over two dimensions, written
 in RegelSpraak: a cell read in either order of its labels, side by side or
 joined by "en", and folds with one selection per dimension, a fixed dimension
-as a selection of one label, as ALEF writes them. Its two cases carry an empty
-cell and a wholly empty selection; `ref`, clingo and the Drools backend replay
-them.
+as a selection of one label, as ALEF writes them. A second attribute has a
+dimension declared with the preposition `uit`; the document writes two of its
+cells with targets whose labels are joined by "en", reads one and folds it.
+Its two cases carry an empty cell and a wholly empty selection; `ref`, clingo
+and the Drools backend replay them.
 
 `jutterswet-seizoenboeking` is the cell as a write position written in
 RegelSpraak: a rule that computes one cell of `vondstgewicht` from another
