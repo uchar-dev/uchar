@@ -5055,7 +5055,10 @@ case reader refuses, while it reads the case (ch. 5.7 step 3):
   all three and `strand`: `noord`, `zuid` reads (`voorjaar`, `noord`),
   (`voorjaar`, `zuid`), (`zomer`, `noord`), (`zomer`, `zuid`), (`najaar`,
   `noord`), (`najaar`, `zuid`) and gives **8.00**; the minimum over the same
-  selections gives **1.00**.
+  selections gives **1.00**. Two cells of one value both count: with the
+  cells (`voorjaar`, `noord`) 2.00 and (`najaar`, `noord`) 2.00 the sum over
+  `strand`: `noord` gives **4.00**, the minimum over all cells **2.00**, and
+  the cell read `voorjaar`, `zuid` **leeg**.
 - **Writing**: "Het vondstgewicht in najaar van een Jutter moet berekend
   worden als zijn vondstgewicht in voorjaar maal 2", "Het vondstgewicht in
   zomer van een Jutter moet geïnitialiseerd worden op 0 kg" and the sum

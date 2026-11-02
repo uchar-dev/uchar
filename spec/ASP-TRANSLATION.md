@@ -1344,7 +1344,8 @@ on every subject, so the bare `#sum` answers 0 there; a fallback other than
 0 is refused, as on the set folds. Each cell of a `sum` carries the range
 fence of a sum of n terms, `|A| > 2^31 / n`. Witnesses: gate 6 on
 `jutterswet-seizoenvouw` (one dimension, a selection whose every cell is
-empty) and the frames of the backend's suite (two dimensions, a path).
+empty) and the frames of the backend's suite (two dimensions, two cells of
+one value, a path, the range fence).
 
 Witnesses (gate 6): count by `jutterswet-erflijn`,
 `jutterswet-maatschap`, `jutterswet-kustregister`, the self-denoting
