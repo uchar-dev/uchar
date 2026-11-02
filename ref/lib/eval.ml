@@ -2273,15 +2273,17 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
    order (Ir_v0.Checks.selected_cells, the cells the dependency graph gives the
    fold), read in that order on the object the argument reaches. An empty cell
    is skipped, a fold whose every cell is empty is empty, and a sum then takes
-   its emptyFallback, evaluated after the cells (ch. 5.11). The cells are no
-   members of a set, so the fold hands its observer no contributor
+   its emptyFallback, evaluated after the cells (ch. 5.11). First and last
+   pick by position, the first and the last filled cell in that order, and
+   the filled count counts the filled cells, 0 where none is. The cells are
+   no members of a set, so the fold hands its observer no contributor
    (ch. 5.12). *)
 and eval_dimension_fold env world self ~err ~kind ~call_arguments ~empty_fallback selections =
-  (match kind with
-  | Sum_function | Minimum | Maximum -> ()
-  | k ->
-      Value.fault "a dimension selection on a %s aggregation: WF-037 admits one on sum, minimum and maximum"
-        (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind k));
+  (if not (List.mem kind Ir_v0.Checks.dimension_fold_kinds) then
+     Value.fault
+       "a dimension selection on a %s aggregation: WF-037 admits one on sum, minimum, maximum, first, last \
+        and filledCount"
+       (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind));
   match call_arguments with
   | [ argument ] -> (
       match Option.value (Ir_v0.Checks.unanchored_expr argument) ~default:argument with
@@ -2305,7 +2307,10 @@ and eval_dimension_fold env world self ~err ~kind ~call_arguments ~empty_fallbac
               let fallback = Option.map (eval_expr env world self ~err) empty_fallback in
               Arith.agg_sum ~fallback cells
           | Minimum -> Arith.agg_min cells
-          | _ -> Arith.agg_max cells)
+          | Maximum -> Arith.agg_max cells
+          | First -> ( match Arith.filled cells with [] -> Value.Empty | v :: _ -> v)
+          | Last -> ( match List.rev (Arith.filled cells) with [] -> Value.Empty | v :: _ -> v)
+          | _ -> Arith.agg_count (Arith.filled cells))
       | _ -> Value.fault "a dimension fold takes one argument, the reference of a dimensioned attribute")
   | _ -> Value.fault "a dimension fold takes one argument, the reference of a dimensioned attribute"
 

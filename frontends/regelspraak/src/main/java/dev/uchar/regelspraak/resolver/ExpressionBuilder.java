@@ -1412,7 +1412,9 @@ final class ExpressionBuilder {
         // the frontend must draw the same one or it emits a document the verifier rejects. ERROR, so
         // irMode writes nothing: the dialect phrase is new, no committed expectation depends on the
         // laxer reading, and a silent marker would leave the author with a fold over nothing.
-        if (kind == Expr.FunctionKind.AANTAL_GEVULDE
+        // "het aantal voorkomens van" counts the filled cells of a dimensioned attribute, no set reading: its
+        // selections resolve below
+        if (kind == Expr.FunctionKind.AANTAL_GEVULDE && !(f instanceof AantalVoorkomensFuncContext)
                 && !(arguments.size() == 1
                      && arguments.get(0) instanceof Expr.AttributeReference zb && zb.set())) {
             // written, the fold carries no element type, which the verifier refuses in these words
@@ -1690,10 +1692,13 @@ final class ExpressionBuilder {
         return cnd != null ? source(cnd) : null;
     }
 
-    /** The dimensieselecties of a SOM/MIN/MAX in written order; empty for every other function. */
+    /** The dimensieselecties of a SOM, MIN, MAX, EERSTE, LAATSTE or "het aantal voorkomens van" in written order; empty
+     *  for every other function. */
     private static List<DimensieSelectieContext> dimensionSelectionsOf(FunctieAanroepContext f) {
         return f instanceof SomFuncContext s ? s.dimensieSelectie()
-                : f instanceof MinMaxFuncContext m ? m.dimensieSelectie() : List.of();
+                : f instanceof MinMaxFuncContext m ? m.dimensieSelectie()
+                : f instanceof EersteLaatsteFuncContext el ? el.dimensieSelectie()
+                : f instanceof AantalVoorkomensFuncContext av ? av.dimensieSelectie() : List.of();
     }
 
     /** The selections of a dimension fold in the declared order of its argument's dimensions, or a refusal whose ERROR
@@ -1702,7 +1707,7 @@ final class ExpressionBuilder {
         static final DimensionSelections REFUSED = new DimensionSelections(null, true);
     }
 
-    /** §13.4.17.51-.54: resolve the dimensieselecties of a SOM/MIN/MAX to one selection per dimension of the folded
+    /** §13.4.17.51-.54: resolve the dimensieselecties of a fold to one selection per dimension of the folded
      *  attribute, in the declared order of its dimensions (IR-SPEC ch. 4.3, WF-040), whatever order the sentence
      *  names them in; or null when they cannot be lowered — a null leaves the honest marker in place. §13.4.17.51
      *  gives a fold one selection; the dialect takes one per dimension, as ALEF writes it, a fixed dimension being a
@@ -2624,10 +2629,12 @@ final class ExpressionBuilder {
             // temporality lives in the timeline, not the unit) — see grammar/DIVERGENCES.md.
             case TOTAAL -> verifierSentence("totaal van", totalOperandError(arguments),
                     arithmeticFoldSentence(Spelling.AGGREGATION_KIND.spelling(kind), arguments));
-            case EERSTE  -> verifierSentence("eerste van",
+            // over the cells of a dimensioned attribute the two pick by position and order nothing, so a cell of
+            // any type is admitted (RUNTIME-SEMANTICS ch. 5.8c; grammar/DIVERGENCES.md, "More dimensions")
+            case EERSTE  -> !dimensionSelectionsOf(f).isEmpty() ? null : verifierSentence("eerste van",
                     Typing.dateAggregation("eerste van", Spelling.AGGREGATION_KIND.spelling(kind), types),
                     Typing.orderingFoldSentence(Spelling.AGGREGATION_KIND.spelling(kind), types));
-            case LAATSTE -> verifierSentence("laatste van",
+            case LAATSTE -> !dimensionSelectionsOf(f).isEmpty() ? null : verifierSentence("laatste van",
                     Typing.dateAggregation("laatste van", Spelling.AGGREGATION_KIND.spelling(kind), types),
                     Typing.orderingFoldSentence(Spelling.AGGREGATION_KIND.spelling(kind), types));
             // §6.12 / §13.4.17.21-.24: a time-of-day component is defined only on a datum-TIJD — a plain
@@ -3080,6 +3087,7 @@ final class ExpressionBuilder {
         if (f instanceof SomFuncContext)        return Expr.FunctionKind.SOM;
         if (f instanceof AantalFuncContext)     return Expr.FunctionKind.AANTAL;
         if (f instanceof AantalGevuldeFuncContext) return Expr.FunctionKind.AANTAL_GEVULDE;
+        if (f instanceof AantalVoorkomensFuncContext) return Expr.FunctionKind.AANTAL_GEVULDE;
         if (f instanceof TotaalFuncContext)     return Expr.FunctionKind.TOTAAL;
         if (f instanceof WortelFuncContext)     return Expr.FunctionKind.WORTEL;
         if (f instanceof AbsWaardeFuncContext)  return Expr.FunctionKind.ABSOLUTE_WAARDE;

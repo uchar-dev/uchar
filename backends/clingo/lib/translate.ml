@@ -4282,9 +4282,9 @@ let doc_env ctx =
    attribute's declaration. [member] is the attribute itself, or one of its
    cells (RUNTIME-SEMANTICS ch. 5.8c), whose val/3 name is the reference
    interpreter's (World.cell), so a cell is read as an attribute is. *)
-let rec member_read ctx ~subject ~subject_ot ~member (e : expr) : string list * string * int =
+let rec member_read ?(scaled = true) ctx ~subject ~subject_ot ~member (e : expr) : string list * string * int =
   match Ir_v0.Checks.unanchored_expr e with
-  | Some inner -> at_form ctx (fun subject subject_ot -> member_read ctx ~subject ~subject_ot ~member inner)
+  | Some inner -> at_form ctx (fun subject subject_ot -> member_read ~scaled ctx ~subject ~subject_ot ~member inner)
   | None -> (
       match e with
       | Attribute_reference { attribute_ref; object_type = ot; navigation_bindings; _ } -> (
@@ -4319,7 +4319,7 @@ let rec member_read ctx ~subject ~subject_ot ~member (e : expr) : string list * 
                  struct passed as a subscope input), the struct_base sibling. A numeric
                  attribute rides its declared scale. *)
               let scale =
-                if attr_sum_typed ctx ~otype:ot ~attr:a || attr_struct_typed ctx ~otype:ot ~attr:a then 0
+                if (not scaled) || attr_sum_typed ctx ~otype:ot ~attr:a || attr_struct_typed ctx ~otype:ot ~attr:a then 0
                 else pow10 (attr_decimals ctx ~otype:ot ~attr:a)
               in
               ([ Printf.sprintf "val(%s,%s,%s)" subject (str member) v ], v, scale)
@@ -4345,7 +4345,7 @@ let rec member_read ctx ~subject ~subject_ot ~member (e : expr) : string list * 
               let v = fresh ctx "A" in
               ( atoms @ [ Printf.sprintf "val(%s,%s,%s)" target (str member) v ],
                 v,
-                pow10 (attr_decimals ctx ~otype:ot ~attr:a) ))
+                if scaled then pow10 (attr_decimals ctx ~otype:ot ~attr:a) else 0 ))
       | _ -> fault "%s stands where an attribute reference is read" (Ir_v0.Spelling.a_node e))
 
 (* the attribute reference a cell read or a dimension fold names, its anchor
@@ -4354,6 +4354,31 @@ let dimensioned_reference (e : expr) =
   match Option.value (Ir_v0.Checks.unanchored_expr e) ~default:e with
   | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (a, ot)
   | _ -> fault "a cell read and a dimension fold name an attribute reference (IR-SPEC ch. 4.3)"
+
+(* the cells a dimension fold reads (RUNTIME-SEMANTICS ch. 5.8c, 3): the
+   attribute's cells of the product of the selections, in its order, each read
+   as a member of its own on the object the argument reaches, with the helper
+   predicate and its key. [scaled] is false for a fold that counts its cells
+   and reads no value, so a cell of any type is read without a scale *)
+let dimension_cells ctx ~subject ~subject_ot ~scaled argument selections =
+  let a, ot = dimensioned_reference argument in
+  let dims =
+    match Ir_v0.Checks.attr_dimensions (object_type ctx ot) a with
+    | Some dims -> dims
+    | None -> fault "dimension fold over undimensioned attribute '%s'" a
+  in
+  if List.length selections <> List.length dims then
+    fault "dimension fold carries %d selections for the %d dimensions of its argument" (List.length selections)
+      (List.length dims);
+  let members = List.map (Eval.cell_member (doc_env ctx) ~ot ~attr:a) (Ir_v0.Checks.selected_cells selections) in
+  let reads = List.map (fun member -> member_read ctx ~scaled ~subject ~subject_ot ~member argument) members in
+  ctx.fresh <- ctx.fresh + 1;
+  let pred = Printf.sprintf "dim%d" ctx.fresh in
+  let key, opening =
+    helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot)
+      (List.concat_map (fun (atoms, _, _) -> atoms) reads)
+  in
+  (pred, key, opening, reads)
 
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match let_into_arm ctx e with
@@ -4436,42 +4461,24 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let member = Eval.cell_member (doc_env ctx) ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       member_read ctx ~subject ~subject_ot ~member inner
   (* a dimension fold (RUNTIME-SEMANTICS ch. 5.8c, 3): one helper atom per
-     selected cell that holds a value, as the listed eerste/laatste fold below
-     keys its operands, and the aggregate over the helper. An empty cell
-     derives no helper atom and drops out; where no cell derives one the
-     definedness atom keeps the fold underivable, ref's leeg — a sum with the
-     emptyFallback 0 is the bare #sum, 0 on no tuple, as on the set folds *)
+     selected cell that holds a value, keyed by the index of the cell in the
+     order of the product, as the listed eerste/laatste fold below keys its
+     operands, and the aggregate over the helper. An empty cell derives no
+     helper atom and drops out; where no cell derives one the definedness atom
+     keeps the fold underivable, ref's leeg. First and last take the value at
+     the least and the greatest index, the filled count counts the helper
+     atoms, 0 on none, and a sum with an emptyFallback takes the fallback
+     where no cell is filled *)
   | Function_call
-      { kind = (Sum_function | Minimum | Maximum) as kind; call_arguments = [ argument ];
-        dimension_selections = Some selections; element_object_type = None; source_role = None;
-        source_path = None; filter = None; empty_fallback; _ } ->
-      let a, ot = dimensioned_reference argument in
-      let dims =
-        match Ir_v0.Checks.attr_dimensions (object_type ctx ot) a with
-        | Some dims -> dims
-        | None -> fault "dimension fold over undimensioned attribute '%s'" a
-      in
-      if List.length selections <> List.length dims then
-        fault "dimension fold carries %d selections for the %d dimensions of its argument" (List.length selections)
-          (List.length dims);
-      let has_fallback =
-        match (kind, empty_fallback) with
-        | _, None -> false
-        | Sum_function, Some (Literal { variant; _ })
-          when Q.equal (Uchar_ref.Value.q_of_lexeme (Ir_v0.Loader.literal_lexeme variant)) Q.zero ->
-            true
-        | _, Some _ -> fault "a dimension fold with an emptyFallback other than 0 on a sum is not translated"
-      in
-      let members =
-        List.map (Eval.cell_member (doc_env ctx) ~ot ~attr:a) (Ir_v0.Checks.selected_cells selections)
-      in
-      let reads = List.map (fun member -> member_read ctx ~subject ~subject_ot ~member argument) members in
-      let scale = match reads with (_, _, s) :: _ -> numeric_scale ~what:"a dimension fold" s | [] -> 1 in
-      ctx.fresh <- ctx.fresh + 1;
-      let pred = Printf.sprintf "dim%d" ctx.fresh in
-      let key, opening =
-        helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot)
-          (List.concat_map (fun (atoms, _, _) -> atoms) reads)
+      { kind = (Sum_function | Minimum | Maximum | First | Last | Filled_count) as kind;
+        call_arguments = [ argument ]; dimension_selections = Some selections; element_object_type = None;
+        source_role = None; source_path = None; filter = None; empty_fallback; _ } ->
+      let pred, key, opening, reads = dimension_cells ctx ~subject ~subject_ot ~scaled:(kind <> Filled_count) argument selections in
+      let scale =
+        match (kind, reads) with
+        | Filled_count, _ -> 1
+        | _, (_, _, s) :: _ -> numeric_scale ~what:"a dimension fold" s
+        | _, [] -> 1
       in
       List.iteri
         (fun i (atoms, t, _) ->
@@ -4482,18 +4489,47 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         reads;
       let v = fresh ctx "D" in
       let x = Printf.sprintf "X%s" v and c = Printf.sprintf "C%s" v in
-      let aggregate =
-        match kind with
-        | Sum_function -> Printf.sprintf "%s = #sum { %s,%s : %s(%s,%s,%s) }" v x c pred key c x
-        | Minimum -> Printf.sprintf "%s = #min { %s : %s(%s,%s,%s) }" v x pred key c x
-        | _ -> Printf.sprintf "%s = #max { %s : %s(%s,%s,%s) }" v x pred key c x
+      let defined = Printf.sprintf "%s_def(%s)" pred key in
+      let filled () = emit ctx "%s_def(%s) :- %s(%s,_,_)." pred key pred key in
+      let pick agg =
+        filled ();
+        let i = Printf.sprintf "I%s" v in
+        ( [ defined; Printf.sprintf "%s = #%s { %s : %s(%s,%s,_) }" i agg c pred key c;
+            Printf.sprintf "%s(%s,%s,%s)" pred key i v ],
+          v, scale )
       in
-      if has_fallback then (
-        emit ctx "%s_def(%s) :- %s." pred key (String.concat ", " opening);
-        ([ Printf.sprintf "%s_def(%s)" pred key; aggregate ], v, scale))
-      else (
-        emit ctx "%s_def(%s) :- %s(%s,_,_)." pred key pred key;
-        ([ Printf.sprintf "%s_def(%s)" pred key; aggregate ], v, scale))
+      (match (kind, empty_fallback) with
+      | Filled_count, _ ->
+          emit ctx "%s_def(%s) :- %s." pred key (String.concat ", " opening);
+          ([ defined; Printf.sprintf "%s = #count { %s : %s(%s,%s,_) }" v c pred key c ], v, scale)
+      | First, _ -> pick "min"
+      | Last, _ -> pick "max"
+      | Minimum, _ ->
+          filled ();
+          ([ defined; Printf.sprintf "%s = #min { %s : %s(%s,%s,%s) }" v x pred key c x ], v, scale)
+      | Maximum, _ ->
+          filled ();
+          ([ defined; Printf.sprintf "%s = #max { %s : %s(%s,%s,%s) }" v x pred key c x ], v, scale)
+      | _, None ->
+          filled ();
+          ([ defined; Printf.sprintf "%s = #sum { %s,%s : %s(%s,%s,%s) }" v x c pred key c x ], v, scale)
+      | _, Some fallback ->
+          (* the value of the fold is the sum where a cell is filled and the
+             fallback where none is, one helper atom per branch; the fallback
+             is evaluated after the cells (ch. 5.11), and its atoms ride the
+             branch that takes it. Both branches are lifted to the finer scale *)
+          let fatoms, fterm, fscale = expr_term ctx ~subject ~subject_ot fallback in
+          let fscale = numeric_scale ~what:"the emptyFallback of a dimension fold" fscale in
+          let common = max scale fscale in
+          if common mod scale <> 0 || common mod fscale <> 0 then
+            fault "the emptyFallback of a dimension fold has scale %d against the fold's %d" fscale scale;
+          let lift t s = if s = common then t else Printf.sprintf "(%s)*%d" t (common / s) in
+          emit ctx "%s_val(%s,%s) :- %s(%s,_,_), %s = #sum { %s,%s : %s(%s,%s,%s) }." pred key (lift v scale) pred key v x c
+            pred key c x;
+          emit ctx "%s_val(%s,%s) :- %s." pred key (lift fterm fscale)
+            (String.concat ", " (opening @ [ Printf.sprintf "not %s(%s,_,_)" pred key ] @ fatoms));
+          let w = fresh ctx "D" in
+          ([ Printf.sprintf "%s_val(%s,%s)" pred key w ], w, common))
   (* the INSTANCE-SET UNION (IR-SPEC ch. 4.3 / WF-110, semantics
      RUNTIME-SEMANTICS ch. 3.4d): the §5.7 concatenation of subject
      expressions under a count. Each selection contributes its own

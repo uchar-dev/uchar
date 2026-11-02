@@ -249,6 +249,37 @@ public final class ComputeHelpers {
         return map instanceof Map<?, ?> m ? m.get(labels) : null;
     }
 
+    /** The value of the first cell of {@code keys}, each the labels of a cell, that the map {@code map} of a dimensioned
+     *  attribute's cells holds, leeg where it holds none: the first by position, in the order of the keys, which is the
+     *  order of the product of a fold's selections (RUNTIME-SEMANTICS ch. 5.8c). A cell of any type. */
+    public static Object firstCell(Object map, List<?> keys) {
+        if (!(map instanceof Map<?, ?> m)) return null;
+        for (Object k : keys) {
+            Object v = m.get(k);
+            if (v != null) return v;
+        }
+        return null;
+    }
+
+    /** As {@link #firstCell}, the last cell of {@code keys} that {@code map} holds. */
+    public static Object lastCell(Object map, List<?> keys) {
+        if (!(map instanceof Map<?, ?> m)) return null;
+        Object last = null;
+        for (Object k : keys) {
+            Object v = m.get(k);
+            if (v != null) last = v;
+        }
+        return last;
+    }
+
+    /** The number of the cells of {@code keys} that the map {@code map} of a dimensioned attribute's cells holds, 0 where
+     *  it holds none or is absent (RUNTIME-SEMANTICS ch. 5.8c). */
+    public static BigDecimal filledCells(Object map, List<?> keys) {
+        long n = 0;
+        if (map instanceof Map<?, ?> m) for (Object k : keys) if (m.get(k) != null) n++;
+        return BigDecimal.valueOf(n);
+    }
+
     /** The map of a dimensioned attribute as it is, leeg where the value is no map. */
     public static Map<?, ?> map(Object value) {
         return value instanceof Map<?, ?> m ? m : null;

@@ -11162,6 +11162,75 @@ let () =
               value "J1" "strandgewicht" "8.00"; value "J1" "minimumgewicht" "1.00"; empty "J3" "voorjaarzuid";
               value "J3" "noordgewicht" "4.00"; empty "J3" "zuidgewicht"; value "J3" "strandgewicht" "4.00";
               value "J3" "minimumgewicht" "2.00" ]));
+  (* first, last and the filled count over cells (ch. 5.8c, 3): by position, the
+     first and the last filled cell in the order of the selection, and the number
+     of filled cells, 0 where none is. The cells 1, leeg, 0, 0, 6, 7 and leeg,
+     leeg, 0, leeg, 6, leeg are ALEF's two tests of the fold *)
+  let count_type = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}|} in
+  let typed_fold kind typ argument selections =
+    Printf.sprintf {|{"node": "Aggregation", "kind": "%s", "arguments": [%s], "dimensionSelections": [%s], "type": %s}|}
+      kind argument (String.concat ", " selections) typ
+  in
+  let isles = [ "texel"; "vlieland"; "terschelling"; "ameland"; "schiermonnikoog"; "rottumeroog" ] in
+  let kustvak = dimension "kustvak" "kustvakken" "op" isles in
+  let all_isles = selection "kustvak" isles in
+  let east_first = selection "kustvak" [ "schiermonnikoog"; "ameland"; "terschelling" ] in
+  let positional =
+    document
+      ~object_types:
+        [ object_type "Jutter" "Jutters"
+            (attribute ~datatype:whole ~dimensions:[ "kustvak" ] "vondstaantal"
+            :: attribute ~datatype:count_type "vondstvakken"
+            :: List.map (attribute ~datatype:whole) [ "eerste vondstaantal"; "laatste vondstaantal"; "oosteerste"; "oostlaatste" ]) ]
+      ~dimensions:[ kustvak ]
+      [ rule "eerste vondstaantal van een jutter" "eerste vondstaantal"
+          (typed_fold "first" whole (reference "vondstaantal") [ all_isles ]);
+        rule "laatste vondstaantal van een jutter" "laatste vondstaantal"
+          (typed_fold "last" whole (reference "vondstaantal") [ all_isles ]);
+        rule "vondstvakken van een jutter" "vondstvakken"
+          (typed_fold "filledCount" count_type (reference "vondstaantal") [ all_isles ]);
+        rule "oosteerste van een jutter" "oosteerste" (typed_fold "first" whole (reference "vondstaantal") [ east_first ]);
+        rule "oostlaatste van een jutter" "oostlaatste" (typed_fold "last" whole (reference "vondstaantal") [ east_first ]) ]
+  in
+  let isle_cells cs = cells_of (List.map (fun (l, v) -> ([ l ], v)) cs) in
+  plays_named ~ident:"WV-5.8c-eerste-laatste-aantal" ~ir:positional
+    ~case_data:
+      (case_of
+         [ instance "J1" "Jutter"
+             [ ("vondstaantal",
+                isle_cells
+                  [ ("texel", "1"); ("terschelling", "0"); ("ameland", "0"); ("schiermonnikoog", "6"); ("rottumeroog", "7") ]) ];
+           instance "J2" "Jutter" [ ("vondstaantal", isle_cells [ ("terschelling", "0"); ("schiermonnikoog", "6") ]) ];
+           instance "J3" "Jutter" [] ]
+         (expected
+            [ value "J1" "eerste vondstaantal" "1"; value "J1" "laatste vondstaantal" "7"; value "J1" "vondstvakken" "5";
+              value "J1" "oosteerste" "6"; value "J1" "oostlaatste" "0";
+              value "J2" "eerste vondstaantal" "0"; value "J2" "laatste vondstaantal" "6"; value "J2" "vondstvakken" "2";
+              value "J2" "oosteerste" "6"; value "J2" "oostlaatste" "0";
+              empty "J3" "eerste vondstaantal"; empty "J3" "laatste vondstaantal"; value "J3" "vondstvakken" "0";
+              empty "J3" "oosteerste"; empty "J3" "oostlaatste" ]));
+  (* over two dimensions the cells are read in the order of the product, the
+     first selection outermost: (voorjaar, noord), (voorjaar, zuid), (zomer,
+     noord), …, so the last filled cell is (najaar, noord) and not (voorjaar,
+     zuid), which it would be with strand outermost *)
+  let two_positional =
+    document
+      ~object_types:
+        [ object_type "Jutter" "Jutters"
+            [ attribute ~dimensions:[ "seizoen"; "strand" ] "vondstgewicht"; attribute "eerste vondst";
+              attribute "laatste vondst"; attribute ~datatype:count_type "vondstcellen" ] ]
+      ~dimensions:[ seizoen; strand ]
+      (let both = [ all_seasons; selection "strand" [ "noord"; "zuid" ] ] in
+       [ rule "eerste vondst van een jutter" "eerste vondst" (fold "first" (reference "vondstgewicht") both);
+         rule "laatste vondst van een jutter" "laatste vondst" (fold "last" (reference "vondstgewicht") both);
+         rule "vondstcellen van een jutter" "vondstcellen"
+           (typed_fold "filledCount" count_type (reference "vondstgewicht") both) ])
+  in
+  plays_named ~ident:"WV-5.8c-eerste-laatste-aantal-twee-dimensies" ~ir:two_positional
+    ~case_data:
+      (case_of [ j1_two ]
+         (expected
+            [ value "J1" "eerste vondst" "2.00"; value "J1" "laatste vondst" "1.00"; value "J1" "vondstcellen" "3" ]));
   (* a cell and a fold over a path of roles (B7): the leader of a ploeg *)
   let path =
     document

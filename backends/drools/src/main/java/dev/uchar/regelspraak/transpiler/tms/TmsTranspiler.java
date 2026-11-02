@@ -4783,17 +4783,23 @@ public final class TmsTranspiler {
         return key;
     }
 
-    /** A sum, minimum or maximum over the cells of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c): the cells of the
-     *  product of its selections, one per dimension of the attribute, the first selection outermost and each in its own
-     *  label order, a leeg cell skipped and an all-leeg selection leeg, through the runtime's {@code rsDimSom},
-     *  {@code rsDimMin} and {@code rsDimMax}; a sum's {@code emptyFallback} is evaluated after the cells, every time
+    /** A fold over the cells of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c): the cells of the product of its
+     *  selections, one per dimension of the attribute, the first selection outermost and each in its own label order, a
+     *  leeg cell skipped and an all-leeg selection leeg. A sum, a minimum and a maximum fold through the runtime's
+     *  {@code rsDimSom}, {@code rsDimMin} and {@code rsDimMax}; a first and a last take the first and the last filled
+     *  cell by position ({@link ComputeHelpers#firstCell}, {@link ComputeHelpers#lastCell}), and a filled count counts the
+     *  filled cells, 0 where none is ({@link ComputeHelpers#filledCells}). A sum's {@code emptyFallback} is evaluated after
+     *  the cells, every time
      *  (RUNTIME-SEMANTICS ch. 5.11), and stands in for an all-leeg sum. The fold reads the map of the cells off the
      *  subject's bean, and every cell a form writes through its standing, which takes the place of its entry in a copy of
      *  the map ({@link ComputeHelpers#withCell}). The argument is no node of a reading (RUNTIME-SEMANTICS ch. 5.12), so
      *  only the fold is noted. */
     private Term dimensionFold(Expr.FunctionCall f, Reads reads) {
         Expr.FunctionKind kind = f.kind();
-        if (kind != Expr.FunctionKind.SOM && kind != Expr.FunctionKind.MINIMUM && kind != Expr.FunctionKind.MAXIMUM)
+        boolean arithmetic = kind == Expr.FunctionKind.SOM || kind == Expr.FunctionKind.MINIMUM
+                || kind == Expr.FunctionKind.MAXIMUM;
+        if (!arithmetic && kind != Expr.FunctionKind.EERSTE && kind != Expr.FunctionKind.LAATSTE
+                && kind != Expr.FunctionKind.AANTAL_GEVULDE)
             throw new Refusal(DroolsCode.DIMENSION_FOLD_UNSUPPORTED_KIND.reason("kind", kind, "snippet", snippet(f.source())));
         if (f.emptyFallback() != null && kind != Expr.FunctionKind.SOM)
             throw new Refusal(DroolsCode.EMPTY_FALLBACK_NON_SUM.reason("kind", kind, "snippet", snippet(f.source())));
@@ -4820,8 +4826,9 @@ public final class TmsTranspiler {
             if (!writers.containsKey(ProducerConsumer.cellOf(a.objectType(), a.attribute(), t))) continue;
             Member cell = cellMember(a.objectType(), a.attribute(), t, description, f.source());
             // a cell a form writes on the unbounded form holds an exact rational in working memory (RUNTIME-SEMANTICS
-            // ch. 2.4 point 3), and the runtime's folds over cells fold decimals; an input cell is a decimal
-            if (cell.datatype().unbounded())
+            // ch. 2.4 point 3), and the runtime's folds over cells fold decimals; an input cell is a decimal. A first, a
+            // last and a filled count compute nothing with the value
+            if (arithmetic && cell.datatype().unbounded())
                 throw new Refusal(DroolsCode.FOLD_OVER_UNBOUNDED_VALUE.reason("attribute", cell.spelled(), "objectType",
                         cell.declarant().name));
             map = new Term.Call(StaticFunction.WITH_CELL, List.of(map, constant(key),
@@ -4832,7 +4839,10 @@ public final class TmsTranspiler {
         StaticFunction fold = switch (kind) {
             case SOM -> StaticFunction.RS_DIM_SUM;
             case MINIMUM -> StaticFunction.RS_DIM_MIN;
-            default -> StaticFunction.RS_DIM_MAX;
+            case MAXIMUM -> StaticFunction.RS_DIM_MAX;
+            case EERSTE -> StaticFunction.CELL_FIRST;
+            case LAATSTE -> StaticFunction.CELL_LAST;
+            default -> StaticFunction.FILLED_CELLS;
         };
         Term cells = new Term.Call(fold, List.of(new Term.Call(StaticFunction.MAP, List.of(map), null), constant(keys)),
                 source);

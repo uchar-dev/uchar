@@ -196,7 +196,7 @@ EXPECTED_MIN_REPORT_KEYS=340  # 2026-11-02: measured 340 distinct keys over the 
 EXPECTED_MIN_ARM_SITES=442    # 2026-11-02: measured 442 key literals "WF-###.<slug>" in spec/verifier/lib/checks.ml (421 on 2026-10-19)
 # The cited pointers (check 4) are floored in the same regime: a parse that stopped finding the
 # pointer in a report line would check nothing and pass.
-EXPECTED_MIN_POINTERS=706   # 2026-11-02: measured 706 pointers over the negative reports, all resolving (619 on 2026-10-19, 547 on 2026-09-25)
+EXPECTED_MIN_POINTERS=705   # 2026-11-02: measured 705 pointers over the negative reports, all resolving (706 that morning, 619 on 2026-10-19, 547 on 2026-09-25); lowered by one with the card dimensions-remaining, which admits a filled count over cells: wf037-filled-count-dimension-selection, whose report cited two pointers, gave way to wf037-total-dimension-selection, which cites one
 
 # check 2: golden dumps — and the red corpus's documents, whose faults
 # are behavioural, never well-formedness — are verifier-clean.

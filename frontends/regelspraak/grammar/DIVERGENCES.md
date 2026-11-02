@@ -1034,11 +1034,20 @@ Het noordnajaarsgewicht van een Jutter moet berekend worden als
     zijn vondstgewicht op noord en in najaar.
 Het noordriviergewicht van een Jutter moet berekend worden als
     zijn aanvoer uit rivier op noord.
+Het openingsgewicht van een Jutter moet berekend worden als
+    de eerste van zijn vondstgewicht over alle seizoenen.
+Het aantal vondstseizoenen van een Jutter moet berekend worden als
+    het aantal voorkomens van zijn vondstgewicht over alle seizoenen.
 ```
 
-The fold: `somFunc` and `minMaxFunc` take `dimensieSelectie*` where
-§13.4.17.51 has one, so a fold writes one selection per dimension, in any
-order. The cell is a name run read as the attribute with labels before it
+The fold: `somFunc`, `minMaxFunc` and `eersteLaatsteFunc` take
+`dimensieSelectie*` where §13.4.17.51 has one, so a fold writes one selection
+per dimension, in any order. The number of filled cells is written as ALEF
+writes its fold `tel`, "het aantal voorkomens van" (a whole-phrase token,
+`AANTAL_VOORKOMENS_VAN`, and the alternative `aantalVoorkomensFunc` with
+`dimensieSelectie+`); §13.4.17.50 puts "het aantal" before
+`<attribuutvanonderwerp>` there, which ALEF does not write, and which the
+typing of the specification gives no meaning over cells (below). The cell is a name run read as the attribute with labels before it
 (dimensions without a preposition) and "`<voorzetsel> <label>`" behind it
 (dimensions with one), each dimension once, in any order. Behind the
 attribute the labels stand side by side ("in voorjaar op zuid") or joined as
@@ -1110,6 +1119,15 @@ functions in every position an expression takes (operand, operand list,
 condition, comparison, consistency, `datum met`), "de dag uit de dag" and "de
 maand uit zee van de vondst" with `zee` a label among them.
 
+The selections after "de eerste van" and "de laatste van", and "het aantal
+voorkomens van": a selection after the listed first or last, and the phrase,
+were a syntax error before (measured: "no viable alternative at input
+'zijnvondstgewichtoveralle'"), and no text of the repository writes the phrase.
+Measured: the parse tree under both entry rules is the same before and after
+the two productions for every `.rgs` file of the repository (271, the parity
+zone included) and for the fragments of the parity zone read as one document,
+but for the one golden that writes the new forms.
+
 ### Lowering (resolver)
 
 - **The cell** (`ExpressionBuilder.cellReadings`, `dimensionCell`): every
@@ -1117,6 +1135,20 @@ maand uit zee van de vondst" with `zee` a label among them.
   labels. One reading of every dimension is the `DimensionCellRead`, its
   labels in the declared order of the dimensions; the longest attribute name
   wins.
+- **First, last and the number of filled cells.** "de eerste van" and "de
+  laatste van" with selections are the `first` and the `last` over the cells,
+  "het aantal voorkomens van" the `filledCount` over them (IR-SPEC ch. 4.3,
+  RUNTIME-SEMANTICS ch. 5.8c): ALEF's eerste, laatste and tel, the first and
+  the last filled cell by position in the order of the selections, and the
+  number of filled cells. The specification types "de eerste van" and "de
+  laatste van" over dates, by value, and "het aantal" over instances; over
+  cells the dialect follows ALEF and admits a cell of any type for the first
+  and the last, since a pick by position orders nothing. A set selection
+  keeps the order it is written in, so "over de seizoenen in {najaar en
+  voorjaar}" reads `najaar` first. ALEF admits one dimension with more than
+  one label under a first or a last; the dialect does not refuse more,
+  because the order of the product of the selections, the first dimension
+  outermost, is the order every dimension fold reads its cells in.
 - **The fold** (`resolveDimensionSelections`): each over-form names its
   dimension by its plural; a bare interval (`vanaf … t/m …`, §5.8.5) names
   none and selects the one dimension of the attribute that no over-form of
@@ -1154,8 +1186,9 @@ selections as the resolver built them.
 - The subject's own attribute only (`zijn …`). A cell or a fold of an
   attribute reached over a role is not read; the executors carry the cell
   over a path (RUNTIME-SEMANTICS ch. 5.8c).
-- `de eerste van`, `de laatste van` and `het aantal` over cells are not
-  folds the wire has (WF-037).
+- "het aantal" followed by a cell and a selection, the form of
+  §13.4.17.50, is not read: it counts instances (`aantalFunc`). The number of
+  filled cells is "het aantal voorkomens van".
 - The labels of a set selection are not checked for repeats here
   (`in {noord, noord}`); the verifier refuses them (WF-040).
 - A read of a dimensioned attribute without any label outside a fold

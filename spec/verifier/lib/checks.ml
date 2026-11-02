@@ -4071,6 +4071,12 @@ let scalar_one_arg_kinds =
 let aggregation_kinds =
   [ Sum_function; Total; Count; Minimum; Maximum; First; Last; Filled_count ]
 
+(* The kinds a dimension fold takes (IR-SPEC ch. 4.3, WF-037). Over cells
+   first and last pick by POSITION, the first and the last filled cell in the
+   order of the selections (RUNTIME-SEMANTICS ch. 5.8c), and filledCount
+   counts the filled cells. *)
+let dimension_fold_kinds = [ Sum_function; Minimum; Maximum; First; Last; Filled_count ]
+
 (* The folds that hand an ELEMENT through unchanged: they select a
    contributor, they never compute a new value, so the node's own type is
    the operand's type. (`Sum_function`/`Total`/`Count` compute, and their result is
@@ -5172,8 +5178,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
       (if f.empty_fallback <> None && f.kind <> Sum_function then
          [ v "WF-037.empty-fallback-kind" at "empty-value fallback on a non-sum aggregation" ]
        else [])
-      @ (if f.dimension_selections <> None && not (List.mem f.kind [ Sum_function; Minimum; Maximum ]) then
-           [ v "WF-037.dimension-selection-kind" at "dimension selection on a kind other than sum/min/max" ]
+      (* the six kinds RegelSpraak §5.8.5 and ALEF fold over cells; a count
+         counts instances, of which a cell is none, and a total integrates a
+         timeline, which a cell does not carry (WF-125 (d)) *)
+      @ (if f.dimension_selections <> None && not (List.mem f.kind dimension_fold_kinds) then
+           [ v "WF-037.dimension-selection-kind" at
+               "dimension selection on a kind other than sum, minimum, maximum, first, last or filledCount" ]
          else [])
       @ (match f.grain, f.kind with
          | Some _, (Time_proportional_part | Day_count) -> []
@@ -5346,8 +5356,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
          attribute reference is the fold-source arm above. A
          filled count that names its population and hands no source is the
          arm above that one: the arity sentence reads its ground from the
-         listed form, which an empty argument list is not. *)
-      @ (if f.kind <> Filled_count || sourceless <> None || non_source <> None then []
+         listed form, which an empty argument list is not. A filled count
+         with dimensionSelections counts cells, not instances: it carries no
+         element type, and WF-040 judges its one argument. *)
+      @ (if f.kind <> Filled_count || sourceless <> None || non_source <> None
+            || f.dimension_selections <> None
+         then []
          else if arity <> 1 then
            [ v ~params:[("count", string_of_int arity)] "WF-037.filled-count-arity" at
                (Printf.sprintf
@@ -5464,9 +5478,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
          An operand whose type nothing declares DEFERS: a reference that
          does not resolve (its own WF-034 arm reports it), an Unresolved
          of unknown type, and a count source, whose name is a role and no
-         attribute — under an ordering fold that source is WF-093's. *)
+         attribute — under an ordering fold that source is WF-093's.
+
+         First and last over cells order nothing: they pick the first and
+         the last filled cell by position (RUNTIME-SEMANTICS ch. 5.8c), so a
+         cell of any type is admitted there, as ALEF admits it. *)
       @ (match List.assoc_opt f.kind passthrough_folds with
          | None -> []
+         | Some _ when f.dimension_selections <> None && (f.kind = First || f.kind = Last) -> []
          | Some kn ->
              let family d =
                if is_number_like d then Some `Num

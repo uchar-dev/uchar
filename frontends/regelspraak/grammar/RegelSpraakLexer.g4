@@ -102,6 +102,10 @@ AANTAL_DAGEN_IN        : 'het' WSP 'aantal' WSP 'dagen' WSP 'in'       ; // §13
 // 'gevulde' and 'waarden' keep lexing as LOWER_ID everywhere else and only this
 // exact five-word sequence changes meaning.
 AANTAL_GEVULDE_WAARDEN_VAN : 'het' WSP 'aantal' WSP 'gevulde' WSP 'waarden' WSP 'van' ;
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "§3.6 / §13.4.17.51 More dimensions"): the number of the filled
+// cells of a dimensioned attribute, as ALEF writes its fold 'tel'. A whole-phrase token for the reason above:
+// 'voorkomens' keeps lexing as LOWER_ID everywhere else.
+AANTAL_VOORKOMENS_VAN  : 'het' WSP 'aantal' WSP 'voorkomens' WSP 'van' ;
 EERSTE_PAASDAG_VAN     : 'de' WSP 'eerste' WSP 'paasdag' WSP 'van'     ; // §13.4.17.37
 EERSTE_VAN             : 'de' WSP 'eerste' WSP 'van'             ; // §13.4.17.39 / .49
 LAATSTE_VAN            : 'de' WSP 'laatste' WSP 'van'            ; // §13.4.17.40 / .49

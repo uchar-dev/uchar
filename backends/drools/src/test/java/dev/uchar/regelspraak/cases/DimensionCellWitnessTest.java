@@ -124,6 +124,39 @@ class DimensionCellWitnessTest {
         assertPlays(ir, List.of(c1, c2));
     }
 
+    /** First, last and the filled count over two dimensions (ch. 5.8c): the cells are read in the order of the product
+     *  of the selections, the first selection outermost, so of the cells (voorjaar, noord) 2.00, (najaar, noord) 1.00 and
+     *  (voorjaar, zuid) 5.00 the first is 2.00 and the last 1.00, where strand outermost would give 5.00, and three cells
+     *  are filled; without a cell the first and the last are leeg and the count is 0. */
+    @Test void first_last_and_the_filled_count_read_the_cells_in_the_order_of_the_product() throws Exception {
+        JsonNode ir = twoDimensions();
+        ObjectNode jutter = IrPath.objectType(ir, "Jutter");
+        JsonNode kg = IrPath.attribute(jutter, "vondstgewicht").get("datatype");
+        ObjectNode count = JSON.createObjectNode();
+        count.put("node", "Number").put("whole", true).put("decimals", 0).put("sign", "nonNegative");
+        IrPath.addAttribute(jutter, "eerste vondst", kg.deepCopy());
+        IrPath.addAttribute(jutter, "laatste vondst", kg.deepCopy());
+        IrPath.addAttribute(jutter, "vondstcellen", count.deepCopy());
+        ArrayNode rules = IrPath.rulesList(ir, "rules");
+        ObjectNode template = (ObjectNode) IrPath.rulesList(golden("jutterswet-seizoenvouw"), "rules").get(0).deepCopy();
+        rules.add(fold(template, "eerste vondst", "first", "noord", "zuid"));
+        rules.add(fold(template, "laatste vondst", "last", "noord", "zuid"));
+        ObjectNode cells = fold(template, "vondstcellen", "filledCount", "noord", "zuid");
+        ((ObjectNode) cells.get("versions").get(0).get("value")).set("type", count);
+        rules.add(cells);
+        Path doc = document(ir);
+        Path c1 = caseFile(List.of(jutter("J1", cell("2.00", "voorjaar", "noord"), cell("1.00", "najaar", "noord"),
+                        cell("5.00", "voorjaar", "zuid"))),
+                List.of(value("J1", "eerste vondst", "2.00"), value("J1", "laatste vondst", "1.00"),
+                        value("J1", "vondstcellen", "3")));
+        Path c2 = caseFile(List.of(jutter("J2")), List.of(empty("J2", "eerste vondst"), empty("J2", "laatste vondst"),
+                value("J2", "vondstcellen", "0")));
+        assertPlays(doc, List.of(c1, c2));
+        // the comparison reads: the last cell of the other order fails
+        assertFails(doc, caseFile(List.of(jutter("J1", cell("2.00", "voorjaar", "noord"), cell("1.00", "najaar", "noord"),
+                cell("5.00", "voorjaar", "zuid"))), List.of(value("J1", "laatste vondst", "5.00"))), "5.00");
+    }
+
     /** A label is a name (IR-SPEC ch. 2.1): the input and an expectation may write it in another capitalisation, and
      *  name the declared cell. */
     @Test void a_label_compares_as_a_name() throws Exception {

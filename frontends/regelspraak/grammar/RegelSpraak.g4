@@ -1115,9 +1115,14 @@ functieAanroep
     // primaireExpressie for the same precedence reason the telling above gives: a trailing
     // 'maal'/'plus' binds OUTSIDE the count.
     | AANTAL_GEVULDE_WAARDEN_VAN primaireExpressie                                                # aantalGevuldeFunc
+    // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "§3.6 / §13.4.17.51 More dimensions"): the number of the filled
+    // cells of a dimensioned attribute over a selection per dimension, as ALEF writes its fold 'tel'
+    | AANTAL_VOORKOMENS_VAN expressie dimensieSelectie+                                            # aantalVoorkomensFunc
     | TOTAAL_VAN expressie conditieBijExpressie? leegwaardeAlternatief?                            # totaalFunc      // §13.4.17.56
     | ( MAXIMALE_WAARDE_VAN | MINIMALE_WAARDE_VAN ) expressie ( COMMA expressie )* ( EN expressie )? dimensieSelectie* # minMaxFunc // §13.4.17.15/.16/.47
-    | ( EERSTE_VAN | LAATSTE_VAN ) expressie ( COMMA expressie )* ( EN expressie )?                 # eersteLaatsteFunc // §13.4.17.39/.40/.49
+    // §13.4.17.50 a datumaggregatiefunctie over a dimensieselectie; the dialect folds the cells by position, as ALEF
+    // does, and over any type (grammar/DIVERGENCES.md, "§3.6 / §13.4.17.51 More dimensions")
+    | ( EERSTE_VAN | LAATSTE_VAN ) expressie ( COMMA expressie )* ( EN expressie )? dimensieSelectie* # eersteLaatsteFunc // §13.4.17.39/.40/.49
     | WORTEL_VAN primaireExpressie afronding                                                      # wortelFunc      // §13.4.17.13 (afronding mandatory; radicand is primair so the afronding rounds the ROOT)
     | ABSOLUTE_WAARDE_VAN LPAREN expressie RPAREN                                                  # absWaardeFunc   // §13.4.17.17
     | ( TIJDSDUUR_VAN | ABSOLUTE_TIJDSDUUR_VAN ) expressie TOT expressie IN HELE? eenheidMeervoud  # tijdsduurFunc   // §13.4.17.32

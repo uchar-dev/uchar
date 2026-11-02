@@ -100,6 +100,13 @@ public enum StaticFunction {
     DATUMTIJD_MET(ComputeHelpers.class, "dateTimeWith", true),
     /** The cell of a dimension map at its labels, a {@code List} constant, leeg where the map or the cell is absent. */
     CELL(ComputeHelpers.class, "cell", false),
+    /** The first cell of a dimension map at a list of cells, each the {@code List} of its labels, that holds a value, by
+     *  position; leeg where none does. */
+    CELL_FIRST(ComputeHelpers.class, "firstCell", false),
+    /** The last cell of a dimension map at a list of cells that holds a value, by position. */
+    CELL_LAST(ComputeHelpers.class, "lastCell", false),
+    /** The number of the cells of a dimension map at a list of cells that hold a value. */
+    FILLED_CELLS(ComputeHelpers.class, "filledCells", false),
     /** A dimension map as it is, or leeg where the value is no map. */
     MAP(ComputeHelpers.class, "map", false),
     /** A copy of a dimension map in which the cell at its labels, a {@code List} constant, holds a value, or nothing

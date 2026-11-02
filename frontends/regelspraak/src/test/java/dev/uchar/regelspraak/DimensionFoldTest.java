@@ -110,6 +110,79 @@ class DimensionFoldTest {
         assertFalse(c.contains("\"elementType\""), () -> "een elementtype op de dimensievouw:\n" + c);
     }
 
+    // First, last and the number of filled cells over the cells of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c):
+    // ALEF's eerste, laatste and tel, by position in the order of the selection; the number of filled cells is the
+    // filledCount over the selection, written as ALEF writes it, "het aantal voorkomens van".
+
+    @Test void the_first_over_all_labels_carries_the_selection_and_no_element_type() {
+        String c = emitCompact("de eerste van zijn vondstgewicht over alle seizoenen.");
+        assertTrue(c.contains("\"node\":\"Aggregation\",\"kind\":\"first\"," + OWN_READ
+                + "\"dimensionSelections\":[{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
+                + "\"labels\":[\"voorjaar\",\"zomer\",\"najaar\"],\"source\":{\"snippet\":\"overalleseizoenen\"}}],"
+                + "\"type\":{\"node\":\"Number\""), () -> "de eerste over alle seizoenen:\n" + c);
+        assertFalse(c.contains("\"elementType\""), () -> "een elementtype op de dimensievouw:\n" + c);
+    }
+
+    /** A set keeps the order it is written in, which is the order a first and a last read the cells in. */
+    @Test void the_last_over_a_set_keeps_its_written_order() {
+        String c = emitCompact("de laatste van zijn vondstgewicht over de seizoenen in {najaar en voorjaar}.");
+        assertTrue(c.contains("\"kind\":\"last\"," + OWN_READ
+                + "\"dimensionSelections\":[{\"node\":\"DimensionSelection\",\"dimension\":\"seizoen\","
+                + "\"labels\":[\"najaar\",\"voorjaar\"],"), () -> "de laatste over een verzameling:\n" + c);
+    }
+
+    @Test void the_first_over_two_dimensions_carries_a_selection_of_each() {
+        String c = emitTwo("de eerste van zijn vondstgewicht over alle stranden over alle seizoenen.");
+        assertTrue(c.contains("\"kind\":\"first\"," + OWN_READ + "\"dimensionSelections\":["
+                + selection("seizoen", "overalleseizoenen", "voorjaar", "zomer", "najaar") + ","
+                + selection("strand", "overallestranden", "noord", "zuid") + "],"), () -> "twee selecties:\n" + c);
+    }
+
+    /** "het aantal voorkomens van" is the filledCount over the selection, a whole unitless number. */
+    @Test void the_number_of_filled_cells_is_a_filled_count_over_the_selection() {
+        RegelSpraakModel m = Resolver.resolve(COAST + "het aantal voorkomens van zijn stand over alle kusten over de winden in {zuid}.\n");
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(c.contains("\"node\":\"Aggregation\",\"kind\":\"filledCount\",\"arguments\":[{\"node\":"
+                + "\"AttributeReference\",\"attribute\":\"stand\",\"subjectType\":\"Jutter\",\"source\":{\"snippet\":"
+                + "\"zijnstand\"}}],\"dimensionSelections\":[" + selection("kust", "overallekusten", "noord", "zuid") + ","
+                + selection("wind", "overdewindenin{zuid}", "zuid") + "],\"type\":{\"node\":\"Number\",\"whole\":true,"
+                + "\"decimals\":0,\"sign\":\"nonNegative\"}"), () -> "het aantal voorkomens:\n" + c);
+        assertFalse(c.contains("\"elementType\""), () -> "een elementtype op de dimensievouw:\n" + c);
+    }
+
+    @Test void the_number_of_filled_cells_takes_a_selection_of_every_dimension() {
+        DimensionCellTest.assertOneError(Resolver.resolve(COAST + "het aantal voorkomens van zijn stand over alle kusten.\n"),
+                "RGS-366", Map.of("expression", "het aantal voorkomens van zijn stand over alle kusten", "attribute", "stand",
+                        "dimension", "wind", "plural", "winden"));
+    }
+
+    /** By position nothing is ordered, so a first and a last take a cell of any type; the specification's typing of
+     *  "de eerste van" over dates holds for the listed fold. */
+    @Test void a_first_and_a_last_over_cells_take_a_cell_of_any_type() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+                1. voorjaar
+                2. zomer
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de vondstsoort Tekst gedimensioneerd met seizoen;
+                de eerste soort Tekst;
+                de laatste soort Tekst;
+
+            Regel eerste soort van een jutter
+                geldig altijd
+                    De eerste soort van een Jutter moet berekend worden als de eerste van zijn vondstsoort over alle seizoenen.
+
+            Regel laatste soort van een jutter
+                geldig altijd
+                    De laatste soort van een Jutter moet berekend worden als de laatste van zijn vondstsoort over alle seizoenen.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(c.contains("\"kind\":\"first\"") && c.contains("\"kind\":\"last\""), () -> "eerste en laatste:\n" + c);
+    }
+
     // A fold over an attribute with two dimensions writes one selection per dimension, as ALEF writes it (one filter
     // per dimension, a fixed dimension as a set of one label); the wire carries them in the declared order of the
     // attribute's dimensions, whatever order the sentence names them in.
