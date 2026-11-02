@@ -360,3 +360,4 @@ RGS-368	dimension-interval-ambiguous	ERROR	dimensions,expression,interval
 RGS-369	scenario-cell-period	ERROR	attribute,written
 RGS-370	assignment-precision-unbounded	ERROR	targetDecimals
 RGS-371	allocation-share-precision-unbounded	ERROR	targetDecimals
+RGS-372	assignment-precision-exceeds	ERROR	targetDecimals,valueDecimals

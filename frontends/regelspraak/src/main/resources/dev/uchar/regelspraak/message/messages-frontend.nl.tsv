@@ -639,7 +639,7 @@ RGS-334	toekenning: a {value} value is assigned to a {target} target
 RGS-335	assignment across incompatible units: value unit '{valueUnit}', target unit '{targetUnit}'
 RGS-336	kan een waarde van type {valueType} niet toekennen aan een {targetType}
 RGS-337	toekenning: a value of the {domainWord} '{valueDomain}' is assigned to a target of the {domainWord} '{targetDomain}'
-RGS-338	the value can carry {valueDecimals} decimals, more than the {targetDecimals} its target declares (RUNTIME-SEMANTICS ch. 2.3): it is written through an explicit rounding
+RGS-338	het toe te kennen resultaat heeft meer decimalen ({valueDecimals}) dan het attribuut toelaat ({targetDecimals}); rond het resultaat eerst expliciet af (§6.1.2)
 RGS-339	kan een waarde van type {sourceType} niet verdelen over een {targetType}
 RGS-340	the share can carry {shareDecimals} decimals, more than the {targetDecimals} its target declares (RUNTIME-SEMANTICS ch. 2.3): the allocation is written through an explicit rounding
 RGS-341	als één operand een eenheid heeft, moeten beide er een hebben
@@ -683,3 +683,4 @@ RGS-368	de vouw '{expression}': het interval '{interval}' noemt geen dimensie en
 RGS-369	de cel '{written}' van het gedimensioneerde attribuut '{attribute}' krijgt een periode of een tijdlijn, maar een casebestand levert en verwacht een cel als één waarde; een gedimensioneerd attribuut heeft geen tijdlijn (WF-125)
 RGS-370	the value has no finite precision bound (RUNTIME-SEMANTICS ch. 2.3) and its target declares {targetDecimals} decimals: it is written through an explicit rounding, or into the unbounded form
 RGS-371	the share has no finite precision bound (its pot is of the unbounded form) and its target declares {targetDecimals} decimals: the allocation is written through an explicit rounding
+RGS-372	the value can carry {valueDecimals} decimals, more than the {targetDecimals} its target declares (RUNTIME-SEMANTICS ch. 2.3): it is written through an explicit rounding

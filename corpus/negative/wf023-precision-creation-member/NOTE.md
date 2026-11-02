@@ -3,7 +3,7 @@ A Melding creates a Strandrecht with `uitkering gelijk aan zijn omvang gedeeld d
 
     WF-023.precision-unbounded FAIL /rules/objectCreations/0/versions/0/initialisations/0/value
 
-The RegelSpraak the document denotes (the frontend refuses it with the same verdict, RGS-338 or RGS-370):
+The RegelSpraak the document denotes (the frontend refuses it with the same verdict, RGS-372 or RGS-370):
 
     Objecttype het Strandrecht (mv: Strandrechten)
         de uitkering Numeriek (niet-negatief getal met 2 decimalen);

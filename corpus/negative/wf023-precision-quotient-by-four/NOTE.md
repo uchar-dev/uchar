@@ -3,7 +3,7 @@ Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1), the precision gate of RUNTIME-SEMAN
 
     WF-023.precision-exceeds FAIL /rules/rules/0/versions/0/value
 
-The RegelSpraak the document denotes (the frontend refuses it with the same verdict, RGS-338 or RGS-370):
+The RegelSpraak the document denotes (the frontend refuses it with the same verdict, RGS-372 or RGS-370):
 
     Objecttype de Vondst (mv: Vondsten)
         de opbrengst Numeriek (geheel getal);

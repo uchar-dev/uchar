@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * The precision gate of RUNTIME-SEMANTICS ch. 2.4: a write whose precision bound (ch. 2.3, the ALEF form), restated into
- * the unit of its target, exceeds the target's decimals is RGS-338, one without a finite bound RGS-370; the share of an
+ * the unit of its target, exceeds the target's decimals is RGS-372, one without a finite bound RGS-370; the share of an
  * allocation, bounded by its rounding or else by its pot, RGS-340 and RGS-371. Each refused source is the RegelSpraak of
  * a negative of the verifier, {@code corpus/negative/wf023-precision-<name>}, with the verdict the verifier gives its IR,
  * so the frontend and the verifier refuse the same writes; each passing source writes the same form through a rounding,
@@ -85,26 +85,26 @@ class PrecisionGateTest {
     // wf023-precision-quotient-by-three, wf023-precision-quotient-by-four
     @Test void a_quotient_by_a_literal_is_a_product_with_its_reciprocal() {
         refused(rule("derde deel", "zijn opbrengst gedeeld door 3"), "RGS-370", unbounded(2));
-        refused(rule("kwart", "zijn opbrengst gedeeld door 4"), "RGS-338", exceeds(2, 1));
+        refused(rule("kwart", "zijn opbrengst gedeeld door 4"), "RGS-372", exceeds(2, 1));
         passes(rule("kwart", "zijn opbrengst gedeeld door 2"));
         // a toeslag of 1 decimal over 8: 1/8 has three decimals, 1 + 3 = 4 does not fit 3
-        refused(rule("halve kwart", "zijn toeslag gedeeld door 8"), "RGS-338", exceeds(4, 3));
+        refused(rule("halve kwart", "zijn toeslag gedeeld door 8"), "RGS-372", exceeds(4, 3));
         passes(rule("halve kwart", "zijn toeslag gedeeld door 4"));
     }
 
     // wf023-precision-percentage-literal, wf023-precision-percentage-attribute
     @Test void a_percentage_adds_the_two_decimals_of_its_hundred() {
-        refused(rule("heffing", "21% van zijn opbrengst"), "RGS-338", exceeds(2, 1));
+        refused(rule("heffing", "21% van zijn opbrengst"), "RGS-372", exceeds(2, 1));
         passes(rule("heffing", "20% van zijn opbrengst"));
         String parameter = "Parameter het heffingspercentage : Percentage (getal met 1 decimalen)\n\n";
-        refused(parameter + rule("brede heffing", "het heffingspercentage van zijn taxatie"), "RGS-338", exceeds(5, 2));
+        refused(parameter + rule("brede heffing", "het heffingspercentage van zijn taxatie"), "RGS-372", exceeds(5, 2));
         passes(parameter + rule("brede heffing", "(het heffingspercentage van zijn taxatie) naar beneden afgerond op 2 decimalen"));
     }
 
     // wf023-precision-maximum
     @Test void a_maximum_takes_the_highest_precision_of_its_operands() {
-        refused(rule("hoogste bod", "de maximale waarde van zijn taxatie en zijn opbrengst"), "RGS-338", exceeds(2, 0));
-        refused(rule("hoogste bod", "de maximale waarde van zijn opbrengst en zijn taxatie"), "RGS-338", exceeds(2, 0));
+        refused(rule("hoogste bod", "de maximale waarde van zijn taxatie en zijn opbrengst"), "RGS-372", exceeds(2, 0));
+        refused(rule("hoogste bod", "de maximale waarde van zijn opbrengst en zijn taxatie"), "RGS-372", exceeds(2, 0));
         passes(rule("hoogste bod", "de maximale waarde van zijn opbrengst en zijn aantal deelnemers"));
     }
 
@@ -116,8 +116,8 @@ class PrecisionGateTest {
 
     // wf023-precision-product, wf023-precision-sum (refused before the gate too, by the type of the composite)
     @Test void a_product_sums_and_a_sum_takes_the_highest() {
-        refused(rule("waarde", "zijn taxatie maal zijn factor"), "RGS-338", exceeds(4, 2));
-        refused(rule("smalle waarde", "zijn taxatie plus zijn toeslag"), "RGS-338", exceeds(2, 1));
+        refused(rule("waarde", "zijn taxatie maal zijn factor"), "RGS-372", exceeds(4, 2));
+        refused(rule("smalle waarde", "zijn taxatie plus zijn toeslag"), "RGS-372", exceeds(2, 1));
         passes(rule("waarde", "zijn taxatie plus zijn toeslag"));
     }
 
@@ -125,7 +125,7 @@ class PrecisionGateTest {
         // 2 decimals times 100 lose two, so the product of a taxatie and 100 is whole
         passes(rule("aandeel", "zijn taxatie maal 100"));
         // times 0,5: one decimal more
-        refused(rule("aandeel", "zijn opbrengst maal 0,5"), "RGS-338", exceeds(1, 0));
+        refused(rule("aandeel", "zijn opbrengst maal 0,5"), "RGS-372", exceeds(1, 0));
     }
 
     // wf023-precision-unit-factor
@@ -143,12 +143,12 @@ class PrecisionGateTest {
 
             """;
         refused(model + "Regel sleepafstand\n    geldig altijd\n        De sleepafstand van een Vondst moet gesteld worden op zijn sleeplengte.\n",
-                "RGS-338", exceeds(3, 0));
+                "RGS-372", exceeds(3, 0));
         // a kilometre of one decimal is a whole number of metres
         passes(model + "Regel lengte\n    geldig altijd\n        De lengte van een Vondst moet gesteld worden op zijn gemeten afstand.\n");
         // the right operand of a sum is restated into the unit of the left: metres into kilometres add three decimals
         refused(model + "Regel sleepafstand\n    geldig altijd\n        De sleepafstand van een Vondst moet berekend worden als "
-                + "zijn gemeten afstand plus zijn sleeplengte.\n", "RGS-338", exceeds(3, 0));
+                + "zijn gemeten afstand plus zijn sleeplengte.\n", "RGS-372", exceeds(3, 0));
     }
 
     // wf023-precision-time-proportional-part

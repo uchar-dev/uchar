@@ -639,7 +639,7 @@ RGS-334	assignment: a {value} value is assigned to a {target} target
 RGS-335	assignment across incompatible units: value unit '{valueUnit}', target unit '{targetUnit}'
 RGS-336	cannot assign a value of type {valueType} to a {targetType}
 RGS-337	assignment: a value of the {domainWord} '{valueDomain}' is assigned to a target of the {domainWord} '{targetDomain}'
-RGS-338	the value can carry {valueDecimals} decimals, more than the {targetDecimals} its target declares (RUNTIME-SEMANTICS ch. 2.3): it is written through an explicit rounding
+RGS-338	the result to be assigned has more decimals ({valueDecimals}) than the member allows ({targetDecimals}); round the result explicitly first (§6.1.2)
 RGS-339	cannot allocate a value of type {sourceType} over a {targetType}
 RGS-340	the share can carry {shareDecimals} decimals, more than the {targetDecimals} its target declares (RUNTIME-SEMANTICS ch. 2.3): the allocation is written through an explicit rounding
 RGS-341	if one operand has a unit, both must have one
@@ -683,3 +683,4 @@ RGS-368	the fold '{expression}': the interval '{interval}' names no dimension an
 RGS-369	the cell '{written}' of the dimensioned attribute '{attribute}' is given a period or a timeline, but a case file gives and expects a cell as one value; a dimensioned attribute has no timeline (WF-125)
 RGS-370	the value has no finite precision bound (RUNTIME-SEMANTICS ch. 2.3) and its target declares {targetDecimals} decimals: it is written through an explicit rounding, or into the unbounded form
 RGS-371	the share has no finite precision bound (its pot is of the unbounded form) and its target declares {targetDecimals} decimals: the allocation is written through an explicit rounding
+RGS-372	the value can carry {valueDecimals} decimals, more than the {targetDecimals} its target declares (RUNTIME-SEMANTICS ch. 2.3): it is written through an explicit rounding

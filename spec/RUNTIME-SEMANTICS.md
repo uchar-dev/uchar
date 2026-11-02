@@ -497,7 +497,7 @@ an explicit rounding. At assignment:
    write of ch. 3.7, the one computed write such a target takes (ch. 2.8). A
    value whose bound nothing declares (an `Unresolved`, an unbound variable)
    defers, as WF-023 does. Examples (the frontend gives the same verdicts on
-   the same sources, RGS-338 and RGS-370, and RGS-340 and RGS-371 for an
+   the same sources, RGS-372 and RGS-370, and RGS-340 and RGS-371 for an
    allocation): "zijn opbrengst gedeeld door zijn aantal deelnemers" into a
    whole aandeel is refused (∞ > 0) and admitted with "rekenkundig afgerond
    op 0 decimalen"; "zijn opbrengst gedeeld door 2" into a whole target is

@@ -2744,7 +2744,7 @@ literal `{"boolean": true}` since L4.)
   `wf023-cel-schrijfgrens`, `wf023-closed-nonexact-division`,
   `wf023-closed-runtime-nonexact-division` and
   `wf023-decimal-nonterminating`; the RegelSpraak frontend refuses the same
-  sources with RGS-338, RGS-370, RGS-340 and RGS-371 in these sentences. The **struct twin** of the keuzetype clause is CLOSED (2026-09-03):
+  sources with RGS-372, RGS-370, RGS-340 and RGS-371 in these sentences. The **struct twin** of the keuzetype clause is CLOSED (2026-09-03):
   `domains` declares struct domains too, and a `StructLiteral` of domain B
   assigned to an attribute of domain A used to be verifier-clean — ref
   faulted at the field read and the ASP backend gave a wrong answer. That

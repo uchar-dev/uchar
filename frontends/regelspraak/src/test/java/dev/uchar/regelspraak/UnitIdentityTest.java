@@ -103,7 +103,7 @@ class UnitIdentityTest {
                 het tempo Numeriek (getal met 2 decimalen) met eenheid 1/mnd;
             Regel tempo
                 geldig altijd
-                    Het tempo van een Verkoop moet berekend worden als het stuktal van de Verkoop gedeeld door de looptijd van de Verkoop.
+                    Het tempo van een Verkoop moet berekend worden als het stuktal van de Verkoop gedeeld door de looptijd van de Verkoop rekenkundig afgerond op 2 decimalen.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertClean(m);
@@ -166,7 +166,8 @@ class UnitIdentityTest {
             """;
         assertClean(withAttributes(attributes, "Een Verkoop is snel indien zijn tempo groter is dan zijn weektempo."));
         assertClean(withAttributes(attributes,
-                "Het totaal van een Verkoop moet berekend worden als het tempo van de Verkoop plus het weektempo van de Verkoop."));
+                "Het totaal van een Verkoop moet berekend worden als (het tempo van de Verkoop plus het weektempo van de Verkoop) "
+                        + "rekenkundig afgerond op 2 decimalen."));
         assertFalse(withAttributes(attributes, "Een Verkoop is snel indien zijn tempo groter is dan zijn looptijd.").errors().isEmpty(),
                 "1/dg tegen dg is geen zelfde dimensie");
         assertFalse(withAttributes(attributes, "Een Verkoop is snel indien zijn tempo groter is dan zijn dagbedrag.").errors().isEmpty(),
@@ -181,7 +182,8 @@ class UnitIdentityTest {
                 het tempo Numeriek (getal met 2 decimalen) met eenheid dg^-1;
             """;
         RegelSpraakModel m = withAttributes(attributes,
-                "Het tempo van een Verkoop moet berekend worden als het stuktal van de Verkoop gedeeld door de looptijd van de Verkoop.");
+                "Het tempo van een Verkoop moet berekend worden als het stuktal van de Verkoop gedeeld door de looptijd van de Verkoop "
+                        + "rekenkundig afgerond op 2 decimalen.");
         assertClean(m);
         assertTrue(IrEmitter.emit(m).replaceAll("\\s+", "").contains("\"exponent\":-1"));
     }
@@ -449,7 +451,7 @@ class UnitIdentityTest {
                 het totaalbedrag Numeriek (geheel getal) met eenheid %s;
             Regel totaalbedrag
                 geldig altijd
-                    Het totaalbedrag van een Haven moet berekend worden als het totaal van zijn tarief.
+                    Het totaalbedrag van een Haven moet berekend worden als (het totaal van zijn tarief) rekenkundig afgerond op 0 decimalen.
             """.formatted(rate, target));
     }
 

@@ -332,7 +332,8 @@ public final class Typing {
     }
 
     /** §6.1/§6.2 assignment of a value whose type is its own precision, a scenario's case value: family, unit and
-     *  domain as {@link #assignment(Datatype, Datatype, boolean)}, and the decimals of the value against the target's. */
+     *  domain as {@link #assignment(Datatype, Datatype, boolean)}, and the decimals of the value against the target's
+     *  (RGS-338): a case value is the number it writes, so its type is its precision. */
     public static Coded assignment(Datatype target, Datatype value) {
         Coded kind = assignment(target, value, false);
         if (kind != null || target.isUnknown() || value.isUnknown() || !target.isNumberLike() || target.unbounded())
@@ -623,7 +624,7 @@ public final class Typing {
     }
 
     /** §6.1.2, the precision gate of RUNTIME-SEMANTICS ch. 2.4: a computed value whose bound, restated into the unit of
-     *  the target, exceeds the target's declared decimals is RGS-338, and one without a finite bound RGS-370; an
+     *  the target, exceeds the target's declared decimals is RGS-372, and one without a finite bound RGS-370; an
      *  unbounded target has no ceiling, and a value that makes no claim passes. A target with a timeline
      *  ({@code timeline}) stands outside the gate: no executor carries a rounding around the pro-rata write of ch. 3.7,
      *  the one computed write such a target takes, so the gate would leave that write no form (ch. 2.8). */
@@ -635,7 +636,7 @@ public final class Typing {
         Precision p = b.in(target.unitOf());
         int dd = decimalsOf(target);
         if (!p.bounded()) return new Coded("RGS-370", params("targetDecimals", dd));
-        return p.decimals() > dd ? new Coded("RGS-338", params("valueDecimals", p.decimals(), "targetDecimals", dd)) : null;
+        return p.decimals() > dd ? new Coded("RGS-372", params("valueDecimals", p.decimals(), "targetDecimals", dd)) : null;
     }
 
 

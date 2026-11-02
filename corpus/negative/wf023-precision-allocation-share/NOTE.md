@@ -3,7 +3,7 @@ The opbrengst of a Berging, of 2 decimals, is divided in equal shares over the w
 
     WF-023.share-precision-exceeds FAIL /rules/allocations/0/versions/0
 
-The RegelSpraak the document denotes (the frontend refuses it with the same verdict, RGS-338 or RGS-370):
+The RegelSpraak the document denotes (the frontend refuses it with the same verdict, RGS-372 or RGS-370):
 
     Objecttype de Berging (mv: Bergingen)
         de opbrengst Numeriek (getal met 2 decimalen);

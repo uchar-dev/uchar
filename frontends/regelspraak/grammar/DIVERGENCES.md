@@ -3819,7 +3819,7 @@ factor of `maal` counts with its own decimals and the powers of ten it carries
 (`maal 100` takes two off), a percentage adds the two decimals of its hundred, a
 minimum or maximum takes the highest number of its operands, and a unit
 conversion counts (`m` into `km` adds three, `km` into `m` takes three off). A
-write that exceeds the bound is RGS-338, one without a finite bound RGS-370, in
+write that exceeds the bound is RGS-372, one without a finite bound RGS-370, in
 the verifier's sentences (WF-023). A verdeling is bounded by its rounding, or else
 by its pot (RGS-340, RGS-371); its division by the recipients is not typed, as in
 ALEF, and a share that does not fit stays the evaluation fault of ch. 2.4.
