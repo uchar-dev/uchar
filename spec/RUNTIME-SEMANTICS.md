@@ -5120,7 +5120,9 @@ refuses by name an initialisation beside a computing rule on one cell, whose
 defaults reading `ref` answers. The worked examples replay in both: the
 goldens `jutterswet-seizoenvondst`, `jutterswet-seizoenvouw`,
 `jutterswet-vormenkabinet` (a cell over two dimensions that share a label),
-`jutterswet-seizoenboeking` and `jutterswet-seizoenkopie`, the `ref/test`
+`jutterswet-seizoenboeking`, `jutterswet-seizoenkopie` and
+`jutterswet-strandseizoen` (cells over two dimensions, read, written and
+folded, written in RegelSpraak), the `ref/test`
 rows `WV-5.8c-*` and the frames of `backends/clingo/test/test_clingo.ml` for
 two dimensions, a path and the write boundary of a cell; the red witnesses
 `corpus/red/jutterswet-cel-overprecisie` and `jutterswet-cel-schrijfgrens`
@@ -5132,7 +5134,7 @@ refuses a cell over a path (DROOLS-189). A cell a form writes is a member of
 its own there as well, under the key of its node (IR-SPEC ch. 5.1): the
 rule, the initialisation and the object creation's member write it, a read
 and a fold take it through its standing, and the write-back puts it into the
-map. The five goldens replay in all three executors (gate 12), the red
+map. The six goldens replay in all three executors (gate 12), the red
 witnesses of the input precision and of the write boundary fault in all
 three with their pinned code and parameters (gate 8), the Drools backend
 naming the place of the write boundary as `ref` does,
