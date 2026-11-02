@@ -342,8 +342,14 @@ have an exact decimal form.
 
 1. an explicit rounding (ch. 2.5), which rounds the *true* rational once;
 2. the abs-division variant (ch. 2.2), defined to truncate toward zero at
-   5 decimals;
-3. the write boundary (ch. 2.4).
+   5 decimals.
+
+The write boundary (ch. 2.4) is no collapse point: it tests that the exact
+value fits the declared decimals of its target, faults where it does not
+(EF-006), and writes a value that fits as the exact value it is. Worked
+example (`ref/` test `WV-2.1-schrijfgrens`): 3/2 written into an attribute
+of 1 decimal is **3/2**; the same 3/2 into a whole-number attribute is
+EF-006; 2,00 into a whole-number attribute is **2**.
 
 *v0 mirror notes:* v0 computes rational-free chains of +, −, × and the
 square root at 34 significant decimal digits (IEEE 754-2008 decimal128);
@@ -407,11 +413,22 @@ although its value is 2,5 — the under-report ch. 2.4 closes by rule.
 **There is no implicit rounding anywhere.** Precision changes only through
 an explicit rounding. At assignment:
 
-1. Writing a value whose declared precision exceeds the target's declared
-   decimals is a **static error** — the author must insert an explicit
-   rounding. Example: `1,5` into a whole-number attribute: error; `1,5
-   afgerond op 0 decimalen` (rekenkundig) into the same attribute: passes,
-   writes 2.
+1. Writing a value that does not fit the target's declared decimals —
+   whose exact value times 10^decimals is no whole number — is an
+   **evaluation fault**, EF-006 (ch. 5.7b), which stands in place of the
+   write (ch. 5.7): the author must insert an explicit rounding. The value
+   counts, not the precision its expression declares (ch. 2.3) and not the
+   scale a decimal is written at. Examples: `1,5` into a whole-number
+   attribute: EF-006; `1,5 afgerond op 0 decimalen` (rekenkundig) into the
+   same attribute: passes, writes 2; `1,00` into it writes 1; "zijn
+   opbrengst gedeeld door 2" writes 500 for an opbrengst of 1000 and faults
+   for 1001, with the parameters place, value 1001/2 and decimals 0 (`ref/`
+   tests `WV-2.4-a`, `WV-2.4-b` and `WV-2.4-i` to `WV-2.4-l`). The gate is
+   a property of the evaluation: 1001/2 and 1000/2 have one type, so no
+   rule on types decides it. A producer may refuse a write statically where
+   its typing shows that the value cannot fit (the RegelSpraak frontend
+   does, RGS-338 for a rule and RGS-340 for an allocation); a static gate in
+   the verifier is OPEN (the v0 mirror note below).
 2. A rounding changes the *facing* precision: `afgerond op n` makes the
    expression n-decimal (whole when n = 0).
 3. An unbounded target (the "getal" precision form, `IR-SPEC.md` ch. 2.4)
@@ -433,9 +450,29 @@ and the unbounded form fixes none, so it holds that form as a whole number
 (the limit recorded below for Catala decimals as well): a whole value plays,
 and a value that is not whole is refused by name, at translation for a case
 input and by a named `viol/2` for a written result (`ASP-TRANSLATION.md`
-S2, S19). The Drools backend carries a decimal value on the unbounded form
-in both branches, and refuses a case value written as a rational (`1/6`) by
-name.
+S2, S19). The Drools backend holds the exact value of the unbounded form in
+its working memory, in both branches, so that a reader and a condition
+compute with the value the form wrote, and writes it onto the bean of the
+attribute as a decimal: exact where it terminates, and at 16 significant
+digits rounded half to even where it does not (the 1/3 above is
+0,3333333333333333 on the bean). It refuses by name a fold over the value of
+such an attribute, since its folds sum decimals, and a case value written as
+a rational (`1/6`).
+
+Worked example — the exact value at rest (`ref/` test `WV-2.4-p`; the Drools
+backend's `RationalAtRestWitnessTest`): a Jutter with `begrensde opbrengst`,
+`volle opbrengst`, `strandinkomen`, `vrijgelaten inkomen` and
+`vrijlatingsgrens` of 2 decimals and a `factor` of the unbounded form;
+"De factor van een Jutter moet berekend worden als zijn begrensde opbrengst
+gedeeld door zijn volle opbrengst", "Het vrijgelaten inkomen van een Jutter
+moet berekend worden als zijn strandinkomen maal zijn factor" and "Een
+Jutter is boven de grens indien zijn strandinkomen maal zijn factor groter
+is dan zijn vrijlatingsgrens". With 240,00, 360,00, 6851,25 and 4567,50 the
+factor is **2/3**, the vrijgelaten inkomen **4567,50**, and the Jutter is
+**not** boven de grens: 6851,25 × 2/3 = 4567,50 exactly. On a factor held
+at 16 digits, 0,6666666666666667, the product is 4567,500000000000228,
+which faults at the gate of the vrijgelaten inkomen and is greater than the
+grens.
 
 Worked example — the exact value 2/3 into a 2-decimal attribute: with
 `afgerond op 2 decimalen` rekenkundig → **0,67**; with `naar beneden` →
@@ -444,12 +481,13 @@ pre-truncated approximation.
 
 *v0 mirror note (known hole, becomes a delta):* because v0 types a bare
 division at maxDec (ch. 2.3), an unrounded non-terminating quotient can
-statically pass the gate and then collapses defensively to 16 significant
-digits at the write boundary. The spec does not bless this: **delta
-(candidate WF rule, rule layer):** a value that can be non-terminating
-MUST pass through an explicit rounding before a bounded write — the static
-under-report is closed by rule rather than by a defensive collapse.
-Verifier/corpus artifacts: OPEN.
+statically pass its type check, and v0 then collapses it to 16
+significant digits at the write, where point 1 faults. **Candidate WF rule
+(rule layer), OPEN:** a value that can be non-terminating MUST pass through
+an explicit rounding before a bounded write — a static gate beside the
+evaluation fault of point 1, which stays for what such a rule does not
+decide: the share of an allocation, and a quotient that terminates and does
+not fit. Verifier/corpus artifacts: OPEN.
 
 ### 2.5 Rounding
 
@@ -603,9 +641,10 @@ value. Example: begrensd(150, 0, 100) = 100; begrensd(−5, 0, 100) = 0;
 
 Per granularity bucket: result = base × days-true/days-in-bucket, as an
 exact fraction. Example: base 1200, 90 of 365 days → 1200 × 90/365 =
-21600/73 — non-terminating, rounded only by an explicit or target
-rounding: afgerond op 2 rekenkundig = **295,89**. Full timeline algebra:
-ch. 3.
+21600/73 — non-terminating, and rounded only by an explicit rounding:
+afgerond op 2 rekenkundig = **295,89**. The assignment gate rounds nothing
+(ch. 2.4); whether it holds on a timeline target is OPEN (ch. 3.7). Full
+timeline algebra: ch. 3.
 
 ### 2.9 The pinned decimal scale — Catala decimals (Phase-5c, vraag 4-A)
 
@@ -644,9 +683,9 @@ own `decimals` — binds only a *declaration* and the *write boundary* it
 guards (ch. 2.4); every intermediate value stays the exact rational of
 ch. 2.1 — a `Let` binder (ch. 10.6) and a `Match`-arm result
 (ch. 9.2) among them, rounded to no scale — and a declared scale is never
-itself a collapse point: those stay exactly the three of ch. 2.1 — an
-explicit `Rounding` node (ch. 2.5), the ch. 2.2 abs-division operator, and
-the ch. 2.4 write boundary already named. Worked example: `100 ÷
+itself a collapse point: those stay exactly the two of ch. 2.1 — an
+explicit `Rounding` node (ch. 2.5) and the ch. 2.2 abs-division operator;
+the ch. 2.4 write boundary tests the value and rounds nothing. Worked example: `100 ÷
 3` (non-terminating) bound through a `Let` at a 2-decimal
 declaration and rounded once at the endpoint — `afgerond op 2
 rekenkundig` → **33,33**; the same binder `afgerond op 4` → **33,3333**,
@@ -2066,15 +2105,17 @@ deel on bucket B = read(base, start(B)) × trueDays(B) / days(B)
   executors until a corpus case lands — a unit-carrying base or target
   faults loudly, never prorates factor-free.
 - The fraction is exact and is **never auto-rounded** to the target's
-  declared decimals — rounding happens only at an explicit rounding or
-  the assignment gate (ch. 2.4). *v0 mirror note (residual, same class as
-  ch. 2.1):* v0 stores a non-terminating pro-rata at 16 significant
+  declared decimals — rounding happens only at an explicit rounding; the
+  assignment gate (ch. 2.4) faults on a value that does not fit and
+  rounds nothing. **OPEN:** whether the gate holds on a timeline target.
+  The reference interpreter writes every segment exactly as computed,
+  without the gate; the ASP translation derives only outcomes exact at
+  the target scale and fences a remainder with a loud witness, so a
+  non-terminating pro-rata cannot enter the differential corpus
+  un-rounded. *v0 mirror note (residual, same class as ch. 2.1):* v0, and
+  the Drools backend, store a non-terminating pro-rata at 16 significant
   digits (DECIMAL64); the exact fraction is normative, the store is the
-  v0 approximation; backends must agree on the corpus after rounding.
-  The reference interpreter stores the exact fraction; the ASP
-  translation derives only outcomes exact at the target scale and
-  fences a remainder with a loud witness — a non-terminating pro-rata
-  therefore cannot enter the differential corpus un-rounded.
+  v0 approximation.
 
 Worked examples (absolute): base per year €12 (2024) / €18 (2025),
 condition true [2024-01-01, 2025-02-08), monthly target: twelve months of
@@ -3440,11 +3481,14 @@ rest = A − Σ_all share_i
 ```
 
 with `min(x, leeg) = x` (no cap) and `floor_d` = round toward −∞ at the
-declared decimals (identity when no rounding is declared). *v0 residual
-(same class as ch. 2.1/3.7):* v0 computes the share divisions at 16
-significant digits; the exact fractions above are normative, and
-backends must agree on the corpus after the floor and the write
-boundary.
+declared decimals (identity when no rounding is declared), applied once to
+the exact `min(raw_i, max_i)`. Each share and the rest are written through
+the assignment gate (ch. 2.4 point 1): a share or a rest that does not fit
+its target is EF-006, one fault for the allocation on its source, and the
+allocation writes none of its shares and no rest there (ch. 4.4). *v0
+residual (same class as ch. 2.1/3.7):* v0 computes the share divisions at
+16 significant digits; the exact fractions above are normative, and the
+executors compute them.
 
 - **Equal shares**: one group, all recipients, unweighted; no cap
   (ill-formed with one, ch. 4.5). `share_i = A / n`.
@@ -3501,6 +3545,7 @@ boundary.
 | cap empty / negative | uncapped + §9.5 error (never a negative share) |
 | empty ordering key | sorts last, no error |
 | pot exhausted before a group | that group's shares are 0 (real 0, not leeg) |
+| a share or the rest does not fit its target (no rounding, or a rounding at more decimals than the target holds) | EF-006 (ch. 2.4 point 1): one fault for the allocation on its source, its place the first share or rest that does not fit in the order of the case; no share and no rest is written there |
 
 ### 4.5 Well-formedness and refusals
 
@@ -3540,6 +3585,14 @@ than picking a winner.
   floor **433** (pot → 367);
   66s: raw 3/4×367 = 275,25 → cap **250**, and 1/4×367 = 91,75 → floor
   **91**; rest = 1800 − 1774 = **26**.
+- Exact before the floor: 2999999999999999,97 in equal shares over 3,
+  floor at 2 decimals → **999999999999999,99** three times, rest **0**
+  (the quotient at 16 significant digits would be 1000000000000000,00 and
+  the rest −0,03).
+- A share that does not fit: 1001 in equal shares over 2 into whole-number
+  shares without a rounding → EF-006, place the first recipient's share,
+  value 1001/2, decimals 0, and nothing written
+  (`corpus/red/jutterswet-verdeling-past-niet`).
 - Edge rows of ch. 4.4, as observable outputs: a source with **no
   recipients** writes nothing (also no rest); ordered with tie weights
   {3, −1} over 1200 in one group → the negative weight counts as 0 →
@@ -4166,6 +4219,17 @@ the session reports the outcomes standing at the fixpoint of the form's
 stratum. A fault stands in place of what the form would write, so a form
 that faults at the fixpoint leaves the session without an answer whichever
 states came before it, and where several stand the report names them all.
+What such a session derives beside its faults is not normed: the reference
+interpreter sets the world back to the state before the evaluation that
+faulted, so its target keeps the value it had there, and the Drools backend
+withdraws the value of the form, so its target is leeg or holds its input;
+a reader of the target, and the deposits and faults that follow from what
+it reads, can differ between executors. The outcome of the session is the
+faults that stand; gate 8 holds the executors to their codes and
+parameters (ch. 5.7b). Worked example (`corpus/red/jutterswet-verdeling-past-niet`,
+`ref/` test `WV-5.7-schrijfgrens`): the reference interpreter and the Drools
+backend each report the one fault EF-006 of the allocation on V1, at
+J1.veilingdeel, value 1001/2, decimals 0.
 An initialisation tests its guard (ch. 5.4) before its condition and its
 value, so a target the input fills or another writer's value displaces
 evaluates neither. Worked examples (absolute; goldens with the rules in the
@@ -4359,7 +4423,8 @@ parameters, the clause that defines it and its witnesses.
   `value` and `decimals` (EF-006), `place` (EF-006) in all but one of its
   reasons, `from` (EF-009), `creation`, `stratum` and `depth` (EF-015),
   `values` (EF-016) and `filler` (EF-017). The Drools backend emits only `field` and
-  `lexeme` (EF-003), `count` (EF-008), `from` and `reach` (EF-009), `creation`,
+  `lexeme` (EF-003), `place`, `value` and `decimals` (EF-004 and EF-006, since
+  2026-11-02), `count` (EF-008), `from` and `reach` (EF-009), `creation`,
   `stratum` and `depth` (EF-015), `rules`, `values`, `attribute`, `label`
   and `objectType` (EF-016), the parts of EF-032 (since 2026-10-22, as ref
   and the ASP backend), and `factType` and `cycle` (EF-033), and no other.
@@ -4396,7 +4461,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-003 | a date lexeme of the case input names no calendar day | case input | `field`, `lexeme` | ch. 5.7 step 3 | `corpus/red/as-of-date-calendar`, `corpus/red/input-date-calendar` |
 | EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 11.3 | `corpus/red/input-overprecision`, `corpus/red/input-overprecision-param`, `corpus/red/list-element-overprecision`, `corpus/red/struct-field-overprecision` |
 | EF-005 | a filled dividend is divided by a numeric zero | §9.5 | `rule`, `label` | ch. 1.4 point 4; ch. 2.2 | `corpus/golden/division-by-numeric-zero`, `corpus/golden/division-abs-by-numeric-zero`, `corpus/golden/filled-count-unguarded-division`, `corpus/golden/at-most-reads-until-settled`, `corpus/golden/closed-runtime-division-by-zero`, `corpus/golden/fold-filter-divides-by-zero`, `corpus/golden/jutterswet-initialisatie-naast-regel`, `corpus/golden/jutterswet-lezer-van-initialisatie` |
-| EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4 | `corpus/red/closed-nonexact-division`, `corpus/red/closed-runtime-nonexact-division`, `corpus/red/decimal-nonterminating`, `corpus/red/jutterswet-fout-aan-fixpunt` |
+| EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4 | `corpus/red/closed-nonexact-division`, `corpus/red/closed-runtime-nonexact-division`, `corpus/red/decimal-nonterminating`, `corpus/red/jutterswet-fout-aan-fixpunt`, `corpus/red/jutterswet-verdeling-past-niet`, `corpus/red/jutterswet-halvering-past-niet`, `corpus/red/jutterswet-kopie-past-niet`, `corpus/red/jutterswet-vast-bergloon-past-niet` |
 | EF-007 | a datum-tijd step or construction leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range`, `corpus/red/date-time-with-outside-range` |
 | EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/red/date-time-step-outside-range` |
 | EF-009 | a day-kind walk passes the reach fence without a day of the kind | fault | `from`, `reach` | ch. 3.8 | `corpus/red/day-kind-unsatisfiable-walk`, `corpus/red/day-kind-scope-outside-table` |
@@ -6862,6 +6927,16 @@ specialised by what the ASP hand-exercises established
 
   At most one default decides, so a single group can never conflict — a
   property of the semantics, not a claim about authors.
+- A decision that does not fit the declared decimals of its target
+  **decides** all the same: every lower default is displaced, a member of a
+  declared-unordered group reconciles on its exact value (ch. 7.2), and
+  the fault EF-006 of the assignment gate (ch. 2.4 point 1) stands in place
+  of the group's write. Worked example (`corpus/red/jutterswet-afwijking-past-niet`,
+  `ref/` test `WV-7.1-past-niet`): the deviation "(zijn toeslaggrond gedeeld
+  door zijn geschatte gewicht) plus 5,00" of the toeslag, of 2 decimals,
+  with toeslaggrond 100,00 and geschatte gewicht 30,00, decides 25/3; the
+  rule "op 1,00" beneath it does not decide, and the session faults with
+  the one fault EF-006, place V6.toeslag, value 25/3, decimals 2.
 - If no default decides, the group **writes nothing**: the target keeps
   what the fact base holds — its input value, or leeg. A defaults group
   never writes leeg; consequently "deliberately assign leeg" is not

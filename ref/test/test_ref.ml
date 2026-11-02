@@ -931,6 +931,118 @@ let () =
   (* evaluation order 2020, 2021, leeg (the empty key last) *)
   check "WV-4.6-h-leeg-laatst" (List.map fst s = [ "a"; "c"; "b" ])
 
+(* --- ch. 2.1, 2.4, 4.6, 5.7, 7.1: the write boundary tests the value -------- *)
+
+(* the evaluation of an inline document and case: the final world, or the
+   standing fault the session raises *)
+let write_boundary_session doc_text case_text =
+  let write suffix body_text =
+    let f = Filename.temp_file "ref-schrijfgrens" suffix in
+    let oc = open_out f in
+    output_string oc body_text;
+    close_out oc;
+    f
+  in
+  let irf = write ".ir.json" doc_text and casef = write ".case.json" case_text in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      let d = Ir_v0.Loader.load_file irf in
+      let c = Case.load_file d casef in
+      match
+        Eval.evaluate
+          { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of;
+            locals = World.SMap.empty; btypes = World.SMap.empty; subj = None; form = None }
+          c.world
+      with
+      | final -> Ok (c, final)
+      | exception Value.Fault { code; params; text } -> Error (code, params, text))
+
+(* the one standing fault of a session, EF-006 with its parameters: a session
+   that reports more than one joins their sentences with "; " *)
+let one_write_boundary_fault name ~place ~value ~decimals = function
+  | Error (code, params, text) ->
+      check name
+        (code = Some "EF-006"
+        && params = [ ("place", place); ("value", value); ("decimals", decimals) ]
+        && not (String.contains text ';'))
+  | Ok _ -> check (name ^ " (no fault at all)") false
+
+let decl1 : Ir_v0.Ast.datatype option =
+  Some (Number { whole_part = false; decimal_places = 1; sign_char = None; measure_unit = None })
+
+let () =
+  (* ch. 2.1: the write boundary is no collapse point *)
+  let w = mini_world None in
+  let w', _ = World.write_attr w ~label:"x" ~attr:"a" ~decl:decl1 (n "3/2") in
+  expect_num "WV-2.1-schrijfgrens-a" (World.attr (World.get w' "x") "a") "3/2";
+  expect_fault "WV-2.1-schrijfgrens-b" (fun () -> World.write_attr w ~label:"x" ~attr:"a" ~decl:whole (n "3/2"));
+  let w', _ = World.write_attr w ~label:"x" ~attr:"a" ~decl:whole (n "2.00") in
+  expect_num "WV-2.1-schrijfgrens-c" (World.attr (World.get w' "x") "a") "2";
+  (* ch. 2.4 point 1, on the value: 1001/2 faults with its parameters, 1000/2
+     and 1,00 write into a whole-number attribute *)
+  (match World.write_attr w ~label:"x" ~attr:"a" ~decl:whole (Arith.div_ ~err:no_err (n "1001") (n "2")) with
+  | exception Value.Fault { code; params; _ } ->
+      check "WV-2.4-i"
+        (code = Some "EF-006" && params = [ ("place", "x.a"); ("value", "1001/2"); ("decimals", "0") ])
+  | _ -> check "WV-2.4-i (no fault at all)" false);
+  let w', _ = World.write_attr w ~label:"x" ~attr:"a" ~decl:whole (Arith.div_ ~err:no_err (n "1000") (n "2")) in
+  expect_num "WV-2.4-j" (World.attr (World.get w' "x") "a") "500";
+  let w', _ = World.write_attr w ~label:"x" ~attr:"a" ~decl:whole (n "1.00") in
+  expect_num "WV-2.4-k" (World.attr (World.get w' "x") "a") "1";
+  expect_fault "WV-2.4-l" (fun () -> World.write_attr w ~label:"x" ~attr:"a" ~decl:whole (Arith.mul (n "1001") (n "0.5")));
+  (* ch. 2.4, the exact value at rest: factor maal inkomen is precies de grens *)
+  let factor_doc = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"begrensde opbrengst","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}},{"node":"Attribute","name":"volle opbrengst","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}},{"node":"Attribute","name":"factor","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"strandinkomen","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}},{"node":"Attribute","name":"vrijgelaten inkomen","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}},{"node":"Attribute","name":"vrijlatingsgrens","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"boven de grens","kind":"adjectival"}]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"factor","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"factor","subjectType":"Jutter","source":{"snippet":"De factor van een Jutter"}},"value":{"node":"Binary","op":"dividedBy","left":{"node":"AttributeReference","attribute":"begrensde opbrengst","subjectType":"Jutter","source":{"snippet":"zijn begrensde opbrengst"}},"right":{"node":"AttributeReference","attribute":"volle opbrengst","subjectType":"Jutter","source":{"snippet":"zijn volle opbrengst"}},"type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"zijn begrensde opbrengst gedeeld door zijn volle opbrengst"}},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"vrijgelaten inkomen","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"vrijgelaten inkomen","subjectType":"Jutter","source":{"snippet":"Het vrijgelaten inkomen van een Jutter"}},"value":{"node":"Binary","op":"times","left":{"node":"AttributeReference","attribute":"strandinkomen","subjectType":"Jutter","source":{"snippet":"zijn strandinkomen"}},"right":{"node":"AttributeReference","attribute":"factor","subjectType":"Jutter","source":{"snippet":"zijn factor"}},"type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"zijn strandinkomen maal zijn factor"}},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"boven de grens","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"boven de grens","subjectType":"Jutter","source":{"snippet":"Een Jutter is boven de grens"}},"value":{"node":"Literal","value":{"boolean":true},"type":{"node":"Boolean"},"source":{"snippet":"waar"}},"condition":{"node":"Comparison","op":"greater","left":{"node":"Binary","op":"times","left":{"node":"AttributeReference","attribute":"strandinkomen","subjectType":"Jutter","source":{"snippet":"zijn strandinkomen"}},"right":{"node":"AttributeReference","attribute":"factor","subjectType":"Jutter","source":{"snippet":"zijn factor"}},"type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"zijn strandinkomen maal zijn factor"}},"right":{"node":"AttributeReference","attribute":"vrijlatingsgrens","subjectType":"Jutter","source":{"snippet":"zijn vrijlatingsgrens"}},"source":{"snippet":"zijn strandinkomen maal zijn factor groter is dan zijn vrijlatingsgrens"}},"initialisation":false}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
+  let factor_case =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "J1", "objectType": "Jutter",
+      "attributes": { "begrensde opbrengst": { "number": "240.00" }, "volle opbrengst": { "number": "360.00" },
+        "strandinkomen": { "number": "6851.25" }, "vrijlatingsgrens": { "number": "4567.50" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "attributeValue", "label": "J1", "attribute": "vrijgelaten inkomen",
+      "value": { "number": "4567.50" } },
+    { "kind": "characteristicAbsent", "label": "J1", "characteristic": "boven de grens" },
+    { "kind": "consistent" } ] }|}
+  in
+  (match write_boundary_session factor_doc factor_case with
+  | Ok (c, final) ->
+      expect_num "WV-2.4-p-factor" (World.attr (World.get final "J1") "factor") "2/3";
+      check "WV-2.4-p" (Case.check c final = [])
+  | Error (_, _, text) -> check ("WV-2.4-p (" ^ text ^ ")") false);
+  (* ch. 4.6: exact before the floor *)
+  let s, r =
+    alloc Equal_shares ~decimals:2 "2999999999999999.97" [ rcp "a"; rcp "b"; rcp "c" ]
+  in
+  assigned "WV-4.6-exact" s
+    [ ("a", Some "999999999999999.99"); ("b", Some "999999999999999.99"); ("c", Some "999999999999999.99") ];
+  check "WV-4.6-exact-rest" (rest_is r "0");
+  (* ch. 4.6 and 5.7: a share that does not fit, one fault of the allocation *)
+  let verdeling_doc = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Strandveiling","animate":false,"plural":"Strandveilingen","attributes":[{"node":"Attribute","name":"veilingopbrengst","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"veilingrestant","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[]},{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"veilingdeel","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[{"node":"FactType","name":"veilingdeelname","reciprocal":false,"roles":[{"node":"Role","name":"strandveiling","objectType":"Strandveiling","many":false},{"node":"Role","name":"veilingjutter","objectType":"Jutter","plural":"veilingjutters","many":true}]}],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[],"dayKindDefinitions":[],"objectCreations":[],"allocations":[{"node":"Allocation","name":"verdeel de veilingopbrengst van een strandveiling","versions":[{"sourceType":"Strandveiling","sourceAttribute":"veilingopbrengst","targetType":"Jutter","targetAttribute":"veilingdeel","method":"equalShares","remainderAttribute":"veilingrestant","descending":false,"validity":{"node":"Validity"},"connectingRole":{"node":"RoleBinding","factType":"veilingdeelname","role":"veilingjutter"}}]}],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
+  let verdeling_case =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "V1", "objectType": "Strandveiling", "attributes": { "veilingopbrengst": { "number": "1001" } },
+        "roles": { "veilingjutters": [ "J1", "J2" ] }, "characteristics": [] },
+      { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "J2", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+  in
+  one_write_boundary_fault "WV-5.7-schrijfgrens" ~place:"J1.veilingdeel" ~value:"1001/2" ~decimals:"0"
+    (write_boundary_session verdeling_doc verdeling_case);
+  (* ch. 7.1: a decision that does not fit decides; the rule beneath it does
+     not, and the session faults once *)
+  let toeslag_doc = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"geschatte gewicht","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}},{"node":"Attribute","name":"toeslaggrond","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}},{"node":"Attribute","name":"toeslag","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"gemerkt","kind":"adjectival"}]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[],"prioritizedDefaults":[{"node":"PrioritizedDefaults","name":"toeslag","subject":"Vondst","attribute":"toeslag","defaults":[{"node":"Default","name":"gewogen toeslag","justification":{"node":"Predicate","kind":"filled","operand":{"node":"AttributeReference","attribute":"toeslaggrond","subjectType":"Vondst","source":{"snippet":"zijn toeslaggrond"}},"negated":false,"digits":0,"source":{"snippet":"zijn toeslaggrond gevuld is"}},"consequence":{"node":"Binary","op":"plus","left":{"node":"Binary","op":"dividedBy","left":{"node":"AttributeReference","attribute":"toeslaggrond","subjectType":"Vondst","source":{"snippet":"zijn toeslaggrond"}},"right":{"node":"AttributeReference","attribute":"geschatte gewicht","subjectType":"Vondst","source":{"snippet":"zijn geschatte gewicht"}},"type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"zijn toeslaggrond gedeeld door zijn geschatte gewicht"}},"right":{"node":"Literal","value":{"number":"5.00"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"5,00"}},"type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"(zijn toeslaggrond gedeeld door zijn geschatte gewicht) plus 5,00"}},"exceptions":{"unordered":false,"members":[{"node":"ExceptionGroup","defaults":[{"node":"Default","name":"gemerkte toeslag","justification":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"Predicate","kind":"filled","operand":{"node":"AttributeReference","attribute":"toeslaggrond","subjectType":"Vondst","source":{"snippet":"zijn toeslaggrond"}},"negated":false,"digits":0,"source":{"snippet":"zijn toeslaggrond gevuld is"}},{"node":"CharacteristicCheck","characteristic":"gemerkt","negated":false,"source":{"snippet":"hij gemerkt is"}}],"source":{"snippet":"zijn toeslaggrond gevuld is en hij gemerkt is"}},"consequence":{"node":"Literal","value":{"number":"2.00"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"2,00"}}}],"source":{"snippet":"Uitzondering op gewogen toeslag"}}]}},{"node":"Default","name":"toeslag","justification":{"node":"Compound","quantifier":"all","threshold":0,"parts":[],"source":{"snippet":"altijd"}},"consequence":{"node":"Literal","value":{"number":"1.00"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"1,00"}}}],"validity":{"node":"Validity"}}]},"diagnostics":[]}|} in
+  let toeslag_case =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "V6", "objectType": "Vondst",
+      "attributes": { "geschatte gewicht": { "number": "30.00" }, "toeslaggrond": { "number": "100.00" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+  in
+  one_write_boundary_fault "WV-7.1-past-niet" ~place:"V6.toeslag" ~value:"25/3" ~decimals:"2"
+    (write_boundary_session toeslag_doc toeslag_case)
+
 (* --- verification-round regressions ------------------------------------- *)
 
 let () =
