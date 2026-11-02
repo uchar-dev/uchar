@@ -420,10 +420,10 @@ class DimensionCellWitnessTest {
                 "0");
     }
 
-    /** jutterswet-cel-schrijfgrens: 1.25 maal 1.5 is 1.875, which the 2 decimals of the cell najaar do not hold (EF-006,
+    /** wf023-cel-schrijfgrens: 1.25 maal 1.5 is 1.875, which the 2 decimals of the cell najaar do not hold (EF-006,
      *  RUNTIME-SEMANTICS ch. 2.4 point 1), its place the cell, as the reference interpreter names it. */
     @Test void a_value_a_cell_does_not_hold_is_the_fault_of_the_write_boundary() throws Exception {
-        Path red = Path.of("..", "..", "corpus", "red", "jutterswet-cel-schrijfgrens");
+        Path red = Path.of("..", "..", "corpus", "negative", "wf023-cel-schrijfgrens");
         for (DroolsBackend.Branch branch : BRANCHES) {
             CaseRunner.RedResult r = CaseRunner.runRed(red.resolve("ir.json"), red.resolve("case1.json"), branch);
             assertEquals("FAULT", r.status(), () -> branch + ": " + r);

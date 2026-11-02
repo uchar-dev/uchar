@@ -1,0 +1,36 @@
+Parameter het heffingspercentage : Percentage (getal met 1 decimalen)
+
+Objecttype de Vondst (mv: Vondsten)
+    de opbrengst Numeriek (geheel getal);
+    het aantal deelnemers Numeriek (geheel getal);
+    de taxatie Numeriek (getal met 2 decimalen);
+    het ruwe aandeel Numeriek (getal);
+    het aandeel Numeriek (geheel getal);
+    het derde deel Numeriek (getal met 2 decimalen);
+    het kwart Numeriek (getal met 2 decimalen);
+    de heffing Numeriek (getal met 2 decimalen);
+    de taxatiewaarde Numeriek (geheel getal);
+
+Regel ruw aandeel
+    geldig altijd
+        Het ruwe aandeel van een Vondst moet berekend worden als zijn opbrengst gedeeld door zijn aantal deelnemers.
+
+Regel aandeel
+    geldig altijd
+        Het aandeel van een Vondst moet berekend worden als zijn ruwe aandeel naar beneden afgerond op 0 decimalen.
+
+Regel derde deel
+    geldig altijd
+        Het derde deel van een Vondst moet berekend worden als zijn opbrengst gedeeld door 3 rekenkundig afgerond op 2 decimalen.
+
+Regel kwart
+    geldig altijd
+        Het kwart van een Vondst moet berekend worden als zijn opbrengst gedeeld door 4.
+
+Regel heffing
+    geldig altijd
+        De heffing van een Vondst moet berekend worden als (het heffingspercentage van zijn taxatie) naar beneden afgerond op 2 decimalen.
+
+Regel taxatiewaarde
+    geldig altijd
+        De taxatiewaarde van een Vondst moet berekend worden als zijn taxatie maal 100.

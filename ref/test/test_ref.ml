@@ -10826,6 +10826,13 @@ let () =
       {|{"node": "Binary", "op": "dividedBy", "left": %s, "right": %s, "type": {"node": "Number", "whole": false, "decimals": 0, "sign": "unspecified"}, "source": {"snippet": "gedeeld door"}}|}
       left_side right_side
   in
+  (* a whole target takes a quotient through a rounding (the precision gate,
+     ch. 2.4); the rounding rounds a leeg quotient to leeg *)
+  let rounded e =
+    Printf.sprintf
+      {|{"node": "Rounding", "base": %s, "mode": "halfAwayFromZero", "decimals": 0, "type": %s, "source": {"snippet": "rekenkundig afgerond op 0 decimalen"}}|}
+      e number_json
+  in
   let rule ~name ~attribute:target ~value ?condition ?(init = false) ?presentation () =
     ( name,
       Printf.sprintf
@@ -10848,11 +10855,13 @@ let () =
   in
   let wage = rule ~name:"bergloon" ~attribute:"bergloon" ~value:(own "taxatie") ~condition:(check_of "erkend") ~presentation:"equation" () in
   let default_wage value = rule ~name:"standaardbergloon" ~attribute:"bergloon" ~value ~init:true () in
-  let share = rule ~name:"aandeel" ~attribute:"aandeel" ~value:(divided (own "opbrengst") (own "bergloon")) ~presentation:"calculation" () in
-  let doc rule_defs =
+  let share = rule ~name:"aandeel" ~attribute:"aandeel" ~value:(rounded (divided (own "opbrengst") (own "bergloon"))) ~presentation:"calculation" () in
+  let doc ?(attributes = [ "taxatie"; "opbrengst"; "aantal deelnemers"; "bergloon"; "aandeel"; "toeslag" ]) ?(dates = []) rule_defs =
     Printf.sprintf
       {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten", "attributes": [%s], "characteristics": [%s]}], "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
-      (String.concat ", " (List.map attribute [ "taxatie"; "opbrengst"; "aantal deelnemers"; "bergloon"; "aandeel"; "toeslag" ]))
+      (String.concat ", "
+         (List.map attribute attributes
+         @ List.map (fun d -> Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": {"node": "Date", "precision": "day"}}|} d) dates))
       (String.concat ", " (List.map characteristic [ "gemeld"; "erkend" ]))
       (String.concat ", " (List.map snd rule_defs))
   in
@@ -10877,11 +10886,11 @@ let () =
       (orders rule_defs)
   in
   (* document A: the rule bergloon decides, so the initialisation is not evaluated *)
-  let a = [ recognition; wage; default_wage (divided (own "opbrengst") (own "aantal deelnemers")) ] in
+  let a = [ recognition; wage; default_wage (rounded (divided (own "opbrengst") (own "aantal deelnemers"))) ] in
   in_every_order "WV-5.7-fixpoint-a" a
     (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 100); ("aantal deelnemers", 0) ] ~chars:[ "gemeld" ]
        (expected [ value "bergloon" 30; consistent ]));
-  in_every_order "WV-5.7-fixpoint-a-nonexact" a
+  in_every_order "WV-5.7-fixpoint-a-three" a
     (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 100); ("aantal deelnemers", 3) ] ~chars:[ "gemeld" ]
        (expected [ value "bergloon" 30; consistent ]));
   (* the initialisation and the rule come to one value: the rule decides all the same *)
@@ -10892,7 +10901,7 @@ let () =
   in
   in_every_order "WV-5.7-fixpoint-a-equal"
     [ recognition; wage;
-      default_wage (plus (divided (own "opbrengst") (own "aantal deelnemers")) (own "taxatie")) ]
+      default_wage (rounded (plus (divided (own "opbrengst") (own "aantal deelnemers")) (own "taxatie"))) ]
     (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 100); ("aantal deelnemers", 0) ] ~chars:[ "gemeld" ]
        (expected [ value "bergloon" 30; consistent ]));
   (* its flank: the initialisation is evaluated, and its deposit stands *)
@@ -10913,23 +10922,47 @@ let () =
   in_every_order "WV-5.7-fixpoint-b-flank" b
     (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 90) ] ~chars:[]
        (expected [ value "bergloon" 0; empty "aandeel"; on_channel "aandeel" "EF-005" ]));
-  (* a fault replaced as a deposit is: 90 by 7 does not fit, 90 by 30 does *)
-  let c7 = [ recognition; wage; default_wage (number 7); share ] in
-  in_every_order "WV-5.7-fixpoint-fault-between" c7
-    (case_of ~attrs:[ ("taxatie", 30); ("opbrengst", 90) ] ~chars:[ "gemeld" ]
-       (expected [ value "bergloon" 30; value "aandeel" 3; consistent ]));
-  (* its flank: 90 by 7 at the fixpoint is the fault, in every order *)
+  (* a fault replaced as a deposit is: the date with day 30 in month 2 names no
+     calendar day (EF-032), the one with day 28 does *)
+  let term = rule ~name:"bergtermijn" ~attribute:"bergtermijn" ~value:(own "opgegeven termijn") ~condition:(check_of "erkend") ~presentation:"equation" () in
+  let default_term = rule ~name:"standaardbergtermijn" ~attribute:"bergtermijn" ~value:(number 30) ~init:true () in
+  let due =
+    rule ~name:"vervaldag" ~attribute:"vervaldag"
+      ~value:
+        (Printf.sprintf
+           {|{"node": "BuiltinCall", "kind": "dateWith", "arguments": [%s, %s, %s], "type": {"node": "Date", "precision": "day"}, "source": {"snippet": "de datum met jaar, maand en dag"}}|}
+           (number 2025) (own "vervalmaand") (own "bergtermijn"))
+      ~presentation:"equation" ()
+  in
+  let e = [ recognition; term; default_term; due ] in
+  let e_doc = doc ~attributes:[ "opgegeven termijn"; "vervalmaand"; "bergtermijn" ] ~dates:[ "vervaldag" ] in
+  let day a v = Printf.sprintf {|{"kind": "attributeValue", "label": "V1", "attribute": "%s", "value": {"date": "%s"}}|} a v in
   List.iter
     (fun order ->
-      with_files ~ir:(doc order)
+      plays
+        ~ident:(Printf.sprintf "WV-5.7-fixpoint-fault-between [%s]" (String.concat ", " (List.map fst order)))
+        ~ir:(e_doc order)
         ~case_data:
-          (case_of ~attrs:[ ("taxatie", 7); ("opbrengst", 90) ] ~chars:[ "gemeld" ]
-             {|"expectedFault": {"code": "EF-006", "params": {}}|})
+          (case_of ~attrs:[ ("opgegeven termijn", 28); ("vervalmaand", 2) ] ~chars:[ "gemeld" ]
+             (expected [ value "bergtermijn" 28; day "vervaldag" "2025-02-28"; consistent ]))
+        (fun _ -> ()))
+    (orders e);
+  (* its flank: day 31 in month 4 at the fixpoint is the fault, in every order *)
+  List.iter
+    (fun order ->
+      with_files ~ir:(e_doc order)
+        ~case_data:
+          (case_of ~attrs:[ ("opgegeven termijn", 31); ("vervalmaand", 4) ] ~chars:[ "gemeld" ]
+             {|"expectedFault": {"code": "EF-032", "params": {}}|})
         (fun _ _ evaluate ->
-          expect_fault_msg
-            (Printf.sprintf "WV-5.7-fixpoint-fault-stands [%s]" (String.concat ", " (List.map fst order)))
-            evaluate "does not fit the declared 0 decimals"))
-    (orders c7);
+          match evaluate () with
+          | exception Value.Fault { code; _ } ->
+              check
+                (Printf.sprintf "WV-5.7-fixpoint-fault-stands [%s]" (String.concat ", " (List.map fst order)))
+                (code = Some "EF-032")
+          | _ ->
+              check (Printf.sprintf "WV-5.7-fixpoint-fault-stands [%s] (no fault)" (String.concat ", " (List.map fst order))) false))
+    (orders e);
   (* documents C and D: an input blocks the initialisation before its condition
      is evaluated, which faults or deposits only where the target is empty *)
   let surcharge condition =
@@ -11716,7 +11749,7 @@ let () =
   plays_named ~ident:"WV-5.8c-schrijven-staande-invoer" ~ir:(read_corpus "corpus/golden/jutterswet-seizoenkopie/ir.json")
     ~case_data:(read_corpus "corpus/golden/jutterswet-seizoenkopie/case1-kopie-en-staande-invoer.json") ();
   (* the write boundary of a cell: "maal 1,5" on voorjaar 1.25 is 15/8 *)
-  let red = "corpus/red/jutterswet-cel-schrijfgrens/" in
+  let red = "corpus/negative/wf023-cel-schrijfgrens/" in
   (match
      with_files ~ir:(read_corpus (red ^ "ir.json")) ~case_data:(read_corpus (red ^ "case1.json")) (fun _ _ evaluate ->
          evaluate ())

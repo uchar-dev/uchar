@@ -73,67 +73,79 @@
               }
             },
             "value": {
-              "node": "Fold",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "unspecified"
-              },
-              "list": {
-                "node": "ParameterReference",
-                "parameter": "kindertallen",
-                "source": {
-                  "snippet": "de kindertallen"
-                }
-              },
-              "function": {
-                "node": "Lambda",
-                "parameters": [
-                  {
-                    "name": "acc",
-                    "datatype": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "unspecified"
-                    }
-                  },
-                  {
-                    "name": "x",
-                    "datatype": {
-                      "node": "Number",
-                      "whole": true,
-                      "decimals": 0,
-                      "sign": "nonNegative"
-                    }
+              "node": "Rounding",
+              "base": {
+                "node": "Fold",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "list": {
+                  "node": "ParameterReference",
+                  "parameter": "kindertallen",
+                  "source": {
+                    "snippet": "de kindertallen"
                   }
-                ],
-                "body": {
-                  "node": "Binary",
-                  "op": "plus",
-                  "left": {
-                    "node": "BinderRef",
-                    "name": "acc",
-                    "source": {
-                      "snippet": "het opgetelde deel"
+                },
+                "function": {
+                  "node": "Lambda",
+                  "parameters": [
+                    {
+                      "name": "acc",
+                      "datatype": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
+                      }
+                    },
+                    {
+                      "name": "x",
+                      "datatype": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "nonNegative"
+                      }
                     }
-                  },
-                  "right": {
+                  ],
+                  "body": {
                     "node": "Binary",
-                    "op": "dividedBy",
+                    "op": "plus",
                     "left": {
-                      "node": "ParameterReference",
-                      "parameter": "grondslag",
+                      "node": "BinderRef",
+                      "name": "acc",
                       "source": {
-                        "snippet": "de grondslag"
+                        "snippet": "het opgetelde deel"
                       }
                     },
                     "right": {
-                      "node": "BinderRef",
-                      "name": "x",
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "ParameterReference",
+                        "parameter": "grondslag",
+                        "source": {
+                          "snippet": "de grondslag"
+                        }
+                      },
+                      "right": {
+                        "node": "BinderRef",
+                        "name": "x",
+                        "source": {
+                          "snippet": "het kindertal"
+                        }
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
+                      },
                       "source": {
-                        "snippet": "het kindertal"
+                        "snippet": "de grondslag gedeeld door het kindertal"
                       }
                     },
                     "type": {
@@ -143,8 +155,17 @@
                       "sign": "unspecified"
                     },
                     "source": {
-                      "snippet": "de grondslag gedeeld door het kindertal"
+                      "snippet": "het opgetelde deel plus het deel"
                     }
+                  },
+                  "source": {
+                    "snippet": "de kinddelen opgeteld"
+                  }
+                },
+                "init": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "0.00"
                   },
                   "type": {
                     "node": "Number",
@@ -153,30 +174,23 @@
                     "sign": "unspecified"
                   },
                   "source": {
-                    "snippet": "het opgetelde deel plus het deel"
+                    "snippet": "0.00"
                   }
                 },
                 "source": {
-                  "snippet": "de kinddelen opgeteld"
+                  "snippet": "de kindertallen gevouwen tot het delertotaal"
                 }
               },
-              "init": {
-                "node": "Literal",
-                "value": {
-                  "number": "0.00"
-                },
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "unspecified"
-                },
-                "source": {
-                  "snippet": "0.00"
-                }
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
               },
               "source": {
-                "snippet": "de kindertallen gevouwen tot het delertotaal"
+                "snippet": "(de kindertallen gevouwen tot het delertotaal) rekenkundig afgerond op 2 decimalen"
               }
             },
             "initialisation": false,

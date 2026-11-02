@@ -29,17 +29,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * declared decimals do not hold it is the evaluation fault EF-006, a logical {@code Fault} in place of the write, with
  * the parameters of ch. 5.7b, the place, the exact value and the decimals; the same form with a value that fits plays.
  * The value counts and not the scale it is written at. Per form a document: a division ("zijn opbrengst gedeeld door
- * 2"), a product ({@code corpus/red/jutterswet-halvering-past-niet}), a copy ({@code jutterswet-kopie-past-niet}), a
- * literal ({@code jutterswet-vast-bergloon-past-niet}), an allocation ({@code jutterswet-verdeling-past-niet}), an
- * initialisation ({@code jutterswet-initialisatie-past-niet}), a default ({@code jutterswet-afwijking-past-niet}), each of
+ * 2"), a product ({@code corpus/negative/wf023-halvering-past-niet}), a copy ({@code wf023-kopie-past-niet}), a
+ * literal ({@code wf023-vast-bergloon-past-niet}), an allocation ({@code corpus/red/jutterswet-verdeling-past-niet}), an
+ * initialisation ({@code wf023-initialisatie-past-niet}), a default ({@code wf023-afwijking-past-niet}), each of
  * the last two with its rules in both orders ({@code -omgekeerd}), and the initialisation of an object creation, the
- * golden {@code jutterswet-strandmelding} with an omvang of three decimals. Beside them: an intermediate state that does
+ * golden {@code jutterswet-strandmelding} with an omvang of three decimals. The precision gate of WF-023 refuses every
+ * one of these documents but the allocation before evaluation; the fault of the write boundary stands behind it, and the
+ * negative corpus keeps the case beside the document. Beside them: an intermediate state that does
  * not fit with a fixpoint that does plays in every order of its rules (the families of the measurement of the card, an
- * initialisation overwritten, a reader withdrawn, an initialisation displaced, a chain); the input precision fence EF-004
+ * initialisation overwritten ({@code src/test/resources/write-boundary/fout-op-tussenstand}, in both orders), a reader
+ * withdrawn, an initialisation displaced, a chain); the input precision fence EF-004
  * on an attribute, a parameter and a timeline; the exact distribution of an allocation with one fault per allocation and
  * source; and a default whose decision does not fit decides, so the lower default of its chain is displaced, as the
  * reference interpreter lets it decide (RUNTIME-SEMANTICS ch. 7.1), in the general form of a stack and in its simple form
- * ({@code src/test/resources/write-boundary/simple-default}, the toeslag of {@code jutterswet-afwijking-past-niet}
+ * ({@code src/test/resources/write-boundary/simple-default}, the toeslag of {@code wf023-afwijking-past-niet}
  * without its exception).
  *
  * <p><b>Red</b> on {@code a0e0fa0ee}, before the card, with the shaded jar of that commit (the outcomes are in the card's
@@ -51,6 +54,10 @@ class WriteBoundaryWitnessTest {
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
     private static final Path RED = Path.of("..", "..", "corpus", "red");
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
+    // the documents the precision gate of WF-023 refuses before evaluation, with the case on which their fault stands
+    private static final Path NEGATIVE = Path.of("..", "..", "corpus", "negative");
+    // the documents of an intermediate state that does not fit, which the gate refuses as goldens as well
+    private static final Path RESOURCES = Path.of("src", "test", "resources", "write-boundary");
 
     private static final String UNBOUNDED = "{\"node\":\"Number\",\"whole\":false,\"decimals\":0,\"sign\":\"unspecified\"}";
 
@@ -66,21 +73,21 @@ class WriteBoundaryWitnessTest {
     }
 
     @Test void a_product_that_does_not_fit_faults_and_one_that_fits_plays() throws Exception {
-        Path ir = RED.resolve("jutterswet-halvering-past-niet").resolve("ir.json");
-        fault(red(ir, redCase("jutterswet-halvering-past-niet")), "J1.veilingdeel", "1001/2", "0");
+        Path ir = NEGATIVE.resolve("wf023-halvering-past-niet").resolve("ir.json");
+        fault(red(ir, negativeCase("wf023-halvering-past-niet")), "J1.veilingdeel", "1001/2", "0");
         plays(ir, instances(List.of(instance("J1", "Jutter", Map.of("opbrengst", "1000"), List.of(), Map.of()))),
                 value("J1", "veilingdeel", "500"));
     }
 
     @Test void a_copy_faults_on_its_value_and_not_on_its_scale() throws Exception {
-        Path ir = RED.resolve("jutterswet-kopie-past-niet").resolve("ir.json");
-        fault(red(ir, redCase("jutterswet-kopie-past-niet")), "V1.bergloon", "3/2", "0");
+        Path ir = NEGATIVE.resolve("wf023-kopie-past-niet").resolve("ir.json");
+        fault(red(ir, negativeCase("wf023-kopie-past-niet")), "V1.bergloon", "3/2", "0");
         plays(ir, vondst("V1", Map.of("taxatie", "1.00")), value("V1", "bergloon", "1"));
     }
 
     @Test void a_literal_that_does_not_fit_faults_and_one_that_fits_plays() throws Exception {
-        Path ir = RED.resolve("jutterswet-vast-bergloon-past-niet").resolve("ir.json");
-        fault(red(ir, redCase("jutterswet-vast-bergloon-past-niet")), "V1.bergloon", "3/2", "0");
+        Path ir = NEGATIVE.resolve("wf023-vast-bergloon-past-niet").resolve("ir.json");
+        fault(red(ir, negativeCase("wf023-vast-bergloon-past-niet")), "V1.bergloon", "3/2", "0");
         // the same literal of one decimal with a whole value: 1,0 writes 1
         ObjectNode doc = (ObjectNode) TmsDocuments.JSON.readTree(ir.toFile());
         ObjectNode literal = (ObjectNode) IrPath.version(doc, "rules", 0, 0).get("value");
@@ -99,17 +106,17 @@ class WriteBoundaryWitnessTest {
     }
 
     @Test void an_initialisation_that_does_not_fit_faults_in_both_orders_and_one_that_fits_plays() throws Exception {
-        for (String name : List.of("jutterswet-initialisatie-past-niet", "jutterswet-initialisatie-past-niet-omgekeerd")) {
-            Path ir = RED.resolve(name).resolve("ir.json");
-            fault(red(ir, redCase(name)), "V6.bergloon", "100/3", "0");
+        for (String name : List.of("wf023-initialisatie-past-niet", "wf023-initialisatie-past-niet-omgekeerd")) {
+            Path ir = NEGATIVE.resolve(name).resolve("ir.json");
+            fault(red(ir, negativeCase(name)), "V6.bergloon", "100/3", "0");
             plays(ir, vondst("V6", Map.of("opbrengst", "100", "aantal deelnemers", "4")), value("V6", "bergloon", "25"));
         }
     }
 
     @Test void a_default_that_does_not_fit_faults_in_both_orders_and_one_that_fits_plays() throws Exception {
-        for (String name : List.of("jutterswet-afwijking-past-niet", "jutterswet-afwijking-past-niet-omgekeerd")) {
-            Path ir = RED.resolve(name).resolve("ir.json");
-            fault(red(ir, redCase(name)), "V6.toeslag", "25/3", "2");
+        for (String name : List.of("wf023-afwijking-past-niet", "wf023-afwijking-past-niet-omgekeerd")) {
+            Path ir = NEGATIVE.resolve(name).resolve("ir.json");
+            fault(red(ir, negativeCase(name)), "V6.toeslag", "25/3", "2");
             plays(ir, vondst("V6", Map.of("geschatte gewicht", "30.00", "toeslaggrond", "90.00")),
                     value("V6", "toeslag", "8.00"));
         }
@@ -131,8 +138,8 @@ class WriteBoundaryWitnessTest {
     // ---------------- (b) an intermediate state that does not fit, a fixpoint that does ----------------
 
     @Test void an_initialisation_overwritten_plays_in_both_orders() throws Exception {
-        for (String name : List.of("jutterswet-fout-op-tussenstand", "jutterswet-fout-op-tussenstand-omgekeerd")) {
-            Path map = GOLDEN.resolve(name);
+        for (String name : List.of("fout-op-tussenstand", "fout-op-tussenstand-omgekeerd")) {
+            Path map = RESOURCES.resolve(name);
             List<Path> cases;
             try (Stream<Path> s = Files.list(map)) {
                 cases = s.filter(f -> f.getFileName().toString().matches("case.*\\.json")).sorted().toList();
@@ -208,7 +215,7 @@ class WriteBoundaryWitnessTest {
     }
 
     @Test void a_rational_input_is_held_to_its_declaration_before_it_is_refused_as_a_form() throws Exception {
-        Path ir = RED.resolve("jutterswet-kopie-past-niet").resolve("ir.json");
+        Path ir = NEGATIVE.resolve("wf023-kopie-past-niet").resolve("ir.json");
         CaseRunner.RedResult misfit = red(ir, vondst("V1", Map.of("taxatie", "1/3")));
         assertEquals("EF-004", misfit.code(), misfit::detail);
         assertEquals(List.of(Map.of("place", "V1.taxatie", "value", "1/3", "decimals", "2")), misfit.params(),
@@ -247,9 +254,9 @@ class WriteBoundaryWitnessTest {
     // ---------------- (g) a default whose decision does not fit decides ----------------
 
     @Test void a_default_whose_decision_does_not_fit_displaces_the_lower_defaults() throws Exception {
-        for (String name : List.of("jutterswet-afwijking-past-niet", "jutterswet-afwijking-past-niet-omgekeerd")) {
-            Path ir = RED.resolve(name).resolve("ir.json");
-            JsonNode c = redCase(name);
+        for (String name : List.of("wf023-afwijking-past-niet", "wf023-afwijking-past-niet-omgekeerd")) {
+            Path ir = NEGATIVE.resolve(name).resolve("ir.json");
+            JsonNode c = negativeCase(name);
             String dump = dumpOnBothBranches(ir, c);
             List<String> toeslag = dump.lines().filter(r -> r.startsWith("fact ") && r.contains("toeslag")).toList();
             // the deviation decided, the outcome of its chain stands with its exact decision, its write is the fault,
@@ -262,7 +269,7 @@ class WriteBoundaryWitnessTest {
         // the simple form of the same stack, without the exception: the control fact of the deviation, its Decides,
         // stands beside the fault and displaces the rule beneath it
         Path ir = Path.of("src", "test", "resources", "write-boundary", "simple-default", "ir.json");
-        JsonNode c = redCase("jutterswet-afwijking-past-niet");
+        JsonNode c = negativeCase("wf023-afwijking-past-niet");
         ((ObjectNode) c.get("input").get("instances").get(0)).putObject("attributes").set("geschatte gewicht",
                 TmsDocuments.JSON.readTree("{\"number\":\"30.00\"}"));
         ((ObjectNode) c.get("input").get("instances").get(0).get("attributes")).set("toeslaggrond",
@@ -314,6 +321,11 @@ class WriteBoundaryWitnessTest {
     /** The case of the red corpus case {@code name}. */
     private static JsonNode redCase(String name) throws Exception {
         return TmsDocuments.JSON.readTree(RED.resolve(name).resolve("case1.json").toFile());
+    }
+
+    /** The case beside the negative corpus document {@code name}. */
+    private static JsonNode negativeCase(String name) throws Exception {
+        return TmsDocuments.JSON.readTree(NEGATIVE.resolve(name).resolve("case1.json").toFile());
     }
 
     /** The red path of the red corpus case {@code name} on both branches. */

@@ -1,14 +1,15 @@
 # jutterswet-fout-op-tussenstand-omgekeerd — an evaluation fault on a state between
 
 The hard-fault variant of document B of RUNTIME-SEMANTICS ch. 5.7, "Faults and
-deposits are read at the fixpoint". The initialisation writes 7, and 90 gedeeld
-door 7 fits no whole target (EF-006). The rules stand in the reverse order of `jutterswet-fout-op-tussenstand`, with the same expectations.
+deposits are read at the fixpoint". The initialisation writes a bergtermijn of
+30, and the date with year 2025, month 2 and day 30 names no calendar day
+(EF-032, ch. 3.8). The rules stand in the reverse order of `jutterswet-fout-op-tussenstand`, with the same expectations.
 
-| case | input | `bergloon` | `aandeel` | channel |
+| case | input | `bergtermijn` | `vervaldag` | channel |
 |---|---|---|---|---|
-| case1-past-aan-fixpunt | V1 gemeld, taxatie 30, opbrengst 90 | **30** | **3** | consistent |
-| case2-initialisatie-past | V2 not gemeld, opbrengst 70 | **7** | **10** | consistent |
+| case1-past-aan-fixpunt | V1 gemeld, opgegeven termijn 28, vervalmaand 2 | **28** | **2025-02-28** | consistent |
+| case2-initialisatie-past | V2 not gemeld, vervalmaand 3 | **30** | **2025-03-30** | consistent |
 
-Where the reader is evaluated on the 7 of case 1, its fault is an outcome that
-the next evaluation replaces. Where the 90/7 stands, the session faults:
-`corpus/red/jutterswet-fout-aan-fixpunt`.
+Where the reader `vervaldag` is evaluated on the 30 of case 1, its fault is an
+outcome that the next evaluation replaces. Where a day that is no calendar day
+stands, the session faults: `corpus/red/jutterswet-fout-aan-fixpunt-omgekeerd`.

@@ -219,32 +219,46 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "plus",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "naadtoeslag",
-                "subjectType": "Zeil",
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "naadtoeslag",
+                  "subjectType": "Zeil",
+                  "source": {
+                    "snippet": "de naadtoeslag van het Zeil"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "basiszoom",
+                  "subjectType": "Zeil",
+                  "source": {
+                    "snippet": "de basiszoom van het Zeil"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "de naadtoeslag van het Zeil"
+                  "snippet": "de naadtoeslag van het Zeil plus de basiszoom van het Zeil"
                 }
               },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "basiszoom",
-                "subjectType": "Zeil",
-                "source": {
-                  "snippet": "de basiszoom van het Zeil"
-                }
-              },
+              "mode": "halfAwayFromZero",
+              "decimals": 1,
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 2,
+                "decimals": 1,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de naadtoeslag van het Zeil plus de basiszoom van het Zeil"
+                "snippet": "(de naadtoeslag van het Zeil plus de basiszoom van het Zeil) rekenkundig afgerond op 1 decimalen"
               }
             },
             "initialisation": false,
@@ -269,32 +283,46 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "dividedBy",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "materiaalkosten",
-                "subjectType": "Zeil",
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "materiaalkosten",
+                  "subjectType": "Zeil",
+                  "source": {
+                    "snippet": "de materiaalkosten van het Zeil"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "panelen",
+                  "subjectType": "Zeil",
+                  "source": {
+                    "snippet": "de panelen van het Zeil"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "de materiaalkosten van het Zeil"
+                  "snippet": "de materiaalkosten van het Zeil gedeeld door de panelen van het Zeil"
                 }
               },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "panelen",
-                "subjectType": "Zeil",
-                "source": {
-                  "snippet": "de panelen van het Zeil"
-                }
-              },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 0,
+                "decimals": 2,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de materiaalkosten van het Zeil gedeeld door de panelen van het Zeil"
+                "snippet": "(de materiaalkosten van het Zeil gedeeld door de panelen van het Zeil) rekenkundig afgerond op 2 decimalen"
               }
             },
             "initialisation": false,

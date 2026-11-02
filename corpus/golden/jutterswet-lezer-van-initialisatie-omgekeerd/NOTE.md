@@ -1,7 +1,8 @@
 # jutterswet-lezer-van-initialisatie-omgekeerd — a reader of a value the initialisation holds for a while
 
 Document B of RUNTIME-SEMANTICS ch. 5.7, "Faults and deposits are read at the
-fixpoint". `aandeel` divides the opbrengst by the `bergloon`; the rule
+fixpoint". `aandeel` divides the opbrengst by the `bergloon`, rekenkundig afgerond op 0
+decimalen; the rule
 `bergloon` writes the taxatie where the Vondst is erkend, and the
 initialisation writes 0. The rules stand in the reverse order of `jutterswet-lezer-van-initialisatie`, with the same expectations.
 

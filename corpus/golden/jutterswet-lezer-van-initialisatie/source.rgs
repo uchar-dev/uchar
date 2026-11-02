@@ -21,4 +21,4 @@ Regel standaardbergloon
 
 Regel aandeel
     geldig altijd
-        Het aandeel van een Vondst moet berekend worden als zijn opbrengst gedeeld door zijn bergloon.
+        Het aandeel van een Vondst moet berekend worden als zijn opbrengst gedeeld door zijn bergloon rekenkundig afgerond op 0 decimalen.

@@ -9,7 +9,7 @@ Objecttype de Vondst (mv: Vondsten)
 
 Regel aandeel
     geldig altijd
-        Het aandeel van een Vondst moet berekend worden als zijn opbrengst gedeeld door zijn bergloon.
+        Het aandeel van een Vondst moet berekend worden als zijn opbrengst gedeeld door zijn bergloon rekenkundig afgerond op 0 decimalen.
 
 Regel standaardbergloon
     geldig altijd

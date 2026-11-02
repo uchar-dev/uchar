@@ -1,0 +1,3 @@
+WF-023.precision-exceeds
+valueDecimals=1
+targetDecimals=0

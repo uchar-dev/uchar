@@ -307,25 +307,45 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "plus",
-              "left": {
+              "node": "Rounding",
+              "base": {
                 "node": "Binary",
-                "op": "dividedBy",
+                "op": "plus",
                 "left": {
-                  "node": "AttributeReference",
-                  "attribute": "som",
-                  "subjectType": "Meting",
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "som",
+                    "subjectType": "Meting",
+                    "source": {
+                      "snippet": "de som van de Meting"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "deler",
+                    "subjectType": "Meting",
+                    "source": {
+                      "snippet": "de deler van de Meting"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
                   "source": {
-                    "snippet": "de som van de Meting"
+                    "snippet": "de som van de Meting gedeeld door de deler van de Meting"
                   }
                 },
                 "right": {
                   "node": "AttributeReference",
-                  "attribute": "deler",
+                  "attribute": "toeslag",
                   "subjectType": "Meting",
                   "source": {
-                    "snippet": "de deler van de Meting"
+                    "snippet": "de toeslag van de Meting"
                   }
                 },
                 "type": {
@@ -335,25 +355,19 @@
                   "sign": "unspecified"
                 },
                 "source": {
-                  "snippet": "de som van de Meting gedeeld door de deler van de Meting"
+                  "snippet": "de som van de Meting gedeeld door de deler van de Meting plus de toeslag van de Meting"
                 }
               },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "toeslag",
-                "subjectType": "Meting",
-                "source": {
-                  "snippet": "de toeslag van de Meting"
-                }
-              },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
-                "whole": false,
+                "whole": true,
                 "decimals": 0,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de som van de Meting gedeeld door de deler van de Meting plus de toeslag van de Meting"
+                "snippet": "(de som van de Meting gedeeld door de deler van de Meting plus de toeslag van de Meting) rekenkundig afgerond op 0 decimalen"
               }
             },
             "condition": {

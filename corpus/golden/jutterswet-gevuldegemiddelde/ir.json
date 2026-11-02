@@ -225,32 +225,46 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "dividedBy",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "vondstwaarde",
-                "subjectType": "Jutter",
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "vondstwaarde",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "de vondstwaarde van de Jutter"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "aantal gewaardeerde vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "de aantal gewaardeerde vondsten van de Jutter"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "de vondstwaarde van de Jutter"
+                  "snippet": "de vondstwaarde van de Jutter gedeeld door het aantal gewaardeerde vondsten van de Jutter"
                 }
               },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "aantal gewaardeerde vondsten",
-                "subjectType": "Jutter",
-                "source": {
-                  "snippet": "de aantal gewaardeerde vondsten van de Jutter"
-                }
-              },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
-                "whole": false,
+                "whole": true,
                 "decimals": 0,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de vondstwaarde van de Jutter gedeeld door het aantal gewaardeerde vondsten van de Jutter"
+                "snippet": "(de vondstwaarde van de Jutter gedeeld door het aantal gewaardeerde vondsten van de Jutter) rekenkundig afgerond op 0 decimalen"
               }
             },
             "condition": {

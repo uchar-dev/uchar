@@ -1,0 +1,83 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "opbrengst": {
+            "number": "70"
+          },
+          "aantal deelnemers": {
+            "number": "5"
+          },
+          "taxatie": {
+            "number": "99.99"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "heffingspercentage": {
+        "number": "12.5"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "ruwe aandeel",
+      "value": {
+        "number": "14"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "aandeel",
+      "value": {
+        "number": "14"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "derde deel",
+      "value": {
+        "number": "23.33"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "kwart",
+      "value": {
+        "number": "17.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "heffing",
+      "value": {
+        "number": "12.49"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "taxatiewaarde",
+      "value": {
+        "number": "9999"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

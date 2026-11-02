@@ -1,0 +1,2 @@
+WF-023.precision-unbounded
+targetDecimals=2

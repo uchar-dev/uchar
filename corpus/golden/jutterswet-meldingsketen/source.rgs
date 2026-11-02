@@ -40,7 +40,7 @@ Regel tijdige aanmelding
 
 Regel meldingsgewicht van een vondst
     geldig altijd
-        Het meldingsgewicht van een Vondst moet berekend worden als het gewicht van de Vondst gedeeld door de weegfactor van de Vondst
+        Het meldingsgewicht van een Vondst moet berekend worden als het gewicht van de Vondst gedeeld door de weegfactor van de Vondst rekenkundig afgerond op 2 decimalen
         indien zijn vinder erkend is.
 
 Regel ongemelde vondst

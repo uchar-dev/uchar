@@ -14,7 +14,7 @@ Regel premie van een berging
 
 Regel helpersdeel van een berging
     geldig altijd
-        Het helpersdeel van een Berging moet berekend worden als de opbrengst van de Berging gedeeld door het helpersaantal van de Berging.
+        Het helpersdeel van een Berging moet berekend worden als de opbrengst van de Berging gedeeld door het helpersaantal van de Berging rekenkundig afgerond op 0 decimalen.
 
 Regel dagdeel van een berging
     geldig altijd

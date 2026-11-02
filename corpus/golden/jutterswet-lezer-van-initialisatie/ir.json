@@ -212,32 +212,46 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "dividedBy",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "opbrengst",
-                "subjectType": "Vondst",
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "opbrengst",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn opbrengst"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "bergloon",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn bergloon"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "zijn opbrengst"
+                  "snippet": "zijn opbrengst gedeeld door zijn bergloon"
                 }
               },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "bergloon",
-                "subjectType": "Vondst",
-                "source": {
-                  "snippet": "zijn bergloon"
-                }
-              },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
-                "whole": false,
+                "whole": true,
                 "decimals": 0,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "zijn opbrengst gedeeld door zijn bergloon"
+                "snippet": "zijn opbrengst gedeeld door zijn bergloon rekenkundig afgerond op 0 decimalen"
               }
             },
             "initialisation": false,

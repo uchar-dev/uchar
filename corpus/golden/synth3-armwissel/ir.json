@@ -90,23 +90,8 @@
               }
             },
             "value": {
-              "node": "Let",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "unspecified"
-              },
-              "binder": "k",
-              "value": {
-                "node": "AttributeReference",
-                "attribute": "inkomen",
-                "subjectType": "Jutter",
-                "source": {
-                  "snippet": "zijn inkomen"
-                }
-              },
-              "body": {
+              "node": "Rounding",
+              "base": {
                 "node": "Let",
                 "type": {
                   "node": "Number",
@@ -114,33 +99,13 @@
                   "decimals": 2,
                   "sign": "unspecified"
                 },
-                "binder": "z",
+                "binder": "k",
                 "value": {
-                  "node": "Binary",
-                  "op": "dividedBy",
-                  "left": {
-                    "node": "BinderRef",
-                    "name": "k",
-                    "source": {
-                      "snippet": "de k"
-                    }
-                  },
-                  "right": {
-                    "node": "AttributeReference",
-                    "attribute": "restpost",
-                    "subjectType": "Jutter",
-                    "source": {
-                      "snippet": "zijn restpost"
-                    }
-                  },
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "unspecified"
-                  },
+                  "node": "AttributeReference",
+                  "attribute": "inkomen",
+                  "subjectType": "Jutter",
                   "source": {
-                    "snippet": "de grondslag gedeeld door zijn restpost"
+                    "snippet": "zijn inkomen"
                   }
                 },
                 "body": {
@@ -151,79 +116,128 @@
                     "decimals": 2,
                     "sign": "unspecified"
                   },
-                  "binder": "w",
+                  "binder": "z",
                   "value": {
-                    "node": "BinderRef",
-                    "name": "k",
-                    "source": {
-                      "snippet": "de k"
-                    }
-                  },
-                  "body": {
-                    "node": "IfThenElse",
+                    "node": "Binary",
+                    "op": "dividedBy",
+                    "left": {
+                      "node": "BinderRef",
+                      "name": "k",
+                      "source": {
+                        "snippet": "de k"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "restpost",
+                      "subjectType": "Jutter",
+                      "source": {
+                        "snippet": "zijn restpost"
+                      }
+                    },
                     "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
                       "sign": "unspecified"
                     },
-                    "condition": {
-                      "node": "Comparison",
-                      "op": "greater",
-                      "left": {
-                        "node": "BinderRef",
-                        "name": "w",
-                        "source": {
-                          "snippet": "de w"
-                        }
-                      },
-                      "right": {
-                        "node": "ParameterReference",
-                        "parameter": "drempel",
-                        "source": {
-                          "snippet": "de drempel"
-                        }
-                      },
+                    "source": {
+                      "snippet": "de grondslag gedeeld door zijn restpost"
+                    }
+                  },
+                  "body": {
+                    "node": "Let",
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    },
+                    "binder": "w",
+                    "value": {
+                      "node": "BinderRef",
+                      "name": "k",
                       "source": {
-                        "snippet": "de grondslag boven de grens"
+                        "snippet": "de k"
                       }
                     },
-                    "then": {
-                      "node": "Literal",
-                      "value": {
-                        "number": "0"
-                      },
+                    "body": {
+                      "node": "IfThenElse",
                       "type": {
                         "node": "Number",
                         "whole": false,
                         "decimals": 2,
                         "sign": "unspecified"
                       },
+                      "condition": {
+                        "node": "Comparison",
+                        "op": "greater",
+                        "left": {
+                          "node": "BinderRef",
+                          "name": "w",
+                          "source": {
+                            "snippet": "de w"
+                          }
+                        },
+                        "right": {
+                          "node": "ParameterReference",
+                          "parameter": "drempel",
+                          "source": {
+                            "snippet": "de drempel"
+                          }
+                        },
+                        "source": {
+                          "snippet": "de grondslag boven de grens"
+                        }
+                      },
+                      "then": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "0"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "0,00"
+                        }
+                      },
+                      "else": {
+                        "node": "BinderRef",
+                        "name": "z",
+                        "source": {
+                          "snippet": "de z"
+                        }
+                      },
                       "source": {
-                        "snippet": "0,00"
-                      }
-                    },
-                    "else": {
-                      "node": "BinderRef",
-                      "name": "z",
-                      "source": {
-                        "snippet": "de z"
+                        "snippet": "boven de grens het een, daaronder het ander"
                       }
                     },
                     "source": {
-                      "snippet": "boven de grens het een, daaronder het ander"
+                      "snippet": "de w is w"
                     }
                   },
                   "source": {
-                    "snippet": "de w is w"
+                    "snippet": "de z is z"
                   }
                 },
                 "source": {
-                  "snippet": "de z is z"
+                  "snippet": "de k is k"
                 }
               },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
               "source": {
-                "snippet": "de k is k"
+                "snippet": "(de k is k) rekenkundig afgerond op 2 decimalen"
               }
             },
             "initialisation": false,

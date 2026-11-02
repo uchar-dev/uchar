@@ -5,9 +5,9 @@ RUNTIME-SEMANTICS ch. 7.1: a default deposits only where it decides, and ch.
 The rules stand in the order of the casus; `jutterswet-deling-in-afwijking-omgekeerd` has them in the reverse order, with the same expectations.
 
 - `verhouding`: base 1,00; deviation gewogen gewicht gedeeld door geschatte
-  gewicht, where the gewogen gewicht is gevuld.
-- `toeslag`: base 1,00; deviation (toeslaggrond gedeeld door geschatte gewicht)
-  plus 5,00, where the toeslaggrond is gevuld; below it the exception 2,00 where
+  gewicht, rekenkundig afgerond op 2 decimalen, where the gewogen gewicht is gevuld.
+- `toeslag`: base 1,00; deviation (toeslaggrond gedeeld door geschatte gewicht,
+  rekenkundig afgerond op 2 decimalen) plus 5,00, where the toeslaggrond is gevuld; below it the exception 2,00 where
   the Vondst is gemerkt.
 - `korting`: base 1,00; deviation 7,00 where kortinggrond gedeeld door geschatte
   gewicht leeg is.
@@ -34,6 +34,5 @@ deviation falls through and deposits nothing (case 2, 3). The consequence of
 `toeslag` is filled there, so it decides with its deposit (case 4). The
 justification of `korting` holds on the leeg quotient, so it decides with its
 deposit (case 7, 8); that of `premie` does not hold, so it deposits nothing (case
-9). A default that a higher one displaces is not evaluated, its division or its
-100/30 included (case 5, 6). Where 100/30 plus 5,00 stands, the session faults:
-`corpus/red/jutterswet-afwijking-past-niet`.
+9). A default that a higher one displaces is not evaluated, its division by zero
+included (case 5, 6).

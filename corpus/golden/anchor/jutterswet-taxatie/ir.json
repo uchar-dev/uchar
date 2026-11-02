@@ -179,31 +179,45 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "power",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "zijde",
-                "subjectType": "Kavel",
-                "source": {
-                  "snippet": "de zijde van de Kavel"
-                }
-              },
-              "right": {
-                "node": "Literal",
-                "value": {
-                  "number": "2"
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "power",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "zijde",
+                  "subjectType": "Kavel",
+                  "source": {
+                    "snippet": "de zijde van de Kavel"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "2"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "nonNegative"
+                  },
+                  "source": {
+                    "snippet": "2"
+                  }
                 },
                 "type": {
                   "node": "Number",
-                  "whole": true,
-                  "decimals": 0,
+                  "whole": false,
+                  "decimals": 2,
                   "sign": "nonNegative"
                 },
                 "source": {
-                  "snippet": "2"
+                  "snippet": "de zijde van de Kavel tot de macht 2"
                 }
               },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -211,7 +225,7 @@
                 "sign": "nonNegative"
               },
               "source": {
-                "snippet": "de zijde van de Kavel tot de macht 2"
+                "snippet": "(de zijde van de Kavel tot de macht 2) rekenkundig afgerond op 2 decimalen"
               }
             },
             "initialisation": false,
@@ -236,39 +250,53 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "power",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "ribbe",
-                "subjectType": "Kavel",
-                "source": {
-                  "snippet": "de ribbe van de Kavel"
-                }
-              },
-              "right": {
-                "node": "Literal",
-                "value": {
-                  "number": "3"
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "power",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "ribbe",
+                  "subjectType": "Kavel",
+                  "source": {
+                    "snippet": "de ribbe van de Kavel"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "3"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "nonNegative"
+                  },
+                  "source": {
+                    "snippet": "3"
+                  }
                 },
                 "type": {
                   "node": "Number",
-                  "whole": true,
+                  "whole": false,
                   "decimals": 0,
                   "sign": "nonNegative"
                 },
                 "source": {
-                  "snippet": "3"
+                  "snippet": "de ribbe van de Kavel tot de macht 3"
                 }
               },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
-                "whole": false,
+                "whole": true,
                 "decimals": 0,
                 "sign": "nonNegative"
               },
               "source": {
-                "snippet": "de ribbe van de Kavel tot de macht 3"
+                "snippet": "(de ribbe van de Kavel tot de macht 3) rekenkundig afgerond op 0 decimalen"
               }
             },
             "initialisation": false,
@@ -293,39 +321,53 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "power",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "krimp",
-                "subjectType": "Kavel",
-                "source": {
-                  "snippet": "de krimp van de Kavel"
-                }
-              },
-              "right": {
-                "node": "Literal",
-                "value": {
-                  "number": "3"
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "power",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "krimp",
+                  "subjectType": "Kavel",
+                  "source": {
+                    "snippet": "de krimp van de Kavel"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "3"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "nonNegative"
+                  },
+                  "source": {
+                    "snippet": "3"
+                  }
                 },
                 "type": {
                   "node": "Number",
-                  "whole": true,
+                  "whole": false,
                   "decimals": 0,
-                  "sign": "nonNegative"
+                  "sign": "unspecified"
                 },
                 "source": {
-                  "snippet": "3"
+                  "snippet": "de krimp van de Kavel tot de macht 3"
                 }
               },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
-                "whole": false,
+                "whole": true,
                 "decimals": 0,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de krimp van de Kavel tot de macht 3"
+                "snippet": "(de krimp van de Kavel tot de macht 3) rekenkundig afgerond op 0 decimalen"
               }
             },
             "initialisation": false,

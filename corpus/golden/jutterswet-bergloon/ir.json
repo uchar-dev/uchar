@@ -176,32 +176,46 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "dividedBy",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "opbrengst",
-                "subjectType": "Berging",
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "opbrengst",
+                  "subjectType": "Berging",
+                  "source": {
+                    "snippet": "de opbrengst van de Berging"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "helpersaantal",
+                  "subjectType": "Berging",
+                  "source": {
+                    "snippet": "het helpersaantal van de Berging"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "de opbrengst van de Berging"
+                  "snippet": "de opbrengst van de Berging gedeeld door het helpersaantal van de Berging"
                 }
               },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "helpersaantal",
-                "subjectType": "Berging",
-                "source": {
-                  "snippet": "het helpersaantal van de Berging"
-                }
-              },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
-                "whole": false,
+                "whole": true,
                 "decimals": 0,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de opbrengst van de Berging gedeeld door het helpersaantal van de Berging"
+                "snippet": "de opbrengst van de Berging gedeeld door het helpersaantal van de Berging rekenkundig afgerond op 0 decimalen"
               }
             },
             "initialisation": false,

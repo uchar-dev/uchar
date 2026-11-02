@@ -423,32 +423,46 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "dividedBy",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "gewicht",
-                "subjectType": "Vondst",
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van de Vondst"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "weegfactor",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de weegfactor van de Vondst"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "het gewicht van de Vondst"
+                  "snippet": "het gewicht van de Vondst gedeeld door de weegfactor van de Vondst"
                 }
               },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "weegfactor",
-                "subjectType": "Vondst",
-                "source": {
-                  "snippet": "de weegfactor van de Vondst"
-                }
-              },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 0,
+                "decimals": 2,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "het gewicht van de Vondst gedeeld door de weegfactor van de Vondst"
+                "snippet": "het gewicht van de Vondst gedeeld door de weegfactor van de Vondst rekenkundig afgerond op 2 decimalen"
               }
             },
             "condition": {

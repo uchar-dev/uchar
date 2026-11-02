@@ -7,11 +7,11 @@
         "label": "V3",
         "objectType": "Vondst",
         "attributes": {
-          "taxatie": {
-            "number": "7"
+          "opgegeven termijn": {
+            "number": "31"
           },
-          "opbrengst": {
-            "number": "90"
+          "vervalmaand": {
+            "number": "4"
           }
         },
         "roles": {},
@@ -23,7 +23,11 @@
     "parameters": {}
   },
   "expectedFault": {
-    "code": "EF-006",
-    "params": {}
+    "code": "EF-032",
+    "params": {
+      "year": "2025",
+      "month": "4",
+      "day": "31"
+    }
   }
 }

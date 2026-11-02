@@ -7,11 +7,11 @@
         "label": "V1",
         "objectType": "Vondst",
         "attributes": {
-          "taxatie": {
-            "number": "30"
+          "opgegeven termijn": {
+            "number": "28"
           },
-          "opbrengst": {
-            "number": "90"
+          "vervalmaand": {
+            "number": "2"
           }
         },
         "roles": {},
@@ -26,17 +26,17 @@
     {
       "kind": "attributeValue",
       "label": "V1",
-      "attribute": "bergloon",
+      "attribute": "bergtermijn",
       "value": {
-        "number": "30"
+        "number": "28"
       }
     },
     {
       "kind": "attributeValue",
       "label": "V1",
-      "attribute": "aandeel",
+      "attribute": "vervaldag",
       "value": {
-        "number": "3"
+        "date": "2025-02-28"
       }
     },
     {

@@ -16,4 +16,4 @@ Regel bergloon
 
 Regel standaardbergloon
     geldig altijd
-        Het bergloon van een Vondst moet geïnitialiseerd worden op zijn opbrengst gedeeld door zijn aantal deelnemers.
+        Het bergloon van een Vondst moet geïnitialiseerd worden op zijn opbrengst gedeeld door zijn aantal deelnemers rekenkundig afgerond op 0 decimalen.

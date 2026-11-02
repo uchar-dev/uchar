@@ -1,9 +1,8 @@
 Objecttype de Vondst (mv: Vondsten)
-    de taxatie Numeriek (geheel getal);
-    de opbrengst Numeriek (geheel getal);
-    het aantal deelnemers Numeriek (geheel getal);
-    het bergloon Numeriek (geheel getal);
-    het aandeel Numeriek (geheel getal);
+    de opgegeven termijn Numeriek (geheel getal);
+    de vervalmaand Numeriek (geheel getal);
+    de bergtermijn Numeriek (geheel getal);
+    de vervaldag Datum in dagen;
     is gemeld kenmerk (bijvoeglijk);
     is erkend kenmerk (bijvoeglijk);
 
@@ -11,14 +10,14 @@ Regel erkenning
     geldig altijd
         Een Vondst is erkend indien hij gemeld is.
 
-Regel bergloon
+Regel bergtermijn
     geldig altijd
-        Het bergloon van een Vondst moet gesteld worden op zijn taxatie indien hij erkend is.
+        De bergtermijn van een Vondst moet gesteld worden op zijn opgegeven termijn indien hij erkend is.
 
-Regel standaardbergloon
+Regel standaardbergtermijn
     geldig altijd
-        Het bergloon van een Vondst moet geïnitialiseerd worden op 7.
+        De bergtermijn van een Vondst moet geïnitialiseerd worden op 30.
 
-Regel aandeel
+Regel vervaldag
     geldig altijd
-        Het aandeel van een Vondst moet berekend worden als zijn opbrengst gedeeld door zijn bergloon.
+        De vervaldag van een Vondst moet gesteld worden op de datum met jaar: 2025, maand: zijn vervalmaand en dag: zijn bergtermijn.

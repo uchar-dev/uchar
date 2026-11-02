@@ -164,24 +164,38 @@
               }
             },
             "consequence": {
-              "node": "Binary",
-              "op": "dividedBy",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "gewogen gewicht",
-                "subjectType": "Vondst",
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewogen gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn gewogen gewicht"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "geschatte gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn geschatte gewicht"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "zijn gewogen gewicht"
+                  "snippet": "zijn gewogen gewicht gedeeld door zijn geschatte gewicht"
                 }
               },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "geschatte gewicht",
-                "subjectType": "Vondst",
-                "source": {
-                  "snippet": "zijn geschatte gewicht"
-                }
-              },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -189,7 +203,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "zijn gewogen gewicht gedeeld door zijn geschatte gewicht"
+                "snippet": "zijn gewogen gewicht gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen"
               }
             }
           },
@@ -256,24 +270,38 @@
               "node": "Binary",
               "op": "plus",
               "left": {
-                "node": "Binary",
-                "op": "dividedBy",
-                "left": {
-                  "node": "AttributeReference",
-                  "attribute": "toeslaggrond",
-                  "subjectType": "Vondst",
+                "node": "Rounding",
+                "base": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "toeslaggrond",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn toeslaggrond"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "geschatte gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn geschatte gewicht"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
                   "source": {
-                    "snippet": "zijn toeslaggrond"
+                    "snippet": "zijn toeslaggrond gedeeld door zijn geschatte gewicht"
                   }
                 },
-                "right": {
-                  "node": "AttributeReference",
-                  "attribute": "geschatte gewicht",
-                  "subjectType": "Vondst",
-                  "source": {
-                    "snippet": "zijn geschatte gewicht"
-                  }
-                },
+                "mode": "halfAwayFromZero",
+                "decimals": 2,
                 "type": {
                   "node": "Number",
                   "whole": false,
@@ -281,7 +309,7 @@
                   "sign": "unspecified"
                 },
                 "source": {
-                  "snippet": "zijn toeslaggrond gedeeld door zijn geschatte gewicht"
+                  "snippet": "zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen"
                 }
               },
               "right": {
@@ -306,7 +334,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "(zijn toeslaggrond gedeeld door zijn geschatte gewicht) plus 5,00"
+                "snippet": "(zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen) plus 5,00"
               }
             },
             "exceptions": {

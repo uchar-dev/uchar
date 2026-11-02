@@ -73,129 +73,141 @@
               }
             },
             "value": {
-              "node": "Fold",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "unspecified"
-              },
-              "list": {
-                "node": "ParameterReference",
-                "parameter": "kindertallen",
-                "source": {
-                  "snippet": "de kindertallen"
-                }
-              },
-              "function": {
-                "node": "Lambda",
-                "parameters": [
-                  {
-                    "name": "acc",
-                    "datatype": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "unspecified"
-                    }
-                  },
-                  {
-                    "name": "x",
-                    "datatype": {
-                      "node": "Number",
-                      "whole": true,
-                      "decimals": 0,
-                      "sign": "unspecified"
-                    }
+              "node": "Rounding",
+              "base": {
+                "node": "Fold",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "list": {
+                  "node": "ParameterReference",
+                  "parameter": "kindertallen",
+                  "source": {
+                    "snippet": "de kindertallen"
                   }
-                ],
-                "body": {
-                  "node": "Let",
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "unspecified"
-                  },
-                  "binder": "m",
-                  "value": {
-                    "node": "Binary",
-                    "op": "dividedBy",
-                    "left": {
-                      "node": "ParameterReference",
-                      "parameter": "grondslag",
-                      "source": {
-                        "snippet": "de grondslag"
+                },
+                "function": {
+                  "node": "Lambda",
+                  "parameters": [
+                    {
+                      "name": "acc",
+                      "datatype": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
                       }
                     },
-                    "right": {
-                      "node": "BinderRef",
+                    {
                       "name": "x",
-                      "source": {
-                        "snippet": "het kindertal"
+                      "datatype": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
                       }
-                    },
-                    "type": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "unspecified"
-                    },
-                    "source": {
-                      "snippet": "de grondslag gedeeld door het kindertal"
                     }
-                  },
+                  ],
                   "body": {
-                    "node": "IfThenElse",
+                    "node": "Let",
                     "type": {
                       "node": "Number",
                       "whole": false,
                       "decimals": 2,
                       "sign": "unspecified"
                     },
-                    "condition": {
-                      "node": "Comparison",
-                      "op": "greaterOrEqual",
+                    "binder": "m",
+                    "value": {
+                      "node": "Binary",
+                      "op": "dividedBy",
                       "left": {
+                        "node": "ParameterReference",
+                        "parameter": "grondslag",
+                        "source": {
+                          "snippet": "de grondslag"
+                        }
+                      },
+                      "right": {
                         "node": "BinderRef",
                         "name": "x",
                         "source": {
                           "snippet": "het kindertal"
                         }
                       },
-                      "right": {
-                        "node": "Literal",
-                        "value": {
-                          "number": "0"
-                        },
-                        "type": {
-                          "node": "Number",
-                          "whole": true,
-                          "decimals": 0,
-                          "sign": "unspecified"
-                        },
-                        "source": {
-                          "snippet": "0"
-                        }
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
                       },
                       "source": {
-                        "snippet": "het kindertal niet onder nul"
+                        "snippet": "de grondslag gedeeld door het kindertal"
                       }
                     },
-                    "then": {
-                      "node": "Binary",
-                      "op": "plus",
-                      "left": {
-                        "node": "BinderRef",
-                        "name": "acc",
+                    "body": {
+                      "node": "IfThenElse",
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
+                      },
+                      "condition": {
+                        "node": "Comparison",
+                        "op": "greaterOrEqual",
+                        "left": {
+                          "node": "BinderRef",
+                          "name": "x",
+                          "source": {
+                            "snippet": "het kindertal"
+                          }
+                        },
+                        "right": {
+                          "node": "Literal",
+                          "value": {
+                            "number": "0"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "unspecified"
+                          },
+                          "source": {
+                            "snippet": "0"
+                          }
+                        },
                         "source": {
-                          "snippet": "het opgetelde deel"
+                          "snippet": "het kindertal niet onder nul"
                         }
                       },
-                      "right": {
-                        "node": "Literal",
-                        "value": {
-                          "number": "1.00"
+                      "then": {
+                        "node": "Binary",
+                        "op": "plus",
+                        "left": {
+                          "node": "BinderRef",
+                          "name": "acc",
+                          "source": {
+                            "snippet": "het opgetelde deel"
+                          }
+                        },
+                        "right": {
+                          "node": "Literal",
+                          "value": {
+                            "number": "1.00"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": false,
+                            "decimals": 2,
+                            "sign": "unspecified"
+                          },
+                          "source": {
+                            "snippet": "1.00"
+                          }
                         },
                         "type": {
                           "node": "Number",
@@ -204,75 +216,77 @@
                           "sign": "unspecified"
                         },
                         "source": {
-                          "snippet": "1.00"
+                          "snippet": "het opgetelde deel plus het vaste deel"
                         }
                       },
-                      "type": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 2,
-                        "sign": "unspecified"
+                      "else": {
+                        "node": "Binary",
+                        "op": "plus",
+                        "left": {
+                          "node": "BinderRef",
+                          "name": "acc",
+                          "source": {
+                            "snippet": "het opgetelde deel"
+                          }
+                        },
+                        "right": {
+                          "node": "BinderRef",
+                          "name": "m",
+                          "source": {
+                            "snippet": "het maatdeel"
+                          }
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "het opgetelde deel plus het maatdeel"
+                        }
                       },
                       "source": {
-                        "snippet": "het opgetelde deel plus het vaste deel"
-                      }
-                    },
-                    "else": {
-                      "node": "Binary",
-                      "op": "plus",
-                      "left": {
-                        "node": "BinderRef",
-                        "name": "acc",
-                        "source": {
-                          "snippet": "het opgetelde deel"
-                        }
-                      },
-                      "right": {
-                        "node": "BinderRef",
-                        "name": "m",
-                        "source": {
-                          "snippet": "het maatdeel"
-                        }
-                      },
-                      "type": {
-                        "node": "Number",
-                        "whole": false,
-                        "decimals": 2,
-                        "sign": "unspecified"
-                      },
-                      "source": {
-                        "snippet": "het opgetelde deel plus het maatdeel"
+                        "snippet": "boven nul het vaste deel, daaronder het maatdeel"
                       }
                     },
                     "source": {
-                      "snippet": "boven nul het vaste deel, daaronder het maatdeel"
+                      "snippet": "het maatdeel is de grondslag gedeeld door het kindertal"
                     }
                   },
                   "source": {
-                    "snippet": "het maatdeel is de grondslag gedeeld door het kindertal"
+                    "snippet": "de kinddelen opgeteld"
+                  }
+                },
+                "init": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "0.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "0.00"
                   }
                 },
                 "source": {
-                  "snippet": "de kinddelen opgeteld"
+                  "snippet": "de kindertallen gevouwen tot het lichaamtotaal"
                 }
               },
-              "init": {
-                "node": "Literal",
-                "value": {
-                  "number": "0.00"
-                },
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "unspecified"
-                },
-                "source": {
-                  "snippet": "0.00"
-                }
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
               },
               "source": {
-                "snippet": "de kindertallen gevouwen tot het lichaamtotaal"
+                "snippet": "(de kindertallen gevouwen tot het lichaamtotaal) rekenkundig afgerond op 2 decimalen"
               }
             },
             "initialisation": false,

@@ -10,7 +10,7 @@
         "attributes": [
           {
             "node": "Attribute",
-            "name": "taxatie",
+            "name": "opgegeven termijn",
             "datatype": {
               "node": "Number",
               "whole": true,
@@ -20,7 +20,7 @@
           },
           {
             "node": "Attribute",
-            "name": "opbrengst",
+            "name": "vervalmaand",
             "datatype": {
               "node": "Number",
               "whole": true,
@@ -30,7 +30,7 @@
           },
           {
             "node": "Attribute",
-            "name": "aantal deelnemers",
+            "name": "bergtermijn",
             "datatype": {
               "node": "Number",
               "whole": true,
@@ -40,22 +40,10 @@
           },
           {
             "node": "Attribute",
-            "name": "bergloon",
+            "name": "vervaldag",
             "datatype": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "unspecified"
-            }
-          },
-          {
-            "node": "Attribute",
-            "name": "aandeel",
-            "datatype": {
-              "node": "Number",
-              "whole": true,
-              "decimals": 0,
-              "sign": "unspecified"
+              "node": "Date",
+              "precision": "day"
             }
           }
         ],
@@ -125,7 +113,7 @@
       },
       {
         "node": "Rule",
-        "name": "bergloon",
+        "name": "bergtermijn",
         "versions": [
           {
             "validity": {
@@ -133,18 +121,18 @@
             },
             "target": {
               "node": "AttributeReference",
-              "attribute": "bergloon",
+              "attribute": "bergtermijn",
               "subjectType": "Vondst",
               "source": {
-                "snippet": "Het bergloon van een Vondst"
+                "snippet": "De bergtermijn van een Vondst"
               }
             },
             "value": {
               "node": "AttributeReference",
-              "attribute": "taxatie",
+              "attribute": "opgegeven termijn",
               "subjectType": "Vondst",
               "source": {
-                "snippet": "zijn taxatie"
+                "snippet": "zijn opgegeven termijn"
               }
             },
             "condition": {
@@ -162,7 +150,7 @@
       },
       {
         "node": "Rule",
-        "name": "standaardbergloon",
+        "name": "standaardbergtermijn",
         "versions": [
           {
             "validity": {
@@ -170,16 +158,16 @@
             },
             "target": {
               "node": "AttributeReference",
-              "attribute": "bergloon",
+              "attribute": "bergtermijn",
               "subjectType": "Vondst",
               "source": {
-                "snippet": "Het bergloon van een Vondst"
+                "snippet": "De bergtermijn van een Vondst"
               }
             },
             "value": {
               "node": "Literal",
               "value": {
-                "number": "7"
+                "number": "30"
               },
               "type": {
                 "node": "Number",
@@ -188,7 +176,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "7"
+                "snippet": "30"
               }
             },
             "initialisation": true
@@ -197,7 +185,7 @@
       },
       {
         "node": "Rule",
-        "name": "aandeel",
+        "name": "vervaldag",
         "versions": [
           {
             "validity": {
@@ -205,43 +193,58 @@
             },
             "target": {
               "node": "AttributeReference",
-              "attribute": "aandeel",
+              "attribute": "vervaldag",
               "subjectType": "Vondst",
               "source": {
-                "snippet": "Het aandeel van een Vondst"
+                "snippet": "De vervaldag van een Vondst"
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "dividedBy",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "opbrengst",
-                "subjectType": "Vondst",
-                "source": {
-                  "snippet": "zijn opbrengst"
+              "node": "BuiltinCall",
+              "kind": "dateWith",
+              "arguments": [
+                {
+                  "node": "Literal",
+                  "value": {
+                    "number": "2025"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "2025"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vervalmaand",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn vervalmaand"
+                  }
+                },
+                {
+                  "node": "AttributeReference",
+                  "attribute": "bergtermijn",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn bergtermijn"
+                  }
                 }
-              },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "bergloon",
-                "subjectType": "Vondst",
-                "source": {
-                  "snippet": "zijn bergloon"
-                }
-              },
+              ],
               "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 0,
-                "sign": "unspecified"
+                "node": "Date",
+                "precision": "day"
               },
               "source": {
-                "snippet": "zijn opbrengst gedeeld door zijn bergloon"
+                "snippet": "de datum met jaar: 2025, maand: zijn vervalmaand en dag: zijn bergtermijn"
               }
             },
             "initialisation": false,
-            "presentation": "calculation"
+            "presentation": "equation"
           }
         ]
       }

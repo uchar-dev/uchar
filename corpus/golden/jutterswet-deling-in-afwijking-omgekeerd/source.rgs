@@ -41,7 +41,7 @@ Uitzondering op gewogen toeslag: gemerkte toeslag
 
 Afwijking van toeslag: gewogen toeslag
     geldig altijd
-        De toeslag van een Vondst moet berekend worden als (zijn toeslaggrond gedeeld door zijn geschatte gewicht) plus 5,00 indien zijn toeslaggrond gevuld is.
+        De toeslag van een Vondst moet berekend worden als (zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen) plus 5,00 indien zijn toeslaggrond gevuld is.
 
 Regel toeslag
     geldig altijd
@@ -49,7 +49,7 @@ Regel toeslag
 
 Afwijking van verhouding: gewogen verhouding
     geldig altijd
-        De verhouding van een Vondst moet berekend worden als zijn gewogen gewicht gedeeld door zijn geschatte gewicht indien zijn gewogen gewicht gevuld is.
+        De verhouding van een Vondst moet berekend worden als zijn gewogen gewicht gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen indien zijn gewogen gewicht gevuld is.
 
 Regel verhouding
     geldig altijd

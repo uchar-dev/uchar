@@ -3,7 +3,8 @@
 Document A of RUNTIME-SEMANTICS ch. 5.7, "Faults and deposits are read at the
 fixpoint". The rule `bergloon` writes the taxatie where the Vondst is erkend,
 the initialisation `standaardbergloon` writes opbrengst gedeeld door aantal
-deelnemers. The rules stand in the order of the casus; `jutterswet-initialisatie-naast-regel-omgekeerd` has them in the reverse order, with the same expectations.
+deelnemers, rekenkundig afgerond op 0 decimalen (the precision gate of ch. 2.4
+wants a rounding on a quotient into a whole target). The rules stand in the order of the casus; `jutterswet-initialisatie-naast-regel-omgekeerd` has them in the reverse order, with the same expectations.
 
 | case | input | `bergloon` | channel |
 |---|---|---|---|
@@ -13,8 +14,7 @@ deelnemers. The rules stand in the order of the casus; `jutterswet-initialisatie
 | case4-initialisatie-rekent | V4 not gemeld, opbrengst 100, deelnemers 4 | **25** | consistent |
 | case5-nul-aan-fixpunt | V5 not gemeld, taxatie 30, opbrengst 100, deelnemers 0 | **leeg** | (standaardbergloon × V5), EF-005 |
 
-The rule decides in case 1 and 2, so the initialisation does not, and neither
-its division by zero nor its 100/3, which fits no whole target, is an outcome
-of the session. The input blocks it in case 3. It decides in case 4 and 5, and
-the deposit of case 5 stands at the fixpoint. Where the 100/3 stands, the
-session faults: `corpus/red/jutterswet-initialisatie-past-niet`.
+The rule decides in case 1 and 2, so the initialisation does not, and its
+division by zero is no outcome of the session. The input blocks it in case 3.
+It decides in case 4 and 5, and the deposit of case 5 stands at the fixpoint;
+the rounding of the leeg quotient is leeg.

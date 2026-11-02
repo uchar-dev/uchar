@@ -90,92 +90,106 @@
               }
             },
             "value": {
-              "node": "Let",
-              "type": {
-                "node": "Number",
-                "whole": false,
-                "decimals": 2,
-                "sign": "unspecified"
-              },
-              "binder": "k",
-              "value": {
-                "node": "AttributeReference",
-                "attribute": "inkomen",
-                "subjectType": "Jutter",
-                "source": {
-                  "snippet": "zijn inkomen"
-                }
-              },
-              "body": {
-                "node": "IfThenElse",
+              "node": "Rounding",
+              "base": {
+                "node": "Let",
                 "type": {
                   "node": "Number",
                   "whole": false,
                   "decimals": 2,
                   "sign": "unspecified"
                 },
-                "condition": {
-                  "node": "Comparison",
-                  "op": "greater",
-                  "left": {
-                    "node": "BinderRef",
-                    "name": "k",
-                    "source": {
-                      "snippet": "de k"
-                    }
-                  },
-                  "right": {
-                    "node": "ParameterReference",
-                    "parameter": "drempel",
-                    "source": {
-                      "snippet": "de drempel"
-                    }
-                  },
+                "binder": "k",
+                "value": {
+                  "node": "AttributeReference",
+                  "attribute": "inkomen",
+                  "subjectType": "Jutter",
                   "source": {
-                    "snippet": "de grondslag boven de grens"
+                    "snippet": "zijn inkomen"
                   }
                 },
-                "then": {
-                  "node": "ParameterReference",
-                  "parameter": "basisheffing",
-                  "source": {
-                    "snippet": "de basisheffing"
-                  }
-                },
-                "else": {
-                  "node": "Binary",
-                  "op": "dividedBy",
-                  "left": {
-                    "node": "BinderRef",
-                    "name": "k",
-                    "source": {
-                      "snippet": "de k"
-                    }
-                  },
-                  "right": {
-                    "node": "AttributeReference",
-                    "attribute": "restpost",
-                    "subjectType": "Jutter",
-                    "source": {
-                      "snippet": "zijn restpost"
-                    }
-                  },
+                "body": {
+                  "node": "IfThenElse",
                   "type": {
                     "node": "Number",
                     "whole": false,
                     "decimals": 2,
                     "sign": "unspecified"
                   },
+                  "condition": {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "BinderRef",
+                      "name": "k",
+                      "source": {
+                        "snippet": "de k"
+                      }
+                    },
+                    "right": {
+                      "node": "ParameterReference",
+                      "parameter": "drempel",
+                      "source": {
+                        "snippet": "de drempel"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de grondslag boven de grens"
+                    }
+                  },
+                  "then": {
+                    "node": "ParameterReference",
+                    "parameter": "basisheffing",
+                    "source": {
+                      "snippet": "de basisheffing"
+                    }
+                  },
+                  "else": {
+                    "node": "Binary",
+                    "op": "dividedBy",
+                    "left": {
+                      "node": "BinderRef",
+                      "name": "k",
+                      "source": {
+                        "snippet": "de k"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "restpost",
+                      "subjectType": "Jutter",
+                      "source": {
+                        "snippet": "zijn restpost"
+                      }
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "de grondslag gedeeld door zijn restpost"
+                    }
+                  },
                   "source": {
-                    "snippet": "de grondslag gedeeld door zijn restpost"
+                    "snippet": "boven de grens het een, daaronder het ander"
                   }
                 },
                 "source": {
-                  "snippet": "boven de grens het een, daaronder het ander"
+                  "snippet": "de k is k"
                 }
               },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
               "source": {
-                "snippet": "de k is k"
+                "snippet": "(de k is k) rekenkundig afgerond op 2 decimalen"
               }
             },
             "initialisation": false,

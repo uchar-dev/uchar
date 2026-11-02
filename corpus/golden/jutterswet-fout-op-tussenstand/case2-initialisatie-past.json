@@ -7,8 +7,8 @@
         "label": "V2",
         "objectType": "Vondst",
         "attributes": {
-          "opbrengst": {
-            "number": "70"
+          "vervalmaand": {
+            "number": "3"
           }
         },
         "roles": {},
@@ -21,17 +21,17 @@
     {
       "kind": "attributeValue",
       "label": "V2",
-      "attribute": "bergloon",
+      "attribute": "bergtermijn",
       "value": {
-        "number": "7"
+        "number": "30"
       }
     },
     {
       "kind": "attributeValue",
       "label": "V2",
-      "attribute": "aandeel",
+      "attribute": "vervaldag",
       "value": {
-        "number": "10"
+        "date": "2025-03-30"
       }
     },
     {

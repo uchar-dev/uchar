@@ -327,32 +327,46 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "dividedBy",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "opbrengst",
-                "subjectType": "Vondst",
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "opbrengst",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de opbrengst van de Vondst"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "aandeel",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het aandeel van de Vondst"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "de opbrengst van de Vondst"
+                  "snippet": "de opbrengst van de Vondst gedeeld door het aandeel van de Vondst"
                 }
               },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "aandeel",
-                "subjectType": "Vondst",
-                "source": {
-                  "snippet": "het aandeel van de Vondst"
-                }
-              },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
-                "whole": false,
+                "whole": true,
                 "decimals": 0,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de opbrengst van de Vondst gedeeld door het aandeel van de Vondst"
+                "snippet": "(de opbrengst van de Vondst gedeeld door het aandeel van de Vondst) rekenkundig afgerond op 0 decimalen"
               }
             },
             "initialisation": false,
@@ -441,32 +455,46 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "dividedBy",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "opbrengst",
-                "subjectType": "Vondst",
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "opbrengst",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de opbrengst van de Vondst"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "kaveldeel",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het kaveldeel van de Vondst"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "de opbrengst van de Vondst"
+                  "snippet": "de opbrengst van de Vondst gedeeld door het kaveldeel van de Vondst"
                 }
               },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "kaveldeel",
-                "subjectType": "Vondst",
-                "source": {
-                  "snippet": "het kaveldeel van de Vondst"
-                }
-              },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
-                "whole": false,
+                "whole": true,
                 "decimals": 0,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de opbrengst van de Vondst gedeeld door het kaveldeel van de Vondst"
+                "snippet": "(de opbrengst van de Vondst gedeeld door het kaveldeel van de Vondst) rekenkundig afgerond op 0 decimalen"
               }
             },
             "condition": {
@@ -521,32 +549,46 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "dividedBy",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "koopsom",
-                "subjectType": "Vondst",
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "koopsom",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de koopsom van de Vondst"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "partijen",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de partijen van de Vondst"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "de koopsom van de Vondst"
+                  "snippet": "de koopsom van de Vondst gedeeld door de partijen van de Vondst"
                 }
               },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "partijen",
-                "subjectType": "Vondst",
-                "source": {
-                  "snippet": "de partijen van de Vondst"
-                }
-              },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 0,
+                "decimals": 2,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de koopsom van de Vondst gedeeld door de partijen van de Vondst"
+                "snippet": "(de koopsom van de Vondst gedeeld door de partijen van de Vondst) rekenkundig afgerond op 2 decimalen"
               }
             },
             "initialisation": false,
@@ -571,32 +613,46 @@
               }
             },
             "value": {
-              "node": "Binary",
-              "op": "times",
-              "left": {
-                "node": "AttributeReference",
-                "attribute": "spanwijdte",
-                "subjectType": "Vondst",
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "spanwijdte",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de spanwijdte van de Vondst"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "rek",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de rek van de Vondst"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "de spanwijdte van de Vondst"
+                  "snippet": "de spanwijdte van de Vondst maal de rek van de Vondst"
                 }
               },
-              "right": {
-                "node": "AttributeReference",
-                "attribute": "rek",
-                "subjectType": "Vondst",
-                "source": {
-                  "snippet": "de rek van de Vondst"
-                }
-              },
+              "mode": "halfAwayFromZero",
+              "decimals": 1,
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 2,
+                "decimals": 1,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "de spanwijdte van de Vondst maal de rek van de Vondst"
+                "snippet": "(de spanwijdte van de Vondst maal de rek van de Vondst) rekenkundig afgerond op 1 decimalen"
               }
             },
             "initialisation": false,
