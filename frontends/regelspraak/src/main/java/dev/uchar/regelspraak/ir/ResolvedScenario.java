@@ -54,13 +54,20 @@ public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Sit
     }
 
     /** One instance: its label, its declared type, and its assignments. A later assignment of the same attribute,
-     *  role or characteristic has replaced the earlier one in place, so each appears once. */
+     *  role or characteristic has replaced the earlier one in place, so each appears once; of a dimensioned attribute
+     *  the same holds per cell. */
     public record Instance(String label, ObjectType objectType, List<AttributeValue> attributes,
                             List<RoleValue> roles, List<CharacteristicValue> characteristics) {}
 
-    /** An attribute assignment under its declared name: a scalar {@code value}, or for a time-dependent
-     *  attribute a {@code timeline} of segments in written order. Exactly one of the two is non-null. */
-    public record AttributeValue(String attribute, ScenarioValue value, List<Segment> timeline, int line) {}
+    /** An attribute assignment under its declared name: a scalar {@code value}, for a time-dependent attribute a
+     *  {@code timeline} of segments in written order, or for a dimensioned attribute its {@code cells} in first-seen
+     *  order. Exactly one of the three is non-null. */
+    public record AttributeValue(String attribute, ScenarioValue value, List<Segment> timeline, List<Cell> cells,
+                                 int line) {}
+
+    /** One cell of a dimensioned attribute: one label of each dimension, in the declared order of the attribute's
+     *  dimensions as the case file carries them (RUNTIME-SEMANTICS ch. 5.8c), and its value. */
+    public record Cell(List<String> labels, ScenarioValue value) {}
 
     /** A role assignment: the key as the case file writes it (the declared role name, or its declared plural where
      *  the source wrote the plural), the fact type the role was resolved in — one role name can stand in several
@@ -83,15 +90,20 @@ public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Sit
     /** One period in which a time-dependent characteristic holds, {@code van} inclusive and {@code until} exclusive. */
     public record TimeWindow(LocalDate van, LocalDate until) {}
 
-    /** One expectation; {@code kind} selects the meaningful fields. {@code timeline} is the expected timeline of an
-     *  {@link ExpectationKind#ATTRIBUTE_TIMELINE} (empty when the whole timeline is expected empty); {@code rule}
-     *  and {@code label} of an {@link ExpectationKind#INCONSISTENT} are its optional key. */
-    public record Expectation(ExpectationKind kind, String label, String attribute, String characteristic,
-                              ScenarioValue expectedValue, List<Segment> timeline, String rule, int line) {}
+    /** One expectation; {@code kind} selects the meaningful fields. {@code labels} are the labels of the cell of a
+     *  {@link ExpectationKind#CELL_VALUE} or {@link ExpectationKind#CELL_EMPTY}, as {@link Cell} carries them;
+     *  {@code timeline} is the expected timeline of an {@link ExpectationKind#ATTRIBUTE_TIMELINE} (empty when the whole
+     *  timeline is expected empty); {@code rule} and {@code label} of an {@link ExpectationKind#INCONSISTENT} are its
+     *  optional key. */
+    public record Expectation(ExpectationKind kind, String label, String attribute, List<String> labels,
+                              String characteristic, ScenarioValue expectedValue, List<Segment> timeline, String rule,
+                              int line) {}
     public enum ExpectationKind {
         ATTRIBUTE_VALUE,    // de <attr> van <LABEL> is <waarde>
         ATTRIBUTE_EMPTY,      // de <attr> van <LABEL> is leeg
         ATTRIBUTE_TIMELINE,  // de <attr> van <LABEL> is <waarde> van <d> tot <d> (one per segment) | is altijd leeg
+        CELL_VALUE,          // de <cel> van <LABEL> is <waarde>
+        CELL_EMPTY,          // de <cel> van <LABEL> is leeg
         CHARACTERISTIC_PRESENT,    // <LABEL> is/heeft [een] <kenmerk>
         CHARACTERISTIC_ABSENT,     // <LABEL> is/heeft geen <kenmerk>
         CONSISTENT,          // de gegevens zijn consistent

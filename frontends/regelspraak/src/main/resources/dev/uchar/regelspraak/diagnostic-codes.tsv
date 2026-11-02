@@ -235,7 +235,6 @@ RGS-233	rule-reads-parameter-without-value	ERROR	parameter,rule,where
 RGS-234	object-type-not-declared	ERROR	objectType
 RGS-235	instance-label-collides-with-type	ERROR	label,objectType
 RGS-236	attribute-not-declared-on-type	ERROR	attribute,objectType
-RGS-237	scenario-attribute-dimensioned	ERROR	attribute
 RGS-238	attribute-periods-and-fixed-value	ERROR	attribute
 RGS-239	attribute-not-time-dependent-with-period	ERROR	attribute
 RGS-240	attribute-fixed-value-and-periods	ERROR	attribute
@@ -358,3 +357,4 @@ RGS-365	dimension-cell-ambiguous	ERROR	cells,written
 RGS-366	dimension-selection-missing	ERROR	attribute,dimension,expression,plural
 RGS-367	dimension-selection-repeated	ERROR	dimension,expression
 RGS-368	dimension-interval-ambiguous	ERROR	dimensions,expression,interval
+RGS-380	scenario-cell-period	ERROR	attribute,written

@@ -640,12 +640,13 @@ public final class ScenarioResolver {
 
         List<AttributeValue> attributes = new ArrayList<>();
         Map<String, List<Segment>> timelines = new LinkedHashMap<>();
+        Map<String, List<Cell>> cells = new LinkedHashMap<>();
         Set<String> fixed = new java.util.HashSet<>();
         List<RoleAssignment> roles = new ArrayList<>();
         List<CharacteristicValue> characteristics = new ArrayList<>();
         Map<String, List<TimeWindow>> periods = new LinkedHashMap<>();
         for (ToewijzingContext t : inst.toewijzing()) {
-            if (t instanceof AttribuutToewijzingContext a) attribute(a, ot, attributes, timelines, fixed);
+            if (t instanceof AttribuutToewijzingContext a) attribute(a, ot, attributes, timelines, cells, fixed);
             else if (t instanceof RolToOneToewijzingContext r)
                 role(ot, src(r.toewijzingNaam()), List.of(r.UPPER_ID().getText()), false, r.getStart().getLine(), roles);
             else if (t instanceof RolToManyToewijzingContext r) {
@@ -658,22 +659,30 @@ public final class ScenarioResolver {
     }
 
     private void attribute(AttribuutToewijzingContext a, ObjectType ot, List<AttributeValue> attributes,
-                           Map<String, List<Segment>> timelines, Set<String> fixed) {
+                           Map<String, List<Segment>> timelines, Map<String, List<Cell>> cells, Set<String> fixed) {
         int line = a.getStart().getLine();
         String written = withoutArticle(src(a.toewijzingNaam()));
         if (ot == null) return;                                        // unknown type: reported at the opener
-        String attr = ot.attributeName(written);
-        if (attr == null) {
-            error(line,
-                    "RGS-236", params("objectType", ot.name, "attribute", written));
-            return;
-        }
-        if (!ot.dimensionsOf(attr).isEmpty()) {
-            error(line,
-                    "RGS-237", params("attribute", attr));
-            return;
-        }
+        Named named = member(ot, written, line);
+        if (named == null) return;
+        String attr = named.attribute();
         Datatype dt = ot.attribute(attr);
+        if (named.labels() != null) {
+            if (a.periode() != null) {
+                error(line, "RGS-380", params("written", written, "attribute", attr));
+                return;
+            }
+            ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, Msg.frontend("PART.what.attribute", "name", attr));
+            if (w == null) return;
+            List<Cell> list = cells.get(norm(attr));
+            if (list == null) {
+                list = new ArrayList<>();
+                cells.put(norm(attr), list);
+                attributes.add(new AttributeValue(attr, null, null, list, line));
+            }
+            putCell(list, new Cell(named.labels(), w));
+            return;
+        }
         ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, Msg.frontend("PART.what.attribute", "name", attr));
         if (a.periode() == null) {
             if (timelines.containsKey(norm(attr))) {
@@ -682,7 +691,7 @@ public final class ScenarioResolver {
                 return;
             }
             fixed.add(norm(attr));
-            if (w != null) attributes.add(new AttributeValue(attr, w, null, line));
+            if (w != null) attributes.add(new AttributeValue(attr, w, null, null, line));
             return;
         }
         if (ot.granularityOf(attr) == null) {
@@ -701,9 +710,64 @@ public final class ScenarioResolver {
         if (tl == null) {
             tl = new ArrayList<>();
             timelines.put(norm(attr), tl);
-            attributes.add(new AttributeValue(attr, null, tl, line));
+            attributes.add(new AttributeValue(attr, null, tl, null, line));
         }
         if (follows(tl.isEmpty() ? null : tl.get(tl.size() - 1).until(), p, line)) tl.add(new Segment(p.van(), p.until(), w));
+    }
+
+    /** What a written member name of a bullet names on an instance: an attribute, and for a cell of a dimensioned
+     *  attribute its labels (null for an attribute without dimensions). */
+    private record Named(String attribute, List<String> labels) {}
+
+    /** The attribute {@code written} names on an instance of {@code ot}, read as a rule reads it (§3.6): a declared
+     *  attribute by its name, and a dimensioned attribute only as one of its cells, with one label of each of its
+     *  dimensions before or behind it ({@link ExpressionBuilder#cellReadings}). The choice among the readings is the
+     *  one of {@code ExpressionBuilder.dimensionCell}: the longest attribute wins, a name that fits two cells is
+     *  refused (RGS-365), and a name that gives no label of a dimension — a dimensioned attribute written without
+     *  labels among them — is refused once per such dimension (RGS-364). Null after an ERROR. */
+    private Named member(ObjectType ot, String written, int line) {
+        String attr = ot.attributeName(written);
+        if (attr != null) {
+            List<String> dimensions = ot.dimensionsOf(attr);
+            if (dimensions.isEmpty()) return new Named(attr, null);
+            for (String d : dimensions) error(line, "RGS-364", params("written", written, "attribute", attr, "dimension", d));
+            return null;
+        }
+        List<ExpressionBuilder.CellReading> readings = ExpressionBuilder.cellReadings(model, ot, written);
+        if (readings.isEmpty()) {
+            error(line,
+                    "RGS-236", params("objectType", ot.name, "attribute", written));
+            return null;
+        }
+        List<ExpressionBuilder.CellReading> complete = readings.stream().filter(ExpressionBuilder.CellReading::complete).toList();
+        if (!complete.isEmpty()) {
+            int longest = complete.stream().mapToInt(r -> r.attribute().length()).max().getAsInt();
+            List<ExpressionBuilder.CellReading> found = new ArrayList<>();
+            for (ExpressionBuilder.CellReading r : complete)
+                if (r.attribute().length() == longest && found.stream().noneMatch(c -> c.spelling().equals(r.spelling())))
+                    found.add(r);
+            if (found.size() > 1) {
+                error(line, "RGS-365", params("written", written,
+                        "cells", String.join("; ", found.stream().map(ExpressionBuilder.CellReading::spelling).toList())));
+                return null;
+            }
+            return new Named(found.get(0).attribute(), found.get(0).labels());
+        }
+        ExpressionBuilder.CellReading partial = readings.get(0);
+        for (ExpressionBuilder.CellReading r : readings)
+            if (r.attribute().length() > partial.attribute().length()
+                    || r.attribute().length() == partial.attribute().length() && r.missing().size() < partial.missing().size())
+                partial = r;
+        for (RegelSpraakModel.Dimension d : partial.missing())
+            error(line, "RGS-364", params("written", written, "attribute", partial.attribute(), "dimension", d.name()));
+        return null;
+    }
+
+    /** {@code cell} into the cells of one attribute: in place of the cell with the same labels, else at the end. */
+    private static void putCell(List<Cell> cells, Cell cell) {
+        for (int i = 0; i < cells.size(); i++)
+            if (cells.get(i).labels().equals(cell.labels())) { cells.set(i, cell); return; }
+        cells.add(cell);
     }
 
     private void characteristic(KenmerkToewijzingContext k, ObjectType ot, List<CharacteristicValue> characteristics,
@@ -1122,7 +1186,17 @@ public final class ScenarioResolver {
 
         InstanceBuilder(String label, ObjectType objectType) { this.label = label; this.objectType = objectType; }
 
-        void setAttribute(AttributeValue w) { attributes.put(norm(w.attribute()), w); }
+        void setAttribute(AttributeValue w) {
+            AttributeValue earlier = attributes.get(norm(w.attribute()));
+            if (w.cells() == null || earlier == null || earlier.cells() == null) {
+                attributes.put(norm(w.attribute()), w);
+                return;
+            }
+            // a block's list stays as it is: the same block is merged into every scenario based on its situation
+            List<Cell> merged = new ArrayList<>(earlier.cells());
+            for (Cell c : w.cells()) putCell(merged, c);
+            attributes.put(norm(w.attribute()), new AttributeValue(earlier.attribute(), null, null, merged, earlier.line()));
+        }
         void setRole(RoleAssignment t) { roles.put(norm(t.role()), t.value()); }
         void setCharacteristic(CharacteristicValue w) { characteristics.put(norm(w.characteristic()), w); }
 
@@ -1142,33 +1216,54 @@ public final class ScenarioResolver {
             int line = v.getStart().getLine();
             if (v instanceof VerwachtAttribuutLeegContext a) {
                 String label = a.UPPER_ID().getText();
-                String attr = expectedAttribute(label, withoutArticle(src(a.verwachtingNaam())), situation, line);
-                if (attr != null)
-                    result.add(new Expectation(ExpectationKind.ATTRIBUTE_EMPTY, label, attr, null, null, null, null, line));
+                String written = withoutArticle(src(a.verwachtingNaam()));
+                Named named = expectedMember(label, written, situation, line);
+                if (named == null) continue;
+                result.add(named.labels() == null
+                        ? new Expectation(ExpectationKind.ATTRIBUTE_EMPTY, label, named.attribute(), null, null, null, null, null, line)
+                        : new Expectation(ExpectationKind.CELL_EMPTY, label, named.attribute(), named.labels(), null, null, null, null, line));
             } else if (v instanceof VerwachtTijdlijnLeegContext a) {
                 String label = a.UPPER_ID().getText();
-                String attr = expectedAttribute(label, withoutArticle(src(a.verwachtingNaam())), situation, line);
-                if (attr == null || !temporalAttribute(label, attr, situation, line)) continue;
+                String written = withoutArticle(src(a.verwachtingNaam()));
+                Named named = expectedMember(label, written, situation, line);
+                if (named == null) continue;
+                String attr = named.attribute();
+                if (named.labels() != null) {
+                    error(line, "RGS-380", params("written", written, "attribute", attr));
+                    continue;
+                }
+                if (!temporalAttribute(label, attr, situation, line)) continue;
                 String key = label + "|" + norm(attr);
                 if (timelines.containsKey(key)) {
                     error(line,
                             "RGS-268", params("attribute", attr, "label", label));
                     continue;
                 }
-                Expectation t = new Expectation(ExpectationKind.ATTRIBUTE_TIMELINE, label, attr, null, null,
+                Expectation t = new Expectation(ExpectationKind.ATTRIBUTE_TIMELINE, label, attr, null, null, null,
                         new ArrayList<>(), null, line);
                 timelines.put(key, t);
                 alwaysEmpty.put(key, true);
                 result.add(t);
             } else if (v instanceof VerwachtAttribuutWaardeContext a) {
                 String label = a.UPPER_ID().getText();
-                String attr = expectedAttribute(label, withoutArticle(src(a.verwachtingNaam())), situation, line);
-                if (attr == null) continue;
+                String written = withoutArticle(src(a.verwachtingNaam()));
+                Named named = expectedMember(label, written, situation, line);
+                if (named == null) continue;
+                String attr = named.attribute();
+                if (named.labels() != null && a.periode() != null) {
+                    error(line, "RGS-380", params("written", written, "attribute", attr));
+                    continue;
+                }
                 Datatype dt = situation.instance(label).objectType().attribute(attr);
                 ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, Msg.frontend("PART.what.expectation", "name", attr));
+                if (named.labels() != null) {
+                    if (w != null)
+                        result.add(new Expectation(ExpectationKind.CELL_VALUE, label, attr, named.labels(), null, w, null, null, line));
+                    continue;
+                }
                 if (a.periode() == null) {
                     if (w != null)
-                        result.add(new Expectation(ExpectationKind.ATTRIBUTE_VALUE, label, attr, null, w, null, null, line));
+                        result.add(new Expectation(ExpectationKind.ATTRIBUTE_VALUE, label, attr, null, null, w, null, null, line));
                     continue;
                 }
                 if (!temporalAttribute(label, attr, situation, line)) continue;
@@ -1184,7 +1279,7 @@ public final class ScenarioResolver {
                 }
                 Expectation t = timelines.get(key);
                 if (t == null) {
-                    t = new Expectation(ExpectationKind.ATTRIBUTE_TIMELINE, label, attr, null, null, new ArrayList<>(),
+                    t = new Expectation(ExpectationKind.ATTRIBUTE_TIMELINE, label, attr, null, null, null, new ArrayList<>(),
                             null, line);
                     timelines.put(key, t);
                     result.add(t);
@@ -1219,9 +1314,9 @@ public final class ScenarioResolver {
                     }
                 }
                 if (s == null || rule != null)
-                    result.add(new Expectation(ExpectationKind.INCONSISTENT, label, null, null, null, null, rule, line));
+                    result.add(new Expectation(ExpectationKind.INCONSISTENT, label, null, null, null, null, null, rule, line));
             } else if (v instanceof VerwachtConsistentContext c) {
-                result.add(new Expectation(ExpectationKind.CONSISTENT, null, null, null, null, null, null, line));
+                result.add(new Expectation(ExpectationKind.CONSISTENT, null, null, null, null, null, null, null, line));
             } else if (!src(v).isBlank()) {
                 // error recovery leaves a bare VerwachtingContext; the syntax error is reported already, and a bare
                 // context without text is recovery's own and names nothing
@@ -1232,8 +1327,9 @@ public final class ScenarioResolver {
         return result;
     }
 
-    /** The declared attribute {@code written} names on the instance labelled {@code label}; null after an ERROR. */
-    private String expectedAttribute(String label, String written, Situation situation, int line) {
+    /** The declared attribute, or cell of one, {@code written} names on the instance labelled {@code label}
+     *  ({@link #member}); null after an ERROR. */
+    private Named expectedMember(String label, String written, Situation situation, int line) {
         Instance i = situation.instance(label);
         if (i == null) {
             error(line,
@@ -1241,18 +1337,7 @@ public final class ScenarioResolver {
             return null;
         }
         if (i.objectType() == null) return null;                      // unknown type: reported at the opener
-        String attr = i.objectType().attributeName(written);
-        if (attr == null) {
-            error(line,
-                    "RGS-236", params("objectType", i.objectType().name, "attribute", written));
-            return null;
-        }
-        if (!i.objectType().dimensionsOf(attr).isEmpty()) {
-            error(line,
-                    "RGS-237", params("attribute", attr));
-            return null;
-        }
-        return attr;
+        return member(i.objectType(), written, line);
     }
 
     private boolean temporalAttribute(String label, String attr, Situation situation, int line) {
@@ -1282,7 +1367,7 @@ public final class ScenarioResolver {
         }
         if (!verbFits(i.objectType(), characteristic, has, line)) return null;
         return new Expectation(absent ? ExpectationKind.CHARACTERISTIC_ABSENT : ExpectationKind.CHARACTERISTIC_PRESENT,
-                label, null, characteristic, null, null, null, line);
+                label, null, null, characteristic, null, null, null, line);
     }
 
     /** A rule an inconsistency may name: a named form of the model, or a conflict channel — a target form

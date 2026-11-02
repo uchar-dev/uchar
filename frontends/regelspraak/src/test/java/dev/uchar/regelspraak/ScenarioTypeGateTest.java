@@ -132,9 +132,11 @@ class ScenarioTypeGateTest {
                 "de tekstwaarde draagt een «expressie», en een waarde in een scenario is letterlijk");
     }
 
-    @Test void a_dimensioned_attribute_has_no_case_form() {
+    /** A dimensioned attribute takes its input per cell (ScenarioCellTest); without a label it names no cell. */
+    @Test void a_dimensioned_attribute_names_a_label_of_every_dimension() {
         error("Situatie s:\neen Jutter J\n- het seizoensgewicht is 3,00 kg\n", "seizoensgewicht is",
-                "het attribuut 'seizoensgewicht' is gedimensioneerd, en een casebestand draagt geen dimensiecoördinaten");
+                "'seizoensgewicht' noemt geen label van de dimensie 'seizoen' van het gedimensioneerde attribuut "
+                        + "'seizoensgewicht'; een cel noemt van elke dimensie één label");
     }
 
     // ---------------- timelines ----------------

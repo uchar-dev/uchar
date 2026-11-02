@@ -273,7 +273,10 @@ verwachtingNaam : begrensdeNaam ;
 // A name that may contain internal ' van <lowercase segment>' but never a trailing
 // ' van <UPPER_ID>' — the UPPER_ID label/right-hand side is left for the enclosing rule.
 begrensdeNaam : kaleNaamDeel ( VAN naamVervolgDeel )* ;
-naamVervolgDeel : naamWoordLower kaleNaamWoord* ; // LOWER_ID-led, so a bare UPPER_ID label ends the name
+// LOWER_ID-led, so a bare UPPER_ID label ends the name. A cell of a dimensioned attribute is a name of a bullet too
+// (grammar/DIVERGENCES.md, Scenariotoetsen), so a segment after 'van' — the label of a dimension whose preposition is
+// 'van' — takes the labels joined after it as kaleNaamDeel does, with the same non-greedy loop.
+naamVervolgDeel : naamWoordLower kaleNaamWoord* ( labelOpsomming | uitLabel )*? ;
 
 // Verification entry point for the spec corpus. The worked examples in the spec
 // are not all whole documents — most are FRAGMENTS of a single non-terminal: a

@@ -3097,6 +3097,32 @@ zijn <LABEL>, <LABEL> en <LABEL>`) and a characteristic (`is|heeft
 characteristic or parameter value may carry one period, `van <datum> tot
 <datum>`: from inclusive, to exclusive, the case format's segment.
 
+A **cell** of a dimensioned attribute stands where an attribute stands, in a
+bullet of an instance and in an expectation, written as a rule writes it
+(§3.6; "§3.6 / §13.4.17.51 More dimensions"): the attribute with one label of
+each of its dimensions, behind it after the preposition its dimension declares,
+side by side or joined by "en" and ",", and before it for a dimension declared
+without a preposition:
+
+```
+een Jutter J1
+- het vondstgewicht in voorjaar op noord is 2,00 kg
+- de aanvoer uit rivier en op noord is 0,75 kg
+- de natte vangst is 1,25 kg
+```
+
+The name of a bullet ends before `is`, `zijn` or `van <LABEL>`
+(`begrensdeNaam`); a segment of it after `van` (`naamVervolgDeel`) takes the
+labels joined after it with the non-greedy loop of a rule's name segment, so a
+label after `van` joins the others there too (`de winst van vorig boekjaar en
+op noord`). The loop enters only at a "," or "en" followed by a preposition,
+or at `uit`, and in a text that parsed before, a bullet name was followed by
+`is`, `zijn` or `van` only. Measured on 2026-11-02: the parse tree under
+`testDocument` is the same before and after this loop for every `.rgs` file of
+the repository other than a `scenario.rgs`, each read alone (217, the parity
+zone included), and for the 40 golden test documents, each `source.rgs` and
+`scenario.rgs` read as one.
+
 A **parameter set**: `Parameterset <naam>:`, then one or more parameter
 rows in the form of a situation block and nothing else:
 
@@ -3143,6 +3169,8 @@ ends at the first header keyword. The expectations, one bullet each:
 | `- de\|het <attribuut> van <LABEL> is leeg` | `attributeEmpty` |
 | `- de\|het <attribuut> van <LABEL> is <waarde> van <datum> tot <datum>` | one segment of an `attributeTimeline` |
 | `- de\|het <attribuut> van <LABEL> is altijd leeg` | `attributeTimeline` with no segment |
+| `- de\|het <cel> van <LABEL> is <waarde>` | `cellValue` |
+| `- de\|het <cel> van <LABEL> is leeg` | `cellEmpty` |
 | `- <LABEL> is\|heeft [een\|de\|het] <kenmerk>` | `characteristicPresent` |
 | `- <LABEL> is\|heeft niet\|geen <kenmerk>` | `characteristicAbsent` |
 | `- de gegevens zijn consistent` | `consistent` |
@@ -3219,6 +3247,16 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
   decimals than its target. A convertible unit is restated exactly into the
   declared unit. An enumeration value must be one of its domain's values,
   compared without regard to case and written as declared.
+- **Cells**: the name of a bullet is read as the name of a rule is
+  (`ExpressionBuilder.cellReadings`): a declared attribute by its name, and a
+  dimensioned attribute only as a cell, with one label of each of its
+  dimensions; where the name reads as a cell of two attributes, the longer
+  attribute wins. The labels go per position, in the declared order of the
+  attribute's dimensions, as the case file carries them. The merge holds per
+  cell: a later assignment of the same cell replaces the earlier one in place,
+  and the other cells of the attribute stay. A cell carries one value, in the
+  input and in an expectation, so it takes no period and no timeline
+  expectation (a dimensioned attribute has no timeline, WF-125).
 - **Roles** resolve as the case readers resolve a role key: the written name
   names the other role of a fact type in which the instance's type fills a
   role, by its declared name or its declared plural. The verb follows the
@@ -3273,6 +3311,9 @@ serialiser, so a case file and an IR document share one shape.
   corpus's key order: the case schema lists the field before
   `characteristics`, and all 51 instances in the corpus that carry the field
   write it after (measured 2026-09-26).
+- The cells of one attribute are its `cells`, in first-seen order, each with
+  its labels and its value; an expected cell is a `cellValue` or a `cellEmpty`
+  with its labels (RUNTIME-SEMANTICS ch. 5.8c).
 - The parameters are those the chosen set gives on the peildatum, in the
   order of each parameter's first row in the set, then the situation's own.
   The resolver has chosen the jaargangen, so the case file carries one value
@@ -3351,10 +3392,12 @@ carries its evaluation date as a day); scenarios with different scopes in
 one document; a scope in a document with a start-point determination (the
 determination and the rule that writes its anchor belong together); and a
 scope that names an exception block or a member of an unordered block (it
-names the group by its base rule). Beside those, three value forms have no
-case form: a dimensioned attribute (a case value carries no dimension
-coordinates), a text value with an `«expressie»` (a case value is literal),
-and a period bound with a time.
+names the group by its base rule). Beside those, these value forms have no
+case form: a dimensioned attribute written without a label of each of its
+dimensions, or with labels that fit two cells (a case value names one cell), a
+cell with a period or a timeline (a case file gives a cell one value), a text
+value with an `«expressie»` (a case value is literal), and a period bound with
+a time.
 
 The extension's sentences are its own and Dutch: no reader refuses a case
 file for these defects, because a case file that carries one is never
@@ -3394,8 +3437,15 @@ prefix `scenario: `, placeholders in angle brackets:
 - `het label '<l>' is eerder gedeclareerd als '<t>', hier als '<u>'`
 - `het objecttype '<t>' kent geen attribuut '<a>'`, `… geen kenmerk '<k>'`,
   `… geen rol '<r>'`
-- `het attribuut '<a>' is gedimensioneerd, en een casebestand draagt geen
-  dimensiecoördinaten`
+- the two sentences of a cell in a rule (RGS-364, RGS-365, "§3.6 /
+  §13.4.17.51 More dimensions"): `'<naam>' noemt geen label van de dimensie
+  '<d>' van het gedimensioneerde attribuut '<a>'; een cel noemt van elke
+  dimensie één label (§3.6, WF-040)`, once per such dimension, also for an
+  attribute written without labels, and `'<naam>' past op meer dan één cel:
+  <cellen>; …`
+- `de cel '<naam>' van het gedimensioneerde attribuut '<a>' krijgt een periode
+  of een tijdlijn, maar een casebestand levert en verwacht een cel als één
+  waarde; een gedimensioneerd attribuut heeft geen tijdlijn (WF-125)`
 - `het attribuut '<a>' krijgt in dit blok zowel perioden als een vaste
   waarde`, and `… zowel een vaste waarde als perioden`; the same for a
   parameter
@@ -3478,8 +3528,10 @@ them), `ScenarioLoweringTest` (a case file written by hand from the
 schema, the file name, the scope and its IR document, the CLI) and
 `ScenarioParameterSetTest` (the two tokens, a case file with a jaargang and
 a whole timeline written by hand, the exclusive end, and each refusal of
-the parameter set on its line). The corpus:
-nine goldens carry a `scenario.rgs` beside their `source.rgs` whose lowering
+the parameter set on its line) and `ScenarioCellTest` (each form of a cell as
+an input and as an expectation, the merge per cell, a case file with cells
+written by hand, each refusal of a cell, and the semantic tokens of a cell).
+The corpus: eleven goldens carry a `scenario.rgs` beside their `source.rgs` whose lowering
 reproduces their pinned case files, and whose scenario route reproduces their
 `ir.json`, byte for byte — the handwritten expectations are the anchor —:
 `ww-herleving-inkomen-rgs`, `jutterswet-uitsluiting-rgs`,
@@ -3494,7 +3546,10 @@ parameter set with two jaargangen of a threshold, an amount, a percentage
 and a date, chosen by two scenarios one day apart), `jutterswet-premierecht` (an object
 type named with a preposition, a fact type named with a verb) and
 `jutterswet-opgave-datum` (the opgave marker on a date, an `inconsistent
-volgens` expectation). Together they carry
+volgens` expectation), `jutterswet-seizoenboeking` (the cells of one dimension
+as input, `cellValue` and `cellEmpty`) and `jutterswet-strandseizoen` (the
+cells of two attributes of two dimensions each, the labels side by side, in
+either order, joined by "en" and by ",", and after `uit`). Together they carry
 every expectation kind of the case format.
 
 ---
@@ -4212,7 +4267,9 @@ lower to. Any other chain is read as `--ir` reads it. The output has the same fo
 - the object type after `een` is an `objectType`; the name in a bullet and in an expectation is read against the object
   type of the instance, as the scenario route reads it: an attribute by its declared name, a role through the fact
   types the type takes part in, a characteristic with the matcher of the rule text, each after one leading article,
-  which stays a keyword. Where the opener or the label names no type, every type's members are candidates, as for a
+  which stays a keyword. A name that reads as a cell of a dimensioned attribute is read word by word as rule text is,
+  so the attribute is an `attribute` and each label a `dimensionLabel`, and the prepositions and the joining "en"
+  keep their lexical kind. Where the opener or the label names no type, every type's members are candidates, as for a
   name its place does not decide;
 - `de parameter …` names a `parameter`; the negation `geen` or `niet` before a characteristic in an expectation and the
   word `volgens` of an inconsistency are keywords; the rule an inconsistency names is a text literal, a `string`.

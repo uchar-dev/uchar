@@ -1293,12 +1293,19 @@ public final class SemanticTokens {
 
     /** A member of an instance of {@code ot} written over {@code range}, a leading article apart, read as the
      *  scenario route reads it: an attribute by {@link ObjectType#attributeName}, a characteristic by
-     *  {@link CharacteristicMatcher}. Where the type is unknown — the opener or the label names nothing, which the
-     *  scenario route reports there — every type's members are candidates, as for a name its place does not decide. */
+     *  {@link CharacteristicMatcher}, and a cell of a dimensioned attribute, which names the attribute and its labels
+     *  ({@link ExpressionBuilder#cellReadings}), word by word as the words of a rule. Where the type is unknown — the
+     *  opener or the label names nothing, which the scenario route reports there — every type's members are
+     *  candidates, as for a name its place does not decide. */
     private void member(int[] range, Kind kind, ObjectType ot) {
         int[] r = withoutArticle(range);
         if (r == null) return;
         String written = text(r[0], r[1]);
+        if (kind == Kind.ATTRIBUTE && ot != null && ot.attributeName(written) == null
+                && !ExpressionBuilder.cellReadings(model, ot, written).isEmpty()) {
+            words(r[0], r[1], new Scope(ot, Map.of()));
+            return;
+        }
         List<Candidate> candidates;
         if (ot == null) candidates = members(written, kind);
         else {

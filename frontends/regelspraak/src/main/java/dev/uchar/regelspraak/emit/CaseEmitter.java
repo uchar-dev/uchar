@@ -101,7 +101,9 @@ public final class CaseEmitter {
         w.key("attributes").beginObject();
         for (AttributeValue a : i.attributes()) {
             w.key(a.attribute());
-            if (a.timeline() != null) timelineValue(w, a.timeline()); else value(w, a.value());
+            if (a.timeline() != null) timelineValue(w, a.timeline());
+            else if (a.cells() != null) cellsValue(w, a.cells());
+            else value(w, a.value());
         }
         w.endObject();
         w.key("roles").beginObject();
@@ -165,6 +167,22 @@ public final class CaseEmitter {
                 w.key("label").value(v.label());
                 w.key("characteristic").value(v.characteristic());
             }
+            case CELL_VALUE -> {
+                w.key("kind").value("cellValue");
+                w.key("label").value(v.label());
+                w.key("attribute").value(v.attribute());
+                w.key("labels");
+                labels(w, v.labels());
+                w.key("value");
+                value(w, v.expectedValue());
+            }
+            case CELL_EMPTY -> {
+                w.key("kind").value("cellEmpty");
+                w.key("label").value(v.label());
+                w.key("attribute").value(v.attribute());
+                w.key("labels");
+                labels(w, v.labels());
+            }
             case CONSISTENT -> w.key("kind").value("consistent");
             case INCONSISTENT -> {
                 w.key("kind").value("inconsistent");
@@ -180,6 +198,28 @@ public final class CaseEmitter {
         w.key("timeline");
         segments(w, timeline);
         w.endObject();
+    }
+
+    /** The cells of a dimensioned attribute, the case format's {@code cellsValue}. */
+    private static void cellsValue(IrEmitter.Json w, List<Cell> cells) {
+        w.beginObject();
+        w.key("cells").beginArray();
+        for (Cell c : cells) {
+            w.beginObject();
+            w.key("labels");
+            labels(w, c.labels());
+            w.key("value");
+            value(w, c.value());
+            w.endObject();
+        }
+        w.endArray();
+        w.endObject();
+    }
+
+    private static void labels(IrEmitter.Json w, List<String> labels) {
+        w.beginArray();
+        for (String l : labels) w.value(l);
+        w.endArray();
     }
 
     private static void segments(IrEmitter.Json w, List<Segment> timeline) {
