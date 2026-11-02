@@ -1262,9 +1262,11 @@ public final class CaseRunner {
      * hold is refused while the case is read, as the reference interpreter refuses it, so that a bounded attribute holds
      * a decimal that fits its declaration wherever the session reads it. A timeline is held to it segment by segment. A
      * value of another datatype, the unbounded form, which holds every value (ch. 2.4 point 3), and leeg pass; a rational
-     * lexeme is held to it too, before the refusal of a rational value ({@link #valueToArg}).
+     * lexeme is held to it too, before the refusal of a rational value ({@link #valueToArg}). Public, with
+     * {@link InputPrecisionFault}, so that a consumer that binds a parameter or attribute itself holds the value to the
+     * same fence and can tell the refusal from a defect.
      */
-    static void inputFits(JsonNode w, Datatype dt, String place) {
+    public static void inputFits(JsonNode w, Datatype dt, String place) {
         if (w == null || w.isNull() || dt == null || !dt.isNumberLike() || dt.unbounded()) return;
         if (w.has("timeline")) {
             for (JsonNode segment : w.get("timeline")) inputFits(segment.get("value"), dt, place);
@@ -1285,7 +1287,7 @@ public final class CaseRunner {
     /** The refusal of a case value its declaration cannot hold (RUNTIME-SEMANTICS ch. 5.7b, EF-004): a defect of the
      *  case, so a hard error and never an {@link Excluded}, as {@link CaseDateFault} is; a type of its own so that the
      *  red path can name its kind ({@link #faultKinds}). */
-    static final class InputPrecisionFault extends IllegalArgumentException {
+    public static final class InputPrecisionFault extends IllegalArgumentException {
         private static final long serialVersionUID = 1L;
 
         private final String place;
@@ -1299,12 +1301,12 @@ public final class CaseRunner {
             this.decimals = decimals;
         }
 
-        String code() {
+        public String code() {
             return "EF-004";
         }
 
         /** The parameters of the kind (ch. 5.7b): the place of the input, its exact value and the declared decimals. */
-        java.util.Map<String, String> params() {
+        public java.util.Map<String, String> params() {
             java.util.Map<String, String> p = new LinkedHashMap<>();
             p.put("place", place);
             p.put("value", value);
