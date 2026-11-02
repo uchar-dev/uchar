@@ -28,6 +28,13 @@ Ch. 7.8 (een regel die niet beslist, laat de waarde van de feitenbasis staan) en
 meerdere schrijvers (ASP afgeschermd, v0 agendavolgorde) en kenmerken (ch. 5.3 "only ever set true"; de truth-maintenance-tak trekt
 ze al in): meet ze en leg ze aan Fable voor als ze meedoen.
 
+## Besluiten Yeb (2026-11-02)
+
+- **Kenmerk: intrekken.** Een kenmerk geldt aan het fixpunt alleen als een regel die het toekent daar beslist; ch. 5.3 "only ever set
+  true" wordt aangepast.
+- **Meerdere schrijvers: wat aan het fixpunt beslist.** Geen beslissende vorm: de invoerwaarde; één: diens waarde; twee met
+  verschillende waarden: de fout van twee schrijvers (ch. 5.7). In elke regelvolgorde.
+
 ## Richting
 
 Dezelfde constructie als `fout-op-tussenstand`: `World.outcome` draagt ook de schrijfactie (attribuut, waarde). Vuurt de
