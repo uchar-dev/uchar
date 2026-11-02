@@ -2777,8 +2777,9 @@ literal `{"boolean": true}` since L4.)
   ch. 7.10 refuses in every executor. This is the chain-awareness ch. 6.1
   asks of the single-writer rules: whether two writers survive into one
   instance's effective stack. Characteristic
-  attributions (a version with neither tag nor flag) are exempt — a monotone
-  many-grounds-one-truth — and a guarded case split (each writer carrying
+  attributions (a version with neither tag nor flag) are exempt — many
+  grounds, one truth: the characteristic holds while one of them decides
+  (`RUNTIME-SEMANTICS.md` ch. 5.3) — and a guarded case split (each writer carrying
   a `condition`) carries its own priority and stays outside the rule; only
   the bare collision is statically over-determined. *Motivation:* the
   `PHASE5D-DIFF` §8.2 witness — the flat form is un-pinnable in every
@@ -9039,8 +9040,8 @@ anchored fold reads the population of its element type and the link sets of
 its own range, not of the range around it. Its kind is the one its position
 gives (ch. 5.2): in the range or the matrix of a quantifier fold under the
 quantifiers that make those negative, or under a leeg/gevuld test, an
-anchored read is negative as every read there is, since a later monotone
-write to the form subject's member can turn the verdict. An `IdentityCheck`
+anchored read is negative as every read there is, since a later write to
+the form subject's member can turn the verdict. An `IdentityCheck`
 draws no edge: the objects it compares are the form's subject and a member
 of the range, which the form and the fold read already. *Cost:* none.
 Measured 2026-10-23 on the verifier of the card: `verifier
@@ -9058,19 +9059,24 @@ to every form that **reads** it — in one of three kinds:
   (assignment, initialisation, allocation) and any positive characteristic
   read. Attribute writes are revocable — idempotent, re-evaluated under
   freshness (`RUNTIME-SEMANTICS.md` ch. 5.1) — so a transient self-corrects
-  within a stratum, and a positive characteristic read is monotone-safe
-  (ch. 5.3).
+  within a stratum, and a positive characteristic read is safe there: a
+  characteristic holds at the fixpoint only where an attribution that
+  grants it decides (`RUNTIME-SEMANTICS.md` ch. 5.3), and an attribution
+  reads every attribute stratum-strictly (below).
 - **stratum-strict**: any non-characteristic read (attribute value,
-  comparison; the leeg/gevuld test reads negatively, below) by a form whose
-  write is **irrevocable** — a characteristic attribution (monotone), a
-  consistency or uniqueness (channel facts are never retracted), or a
-  creation. Such a form MUST evaluate strictly above the producers of what
-  it reads: a transient it acted on would persist. Within a WF-045-admissible
+  comparison; the leeg/gevuld test reads negatively, below) by a
+  characteristic attribution, a consistency or uniqueness, or a creation.
+  Such a form MUST evaluate strictly above the producers of what it reads.
+  A consistency or uniqueness (channel facts are never retracted) and a
+  creation are **irrevocable**, so a transient they acted on would persist;
+  a characteristic attribution withdraws what it set where it no longer
+  decides (`RUNTIME-SEMANTICS.md` ch. 5.3), and its strict reads order it
+  after its producers, so it does not decide on a transient. Within a WF-045-admissible
   recursive-creation cycle the strictness is discharged by the
   one-generation-per-instance progression (ch. 5.5), not a stratum boundary.
 - **negative**: a negated characteristic read, a characteristic read under
   a negation-like quantifier (*geen*, *ten hoogste*, *precies* — their
-  truth can be lost by a later monotone write), every read under a
+  truth can be lost by a later write), every read under a
   leeg/gevuld test in either polarity (*2026-09-23*, below), every read in
   the range of a quantifier fold under `all`, `none`, `atMost` or
   `exactly` and in its matrix under `none`, `atMost` or `exactly`

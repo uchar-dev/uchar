@@ -6494,22 +6494,26 @@ every form that reads it — in three kinds:
   (assignment, initialisation, allocation), and positive characteristic
   reads anywhere. Attribute writes are revocable — idempotent and
   re-evaluated under freshness (ch. 5.1) — so a transient self-corrects
-  within a stratum, and a positive characteristic read is monotone-safe
-  (it can only still become true).
+  within a stratum, and a positive characteristic read is safe there: a
+  characteristic holds at the fixpoint only where an attribution that
+  grants it decides (ch. 5.3), and an attribution reads every attribute
+  stratum-strictly (below).
 - **stratum-strict**: any non-characteristic read (attribute values,
   comparisons; the leeg/gevuld predicates read negatively, below) by a
-  form whose write is *irrevocable* — a characteristic attribution
-  (monotone, ch. 5.3), a consistency or uniqueness (channel facts are
-  never retracted, ch. 5.6), or a creation. Such a form must evaluate
-  strictly above the producers of what it reads: a transient it acted
-  on would persist.
+  characteristic attribution, a consistency or uniqueness, or a creation.
+  Such a form must evaluate strictly above the producers of what it
+  reads. A consistency or uniqueness (channel facts are never retracted,
+  ch. 5.6) and a creation are *irrevocable*, so a transient they acted on
+  would persist; a characteristic attribution withdraws what it set where
+  it no longer decides (ch. 5.3), and its strict reads order it after its
+  producers, so it does not decide on a transient.
   Within a WF-045-admissible recursive-creation cycle the strictness is
   discharged by the one-generation-per-instance progression (ch. 5.5)
   rather than a stratum boundary: the creation reads the settled world
   of the previous generation (ch. 5.5, Generations).
 - **negative**: a negated characteristic read, a characteristic read
   under a negation-like quantifier (*geen*, *ten hoogste*, *precies* —
-  their truth can be lost by a later monotone write), every read under a
+  their truth can be lost by a later write), every read under a
   leeg/gevuld predicate in either polarity, every read in the range of a
   quantifier fold (ch. 3.9a) under *alle*, *geen*, *ten hoogste* or
   *precies* and in its matrix under *geen*, *ten hoogste* or *precies*
@@ -6633,12 +6637,6 @@ back to **leeg** at the fixpoint, in
 either order of the two rules (`WV-6.1-written-allocation`; measured
 2026-11-02, the reference interpreter answered 25 and 75 with the
 vrijgavescore first, the ASP backend and both Drools branches leeg).
-
-Since that day a characteristic attribution withdraws what it set where it
-no longer decides (ch. 5.3), so its write is no longer irrevocable within
-an evaluation; its reads keep the stratum-strict kind above, which orders
-it after the producers of what it reads, as `IR-SPEC.md` ch. 5 states the
-edge kinds.
 
 *Recorded residual — conditions that hold on absence (measured
 2026-09-23, open).* The leeg/gevuld predicate, the range of a quantifier
