@@ -2161,6 +2161,23 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
            is no source of instances"
           (Ir_v0.Spelling.encode Ir_v0.Spelling.aggregation_kind kind)
           el
+    (* a cell of each member (ch. 5.8c, ALEF's fold of one cell over a
+       role): the set source names the dimensioned attribute of the element
+       type, read per contributor in the cell its labels name; a count counts
+       instances and reads no cell *)
+    | ( Some el,
+        [ Dimension_cell_read
+            { attribute_ref = Some (Attribute_reference { attribute_ref = Some name; navigation_bindings = None; _ });
+              labels; _ } ] )
+      when ranged
+           && (match kind with
+              | Sum_function | Minimum | Maximum | First | Last | Filled_count -> true
+              | _ -> false) ->
+        let member = cell_member env ~ot:el ~attr:name (List.map (req "DimensionCellRead.labels") labels) in
+        let members =
+          filter_in_order keep (fold_members ?binding:source_role ?path:source_path env world self ~element:el)
+        in
+        `Values (contributing_values members (List.map (fun i -> World.attr i member) members))
     (* WF-037, the fold-source arm, in the verifier's sentence: the one
        argument of an aggregation that carries an elementType is an
        AttributeReference, and any other node there is refused by name. A

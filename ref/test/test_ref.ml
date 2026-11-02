@@ -11258,6 +11258,39 @@ let () =
          (expected
             [ value "P1" "leidersvoorjaar" "12.50"; value "P1" "leidersjaargewicht" "16.50"; empty "P2" "leidersvoorjaar";
               empty "P2" "leidersjaargewicht" ]));
+  (* a fold of one cell of each member of a to-many role (ALEF's fold of a
+     cell over a role): the sum and the maximum skip a member whose cell is
+     leeg, the filled count counts the filled cells, 0 over no member *)
+  let members =
+    document
+      ~fact_types:
+        {|{"node": "FactType", "name": "ploeglidmaatschap", "reciprocal": false, "roles": [{"node": "Role", "name": "ploeg", "objectType": "Ploeg", "many": false}, {"node": "Role", "name": "lid", "objectType": "Jutter", "plural": "leden", "many": true}]}|}
+      ~object_types:
+        [ object_type "Jutter" "Jutters" [ attribute ~dimensions:[ "seizoen" ] "vondstgewicht" ];
+          object_type ~animate:false "Ploeg" "Ploegen"
+            [ attribute "ledenvoorjaar"; attribute "zwaarste najaar"; attribute ~datatype:count_type "voorjaarsleden" ] ]
+      ~dimensions:[ seizoen ]
+      (let member_fold kind typ label =
+         Printf.sprintf
+           {|{"node": "Aggregation", "kind": "%s", "arguments": [%s], "elementType": "Jutter", "sourceRole": {"node": "RoleBinding", "factType": "ploeglidmaatschap", "role": "lid"}, "type": %s}|}
+           kind (cell "vondstgewicht" [ label ]) typ
+       in
+       [ rule ~subject:"Ploeg" "ledenvoorjaar van een ploeg" "ledenvoorjaar" (member_fold "sum" kg "voorjaar");
+         rule ~subject:"Ploeg" "zwaarste najaar van een ploeg" "zwaarste najaar" (member_fold "maximum" kg "najaar");
+         rule ~subject:"Ploeg" "voorjaarsleden van een ploeg" "voorjaarsleden"
+           (member_fold "filledCount" count_type "voorjaar") ])
+  in
+  plays_named ~ident:"WV-5.8c-cel-van-elk-lid" ~ir:members
+    ~case_data:
+      (case_of
+         [ instance ~roles:{|{"lid": ["J1", "J2", "J3"]}|} "P1" "Ploeg" [];
+           instance "P2" "Ploeg" [];
+           instance "J1" "Jutter" [ ("vondstgewicht", cells_of [ ([ "voorjaar" ], "2.50") ]) ];
+           instance "J2" "Jutter" [];
+           instance "J3" "Jutter" [ ("vondstgewicht", cells_of [ ([ "voorjaar" ], "3.00"); ([ "najaar" ], "1.00") ]) ] ]
+         (expected
+            [ value "P1" "ledenvoorjaar" "5.50"; value "P1" "zwaarste najaar" "1.00"; value "P1" "voorjaarsleden" "2";
+              empty "P2" "ledenvoorjaar"; empty "P2" "zwaarste najaar"; value "P2" "voorjaarsleden" "0" ]));
   (* the input precision of a cell (EF-004): its place is the cell *)
   let seizoenvondst = read_corpus "corpus/golden/jutterswet-seizoenvondst/ir.json" in
   (match

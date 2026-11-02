@@ -2378,7 +2378,7 @@ let new_part ctx (ro : range_order) =
    and the Drools loader split it: a characteristic (WF-080), a role
    reachable from the fold subject (WF-093 (a)), any other name (WF-034) *)
 let set_source_attribute ctx ~subject_ot ~el a =
-  if Ir_v0.Checks.find_ci (object_type ctx el).attributes a = None then
+  if find_decl ctx ~otype:el ~attr:a = None then
     if Ir_v0.Checks.has_characteristic (object_type ctx el) a then
       fault
         "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
@@ -3377,6 +3377,128 @@ let doc_env ctx =
   { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None;
     locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
 
+(* The read of [member] on the object the attribute reference [e] reaches
+   (ch. 5.8): its val/3 atom, the value variable and the scale of the
+   attribute's declaration. [member] is the attribute itself, or one of its
+   cells (RUNTIME-SEMANTICS ch. 5.8c), whose val/3 name is the reference
+   interpreter's (World.cell), so a cell is read as an attribute is. *)
+let rec member_read ?(scaled = true) ctx ~subject ~subject_ot ~member (e : expr) : string list * string * int =
+  match Ir_v0.Checks.unanchored_expr e with
+  | Some inner -> at_form ctx (fun subject subject_ot -> member_read ~scaled ctx ~subject ~subject_ot ~member inner)
+  | None -> (
+      match e with
+      | Attribute_reference { attribute_ref; object_type = ot; navigation_bindings; _ } -> (
+          let a = req "attribute" attribute_ref in
+          let ot = req "subjectType" ot in
+          (* a value position reads a DECLARED attribute; a characteristic or a
+             count source's role name has no value term here *)
+          if Ir_v0.Checks.find_ci (object_type ctx ot).attributes a = None then
+            if Ir_v0.Checks.has_characteristic (object_type ctx ot) a then
+              fault
+                "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
+                 ill-formed in a value position"
+                a ot
+            else fault "%S is not a declared attribute of %S: a value position reads an attribute" a ot;
+          if attr_temporal ctx ~otype:ot ~attr:a then
+            fault "temporal attribute %S in a scalar slot is refused (ch. 3.3)" a;
+          match navigation_bindings with
+          | None ->
+              (* WF-053, IR-SPEC ch. 4.1a, ref's [own_read]: without bindings the
+                 read is the subject's own, so it names the subject type itself. A
+                 supertype is another type, even where it declares the member (the
+                 subject type reaches that through the chain, ch. 2.2), and only a
+                 navigation reaches another type *)
+              if norm ot <> norm subject_ot then
+                fault
+                  "an attribute reference without a path is the subject's own read, so its subjectType \
+                   is the subject type '%s' — '%s' names another type, which only a navigation reaches"
+                  subject_ot ot;
+              let v = fresh ctx "A" in
+              (* a sum-/struct-typed attribute holds a ground record/constructor term,
+                 carrying no numeric scale (value_scale 0) — the whole-value read (a
+                 struct passed as a subscope input), the struct_base sibling. A numeric
+                 attribute rides its declared scale. *)
+              let scale =
+                if (not scaled) || attr_sum_typed ctx ~otype:ot ~attr:a || attr_struct_typed ctx ~otype:ot ~attr:a then 0
+                else pow10 (attr_decimals ctx ~otype:ot ~attr:a)
+              in
+              ([ Printf.sprintf "val(%s,%s,%s)" subject (str member) v ], v, scale)
+          | Some rbs ->
+              (* the navigated read (ch. 5.8): one role/3 body join per to-one
+                 hop — an absent link leaves the body underivable, which IS the
+                 leeg-on-absent-relation rule (leeg as absence, for free). The
+                 hop roles are the bindings, resolved through ref's resolver. *)
+              let roles = List.map (Eval.bound_role (doc_env ctx)) rbs in
+              List.iter
+                (fun (r : role_ref) ->
+                  if r.role_many then
+                    fault "navigation over the to-many role %S in a scalar slot is refused"
+                      (Option.value r.role_identifier ~default:"?"))
+                roles;
+              let atoms, target =
+                List.fold_left
+                  (fun (atoms, cur) (r : role_ref) ->
+                    let n = fresh ctx "N" in
+                    (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (str (role_canonical r)) n ], n))
+                  ([], subject) roles
+              in
+              let v = fresh ctx "A" in
+              ( atoms @ [ Printf.sprintf "val(%s,%s,%s)" target (str member) v ],
+                v,
+                if scaled then pow10 (attr_decimals ctx ~otype:ot ~attr:a) else 0 ))
+      | _ -> fault "%s stands where an attribute reference is read" (Ir_v0.Spelling.a_node e))
+
+(* the attribute reference a cell read or a dimension fold names, its anchor
+   aside, with the attribute and the type it is read on *)
+let dimensioned_reference (e : expr) =
+  match Option.value (Ir_v0.Checks.unanchored_expr e) ~default:e with
+  | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (a, ot)
+  | _ -> fault "a cell read and a dimension fold name an attribute reference (IR-SPEC ch. 4.3)"
+
+(* the cells a dimension fold reads (RUNTIME-SEMANTICS ch. 5.8c, 3): the
+   attribute's cells of the product of the selections, in its order, each read
+   as a member of its own on the object the argument reaches, with the helper
+   predicate and its key. [scaled] is false for a fold that counts its cells
+   and reads no value, so a cell of any type is read without a scale *)
+let dimension_cells ctx ~subject ~subject_ot ~scaled argument selections =
+  let a, ot = dimensioned_reference argument in
+  let dims =
+    match Ir_v0.Checks.attr_dimensions (object_type ctx ot) a with
+    | Some dims -> dims
+    | None -> fault "dimension fold over undimensioned attribute '%s'" a
+  in
+  if List.length selections <> List.length dims then
+    fault "dimension fold carries %d selections for the %d dimensions of its argument" (List.length selections)
+      (List.length dims);
+  let members = List.map (Eval.cell_member (doc_env ctx) ~ot ~attr:a) (Ir_v0.Checks.selected_cells selections) in
+  let reads = List.map (fun member -> member_read ctx ~scaled ~subject ~subject_ot ~member argument) members in
+  ctx.fresh <- ctx.fresh + 1;
+  let pred = Printf.sprintf "dim%d" ctx.fresh in
+  let key, opening =
+    helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot)
+      (List.concat_map (fun (atoms, _, _) -> atoms) reads)
+  in
+  (pred, key, opening, reads)
+
+(* ALEF's fold of one cell over a role (IR-SPEC ch. 4.3, RUNTIME-SEMANTICS
+   ch. 5.8c): the set source is a cell of each contributor, which this encoding
+   holds as a member of its own (val(X,"vondstgewicht[voorjaar]",A)), so the
+   fold is the set fold over that member. Some of that fold; None for any
+   other node, a count included, which counts instances and reads no cell *)
+let cell_source_fold ctx (e : expr) =
+  match e with
+  | Function_call
+      ({ kind = Sum_function | Minimum | Maximum | First | Last | Filled_count;
+         call_arguments =
+           [ Dimension_cell_read
+               { attribute_ref = Some (Attribute_reference ({ attribute_ref = Some a; navigation_bindings = None; _ } as r));
+                 labels; _ } ];
+         element_object_type = Some el; dimension_selections = None; _ } as f)
+    when f.source_role <> None || f.source_path <> None ->
+      let member = Eval.cell_member (doc_env ctx) ~ot:el ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      Some (Function_call { f with call_arguments = [ Attribute_reference { r with attribute_ref = Some member } ] })
+  | _ -> None
+
 (* a text/enum/boolean operand → (body atoms binding a ground term, the
    term): an own-subject attribute read binds its val atom's value, a literal
    is a bare ground term with no atom. Both are positive, so a leeg attribute
@@ -3384,6 +3506,9 @@ let doc_env ctx =
    equality directions, for free) — the sum/struct operand pattern on the
    scalar datatypes. *)
 let rec symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string =
+  match cell_source_fold ctx e with
+  | Some fold -> symbolic_term ctx ~subject ~subject_ot fold
+  | None ->
   match Ir_v0.Checks.unanchored_expr e with
   | Some inner -> at_form ctx (fun subject subject_ot -> symbolic_term ctx ~subject ~subject_ot inner)
   | None ->
@@ -3411,49 +3536,34 @@ let rec symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string
       sourceless_fold kind el ~list_literal:false
   | Function_call { kind; call_arguments = [ a ]; element_object_type = Some el; _ } when non_source kind a ->
       non_source_fold kind el a
-  (* a cell of a text, enumeration or boolean attribute of the subject
-     (RUNTIME-SEMANTICS ch. 5.8c, 1): the val/3 of the cell's member, as the
-     own read above binds the attribute's *)
+  (* a cell of a text, enumeration or boolean attribute (RUNTIME-SEMANTICS
+     ch. 5.8c, 1), on the subject or over a path of to-one roles: the val/3 of
+     the cell's member on the object its reference reaches, read without a
+     scale, as the numeric cell read reads it with one *)
   | Dimension_cell_read
-      { attribute_ref = Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ });
+      { attribute_ref = Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } as inner);
         labels; _ }
-    when norm ot = norm subject_ot && attr_symbolic_datatype ctx ~otype:ot ~attr:a <> None ->
+    when attr_symbolic_datatype ctx ~otype:ot ~attr:a <> None ->
       let member = Eval.cell_member (doc_env ctx) ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
-      let v = fresh ctx "V" in
-      ([ Printf.sprintf "val(%s,%s,%s)" subject (str member) v ], v)
+      let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member inner in
+      (atoms, v)
   (* the first and the last filled cell of a text, enumeration or boolean
-     attribute of the subject (ch. 5.8c, 3), by position: one helper atom per
-     selected cell that holds a value, keyed by its index in the order of the
-     product, and the value at the least or the greatest index; where no cell
-     holds one the definedness atom keeps the fold underivable, ref's leeg *)
+     attribute (ch. 5.8c, 3), on the subject or over a path, by position: one
+     helper atom per selected cell that holds a value, keyed by its index in the
+     order of the product, and the value at the least or the greatest index;
+     where no cell holds one, an absent link included, the definedness atom
+     keeps the fold underivable, ref's leeg *)
   | Function_call
       { kind = (First | Last) as kind; call_arguments = [ argument ]; dimension_selections = Some selections;
         element_object_type = None; source_role = None; source_path = None; filter = None; _ }
     when (match Option.value (Ir_v0.Checks.unanchored_expr argument) ~default:argument with
-          | Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ } ->
-              norm ot = norm subject_ot && attr_symbolic_datatype ctx ~otype:ot ~attr:a <> None
+          | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } ->
+              attr_symbolic_datatype ctx ~otype:ot ~attr:a <> None
           | _ -> false) ->
-      let a, ot =
-        match Option.value (Ir_v0.Checks.unanchored_expr argument) ~default:argument with
-        | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (a, ot)
-        | _ -> fault "a dimension fold names an attribute reference (IR-SPEC ch. 4.3)"
-      in
-      (match Ir_v0.Checks.attr_dimensions (object_type ctx ot) a with
-      | Some dims when List.length dims = List.length selections -> ()
-      | Some dims ->
-          fault "dimension fold carries %d selections for the %d dimensions of its argument" (List.length selections)
-            (List.length dims)
-      | None -> fault "dimension fold over undimensioned attribute '%s'" a);
-      let members = List.map (Eval.cell_member (doc_env ctx) ~ot ~attr:a) (Ir_v0.Checks.selected_cells selections) in
-      let reads =
-        List.map (fun m -> let v = fresh ctx "V" in ([ Printf.sprintf "val(%s,%s,%s)" subject (str m) v ], v)) members
-      in
-      ctx.fresh <- ctx.fresh + 1;
-      let pred = Printf.sprintf "dim%d" ctx.fresh in
-      let key, opening =
-        helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) (List.concat_map fst reads)
-      in
-      List.iteri (fun i (atoms, t) -> emit ctx "%s(%s,%d,%s) :- %s." pred key i t (String.concat ", " (opening @ atoms))) reads;
+      let pred, key, opening, reads = dimension_cells ctx ~subject ~subject_ot ~scaled:false argument selections in
+      List.iteri
+        (fun i (atoms, t, _) -> emit ctx "%s(%s,%d,%s) :- %s." pred key i t (String.concat ", " (opening @ atoms)))
+        reads;
       emit ctx "%s_def(%s) :- %s(%s,_,_)." pred key pred key;
       let v = fresh ctx "D" in
       let c = "C" ^ v and i = "I" ^ v in
@@ -4327,110 +4437,10 @@ let bucketing = function Time_proportional_part | Day_count -> true | _ -> false
 
 let foreign_granularity () = fault "granularity facet on a non-bucketing kind"
 
-(* The read of [member] on the object the attribute reference [e] reaches
-   (ch. 5.8): its val/3 atom, the value variable and the scale of the
-   attribute's declaration. [member] is the attribute itself, or one of its
-   cells (RUNTIME-SEMANTICS ch. 5.8c), whose val/3 name is the reference
-   interpreter's (World.cell), so a cell is read as an attribute is. *)
-let rec member_read ?(scaled = true) ctx ~subject ~subject_ot ~member (e : expr) : string list * string * int =
-  match Ir_v0.Checks.unanchored_expr e with
-  | Some inner -> at_form ctx (fun subject subject_ot -> member_read ~scaled ctx ~subject ~subject_ot ~member inner)
-  | None -> (
-      match e with
-      | Attribute_reference { attribute_ref; object_type = ot; navigation_bindings; _ } -> (
-          let a = req "attribute" attribute_ref in
-          let ot = req "subjectType" ot in
-          (* a value position reads a DECLARED attribute; a characteristic or a
-             count source's role name has no value term here *)
-          if Ir_v0.Checks.find_ci (object_type ctx ot).attributes a = None then
-            if Ir_v0.Checks.has_characteristic (object_type ctx ot) a then
-              fault
-                "'%s' is a characteristic of '%s', not an attribute — a characteristic endpoint is \
-                 ill-formed in a value position"
-                a ot
-            else fault "%S is not a declared attribute of %S: a value position reads an attribute" a ot;
-          if attr_temporal ctx ~otype:ot ~attr:a then
-            fault "temporal attribute %S in a scalar slot is refused (ch. 3.3)" a;
-          match navigation_bindings with
-          | None ->
-              (* WF-053, IR-SPEC ch. 4.1a, ref's [own_read]: without bindings the
-                 read is the subject's own, so it names the subject type itself. A
-                 supertype is another type, even where it declares the member (the
-                 subject type reaches that through the chain, ch. 2.2), and only a
-                 navigation reaches another type *)
-              if norm ot <> norm subject_ot then
-                fault
-                  "an attribute reference without a path is the subject's own read, so its subjectType \
-                   is the subject type '%s' — '%s' names another type, which only a navigation reaches"
-                  subject_ot ot;
-              let v = fresh ctx "A" in
-              (* a sum-/struct-typed attribute holds a ground record/constructor term,
-                 carrying no numeric scale (value_scale 0) — the whole-value read (a
-                 struct passed as a subscope input), the struct_base sibling. A numeric
-                 attribute rides its declared scale. *)
-              let scale =
-                if (not scaled) || attr_sum_typed ctx ~otype:ot ~attr:a || attr_struct_typed ctx ~otype:ot ~attr:a then 0
-                else pow10 (attr_decimals ctx ~otype:ot ~attr:a)
-              in
-              ([ Printf.sprintf "val(%s,%s,%s)" subject (str member) v ], v, scale)
-          | Some rbs ->
-              (* the navigated read (ch. 5.8): one role/3 body join per to-one
-                 hop — an absent link leaves the body underivable, which IS the
-                 leeg-on-absent-relation rule (leeg as absence, for free). The
-                 hop roles are the bindings, resolved through ref's resolver. *)
-              let roles = List.map (Eval.bound_role (doc_env ctx)) rbs in
-              List.iter
-                (fun (r : role_ref) ->
-                  if r.role_many then
-                    fault "navigation over the to-many role %S in a scalar slot is refused"
-                      (Option.value r.role_identifier ~default:"?"))
-                roles;
-              let atoms, target =
-                List.fold_left
-                  (fun (atoms, cur) (r : role_ref) ->
-                    let n = fresh ctx "N" in
-                    (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (str (role_canonical r)) n ], n))
-                  ([], subject) roles
-              in
-              let v = fresh ctx "A" in
-              ( atoms @ [ Printf.sprintf "val(%s,%s,%s)" target (str member) v ],
-                v,
-                if scaled then pow10 (attr_decimals ctx ~otype:ot ~attr:a) else 0 ))
-      | _ -> fault "%s stands where an attribute reference is read" (Ir_v0.Spelling.a_node e))
-
-(* the attribute reference a cell read or a dimension fold names, its anchor
-   aside, with the attribute and the type it is read on *)
-let dimensioned_reference (e : expr) =
-  match Option.value (Ir_v0.Checks.unanchored_expr e) ~default:e with
-  | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (a, ot)
-  | _ -> fault "a cell read and a dimension fold name an attribute reference (IR-SPEC ch. 4.3)"
-
-(* the cells a dimension fold reads (RUNTIME-SEMANTICS ch. 5.8c, 3): the
-   attribute's cells of the product of the selections, in its order, each read
-   as a member of its own on the object the argument reaches, with the helper
-   predicate and its key. [scaled] is false for a fold that counts its cells
-   and reads no value, so a cell of any type is read without a scale *)
-let dimension_cells ctx ~subject ~subject_ot ~scaled argument selections =
-  let a, ot = dimensioned_reference argument in
-  let dims =
-    match Ir_v0.Checks.attr_dimensions (object_type ctx ot) a with
-    | Some dims -> dims
-    | None -> fault "dimension fold over undimensioned attribute '%s'" a
-  in
-  if List.length selections <> List.length dims then
-    fault "dimension fold carries %d selections for the %d dimensions of its argument" (List.length selections)
-      (List.length dims);
-  let members = List.map (Eval.cell_member (doc_env ctx) ~ot ~attr:a) (Ir_v0.Checks.selected_cells selections) in
-  let reads = List.map (fun member -> member_read ctx ~scaled ~subject ~subject_ot ~member argument) members in
-  ctx.fresh <- ctx.fresh + 1;
-  let pred = Printf.sprintf "dim%d" ctx.fresh in
-  let key, opening =
-    helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot)
-      (List.concat_map (fun (atoms, _, _) -> atoms) reads)
-  in
-  (pred, key, opening, reads)
-
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
+  match cell_source_fold ctx e with
+  | Some fold -> expr_term ctx ~subject ~subject_ot fold
+  | None ->
   match let_into_arm ctx e with
   | Some pushed -> expr_term ctx ~subject ~subject_ot pushed
   | None ->
@@ -6722,6 +6732,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
    propagates by the bare join (an unbound date leaves the pair underivable),
    exactly the day-precision date rule. *)
 and dt_term ctx ~subject ~subject_ot (e : expr) : string list * string * string =
+  match cell_source_fold ctx e with
+  | Some fold -> dt_term ctx ~subject ~subject_ot fold
+  | None ->
   match Ir_v0.Checks.unanchored_expr e with
   | Some inner -> at_form ctx (fun subject subject_ot -> dt_term ctx ~subject ~subject_ot inner)
   | None ->

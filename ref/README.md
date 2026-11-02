@@ -172,7 +172,9 @@ faults with file/position context — never a silent fallback.
   declared order (`World.cell`, `vondstgewicht[voorjaar]`), so it is read,
   held to its declared decimals at input (EF-004) and compared as an
   attribute is. A `DimensionCellRead` reads its cell on the subject or on
-  the object a path of roles reaches, and a dimension fold folds the cells
+  the object a path of roles reaches, also as the source of a value fold or
+  a filled count over a set, where each member gives its cell, and a
+  dimension fold folds the cells
   of the product of its selections, an empty cell skipped and a fold whose
   every cell is empty leeg: a sum, a minimum and a maximum over the values, a
   first and a last by position, the first and the last filled cell in that

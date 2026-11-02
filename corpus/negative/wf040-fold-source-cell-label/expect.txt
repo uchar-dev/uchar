@@ -1,0 +1,4 @@
+WF-040.misplaced-label
+position=1
+label=winter
+dimension=seizoen

@@ -5171,6 +5171,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
             match a with
             | Attribute_reference _ | List_literal _ -> None
             | Instance_set_union _ when f.kind = Count -> None
+            (* one cell of each contributor (ALEF's fold of a cell over a role,
+               ch. 4.3): its reference is the set source, read on the element
+               type; a count counts instances and reads no cell *)
+            | Dimension_cell_read { attribute_ref = Some (Attribute_reference _); _ }
+              when f.dimension_selections = None && List.mem f.kind dimension_fold_kinds ->
+                None
             | _ -> Some (el, a))
         | _ -> None
       in
@@ -5647,6 +5653,20 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
                | Attribute_reference _, Some el when source_position ->
                    wf125_bare_read ctx p a
                    @ aggregation_source_check ctx p ~element_type:el ~subject ~kind:f.kind ~ranged a
+               (* a cell as the set source: the labels name a cell of the
+                  attribute (WF-040), and its reference is judged by the
+                  fold-source rules, as a source without a cell is *)
+               | ( Dimension_cell_read
+                     { attribute_ref =
+                         Some (Attribute_reference { attribute_ref = Some an; object_type = Some otn; _ } as inner);
+                       labels; _ },
+                   Some el )
+                 when source_position && non_source = None ->
+                   (match object_type ctx otn with
+                    | Some ot -> wf040_cell ctx p ~ot ~attribute:an labels
+                    | None -> [])
+                   @ aggregation_source_check ctx (p ^ "/attribute") ~element_type:el ~subject ~kind:f.kind
+                       ~ranged inner
                | _ ->
                    (* the union's admissible position (WF-110 (a)): the SINGLE
                       argument of a count. Keyed on the kind and the arity and
@@ -5804,6 +5824,8 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
                    | Src_count | Src_role_under_value_fold -> Some (el, `Role_name a)
                    | _ -> Some (el, `Member))
                | None -> Some (el, `Member))
+           | Some el, [ Dimension_cell_read _ ] when source_position && ranged && non_source = None ->
+               Some (el, `Member)
            | _ -> None
          in
          (* WF-102 (maintainer decision 2026-09-11): the fold source's range
