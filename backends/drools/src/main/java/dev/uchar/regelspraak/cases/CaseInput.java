@@ -361,8 +361,9 @@ public final class CaseInput {
 
     /** A cell of the case input whose labels name no cell of its attribute (EF-034) or that the input names twice
      *  (EF-035), RUNTIME-SEMANTICS ch. 5.8c: a fault kind of the case input, with the label of the instance, the
-     *  attribute and the labels of the cell as the case writes them. */
-    static final class CellFault extends IllegalArgumentException {
+     *  attribute and the labels of the cell as the case writes them. Public, as {@link CaseRunner.InputPrecisionFault}
+     *  is, so that a caller that hands this reader a case can name the fault kind by its type. */
+    public static final class CellFault extends IllegalArgumentException {
         private static final long serialVersionUID = 1L;
 
         private final String code;
@@ -378,13 +379,13 @@ public final class CaseInput {
             this.labels = String.join(", ", labels);
         }
 
-        String code() {
+        public String code() {
             return code;
         }
 
         /** The parameters of the kind (ch. 5.7b): the label of the instance, the attribute and the labels of the cell,
          *  joined by ", ". */
-        Map<String, String> params() {
+        public Map<String, String> params() {
             Map<String, String> out = new LinkedHashMap<>();
             out.put("label", label);
             out.put("attribute", attribute);
