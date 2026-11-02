@@ -4053,7 +4053,8 @@ let validate_input_precision env world =
 (* The depth of each object in the chain the switch relation of the
    instance-ordered part [o] lays (RUNTIME-SEMANTICS ch. 6.2): 0 without a
    predecessor, d + 1 after a predecessor at depth d, a satellite at the
-   depth of its owner, 0 with neither. The links are the case's, since no
+   depth of its owner where the owner is an object of the chain and at 0
+   where it is not, 0 with neither. The links are the case's, since no
    form writes them, so the depths are read off the input world [world0].
 
    A hop over a relation leaves the role opposite the one it reaches, so it
@@ -4067,11 +4068,15 @@ let validate_input_precision env world =
    type can hold, under the name of the predecessor's role, a link of
    another relation.
 
-   The case reader refused a cycle in the switch relation (EF-033). The
-   owner links can close one too, among satellites whose type lies below the
-   filler of the owner's role, and ch. 6.2 gives such a satellite no depth:
-   an object whose depth is asked for while it is still open fails with the
-   path, rather than recursing until the stack runs out. *)
+   Where the satellite type lies below the filler of the owner's role, a
+   satellite can be the owner of another, and the owner links can close a
+   cycle the case reader does not refuse, since EF-033 reads the switch
+   relation alone. A satellite owned by a satellite lies in no household,
+   so it stands at 0: the depth follows the owner only onto an object of the
+   chain, and recurses only over the switch relation, which EF-033 keeps
+   free of cycles. The mark "open" in the memo stays as a guard: an object whose
+   depth is asked for while it is still open fails with the path, rather
+   than recursing until the stack runs out. *)
 let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
   let pred = { rb_fact_type = o.io_relation; rb_role = o.io_role } in
   let leaves_from (i : World.instance) (rb : role_binding) =
@@ -4134,7 +4139,8 @@ let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
                           | [] -> None)
                       o.io_owners
                   with
-                  | Some (owner, q) -> depth ((label, owner) :: trail) q.World.label
+                  | Some (owner, q) ->
+                      if leaves_from q pred then depth ((label, owner) :: trail) q.World.label else 0
                   | None -> 0))
         in
         Hashtbl.replace memo label (Some d);
@@ -4324,7 +4330,8 @@ let evaluate env world =
      every edge of a cycle counts positive above, and within it they run per
      object in the order of the chain their switch relation lays: depth 0
      the objects without a predecessor, depth d + 1 those whose predecessor
-     stands at depth d, a satellite at the depth of its owner; per depth the
+     stands at depth d, a satellite at the depth of its owner where that is
+     an object of the chain and at depth 0 where it is not; per depth the
      members run level by level, so a member that reads another negatively
      on the same object reads it settled. The depths are read off the input
      world ([instance_depth]); an instance a creation makes has no link and

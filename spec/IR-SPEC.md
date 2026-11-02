@@ -9306,9 +9306,9 @@ Outside stay, each with its reason:
   `anchor-hub-own-hops`, verifier-clean, beside its mirror without the anchor,
   `wf045-instance-cycle-hub-filter-without-anchor`, whose read starts at the
   member and so has the hub in its path (`WF-045.dependency-cycle`).
-- **a satellite of a satellite**: its depth would be derivable (that of the
-  owner of its owner), but the order reads the depth of a satellite over the
-  one hop to its owner, and "one satellite relation per satellite type" is a
+- **a satellite of a satellite**: it stands at 0, since its owner is no
+  object of the chain (`RUNTIME-SEMANTICS.md` ch. 6.2), so a hop to it
+  leaves the household, and "one satellite relation per satellite type" is a
   clause over the relations of T:
   `wf045-instance-cycle-satellite-of-satellite`, verifier-clean with such a
   hop counted as a household hop (measured 2026-10-22).

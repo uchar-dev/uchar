@@ -6358,9 +6358,26 @@ per object:
 - **Depth.** An object without a link of the switch relation to a
   predecessor stands at depth 0, an object whose predecessor stands at depth
   d at d + 1, and a satellite at the depth of its owner (over its satellite
-  relation); an object with neither stands at 0. No form writes these
-  links, so the depths are a property of the case input; an instance a
-  creation makes has no link and stands at 0.
+  relation) where the owner is an object of the chain — of a type that fills
+  the role a hop to the predecessor leaves — and at 0 where it is not (an
+  owner outside the chain, a satellite among them); an object with neither
+  stands at 0. No form writes these links, so the depths are a property of
+  the case input; an instance a creation makes has no link and stands at 0.
+  *(The satellite outside the chain: voorlopig besluit 2026-11-02, card
+  `instance-depth-owner-hop`.)* An owner outside the chain that is no
+  satellite has no predecessor and no owner, so it stands at 0 itself. Where
+  the satellite type lies below the filler of the owner's role, a satellite
+  can own another, and the owner links can close a cycle, which EF-033
+  below, a test of the switch relation, does not refuse. A satellite owned by
+  a satellite lies in no household (`IR-SPEC.md` ch. 5.3). No read of the
+  part reaches its owner from it: the hop falls on the clause `one-walk`,
+  since the satellite relation then has ⊑-comparable fillers and a to-one
+  owner's role, the shape of a switch relation (measured 2026-11-02 on a
+  Bijlage that reads the grensdag of its eigenaar). So it reads in the part
+  only itself and the satellites below it, which stand at 0 as well, and at
+  depth 0 they settle, ordered by the levels, before an object of a higher
+  depth reads them. The depth recurses only over the switch relation, which
+  EF-033 keeps free of cycles.
 - **The chain ends.** The links of the switch relation, over the role the
   hop reaches, MUST form no cycle in the case input. A cycle is refused
   while the case is read, before any rule fires: EF-033 (ch. 5.7b), with
@@ -6618,6 +6635,22 @@ the level of the member (ch. 6.2): stratum k, then depth d, then level l.
   carries the household further: a filter and a quantifier `all` over the
   own termijnen that read the verlengde einddag of the houder of the termijn,
   and a sum over the termijnen of the vorige vergunning.
+- A satellite outside the chain (ch. 6.2, the depth; `ref/` test
+  `instance-depth-owner-cycle`, absolute): Vergunning and Bijlage are each a
+  Ding, the switch relation is vorige vergunning, and the owner's role of the
+  satellite relation bijlagerelatie, eigenaar, is filled by Ding, its other
+  role by Bijlage, to-many. The einddag of a Vergunning is its basiseinddag
+  plus the restant of its vorige vergunning, its restant the sum of the
+  overschotten of its bijlagen, the overschot of a Bijlage the number of days
+  from its stopdag to its grensdag when the stopdag is earlier, and the
+  grensdag of a Ding its einddag; the verifier admits the document. The
+  Bijlagen b1 and b2 are each other's eigenaar, a cycle EF-033 does not
+  test, and V1 (basiseinddag 01-06-2026) has no predecessor: **depth V1 0,
+  b1 0, b2 0**, and the case is **consistent**, the ASP backend's answer as
+  well. Measured 2026-11-02 with the owner's depth followed onto a satellite:
+  the depth of b1 asked for that of b2 and then for its own, and the
+  reference interpreter failed. The Bijlage of `ref/` test WV-6.4-o, whose
+  eigenaar is a Ding that is no Vergunning, stands at 0 by the same clause.
 - A cycle in the links (`ref/` test WV-6.4-k, red case
   `corpus/red/instance-order-link-cycle`): V1's vorige vergunning is V2 and
   V2's is V1. The case is refused while it is read, **EF-033** with

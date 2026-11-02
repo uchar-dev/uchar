@@ -10603,9 +10603,9 @@ let () =
    predecessor. The Ding d holds under "vorige vergunning" a link of the
    relation "verwijzing", whose role to a Bijlage carries that name; d is no
    Vergunning, so it has no predecessor and stands at depth 0, and the Bijlage
-   i, whose eigenaar d is, at the depth of its owner, 0. A hop to the
-   predecessor from d reached i, and the hop to the owner from i reached d
-   again. The overschot of i is 92 days, from the stopdag 01-03-2026 of d to
+   i, whose eigenaar d is, at 0, since its owner is no object of the chain. A
+   hop to the predecessor from d reached i, and the hop to the owner from i
+   reached d again. The overschot of i is 92 days, from the stopdag 01-03-2026 of d to
    its verlengde einddag 01-06-2026, and the verlengde einddag of V1, without
    a predecessor, is its basiseinddag 01-06-2026; the ASP backend answers the
    same (measured 2026-11-02). *)
@@ -10671,13 +10671,14 @@ let () =
         [ ("d", 0); ("i", 0); ("V1", 0) ];
       expect_outcome "WV-6.4-o" c env)
 
-(* The owner links of a satellite relation can close a cycle the case reader,
-   which reads the switch relation (EF-033), does not refuse: here the eigenaar
-   of a Bijlage is a Ding, and a Bijlage is a Ding. b1 and b2 are each other's
-   eigenaar, so ch. 6.2 gives them no depth, and the depth fails with the
-   cycle, from the label it was asked for, instead of recursing until the stack
-   runs out. The verifier admits the document; the ASP backend, which orders
-   nothing by depth, answers the case (measured 2026-11-02). *)
+(* instance-depth-owner-cycle (ch. 6.2, the depth): a satellite whose owner is
+   no object of the chain stands at 0. The owner links of a satellite relation
+   can close a cycle the case reader, which reads the switch relation (EF-033),
+   does not refuse: here the eigenaar of a Bijlage is a Ding, and a Bijlage is
+   a Ding. b1 and b2 are each other's eigenaar, neither is a Vergunning, so b1
+   and b2 stand at 0, and V1, without a predecessor, at 0. The verifier admits
+   the document, and the evaluation answers consistent, as the ASP backend,
+   which orders nothing by depth, does (measured 2026-11-02). *)
 let wv64_owner_cycle =
   {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Ding","animate":false,
 "plural":"Dingen","attributes":[{"node":"Attribute","name":"stopdag","datatype":{"node":"Date",
@@ -10740,30 +10741,11 @@ let () =
        {"label": "V1", "objectType": "Vergunning", "attributes": {"basiseinddag": {"date": "2026-06-01"}}, "roles": {}, "characteristics": []}],
        "parameters": {}}, "expected": [{"kind": "consistent"}]}|}
     (fun violations c env depth ->
-      let cycle from other =
-        Printf.sprintf
-          "ref/lib/eval.ml, instance order: the depth of %S over the switch relation \"vorige \
-           vergunning\" depends on itself: %s -(bijlagerelatie: eigenaar)-> %s -(bijlagerelatie: \
-           eigenaar)-> %s"
-          from from other from
-      in
-      let expect_cycle name got want =
-        match got with
-        | Error m -> check (if m = want then name else name ^ " (got: " ^ m ^ ")") (m = want)
-        | Ok d -> check (Printf.sprintf "%s (got depth %d)" name d) false
-      in
       check "instance-depth-owner-cycle-verifier-clean" (violations = []);
-      expect_depth "instance-depth-owner-cycle-depth-V1" depth "V1" 0;
-      expect_cycle "instance-depth-owner-cycle-b1" (depth "b1") (cycle "b1" "b2");
-      expect_cycle "instance-depth-owner-cycle-b2" (depth "b2") (cycle "b2" "b1");
-      match Eval.evaluate env c.world with
-      | _ -> check "instance-depth-owner-cycle-evaluate (no failure)" false
-      | exception Failure m ->
-          let want = cycle "b1" "b2" in
-          check
-            (if m = want then "instance-depth-owner-cycle-evaluate"
-             else "instance-depth-owner-cycle-evaluate (got: " ^ m ^ ")")
-            (m = want))
+      List.iter
+        (fun (label, want) -> expect_depth ("instance-depth-owner-cycle-depth-" ^ label) depth label want)
+        [ ("V1", 0); ("b1", 0); ("b2", 0) ];
+      expect_outcome "instance-depth-owner-cycle-evaluate" c env)
 
 (* WV-5.7-fixpoint (ch. 5.7, "Faults and deposits are read at the fixpoint"): a
    fault and a deposit are outcomes of one form's evaluation on one subject, the
