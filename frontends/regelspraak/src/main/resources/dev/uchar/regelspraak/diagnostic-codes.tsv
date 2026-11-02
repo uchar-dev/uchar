@@ -357,4 +357,4 @@ RGS-365	dimension-cell-ambiguous	ERROR	cells,written
 RGS-366	dimension-selection-missing	ERROR	attribute,dimension,expression,plural
 RGS-367	dimension-selection-repeated	ERROR	dimension,expression
 RGS-368	dimension-interval-ambiguous	ERROR	dimensions,expression,interval
-RGS-380	scenario-cell-period	ERROR	attribute,written
+RGS-369	scenario-cell-period	ERROR	attribute,written

@@ -449,7 +449,7 @@ class ScenarioCellTest {
     /** A case file gives a cell one value and expects one (cells, cellValue, cellEmpty): a period or a timeline of a
      *  cell has no case form. */
     @Test void a_cell_has_no_period() {
-        String cell = "RGS-380 {attribute=vondstgewicht, written=vondstgewicht in voorjaar op noord}";
+        String cell = "RGS-369 {attribute=vondstgewicht, written=vondstgewicht in voorjaar op noord}";
         assertEquals(List.of(cell), errorsOn(scenario(
                 "- het vondstgewicht in voorjaar op noord is 3 kg van 01-01-2024 tot 01-02-2024\n", CONSISTENT), "op noord is 3 kg van"));
         assertEquals(List.of(cell), errorsOn(scenario("",

@@ -680,4 +680,4 @@ RGS-365	'{written}' fits more than one cell: {cells}; a cell names one label of 
 RGS-366	the fold '{expression}' selects no label of the dimension '{dimension}' of the dimensioned attribute '{attribute}'; a fold selects in every dimension, a fixed dimension with one label: 'over de {plural} in {{…}}' (§3.6, IR-SPEC ch. 4.3, WF-040)
 RGS-367	the fold '{expression}' selects the dimension '{dimension}' more than once; a fold selects in every dimension once (IR-SPEC ch. 4.3, WF-040)
 RGS-368	the fold '{expression}': the interval '{interval}' names no dimension and fits more than one ({dimensions}); write 'over de <meervoud> {interval}' (§13.4.17.53)
-RGS-380	the cell '{written}' of the dimensioned attribute '{attribute}' is given a period or a timeline, but a case file gives and expects a cell as one value; a dimensioned attribute has no timeline (WF-125)
+RGS-369	the cell '{written}' of the dimensioned attribute '{attribute}' is given a period or a timeline, but a case file gives and expects a cell as one value; a dimensioned attribute has no timeline (WF-125)

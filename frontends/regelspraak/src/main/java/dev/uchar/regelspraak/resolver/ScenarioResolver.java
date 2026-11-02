@@ -669,7 +669,7 @@ public final class ScenarioResolver {
         Datatype dt = ot.attribute(attr);
         if (named.labels() != null) {
             if (a.periode() != null) {
-                error(line, "RGS-380", params("written", written, "attribute", attr));
+                error(line, "RGS-369", params("written", written, "attribute", attr));
                 return;
             }
             ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, Msg.frontend("PART.what.attribute", "name", attr));
@@ -1229,7 +1229,7 @@ public final class ScenarioResolver {
                 if (named == null) continue;
                 String attr = named.attribute();
                 if (named.labels() != null) {
-                    error(line, "RGS-380", params("written", written, "attribute", attr));
+                    error(line, "RGS-369", params("written", written, "attribute", attr));
                     continue;
                 }
                 if (!temporalAttribute(label, attr, situation, line)) continue;
@@ -1251,7 +1251,7 @@ public final class ScenarioResolver {
                 if (named == null) continue;
                 String attr = named.attribute();
                 if (named.labels() != null && a.periode() != null) {
-                    error(line, "RGS-380", params("written", written, "attribute", attr));
+                    error(line, "RGS-369", params("written", written, "attribute", attr));
                     continue;
                 }
                 Datatype dt = situation.instance(label).objectType().attribute(attr);

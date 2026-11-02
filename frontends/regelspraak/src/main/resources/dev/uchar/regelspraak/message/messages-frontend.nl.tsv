@@ -680,4 +680,4 @@ RGS-365	'{written}' past op meer dan één cel: {cells}; een cel noemt van elke 
 RGS-366	de vouw '{expression}' selecteert geen label van de dimensie '{dimension}' van het gedimensioneerde attribuut '{attribute}'; een vouw selecteert in elke dimensie, een vaste dimensie met één label: 'over de {plural} in {{…}}' (§3.6, IR-SPEC ch. 4.3, WF-040)
 RGS-367	de vouw '{expression}' selecteert de dimensie '{dimension}' meer dan één keer; een vouw selecteert in elke dimensie één keer (IR-SPEC ch. 4.3, WF-040)
 RGS-368	de vouw '{expression}': het interval '{interval}' noemt geen dimensie en past in meer dan één ({dimensions}); schrijf 'over de <meervoud> {interval}' (§13.4.17.53)
-RGS-380	de cel '{written}' van het gedimensioneerde attribuut '{attribute}' krijgt een periode of een tijdlijn, maar een casebestand levert en verwacht een cel als één waarde; een gedimensioneerd attribuut heeft geen tijdlijn (WF-125)
+RGS-369	de cel '{written}' van het gedimensioneerde attribuut '{attribute}' krijgt een periode of een tijdlijn, maar een casebestand levert en verwacht een cel als één waarde; een gedimensioneerd attribuut heeft geen tijdlijn (WF-125)
