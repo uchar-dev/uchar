@@ -77,11 +77,13 @@ the object the path reached (`on "J1"`, `on none` for P3), the fold over the
 leader's cells none, and a fold of one cell of each member its contributors.
 
 Red on `28df094fd` (the card's step B): the frontend wrote none of the forms
-(a cell over a role was an unknown member, RGS-125; the fold over the
-leader's cells a fold source with a written step; the cell of each member a
-set reading outside a fold source, RGS-165); on this `ir.json` the verifier
-refused the fold of one cell of each member (`WF-037.aggregation-non-source`,
-`WF-053.read-other-type`), and so did `ref` and the ASP backend in the same
-sentence, the ASP backend refused the text cell over a path and the first of
-text cells over a path (`CLINGO-002`), and Drools refused the cell over a path
-(`EXCLUDE DROOLS-189`).
+(a cell over a role an unknown member, RGS-125; the fold over the leader's
+cells a fold source with a written step, RGS-127; a cell of each member an
+undeclared attribute of the element type, a marker with RGS-068). On this
+`ir.json` the verifier refused the three folds of one cell of each member
+(`WF-037.aggregation-non-source` and `WF-053.read-other-type`), `ref` and the
+ASP backend refused them in the same sentence, and the Drools loader refused
+the document (`DocumentError`, the same sentence). Without those three folds
+the document was verifier-clean; the ASP backend then refused the text cell
+over a path and the first of text cells over a path (`CLINGO-002`), and both
+Drools branches the cell and the fold over a path (`EXCLUDE DROOLS-189`).

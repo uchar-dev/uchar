@@ -324,8 +324,9 @@ class DimensionCellWitnessTest {
      *  of the to-many role lid; a text cell and the first text cell over the path. The two case files play, P3 without a
      *  leader or members reads leeg, and a wrong value of a cell over the path fails.
      *
-     *  <p><b>Red before the change</b> (measured 2026-11-02 on {@code 28df094fd}): {@code EXCLUDE DROOLS-189} on both
-     *  branches, the cell over a path refused. */
+     *  <p><b>Red before the change</b> (measured 2026-11-02 on {@code 28df094fd}): the loader refused the document, the
+     *  fold of one cell of each member no source of an instance fold ({@code IrLoader.DocumentError}); without those
+     *  folds both branches refused the cell over a path, {@code EXCLUDE DROOLS-189}. */
     @Test void a_cell_over_a_path_and_a_cell_of_each_member_play() throws Exception {
         Path ir = document(golden("jutterswet-ploegseizoen"));
         Path dir = GOLDEN.resolve("jutterswet-ploegseizoen");
