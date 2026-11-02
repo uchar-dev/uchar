@@ -4465,7 +4465,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-003 | a date lexeme of the case input names no calendar day | case input | `field`, `lexeme` | ch. 5.7 step 3 | `corpus/red/as-of-date-calendar`, `corpus/red/input-date-calendar` |
 | EF-004 | an input value does not fit the declared decimals of its place | case input | `place`, `value`, `decimals` | ch. 2.4; ch. 5.8c; ch. 11.3 | `corpus/red/input-overprecision`, `corpus/red/input-overprecision-param`, `corpus/red/list-element-overprecision`, `corpus/red/struct-field-overprecision`, `corpus/red/jutterswet-cel-overprecisie` |
 | EF-005 | a filled dividend is divided by a numeric zero | §9.5 | `rule`, `label` | ch. 1.4 point 4; ch. 2.2 | `corpus/golden/division-by-numeric-zero`, `corpus/golden/division-abs-by-numeric-zero`, `corpus/golden/filled-count-unguarded-division`, `corpus/golden/at-most-reads-until-settled`, `corpus/golden/closed-runtime-division-by-zero`, `corpus/golden/fold-filter-divides-by-zero`, `corpus/golden/jutterswet-initialisatie-naast-regel`, `corpus/golden/jutterswet-lezer-van-initialisatie` |
-| EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4 | `corpus/red/closed-nonexact-division`, `corpus/red/closed-runtime-nonexact-division`, `corpus/red/decimal-nonterminating`, `corpus/red/jutterswet-fout-aan-fixpunt`, `corpus/red/jutterswet-verdeling-past-niet`, `corpus/red/jutterswet-halvering-past-niet`, `corpus/red/jutterswet-kopie-past-niet`, `corpus/red/jutterswet-vast-bergloon-past-niet` |
+| EF-006 | a written value does not fit the declared decimals of its target | fault | `place`, `value`, `decimals` | ch. 2.4; ch. 5.8c | `corpus/red/closed-nonexact-division`, `corpus/red/closed-runtime-nonexact-division`, `corpus/red/decimal-nonterminating`, `corpus/red/jutterswet-fout-aan-fixpunt`, `corpus/red/jutterswet-verdeling-past-niet`, `corpus/red/jutterswet-halvering-past-niet`, `corpus/red/jutterswet-kopie-past-niet`, `corpus/red/jutterswet-vast-bergloon-past-niet`, `corpus/red/jutterswet-cel-schrijfgrens` |
 | EF-007 | a datum-tijd step or construction leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range`, `corpus/red/date-time-with-outside-range` |
 | EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/red/date-time-step-outside-range` |
 | EF-009 | a day-kind walk passes the reach fence without a day of the kind | fault | `from`, `reach` | ch. 3.8 | `corpus/red/day-kind-unsatisfiable-walk`, `corpus/red/day-kind-scope-outside-table` |
@@ -4981,7 +4981,14 @@ chapter follows ALEF (IR-SPEC ch. 2.7, the norm source).
    keep it from its turn. Two writers of one cell whose values differ fault
    the session (EF-016, ch. 5.7); two writers of two cells do not meet. An
    object creation's member with `labels` writes that cell of the object it
-   makes (ch. 5.5).
+   makes (ch. 5.5). A cell is a target of its own in the standing norm
+   (ch. 7.8) and in the domain of the v0 desugaring (ch. 7.7): a computing
+   rule that is the only writer of its cell displaces the input of that cell
+   when its value is gevuld and leaves it standing when it is leeg, and a
+   computing rule beside an initialisation on one cell decides like the
+   default above the initialisation default. The desugaring does not rewrite
+   the pair on a cell into a defaults group, which names its attribute whole
+   (WF-125): the two forms stay as written and keep that reading.
 3. **Folding cells.** An aggregation with `dimensionSelections` — a `sum`,
    a `minimum` or a `maximum` (WF-037) — folds the cells of the product of
    its selections on the object its argument reaches. The tuples are formed
@@ -5066,10 +5073,28 @@ case reader refuses, while it reads the case (ch. 5.7 step 3):
   3.00, zomer 0.00, jaargewicht 4.50**. J2 with `voorjaar` 1.50 and `zomer`
   2.00 gives **zomer 2.00** — the input fills the cell, so the
   initialisation is not at its turn — **najaar 3.00, jaargewicht 6.50**. J3
-  without input gives **najaar leeg** (a leeg operand empties the product,
-  ch. 1.2), **zomer 0.00, jaargewicht 0.00**. With "maal 1,5" in place of
-  "maal 2", J1 with `voorjaar` 1.25 faults: 1.875 does not fit 2 decimals,
-  **EF-006** at `J1.vondstgewicht[najaar]`, value 15/8, decimals 2.
+  without input gives **najaar 0.00** (the product coalesces a leeg operand
+  to 0, ch. 1.2), **zomer 0.00, jaargewicht 0.00**. J4 with `najaar` 5.00
+  alone gives **najaar 0.00**: the computed value displaces the input of the
+  cell (ch. 7.8); J5 with `voorjaar` 1.00 and `najaar` 5.00 gives **najaar
+  2.00, jaargewicht 3.00**. An object creation "Een Jutter heeft een
+  geboekte vangst met vangstgewicht in najaar gelijk aan zijn vondstgewicht
+  in najaar" makes for J1 a `Vangst` whose cell `najaar` is **3.00** and whose
+  other cells are **empty** (`jutterswet-seizoenboeking`). With "maal 1,5"
+  in place of "maal 2", J1 with `voorjaar` 1.25 faults: 1.875 does not fit 2
+  decimals, **EF-006** at `J1.vondstgewicht[najaar]`, value 15/8, decimals 2
+  (`corpus/red/jutterswet-cel-schrijfgrens`).
+- **The standing norm and the pair on a cell**: "Het vondstgewicht in najaar
+  van een Jutter moet berekend worden als zijn vondstgewicht in voorjaar" and
+  the same rule on `zomer`, each its cell's only writer
+  (`jutterswet-seizoenkopie`). J1 with `voorjaar` 12.50 and `najaar` 4.00
+  gives **najaar 12.50, zomer 12.50**; J2 with `zomer` 7.00 alone gives
+  **zomer 7.00** — the copy of an empty cell is leeg and writes nothing — and
+  **najaar leeg**. With an initialisation "Het vondstgewicht in najaar van
+  een Jutter moet geïnitialiseerd worden op 0 kg" beside the copy into
+  `najaar`, J1 with `voorjaar` 2.00 gives **najaar 2.00**, J2 without input
+  **najaar 0.00** (the copy evaluates leeg and does not decide, so the
+  initialisation does), and J3 with `najaar` 5.00 alone **najaar 5.00**.
 - **The case**: on `vondstgewicht` dimensioned by `seizoen` and `strand`, the
   cell `zuid`, `voorjaar` — two declared labels in the reversed order — is
   refused with **EF-034** {`label`: j1, `attribute`: vondstgewicht,
@@ -5083,28 +5108,35 @@ case reader refuses, while it reads the case (ch. 5.7 step 3):
 **Where the executors stand** (measured 2026-11-02). The reference
 interpreter and the ASP backend share the case reader, which holds the
 refusals of the case above and lays a valid cell input down cell by cell.
-Both read a cell, of the subject and over a path, and fold over one
-dimension and over more, and both refuse a read of a dimensioned attribute
-outside a cell in WF-125's sentence and a cell target (REF-012, CLINGO-026).
-A cell is a member of its own in either executor: `ref` holds it in its fact
-base under the attribute's name with the cell's labels, `vondstgewicht[najaar]`,
-and the ASP backend reads and writes it with the `val/3` of an attribute
-under the same name (`spec/ASP-TRANSLATION.md`). The worked examples of
-reading and folding replay in both: the goldens `jutterswet-seizoenvondst`,
-`jutterswet-seizoenvouw` and `jutterswet-vormenkabinet` (a cell over two
-dimensions that share a label), the `ref/test` rows `WV-5.8c-*` and the
-frames of `backends/clingo/test/test_clingo.ml` for two dimensions and a
-path; the red witness `corpus/red/jutterswet-cel-overprecisie` carries the
-input precision of a cell. The Drools backend holds the same refusals of
-the case in a case reader of its own and keeps a dimensioned attribute as a
-map of its cells; it reads a cell and folds over one dimension and over
-more, of an attribute of the subject, and refuses a cell over a path
-(DROOLS-189) and a cell write (DROOLS-298). The three goldens replay in all
-three executors (gate 12), the three red witnesses of a cell fault in all
-three with their pinned code and parameters (gate 8), and the backend's
-`DimensionCellWitnessTest` replays the example over two dimensions on its
-cells 2.00, 1.00 and 5.00. The worked examples of reading over a path and
-of writing have no replay in it.
+Both read a cell, of the subject and over a path, fold over one dimension
+and over more, and write a cell by a rule, an initialisation and an object
+creation's member, and both refuse a read of a dimensioned attribute outside
+a cell in WF-125's sentence. A cell is a member of its own in either
+executor: `ref` holds it in its fact base under the attribute's name with
+the cell's labels, `vondstgewicht[najaar]`, and the ASP backend reads and
+writes it with the `val/3` of an attribute under the same name, its
+declaration the attribute's (`spec/ASP-TRANSLATION.md`). The ASP backend
+refuses by name an initialisation beside a computing rule on one cell, whose
+defaults reading `ref` answers. The worked examples replay in both: the
+goldens `jutterswet-seizoenvondst`, `jutterswet-seizoenvouw`,
+`jutterswet-vormenkabinet` (a cell over two dimensions that share a label),
+`jutterswet-seizoenboeking` and `jutterswet-seizoenkopie`, the `ref/test`
+rows `WV-5.8c-*` and the frames of `backends/clingo/test/test_clingo.ml` for
+two dimensions, a path and the write boundary of a cell; the red witnesses
+`corpus/red/jutterswet-cel-overprecisie` and `jutterswet-cel-schrijfgrens`
+carry the input precision and the write boundary of a cell. The Drools
+backend holds the same refusals of the case in a case reader of its own and
+keeps a dimensioned attribute as a map of its cells; it reads a cell and
+folds over one dimension and over more, of an attribute of the subject, and
+refuses a cell over a path (DROOLS-189). It loads a cell write and its rule
+graph writes the cell, but it refuses the document when it builds
+(DROOLS-298). The three goldens that read replay in all three executors
+(gate 12), the two that write are a ref = clingo pair, the red witness of the
+input precision faults in all three with its pinned code and parameters and
+that of the write boundary in `ref` and the ASP backend (gate 8), and the
+backend's `DimensionCellWitnessTest` replays the example over two dimensions
+on its cells 2.00, 1.00 and 5.00. The worked examples of reading over a path
+and of writing have no replay in it.
 
 ### 5.9 Uniqueness: the union and the scope
 
@@ -5873,7 +5905,14 @@ rule without a condition, reads on J1 its node 0, the `Aggregation`,
 `WV-5.12-cel` pins both. Over a path, on the example "Reading over a path"
 of ch. 5.8c, the cell read of P1 reads `12.5 "kg" on "J1"` and that of P2
 `empty "kg" on none`, while the fold over the path names no object
-(`WV-5.12-cel-over-een-pad`).
+(`WV-5.12-cel-over-een-pad`). A rule whose target is a cell is read as a
+rule on an attribute, and its initialisation is `DISPLACED` where its cell
+holds a value of the input or of another writer: on the case J1, J2 of the
+writing example of ch. 5.8c, the rule on `najaar` reads `HOLDS` on both, its
+node 0, the product, `3 "kg"`, node 1, the cell `voorjaar`, `1.5 "kg"`, and
+node 3, the literal, `2`; the initialisation of `zomer` reads `HOLDS` on J1
+with its node 0, the literal, `0 "kg"`, and `DISPLACED` on J2, whose cell
+`zomer` the input fills (`WV-5.12-celdoel`).
 
 **Folds over a set.** A node that the evaluation reads once per member of
 a fold over a set — the source, the filter and the matrix of an
@@ -7351,6 +7390,10 @@ serve the old forms through the new machinery:
 |---|---|
 | **exactly one** unconditional, version-free Initialisatie | the ch. 7.3 initialisation default (lowest) |
 | plus at most one version-free computing rule (Gelijkstelling/Berekening) | plus one default above it: justification = its condition (an unconditional rule gets the vacuously true empty `all`), consequence = its value |
+
+A cell of a dimensioned attribute is a target of its own here (ch. 5.8c,
+2); the pair on a cell keeps its two forms, since a defaults group names its
+attribute whole (WF-125), and reads as the table says.
 
 The initialisation is what the desugaring exists for — and what keeps
 the two readings extensionally equal on the confluent domain. A **bare

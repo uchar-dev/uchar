@@ -233,6 +233,19 @@ subject must never fault or deposit a channel fact (pinned by
 `jutterswet-vindersloon` case4 — a zero divisor under a false
 condition stays consistent).
 
+**A cell as the target** (RUNTIME-SEMANTICS ch. 5.8c, 2): a target that is
+a `DimensionCellRead` writes the `val/3` of the cell under its own name,
+`val(S,"vondstgewicht[najaar]",⟨term⟩)`, the name the case input and the
+cell read use (S2, S4), and every declaration the arms below read — the
+datatype, the decimals, the unit — is the attribute's (`find_decl`). The
+cell is a target of its own in the ch. 7.8 standing domain and in the
+initialisation arm, so its input enters as `inputval/3` where the cell is a
+standing target and as `inputfilled/2` where an initialisation writes it.
+An initialisation beside a computing rule on one cell is refused by name:
+the ch. 7.7 desugaring leaves the pair on a cell as written (a defaults group
+names its attribute whole), and this arm does not encode its defaults
+reading, which `ref` answers.
+
 **The write boundary** (`fitted`): the term's scale is fitted to the
 target's declared scale. Equal — unchanged; coarser — exact upscale
 under a range guard; finer — downscale guarded by runtime
@@ -1489,7 +1502,9 @@ input must survive an ineffective producer.
 deterministic function term `ocI(S)` — set semantics gives
 idempotence for free (re-deriving the same head is the same atom).
 `is_a(ocI(S),new) :- ⟨body⟩.`, member initialisations as
-`val(ocI(S),m,⟨term⟩)`/`has(ocI(S),m)`, and the back-link doubled
+`val(ocI(S),m,⟨term⟩)`/`has(ocI(S),m)` — a member with `labels` as
+`val(ocI(S),"vangstgewicht[najaar]",⟨term⟩)`, the cell of the made object
+(ch. 5.8c) —, and the back-link doubled
 in both directions (`role(S,new_role,ocI(S))` and
 `role(ocI(S),subj_role,S)`). A **characteristic initialisation** deposits
 `has(ocI(S),m)`: the two boolean constants are the v0 form — `waar`
@@ -2577,7 +2592,11 @@ within 9 decimals`) — ref computes it exactly and both Drools branches
 play it (measured 2026-09-26 on "zijn taxatie maal 1/3 naar beneden
 afgerond op 2 decimalen" over a taxatie of 10: ref `oracle: PASS` on
 3.33, the exec-model and the DRL-text branch `PLAYED 1`), while this
-encoding holds a number only as an integer at a power-of-ten scale. And
+encoding holds a number only as an integer at a power-of-ten scale; an
+initialisation beside a computing rule on one cell of a dimensioned
+attribute (S3, `the ch. 7.7 defaults reading of the pair is not translated
+for a cell`), which ref answers in the defaults reading (RUNTIME-SEMANTICS
+ch. 5.8c, `WV-5.8c-initialisatie-naast-berekening`). And
 one decided delta, executed 2026-10-19 in both executors at once:
 ch. 1.4 point 4 routes numeric-zero division into the §9.5 channel in
 v1 (goldens `division-by-numeric-zero`, `division-abs-by-numeric-zero`),
