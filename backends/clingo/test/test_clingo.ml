@@ -15126,12 +15126,16 @@ let () =
    ref carries any exact value there, as input and as a written result
    (RUNTIME-SEMANTICS ch. 2.4 point 3, WV-2.4-e..h). This encoding holds a
    number at the scale its declaration fixes, and the unbounded form fixes
-   none, so it holds it as a whole number (the limit RUNTIME-SEMANTICS
-   ch. 2.4 records for the ASP side). A whole value plays; a value that is
-   not whole is refused by name — at translation for a case input, and by a
-   named viol/2 for a written result — instead of as a value that "does not
-   fit 0 decimals" or a division that needs "an explicit rounding", neither
-   of which the declaration says. *)
+   none, so [Scale] gives it one: the widest precision bound (ch. 2.3) of the
+   values the case gives it and the values written into it, found as a least
+   fixpoint. Where that bound is finite, every value of the attribute is whole
+   at its scale and plays (ch. 2.4's worked example: 1,5 doubles to 3 and
+   quarters to 3/8). Where it is not — a non-terminating input, a quotient by
+   an attribute, a bound past 9 decimals — the form is held as a whole number:
+   a whole value plays, and a value that is not whole is refused by name, at
+   translation for a case input and by a named viol/2 for a written result,
+   instead of as a value that "does not fit 0 decimals" or a division that
+   needs "an explicit rounding", neither of which the declaration says. *)
 let () =
   let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"sleepafstand","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"dubbele sleepafstand","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"gedeelde sleepafstand","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"dubbele sleepafstand","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"dubbele sleepafstand","subjectType":"Vondst","source":{"snippet":"De dubbele sleepafstand van een Vondst"}},"value":{"node":"Binary","op":"times","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"2"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"2"}},"type":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"},"source":{"snippet":"zijn sleepafstand maal 2"}},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"gedeelde sleepafstand","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"gedeelde sleepafstand","subjectType":"Vondst","source":{"snippet":"De gedeelde sleepafstand van een Vondst"}},"value":{"node":"Binary","op":"dividedBy","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"4"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"4"}},"type":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"},"source":{"snippet":"zijn sleepafstand gedeeld door 4"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
   let case_data input_data duplicate shared =
@@ -15144,23 +15148,123 @@ let () =
     ~needle:
       "input V1.sleepafstand = 1/6 is not a whole number, and this encoding holds a number \
        declared without decimals (the unbounded form) as a whole number";
-  translates_carrying ~name:"unbounded form, a non-exact division into it" ~ir
-    ~case_text:(case_data "6" "12" "3/2")
-    ~needle:
-      "a division into a number declared without decimals is not whole, and this encoding holds \
-       the unbounded form as a whole number";
-  (* the fit guard of a written product: 3 × 3/2 is 9/2, at the literal's
-     scale, into the unbounded target *)
+  (* the input's decimals and the bound of each write: the quotient by 4 has
+     two decimals more than the sleepafstand, the double as many *)
+  both_answer ~name:"unbounded form at the scale of its bound, a quotient by 4" ~ir
+    ~case_text:(case_data "6" "12" "3/2");
+  both_answer ~name:"unbounded form at the scale of its bound, an input of 1,5" ~ir
+    ~case_text:(case_data "1.5" "3" "3/8");
+  (* the product by the literal 3/2 has one decimal more than its operand *)
   let product =
     replace_first ~needle:{|"op":"times","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"2"}|}
       ~by:{|"op":"times","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"3/2"}|}
       ir
   in
-  translates_carrying ~name:"unbounded form, a non-whole product into it" ~ir:product
-    ~case_text:(case_data "3" "9/2" "3/4")
+  both_answer ~name:"unbounded form at the scale of its bound, a product by 3/2" ~ir:product
+    ~case_text:(case_data "3" "9/2" "3/4");
+  (* a write that reads another place of the form reads it at the bound found
+     so far: the double of the quarter has the quarter's three decimals only
+     once the quarter's bound is known, a second round *)
+  let chained =
+    replace_first ~needle:{|"op":"times","left":{"node":"AttributeReference","attribute":"sleepafstand"|}
+      ~by:{|"op":"times","left":{"node":"AttributeReference","attribute":"gedeelde sleepafstand"|}
+      ir
+  in
+  both_answer ~name:"unbounded form, a bound that reads a bound" ~ir:chained
+    ~case_text:(case_data "1.5" "3/4" "3/8");
+  (* a bound past the scales this encoding carries (1/1024 has ten decimals) is
+     no finite bound: the form is held whole, and a whole value plays *)
+  let fine =
+    replace_first ~needle:{|"op":"dividedBy","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"4"}|}
+      ~by:{|"op":"dividedBy","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"1024"}|}
+      ir
+  in
+  both_answer ~name:"unbounded form, a bound past nine decimals held whole" ~ir:fine
+    ~case_text:(case_data "2048" "4096" "2");
+  (* a quotient by an attribute has no finite bound, and neither has the
+     product of that quotient: both targets stay whole numbers here, and a
+     value that is not whole is refused in the unbounded form's words *)
+  let runtime =
+    ir
+    |> replace_first ~needle:{|"attributes":[{"node":"Attribute","name":"sleepafstand"|}
+         ~by:{|"attributes":[{"node":"Attribute","name":"deler","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"sleepafstand"|}
+    |> replace_first ~needle:{|"right":{"node":"Literal","value":{"number":"4"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"4"}}|}
+         ~by:{|"right":{"node":"AttributeReference","attribute":"deler","subjectType":"Vondst","source":{"snippet":"zijn deler"}}|}
+    |> replace_first ~needle:{|"op":"times","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"2"}|}
+         ~by:{|"op":"times","left":{"node":"AttributeReference","attribute":"gedeelde sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn gedeelde sleepafstand"}},"right":{"node":"Literal","value":{"number":"3/2"}|}
+  in
+  let runtime_case input_data divisor duplicate shared =
+    Printf.sprintf
+      {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"V1","objectType":"Vondst","attributes":{"sleepafstand":{"number":"%s"},"deler":{"number":"%s"}},"roles":{},"characteristics":[]}],"parameters":{}},"expected":[{"kind":"attributeValue","label":"V1","attribute":"dubbele sleepafstand","value":{"number":"%s"}},{"kind":"attributeValue","label":"V1","attribute":"gedeelde sleepafstand","value":{"number":"%s"}}]}|}
+      input_data divisor duplicate shared
+  in
+  both_answer ~name:"unbounded form without a finite bound, whole values" ~ir:runtime
+    ~case_text:(runtime_case "8" "2" "6" "4");
+  translates_carrying ~name:"unbounded form without a finite bound, a division into it" ~ir:runtime
+    ~case_text:(runtime_case "6" "4" "9/4" "3/2")
+    ~needle:
+      "a division into a number declared without decimals is not whole, and this encoding holds \
+       the unbounded form as a whole number";
+  translates_carrying ~name:"unbounded form without a finite bound, a product into it" ~ir:runtime
+    ~case_text:(runtime_case "6" "2" "9/2" "3")
     ~needle:
       "result of dubbele sleepafstand is not a whole number, and this encoding holds a number \
        declared without decimals (the unbounded form) as a whole number"
+
+(* THE UNBOUNDED FORM AS THE TARGET OF A DEFAULTS CONSEQUENCE AND AS A
+   PARAMETER. A consequence is fitted to its target as a rule's value is, so on
+   the unbounded form held as a whole number a value that is not whole is this
+   encoding's limit, in that form's words, and no EF-006: ref writes the exact
+   value (RUNTIME-SEMANTICS ch. 2.4 point 3). The aandeel, a quotient by an
+   attribute, has no finite bound, and so has the toeslag, half as much again.
+   A parameter of the form takes the decimals of its case value: a rate of
+   0,25 makes the product by it two decimals finer than the inkomen. *)
+let () =
+  let unbounded = {|{ "node": "Number", "whole": false, "decimals": 0, "sign": "unspecified" }|} in
+  let jutter = pf_ot [ ("inkomen", pf_n0); ("deler", pf_n0); ("aandeel", unbounded); ("toeslag", unbounded) ] in
+  let share = pf_rule ~objective:"aandeel" (pf_bin ~typ:unbounded "dividedBy" (pf_a "inkomen") (pf_a "deler")) in
+  let toeslag =
+    Printf.sprintf
+      {|{ "node": "PrioritizedDefaults", "name": "toeslag van een jutter", "subject": "Jutter",
+          "attribute": "toeslag", "defaults": [ { "node": "Default", "justification": %s,
+          "consequence": %s, "source": { "snippet": "anderhalf aandeel" } } ], "source": { "snippet": "de toeslag" },
+          "validity": { "node": "Validity" } }|}
+      (pf_cmp "greater" (pf_a "deler") (pf_l ~typ:pf_n0 "0"))
+      (pf_bin ~typ:unbounded "times" (pf_a "aandeel") (pf_l ~typ:unbounded "3/2"))
+  in
+  let ir = pf_doc ~object_types:[ jutter ] ~rule_defs:[ share ] ~defaults:[ toeslag ] () in
+  let case_data inkomen deler rows =
+    pf_case
+      ~instances:
+        [ Printf.sprintf
+            {|{ "label": "J1", "objectType": "Jutter", "attributes": { "inkomen": { "number": "%s" }, "deler": { "number": "%s" } }, "roles": {}, "characteristics": [] }|}
+            inkomen deler ]
+      rows
+  in
+  both_answer ~name:"a defaults consequence into the unbounded form, whole values" ~ir
+    ~case_text:(case_data "8" "2" [ pf_is ~attr:"aandeel" "4"; pf_is ~attr:"toeslag" "6"; pf_cons ]);
+  ref_matches ~name:"a defaults consequence into the unbounded form, 9/2" ~ir
+    ~case_text:(case_data "6" "2" [ pf_is ~attr:"aandeel" "3"; pf_is ~attr:"toeslag" "9/2"; pf_cons ]);
+  translates_carrying ~name:"a defaults consequence into the unbounded form held whole" ~ir
+    ~case_text:(case_data "6" "2" [ pf_is ~attr:"aandeel" "3"; pf_is ~attr:"toeslag" "9/2"; pf_cons ])
+    ~needle:
+      "result of jutter.toeslag is not a whole number, and this encoding holds a number declared \
+       without decimals (the unbounded form) as a whole number";
+  check "a defaults consequence into the unbounded form: the witness has no fault kind"
+    (Translate.viol_code
+       "viol(\"result of jutter.toeslag is not a whole number, and this encoding holds a number declared \
+        without decimals (the unbounded form) as a whole number\",\"J1\")"
+    = None);
+  let rate =
+    pf_doc
+      ~object_types:[ pf_ot [ ("inkomen", pf_n0); ("heffing", unbounded) ] ]
+      ~parameters:[ Printf.sprintf {|{ "node": "Parameter", "name": "tarief", "datatype": %s }|} unbounded ]
+      ~rule_defs:[ pf_rule (pf_bin ~typ:unbounded "times" (pf_a "inkomen") (pf_p "tarief")) ]
+      ()
+  in
+  both_answer ~name:"a parameter of the unbounded form at the decimals of its case value" ~ir:rate
+    ~case_text:(pf_case ~params:[ pf_bind "tarief" "0.25" ] [ pf_is "5.25"; pf_cons ]
+                |> replace_first ~needle:{|"inkomen": { "number": "20" }|} ~by:{|"inkomen": { "number": "21" }|})
 
 (* RUNTIME-SEMANTICS ch. 5.5, Generations (card
    creatie-initialisatie-leest-groeiende-waarde, 2026-10-09). A member

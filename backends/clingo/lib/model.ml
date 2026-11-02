@@ -188,6 +188,9 @@ let val_present model label attr =
    object type (IR-SPEC ch. 2.2): an inherited attribute scales by the
    decimals its declaring type gives it, exactly as the writer scaled it. *)
 let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : string list =
+  (* the declarations [Translate.translate] wrote the program under: an
+     attribute of the unbounded form at the scale [Scale] gives it *)
+  let doc = Scale.document doc case in
   let scaled_expect ~label ~attr (v : Value.t) =
     let i = Uchar_ref.World.SMap.find label case.world.Uchar_ref.World.instances in
     let ot = i.Uchar_ref.World.otype in

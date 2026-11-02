@@ -209,15 +209,13 @@ let scaled_of_value ?fit_code ~decimals (v : Value.t) : int =
    has 0 decimals, a "getal" declared without decimals) has no ceiling, and
    ref carries any exact value there (RUNTIME-SEMANTICS ch. 2.4 point 3).
    This encoding holds a number at the scale its declaration fixes, and the
-   unbounded form fixes none, so it is held as a whole number, the limit
-   ch. 2.4 records for the ASP side. A value that is not whole is refused in
-   that form's own words: "does not fit 0 decimals" would name a ceiling the
-   declaration does not have. *)
-let unbounded_datatype = function
-  | Some (Number { whole_part = false; decimal_places = 0; _ } | Percentage { whole_part = false; decimal_places = 0; _ })
-    ->
-      true
-  | _ -> false
+   unbounded form fixes none: [Scale] declares the form at the scale of its
+   precision bound where that bound is finite, and a declaration still of
+   this form here has no finite bound (or a bound of 0), so it is held as a
+   whole number, the limit ch. 2.4 records for the ASP side. A value that is
+   not whole is refused in that form's own words: "does not fit 0 decimals"
+   would name a ceiling the declaration does not have. *)
+let unbounded_datatype = Scale.unbounded_datatype
 
 let unbounded_refusal ~what q =
   fault
@@ -11305,7 +11303,7 @@ let path_key target_form = function
    descendant's, so the position a default is translated on is its own and
    not the owner's. *)
 let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
-    ~target_form ~target_scale ~has_input ~outer_displaced (defaults : default list) :
+    ~target_form ~target_scale ~target_unbounded ~has_input ~outer_displaced (defaults : default list) :
     string * string =
   let ot_at n = List.nth origins n in
   let tag = fresh ctx "nl" in
@@ -11398,9 +11396,13 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
       ctx.rule_guard <- saved_g;
       (* the write boundary of ch. 2.4 on the consequence, as on a rule's
          value: a coarser one is lifted exactly, a finer one held to the
-         target's decimals *)
+         target's decimals, and on the unbounded form held as a whole number
+         in that form's words — ref writes the exact value there, so a value
+         that is not whole is this encoding's limit and no fault of the write *)
       let body = (base :: just) @ bindings @ extra in
-      let term, fit_guards = fitted ctx ~subject ~what:target_form ~body term scale target_scale in
+      let term, fit_guards =
+        fitted ~unbounded:target_unbounded ctx ~subject ~what:target_form ~body term scale target_scale
+      in
       head_body ctx (Printf.sprintf "%s(%s,%s)" (dec n) subject term) (body @ fit_guards)
     end;
     ctx.rule_name <- saved_name;
@@ -11423,7 +11425,7 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
           in
           let u_out, u_cfl, u_any =
             translate_group ctx ~is_char ~subject ~subject_ot:(ot_at n) ~base
-              ~group_path:(path @ [ n ]) ~target_form ~target_scale ~has_input
+              ~group_path:(path @ [ n ]) ~target_form ~target_scale ~target_unbounded ~has_input
               ~outer_displaced:default_displaced egs
           in
           (* the exception groups go first: adopt their clean decision,
@@ -11459,7 +11461,7 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
   (out, cfl)
 
 and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
-    ~target_form ~target_scale ~has_input ~outer_displaced (egs : exception_groups) :
+    ~target_form ~target_scale ~target_unbounded ~has_input ~outer_displaced (egs : exception_groups) :
     string * string * string =
   let tag = fresh ctx "ng" in
   let out = Printf.sprintf "%s_out" tag in
@@ -11474,7 +11476,7 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
       (fun (eg : exception_group) ->
         translate_chain ctx ~is_char ~subject
           ~origins:(List.map (fun _ -> subject_ot) eg.eg_defaults) ~base ~path:group_path
-          ~root:false ~target_form ~target_scale ~has_input
+          ~root:false ~target_form ~target_scale ~target_unbounded ~has_input
           ~outer_displaced eg.eg_defaults)
       egs.egs_members
   in
@@ -11589,13 +11591,16 @@ let translate_defaults_group ctx gidx ~owner
       (pow10 (attr_decimals ctx ~otype:owner ~attr:target_name), Some hi)
     end
   in
+  let target_unbounded =
+    (not is_char) && unbounded_datatype (attr_datatype ctx ~otype:owner ~attr:target_name)
+  in
   (* each top-level member is a chain reconciled at the root path [] *)
   let member_info =
     List.map
       (fun ((l, origins) : prioritized_defaults * string list) ->
         let out, cfl =
           translate_chain ctx ~is_char ~subject ~origins ~base ~path:[]
-            ~root:true ~target_form ~target_scale ~has_input ~outer_displaced:[] l.defaults
+            ~root:true ~target_form ~target_scale ~target_unbounded ~has_input ~outer_displaced:[] l.defaults
         in
         (out, cfl, List.exists (fun (r : default) -> r.default_exceptions <> None) l.defaults))
       members
@@ -12848,6 +12853,9 @@ let object_creation_strata (doc : document) : (string * int) list =
     doc.object_creations
 
 let translate (doc : document) (case : Case.t) : string =
+  (* the unbounded form at the scale its writes and the case give it
+     ([Scale]); [Model.check] reads the model through the same declarations *)
+  let doc = Scale.document doc case in
   (* WF-007: a presentation tag inside a type annotation, listed by the
      loader, is refused in the verifier's sentence — the same refusal ref
      makes — before anything is translated *)
