@@ -530,3 +530,121 @@ end 2026-11-02 18:29:10 330s red=0
 Uit de gate-logs: gate 10 `check-rgs-codes` 359 codes, 380 plaatsen; JUnit 1415 tests, 163 rgs-goldens; gate 16 40
 scenario-goldens, 136 case-bestanden en hun `ir.json` byte-gelijk; gate 11 29 PASS in ref en clingo; gate 12 299 codes;
 gate 17 306 goldens en 852 case-bestanden vergeleken, afwijkingen 0. Niet gemerged, niet gepusht; `git status --short` leeg.
+
+### Stap M (D samengevoegd met A; de tokens van een verzameling met "en")
+
+Branch `card/dimensions-remaining`, op `bc42f8538` (stap A). Commits:
+
+- `243eead3b`, `ad900fe29`, `dd7430cc6`: de drie commits van stap D (`e41193929`, `9bf0fbf31`, `9d2f091e7`), met
+  `git cherry-pick b7e3a9611..9d2f091e7` overgezet;
+- `f5c455073` RGS-380 heet RGS-369;
+- `962c1087d` semantische tokens: een lid van een verzameling met "en" noemt elk label, met twee tests en
+  `grammar/DIVERGENCES.md`;
+- `b63d1772f` golden `jutterswet-seizoenvouw` weer met de verzameling van twee labels (terugdraaiing van `08e716151`, en
+  de NOTE beschrijft de vorm);
+- `bc11070ba` voorstel spec: ch. 5.8c noemt die verzameling weer met twee labels (terugdraaiing van `374cc5b9f`);
+- `580c7959d` het Result van stap D als "Stap D" in de kaart;
+- het commit van dit Result.
+
+Beschermde paden: alleen `spec/RUNTIME-SEMANTICS.md` (de terugdraaiing van A's eigen voorstel); geen `scripts/`.
+
+**Conflicten.** Geen tekstueel conflict: git voegde `grammar/DIVERGENCES.md`, `grammar/RegelSpraak.g4` en
+`corpus/golden/README.md` zelf samen (A en D schreven in andere secties en regels). Nagelezen: in `RegelSpraak.g4` staan
+D's `naamVervolgDeel` en A's `aantalVoorkomensFunc` en `eersteLaatsteFunc` naast elkaar; in de README A's alinea over
+`seizoenaanvang`/`seizoenlogboek` na D's zinnen over de `scenario.rgs` van `strandseizoen` en `seizoenboeking`. Register
+en catalogi: A voegde geen RGS-code toe, D verving RGS-237 door RGS-380; geen overlap. Semantische tokens: alleen D
+raakte `SemanticTokens.java`. A breidde geen golden met een toetsdocument uit (`seizoenvouw` heeft geen `scenario.rgs`,
+`seizoenaanvang` en `seizoenlogboek` zijn nieuw zonder), dus geen bullets erbij; gate 16 regenereert de 40 goldens.
+
+**Hernummerd.** RGS-380 `scenario-cell-period` → **RGS-369**, het eerste vrije nummer na RGS-368 (de laatste code van
+het register, ook na A): register, beide catalogi, de drie plaatsen in `ScenarioResolver` en de pin in
+`ScenarioCellTest.a_cell_has_no_period`. RGS-369 kwam in geen commit van de geschiedenis voor (`git log --all
+-S'RGS-369'` leeg). RGS-237 blijft vrij: een ingetrokken code krijgt geen andere betekenis (besluit 1 van D). In de tekst
+van stap D en in zijn voorstel voor CONSTRUCTS leest de hoofdsessie RGS-369 voor RGS-380 en de nieuwe hashes.
+
+**De tokenfout.** De grammatica laat "en" binnen een label toe (`dimensieWaardeWoord`), dus `{najaar en voorjaar}` is
+één `dimensieWaarde`; de resolutie leest zo'n lid als labels (`ExpressionBuilder.memberLabels`: eerst het hele lid als
+label, anders labels verbonden door "en" als precies één groepering labels geeft), maar `SemanticTokens.labelReference`
+zocht het hele lid als één label en liet het `unresolved`. Nu leest `labelReference` met dezelfde regel, op de stukken van
+de bron (`labelGrouping`, `labelGroupings`): elk label is een eigen `dimensionLabel`-naam en "en" houdt zijn lexicale
+soort; bij twee groeperingen blijft het lid één onopgeloste naam (de resolutie weigert dan met RGS-070). Alleen bij een
+bekende dimensie, zoals de resolutie.
+
+- Rood (`logs/stapM-red-tokens-1.log`): de nieuwe test `SemanticTokensTest.a_set_member_of_labels_joined_by_en_names_each_label`
+  vóór de reparatie: "unresolved: 'najaar en voorjaar' at line 16". Met de golden in de vorm van twee labels en de
+  reparatie uit (mutant T1) ook `SemanticTokensCorpusTest`: "jutterswet-seizoenvouw:47:131 'najaar en voorjaar':
+  unresolved in a document without diagnostics", de rode eerste run van A.
+- Tests: `{najaar en voorjaar}` (de vorm van de golden), `{eb en vloed en springtij}` (een label met "en" naast een
+  ander), `{eb en vloed}` (een gedeclareerd label met "en" blijft één naam), en
+  `a_set_member_with_two_groupings_stays_one_unresolved_name` (labels eb, vloed, "eb en vloed": het lid "eb en vloed en
+  springtij" blijft één `unresolved`-naam, RGS-070 op die regel).
+- Mutaties (recept `mutants/stapM/mutateM.py`, `runM.sh`, in een `git worktree add --detach` van `bc11070ba`, opgeruimd;
+  `logs/stapM-mutants-1.log`), elk rood:
+
+| | bewaking | mutatie | rood |
+|---|---|---|---|
+| T1 | een lid wordt gegroepeerd | groepering uit | de nieuwe settest en `SemanticTokensCorpusTest` (`seizoenvouw`) |
+| T2 | een label van meer stukken | één stuk per label | `{eb en vloed en springtij}` onopgelost; de tweede test leest "eb" |
+| T3 | alleen bij precies één groepering | de eerste van meer groeperingen | de tweede test leest "eb" |
+
+**"En" buiten een verzameling** (proef in de scratchpad, niet bewaard, met `Resolver.tokens` op één document): de tokens
+lezen elke cel met "en" die de resolutie leest al goed, omdat regeltekst woord voor woord gelezen wordt (`words`), niet
+uit één parseknoop: `zijn vondstgewicht op noord en in najaar`, `zijn winst van vorig boekjaar en op noord`, het celdoel
+`De winst van vorig boekjaar en op zuid van een Jutter`, `in zomer en op zuid`; de bulletnamen van een toetsdocument lezen
+ze sinds stap D zo ook. Dezelfde fout zat wel in elke andere verzameling van twee of meer met "en" in één lid
+(`{zuid en noord}`, `{huidig boekjaar en vorig boekjaar}`, `{eb en vloed en springtij}`): alle vier onopgelost vóór, alle
+opgelost na de reparatie, zoals de resolutie ze leest (`dimensionSelections` gecontroleerd in de `ir.json` van de proef).
+Niet dezelfde fout en niet gerepareerd: een cel met een label dat zelf "en" bevat achter het attribuut (`zijn
+getijgewicht bij eb en vloed`) is een syntaxfout (RGS-091); die lezen resolutie en tokens geen van beide.
+
+**De golden.** De oorspronkelijke bedoeling van A (`d751929d9`) was `{najaar en voorjaar}`: de volgorde van de
+verzameling én dat een verzameling alleen haar eigen labels vouwt (J3 met alleen `zomer` 1.25 is leeg). Daarom terug
+naar twee labels in plaats van een extra case. Verwachting (oud → nieuw): `case2-leeg-en-zomer.json` J3
+`najaarsvoorrangsgewicht` `attributeValue` 1.25 → `attributeEmpty`, de waarde van `d751929d9`; `ir.json` (de selectie
+`najaar`, `voorjaar` en twee snippets) en de NOTE idem, plus een zin over het ene lid dat als twee labels gelezen wordt.
+Besluit 11 van stap A vervalt.
+
+**Pins en vloeren.** Geen pin of vloer veranderd. Tellingen tegen de laatste run van A (`out/gates/20261102-190122`):
+gate 10 1408 → 1423 tests (13 van D, 2 van M), 359 codes (gelijk), 377 → 380 plaatsen (D), 165 rgs-goldens; gate 16 38 →
+40 scenario-goldens, 131 → 136 case-bestanden; gates 2, 4, 5, 6, 7, 12, 13 en 17 gelijk (413 bestanden en 55178 objecten,
+1056 cases, 1860 voorbeelden en 985 cases, 2289 checks, 940, 308 gespeeld op beide takken, 75 getwiste annotaties, 6941
+lezingen en afwijkingen 0).
+
+**Voorlopige besluiten.** (1) RGS-369 voor RGS-380 (opdracht: zonder gat), RGS-237 niet hergebruikt. (2) De tokens
+volgen de regel van `memberLabels` met een eigen groepering op stukken van de bron in plaats van `memberLabels` te
+hergebruiken: die geeft labels, geen posities. (3) De golden terug naar twee labels, geen extra case.
+
+**Niets mislukt.**
+
+#### `make gates`
+
+Eén run op `580c7959d` (dit Result zonder deze sectie; de kaart is geen invoer van een gate),
+`logs/stapM-gates-1.log`, `out/gates/20261102-192040/summary.txt`:
+
+```
+start 2026-11-02 19:20:40 580c7959d card/dimensions-remaining
+ocaml rc=0 0s ocaml-build: fresh (stamp newer than 217 source files)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 6s drools-jar: rebuilt (12 source path(s) newer than the jar, e.g. frontends/regelspraak/src/main/java/dev/uchar/regelspraak/emit; 6s)
+01-self-contained rc=0 2s
+02-ir-schema rc=0 125s
+04-case-schema rc=0 7s
+03-verifier rc=0 36s
+05-oracle rc=0 21s
+06-clingo rc=0 255s
+07-noop rc=0 12s
+08-red rc=0 156s
+09-catala rc=0 5s
+10-regelspraak rc=0 218s
+11-toka-parity rc=0 213s
+12-drools rc=0 311s
+13-reftype rc=0 264s
+14-flogic rc=0 2s
+15-graph rc=0 45s
+16-scenario rc=0 38s
+17-readings rc=0 232s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 19:25:57 317s red=0
+```
+
+Niet gemerged, niet gepusht. De kaart blijft in `doing/`.
