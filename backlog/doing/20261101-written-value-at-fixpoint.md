@@ -83,7 +83,11 @@ Proefdocumenten, scripts en logs onder `/Users/yeb/Developer/uchar-dev/werk/writ
 - `14327882e` spec (voorstel): ch. 5.3, 5.7, 6.1, 6.3, 7.1, 7.4
 - `310fa3450` ref: een verdeling geeft haar delen terug waar ze niet meer beslist (test `WV-6.1-written-allocation`)
 - `0dc3643a6` spec (voorstel): ook een verdeling wordt aan het fixpunt gelezen
-- de commit met dit Result
+- `c7356ce53` Result
+- `a0cc6e65b` spec (voorstel): een kenmerktoekenning is niet meer onherroepelijk (IR-SPEC ch. 5.2, WF-079; RUNTIME-SEMANTICS
+  ch. 6.1)
+- `87c917339` Drools-getuigen: de meting beschrijft de huidige stand van ref (alleen Javadoc)
+- `e40e59345` en de commit hierna: dit Result met de restpunten
 
 ### Wat er in ref veranderde
 
