@@ -884,3 +884,37 @@ over een set (een cel van elk lid)."
 - Distributie (pin-bump): zoals stap 4a/4b/D; nieuw is alleen `Resolver.parse` met de tweede parse (geen API) en
   `IrEmitter.foldSourceReference` (nieuwe publieke methode).
 - `CLAUDE.md` (beschermd): DROOLS-189 bij de retired codes van gate 12; de vloeren van gate 3 (zie stap A).
+
+#### `make gates`
+
+Eerste run op `bc109cfa8` (`logs/stapB-gates-1.log`, `out/gates/20261102-201508`): alle zeventien groen, `red=0`,
+329 s; daaruit de tellingen hierboven. Laatste run op `3d8f12923` (dit Result zonder deze alinea; de kaart is geen
+invoer van een gate), `logs/stapB-gates-2.log`, `out/gates/20261102-202914/summary.txt`:
+
+```
+start 2026-11-02 20:29:14 3d8f12923 card/dimensions-remaining
+ocaml rc=0 0s ocaml-build: fresh (stamp newer than 217 source files)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 5s drools-jar: rebuilt (1 source path(s) newer than the jar, e.g. backends/drools/src/test/java/dev/uchar/regelspraak/cases/DimensionCellWitnessTest.java; 5s)
+01-self-contained rc=0 2s
+02-ir-schema rc=0 123s
+04-case-schema rc=0 7s
+03-verifier rc=0 37s
+05-oracle rc=0 21s
+06-clingo rc=0 259s
+07-noop rc=0 12s
+08-red rc=0 159s
+09-catala rc=0 5s
+10-regelspraak rc=0 220s
+11-toka-parity rc=0 213s
+12-drools rc=0 314s
+13-reftype rc=0 270s
+14-flogic rc=0 1s
+15-graph rc=0 46s
+16-scenario rc=0 39s
+17-readings rc=0 235s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 20:34:33 319s red=0
+```
+
+Niet gemerged, niet gepusht. De kaart blijft in `doing/`.
