@@ -11276,7 +11276,38 @@ let () =
           check "WV-5.12-cel" (got = expected);
           if got <> expected then List.iter (Printf.printf "  got: %s\n") got
       | exception Case.Error { text; _ } -> check ("WV-5.12-cel (case refused: " ^ text ^ ")") false
-      | exception Value.Fault { text; _ } -> check ("WV-5.12-cel (fault: " ^ text ^ ")") false)
+      | exception Value.Fault { text; _ } -> check ("WV-5.12-cel (fault: " ^ text ^ ")") false);
+  (* WV-5.12-cel-over-een-pad: a cell read over a path names the object the
+     path reached, as an attribute read over one does; a dimension fold over a
+     path names none *)
+  let irf = write ".ir.json" path
+  and casef =
+    write ".case.json"
+      (case_of
+         [ instance ~roles:{|{"leider": ["J1"]}|} "P1" "Ploeg" [];
+           instance "P2" "Ploeg" [];
+           instance "J1" "Jutter" [ ("vondstgewicht", cells_of [ ([ "voorjaar" ], "12.50"); ([ "najaar" ], "4.00") ]) ] ]
+         (expected [ value "P1" "leidersvoorjaar" "12.50" ]))
+  in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      match readings_of irf casef with
+      | got ->
+          let row form subject cells =
+            List.map (fun c -> Printf.sprintf "/rules/rules/%d/versions/0 \"%s\" %s" form subject c) cells
+          in
+          let expected =
+            List.sort compare
+              (row 0 "P1" [ "HOLDS"; "0 DimensionCellRead 12.5 \"kg\" on \"J1\"" ]
+              @ row 0 "P2" [ "HOLDS"; "0 DimensionCellRead empty \"kg\" on none" ]
+              @ row 1 "P1" [ "HOLDS"; "0 Aggregation 16.5 \"kg\"" ]
+              @ row 1 "P2" [ "HOLDS"; "0 Aggregation empty \"kg\"" ])
+          in
+          check "WV-5.12-cel-over-een-pad" (got = expected);
+          if got <> expected then List.iter (Printf.printf "  got: %s\n") got
+      | exception Case.Error { text; _ } -> check ("WV-5.12-cel-over-een-pad (case refused: " ^ text ^ ")") false
+      | exception Value.Fault { text; _ } -> check ("WV-5.12-cel-over-een-pad (fault: " ^ text ^ ")") false)
 
 let () =
   if !failures > 0 then begin
