@@ -146,17 +146,32 @@ differential). A granular parameter is only ever read temporally
 
 A numeric value is scaled by its declaration's decimals. The
 **unbounded form** (IR-SPEC ch. 2.4 (c): `whole: false`, `decimals:
-0`, a "getal" declared without decimals) fixes no scale, and this
-encoding holds it as a whole number (the limit RUNTIME-SEMANTICS
-ch. 2.4 records). A case input on it that is not whole — an attribute
-or parameter, scalar or timeline segment, a struct field, a list
-element, a constructor payload — is refused at translation in that
-form's own words, `input V1.sleepafstand = 1/6 is not a whole number,
-and this encoding holds a number declared without decimals (the
-unbounded form) as a whole number`, where ref carries it exactly
-(RUNTIME-SEMANTICS ch. 2.4 point 3). Until 2026-09-26 it was refused
-as a value that "does not fit 0 decimals", a ceiling the declaration
-does not have.
+0`, a "getal" declared without decimals) fixes no scale, so a pre-pass
+(`Scale`, run by the translation and by the reading of the model alike;
+the wire is untouched) gives each attribute and parameter of that form
+one: the widest precision bound (RUNTIME-SEMANTICS ch. 2.3, the
+verifier's own `precision`) of the values the case gives it and of the
+values written into it — a rule version, an object creation's member, a
+defaults consequence at any depth, an allocation share by its rounding —
+restated into its unit. A write that reads a place of the form reads it
+at the bound found so far, so the bounds are the least fixpoint from the
+case values upward. A finite bound d > 0 declares the place at d
+decimals: every value it takes is whole at scale 10^d, so no value
+changes. Where the bound is not finite — a non-terminating case value, a
+quotient by a non-literal, an allocation share without a rounding, a
+bound past 9 decimals — this encoding holds the form as a whole number
+(the limit RUNTIME-SEMANTICS ch. 2.4 records). A case input on it that
+is not whole — an attribute or parameter, scalar or timeline segment,
+and always a struct field, a list element or a constructor payload, which
+are no place of the pre-pass — is refused at translation in that form's
+own words, `input V1.sleepafstand = 1/6 is not a whole number, and this
+encoding holds a number declared without decimals (the unbounded form)
+as a whole number`, where ref carries it exactly (RUNTIME-SEMANTICS
+ch. 2.4 point 3). Witnesses: the backend suite (the input 1,5 doubled
+to 3 and quartered to 3/8 at 1 and 3 decimals, a bound that reads a
+bound, a parameter at the decimals of its case value, a bound past 9
+decimals held whole, the named refusals without a finite bound) and
+golden `jutterswet-tariefrecht-catala` (a tarief held at 2 decimals).
 
 The ch. 1.2d **non-numeric scalars** ride ground *symbolic* terms in
 the same `val/3` slot, beside the integer encoding
@@ -2440,18 +2455,18 @@ each branch also emits the effectiveness atom — the rule decides if *any*
 branch fires — and the input-stands rule is emitted once.
 
 **(c) Decimals and the split money multiplication.** Catala decimals are
-exact rationals with a **pinned finite scale S = 4** (vraag 4-A): a
-4-decimal declaration scales by 10^4, ref stays exact-rational, and a
-value that does not terminate at four decimals faults loudly and
-*consistently* in both executors — ref's bounded-write gate and clingo's
-does-not-fit / non-exact-division fence (the document
-`corpus/negative/wf023-decimal-nonterminating`, `1,0000 / 3,0000` at four
-decimals, which the precision gate of WF-023 refuses before it runs:
-ref's *"does not fit the declared 4 decimals"* and clingo's *"non-exact
-division (an explicit rounding is mandated before precision is lost)"*).
-The rational operators and the `ToRat` casts ride the existing numeric
-family unchanged (a cast is a pass-through re-typing — the value is
-already exact-rational).
+exact rationals of the unbounded form (RUNTIME-SEMANTICS ch. 2.9): this
+encoding holds a decimal at the scale of its precision bound (S2) — the
+tarief of `jutterswet-tariefrecht-catala`, written 0.2, 0.15, 0.1 and 0,
+at 2 decimals — and a decimal without a finite bound as a whole number,
+refusing a value there that is not whole by name (the quotient 7/2 of
+`frontends/catala/test/division_runtime.catala_en`), where ref stays
+exact-rational. A decimal declared at four decimals, `1,0000 / 3,0000`
+unrounded into it, is refused by the precision gate of WF-023 before it
+runs (`corpus/negative/wf023-decimal-nonterminating`). The rational
+operators and the `ToRat` casts ride the existing numeric family
+unchanged (a cast is a pass-through re-typing — the value is already
+exact-rational).
 
 The one new arithmetic encoding is the money product Catala rounds to the
 cent (`Mult_mon_rat`; the plugin wraps it in `Rounding {halfAwayFromZero, 2}`).
@@ -2526,15 +2541,17 @@ without the `Let`, the bare `maal` would coalesce a leeg inkomen to 0.00,
 ch. 1.2a). Gate 6 replays all three (ref ≡ clingo); gate 8 the red
 witness.
 
-**A computed-rate magnitude limit (the tutorial fixture).** When the
-4-decimal rate is itself computed by an exact division — the Catala
+**A computed-rate magnitude limit.** When the rate is itself computed by
+an exact division by a constant written at four decimals — golden
+`jutterswet-kinderweging`'s `1.0000 + n / 2.0000`, the shape of the Catala
 tutorial's `1.0 + decimal of number_of_children / 2.0`
-(`frontends/catala/test/tutorial_end_2_3.catala_en`) — the exact scaled
-quotient of `L / R` at out-scale `m` is `L·(s_R·m) / (R·s_L)` (`s_L`,
-`s_R` the operand scales). At `S = 4` the numerator is pre-scaled by the
-divisor's own scale `s_R = 10⁴`, so a 4-decimal divisor rides a
-scale-`s_R·m = 10⁸` intermediate — `n·10⁸` for `n / 2.0000` — which clears
-clingo's int31 grounding range only for `n ≤ 5`.
+(`frontends/catala/test/tutorial_end_2_3.catala_en`, whose plugin writes
+the shortest lexemes `1` and `2`) — the exact scaled quotient of `L / R`
+at out-scale `m` is `L·(s_R·m) / (R·s_L)` (`s_L`, `s_R` the operand
+scales). The numerator is pre-scaled by the divisor's own scale
+`s_R = 10⁴`, so a 4-decimal divisor rides a scale-`s_R·m = 10⁸`
+intermediate — `n·10⁸` for `n / 2.0000` — which clears clingo's int31
+grounding range only for `n ≤ 5`.
 
 The divisor here is a **compile-time constant** `c` (`2.0000` →
 `c = 20000`), and that lets the whole *constant* fraction `(s_R·m)/(c·s_L)`
@@ -2609,14 +2626,15 @@ restating sibling's unit (S6, golden `jutterswet-sleeprest`); negative operands
 under non-richting-nul rounded forms (runtime `viol/2` fences);
 non-exact bare division and non-fitting write results (runtime
 `viol/2` — an explicit rounding is mandated before precision is
-lost) — inside the write of the unbounded form (S2) both name that
-form instead, `result of <target> is not a whole number, and this
+lost) — inside the write of the unbounded form without a finite bound
+(S2), of a rule, a creation's member or a defaults consequence alike,
+both name that form instead, `result of <target> is not a whole number, and this
 encoding holds a number declared without decimals (the unbounded form)
 as a whole number` and `a division into a number declared without
 decimals is not whole, and this encoding holds the unbounded form as a
 whole number`, since the spec mandates no rounding there and ref writes
 the exact value (RUNTIME-SEMANTICS ch. 2.4 point 3); a non-whole case
-input on that form (S2); a rational literal that no power-of-ten scale up to 10^9 holds
+input on that form without a finite bound (S2); a rational literal that no power-of-ten scale up to 10^9 holds
 exactly (S4, `rational literal 1/3 has no finite decimal expansion
 within 9 decimals`) — ref computes it exactly and both Drools branches
 play it (measured 2026-09-26 on "zijn taxatie maal 1/3 naar beneden

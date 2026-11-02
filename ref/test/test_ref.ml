@@ -4136,6 +4136,70 @@ let () =
     (Eval.eval_expr env w self ~err:no_err match_round)
     "33.33"
 
+(* --- ch. 2.9: a Catala decimal is the unbounded form. The worked example
+   verbatim: the tarief of the golden jutterswet-tariefrecht-catala, whose
+   defaults write 20%, 15%, 10% and 0%, with the aanslag that reads it; and a
+   decimal quotient by an input, well-formed without a rounding (the precision
+   gate sets no ceiling on the unbounded form) and exact in ref. *)
+let () =
+  let golden = "corpus/golden/jutterswet-tariefrecht-catala/" in
+  let d = Ir_v0.Loader.load_file (corpus_file (golden ^ "ir.json")) in
+  (match Option.bind (Ir_v0.Checks.effective_ot d "Penningplichtige") (fun ot -> Ir_v0.Checks.find_ci ot.attributes "tarief") with
+  | Some (Some (Number { whole_part = false; decimal_places = 0; _ })) -> check "WV-2.9-tarief-onbegrensd" true
+  | _ -> check "WV-2.9-tarief-onbegrensd (the tarief is not declared as the unbounded form)" false);
+  let j1 case_name =
+    let c = Case.load_file d (corpus_file (golden ^ case_name)) in
+    World.get
+      (Eval.evaluate
+         { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of; locals = World.SMap.empty;
+           btypes = World.SMap.empty; subj = None; form = None }
+         c.world)
+      "J1"
+  in
+  let one = j1 "case1-basistarief.json" in
+  expect_num "WV-2.9-tarief-een-kind" (World.attr one "tarief") "1/5";
+  expect_num "WV-2.9-aanslag-een-kind" (World.attr one "aanslag") "3750.00";
+  let four = j1 "case2-grootgezin.json" in
+  expect_num "WV-2.9-tarief-vier-kinderen" (World.attr four "tarief") "1/10";
+  expect_num "WV-2.9-aanslag-vier-kinderen" (World.attr four "aanslag") "1000.00";
+  let whole = {|{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}|} in
+  let unbounded = {|{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}|} in
+  let read a = Printf.sprintf {|{"node":"AttributeReference","attribute":"%s","subjectType":"Vangstverdeling","source":{"snippet":"%s"}}|} a a in
+  let doc =
+    Printf.sprintf
+      {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vangstverdeling","animate":false,"plural":"Vangstverdelingen","attributes":[{"node":"Attribute","name":"vangst","datatype":%s},{"node":"Attribute","name":"jutters","datatype":%s},{"node":"Attribute","name":"aandeel","datatype":%s}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"aandeel","versions":[{"validity":{"node":"Validity"},"target":%s,"value":{"node":"Binary","op":"dividedBy","left":%s,"right":%s,"type":%s,"source":{"snippet":"vangst / jutters"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+      whole whole unbounded (read "aandeel") (read "vangst") (read "jutters") unbounded
+  in
+  let case_data =
+    {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "V", "objectType": "Vangstverdeling",
+      "attributes": { "vangst": { "number": "7" }, "jutters": { "number": "2" } }, "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+  in
+  let write suffix body_text =
+    let f = Filename.temp_file "ref-wv29" suffix in
+    let oc = open_out f in
+    output_string oc body_text;
+    close_out oc;
+    f
+  in
+  let irf = write ".ir.json" doc and casef = write ".case.json" case_data in
+  Fun.protect
+    ~finally:(fun () -> Sys.remove irf; Sys.remove casef)
+    (fun () ->
+      check "WV-2.9-quotient-by-input-well-formed"
+        (Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier irf) = []);
+      let d = Ir_v0.Loader.load_file irf in
+      let c = Case.load_file d casef in
+      let final =
+        Eval.evaluate
+          { Eval.doc = d; params = c.params; param_tls = c.param_tls; as_of = c.as_of; locals = World.SMap.empty;
+            btypes = World.SMap.empty; subj = None; form = None }
+          c.world
+      in
+      expect_num "WV-2.9-quotient-by-input" (World.attr (World.get final "V") "aandeel") "7/2")
+
 (* --- ch. 3.8: the calendar kernel (worked examples verbatim) ------------ *)
 
 let () =

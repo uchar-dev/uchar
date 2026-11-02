@@ -520,12 +520,17 @@ attributes, write **1/3** and **1/24**; with the input 1,5 they write **3**
 and **3/8**. (Measured 2026-09-26: until then the reference interpreter
 refused both, the write as a value that "does not fit the declared 0
 decimals" and the input as one that "does not fit 0 decimals", against
-point 3.) The ASP backend holds a number at the scale its declaration fixes
-and the unbounded form fixes none, so it holds that form as a whole number
-(the limit recorded below for Catala decimals as well): a whole value plays,
-and a value that is not whole is refused by name, at translation for a case
-input and by a named `viol/2` for a written result (`ASP-TRANSLATION.md`
-S2, S19). The Drools backend holds the exact value of the unbounded form in
+point 3.) The ASP backend holds a number at the scale its declaration fixes,
+and the unbounded form fixes none: it gives an attribute or parameter of
+that form the scale of its precision bound (ch. 2.3), the widest bound of
+the values written into it and of the values the case gives it, where that
+bound is finite — with the input 1,5 the sleepafstand and the dubbele
+sleepafstand are bound at 1 decimal and the gedeelde at 3, so both rules
+play there — and holds the form as a whole number where it is not (the
+input 1/6, a quotient by an attribute): there a whole value plays, and a
+value that is not whole is refused by name, at translation for a case input
+and by a named `viol/2` for a written result (`ASP-TRANSLATION.md` S2,
+S19). The Drools backend holds the exact value of the unbounded form in
 its working memory, in both branches, so that a reader and a condition
 compute with the value the form wrote, and writes it onto the bean of the
 attribute as a decimal: exact where it terminates, and at 16 significant
@@ -737,47 +742,53 @@ into a scalar target of 2 decimals the part is refused (∞ > 2,
 `corpus/negative/wf023-precision-time-proportional-part`). Full timeline
 algebra: ch. 3.
 
-### 2.9 The pinned decimal scale — Catala decimals (Phase-5c, vraag 4-A)
+### 2.9 Catala decimals — the unbounded form (Phase-5c)
 
-*A v1 kernel decision (design and ratified decision:
-`spec/proposals/PHASE5C-TUTORIAL.md` §5, question 4 = A). Frontend
-mapping: the Catala plugin.*
+*A v1 kernel decision (owner's decision 2026-11-02; the design of the
+Catala route: `spec/proposals/PHASE5C-TUTORIAL.md` §5). Frontend mapping:
+the Catala plugin.*
 
 A Catala decimal (`TRat`) is an **exact rational** — precisely the
 ch. 2.1 model — so its resolved operators
 (`Add/Sub/Mult/Div_rat_rat`, `Minus_rat`) map onto the existing numeric
-operators and its literals (`LRat`) carry the exact lexeme; the casts
+operators and its literals (`LRat`) carry the exact value in its shortest
+decimal lexeme (`0.2`, `0.12345`, `3`); the casts
 `ToRat_int`/`ToRat_mon` are a **pass-through** — the value is already
 exact-rational, so the plugin emits the operand unchanged, with no cast
 node of its own, and the result type is borne by the surrounding
 mixed-decimals arithmetic — and no percentage (a `Number` whose unit is `%`) is involved (Catala
-pre-divides — `20%` arrives as the rational `1/5`). But because the ASP
-side scales every value by its declared `decimals`, an *unbounded*
-decimal form would be integer-only there. The pin: a Catala-decimal
-declaration carries a **finite scale `decimals = S`, with S = 4**
-(chosen against the tutorial, fixed here) — the frontend maps `TRat` to
-`Number{whole = false, decimals = 4, sign unspecified}` without a unit.
+pre-divides — `20%` arrives as the rational `1/5`). A decimal fixes no
+number of decimals, so the frontend maps `TRat` to the **unbounded form**
+(IR-SPEC ch. 2.4 (c)): `Number{whole = false, decimals = 0, sign
+unspecified}` without a unit.
 
 `ref` stays exact-rational throughout. The precision gate of ch. 2.4
-point 4 holds for a Catala decimal as for any bounded declaration: a 4-dec
-target fed `1,0000 ÷ 3,0000` without a rounding is ill-formed (WF-023,
-`corpus/negative/wf023-decimal-nonterminating`), and a Catala source has no
-rounding to write there, so a Catala division into a decimal is outside
-what the plugin can emit well-formed; no Catala golden carries one. Behind
-the gate both executors fault on a value that does not terminate at 4
-decimals — ref at its write boundary (ch. 2.4 point 1), clingo at its
-does-not-fit fence. **OPEN** (maintainer decision 2026-11-02 to map a
-Catala decimal to the unbounded form, measured that day and not carried
-out): with `TRat` as the unbounded form, `jutterswet-tariefrecht-catala`
-plays in ref and in both Drools branches and fails in the ASP backend on
-each of its four cases ("result of penningplichtige.tarief does not fit its
-declared decimals", the unbounded form being whole there), and the plugin
-refuses to emit `jutterswet-kamerhuishouden-catala`, whose money product
-by a rate the ASP encoding carries at the rate's scale of 4 only.
+point 4 sets no ceiling on the unbounded form, so a Catala quotient into a
+decimal — by a literal or by a runtime value — is well-formed without the
+rounding a Catala source has no means to write: the gate holds for the
+Catala route as for every frontend. The ASP backend holds a decimal at the
+scale of its precision bound (ch. 2.3) where the bound of every value
+written into it and of every value the case gives it is finite, and as a
+whole number where it is not (`ASP-TRANSLATION.md` S2): a quotient by a
+runtime value has no finite bound, so there a value that is not whole is
+refused by name, a limit of that backend.
+
+Worked example (`ref/` tests `WV-2.9-tarief-*`, `WV-2.9-aanslag-*` and
+`WV-2.9-quotient-by-input*`; golden `jutterswet-tariefrecht-catala`): the
+tarief is a decimal whose defaults write 20%, 15%, 10% and 0%. With an
+inkomen of 20000,00 and a kindertal of 1 the tarief is **1/5** and the
+aanslag — 20000,00 × 1/5 rounded to the cent, less a kinderaftrek of
+250,00 — is **3750,00**; with a kindertal of 4 the tarief is **1/10** and
+the aanslag **1000,00**. The four consequences are bound at 1, 2, 1 and 0
+decimals, so the ASP backend holds the tarief at 2 decimals (1/5 as 20). A
+decimal aandeel defined as `vangst / jutters` over two integer inputs is
+verifier-clean without a rounding; with 7 and 2 it is **7/2**, which the
+ASP backend refuses by name
+(`frontends/catala/test/division_runtime.catala_en`).
 
 **The scale is a boundary, not a step (maintainer decision 2026-08-24,
-vraag 3-A).** A declared scale `S` — the pin above, or any attribute's
-own `decimals` — binds only a *declaration* and the *write boundary* it
+vraag 3-A).** A declared scale — an attribute's own `decimals` — binds
+only a *declaration* and the *write boundary* it
 guards (ch. 2.4); every intermediate value stays the exact rational of
 ch. 2.1 — a `Let` binder (ch. 10.6) and a `Match`-arm result
 (ch. 9.2) among them, rounded to no scale — and a declared scale is never
@@ -796,12 +807,12 @@ limit conform to the norm, not a value split (`ASP-TRANSLATION.md` S19).
 **Money × decimal rounds to the cent.** Catala's runtime rounds money
 multiplication (`Mult_mon_rat`/`Mult_mon_int`) to the cent, so the
 frontend wraps those products in `Rounding {halfAwayFromZero, 2}` — the same
-wrapper the money *divisions* already carry. (No existing corpus golden
-contains a money multiplication, so the fix is byte-neutral; it lands
-with the first fixture that exercises it. The ASP encoding must split
-the scale-2 × scale-4 product so the intermediate stays inside the
-int31 fences — e.g. `M × R = M × R_hi/10² + M × R_lo/10⁴`, each part
-within the existing bound, the sum exact.)
+wrapper the money *divisions* already carry (golden
+`jutterswet-tariefrecht-catala`). The ASP encoding splits the product of a
+2-decimal money and a rate of up to four decimals so the intermediate stays
+inside the int31 fences — `M × R = M × R_hi/10² + M × R_lo/10⁴` at the
+rate's scale 10⁴, each part within the existing bound, the sum exact
+(`ASP-TRANSLATION.md` S18(c)).
 
 ### 2.10 The consumer clause — where a type annotation is not the source
 
