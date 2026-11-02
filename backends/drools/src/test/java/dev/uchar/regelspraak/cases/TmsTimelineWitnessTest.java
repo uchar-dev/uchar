@@ -97,17 +97,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * input) holds the condition only on the intermediate state where the teller is still its input; at the fixpoint the
  * teller is 10, so the jaardeel keeps its input. J2 (score 2, teller 8) gets 306 and 59. Both orders.
  *
- * <p><b>Measured</b> (2026-10-09, every document of {@link #main}, every order: 131 documents): the verifier passes all;
- * the reference interpreter's runner passes all but one, and the ASP runner passes all but one. The reference
- * interpreter is order-dependent on B2: with the jaardeel before the teller it keeps the timeline it wrote on the
- * intermediate state, "MISMATCH: J1.jaardeel = [2024-01-01,2025-01-01)=306 [2025-01-01,2026-01-01)=59, expected
- * [2024-01-01,2025-01-01)=4", and with the teller first it passes; the ASP runner passes both orders. That is the
- * class of the card fout-op-tussenstand (PLAN §9, 2026-10-09: an intermediate state is not observable), here for a
- * timeline: this branch withdraws the write and answers the fixpoint in every order. On B, the negated read, the
- * reference interpreter passes both orders: it puts the reader of a negated characteristic in a stratum above its
- * writer (ch. 6.3), so it never sees the intermediate state. On C the ASP runner refuses, "TRANSLATION FAULT: the case
- * supplies input for computed target "jaardeel": ref (like v0) overwrites it, which has no monotone encoding here (no
- * corpus case)", and the reference interpreter passes: it writes the empty timeline over the input.
+ * <p><b>Measured</b> (2026-11-02, every document of {@link #main}, every order: 133 documents): the verifier passes all;
+ * the reference interpreter's runner passes all, and the ASP runner passes all but C. On B2 both answer the fixpoint in
+ * both orders, as this branch does: the reference interpreter gives back the timeline it wrote where the condition held
+ * on the input teller (RUNTIME-SEMANTICS ch. 6.1, "A write is read at the fixpoint"), and this branch withdraws the
+ * write. On B, the negated read, the reference interpreter passes both orders: it puts the reader of a negated
+ * characteristic in a stratum above its writer (ch. 6.3), so it never sees the intermediate state. On C the ASP runner
+ * refuses, "TRANSLATION FAULT: the case supplies input for computed target "jaardeel": ref (like v0) overwrites it,
+ * which has no monotone encoding here (no corpus case)", and the reference interpreter passes: it writes the empty
+ * timeline over the input.
  *
  * <p><b>Red</b> on b9f77aa7, the code before the change: all seven tests, each on the refusal of the member, "Excluded:
  * tms-transpiler SKIP: regel: jaardeel — het tijdsafhankelijke attribuut 'jaardeel' van Jutter: tijdlijnen zijn buiten
