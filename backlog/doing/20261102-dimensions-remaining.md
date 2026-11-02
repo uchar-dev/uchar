@@ -648,3 +648,239 @@ end 2026-11-02 19:25:57 317s red=0
 ```
 
 Niet gemerged, niet gepusht. De kaart blijft in `doing/`.
+
+### Stap B (een cel en een vouw over een rol, een label met "en", clingo over een pad)
+
+Branch `card/dimensions-remaining`, op `28df094fd` (stap A, D en M). Commits:
+
+- `b5265c790` verifier, ref en clingo: een cel van elk lid als vouwbron (WF-037, `Eval`, `cell_source_fold`), clingo leest
+  een symbolische cel en eerste/laatste over een pad, de rij `WV-5.8c-cel-van-elk-lid`, de negatieven
+  `wf037-count-cell-source` en `wf040-fold-source-cell-label`;
+- `6b8feba0e` Drools: een cel en een dimensievouw over een pad, een cel van elk lid als bron van een vouw over een set,
+  DROOLS-189 `RETIRED`, README;
+- `93c21b5bd` frontend: een cel over een rol, een dimensievouw over een rol, een cel van elk lid, een label met "en",
+  `grammar/DIVERGENCES.md`, `DimensionCellOverRoleTest`;
+- `093900062` golden `jutterswet-ploegseizoen`, `corpus/golden/README.md`, de rijen van `DimensionCellWitnessTest`,
+  gate 12 `EXPECTED_PLAYED` (voorstel);
+- `bc109cfa8` voorstel spec: IR-SPEC ch. 4.3 en de indexrij van WF-037, RUNTIME-SEMANTICS ch. 5.8c en 5.12,
+  ASP-TRANSLATION;
+- `1410d7d23` de rode stand in de NOTE van de golden en de javadoc van de getuige zoals gemeten;
+- het commit van dit Result.
+
+Beschermde paden (voorstel, niet gemerged): `spec/verifier/lib/checks.ml`, `spec/IR-SPEC.md`,
+`spec/RUNTIME-SEMANTICS.md`, `scripts/check-drools.sh`; `spec/ASP-TRANSLATION.md` onder het net van `/spec/`. Buiten de
+may-touch-set: niets.
+
+**Begintoets.** ALEF nagelezen (`872b859`, dump van de `.mps`-modellen met een eigen script in de scratchpad): een cel
+over een rol staat in `Onderwerpen_Test.ALEF4486` ("td3 [dim] van de a van de V", ook over twee rollen) en in
+`Consistentieregel_Test.ALEF4638`; een vouw van een cel van elk lid in `MeerdereObjecten_Test.EenOpMeer_AggregatieDimensies`
+(de som van `inkomen [België]` van alle `kinderen`, verwacht 300) en in `Onderwerpen_Test.ALEFS473` (negen keer). ALEF
+schrijft de cel als `DimAttribuutSelector` (lidwoord, attributieve labels, attribuut, predicatieve labels), dan "van" en
+het object (`regelspraak/editor.mps`). ALEF schrijft geen celdoel over een rol: alle 30 doelen met een
+`DimAttribuutSelector` staan op `UnivOnderwerp`. ALEF schrijft geen `DimensieAggregatie` over een rol: alle 37 staan op
+het eigen onderwerp (`OnderwerpRef`). Gemeten op `28df094fd` met een hand-IR: ref en clingo lazen de cel en de vouw
+over een pad al (stap 2); de vouw van een cel van elk lid weigerden verifier, ref, clingo en de Drools-lader met
+`WF-037.aggregation-non-source` (de draad had geen vorm); clingo weigerde een tekstcel over een pad en de eerste
+tekstcel over een pad met `CLINGO-002`, een getal (som, laatste) over een pad las clingo al; Drools weigerde elke
+cellezing en dimensievouw over een pad met DROOLS-189. Het advies (B7: Drools met de pin tot later, een golden pas
+met de frontendvorm) klopt; deze stap bouwt beide.
+
+#### Wat er veranderde, per laag
+
+- **Verifier (voorstel).** WF-037: de bron van `sum`, `minimum`, `maximum`, `first`, `last` en `filledCount` met een
+  bereik en zonder `dimensionSelections` mag een `DimensionCellRead` zijn van een `AttributeReference` op het
+  elementtype (`non_source`, `fold_source`); de labels gaan door WF-040 (`wf040_cell`), de verwijzing eronder door de
+  bronregels (`aggregation_source_check`: geen pad, WF-083-anker, WF-034/080). Een `count` en een `total` nemen geen
+  cel. De afhankelijkheidsgraaf las de cel onder het argument al per cel (ch. 5.1).
+- **ref.** `eval_function_call`: een cel van elk lid als bron leest per lid `World.attr i (cell_member …)`, een lid met
+  een lege cel draagt niets bij (`contributing_values`); de lezing (ch. 5.12) geeft de vouw haar bijdragers, zoals bij
+  een attribuut. README.
+- **clingo.** `cell_source_fold` herschrijft zo'n vouw naar de setvouw over het lid van de cel
+  (`val(X,"vondstgewicht[voorjaar]",A)`), aan de ingang van `expr_term`, `symbolic_term` en `dt_term`;
+  `set_source_attribute` zoekt de declaratie met `find_decl`, die een cel kent. `symbolic_term`: een cel van tekst,
+  enumeratie of boolean en `first`/`last` over zulke cellen lezen over een pad via `member_read ~scaled:false` en
+  `dimension_cells` (die twee en `dimensioned_reference` staan nu vóór `symbolic_term`, ongewijzigd).
+- **Drools.** `TmsTranspiler.dimensionedPath` en `dimensionedRead` in plaats van `dimensioned`: een cel en een
+  dimensievouw lezen op het object dat het pad bereikt (`Reads.navigated`): de kaart van de bereikte bean, een
+  geschreven cel via de padstand, leeg bij een ontbrekende schakel; een cellezing over een pad noteert het bereikte
+  object (`noteObject`), de vouw niet. `fold` en `contributionRules`: een cel van elk lid als bron, de bijdrage leest de
+  ingang van de kaart (`Consequence.Input.MemberValue.cell`, beide weergaven: `ComputeHelpers.cell`, route `CELL`) of
+  de stand van een geschreven cel (`cellMember`); `IrLoader.sourceRefusal` laat de cel door onder de waardevouwen en de
+  filled count. DROOLS-189 `RETIRED`; DROOLS-100 blijft, met reden (hieronder). README.
+- **Frontend.** `ExpressionBuilder.attributeRefAt`: na een navigatie of over een set leest een naam die geen attribuut
+  is van het bereikte type als cel van dat type (`dimensionCell` met een fabriek voor de verwijzing eronder, die pad of
+  setlezing draagt); een keten van to-one rollen eindigt bij de eerste grens waar het voorvoegsel een cel noemt, ook
+  een gedeeltelijke (RGS-364). `resolveDimensionSelections` vouwt ook over een argument over een to-one pad;
+  `IrEmitter.foldSourceReference` maakt een cel van elk lid tot vouwbron (`isFoldSource`, `foldRange`,
+  `foldRefusalOf`, de bron zonder pad), `aggregationElement` en de vouwhekken lezen hem; `RuleChecker.checkSetRead` laat
+  de uitzondering door de cel heen onder een waardevouw. Het label met "en": `Resolver.parse` en
+  `ScenarioResolver.read` parsen een document met zo'n gedeclareerd label een tweede keer, met elke "en" buiten
+  accolades waarvan de buurwoorden zo'n label spellen als `LOWER_ID` (`Resolver.labelsWithEn`, `labelWords`); geen
+  grammaticawijziging, geen nieuwe code. `grammar/DIVERGENCES.md` "More dimensions": de vormen, de lowering, de grenzen.
+- **Corpus.** Golden `jutterswet-ploegseizoen` (hieronder), twee negatieven.
+- **Spec (voorstel).** IR-SPEC ch. 4.3 (de rij `arguments`: de cel van elk lid), de indexrij van WF-037 (de
+  fold-source-arm, de getuigen); RUNTIME-SEMANTICS ch. 5.8c (uitgewerkt voorbeeld "A cell of each member", "Where the
+  executors stand": Drools leest een cel over een pad, beide OCaml-uitvoerders een cel van elk lid, de golden), ch. 5.12
+  (een cel over een pad valt binnen gate 17; "Four boundaries" wordt "Three"); ASP-TRANSLATION (de symbolische cel over
+  een pad, de vouw over een pad, de cel van elk lid).
+
+#### De golden
+
+`jutterswet-ploegseizoen` (bron, met de hand uitgerekend): `vondstgewicht` (getal, kg) en `vondstsoort` (tekst) over
+`seizoen` op de `Jutter`; een `Ploeg` met één `leider` en meer `leden`. Tien regels: de cel `najaar` als `zomer` maal 2,
+de cel `voorjaar` en `najaar` (geschreven) van de leider, de som en de laatste over de cellen van de leider, de som,
+het maximum (over geschreven cellen) en de filled count van een cel van elk lid, de tekstcel `zomer` en de eerste
+tekstcel van de leider. `case1-twee-ploegen.json` 23 verwachtingen (P1 en P2, vier geschreven cellen), lege cel: J2
+`voorjaar` (P2 `leidersvoorjaarsgewicht` leeg), J5 `voorjaar` (een lid zonder bijdrage); J3 `najaar` 0.00 (leeg maal 2,
+ch. 1.2). `case2-zonder-leider-en-leden.json` 11 verwachtingen (P3 zonder leider en leden: alles leeg, de filled count
+0; J4 buiten elke ploeg). ref en clingo `PASS (23)` en `PASS (11)`, Drools `PLAYED 2` op beide takken, beide cases
+vallen onder `--noop`, gate 17 vergelijkt hun lezingen (`on "J1"`, `on none`, de bijdragers), gate 15 hun graaf.
+
+#### Rood op `28df094fd` en mutaties
+
+Rood (detached werkboom `base-B` op `28df094fd` met de nieuwe tests en documenten, opgeruimd;
+`logs/stapB-red-1.log`, `-2.log`):
+
+- verifier op de golden: `WF-037.aggregation-non-source` en `WF-053.read-other-type` op de drie vouwen van een cel van
+  elk lid; ref `EVALUATION FAULT` en clingo `TRANSLATION FAULT` in dezelfde zin; Drools `DocumentError` van de lader,
+  beide takken. Zonder die drie vouwen: verifier `PASS`, clingo `CLINGO-002` op de tekstcel en de eerste tekstcel over
+  het pad, Drools `EXCLUDE DROOLS-189` op beide takken (de cel en de vouw over het pad).
+- frontend op `source.rgs`: RGS-125 (cel over een rol), RGS-127 (vouw over de cellen van de leider), RGS-068 (cel van
+  elk lid, marker); `DimensionCellOverRoleTest` 10 van 11 rood; groen bleef
+  `an_en_outside_a_declared_label_stays_a_syntax_error`, een pin van bestaand gedrag (RGS-091).
+- `ref/test` `WV-5.8c-cel-van-elk-lid`: niet verifier-schoon en de fout van de vouw.
+- `DimensionCellWitnessTest`: de drie nieuwe rijen rood op de `DocumentError`, 18 bestaande groen.
+- De negatieven op de oude verifier: beide verworpen, met `WF-037.aggregation-non-source` erbij; het zijn pinnen van de
+  verbreding (V2, V3 hieronder).
+
+Mutaties, elk één vervanging in een `git worktree add --detach` van `bc109cfa8` (`mut-B`, opgeruimd), recept
+`/Users/yeb/Developer/uchar-dev/werk/dimensions-remaining/mutants/stapB/mutateB.py` en `runB.sh`, uitkomst
+`logs/stapB-mutants-1.log` en `-2.log` (R1 en D3 opnieuw: de eerste R1 bouwde niet, warning 26, en mat de oude binary;
+de eerste D3 veranderde twee dingen); niet gecommit, elk rood:
+
+| | bewaking | mutatie | rood |
+|---|---|---|---|
+| V1 | WF-037 laat de cel van elk lid toe | uitzondering uit | golden: `WF-037.aggregation-non-source` 3×; `WV-5.8c-cel-van-elk-lid` niet schoon |
+| V2 | geen cel onder een count | ook onder count | `wf037-count-cell-source` krijgt `WF-093.count-source-member`, niet de gepinde arm |
+| V3 | labels van de bron door WF-040 | `wf040_cell` weg | `wf040-fold-source-cell-label` niet verworpen |
+| R1 | ref leest de cel van elk lid | het attribuut | case1 `aantal voorjaarsleden` 0 voor 2; `WV-…-cel-van-elk-lid` drie waarden |
+| C1 | clingo: cel van elk lid | herschrijving uit | golden `TRANSLATION FAULT` (de vouw) |
+| C2 | clingo: symbolische cel over een pad | alleen eigen onderwerp | golden `CLINGO-002` |
+| C3 | clingo: symbolische eerste over een pad | alleen eigen onderwerp | golden `CLINGO-002` |
+| D1 | Drools: pad van de cel | pad genegeerd | `EXCLUDE DROOLS-279`; twee rijen |
+| D2 | geschreven cel over een pad via de padstand | uit de kaart | `leidersnajaarsgewicht` leeg voor 2.50 en 8.00 |
+| D3 | object van een cel over een pad in de lezing | niet genoteerd | de lezingsrij (`on "J1"` ontbreekt) |
+| D4 | bijdrage leest de cel uit de kaart | de hele kaart | `ClassCastException` (LinkedHashMap naar BigDecimal), twee rijen |
+| D5 | geschreven cel van elk lid via de stand | uit de kaart | `zwaarste ledennajaarsgewicht` leeg voor 4.20 en 8.00 |
+| D6 | DRL-tekst: de cel in de bijdrage | omgedraaid | DRL-teksttak `ClassCastException`, exec-model `PLAYED` |
+| F1 | frontend: cel over een rol | lezing uit | 5 tests; golden niet geëmitteerd |
+| F2 | gedeeltelijke cel aan een ketengrens | alleen volledige | `a_cell_over_a_role_names_a_label…` (RGS-125 voor RGS-364) |
+| F3 | cel van elk lid is vouwbron | `foldSourceReference` alleen verwijzing | `a_value_fold…` (RGS-071, RGS-165); golden niet |
+| F4 | sethek door de cel heen | niet | `a_value_fold…` (RGS-165); golden niet |
+| F5 | dimensievouw over een pad | alleen eigen | `a_dimension_fold…` (RGS-070); golden niet |
+| F6 | cel over een set | alleen na navigatie | `a_value_fold…`; golden niet |
+| F7 | tweede parse met de labels | uit | 3 tests (RGS-091) |
+| F8 | accolades houden hun "en" | ook binnen | `SemanticTokensTest.a_set_member_with_two_groupings…` |
+| F9 | alleen "en" binnen een gedeclareerd label | elke "en" | 5 tests (een marker waar RGS-091 hoort) |
+
+Eerste poging voor het label met "en", gemeten en verworpen: een grammaticaproductie `labelVervolg : EN kaleNaamWoord+`
+in de niet-gulzige lus van `kaleNaamDeel` veranderde de parseboom van drie bronnen (`jutterswet-unievoorwaarde`,
+`jutterswet-vondstunie`, `toka-22`: de "en" van een instantievereniging werd een naamwoord), gemeten met de
+parseboomvergelijking van stap A (`ParseTrees.java`, oude en nieuwe parser, 308 documenten: alle `.rgs` van de werkboom,
+de TOKA-fragmenten als één document, de 40 toetsdocumenten); met een semantisch predikaat ervoor gaf de voorspelling
+het alternatief toch en faalden die drie op RGS-091. De herspelling van tokens laat de grammatica ongemoeid.
+
+#### Aangepaste verwachtingen, tests, pins en vloeren (oud → nieuw)
+
+- Geen bestaande test of verwachting omgedraaid. `FormsPlan` bouwt `MemberValue` met een vierde argument (`null`); geen
+  verwachting veranderde.
+- Gate 12 `EXPECTED_PLAYED` 308 → 309 (voorstel), met reden; `EXPECTED_CHANNEL` gelijk (47); DRL-teksttak 308 → 309;
+  register 299 codes, retired 11 → 12.
+- Geen vloer veranderd. Tellingen (oud: `out/gates/20261102-192040`, stap M; nieuw: `out/gates/20261102-201508`): gate 2
+  413 → 414 bestanden, 55178 → 55493 objecten in 981 → 984 documenten; gate 3 413 → 414 golden schoon, 568 → 570
+  negatief, 411 → 413 op hun arm, 686 → 692 `name=value`-regels, 705 → 708 wijzers; gate 4 1056 → 1058 cases; gate 5
+  1860 → 1862 voorbeelden, 985 → 987 cases; gate 6 2289 checks (gelijk), 985 → 987 cases; gate 7 940 → 942; gate 8
+  gelijk; gate 10 1423 → 1434 tests, 165 → 166 rgs-goldens, 359 codes en 380 plaatsen (gelijk); gate 12 JUnit 1761 →
+  1764; gate 13 75 → 80 getwiste annotaties over 33 → 34 goldens, 180 → 186 replays, DRL-tak 32 → 33; gate 15 318/355 →
+  319/356 vergeleken, 284 → 288 afhankelijkheden, route 165 → 166; gate 16 gelijk (40, 136); gate 17 985 → 987
+  getraceerd, 308 → 309 goldens, 855 → 857 case-bestanden, 6941 → 6973 lezingen, 22491 → 22533 knoopregels, 926 → 930
+  met bijdragers, 808 → 817 met het object van een lezing (122 → 125 `on none`), afwijkingen 0.
+- `CLAUDE.md` (beschermd, niet aangeraakt): gate 12 noemt bij de retired codes DROOLS-189 niet.
+
+#### Voorgestelde tekst voor CONSTRUCTS (hoofdsessie)
+
+Rij 28: in de noot van `dimensions-executed` wordt "Still refused by name: a cell over a path in Drools (DROOLS-189,
+DROOLS-100)" "a cell target over a path in Drools (DROOLS-100)". Daarachter:
+
+> **Landed (card `dimensions-remaining`, step B, 2026-11-02, `b5265c790` … `1410d7d23`):** a cell of another object than
+> the subject. The Drools backend reads a cell, and folds the cells, of the object a path of to-one roles reaches, as
+> ref and the ASP backend did (DROOLS-189 retired); the ASP backend reads a cell of a text, an enumeration or a boolean,
+> and the first and the last of such cells, over a path as well. The source of a value fold or a filled count over a
+> set may be a cell of each member, a `DimensionCellRead` of the element type (ALEF's fold of one cell over a role;
+> WF-037, IR-SPEC ch. 4.3), carried by all three executors. The RegelSpraak frontend writes these forms as ALEF writes
+> them ("het vondstgewicht in voorjaar van de leider van de Ploeg", "de som van het vondstgewicht van de leider van de
+> Ploeg over alle seizoenen", "de som van het vondstgewicht in voorjaar van alle leden van de Ploeg"), and reads a
+> declared label that contains "en" as one label behind the attribute. Golden `jutterswet-ploegseizoen` plays in the
+> square ref ≡ clingo ≡ Drools; negatives `wf037-count-cell-source`, `wf040-fold-source-cell-label`. Still refused by
+> name: a cell target over a path (DROOLS-100, as every target over a path; ALEF writes none); a dimension fold over the
+> cells of every member of a set has no wire form (ALEF writes none).
+
+Rij `DimensieCel`: "**Landed (`dimensions-remaining`, stap B):** ook over een pad in Drools, en als bron van een vouw
+over een set (een cel van elk lid)."
+
+#### Voorlopige besluiten
+
+1. **Een cel van elk lid is een `DimensionCellRead` als vouwbron**, geen nieuwe knoop en geen genavigeerde verwijzing in
+   de bron: de draad heeft de cel al, de verwijzing eronder houdt de bronregels (geen pad, het anker op het
+   elementtype), en elke uitvoerder leest haar per lid zoals een attribuut. Toegestaan onder de zes soorten van een
+   dimensievouw, met een bereik en zonder selecties; een `count` (vouwt instanties) en een `total` (integreert een
+   tijdlijn, die een cel niet heeft, WF-125) niet.
+2. **DROOLS-100 blijft voor een celdoel over een pad**, met reden: ALEF schrijft geen celdoel over een rol (gemeten: alle
+   30 op het eigen onderwerp), een doel over een pad weigert Drools ook voor een attribuut, en de frontend leest het
+   niet.
+3. **Geen dimensievouw over de cellen van alle leden**: de draad heeft er geen vorm voor (een dimensievouw draagt geen
+   elementtype, WF-037) en ALEF schrijft er geen (gemeten: alle 37 `DimensieAggregatie` op het eigen onderwerp); grens in
+   `DIVERGENCES.md`.
+4. **De frontend leest een cel van een ander object alleen na een navigatie of over een set**; een bepaalde
+   terugverwijzing naar het eigen type ("het vondstgewicht in voorjaar van de Jutter") niet: de doelroute van een regel
+   gaat door dezelfde code en moet ongewijzigd blijven. Grens in `DIVERGENCES.md`.
+5. **Een gedeeltelijke cel aan een ketengrens beëindigt de keten**, zodat de fout RGS-364 is (een label ontbreekt) en
+   niet RGS-125 (geen lid).
+6. **Het label met "en" door herspelling van tokens in een tweede parse**, niet door een productie (gemeten, hierboven):
+   alleen een document met zo'n gedeclareerd label wordt anders gelezen, en alleen op de woorden van zo'n label;
+   binnen accolades groepeert de resolutie zelf (stap M), dus daar blijft de "en". De langste die past: een label wordt
+   als geheel tegen de gedeclareerde labels gelezen (`cellReadings`), en een opsomming vraagt het voorzetsel na "en",
+   dus een label met "en" en twee labels zijn nooit beide een volledige lezing; twee volledige lezingen blijven RGS-365.
+   Geen nieuwe code: een "en" buiten zo'n label blijft RGS-091. De prijs (in `DIVERGENCES.md`): een "en" tussen de
+   woorden van een gedeclareerd label is overal buiten accolades een woord van dat label, ook waar het twee operanden
+   van een lijst scheidt; een beslistabel parst haar cellen zonder de labels.
+7. **`Consequence.Input.MemberValue.cell`** (de sleutel van de cel in de kaart van het lid) in plaats van een invoer met
+   een term: beide weergaven lezen de ingang met de bestaande route `CELL`.
+8. **clingo herschrijft de vouw aan de drie ingangen** in plaats van in een voorpas over het document: de vouw komt
+   alleen daar binnen, en de herschrijving raakt geen gedeelde bibliotheek.
+9. **Twee negatieven als pin van de verbreding** (count, label), geen negatief voor een `total` met een cel: dezelfde
+   arm als de count.
+
+#### Wat niet lukte of buiten stap B bleef
+
+- Lukte niet na twee pogingen, en vervangen: het label met "en" als grammaticaproductie (zonder en met predikaat); zie
+  hierboven.
+- Buiten deze stap, met reden (besluiten 2–4, 6): het celdoel over een pad, de dimensievouw over alle leden, de
+  bepaalde terugverwijzing, een label met "en" in een beslistabel.
+- De zin van CLINGO-002 ("an own-subject attribute read or a literal") is niet aangepast; een cel over een pad valt er
+  niet meer onder.
+
+#### Wat van de kaart nog open is
+
+- Punt 2: een celdoel over een pad (DROOLS-100; frontend leest het niet; ALEF schrijft het niet); een dimensievouw over de
+  cellen van alle leden (geen draadvorm; ALEF schrijft het niet).
+- Punt 3: een vouw over een geschreven cel van de onbegrensde vorm in Drools (DROOLS-296), met
+  `20261102-drools-exact-arithmetic`.
+- Punt 5: een `cellValue` van een datum-tijd, constructor, record of lijst in clingo (fout met naam, stap A).
+- Punt 6 (frontend, gedocumenteerde grenzen): labels vóór het attribuut met "en"; een cel met "en" of "," in een
+  operandenlijst (RGS-364 met waarschuwing); labels achter het onderwerp (RGS-308); een attribuut met de naam van een
+  eenheidswoord na een lidwoord; de bepaalde terugverwijzing naar het eigen onderwerp; een label met "en" in een
+  beslistabel.
+- Distributie (pin-bump): zoals stap 4a/4b/D; nieuw is alleen `Resolver.parse` met de tweede parse (geen API) en
+  `IrEmitter.foldSourceReference` (nieuwe publieke methode).
+- `CLAUDE.md` (beschermd): DROOLS-189 bij de retired codes van gate 12; de vloeren van gate 3 (zie stap A).
