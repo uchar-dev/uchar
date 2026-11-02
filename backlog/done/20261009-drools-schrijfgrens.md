@@ -424,3 +424,5 @@ end 2026-11-02 11:48:52 326s red=0
 ```
 
 Gate 17 groen: de lezingen van alle goldens, waar elke begrensde regel nu `FIT_TARGET` draagt, zijn gelijk aan de trace van ref.
+
+**Landing (hoofdsessie, 2026-11-02).** Zelf nagemeten: de vier nieuwe rode gevallen geven op de jar van `3d4676b88` `NOFAULT` en op die van `d1a0792a4` `FAULT EF-006` met dezelfde `place`, `value` en `decimals` als ref. Ff op main na `b3e49849a` (`instance-depth-owner-hop`); de `make gates` hierboven draaide op die basis. Daarna veranderden alleen deze kaart, `spec/CONSTRUCTS.md` rij 2 en de nieuwe kaart `20261102-drools-exact-arithmetic`. Pin-bump van de toolchain volgt.
