@@ -23,14 +23,17 @@ the `Jutter` a `vondstgewicht` in `kg` dimensioned by it. Nine rules:
 | `dalgewicht` | `minimum` | `over de seizoenen vanaf zomer t/m najaar` | zomer, najaar |
 | `openingsgewicht` | `first` ("de eerste van") | `over alle seizoenen` | voorjaar, zomer, najaar |
 | `slotgewicht` | `last` ("de laatste van") | `over alle seizoenen` | voorjaar, zomer, najaar |
-| `najaarsvoorrangsgewicht` | `first` | `over de seizoenen in {najaar, zomer en voorjaar}` | najaar, zomer, voorjaar |
+| `najaarsvoorrangsgewicht` | `first` | `over de seizoenen in {najaar en voorjaar}` | najaar, voorjaar |
 | `aantal vondstseizoenen` | `filledCount` ("het aantal voorkomens van") | `over alle seizoenen` | voorjaar, zomer, najaar |
 | `basisgewicht` | `sum`, `emptyFallback` 0.50 kg ("of 0,50 kg als die er niet zijn") | `over alle seizoenen` | voorjaar, zomer, najaar |
 
 The first and the last pick by position, the first and the last filled cell
 in the order of the selection, as ALEF does; a set keeps its written order,
-so `najaarsvoorrangsgewicht` reads `najaar`, then `zomer`, then `voorjaar`. The filled count
-counts the filled cells and is 0 where none is.
+so `najaarsvoorrangsgewicht` reads `najaar` before `voorjaar`, and J3, whose
+one filled cell is `zomer`, has none in that set. The set `{najaar en voorjaar}`
+is one member to the grammar, which admits "en" inside a label; the resolver
+and the semantic tokens read it as the two labels. The filled count counts the
+filled cells and is 0 where none is.
 
 Each value is an `Aggregation` whose one argument is the subject's own read of
 `vondstgewicht` (an `AttributeReference` without a path) and whose
@@ -83,7 +86,7 @@ hand-computed:
 |---|---|---|---|---|---|---|
 | `case1-twee-seizoenen.json` | J1 | 3.00 | 2.00 | 2.00 | 2 | 5.00 |
 | `case2-leeg-en-zomer.json` | J2 | leeg | leeg | leeg | 0 | 0.50 |
-| | J3 | 1.25 | 1.25 | 1.25 | 1 | 1.25 |
+| | J3 | 1.25 | 1.25 | leeg | 1 | 1.25 |
 | `case3-nul-in-zomer.json` | J4 | 0.00 | 1.50 | 1.50 | 2 | 1.50 |
 
 An empty cell is skipped (`groeigewicht` of J1 is `voorjaar` alone, the
@@ -91,15 +94,10 @@ An empty cell is skipped (`groeigewicht` of J1 is `voorjaar` alone, the
 the folds of J2, but for the filled count, 0, and the sum with a fallback,
 which takes the fallback. A cell of 0.00 is filled: J4's first is 0.00 and it
 counts. A fold by value would give J1's first as 2.00 and its last as 3.00;
-in declared order J1's `najaarsvoorrangsgewicht` would be 3.00.
-
-The set of `najaarsvoorrangsgewicht` writes three labels: a set of two written
-`{najaar en voorjaar}` parses as the one member "najaar en voorjaar", which the
-resolver reads as two labels (`DimensionFoldTest`) but the semantic tokens of
-the frontend do not resolve, so `SemanticTokensCorpusTest` would find the
-member unresolved. J2 shares its case with J3, since a case of J2 alone
-would hold on its input and the no-op guard (gate 7) would let it pass; for
-the same reason no case pins an input cell.
+in declared order J1's `najaarsvoorrangsgewicht` would be 3.00. J2 shares its
+case with J3, since a case of J2 alone would hold on its input and the no-op
+guard (gate 7) would let it pass; for the same reason no case pins an input
+cell.
 
 | executor | outcome (2026-11-02) |
 |---|---|

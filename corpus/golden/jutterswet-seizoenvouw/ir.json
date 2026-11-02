@@ -719,11 +719,10 @@
                   "dimension": "seizoen",
                   "labels": [
                     "najaar",
-                    "zomer",
                     "voorjaar"
                   ],
                   "source": {
-                    "snippet": "over de seizoenen in {najaar, zomer en voorjaar}"
+                    "snippet": "over de seizoenen in {najaar en voorjaar}"
                   }
                 }
               ],
@@ -746,7 +745,7 @@
                 ]
               },
               "source": {
-                "snippet": "de eerste van zijn vondstgewicht over de seizoenen in {najaar, zomer en voorjaar}"
+                "snippet": "de eerste van zijn vondstgewicht over de seizoenen in {najaar en voorjaar}"
               }
             },
             "initialisation": false,

@@ -134,12 +134,9 @@
       }
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeEmpty",
       "label": "J3",
-      "attribute": "najaarsvoorrangsgewicht",
-      "value": {
-        "number": "1.25"
-      }
+      "attribute": "najaarsvoorrangsgewicht"
     },
     {
       "kind": "attributeValue",
