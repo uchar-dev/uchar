@@ -327,8 +327,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-penningstaffel-catala|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-postenheffing|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-premiespelling|EXCLUDE DROOLS-070|bean name collision: the object types 'RechtOpPremie' and 'Recht op premie' fall on one fact class, dev.uchar.regelspraak.facts.RechtOpPremie. Measured 2026-09-28 before the refusal: both branches crashed compiling the generated beans (cyclic inheritance), so its pins are a ref = clingo pair"
-  "jutterswet-seizoenboeking|EXCLUDE DROOLS-298|the build refuses a write of a cell before a bean or a rule is built: the golden writes one cell of a dimensioned attribute by a rule, by an initialisation and by an object creation (IR-SPEC ch. 3.1, ch. 3.3; RUNTIME-SEMANTICS ch. 5.8c), and this backend reads and folds cells but writes none yet. The loader carries the forms, so the rule graph compares them per cell (gate 15). Its pins are a ref = clingo pair until the write part of the card dimensions-executed"
-  "jutterswet-seizoenkopie|EXCLUDE DROOLS-298|the build refuses a write of a cell, as for jutterswet-seizoenboeking: two rules write one cell each from another cell of the same attribute, and an object creation one cell of the object it makes. Until 2026-11-02 the golden had no case file (NOCASE); its case pins the standing norm per cell, a ref = clingo pair"
   "jutterswet-vaarwaterspelling|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
@@ -1470,7 +1468,12 @@ EXPECTED_CHANNEL=(
 # jutterswet-vormenkabinet, whose cases fill cells of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c). The case reader
 # lays the cells down in the bean's map per cell (DROOLS-047 retired), the transpiler reads a cell over any number of
 # dimensions (DROOLS-184 retired) and folds over the product of the selections. They play on both with PLAYED 1, 2 and 1.
-EXPECTED_PLAYED=303
+# 305 since the same card (2026-11-02, step 4b): the goldens jutterswet-seizoenboeking and jutterswet-seizoenkopie, whose
+# rules, initialisations and object creation write cells (IR-SPEC ch. 3.1, 3.3). A cell is a member of its own: its
+# Value carries the cell's key, its standing reads the entry of the map on the bean, the write-back puts it into that
+# map, and the cycle check draws it as a node of its own (DROOLS-298 and DROOLS-191 retired). They play on both with
+# PLAYED 3 and 1.
+EXPECTED_PLAYED=305
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
