@@ -1,0 +1,114 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstgewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "zomer"
+                ],
+                "value": {
+                  "number": "0.00"
+                }
+              },
+              {
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "number": "1.50"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "jaargewicht",
+      "value": {
+        "number": "1.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "groeigewicht",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "piekgewicht",
+      "value": {
+        "number": "1.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "dalgewicht",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "openingsgewicht",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "slotgewicht",
+      "value": {
+        "number": "1.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "najaarsvoorrangsgewicht",
+      "value": {
+        "number": "1.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "aantal vondstseizoenen",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "basisgewicht",
+      "value": {
+        "number": "1.50"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

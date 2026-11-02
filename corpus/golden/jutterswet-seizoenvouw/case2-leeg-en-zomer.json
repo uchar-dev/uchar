@@ -55,6 +55,37 @@
       "attribute": "dalgewicht"
     },
     {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "openingsgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "slotgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J2",
+      "attribute": "najaarsvoorrangsgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "aantal vondstseizoenen",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "basisgewicht",
+      "value": {
+        "number": "0.50"
+      }
+    },
+    {
       "kind": "attributeValue",
       "label": "J3",
       "attribute": "jaargewicht",
@@ -82,6 +113,43 @@
       "kind": "attributeValue",
       "label": "J3",
       "attribute": "dalgewicht",
+      "value": {
+        "number": "1.25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "openingsgewicht",
+      "value": {
+        "number": "1.25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "slotgewicht",
+      "value": {
+        "number": "1.25"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J3",
+      "attribute": "najaarsvoorrangsgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "aantal vondstseizoenen",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "basisgewicht",
       "value": {
         "number": "1.25"
       }

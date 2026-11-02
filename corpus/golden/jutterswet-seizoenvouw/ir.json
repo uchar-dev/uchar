@@ -120,6 +120,104 @@
                 }
               ]
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "openingsgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "slotgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "najaarsvoorrangsgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal vondstseizoenen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "basisgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
           }
         ],
         "characteristics": []
@@ -439,6 +537,370 @@
               },
               "source": {
                 "snippet": "de minimale waarde van zijn vondstgewicht over de seizoenen vanaf zomer t/m najaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "openingsgewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "openingsgewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het openingsgewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "first",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondstgewicht",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstgewicht"
+                  }
+                }
+              ],
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "seizoen",
+                  "labels": [
+                    "voorjaar",
+                    "zomer",
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "over alle seizoenen"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "nonNegative",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "de eerste van zijn vondstgewicht over alle seizoenen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "slotgewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "slotgewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het slotgewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "last",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondstgewicht",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstgewicht"
+                  }
+                }
+              ],
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "seizoen",
+                  "labels": [
+                    "voorjaar",
+                    "zomer",
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "over alle seizoenen"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "nonNegative",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "de laatste van zijn vondstgewicht over alle seizoenen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "najaarsvoorrangsgewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "najaarsvoorrangsgewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het najaarsvoorrangsgewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "first",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondstgewicht",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstgewicht"
+                  }
+                }
+              ],
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "seizoen",
+                  "labels": [
+                    "najaar",
+                    "voorjaar"
+                  ],
+                  "source": {
+                    "snippet": "over de seizoenen in {najaar en voorjaar}"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "nonNegative",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "de eerste van zijn vondstgewicht over de seizoenen in {najaar en voorjaar}"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal vondstseizoenen van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal vondstseizoenen",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal vondstseizoenen van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "filledCount",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondstgewicht",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstgewicht"
+                  }
+                }
+              ],
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "seizoen",
+                  "labels": [
+                    "voorjaar",
+                    "zomer",
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "over alle seizoenen"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal voorkomens van zijn vondstgewicht over alle seizoenen"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "basisgewicht van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "basisgewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het basisgewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondstgewicht",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn vondstgewicht"
+                  }
+                }
+              ],
+              "emptyFallback": {
+                "node": "Literal",
+                "value": {
+                  "number": "0.50"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 1,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "kg",
+                      "system": "Gewicht",
+                      "canonical": "kg",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "0,50 kg"
+                }
+              },
+              "dimensionSelections": [
+                {
+                  "node": "DimensionSelection",
+                  "dimension": "seizoen",
+                  "labels": [
+                    "voorjaar",
+                    "zomer",
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "over alle seizoenen"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "nonNegative",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "kg",
+                    "system": "Gewicht",
+                    "canonical": "kg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "de som van zijn vondstgewicht over alle seizoenen of 0,50 kg als die er niet zijn"
               }
             },
             "initialisation": false,

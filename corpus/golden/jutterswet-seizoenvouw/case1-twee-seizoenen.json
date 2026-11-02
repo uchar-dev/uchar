@@ -68,6 +68,46 @@
       }
     },
     {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "openingsgewicht",
+      "value": {
+        "number": "3.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "slotgewicht",
+      "value": {
+        "number": "2.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "najaarsvoorrangsgewicht",
+      "value": {
+        "number": "2.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal vondstseizoenen",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "basisgewicht",
+      "value": {
+        "number": "5.00"
+      }
+    },
+    {
       "kind": "consistent"
     }
   ]

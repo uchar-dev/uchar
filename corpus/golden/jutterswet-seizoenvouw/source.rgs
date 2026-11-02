@@ -12,6 +12,11 @@ Objecttype de Jutter (mv: Jutters) (bezield)
     het groeigewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
     het piekgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
     het dalgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het openingsgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het slotgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het najaarsvoorrangsgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    het aantal vondstseizoenen Numeriek (niet-negatief geheel getal);
+    het basisgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
 
 Regel jaargewicht van een jutter
     geldig altijd
@@ -28,3 +33,23 @@ Regel piekgewicht van een jutter
 Regel dalgewicht van een jutter
     geldig altijd
         Het dalgewicht van een Jutter moet berekend worden als de minimale waarde van zijn vondstgewicht over de seizoenen vanaf zomer t/m najaar.
+
+Regel openingsgewicht van een jutter
+    geldig altijd
+        Het openingsgewicht van een Jutter moet berekend worden als de eerste van zijn vondstgewicht over alle seizoenen.
+
+Regel slotgewicht van een jutter
+    geldig altijd
+        Het slotgewicht van een Jutter moet berekend worden als de laatste van zijn vondstgewicht over alle seizoenen.
+
+Regel najaarsvoorrangsgewicht van een jutter
+    geldig altijd
+        Het najaarsvoorrangsgewicht van een Jutter moet berekend worden als de eerste van zijn vondstgewicht over de seizoenen in {najaar en voorjaar}.
+
+Regel aantal vondstseizoenen van een jutter
+    geldig altijd
+        Het aantal vondstseizoenen van een Jutter moet berekend worden als het aantal voorkomens van zijn vondstgewicht over alle seizoenen.
+
+Regel basisgewicht van een jutter
+    geldig altijd
+        Het basisgewicht van een Jutter moet berekend worden als de som van zijn vondstgewicht over alle seizoenen of 0,50 kg als die er niet zijn.
