@@ -15061,6 +15061,40 @@ let () =
   faults_with ~name:"rational literal 1/1024, ten decimals" ~ir:(doc "1/1024")
     ~case_text:(case_data ("0.01", value_node "V2" "0.01")) ~needle:(no_scale "1/1024")
 
+(* A NON-EXACT DIVISION INSIDE A VALUE (RUNTIME-SEMANTICS ch. 2.1, 2.4): the
+   encoding computes a quotient at the scale of the write, so x/3 maal 3 into
+   2 decimals cannot carry its exact 1/3, while the value, 1, fits: a limit of
+   the encoding (CLINGO-031), never the fault of the write boundary, which ref
+   does not raise. The same quotient as the value itself does not fit, EF-006. *)
+let () =
+  let ir value =
+    Printf.sprintf
+      {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"gewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"herwogen","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"herwogen gewicht","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"herwogen","subjectType":"Vondst","source":{"snippet":"Het herwogen van een Vondst"}},"value":%s,"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
+      value
+  in
+  let third =
+    {|{"node":"Binary","op":"dividedBy","left":{"node":"AttributeReference","attribute":"gewicht","subjectType":"Vondst","source":{"snippet":"zijn gewicht"}},"right":{"node":"Literal","value":{"number":"3"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"3"}},"type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"zijn gewicht gedeeld door 3"}}|}
+  in
+  let thrice =
+    Printf.sprintf
+      {|{"node":"Binary","op":"times","left":%s,"right":{"node":"Literal","value":{"number":"3"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"3"}},"type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"zijn gewicht gedeeld door 3 maal 3"}}|}
+      third
+  in
+  let case_data =
+    {|{"format":"uchar-case-v0","asOfDate":null,"input":{"instances":[{"label":"V1","objectType":"Vondst","attributes":{"gewicht":{"number":"1"}},"roles":{},"characteristics":[]}],"parameters":{}},"expected":[{"kind":"attributeValue","label":"V1","attribute":"herwogen","value":{"number":"1"}}]}|}
+  in
+  ref_matches ~name:"x/3 maal 3 into 2 decimals is 1" ~ir:(ir thrice) ~case_text:case_data;
+  translates_carrying ~name:"x/3 maal 3, the quotient inside the value" ~ir:(ir thrice) ~case_text:case_data
+    ~needle:Translate.nested_non_exact_division;
+  translates_carrying ~name:"x/3 as the value" ~ir:(ir third) ~case_text:case_data
+    ~needle:Translate.non_exact_division_bounded;
+  check "x/3 maal 3: the witness is CLINGO-031"
+    (Translate.viol_code (Printf.sprintf "viol(\"%s\",\"V1\")" Translate.nested_non_exact_division)
+    = Some ("CLINGO-031", []));
+  check "x/3: the witness is EF-006"
+    (Translate.viol_code (Printf.sprintf "viol(\"%s\",\"V1\")" Translate.non_exact_division_bounded)
+    = Some ("EF-006", []))
+
 (* THE UNBOUNDED FORM (IR-SPEC ch. 2.4 (c): a Number that is not whole and
    has 0 decimals, a "getal" declared without decimals). It has no ceiling:
    ref carries any exact value there, as input and as a written result

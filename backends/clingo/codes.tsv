@@ -29,3 +29,4 @@ CLINGO-027	fallback	characteristic-init-expression-shape		bool_atoms
 CLINGO-028	refusal	aggregate-in-element-condition-outer-variable		element_aggregate_plan
 CLINGO-029	limit	date-construction-year-range		viol_code
 CLINGO-030	refusal	not-exactly-one-stable-model	models	one_model
+CLINGO-031	limit	nested-non-exact-division		viol_code

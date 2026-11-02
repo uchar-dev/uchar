@@ -230,6 +230,14 @@ let unbounded_refusal ~what q =
 let non_exact_division_bounded =
   "non-exact division (an explicit rounding is mandated before precision is lost)"
 
+(* the viol/2 reason of a bare division inside the value a write writes that
+   is not exact at the scale this encoding computes it: the value may fit
+   where the quotient does not (x/3 maal 3), so it is a limit of the encoding
+   (CLINGO-031), not the fault of the write boundary *)
+let nested_non_exact_division =
+  "non-exact division inside a value (this encoding computes a quotient at the scale of the write, \
+   and the value it is part of may fit where the quotient does not)"
+
 (* the viol/2 reason of a pro-rata part that does not fit the target scale of
    its segment (EF-006, RUNTIME-SEMANTICS ch. 2.4, 3.7) *)
 let pro_rata_misfit =
@@ -387,6 +395,12 @@ type ctx = {
      mandated rounding, which the spec does not mandate there (false
      outside a write) *)
   mutable write_unbounded : bool;
+  (* the value the write of a rule or of a creation's initialisation writes,
+     physically: a bare division that is that value and is not exact at the
+     target's scale does not fit it (EF-006); one inside it is a quotient this
+     encoding cannot carry at that scale, while the value may fit (CLINGO-031).
+     None elsewhere, where a non-exact division keeps the sentence of EF-006 *)
+  mutable write_value : expr option;
   (* the defaults group being translated is the ch. 7.7 desugaring of v0 forms *)
   mutable desugared_group : bool;
   (* the enclosing rule's (or creation's) name: the §9.5 channel fact
@@ -771,6 +785,7 @@ let viol_code witness =
      label, which is no parameter of EF-006 *)
   else if opens (allocation_share_misfit ^ "\"") then Some ("EF-006", [])
   else if opens (pro_rata_misfit ^ "\"") then Some ("EF-006", [])
+  else if opens (nested_non_exact_division ^ "\"") then Some ("CLINGO-031", [])
   else if opens "result of " && holds " does not fit its declared decimals\"" then
     Some ("EF-006", found "place" (between "result of " " does not fit its declared decimals"))
   else if opens "day-kind walk: no day of the kind within " then
@@ -6281,8 +6296,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let term = Printf.sprintf "(%s*%s)" tl tr in
       ctx.signs <- (term, Product (tl, tr)) :: ctx.signs;
       (bl @ br, term, sl * sr * (if op = Percentage_of then 100 else 1))
-  | Binary { op = Divided_by; left_side; right_side; _ } ->
-      translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding:None
+  | Binary { op = Divided_by; left_side; right_side; _ } as e ->
+      let root = match ctx.write_value with Some v -> v == e | None -> true in
+      translate_division ~root ctx ~subject ~subject_ot ~left_side ~right_side ~rounding:None
   | Binary { op = Divided_by_abs; left_side; right_side; _ } ->
       (* the abs-division variant (ch. 2.2): the quotient truncated
          toward zero at 5 decimals — a defined collapse point, so the
@@ -7029,7 +7045,7 @@ and date_construction ctx ~subject ~subject_ot ~time (args : expr list) =
         Some msv )
   | _ -> assert false (* the arity test above *)
 
-and translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding =
+and translate_division ?(root = true) ctx ~subject ~subject_ot ~left_side ~right_side ~rounding =
   let left_side = req "Binary.left" left_side and right_side = req "Binary.right" right_side in
   numeric_ok ctx (Some left_side);
   numeric_ok ctx (Some right_side);
@@ -7121,8 +7137,8 @@ and translate_division ctx ~subject ~subject_ot ~left_side ~right_side ~rounding
   | None ->
       emit ctx "%s(%s,V) :- %s, (%s) != 0, %s \\ %s == 0, V = %s/%s." p hkey full tr numt
         dent numt dent;
-      emit ctx "viol(\"%s\",%s) :- %s, (%s) != 0, %s \\ %s != 0." (non_exact_division ctx) subject
-        full tr numt dent
+      emit ctx "viol(\"%s\",%s) :- %s, (%s) != 0, %s \\ %s != 0."
+        (if root then non_exact_division ctx else nested_non_exact_division) subject full tr numt dent
   | Some (mode_kind, _) ->
       let value =
         match mode_kind with
@@ -10789,6 +10805,7 @@ let translate_rule ctx (r : resolved_rule) =
               ctx.rule_guard <- cond;
               ctx.write_scale <- target_scale;
               ctx.write_unbounded <- unbounded;
+              ctx.write_value <- r.value_node;
               (* the value lowers to one or more guarded branches (§6): a
                  non-branching value is one branch, identical to the single-head
                  emission; a Let-nested IfThenElse is one val head per branch,
@@ -10797,6 +10814,7 @@ let translate_rule ctx (r : resolved_rule) =
               ctx.rule_guard <- [];
               ctx.write_scale <- 1;
               ctx.write_unbounded <- false;
+              ctx.write_value <- None;
               (* ch. 7.8 standing target: the rule decides like a default. The
                  effectiveness atom carries the SAME body as each val head —
                  condition and value bindings — so a leeg evaluation derives
@@ -10952,10 +10970,12 @@ let translate_rule ctx (r : resolved_rule) =
               ctx.rule_guard <- cond @ guard;
               ctx.write_scale <- target_scale;
               ctx.write_unbounded <- unbounded;
+              ctx.write_value <- r.value_node;
               let branches = value_branches ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.value_node) in
               ctx.rule_guard <- [];
               ctx.write_scale <- 1;
               ctx.write_unbounded <- false;
+              ctx.write_value <- None;
               List.iter
                 (fun { vb_guard = bindings; vb_term = term; vb_scale = scale; _ } ->
                   let body = (base :: cond) @ guard @ bindings in
@@ -11150,12 +11170,14 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
         ctx.rule_guard <- cond @ guard @ depth_guard;
         ctx.write_scale <- target_scale;
         ctx.write_unbounded <- unbounded;
+        ctx.write_value <- t.to_value;
         let bindings, tm, scale =
           expr_term ctx ~subject ~subject_ot (req "MemberInit.value" t.to_value)
         in
         ctx.rule_guard <- [];
         ctx.write_scale <- 1;
         ctx.write_unbounded <- false;
+        ctx.write_value <- None;
         let wbody = body @ bindings in
         let tm, fit_guards = fitted ~unbounded ctx ~subject ~what:m ~body:wbody tm scale target_scale in
         head_body ctx (Printf.sprintf "val(%s,%s,%s)" term (str m) tm) (wbody @ fit_guards)
@@ -12861,7 +12883,7 @@ let translate (doc : document) (case : Case.t) : string =
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
     { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; deposit_guard = []; write_scale = 1;
-      write_unbounded = false; desugared_group = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
+      write_unbounded = false; write_value = None; desugared_group = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
       value_of = None;
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
       before_arm = []; pre_scope = []; pre_reach = []; pre_let = [];
