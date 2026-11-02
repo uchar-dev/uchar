@@ -288,3 +288,201 @@ Uit de gate-logs: gate 2 527 vormrijen, 407 bestanden, 54515 objecten in 975 doc
 parameterchecks, 35 soorten in ch. 5.7b, Drools-leg 47 met fout, 22 met reden; gate 10 1364 tests, 161 rgs-goldens;
 gate 12 298 codes, 300 gespeeld op beide takken; gate 15 313 van 351 goldens vergeleken, 38 door de loader geweigerd;
 gate 17 300 goldens, 842 case-bestanden, afwijkingen 0.
+
+### Stap 2
+
+Branch `card/dimensions-executed`, worktree op `574faa1a7`. Commits:
+
+- `a6d36acee` ref en clingo lezen en vouwen cellen: `ref/` (case-lezer, evaluatie, lezing, README),
+  `backends/clingo/` (vertaling, model), beide suites, de cases van drie goldens, het rode geval, de NOTEs,
+  `corpus/golden/README.md`, de pins van gate 8 en 12;
+- `6022b6fe2` voorstel spec: RUNTIME-SEMANTICS, IR-SPEC, ASP-TRANSLATION;
+- `6765aea05` getuigen voor twee gelijke cellen, het bereikhek van clingo en de kale lezing in clingo;
+- `1b312ada1` voorstel spec: twee gelijke cellen in het voorbeeld van ch. 5.8c;
+- `2af4632ba` de lezing van een cel over een pad (`WV-5.12-cel-over-een-pad`);
+- `1e0a3bfec` voorstel spec: die lezing in ch. 5.12;
+- het commit van dit Result.
+
+Beschermde paden (voorstel, niet gemerged): `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`,
+`scripts/check-drools.sh`, `scripts/check-red.sh`; `spec/ASP-TRANSLATION.md` onder het net van `/spec/`. Buiten de
+may-touch-set: niets.
+
+**Begintoets van het advies** (stap 2): de voorspelling van gate 12 klopt voor `jutterswet-seizoenvondst` en
+`jutterswet-seizoenvouw` (`EXCLUDE DROOLS-047`, beide takken); `jutterswet-vormenkabinet` weigert Drools eerder, bij de
+bouw (`EXCLUDE DROOLS-184`, de cel over twee dimensies), dus die pin noemt DROOLS-184. Het kabinet kan cases dragen:
+gemeten op `574faa1a7` speelt het document zonder zijn twee celregels in ref en clingo (`oracle: PASS (3
+expectations)`, `clingo: PASS (3 expectations)`, met `StartPointDetermination` en `TimeWindow`); zie besluit 7.
+
+#### Wat er veranderde
+
+- **ref.** `World.cell` geeft een cel een eigen naam in `World.attrs`, `vondstgewicht[voorjaar, zuid]` (labels in
+  gedeclareerde volgorde, in de sleutel genormaliseerd), dezelfde spelling als de celknoop van de verifier en de
+  `place`; daarmee lezen `World.attr` en de schrijffuncties een cel ongewijzigd. De case-lezer legt `cells` cel voor
+  cel neer (na EF-034/EF-035) in plaats van te weigeren, en leest `cellValue`/`cellEmpty`: labels die geen cel noemen
+  en een celverwachting op een ongedimensioneerd attribuut zijn een `CASE ERROR` zonder code. `Eval.member_holder`
+  (het object dat een verwijzing bereikt, eigen of over een pad) is uit de arm van `AttributeReference` gehaald en
+  dient ook de cel en de vouw. De `DimensionCellRead` leest haar cel (ook over een pad, B7); `eval_dimension_fold`
+  vouwt sum/minimum/maximum over `Ir_v0.Checks.selected_cells` (dezelfde productvolgorde als de graaf), lege cel
+  overgeslagen, geheel leeg = leeg, `emptyFallback` van een som na de cellen. EF-004 per celwaarde
+  (`validate_input_precision` vindt de declaratie via `Eval.member_attribute`), `place` `j1.vondstgewicht[voorjaar]`.
+  Een gedimensioneerd attribuut buiten een cel wordt geweigerd in de zin van WF-125 (tweede lijn). REF-002 en de
+  `Value.fault` op de vouw zijn weg voor wat nu gedragen wordt (REF-002 blijft voor `VariableReference` en
+  `ContextValue`). `ref/lib/reading.ml`: de verwijzing onder een cel en het argument van een dimensievouw zijn
+  `own:false` (besluit 7 van stap 1); een cel over een pad schrijft `on "<object>"`. `ref/README.md` bijgewerkt.
+- **clingo.** `member_read` (uit de arm van `AttributeReference` gehaald) leest een lid met de `val/3` van een
+  attribuut, eigen of over een pad; een cel is `val(S,"vondstgewicht[voorjaar]",A)` (geen eigen predicaat), via
+  `Eval.cell_member`. De dimensievouw: per geselecteerde cel een hulpatoom `dimN(S,I,A)` met de celindex, `#sum
+  { A,I }` / `#min` / `#max`, een definitieatoom voor geheel leeg, een som met `emptyFallback` 0 als kale `#sum`,
+  een ander `emptyFallback` geweigerd zoals bij de setvouwen, per cel van een som het bereikhek `|A| > 2^31/n`. De
+  invoer schaalt een cel naar de declaratie van haar attribuut. `Model.check` leest `Cell_value` (een getal) en
+  `Cell_empty`. CLINGO-008 is weg voor cel en vouw; de kale lezing in de zin van WF-125. Het commentaar bij
+  CLINGO-007 bijgewerkt.
+- **Spec (voorstel).** RUNTIME-SEMANTICS ch. 5.8c: nieuw voorbeeld "Reading over a path" (12.50, 16.50; leeg, leeg),
+  twee gelijke cellen in het tweedimensionale voorbeeld (4.00, minimum 2.00, cel leeg), "Where the executors stand"
+  herschreven; ch. 5.7b EF-004 + `corpus/red/jutterswet-cel-overprecisie` en ch. 5.8c; ch. 5.11 de rij van de
+  dimensievouw ("`ref` and the ASP backend evaluate the form"); ch. 5.12 het voorbeeld van de cel aangevuld (J2,
+  de vouw, over een pad) en de grens van gate 17 herschreven. IR-SPEC ch. 4.6 (g): de zin "declined as a FORM by
+  both OCaml executors" vervangen. ASP-TRANSLATION: S2 (een cel als `val/3`), S4 (cellezing, kale lezing), S8
+  (dimensievouw), S19 (de bodem: de dimensiesom heeft een eigen arm; de vervallen bewering dat clingo de
+  `TimeWindow` van het kabinet weigert, geschrapt, want het kabinet speelt nu in clingo).
+- **Corpus.** Cases (handmatig berekend): `jutterswet-seizoenvondst/case1-voorjaarscel.json` (J1 12.50, J2 leeg; 3
+  verwachtingen), `jutterswet-seizoenvouw/case1-twee-seizoenen.json` (5.00, 3.00, 3.00, 2.00; 5) en
+  `case2-leeg-en-zomer.json` (J2 viermaal leeg, J3 viermaal 1.25; 9), `jutterswet-vormenkabinet/case1-cellen.json`
+  (S1 vakcijfer 7, zeecijfer 4 uit (`voorjaar`, `zee`) naast (`voorjaar`, `voorjaar`) 9, peiling 1; S2 drie keer
+  leeg; 7). Rood `corpus/red/jutterswet-cel-overprecisie` (document van seizoenvondst, cel `voorjaar` 1.005, EF-004
+  `{value: 1.005, decimals: 2}`). NOTEs van de drie goldens en `corpus/golden/README.md` (getuigenkast) beschrijven
+  de nieuwe stand; gate 5 noemt nog één golden zonder case (`jutterswet-seizoenkopie`).
+- **Suites.** ref/test: `WV-5.8c-lezen`, `-vouw-een-dimensie-J1`, `-J2-J3` (de goldens), `-vouw-twee-dimensies`
+  (J1 5.00/3.00/5.00/8.00/1.00, J3 twee gelijke cellen), `-cel-over-een-pad`, `-invoer-ef004` (code en drie
+  parameters), `-kale-lezing`, `-caselezer-geldige-cellen`, `-verwachting-afwijkende-cel`,
+  `-verwachting-weigert-omgekeerde-labels`, `-verwachting-weigert-cel-op-scalair`, `WV-5.12-cel`,
+  `WV-5.12-cel-over-een-pad`. clingo-suite: de frames twee dimensies (met cellValue/cellEmpty, J2 leeg, J3 gelijke
+  cellen) en pad, elk door ref en de solver; EF-004 op een cel; het bereikhek; de kale lezing.
+
+#### Rode stand op `574faa1a7` en mutaties
+
+Op `574faa1a7` (binaries van stap 1, `logs/stap2-red-cases.log`): de vier golden-cases geven in ref en clingo `CASE
+ERROR: <label>.<attr>: a cells input is checked and then refused: neither executor that shares this reader evaluates
+a cell` (exit 2), Drools `EXCLUDE DROOLS-047` (vondst, vouw) en `EXCLUDE DROOLS-184` (kabinet), beide takken; het rode
+geval in ref en clingo `EXPECTED FAULT MISMATCH` met die `CASE ERROR`. ref/test met de nieuwe rijen op de oude code
+(`logs/stap2-red-reftest.log`): twaalf FAIL, elk met de geweigerde case of de oude zin; clingo-suite
+(`logs/stap2-red-clingotest.log`): drie FAIL (twee dimensies, pad, EF-004). De rijen die na de bouw kwamen (J3,
+bereikhek, kale lezing in clingo, `WV-5.12-cel-over-een-pad`) zijn met de mutanten hieronder rood gezien.
+
+Mutanten (`/Users/yeb/Developer/uchar-dev/werk/dimensions-executed/mutants/stap2/mutate2.py`, in een `git worktree add
+--detach` die daarna verwijderd is; `logs/stap2-mutants-1.log` tot `-4.log`), elk één vervanging:
+
+| | bewaking | mutatie | rood |
+|---|---|---|---|
+| a | EF-004 per cel | `validate_input_precision` zoekt de declaratie met de celnaam zelf (geen) | `WV-5.8c-invoer-ef004`; het rode geval in ref: `CODE EF-006 {"place":"j1.voorjaarsgewicht",…}` in plaats van EF-004 |
+| b | geheel lege vouw is leeg | `agg_total` in plaats van `agg_sum` | `-J2-J3` (0 voor leeg), `-twee-dimensies`, `-cel-over-een-pad` |
+| c | het product van de selecties | alleen de eerste cel | `-J1` (3 voor 5), `-J2-J3`, `-twee-dimensies`, `-pad`, `WV-5.12-cel` |
+| d | cel over een pad | de cel op het subject zelf | `-cel-over-een-pad` (leeg voor 12.5) |
+| e | celverwachting noemt een cel | toets weg | `-verwachting-weigert-omgekeerde-labels` (geladen) |
+| f | kale lezing (ref) | toets weg | `-kale-lezing` (geen fout) |
+| g | de cel is de knoop | verwijzing onder de cel `own` | `WV-5.12-cel` |
+| g2 | vouwargument zonder lezing | `own_parts` zonder het conjunct | `WV-5.12-cel` |
+| m | object van de cellezing | `object_reached` op de verwijzing i.p.v. de cel | suite stopt na `WV-5.12-cel` op de struikeldraad van `reading.ml` ("read a member over a path without walking it"), exit 2 |
+| h | definitieatoom (clingo) | altijd gedefinieerd | twee dimensies (J2 `[0]` en `[#sup]` voor leeg), pad (`[0]`) |
+| i | celindex in de `#sum` | index weg | twee dimensies (J3 200 voor 400) |
+| j | bereikhek | hek weg | "past clingo's integer range" (clingo geeft een model) |
+| k | kale lezing (clingo) | toets weg | "WF-125: …" (een model) |
+
+#### Aangepaste verwachtingen, pins en vloeren (oud → nieuw)
+
+- ref/test `WV-5.8c-caselezer-weigert-geldige-cellen` (een geldige celinvoer geeft `a cells input is checked and then
+  refused…`) → `WV-5.8c-caselezer-geldige-cellen` (de invoer laadt, cellValue/cellEmpty kloppen): de kaart draait dit
+  om.
+- clingo-suite "WF-037 arm bounds: the dimension-cell sum holds the bottom" (CLINGO-008, `expression kind not
+  translated`) → "… has its own arm" (vertaalt) plus de vergelijking door ref en de solver op dat frame; het commentaar
+  bij die armgrens volgt.
+- Gate 12 `EXPECTED_CHANNEL`: `jutterswet-seizoenvondst` en `jutterswet-seizoenvouw` `NOCASE` → `EXCLUDE DROOLS-047`,
+  `jutterswet-vormenkabinet` `NOCASE` → `EXCLUDE DROOLS-184`, met reden; `EXPECTED_PLAYED` blijft 300.
+- Gate 8, Drools-lijst: + `jutterswet-cel-overprecisie|EXCLUDE DROOLS-047 …`.
+- Geen vloer veranderd. Tellingen: gate 4 1041 → 1046 cases; gate 5 1816 → 1834 voorbeelden, 972 → 976 cases, vier
+  → één golden zonder case; gate 6 2267 → 2277 checks, 972 → 976 cases; gate 7 927 → 931 weerleggende cases, 45
+  overlevers; gate 8 69 → 70 rode gevallen, 129 → 131 codechecks, 203 → 207 parameterchecks, Drools-leg 22 → 23 met
+  reden; gate 13 57 → 61 getwiste annotaties over 29 → 30 goldens (de vier vouwen van seizoenvouw), 154 → 160
+  replays; gate 17 972 → 976 getraceerde case-bestanden, vergeleken onveranderd (300 goldens, 842 bestanden).
+
+#### Voorgestelde tekst voor CONSTRUCTS (hoofdsessie)
+
+Rij 28, achter de noot van stap 1:
+
+> **Landed (stap 2 van `dimensions-executed`, 2026-11-02, `a6d36acee` … `1e0a3bfec`):** ref en de ASP-backend
+> lezen een cel, op het subject en over een pad van rollen, en vouwen sum, minimum en maximum over het product van
+> de selecties (RUNTIME-SEMANTICS ch. 5.8c); een cel is in beide een lid van haar eigen (`vondstgewicht[najaar]`).
+> Cases op `jutterswet-seizoenvondst`, `jutterswet-seizoenvouw` en `jutterswet-vormenkabinet`; rood EF-004 op een cel.
+> Drools weigert de celinvoer (DROOLS-047) en de cel over twee dimensies (DROOLS-184), dus die pins zijn een
+> ref = clingo-paar tot stap 4.
+
+#### Voorlopige besluiten
+
+1. **De naam van een cel** is `World.cell attr labels` = `attr[l1, l2]`, in ref de sleutel in `World.attrs` en in
+   clingo de naam in `val/3`, geen eigen predicaat. Het attribuut van een lid zoekt `Eval.member_attribute` op het
+   voorvoegsel `attr[`; past dat op meer dan één gedimensioneerd attribuut (alleen bij een attribuutnaam met `[`),
+   dan is het een fout, geen keuze.
+2. **De pin van het rode geval** noemt `value` en `decimals`, zoals de vier bestaande EF-004-getuigen: clingo's
+   EF-004 draagt geen `place`. De `place` van een cel in ref pint `WV-5.8c-invoer-ef004`.
+3. **Kale lezing**: ref en clingo weigeren een gedimensioneerd attribuut buiten een cel in de zin van WF-125, in
+   plaats van leeg te lezen (tweede lijn achter de verifier).
+4. **Tweede lijn in ref** zonder code: labels die geen cel noemen, een vouw waarvan het aantal selecties niet het aantal
+   dimensies is, een vouw op een andere soort dan sum/minimum/maximum, een vouw met `elementType`, bereik, filter of
+   granulariteit. De verifier (WF-040, WF-037) weigert die eerst.
+5. **`emptyFallback`** van een dimensievouw: bij een som na de cellen geëvalueerd (ref) en in clingo alleen 0
+   gedragen (zoals de setvouwen); bij minimum en maximum niet geëvalueerd (WF-037 laat hem daar niet toe).
+6. **Cel van een ander type dan getal**: ref draagt elk type; clingo leest een cel als getal, een `cellValue` van een
+   ander type weigert `Model.check` met naam, een symbolische cellezing valt op CLINGO-002. Geen corpusgeval.
+7. **Het vormenkabinet draagt een case** (afwijking van zijn eerdere regel "geen case"): elke constructie die het
+   houdt, draait in ref en clingo (gemeten), dus het is geen verifier-only golden meer. De rijen blijven: een cel over
+   twee dimensies met een gedeeld label staat in geen andere golden; krimpen is een eigen kaart. NOTE en README
+   beschrijven de nieuwe stand.
+8. **Geen invoercel als verwachting** (gate 7); een instantie zonder enige cel deelt haar case met een gevulde, anders
+   overleeft de case de no-op.
+9. **Een dimensievouw over een pad noemt geen object** in haar lezing (ze is geen van de knopen die ch. 5.12 een
+   object laat noemen); een cellezing over een pad wel.
+
+#### Wat niet lukte of buiten stap 2 bleef
+
+- Geen poging die mislukte.
+- Cel als schrijfdoel (REF-012, CLINGO-026) en `MemberInit.labels`: stap 3; `jutterswet-seizoenkopie` blijft zonder
+  case. Drools: stap 4.
+- `CLAUDE.md` noemt bij gate 5 geen lijst van goldens zonder case; niets aan te passen. De vloeren van gate 3 in
+  `CLAUDE.md` (stap 1) staan nog open voor de hoofdsessie.
+
+#### `make gates`
+
+Eerste run op `6022b6fe2` (`out/gates/20261102-145657/`): alle zeventien gates groen, `red=0`, 362 s. Laatste run op
+`1e0a3bfec` (dit Result zonder deze alinea; de kaart is geen invoer van een gate),
+`out/gates/20261102-151130/summary.txt`:
+
+```
+ocaml rc=0 0s ocaml-build: rebuilt (3 source path(s) newer than the stamp, e.g. backends/clingo/test/test_clingo.ml; 0s)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 0s drools-jar: fresh (jar newer than 536 source files)
+01-self-contained rc=0 1s
+02-ir-schema rc=0 160s
+04-case-schema rc=0 9s
+03-verifier rc=0 37s
+05-oracle rc=0 22s
+06-clingo rc=0 288s
+07-noop rc=0 13s
+08-red rc=0 166s
+09-catala rc=0 4s
+10-regelspraak rc=0 236s
+11-toka-parity rc=0 245s
+12-drools rc=0 336s
+13-reftype rc=0 277s
+14-flogic rc=0 1s
+15-graph rc=0 49s
+16-scenario rc=0 39s
+17-readings rc=0 248s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 15:17:06 336s red=0
+```
+
+Uit de gate-logs: gate 5 1834 voorbeelden, 976 cases, één golden zonder case; gate 6 2277 checks, 976 cases; gate 7
+931 weerleggende cases, 45 overlevers; gate 8 70 rode gevallen, 131 codechecks, 207 parameterchecks, Drools-leg 47
+met fout, 23 met reden; gate 12 300 gespeeld op beide takken, 51 niet-gespeelde goldens met naam; gate 13 61
+annotaties over 30 goldens, 160 replays; gate 17 976 getraceerd, 300 goldens en 842 case-bestanden vergeleken,
+afwijkingen 0.
