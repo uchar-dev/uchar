@@ -274,10 +274,13 @@ class DimensionCellWitnessTest {
                 r + "\"J2\" 3 Literal 10 \"kg\"",
                 r + "\"J2\" 4 DimensionCellRead unreached",
                 r + "\"J2\" FAILS"));
+        // the nine folds of the golden, the sum with its fallback last, whose literal is a node of its own
         List<String> folds = new ArrayList<>();
-        String[] values = { "5", "3", "3", "2" };
-        for (int k = 0; k < 4; k++) {
-            folds.add("/rules/rules/" + k + "/versions/0 \"J1\" 0 Aggregation " + values[k] + " \"kg\"");
+        String[] values = { "5 \"kg\"", "3 \"kg\"", "3 \"kg\"", "2 \"kg\"", "3 \"kg\"", "2 \"kg\"", "2 \"kg\"", "2",
+                "5 \"kg\"" };
+        for (int k = 0; k < values.length; k++) {
+            folds.add("/rules/rules/" + k + "/versions/0 \"J1\" 0 Aggregation " + values[k]);
+            if (k == 8) folds.add("/rules/rules/8/versions/0 \"J1\" 2 Literal 0.5 \"kg\"");
             folds.add("/rules/rules/" + k + "/versions/0 \"J1\" HOLDS");
         }
         assertReadings(document(golden("jutterswet-seizoenvouw")), caseFile(List.of(jutter("J1", cell("3.00", "voorjaar"),
