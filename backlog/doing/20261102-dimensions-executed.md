@@ -53,3 +53,204 @@ Buiten deze kaart (advies §4): `eerste`/`laatste`/`aantal` over cellen (vervolg
 
 May touch: `spec/schema/`, `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md` (voorstel), `spec/verifier/`, `ref/`, `backends/clingo/`,
 `backends/drools/`, `frontends/regelspraak/`, `corpus/`, `scripts/` (pins en vloeren, voorstel), `ref/README.md`.
+
+## Result
+
+### Stap 1
+
+Branch `card/dimensions-executed`, worktree op main `b906f78ba`. Commits:
+
+- `37b5a591d` kaart naar `doing/`;
+- `3ee5d2892` draad, verifier, IR-schema, corpus (migratie, negatieven, goldens), emitter, Drools-loader en de
+  naamswijziging in ref, clingo, catala en flogic;
+- `cf981a3cf` case-schema, case-lezer van ref (en dus clingo), `ref/test`-rijen, twee rode gevallen, gates 4 en 8;
+- `a60668183` voorstel spec: IR-SPEC, RUNTIME-SEMANTICS, `spec/schema/README.md`, `spec/ASP-TRANSLATION.md`;
+- het commit van dit Result (en het commit met de samenvatting van de laatste `make gates`, onderaan).
+
+Beschermde paden (voorstel, niet gemerged): `spec/IR-SPEC.md`, `spec/RUNTIME-SEMANTICS.md`, `spec/schema/`,
+`spec/verifier/`, `scripts/check-ir-schema.sh`, `check-case-schema.sh`, `check-verifier.sh`, `check-red.sh`,
+`check-drools.sh`; `spec/ASP-TRANSLATION.md` valt onder het CODEOWNERS-net van `/spec/`.
+
+**Buiten de may-touch-set**, met reden: `frontends/catala/lib/translate.ml`, `frontends/flogic/lib/emit.ml` en
+`lower.ml` bouwen de gedeelde OCaml-AST (`Function_call`, `assignment`) zelf; het hernoemde veld
+`dimension_selections` en het nieuwe `to_labels` moeten daar gespeld worden, anders bouwt de werkruimte niet (gates
+9 en 14). Alleen die spelling veranderde. `spec/ASP-TRANSLATION.md`: drie plaatsen noemen het veld bij naam.
+
+**Begintoets van het advies** (gemeten, verifier en ref/clingo van `b906f78ba`; mutanten herbouwd uit de kern van
+`mutate.py` in `notes/metingen.md`, omdat het script zelf niet in `notes/` staat:
+`/Users/yeb/Developer/uchar-dev/werk/dimensions-executed/mutants/mutate.py`): a, b, c, d, e, f, g, k, l
+`verifier: PASS`; h `WF-040.dimension-pin-count FAIL … pins dimension 'herkomst' 2 times`; i met een scalar 3.00 en
+`attributeValue 3.00`: `oracle: PASS (1 expectations)`, `clingo: PASS (1 expectations)`. Het advies klopt op de
+beginstand. Logs: `/Users/yeb/Developer/uchar-dev/werk/dimensions-executed/logs/stap1-red-*.log`.
+
+#### Wat er veranderde
+
+- **IR (schema, voorstel).** `RuleVersion.target` is `anyOf [AttributeReference, DimensionCellRead]` (B1);
+  `MemberInit.labels` (lijst van strings, minItems 1, tussen `member` en `value`); `Aggregation.dimensionSelections`
+  (lijst van `DimensionSelection`, minItems 1) vervangt `dimensionSelection` (B3). Migratie: `jutterswet-seizoenvouw`
+  en `wf037-filled-count-dimension-selection`, met de serialisator van gate 2.
+- **Case (schema, voorstel).** `$defs/cellsValue` (`cells`: per cel `labels` en `value`, minItems 1) als derde
+  variant van een attribuutinvoer; verwachtingen `cellValue` en `cellEmpty` (oneOf-index 7 en 8, zodat de
+  patroonposities van gate 4 niet schuiven).
+- **Verifier.** `WF-040` positioneel en met de selectielijst (`wf040_cell` voor lezing, celdoel en
+  `MemberInit.labels`; `wf040_selections`); nieuwe regel **WF-125** met vier armen (`bare-read`, `whole-write`,
+  `whole-member`, `timeline`); WF-022 leest een celdoel via de verwijzing erin; WF-079 sleutelt een celdoel op de
+  cel; de afhankelijkheidsgraaf heeft een knoop per cel (`n_cell`, `selected_cells`) en ref en clingo nemen die graaf
+  over. De loader leest `dimensionSelections` zoals geladen (lege lijst inbegrepen), een `DimensionCellRead` als doel
+  en `MemberInit.labels`.
+- **Spec (voorstel).** IR-SPEC ch. 2.2 (rij `dimensions`), ch. 2.7 (de cel, de normbron ALEF, WF-125), ch. 3.1
+  (doel, WF-022, WF-079), ch. 3.3 (`MemberInit.labels`), ch. 4 (laaguitzonderingen), ch. 4.3 (`dimensionSelections`,
+  `filledCount`, `DimensionCellRead`), WF-037, WF-040, ch. 5.1 (celknoop), index WF-040, WF-079 en nieuw WF-125.
+  RUNTIME-SEMANTICS: rij "dimension folds", ch. 5.7 stap 3, nieuw **ch. 5.8c** (toestand, lezen, schrijven, vouwen,
+  graaf, case-vorm, uitgewerkte voorbeelden met absolute uitkomsten, waar de uitvoerders staan), ch. 5.7b EF-034 en
+  EF-035, ch. 5.11 (de rij van de dimensievouw), ch. 5.12 (de cel als knoop, met voorbeeld; de grens van gate 17
+  herschreven). De rekensommen van het advies (c1–c3: 5.00, 3.00, 3.00, 2.00; 1.25 viermaal; seizoenboeking 4.50 /
+  6.50 / 0.00; 1.875 op 2 decimalen) staan erin, plus een tweedimensionaal voorbeeld (3.00, 5.00, 8.00, minimum
+  1.00).
+- **Frontend-emitter.** `IrEmitter` schrijft `dimensionSelections` als lijst van de ene selectie die de resolver
+  bouwt; gate 10 houdt `seizoenvouw/ir.json` byte-gelijk.
+- **Case-lezer (ref, gedeeld met clingo).** Scalar of tijdlijn op een gedimensioneerd attribuut, `cells` op een
+  ongedimensioneerd, en `attributeValue`/`attributeEmpty`/`attributeTimeline` op een gedimensioneerd: `CASE ERROR`
+  zonder code. `cells` op een gedimensioneerd attribuut: per cel EF-034 (labels noemen geen cel), EF-035 (cel twee
+  keer), de waarde via `value_of_json`; daarna een `CASE ERROR` omdat geen van beide uitvoerders een cel evalueert.
+- **Drools.** De loader leest `dimensionSelections`: één selectie in het bestaande model, meer selecties een
+  `Refusal` **DROOLS-297** (`dimension-fold-multi-dimension`, REFUSAL), een lege lijst een `DocumentError`. Een
+  celdoel en `MemberInit.labels` zijn een `Refusal` **DROOLS-298** (`dimension-cell-write`, REFUSAL) in plaats van een
+  `DocumentError`: het schema laat ze nu toe. Catalogi nl/en kregen beide regels; register 296 → 298 codes.
+
+#### Rood en groen per negatief en per rij
+
+Verifier van `b906f78ba` ("oud") tegenover die van de branch ("nieuw"). Voor de vouw-mutanten gemeten in de oude
+draadvorm (`dimensionSelection`, één knoop) en in de nieuwe; de oude verifier laadt de nieuwe vorm niet
+(`LOAD ERROR … unknown field 'dimensionSelections'`).
+
+| negatief (`corpus/negative/`) | mutant | oud | nieuw (`expect.txt`) |
+|---|---|---|---|
+| `wf125-bare-read` | a | PASS | `WF-125.bare-read` |
+| `wf125-whole-target` | b | PASS | `WF-125.whole-write` |
+| `wf125-dimension-and-timeline` | c | PASS | `WF-125.timeline` |
+| `wf040-cell-labels-reversed` | d | PASS | `WF-040.misplaced-label` (positie 1 en 2) |
+| `wf040-fold-foreign-dimension` | e | PASS (oude vorm) | `WF-040.selection-dimension-position` |
+| `wf040-fold-dimension-unpinned` | f | PASS (oude vorm) | `WF-040.selection-count` (viermaal) |
+| `wf040-fold-undimensioned-argument` | g | PASS (oude vorm) | `WF-040.selection-undimensioned-argument` |
+| `wf040-selection-duplicate-label` | k | PASS (oude vorm) | `WF-040.selection-duplicate-label` |
+| `wf040-selection-empty` | l | PASS (oude vorm) | `WF-040.selection-empty` |
+| `wf040-selection-argument` | (nieuw: literal als argument) | PASS (oude vorm) | `WF-040.selection-argument` |
+| `wf040-target-label-count` | (nieuw) | LOAD ERROR (`labels`) | `WF-040.label-count-mismatch` |
+| `wf040-member-undimensioned-cell` | (nieuw) | LOAD ERROR (`labels`) | `WF-040.undimensioned-cell` |
+| `wf125-member-without-labels` | (nieuw) | LOAD ERROR (celdoel); zonder de twee regels PASS | `WF-125.whole-write` |
+| `wf125-defaults-target` | (nieuw) | PASS | `WF-125.whole-member`, `form=a defaults group` |
+| `wf079-two-writers-one-cell` | (nieuw) | LOAD ERROR (`labels`) | `WF-079.computing-same-target`, `attribute=vondstgewicht[najaar]` |
+
+Positief: h staat in `jutterswet-vormenkabinet` (dimensie `herkomst` {voorjaar, zee}, attribuut `aanspoeling`
+[seizoen, herkomst], regel `zeecijfer uit voorjaarsaanspoeling` leest de cel `voorjaar`, `zee`): oud
+`WF-040.dimension-pin-count FAIL /rules/rules/1/versions/0/value`, nieuw `verifier: PASS`. Nieuwe golden
+`jutterswet-seizoenkopie` (celdoel, `MemberInit.labels`, twee schrijvers van twee cellen): oud `LOAD ERROR`, nieuw
+`verifier: PASS`, `--dependency-edges` geeft de ene rand over `attr:jutter:vondstgewicht[najaar]`; per attribuut was
+mutant j een WF-045-kring (`notes/metingen.md` M2 j).
+
+Case-lezer, mutant i met `scalar-expect.json`: oud `oracle: PASS`, `clingo: PASS`; nieuw beide `CASE ERROR:
+j1.vondstgewicht: a dimensioned attribute takes its input per cell ("cells"), never a scalar or a timeline` (exit
+2). Rijen in `ref/test/test_ref.ml` (`WV-5.8c-caselezer-*`, negen): scalar, tijdlijn, `attributeValue`,
+`attributeEmpty` op een gedimensioneerd attribuut, `cells` op een scalair, omgekeerde labels en te weinig labels
+(EF-034), dubbele cel (EF-035), geldige cellen (geweigerd na de toetsen); elk pint de hele zin, de code en de
+parameters. Rode gevallen: `corpus/red/jutterswet-cel-onbekend-label` (EF-034) en `jutterswet-cel-dubbel` (EF-035):
+ref en clingo `expected fault observed at load` met de gepinde parameters; Drools `EXCLUDE DROOLS-184` (de cel over
+twee dimensies, bij de bouw, vóór de case), in de lijst van gate 8.
+
+#### Aangepaste verwachtingen, pins en vloeren (oud → nieuw)
+
+- Gate 3 (`scripts/check-verifier.sh`, voorstel): `EXPECTED_MIN_NEGATIVE` 350 → 568, `EXPECTED_MIN_EXPECT` 354 →
+  411, `EXPECTED_MIN_ARMS` 213 → 239, `EXPECTED_MIN_PARAM_LINES` 572 → 686, `EXPECTED_MIN_REPORT_KEYS` 318 → 340,
+  `EXPECTED_MIN_ARM_SITES` 421 → 442, `EXPECTED_MIN_POINTERS` 619 → 706 (alle gemeten 2026-11-02). `CLAUDE.md` noemt
+  bij gate 3 nog de vloeren van 2026-10-19; niet aangepast (buiten de kaart, voor de hoofdsessie).
+- WF-040-sleutels: `WF-040.dimension-pin-count` vervalt (opgevolgd door `WF-040.misplaced-label`),
+  `WF-040.undimensioned-cell-read` heet `WF-040.undimensioned-cell` (tekst "cell of undimensioned attribute");
+  `label-count-mismatch` zegt "cell carries" in plaats van "cell read carries"; `WF-022.target-not-attribute` zegt
+  "neither an attribute reference nor a cell over one". Geen `expect.txt` pinde een van die sleutels.
+- `wf037-filled-count-dimension-selection`: document gemigreerd; de pin `WF-037.dimension-selection-kind` blijft; het
+  rapport heeft er nu `WF-040.selection-undimensioned-argument` naast (NOTE bijgewerkt).
+- Zin van de gedeelde OCaml-loader en de Drools-loader: "the target of a rule version is an AttributeReference" →
+  "… an AttributeReference or a DimensionCellRead"; omgezet in `backends/clingo/test/test_clingo.ml` en
+  `RuleAndExpressionLayerRefusalWitnessTest.the_target_is_an_attribute_reference`.
+- Draadvorm in tests (de kaart verandert de draad): `DimensionFoldTest` (vier verwachtingen) en
+  `SubtypeDialectTest` (één) verwachten `"dimensionSelections":[{…}]`; Drools `RenamingRefusalWitnessTest`,
+  `SourceReferenceRefusalWitnessTest` en `UnknownFieldWitnessTest` wijzen naar `/dimensionSelections/0`,
+  `RuleAndExpressionLayerRefusalWitnessTest` noemt `dimensionSelections` als veld dat een `BuiltinCall` niet draagt;
+  `TmsBuiltinWitnessTest` en de clingo-frames schrijven de lijst.
+- Gate 2: basisdocumenten en de rij "BuiltinCall carries dimensionSelections" in de lijstvorm, `_DSEL` wijst naar
+  `[0]`; tien nieuwe vormrijen `CELL_SHAPE_ROWS` (517 → 527 vormrijen).
+- Gate 4: dertien nieuwe zelftestrijen `CELL_ROWS` (121 → 134).
+- Gate 8: twee `EXCLUDE DROOLS-184`-regels in de Drools-lijst; ch. 5.7b 33 → 35 rijen (vloer 31).
+- Gate 12: `EXPECTED_CHANNEL` + `jutterswet-seizoenkopie|NOCASE`; `EXPECTED_PLAYED` blijft 300.
+- Gate 5: ref-suite 1807 → 1816 voorbeelden; vier goldens niet gespeeld (+ `jutterswet-seizoenkopie`).
+- Gate 15: `jutterswet-seizoenkopie` staat bij de goldens die de loader weigert (38).
+
+#### Voorgestelde tekst voor CONSTRUCTS (hoofdsessie)
+
+Rij 28, achter de bestaande `Landed`-noten:
+
+> **Landed (stap 1 van de kaart `dimensions-executed`, 2026-11-02, `3ee5d2892`, `cf981a3cf`, `a60668183`):** de
+> normbron — waar RegelSpraak v2.3.0 zwijgt (een cel als schrijfplaats, een vouw over meer dimensies, een cel van een
+> ander type dan getal) volgt het dialect ALEF (besluit Yeb, 2026-11-02); waar de typering van de specificatie ALEF
+> tegenspreekt (`first`, `last`, `count` over cellen) laat het dialect geen vouw toe. Een cel is overal een eigen
+> sleutel: labels per positie in gedeclareerde volgorde (WF-040), `RuleVersion.target` mag een `DimensionCellRead`
+> zijn, `MemberInit.labels?`, `Aggregation.dimensionSelections` met een selectie per dimensie (vervangt
+> `dimensionSelection`), WF-125 (geen kale lezing, geen hele schrijving, geen vorm die het attribuut heel noemt, geen
+> dimensie naast een tijdlijn), de afhankelijkheidsgraaf per cel (IR-SPEC ch. 5.1); het case-formaat draagt `cells`,
+> `cellValue`, `cellEmpty`, met EF-034 en EF-035 (RUNTIME-SEMANTICS ch. 5.8c). Golden `jutterswet-seizoenkopie`
+> (verifier-only). Geen uitvoerder evalueert een cel: ref en clingo toetsen een celinvoer en weigeren haar, Drools
+> weigert een celschrijving (DROOLS-298) en een vouw over meer dimensies (DROOLS-297).
+
+Rij `DimensieSelectie` (:102), achter de L5-noot: "**Landed (stap 1 van `dimensions-executed`, 2026-11-02):**
+`Aggregation.dimensionSelections`, een lijst met een selectie per dimensie (B3)." Rij `DimensieCel` (:106): "**Landed
+(stap 1 van `dimensions-executed`, 2026-11-02):** labels per positie (WF-040, B2); ook regeldoel (B1), en
+`MemberInit.labels` voor een objectcreatie." Rij :204 ("Undimensioned read of a dimensioned attribute; dimensiecel
+limits"): "gesloten door WF-125 en WF-040 (stap 1 van `dimensions-executed`)".
+
+#### Voorlopige besluiten
+
+1. **EF-034 en EF-035 met rode getuigen al in stap 1** (afwijking van de kaart, die de rode gevallen in stap 2 zet).
+   Reden: gate 8 eist bij elke rij van ch. 5.7b een getuige (`scripts/check-red.sh`, de rij-regex; RUNTIME-SEMANTICS
+   ch. 5.7b "Witnesses"), en de case-lezer is stap 1. Stap 2 hoeft ze niet meer te maken, wel EF-004 op een cel.
+2. **Een geldige celinvoer is in stap 1 een `CASE ERROR`** na de toetsen, in plaats van haar in een wereld te leggen
+   die geen cel leest. Stap 2 vervangt die weigering door de opslag (celsleutel in `World.attrs`) en het
+   precisiehek EF-004 per cel. `cellValue`/`cellEmpty` leest de ref-lezer in stap 1 nog niet (onbekende soort, de
+   bestaande fout); voorstel voor stap 2: labels die geen cel noemen in een verwachting zijn een fout zonder code,
+   zoals een verwachting op een onbekend attribuut.
+3. **Parameters van EF-034/EF-035**: `label` (het instantielabel, zoals bij EF-005/EF-016), `attribute`, `labels` (de
+   labels van de cel, gescheiden door `, `). De `place` van een cel (EF-004, EF-006) is
+   `<label>.<attribuut>[<l1>, <l2>]`, dezelfde spelling als de celknoop en de WF-079-melding.
+4. **Java-model blijft één selectie.** `Expr.FunctionCall.dimensionSelection` (gedeeld door frontend en Drools) houdt
+   één selectie; de emitter schrijft een lijst van één, de Drools-loader leest een lijst van één en weigert meer
+   (DROOLS-297). De lijst in het model hoort bij stap 4 (Drools) en stap 5 (frontend).
+5. **Twee nieuwe Drools-codes** DROOLS-297 en DROOLS-298 (soort REFUSAL); in stap 4 worden ze `RETIRED` zodra Drools de
+   vorm draagt, naast 040, 047, 184, 191.
+6. **Spelling van de celknoop** `attr:<type>:<attribuut>[<l1>, <l2>]`: de projectie van gate 15 knipt op `:` en leest
+   de cel als lid; de Drools-graaf moet in stap 4 hetzelfde lid spellen.
+7. **Lezing (ch. 5.12):** de `DimensionCellRead` is de knoop, de verwijzing eronder en het argument van een
+   dimensievouw hebben geen eigen lezing; een dimensievouw draagt geen bijdragers. `ref/lib/reading.ml:112` loopt nog
+   in de verwijzing; onbereikbaar zolang ref een cel met REF-002 weigert, voor stap 2.
+8. **Een selectie mag haar labels in eigen volgorde noemen** (geen volgorde-eis, wel geen herhaling): de vouw leest in
+   die volgorde, de frontend schrijft een interval in gedeclareerde volgorde.
+9. **WF-125 als één nieuwe regel met vier armen**, WF-040 voor de cel en de selectielijst; de arm `timeline` wijst naar
+   `/model/objectTypes/i/attributes/j/dimensions`.
+10. **Nieuwe golden `jutterswet-seizoenkopie`** (met de hand, zonder bron) als positieve getuige van het celdoel, van
+    `MemberInit.labels` en van de graaf per cel, in plaats van een celdoel in het vormenkabinet: de Drools-loader
+    weigert een document met een celdoel, en het kabinet is de enige golden met een `StartPointDetermination`, die de
+    sweep van `UnknownFieldWitnessTest` dan zou verliezen. De golden kan opgaan in `jutterswet-seizoenboeking` van
+    stap 3.
+11. **Schema-strengheid:** `dimensionSelections`, `MemberInit.labels`, `cells` en de labels van een cel minItems 1
+    (afwezig is de enige spelling van "geen"); de labels van een `DimensionSelection` en een `DimensionCellRead` bleven
+    zonder minItems (WF-040 weigert de lege selectie, `wf040-unpinned-cell` de lege cel).
+
+#### Wat niet lukte of buiten stap 1 bleef
+
+- `cellValue`/`cellEmpty` in de lezer van ref, de uitvoering van cellen in ref/clingo en Drools: stap 2–4.
+- `IR-SPEC.md` ch. 4.6 (g) "a cell read is declined as a FORM by both OCaml executors" ongewijzigd: nog waar.
+- Geen poging die mislukte.
+
+#### `make gates`
+
+Eerste run (op `cf981a3cf` plus de spectekst die daarna in `a60668183` landde): alle zeventien gates groen,
+`red=0`, 317 s.
