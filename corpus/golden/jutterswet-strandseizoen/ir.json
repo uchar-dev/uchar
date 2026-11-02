@@ -285,7 +285,7 @@
                 "attribute": "vondstgewicht",
                 "subjectType": "Jutter",
                 "source": {
-                  "snippet": "zijn vondstgewicht op noord in najaar"
+                  "snippet": "zijn vondstgewicht op noord en in najaar"
                 }
               },
               "labels": [
@@ -293,7 +293,7 @@
                 "noord"
               ],
               "source": {
-                "snippet": "zijn vondstgewicht op noord in najaar"
+                "snippet": "zijn vondstgewicht op noord en in najaar"
               }
             },
             "initialisation": false,

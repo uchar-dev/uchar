@@ -14,7 +14,7 @@ dimensions"; IR-SPEC ch. 2.7).
 | rule | written value | on the wire |
 |---|---|---|
 | `zuidvoorjaarsgewicht` | `zijn vondstgewicht in voorjaar op zuid` | `DimensionCellRead`, labels `voorjaar`, `zuid` |
-| `noordnajaarsgewicht` | `zijn vondstgewicht op noord in najaar` | `DimensionCellRead`, labels `najaar`, `noord` |
+| `noordnajaarsgewicht` | `zijn vondstgewicht op noord en in najaar` | `DimensionCellRead`, labels `najaar`, `noord` |
 | `noordgewicht` | `de som van zijn vondstgewicht over alle seizoenen over de stranden in {noord}` | `sum`; `seizoen` all three, `strand` `noord` |
 | `zuidpiekgewicht` | `de maximale waarde van zijn vondstgewicht over de stranden in {zuid} over de seizoenen vanaf voorjaar t/m zomer` | `maximum`; `seizoen` `voorjaar`, `zomer`, `strand` `zuid` |
 | `dalgewicht` | `de minimale waarde van zijn vondstgewicht over de seizoenen vanaf zomer t/m najaar over alle stranden` | `minimum`; `seizoen` `zomer`, `najaar`, `strand` both |
@@ -22,9 +22,12 @@ dimensions"; IR-SPEC ch. 2.7).
 
 A cell carries its labels per position, label i a label of dimension i
 (WF-040), whatever order the sentence writes them in: `noordnajaarsgewicht`
-writes the strand first. A fold carries one `DimensionSelection` per dimension
-of its argument, in the declared order of the dimensions: `zuidpiekgewicht`
-writes the strand first and goes out with the season first. A fixed dimension
+writes the strand first. Behind the attribute the labels stand side by side
+(`zuidvoorjaarsgewicht`) or joined by "en", as ALEF writes them
+(`noordnajaarsgewicht`); the wire is the same. A fold carries one
+`DimensionSelection` per dimension of its argument, in the declared order of
+the dimensions: `zuidpiekgewicht` writes the strand first and goes out with
+the season first. A fixed dimension
 is a selection of one label, as ALEF writes it (`over de stranden in {noord}`).
 In `dalgewicht` the operand takes `over de seizoenen` as name words and leaves
 the bare interval; the frontend splits the operand off by the declared plural,
