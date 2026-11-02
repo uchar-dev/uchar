@@ -379,9 +379,10 @@ it. **Cell read** (`DimensionCellRead`, RUNTIME-SEMANTICS ch. 5.8c): the
 `val/3` atom of the attribute reference under it, own or over a path, with
 the cell's name in place of the attribute's, `val(S,"vondstgewicht[voorjaar]",A)`,
 at the attribute's scale; an empty cell, like an absent link, leaves the
-body underivable. A cell of a text, an enumeration or a boolean of the
-subject is read in a symbolic position as such an attribute is, its value
-the ground term of the case input (`jutterswet-seizoenlogboek`). **evaluationDate** (ch. 8.2): the session's evaluation date
+body underivable. A cell of a text, an enumeration or a boolean is read in a
+symbolic position as such an attribute is, on the subject or over a path,
+its value the ground term of the case input, without a scale
+(`jutterswet-seizoenlogboek`, `jutterswet-ploegseizoen`). **evaluationDate** (ch. 8.2): the session's evaluation date
 as a compile-time civil day number; a case without `asOfDate` faults.
 **Temporal point read** (ch. 3.3): a `tl/5`/`param_tl/4` atom with
 `F <= D, D < T` — the gap and the empty-index corner are the
@@ -1373,6 +1374,17 @@ every cell is empty, a fallback of 0.50 kg) and `jutterswet-seizoenlogboek`
 (the first of text cells, the last of date cells, the filled count of text
 cells), and the frames of the backend's suite (two dimensions, two cells of
 one value, a path, first, last and the filled count, the range fence).
+Over a path, the cells of the object the path reaches, of a number or
+symbolic, and the absent link leaves every helper atom underivable
+(`jutterswet-ploegseizoen`: a sum and a last of numbers, a first of texts).
+
+**A cell of each member** (IR-SPEC ch. 4.3): a value fold or a filled count
+over a set whose source is a `DimensionCellRead` of the element type is the
+set fold over the cell's member name (`cell_source_fold`), so each member
+contributes its `val(X,"vondstgewicht[voorjaar]",A)` and a member whose cell
+is empty contributes nothing, as the set folds below read an attribute.
+Witness: gate 6 on `jutterswet-ploegseizoen` (a sum, a maximum over cells a
+rule writes, and a filled count).
 
 Witnesses (gate 6): count by `jutterswet-erflijn`,
 `jutterswet-maatschap`, `jutterswet-kustregister`, the self-denoting

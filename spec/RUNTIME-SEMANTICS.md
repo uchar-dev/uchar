@@ -5057,6 +5057,18 @@ case reader refuses, while it reads the case (ch. 5.7 step 3):
   `voorjaar` 12.50 and `najaar` 4.00 gives **leidersvoorjaar 12.50,
   leidersjaargewicht 16.50**; P2 without a leader gives **leeg** for both
   (rule 1 of ch. 5.8: the absent link reads every cell leeg).
+- **A cell of each member** (ALEF's fold of one cell over a role): the
+  source of a value fold or of a filled count over a set may be a cell of
+  each member, a `DimensionCellRead` of the element type (IR-SPEC ch. 4.3);
+  each member gives the value of its cell, and a member whose cell is empty
+  gives none (ch. 1.2e), as a member whose attribute is empty. A `Ploeg`
+  whose to-many role `lid` reaches J1 (`voorjaar` 2.50), J2 without a cell
+  and J3 (`voorjaar` 3.00, `najaar` 1.00) gives the sum of the cells
+  `voorjaar` **5.50**, the maximum of the cells `najaar` **1.00** and the
+  filled count of the cells `voorjaar` **2**; a `Ploeg` without members
+  gives **leeg**, **leeg** and **0** (`WV-5.8c-cel-van-elk-lid`). In
+  `jutterswet-ploegseizoen` the leader's cells, the fold over them and the
+  folds of one cell of each member are written in RegelSpraak.
 - **Folding over one dimension** (`jutterswet-seizoenvouw`): `jaargewicht`
   is the sum over all seasons, `groeigewicht` the sum from `voorjaar` up to
   and including `zomer`, `piekgewicht` the maximum over `voorjaar`, `zomer`
@@ -5167,7 +5179,8 @@ the cell's labels, `vondstgewicht[najaar]`, and the ASP backend reads and
 writes it with the `val/3` of an attribute under the same name, its
 declaration the attribute's (`spec/ASP-TRANSLATION.md`); a cell of a text,
 an enumeration or a boolean of the subject is read there as such an
-attribute is. The pair of a computing rule and an initialisation on one cell
+attribute is, on the subject and over a path. Both fold a cell of each
+member of a set as a set fold folds an attribute of each member. The pair of a computing rule and an initialisation on one cell
 reads in the defaults reading in both: `ref` natively, the ASP backend
 through the ch. 7.7 lowering on the cell. The worked examples replay in both:
 the goldens `jutterswet-seizoenvondst`, `jutterswet-seizoenvouw` (the six
@@ -5175,8 +5188,9 @@ kinds and a sum with a fallback), `jutterswet-vormenkabinet` (a cell over two
 dimensions that share a label), `jutterswet-seizoenboeking`,
 `jutterswet-seizoenkopie`, `jutterswet-strandseizoen` (cells over two
 dimensions, read, written and folded, written in RegelSpraak),
-`jutterswet-seizoenaanvang` (the pair on a cell) and
-`jutterswet-seizoenlogboek` (cells of a text, a date and a boolean), the
+`jutterswet-seizoenaanvang` (the pair on a cell),
+`jutterswet-seizoenlogboek` (cells of a text, a date and a boolean) and
+`jutterswet-ploegseizoen` (cells over a path and of each member), the
 `ref/test` rows `WV-5.8c-*` and the frames of
 `backends/clingo/test/test_clingo.ml` for two dimensions, a path, first,
 last and the filled count, the pair on a cell and the write boundary of a
@@ -5186,7 +5200,9 @@ carry the input precision and the write boundary of a cell. The Drools
 backend holds the same refusals of the case in a case reader of its own and
 keeps a dimensioned attribute as a map of its cells; it reads a cell and
 folds over one dimension and over more with each of the six kinds, of an
-attribute of the subject, and refuses a cell over a path (DROOLS-189). A cell a form writes is a member of
+attribute of the subject and of the object a path of to-one roles reaches,
+the input off the map of the reached bean and a written cell through the
+standing of the path; a fold over a set reads a cell of each member. A cell a form writes is a member of
 its own there as well, under the key of its node (IR-SPEC ch. 5.1): the
 rule, the initialisation and the object creation's member write it, a read
 and a fold take it through its standing, and the write-back puts it into the
@@ -5197,7 +5213,8 @@ naming the place of the write boundary as `ref` does,
 `j1.vondstgewicht[najaar]`, and the backend's `DimensionCellWitnessTest`
 replays the examples over two dimensions on its cells 2.00, 1.00 and 5.00,
 the first, the last and the filled count among them.
-The worked example of reading over a path has no replay in it.
+The worked example of reading over a path replays in
+`jutterswet-ploegseizoen` and in its rows of the backend's witness.
 
 ### 5.9 Uniqueness: the union and the scope
 
@@ -6337,15 +6354,15 @@ plays to the nodes of a reading at its turn, and every operand in them to
 the value of the fixpoint; gate 17 compares their node lines as it
 compares every other, and counts them.
 
-Four boundaries, recorded rather than left implicit. The reading of a
-cell over a path stays outside gate 17 and outside that corpus witness: the
-Drools backend reads a cell only of the subject's own attribute (a cell over
-a path it refuses, DROOLS-189), and no golden with case files reads one over
-a path; `WV-5.12-cel-over-een-pad` pins it in `ref`. A cell of the subject
-is inside: gate 17 compares the readings of the goldens that read or write
-one (ch. 5.8c) on both branches, the cell read and the dimension fold as the
-nodes, a rule whose target is a cell as a rule on an attribute, and the text
-writes no object for the cell. The status `FAULTS`
+A cell is inside that differential: gate 17 compares the readings of the
+goldens that read or write one (ch. 5.8c) on both branches, the cell read
+and the dimension fold as the nodes, a rule whose target is a cell as a rule
+on an attribute, the object a path reaches for a cell read over it
+(`jutterswet-ploegseizoen`; `WV-5.12-cel-over-een-pad` in `ref`) and none
+for the subject's own cell or for a dimension fold, and the contributors of
+a fold of one cell of each member.
+
+Three boundaries, recorded rather than left implicit. The status `FAULTS`
 and a fault at a node stay outside that differential: a golden does not
 fault at its fixpoint, and `runner --trace` refuses a case that pins one.
 Neither does a displaced default of a golden fault in its reading
