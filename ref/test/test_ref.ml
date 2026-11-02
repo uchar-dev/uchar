@@ -11309,6 +11309,167 @@ let () =
       | exception Case.Error { text; _ } -> check ("WV-5.12-cel-over-een-pad (case refused: " ^ text ^ ")") false
       | exception Value.Fault { text; _ } -> check ("WV-5.12-cel-over-een-pad (fault: " ^ text ^ ")") false)
 
+(* The worked examples of writing a cell (RUNTIME-SEMANTICS ch. 5.8c, 2),
+   verbatim: a rule that computes one cell from another cell of its own
+   attribute, an initialisation and an object creation that each write one
+   cell, the input of a written cell displaced or standing (ch. 7.8), the pair
+   of an initialisation and a computation on one cell (ch. 7.7), the write
+   boundary of a cell (EF-006), and the reading of a rule whose target is a
+   cell (ch. 5.12). The examples of the goldens `jutterswet-seizoenboeking`
+   and `jutterswet-seizoenkopie` replay their cases; the others are written
+   here. *)
+let () =
+  let read_corpus rel = In_channel.with_open_text (corpus_file rel) In_channel.input_all in
+  let plays_named ?(further = fun _ -> ()) ~ident ~ir ~case_data () =
+    try plays ~ident ~ir ~case_data further
+    with Case.Error { text; _ } -> check (ident ^ " (case refused: " ^ text ^ ")") false
+  in
+  let boeking = "corpus/golden/jutterswet-seizoenboeking/" in
+  let boeking_ir = read_corpus (boeking ^ "ir.json") in
+  (* the object creation writes the cell najaar of the Vangst it makes, and no
+     other cell of it *)
+  let minted_cells label najaar (final : World.t) =
+    let v = World.get final ("oc0::" ^ label) in
+    check
+      (Printf.sprintf "WV-5.8c-objectcreatie-cel %s (najaar %s, voorjaar %s, zomer %s)" label
+         (Value.to_string (World.attr v "vangstgewicht[najaar]"))
+         (Value.to_string (World.attr v "vangstgewicht[voorjaar]"))
+         (Value.to_string (World.attr v "vangstgewicht[zomer]")))
+      (Arith.equal (World.attr v "vangstgewicht[najaar]") (Value.Num (Q.of_string najaar, Value.Unitless))
+      && World.attr v "vangstgewicht[voorjaar]" = Value.Empty
+      && World.attr v "vangstgewicht[zomer]" = Value.Empty)
+  in
+  plays_named ~ident:"WV-5.8c-schrijven-J1-J2" ~ir:boeking_ir
+    ~case_data:(read_corpus (boeking ^ "case1-voorjaar-en-zomer.json"))
+    ~further:(fun final -> minted_cells "J1" "3" final; minted_cells "J2" "3" final)
+    ();
+  plays_named ~ident:"WV-5.8c-schrijven-J3" ~ir:boeking_ir ~case_data:(read_corpus (boeking ^ "case2-zonder-invoer.json")) ();
+  plays_named ~ident:"WV-5.8c-schrijven-invoer-verdrongen" ~ir:boeking_ir
+    ~case_data:(read_corpus (boeking ^ "case3-invoer-in-een-geschreven-cel.json")) ();
+  plays_named ~ident:"WV-5.8c-schrijven-staande-invoer" ~ir:(read_corpus "corpus/golden/jutterswet-seizoenkopie/ir.json")
+    ~case_data:(read_corpus "corpus/golden/jutterswet-seizoenkopie/case1-kopie-en-staande-invoer.json") ();
+  (* the write boundary of a cell: "maal 1,5" on voorjaar 1.25 is 15/8 *)
+  let red = "corpus/red/jutterswet-cel-schrijfgrens/" in
+  (match
+     with_files ~ir:(read_corpus (red ^ "ir.json")) ~case_data:(read_corpus (red ^ "case1.json")) (fun _ _ evaluate ->
+         evaluate ())
+   with
+  | exception Value.Fault { code; params; text } ->
+      check
+        ("WV-5.8c-schrijfgrens-ef006 (got: " ^ text ^ ")")
+        (code = Some "EF-006" && params = [ ("place", "j1.vondstgewicht[najaar]"); ("value", "15/8"); ("decimals", "2") ])
+  | exception Case.Error { text; _ } -> check ("WV-5.8c-schrijfgrens-ef006 (case refused: " ^ text ^ ")") false
+  | _ -> check "WV-5.8c-schrijfgrens-ef006 (no fault)" false);
+  (* the pair on one cell reads as the ch. 7.7 defaults: a computation that
+     evaluates leeg writes nothing, so the initialisation decides, and an
+     input of the cell stands above it *)
+  let unit_kg =
+    {|{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}|}
+  in
+  let cell labels =
+    Printf.sprintf
+      {|{"node": "DimensionCellRead", "attribute": {"node": "AttributeReference", "attribute": "vondstgewicht", "subjectType": "Jutter"}, "labels": [%s]}|}
+      (String.concat ", " (List.map (Printf.sprintf "%S") labels))
+  in
+  let version ?(presentation = {|, "presentation": "calculation"|}) ~initialisation target value =
+    Printf.sprintf
+      {|{"validity": {"node": "Validity"}, "target": %s, "value": %s, "initialisation": %b%s}|}
+      target value initialisation presentation
+  in
+  let doc rules =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters", "attributes": [{"node": "Attribute", "name": "vondstgewicht", "datatype": {"node": "Number", "whole": false, "decimals": 2, "sign": "nonNegative", "unit": [%s]}, "dimensions": ["seizoen"]}], "characteristics": []}], "factTypes": [], "parameters": [], "domains": [], "unitSystems": [{"node": "UnitSystem", "name": "Gewicht", "units": [{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}, "spellings": ["kilogram", "kilogrammen"]}]}], "dimensions": [{"node": "Dimension", "name": "seizoen", "plural": "seizoenen", "preposition": "in", "labels": ["voorjaar", "zomer", "najaar"]}], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+      unit_kg
+      (String.concat ", "
+         (List.map (fun (name, v) -> Printf.sprintf {|{"node": "Rule", "name": "%s", "versions": [%s]}|} name v) rules))
+  in
+  let zero_kg =
+    Printf.sprintf {|{"node": "Literal", "value": {"number": "0"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [%s]}}|}
+      unit_kg
+  in
+  let pair =
+    doc
+      [ ("najaarskopie", version ~initialisation:false (cell [ "najaar" ]) (cell [ "voorjaar" ]));
+        ("najaarsbegin", version ~presentation:"" ~initialisation:true (cell [ "najaar" ]) zero_kg) ]
+  in
+  let instance label cells =
+    Printf.sprintf {|{"label": "%s", "objectType": "Jutter", "attributes": {%s}, "roles": {}, "characteristics": []}|} label
+      (if cells = [] then ""
+       else
+         Printf.sprintf {|"vondstgewicht": {"cells": [%s]}|}
+           (String.concat ", "
+              (List.map (fun (l, v) -> Printf.sprintf {|{"labels": ["%s"], "value": {"number": "%s"}}|} l v) cells)))
+  in
+  let cell_value label l v =
+    Printf.sprintf {|{"kind": "cellValue", "label": "%s", "attribute": "vondstgewicht", "labels": ["%s"], "value": {"number": "%s"}}|}
+      label l v
+  in
+  plays_named ~ident:"WV-5.8c-initialisatie-naast-berekening" ~ir:pair
+    ~case_data:
+      (Printf.sprintf
+         {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [%s, %s, %s], "parameters": {}}, "expected": [%s, %s, %s, {"kind": "consistent"}]}|}
+         (instance "J1" [ ("voorjaar", "2.00") ])
+         (instance "J2" [])
+         (instance "J3" [ ("najaar", "5.00") ])
+         (cell_value "J1" "najaar" "2.00") (cell_value "J2" "najaar" "0.00") (cell_value "J3" "najaar" "5.00"))
+    ();
+  (* a version that attributes a characteristic names a characteristic, never
+     a cell (WF-022); ref refuses it in the same words *)
+  let attribution =
+    doc
+      [ ("najaarsmerk",
+         version ~presentation:"" ~initialisation:false (cell [ "najaar" ])
+           {|{"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}}|}) ]
+  in
+  (match
+     with_files ~ir:attribution
+       ~case_data:
+         (Printf.sprintf
+            {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [%s], "parameters": {}}, "expected": [{"kind": "consistent"}]}|}
+            (instance "J1" []))
+       (fun findings _ evaluate ->
+         check "WV-5.8c-celdoel-kenmerk: the verifier refuses it"
+           (List.exists (fun (x : Ir_v0.Checks.violation) -> x.wf = "WF-022") findings);
+         evaluate ())
+   with
+  | exception Value.Fault { text; _ } ->
+      check
+        ("WV-5.8c-celdoel-kenmerk (got: " ^ text ^ ")")
+        (text
+        = "rule \"najaarsmerk\" attributes a characteristic to the cell \"vondstgewicht[najaar]\": a cell is a cell of \
+           an attribute, written by a computation or an initialisation (WF-022)")
+  | exception Case.Error { text; _ } -> check ("WV-5.8c-celdoel-kenmerk (case refused: " ^ text ^ ")") false
+  | _ -> check "WV-5.8c-celdoel-kenmerk (no fault)" false);
+  (* WV-5.12-celdoel: a rule whose target is a cell reads as a rule on an
+     attribute, and its initialisation is displaced where its cell is filled *)
+  let write suffix body_text =
+    let f = Filename.temp_file "ref-wv58c-write" suffix in
+    Out_channel.with_open_text f (fun oc -> output_string oc body_text);
+    f
+  in
+  let irf = write ".ir.json" boeking_ir
+  and casef = write ".case.json" (read_corpus (boeking ^ "case1-voorjaar-en-zomer.json")) in
+  Fun.protect
+    ~finally:(fun () -> List.iter Sys.remove [ irf; casef ])
+    (fun () ->
+      match readings_of irf casef with
+      | got ->
+          let got = List.filter (fun l -> String.starts_with ~prefix:"/rules/rules/0/" l || String.starts_with ~prefix:"/rules/rules/1/" l) got in
+          let row form subject cells =
+            List.map (fun c -> Printf.sprintf "/rules/rules/%d/versions/0 \"%s\" %s" form subject c) cells
+          in
+          let expected =
+            List.sort compare
+              (row 0 "J1" [ "HOLDS"; "0 Binary 3 \"kg\""; "1 DimensionCellRead 1.5 \"kg\""; "3 Literal 2" ]
+              @ row 0 "J2" [ "HOLDS"; "0 Binary 3 \"kg\""; "1 DimensionCellRead 1.5 \"kg\""; "3 Literal 2" ]
+              @ row 1 "J1" [ "HOLDS"; "0 Literal 0 \"kg\"" ]
+              @ row 1 "J2" [ "DISPLACED" ])
+          in
+          check "WV-5.12-celdoel" (got = expected);
+          if got <> expected then List.iter (Printf.printf "  got: %s\n") got
+      | exception Case.Error { text; _ } -> check ("WV-5.12-celdoel (case refused: " ^ text ^ ")") false
+      | exception Value.Fault { text; _ } -> check ("WV-5.12-celdoel (fault: " ^ text ^ ")") false)
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

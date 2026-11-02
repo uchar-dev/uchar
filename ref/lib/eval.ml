@@ -871,6 +871,32 @@ let cell_member env ~ot ~attr labels =
           (String.concat ", " dims);
       World.cell attr labels
 
+(* What a rule target writes (ch. 5.8c, 2): the subject type, the declared
+   attribute and the member of the fact base, which is the attribute itself or
+   the cell a DimensionCellRead target names. None for any other shape. *)
+let target_member env (target : expr option) =
+  match target with
+  | Some (Attribute_reference { attribute_ref; object_type = Some ot; _ }) ->
+      let a = req "RuleVersion.target attribute" attribute_ref in
+      Some (ot, a, a)
+  | Some
+      (Dimension_cell_read
+         { attribute_ref =
+             Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ });
+           labels; _ }) ->
+      Some (ot, a, cell_member env ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels))
+  | _ -> None
+
+(* The member an object creation's initialisation writes on the object it
+   makes (ch. 5.5, 5.8c): the member, or its cell where it carries labels *)
+let init_member env ~created (t : assignment) =
+  let m = req "MemberInit.member" t.to_attribute in
+  match t.to_labels with
+  | None -> m
+  | Some _ when t.to_characteristic ->
+      Value.fault "the characteristic initialisation of %S carries labels: a cell is a cell of an attribute" m
+  | Some labels -> cell_member env ~ot:created ~attr:m (List.map (req "MemberInit.labels") labels)
+
 (* The attribute a member of an instance's [attrs] belongs to: the member
    itself, or the dimensioned attribute of a cell (World.cell) *)
 let member_attribute env ~otype member =
@@ -3103,10 +3129,16 @@ let characteristic_value_constant_true (r : resolved_rule) ~ot ~attr =
 let run_rule ?only env world (r : resolved_rule) =
   if not (applies env r.rr_validity) then (world, false)
   else
-    match r.objective with
-    | Some (Attribute_reference { attribute_ref; object_type = Some ot; _ }) ->
-        let attr = req "RuleVersion.target attribute" attribute_ref in
+    match target_member env r.objective with
+    | Some (ot, attr, member) ->
         let env = { env with subj = Some ot } in
+        (* [attr] is the declaration, [member] what the fact base holds: the
+           attribute, or the cell the target names (ch. 5.8c, 2) *)
+        if member <> attr && r.rr_presentation = Some Characteristic_attribution then
+          Value.fault
+            "rule %S attributes a characteristic to the cell %S: a cell is a cell of an attribute, written by a \
+             computation or an initialisation (WF-022)"
+            (rule_name r) member;
         let temporal_target =
           match r.rr_presentation with
           | Some Characteristic_attribution -> false
@@ -3194,7 +3226,7 @@ let run_rule ?only env world (r : resolved_rule) =
                its condition nor its value is evaluated (ch. 5.4, 7.1, 7.3) *)
             let blocked =
               r.rr_presentation = Some Initialisation
-              && not (World.init_may_write w ~label:self.label ~attr)
+              && not (World.init_may_write w ~label:self.label ~attr:member)
             in
             let fire =
               (not blocked)
@@ -3223,13 +3255,13 @@ let run_rule ?only env world (r : resolved_rule) =
                      persist as in any ordinary evaluation *)
                   if
                     v = Value.Empty
-                    && (List.mem (norm ot, norm attr)
+                    && (List.mem (norm ot, norm member)
                           (Ir_v0.Desugar.standing_targets env.doc)
-                       || List.mem (norm ot, norm attr)
+                       || List.mem (norm ot, norm member)
                             (Ir_v0.Desugar.desugared_targets env.doc))
                   then (w, false)
                   else
-                    World.write_attr w ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr) v
+                    World.write_attr w ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr) v
               | Some Initialisation ->
                   (* writes only where the target is empty (ch. 5.4) — apart
                      from its own write ([blocked] above). A case input and a
@@ -3241,7 +3273,7 @@ let run_rule ?only env world (r : resolved_rule) =
                      the initialisation computed against a read that another
                      rule had not yet written: the document order decided *)
                   let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
-                  World.write_attr_init w ~label:self.label ~attr
+                  World.write_attr_init w ~label:self.label ~attr:member
                     ~decl:(attr_decl env ~otype:ot ~attr) v
               | None -> Value.fault "rule %S has no kind" (rule_name r))
     | _ -> Value.faultc ~params:[ ("rule", (rule_name r)) ] "REF-012" "rule %S: unsupported target shape" (rule_name r)
@@ -3508,6 +3540,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
               List.fold_left
                 (fun w (t : assignment) ->
                   let m = req "MemberInit.member" t.to_attribute in
+                  let member = init_member env ~created t in
                   if t.to_characteristic then (
                     match t.to_value with
                     | Some (Literal { variant = Lv_boolean true; _ }) ->
@@ -3541,7 +3574,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                   else
                     let v = eval_expr env read self ~err (req "MemberInit.value" t.to_value) in
                     fst
-                      (World.write_attr w ~label ~attr:m
+                      (World.write_attr w ~label ~attr:member
                          ~decl:(attr_decl env ~otype:created ~attr:m)
                          v))
                 w oc.assignments

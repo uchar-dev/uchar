@@ -386,14 +386,16 @@ let of_type env world ?(except = []) otype =
 
 (* --- the forms ------------------------------------------------------------ *)
 
-(* A rule on an attribute has a reading where it has a condition or computes
-   a value: a characteristic attribution without a condition has nothing to
-   read. *)
+(* A rule on an attribute or a cell has a reading where it has a condition or
+   computes a value: a characteristic attribution without a condition has
+   nothing to read. A cell target reads as its attribute does, its
+   initialisation displaced where its cell is filled (ch. 5.8c, 2). *)
 let rules json env ~world =
   List.concat_map
     (fun (r : resolved_rule) ->
-      match r.objective with
-      | Some (Attribute_reference { attribute_ref = Some attr; object_type = Some ot; _ })
+      match (r.objective, Eval.target_member env r.objective) with
+      | ( Some (Attribute_reference { attribute_ref = Some _; object_type = Some _; _ } | Dimension_cell_read _),
+          Some (ot, attr, member) )
         when r.rr_condition <> None || r.rr_presentation <> Some Characteristic_attribution ->
           let condition = r.rr_condition in
           let form = r.rr_pointer in
@@ -415,7 +417,7 @@ let rules json env ~world =
           let temporal = computes && Ir_v0.Checks.attr_temporal (Eval.object_type env ot) attr in
           in_window env r.rr_validity ~form (of_type env world ~except ot) (fun self ->
               if r.rr_presentation = Some Initialisation
-                 && not (World.init_may_write world ~label:self.label ~attr)
+                 && not (World.init_may_write world ~label:self.label ~attr:member)
               then [ without ~form Displaced self ]
               else if not temporal then [ read_on ~form ~numbered env world self ~condition ~value ]
               else

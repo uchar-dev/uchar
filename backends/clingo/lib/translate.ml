@@ -889,20 +889,32 @@ let object_type ctx name =
   | Some ot -> ot
   | None -> fault "unknown object type %S" name
 
-
-let attr_decimals ctx ~otype ~attr =
+(* The declaration of a member: of an attribute, or of the dimensioned
+   attribute a cell belongs to (Uchar_ref.World.cell), whose val/3 name is
+   the cell's (RUNTIME-SEMANTICS ch. 5.8c). Every declaration lookup by member
+   below goes through here, so a cell that is written or read takes its
+   attribute's datatype, decimals and unit. *)
+let find_decl ctx ~otype ~attr =
   let ot = object_type ctx otype in
   match Ir_v0.Checks.find_ci ot.attributes attr with
+  | Some _ as d -> d
+  | None -> (
+      match List.filter (fun (a, _) -> Uchar_ref.World.cell_of a attr) ot.attribute_dimensions with
+      | [ (a, _) ] -> Ir_v0.Checks.find_ci ot.attributes a
+      | _ -> None)
+
+let attr_decimals ctx ~otype ~attr =
+  match find_decl ctx ~otype ~attr with
   | Some dt -> decimals_of_datatype dt
   | None -> fault "unknown attribute %S on %S" attr otype
 
 let attr_datatype ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
+  match find_decl ctx ~otype ~attr with
   | Some dt -> dt
   | None -> fault "unknown attribute %S on %S" attr otype
 
 let attr_unit ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
+  match find_decl ctx ~otype ~attr with
   | Some (Some (Number { measure_unit; _ } | Percentage { measure_unit; _ })) -> measure_unit
   | _ -> None
 
@@ -933,17 +945,17 @@ let refuse_date_timeline_total ctx ~what ~otype ~attr =
   | _ -> ()
 
 let attr_sum_typed ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
+  match find_decl ctx ~otype ~attr with
   | Some (Some (Sum_type _)) -> true
   | _ -> false
 
 let attr_struct_typed ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
+  match find_decl ctx ~otype ~attr with
   | Some (Some (Struct_type _)) -> true
   | _ -> false
 
 let attr_datetime_typed ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
+  match find_decl ctx ~otype ~attr with
   | Some (Some Date_time_type) -> true
   | _ -> false
 
@@ -3293,7 +3305,7 @@ let date_step_operands ctx ~minus le re =
   else fault "%s" (Ir_v0.Checks.duration_before_date_refusal ~minus)
 
 let attr_symbolic_datatype ctx ~otype ~attr =
-  match Ir_v0.Checks.find_ci (object_type ctx otype).attributes attr with
+  match find_decl ctx ~otype ~attr with
   | Some (Some ((Text_type | Boolean | Enumeration _) as dt)) -> Some dt
   | _ -> None
 
@@ -10336,10 +10348,9 @@ let init_writers ctx ~ot ~a =
     r.rr_presentation <> Some Characteristic_attribution
     && applies ctx r.rr_validity
     &&
-    match r.objective with
-    | Some (Attribute_reference { attribute_ref = Some a'; object_type = Some ot'; _ }) ->
-        norm a' = norm a && co_writes ot'
-    | _ -> false
+    match Ir_v0.Desugar.target_of r with
+    | Some (ot', a') -> norm a' = norm a && co_writes ot'
+    | None -> false
   in
   let inits, comps =
     List.partition
@@ -10363,7 +10374,10 @@ let init_writers ctx ~ot ~a =
            && List.exists
                 (fun (t : assignment) ->
                   (not t.to_characteristic)
-                  && match t.to_attribute with Some ta -> norm ta = norm a | None -> false)
+                  && match t.to_attribute with
+                     | Some ta ->
+                         norm (Ir_v0.Checks.cell_member ta (Option.map Ir_v0.Checks.some_names t.to_labels)) = norm a
+                     | None -> false)
                 o.assignments)
          ctx.doc.object_creations
   in
@@ -10402,8 +10416,16 @@ let translate_rule ctx (r : resolved_rule) =
   if applies ctx r.rr_validity then begin
       let objective = req "RuleVersion.target" r.objective in
       ctx.rule_name <- Option.value r.rr_name ~default:"?";
-      (match objective with
-      | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } ->
+      (* [a] is the member the target writes, its val/3 name: the attribute,
+         or the cell it names (RUNTIME-SEMANTICS ch. 5.8c, 2), whose
+         declaration is its attribute's ([find_decl]) *)
+      (match Eval.target_member (doc_env ctx) (Some objective) with
+      | Some (ot, declared, a) ->
+          if a <> declared && r.rr_presentation = Some Characteristic_attribution then
+            fault
+              "rule %S attributes a characteristic to the cell %S: a cell is a cell of an attribute, written \
+               by a computation or an initialisation (WF-022)"
+              ctx.rule_name a;
           let subject = "S" in
           (* SUBTYPING §4.1 rules 1 and 4: on the concrete types where
              inheritance made this rule a defaults BASE, the stack writes it
@@ -10714,9 +10736,8 @@ let translate_rule ctx (r : resolved_rule) =
                     let _, comps, _ = init_writers ctx ~ot ~a in
                     List.filter_map
                       (fun (r' : resolved_rule) ->
-                        match r'.objective with
-                        | Some (Attribute_reference { attribute_ref = Some a'; object_type = Some ot'; _ })
-                          when r' != r ->
+                        match Ir_v0.Desugar.target_of r' with
+                        | Some (ot', a') when r' != r ->
                             Option.map
                               (fun k -> Printf.sprintf "not state%d_eff(%s)" k subject)
                               (List.find_index (( = ) (norm ot', norm a'))
@@ -10770,9 +10791,18 @@ let translate_rule ctx (r : resolved_rule) =
                    creation or a defaults group of its own level: ch. 5.4 places an \
                    initialisation beside ordinary rules only (no corpus case)"
                   a;
+              (* on an attribute the pair is the ch. 7.7 desugaring's, whose
+                 defaults group this backend translates; a cell keeps its two
+                 forms (Ir_v0.Desugar.document), and ref answers them in the
+                 defaults reading, which this arm does not encode *)
+              if a <> declared && comps <> [] then
+                fault
+                  "the initialisation of the cell %S sits beside a computing rule on that cell: the \
+                   ch. 7.7 defaults reading of the pair is not translated for a cell (no corpus case)"
+                  a;
               if attr_temporal ctx ~otype:ot ~attr:a then
                 fault "temporal attribute %S as a target: temporal writes are not implemented" a;
-              (match Ir_v0.Checks.find_ci (object_type ctx ot).attributes a with
+              (match find_decl ctx ~otype:ot ~attr:a with
               | Some (Some (Number _ | Percentage _ | Date_in_days)) -> ()
               | _ ->
                   fault
@@ -10785,8 +10815,8 @@ let translate_rule ctx (r : resolved_rule) =
                  nothing on a leeg evaluation, so ref's initialisation then
                  writes and nothing diverges *)
               let divergent =
-                match comps with
-                | [ { objective = Some (Attribute_reference { object_type = Some cot; _ }); _ } ] ->
+                match List.map Ir_v0.Desugar.target_of comps with
+                | [ Some (cot, _) ] ->
                     not (List.mem (norm cot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc))
                 | _ -> false
               in
@@ -10825,7 +10855,7 @@ let translate_rule ctx (r : resolved_rule) =
                       (body @ fit_guards @ [ Printf.sprintf "comp_fires(%s,%s)" subject (str a) ]))
                 branches
           | _ -> faultc "CLINGO-025" "rule kind not translated")
-      | _ -> faultc "CLINGO-026" "unsupported rule target")
+      | None -> faultc "CLINGO-026" "unsupported rule target")
   end
 
 (* a boolean-typed characteristic-initialisation EXPRESSION → the body atoms
@@ -10964,7 +10994,8 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
   head_body ctx (Printf.sprintf "is_a(%s,%s)" term (str created)) body;
   List.iter
     (fun (t : assignment) ->
-      let m = req "MemberInit.member" t.to_attribute in
+      (* the member, or the cell it names on the made object (ch. 5.8c, 2) *)
+      let m = Eval.init_member (doc_env ctx) ~created t in
       if t.to_characteristic then (
         match t.to_value with
         | Some (Literal { variant = Lv_boolean true; _ }) ->
@@ -12109,10 +12140,9 @@ let translate_case ctx (case : Case.t) =
       (fun (r : resolved_rule) ->
         r.rr_presentation = Some Initialisation
         &&
-        match r.objective with
-        | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }) ->
-            norm a = norm aname && inherits otype ot
-        | _ -> false)
+        match Ir_v0.Desugar.target_of r with
+        | Some (ot, a) -> norm a = norm aname && inherits otype ot
+        | None -> false)
       doc.resolved_rules
   in
   Eval.SMap.iter
@@ -12283,10 +12313,8 @@ let writer_conflicts ctx =
   let writers =
     List.filter_map
       (fun (i, (r : resolved_rule)) ->
-        match r.objective with
-        | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ })
-          when applies ctx r.rr_validity && co_writer ctx r ~ot ~a <> None ->
-            Some (i, r, ot, a)
+        match Ir_v0.Desugar.target_of r with
+        | Some (ot, a) when applies ctx r.rr_validity && co_writer ctx r ~ot ~a <> None -> Some (i, r, ot, a)
         | _ -> None)
       (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_rules)
   in

@@ -176,9 +176,12 @@ faults with file/position context — never a silent fallback.
   maximum) folds the cells of the product of its selections, an empty cell
   skipped and a fold whose every cell is empty leeg. The case reader lays
   the `cells` input down cell by cell (EF-034, EF-035) and reads the
-  `cellValue` and `cellEmpty` expectations. A read of a dimensioned
-  attribute outside a cell is refused (WF-125), and so is a cell as a write
-  target (REF-012).
+  `cellValue` and `cellEmpty` expectations. A rule or an initialisation
+  whose target is a cell writes that cell, and an object creation's member
+  with `labels` that cell of the object it makes; the write boundary holds
+  per cell (EF-006, its place the cell), and a cell is a target of its own
+  in the standing norm and in the ch. 7.7 domain, read natively. A read of
+  a dimensioned attribute outside a cell is refused (WF-125).
 - **Not implemented** (each faults with context): multi-period grids,
   variable/constant refs, the "is gevuurd" test (row 30:
   decided as a dialect-only fixpoint predicate, not yet implemented),

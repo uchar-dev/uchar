@@ -24,10 +24,17 @@ let version_free (g : validity_window option) =
 let always_true : condition_expr =
   Compound { quantifier_kind = All; cutoff = 0; components = []; source_name = Some "altijd" }
 
+(* The (type, member) a rule writes: its attribute, or the cell its target
+   names (RUNTIME-SEMANTICS ch. 5.8c), spelled as the dependency graph and the
+   fact bases of ref/ and the ASP backend spell it, so a cell is a target of
+   its own in both domains below. *)
 let target_of (r : resolved_rule) =
-  match r.objective with
-  | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }) -> Some (ot, a)
+  match Checks.written_reference r.objective with
+  | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }) ->
+      Some (ot, Checks.cell_member a (Checks.written_labels r.objective))
   | _ -> None
+
+let cell_target (r : resolved_rule) = Checks.written_labels r.objective <> None
 
 (* Is this rule inside the desugaring's domain for its target? *)
 let is_computing (r : resolved_rule) =
@@ -84,7 +91,10 @@ let desugared_targets (doc : document) : (string * string) list =
 (* Desugar every target carried entirely by domain forms; leave every
    other rule untouched. Returns the rewritten document. *)
 let document (doc : document) : document =
-  let chosen = chosen_targets doc in
+  (* a cell keeps its forms: the rewrite makes a defaults group, and a defaults
+     group names its attribute whole (WF-125), so the pair on a cell is
+     replayed as written, by ref/ in the defaults reading of this domain *)
+  let chosen = List.filter (fun (_, (_, rs)) -> not (List.exists cell_target rs)) (chosen_targets doc) in
   if chosen = [] then doc
   else
     let in_chosen r =
@@ -179,7 +189,9 @@ let standing_targets_gen ~temporal (doc : document) : (string * string) list =
            && List.exists
                 (fun (t : assignment) ->
                   (not t.to_characteristic)
-                  && match t.to_attribute with Some ta -> norm ta = norm a | None -> false)
+                  && match t.to_attribute with
+                     | Some ta -> norm (Checks.cell_member ta (Option.map Checks.some_names t.to_labels)) = norm a
+                     | None -> false)
                 o.assignments)
          doc.object_creations
   in

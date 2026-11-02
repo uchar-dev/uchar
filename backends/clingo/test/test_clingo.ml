@@ -16522,6 +16522,92 @@ let () =
       | exception Uchar_ref.Value.Fault { code; params; _ } ->
           check "EF-004 on a cell" (code = Some "EF-004" && params = [ ("value", "1.005"); ("decimals", "2") ]))
 
+(* Writing a cell (RUNTIME-SEMANTICS ch. 5.8c, 2): a rule writes the cell
+   its target names, under the cell's own val/3 name, with the declaration of
+   its attribute, and each frame is held to ref and to the solver at once. The
+   golden jutterswet-seizoenboeking replays the rule, the initialisation and
+   the object creation through gate 6; these frames carry what it does not:
+   the write boundary of a cell, and the two forms this backend refuses by
+   name. *)
+let () =
+  let unit_kg =
+    {|{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}|}
+  in
+  let cell labels =
+    Printf.sprintf
+      {|{"node": "DimensionCellRead", "attribute": {"node": "AttributeReference", "attribute": "vondstgewicht", "subjectType": "Jutter"}, "labels": [%s]}|}
+      (String.concat ", " (List.map (Printf.sprintf "%S") labels))
+  in
+  let version ?(presentation = {|, "presentation": "calculation"|}) ~initialisation target value =
+    Printf.sprintf {|{"validity": {"node": "Validity"}, "target": %s, "value": %s, "initialisation": %b%s}|} target value
+      initialisation presentation
+  in
+  let doc rules =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters", "attributes": [{"node": "Attribute", "name": "vondstgewicht", "datatype": {"node": "Number", "whole": false, "decimals": 2, "sign": "nonNegative", "unit": [%s]}, "dimensions": ["seizoen"]}], "characteristics": []}], "factTypes": [], "parameters": [], "domains": [], "unitSystems": [{"node": "UnitSystem", "name": "Gewicht", "units": [{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}, "spellings": ["kilogram", "kilogrammen"]}]}], "dimensions": [{"node": "Dimension", "name": "seizoen", "plural": "seizoenen", "preposition": "in", "labels": ["voorjaar", "zomer", "najaar"]}], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+      unit_kg
+      (String.concat ", "
+         (List.map (fun (name, v) -> Printf.sprintf {|{"node": "Rule", "name": "%s", "versions": [%s]}|} name v) rules))
+  in
+  let number ?(whole = false) ?(decimals = 2) ?(unit = true) v =
+    Printf.sprintf {|{"node": "Literal", "value": {"number": "%s"}, "type": {"node": "Number", "whole": %b, "decimals": %d, "sign": "unspecified"%s}}|}
+      v whole decimals (if unit then Printf.sprintf {|, "unit": [%s]|} unit_kg else "")
+  in
+  let case_of cells tail =
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "j1", "objectType": "Jutter", "attributes": {"vondstgewicht": {"cells": [%s]}}, "roles": {}, "characteristics": []}], "parameters": {}}, %s}|}
+      (String.concat ", "
+         (List.map (fun (l, v) -> Printf.sprintf {|{"labels": ["%s"], "value": {"number": "%s"}}|} l v) cells))
+      tail
+  in
+  (* the write boundary of a cell: voorjaar 1.25 maal 1,5 is 1.875, which does
+     not fit 2 decimals; the fence names the cell *)
+  let boundary =
+    doc
+      [ ("najaarsgewicht",
+         version ~initialisation:false (cell [ "najaar" ])
+           (Printf.sprintf {|{"node": "Binary", "op": "times", "left": %s, "right": %s, "type": {"node": "Number", "whole": false, "decimals": 3, "sign": "nonNegative", "unit": [%s]}}|}
+              (cell [ "voorjaar" ]) (number ~unit:false ~decimals:1 "1.5") unit_kg)) ]
+  in
+  (let doc, case =
+     load_pair ~ir:boundary ~case_text:(case_of [ ("voorjaar", "1.25") ] {|"expectedFault": {"code": "EF-006", "params": {}}|})
+   in
+   let label = "the write boundary of a cell (EF-006)" in
+   match translate doc case with
+   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
+   | program -> (
+       match Solve.run_clingo program with
+       | _, Unix.WEXITED 20 ->
+           let ws = Solve.diagnostic program in
+           check
+             (label ^ " (" ^ String.concat "; " ws ^ ")")
+             (List.exists
+                (fun w -> Uchar_ref.Case.contains ~needle:"result of vondstgewicht[najaar] does not fit its declared decimals" w)
+                ws)
+       | _, _ -> check (label ^ " (clingo answered)") false));
+  (* an initialisation beside a computing rule on one cell: ref answers the
+     pair in the ch. 7.7 defaults reading, which this backend does not encode
+     for a cell *)
+  faults_with ~name:"the initialisation of a cell beside a computing rule on that cell"
+    ~ir:
+      (doc
+         [ ("najaarskopie", version ~initialisation:false (cell [ "najaar" ]) (cell [ "voorjaar" ]));
+           ("najaarsbegin", version ~presentation:"" ~initialisation:true (cell [ "najaar" ]) (number ~whole:true ~decimals:0 "0")) ])
+    ~case_text:(case_of [ ("voorjaar", "2.00") ] {|"expected": [{"kind": "consistent"}]|})
+    ~needle:"the ch. 7.7 defaults reading of the pair is not translated for a cell";
+  (* a version that attributes a characteristic names a characteristic, never a
+     cell (WF-022), in ref's words *)
+  faults_with ~name:"a characteristic attributed to a cell"
+    ~ir:
+      (doc
+         [ ("najaarsmerk",
+            version ~presentation:"" ~initialisation:false (cell [ "najaar" ])
+              {|{"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}}|}) ])
+    ~case_text:(case_of [ ("voorjaar", "2.00") ] {|"expected": [{"kind": "consistent"}]|})
+    ~needle:
+      "rule \"najaarsmerk\" attributes a characteristic to the cell \"vondstgewicht[najaar]\": a cell is a cell of an \
+       attribute, written by a computation or an initialisation (WF-022)"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
