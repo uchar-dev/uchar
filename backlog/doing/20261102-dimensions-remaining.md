@@ -317,3 +317,216 @@ end 2026-11-02 19:06:31 309s red=0
 ```
 
 Niet gemerged, niet gepusht. De kaart blijft in `doing/`.
+
+### Stap D (de scenariolaag leest een cel)
+
+*Samengevoegd in stap M (zie daar): op `card/dimensions-remaining` heten de drie commits `243eead3b`, `ad900fe29` en
+`dd7430cc6`, en RGS-380 heet RGS-369 (`f5c455073`). De tekst hieronder is het Result van stap D zoals geschreven.*
+
+Branch `card/dimensions-scenario`, worktree `/Users/yeb/Developer/uchar-dev/wt/dimensions-scenario`, op main `b7e3a9611`.
+Commits:
+
+- `e41193929` frontend: scenariolaag (`ScenarioResolver`, `ResolvedScenario`, `CaseEmitter`), de grammaticaregel
+  `naamVervolgDeel`, de semantische tokens van een cel, register en catalogi (RGS-237 weg, RGS-380 nieuw),
+  `grammar/DIVERGENCES.md`, `ScenarioCellTest` en de omgedraaide test in `ScenarioTypeGateTest`;
+- `9bf0fbf31` goldens: `scenario.rgs` bij `jutterswet-strandseizoen` en `jutterswet-seizoenboeking`, hun `NOTE.md` en
+  `corpus/golden/README.md`;
+- `9d2f091e7` frontend: getuige voor de keuze tussen gedeeltelijke cellezingen.
+
+Beschermde paden: geen aangeraakt (geen `scripts/`, geen `spec/`). Buiten de opgegeven set, met reden:
+`SemanticTokens.java` (de pas over de scenariolaag; zonder die wijziging faalt `SemanticTokensCorpusTest` op de twee nieuwe
+toetsdocumenten, want de cel zou `unresolved` zijn), de grammaticaregel `naamVervolgDeel` (alleen gebruikt door de
+scenariolaag, `begrensdeNaam`), `corpus/golden/README.md` (één zin per golden). Een map `.../scenario/` bestaat niet; de
+scenariolaag is `resolver/ScenarioResolver.java`, `ir/ResolvedScenario.java` en `emit/CaseEmitter.java`.
+`ExpressionBuilder.java` is niet aangeraakt (stap A werkt daar).
+
+**Begintoets.** Op `b7e3a9611` (`logs/stapD-red-golden-1.log`): elke cel in een bullet geeft RGS-236 ("kent geen attribuut
+'vondstgewicht in voorjaar'"), een kaal gedimensioneerd attribuut RGS-237; geen syntaxfout voor de vormen zonder `van`-label.
+Het advies (§4: de scenariolaag pas als een golden met cellen een `scenario.rgs` krijgt) klopt.
+
+#### Wat er veranderde
+
+- **Lezen van een naam in een bullet** (`ScenarioResolver.member`). Een naam in een situatiebullet en in een verwachting
+  leest zoals een regel een cel leest: eerst een gedeclareerd attribuut bij zijn naam; een gedimensioneerd attribuut alleen
+  als cel, via `ExpressionBuilder.cellReadings` (labels vóór het attribuut bij een dimensie zonder voorzetsel, erachter na
+  het voorzetsel, naast elkaar of verbonden met "en" en ",", in elke volgorde, labels van meer woorden). De keuze tussen
+  lezingen is die van `ExpressionBuilder.dimensionCell`, gespiegeld: het langste attribuut wint; past de naam op twee cellen,
+  dan RGS-365; noemt de beste lezing van een dimensie geen label, dan RGS-364 per ontbrekende dimensie (ook voor een kaal
+  gedimensioneerd attribuut). De fouten dragen het kader `scenario: ` zoals elke fout van de laag.
+- **Invoer.** De cellen van één attribuut zijn één `AttributeValue` met `cells` (nieuw record `Cell(labels, value)`), de
+  labels per positie in gedeclareerde volgorde. De samenvoeging werkt per cel: een latere toekenning van dezelfde cel
+  vervangt de eerdere op haar plaats, de andere cellen blijven, in volgorde van eerste voorkomen; ook binnen één blok. Een
+  samengevoegde lijst is een eigen kopie, want één blok gaat in elk scenario dat op zijn situatie gebaseerd is.
+- **Verwachting.** Nieuwe soorten `CELL_VALUE` en `CELL_EMPTY` met het veld `labels` op `Expectation`; `CaseEmitter`
+  schrijft `cellValue` en `cellEmpty` in de sleutelvolgorde van het case-schema (`kind`, `label`, `attribute`, `labels`,
+  `value`) en de invoer als `cellsValue` (`cells` → `labels`, `value`).
+- **Geen case-vorm.** Een cel met een periode (invoer), een periodeverwachting op een cel en `is altijd leeg` op een cel:
+  ERROR **RGS-380** `scenario-cell-period` (parameters `attribute`, `written`), nl en en.
+- **Register en catalogi.** RGS-237 `scenario-attribute-dimensioned` uit het register en uit beide catalogi (geen plaats
+  roept het nog aan; gate 10 eist dat elke code gebruikt wordt); RGS-380 erbij. 359 codes (gelijk), 377 → 380 plaatsen.
+- **Grammatica.** `naamVervolgDeel : naamWoordLower kaleNaamWoord* ( labelOpsomming | uitLabel )*? ;` (was zonder de lus):
+  een segment na `van` in een bulletnaam neemt de verbonden labels zoals `kaleNaamDeel` sinds stap 5b, zodat "de winst van
+  vorig boekjaar en op noord" parseert. Inertheid gemeten met een parseboomvergelijking (`ParseTreeDump`, gereedschap in de
+  scratchpad, niet bewaard): parser van `b7e3a9611` en van de branch, `toStringTree` onder `testDocument`, voor de 217
+  `.rgs`-bestanden van `corpus/`, `toka/` en `frontends/` buiten de `scenario.rgs` en voor de 40 golden-toetsdocumenten
+  (`source.rgs` + `scenario.rgs` als één document): 514 regels, `diff` leeg.
+- **Semantische tokens** (`SemanticTokens.member`). Een bulletnaam die als cel leest, wordt woord voor woord gelezen zoals
+  regeltekst (`words`, met het objecttype van de instantie als subject): het attribuut `attribute`, elk label
+  `dimensionLabel`, voorzetsels en "en" houden hun lexicale soort.
+- **`grammar/DIVERGENCES.md`**, "Scenariotoetsen": de cel onder Surface (met de meting), twee rijen in de tabel van
+  verwachtingen, "Cells" onder Resolution, de lowering van `cells`/`cellValue`/`cellEmpty`, de weigeringen (de zin van
+  RGS-237 vervangen door die van RGS-364, RGS-365 en RGS-380), de getuigen (`ScenarioCellTest`, elf goldens);
+  "Semantic tokens", "A test document": de cel in een bullet.
+
+#### De goldens
+
+Geen bestaande invoer, verwachting of `ir.json` veranderd; alleen `scenario.rgs` erbij, die de met de hand geschreven cases
+van stap 3, 5 en 6 in RegelSpraak schrijft.
+
+- `jutterswet-strandseizoen/scenario.rgs`: twee scenario's, `twee stranden` (J1, zes invoercellen, 11 verwachtingen, waarvan
+  2 `cellValue`) en `lege cellen` (J2 met twee invoercellen, J3 zonder, 21 verwachtingen, waarvan 4 `cellValue`). Vormen:
+  naast elkaar (`in voorjaar op noord`), omgekeerd (`op noord in zomer`), met "en" (`op noord en in najaar`), met ","
+  (`in voorjaar, op zuid`, `op zuid, uit rivier`), na `uit` (`op noord uit zee`, `uit rivier en op noord`), en in de
+  verwachtingen `uit zee en op zuid`, `op zuid en uit rivier`.
+- `jutterswet-seizoenboeking/scenario.rgs`: drie scenario's (`voorjaar en zomer` 9 verwachtingen, `zonder invoer` 6,
+  `invoer in een geschreven cel` 8), cellen van één dimensie als invoer, `cellValue` en één `cellEmpty`.
+
+Gate 16 regenereert de 5 case-bestanden en beide `ir.json` byte-gelijk. Ref, clingo en beide Drools-branches spelen de
+cases al sinds stap 4b en 6 (gates 5, 6, 12 en 17 ongewijzigd groen: gate 12 306 gespeeld op beide takken).
+
+#### Rood en mutaties
+
+Rood op `b7e3a9611`, in een `git worktree add --detach` met de nieuwe testbestanden en de twee `scenario.rgs` erin
+(opgeruimd; `logs/stapD-red-tests-2.log`, `-3.log`): van `ScenarioCellTest` 12 van 13 rood, elk op RGS-236 of RGS-237
+waar een cel of RGS-364/365/380 verwacht werd; groen bleef `a_name_with_a_label_of_no_dimension_names_no_attribute`, een pin
+van bestaand gedrag (RGS-236 voor "in winter op noord"). Rood ook de omgedraaide test in `ScenarioTypeGateTest` en
+`SemanticTokensCorpusTest.every_golden_test_document_is_covered_and_resolved` (60 problemen: de ERRORs en de `unresolved`
+cellen van de twee goldens). De goldens: gate 16 op de frontend van `b7e3a9611` `LOWER FAIL` voor beide (30 RGS-236,
+`logs/stapD-red-golden-1.log`). Groen: de drie klassen 69/69, de hele frontendsuite 1412 (`logs/stapD-fe-suite-1.log`,
+vóór de laatste getuige) en 1415 in gate 10.
+
+Mutaties, één voor één in een `git worktree add --detach` van `9d2f091e7` met `git checkout -- .` ertussen (opgeruimd),
+recept `/Users/yeb/Developer/uchar-dev/werk/dimensions-remaining/mutants/stapD/mutateD.py` en `runD.sh`, uitkomst
+`logs/stapD-mutants-2.log` (`-1.log` liep met de verkeerde werkmap voor de corpusgetuige en is afgebroken); per mutant
+`ScenarioCellTest`, `ScenarioTypeGateTest`, `SemanticTokensCorpusTest`, bij C1 en E1 ook gate 16. Niet gecommit:
+
+| | bewaking | mutatie | rood |
+|---|---|---|---|
+| G1 | labels na een `van`-segment | `naamVervolgDeel` zonder lus | `the_labels_are_read_in_every_form_of_a_cell` (syntaxfout bij "van vorig boekjaar en") |
+| B1 | kaal gedimensioneerd attribuut geweigerd | als scalair gelezen | `a_dimensioned_attribute_without_its_labels…`, `ScenarioTypeGateTest.a_dimensioned_attribute_names_a_label…` |
+| C1 | een naam leest als cel | geen cellezing | 11 celtests, `SemanticTokensCorpusTest` (30 problemen); gate 16 `LOWER FAIL` voor beide goldens |
+| A1 | RGS-365 | de eerste van twee cellen | `a_cell_that_fits_two_ways_is_refused` |
+| L1 | langste attribuut wint | alle volledige lezingen tellen | `the_longest_attribute_wins` (RGS-365) |
+| P1 | RGS-364 bij een gedeeltelijke lezing | RGS-236 | `a_cell_without_a_label…`, `a_partial_cell_is_refused…` |
+| P2 | gedeeltelijk: langste attribuut | eerste lezing | `a_partial_cell_is_refused…` (`attribute=buit`) |
+| P3 | gedeeltelijk: minste ontbrekende dimensies | geen voorrang | `a_partial_cell_is_refused…` (`dimension=glans` erbij) |
+| M1 | samenvoegen per cel | hele attribuut vervangen | `the_cells_of_an_attribute_merge_cell_by_cell`, `a_situation_gives_its_cells…` |
+| M2 | kopie bij samenvoegen | lijst van het blok aangevuld | `a_situation_gives_its_cells_to_every_scenario_alike` |
+| I1 | dezelfde cel op haar plaats | altijd achteraan | `the_cells_of_an_attribute_merge_cell_by_cell` |
+| R1 | RGS-380 op invoer | periode genegeerd | `a_cell_has_no_period` |
+| R2 | RGS-380 op `altijd leeg` | door naar de tijdlijntoets | `a_cell_has_no_period` (RGS-273) |
+| R3 | RGS-380 op een periodeverwachting | periode genegeerd | `a_cell_has_no_period` |
+| E1 | `cellEmpty` met labels | zonder labels geschreven | 3 celtests; gate 16 `DIFF` op `jutterswet-seizoenboeking/case2-zonder-invoer.json` |
+| S1 | semantische tokens van een cel | als één naam | `the_semantic_tokens_read_a_cell…`, `SemanticTokensCorpusTest` (30 problemen) |
+
+#### Aangepaste verwachtingen, pins en vloeren (oud → nieuw)
+
+- `ScenarioTypeGateTest.a_dimensioned_attribute_has_no_case_form` → `a_dimensioned_attribute_names_a_label_of_every_dimension`,
+  door de kaart omgedraaid. Oud: `- het seizoensgewicht is 3,00 kg` geeft "het attribuut 'seizoensgewicht' is
+  gedimensioneerd, en een casebestand draagt geen dimensiecoördinaten" (RGS-237). Nieuw: dezelfde regel geeft "'seizoensgewicht'
+  noemt geen label van de dimensie 'seizoen' van het gedimensioneerde attribuut 'seizoensgewicht'; een cel noemt van elke
+  dimensie één label" (RGS-364). De bewaking (geen kaal gedimensioneerd attribuut in een casebestand) blijft.
+- RGS-237 ingetrokken (register en catalogi); RGS-380 nieuw.
+- Geen pin of vloer veranderd. Gate 16 `EXPECTED_MIN_SCENARIO_GOLDENS=7` en `EXPECTED_MIN_SCENARIO_CASES=31` blijven (vloeren,
+  geen gelijkheden): gemeten 38 → 40 goldens en 131 → 136 case-bestanden. `SemanticTokensCorpusTest`-vloeren ongewijzigd
+  (groei). Tellingen: gate 10 1402 → 1415 tests, 163 rgs-goldens, 359 codes, 377 → 380 plaatsen; gates 2–9, 11–15 en 17
+  gelijk aan de laatste run van stap 6 (gate 4 1053 cases, gate 5 1850 voorbeelden en 982 cases, gate 12 306 gespeeld,
+  gate 17 306 goldens en 852 case-bestanden, 6891 lezingen, afwijkingen 0).
+
+#### Voorgestelde tekst voor CONSTRUCTS (hoofdsessie)
+
+Rij 28, na de noot van stap 6:
+
+> **Landed (stap D van `dimensions-remaining`, 2026-11-02, `e41193929`, `9bf0fbf31`, `9d2f091e7`):** de scenariolaag van de
+> RegelSpraak-frontend schrijft een cel als invoer en als verwachting, in de vormen waarin een regel een cel leest (labels
+> vóór het attribuut zonder voorzetsel, erachter na hun voorzetsel, naast elkaar of verbonden met "en" en ","); `--cases`
+> zet ze om in `cells`, `cellValue` en `cellEmpty`. Een gedimensioneerd attribuut zonder label van elke dimensie of met
+> labels die op twee cellen passen krijgt de weigering van een regel (RGS-364, RGS-365), een cel met een periode of
+> tijdlijn RGS-380; RGS-237 is ingetrokken. `jutterswet-strandseizoen` en `jutterswet-seizoenboeking` dragen een
+> `scenario.rgs` die hun cases en `ir.json` byte-gelijk regenereert (gate 16).
+
+#### Voorlopige besluiten
+
+1. **RGS-364 en RGS-365 ook in de scenariolaag**, met het kader `scenario: `: het is hetzelfde gebrek als in een regel, met
+   dezelfde zin en parameters. Een kaal gedimensioneerd attribuut krijgt één RGS-364 per dimensie, waar het in een regel
+   aan de verifier wordt gelaten (WF-125): een casebestand kan het niet dragen. RGS-237 ingetrokken in plaats van herschreven:
+   zijn zin klopt niet meer, en een code krijgt geen andere betekenis.
+2. **Eén nieuwe code RGS-380** voor een periode of tijdlijn op een cel, ongeacht het raster van het attribuut: in een
+   document dat de verifier aanneemt heeft een gedimensioneerd attribuut geen tijdlijn (WF-125), maar de frontend weigert
+   de declaratie met beide niet, en de laag mag dan geen tijdlijn op een gedimensioneerd attribuut schrijven. **Nummer 380**
+   laat 369–379 vrij voor stap A in hetzelfde register (gaten zijn toegestaan; zoals stap 5 vanaf 370 nummerde);
+   hernummeren bij de samenvoeging mag.
+3. **De keuze tussen cellezingen gespiegeld in `ScenarioResolver.member`**, niet uit `ExpressionBuilder.dimensionCell`
+   gehaald: zo raakt stap D `ExpressionBuilder` niet, waar stap A werkt. De spiegel is bewaakt door
+   `the_longest_attribute_wins` en `a_partial_cell_is_refused_for_what_its_best_reading_leaves_out` (L1, P2, P3). Bij de
+   samenvoeging kan de keuze één methode worden.
+4. **Samenvoegen per cel, ook binnen een blok**, zoals voor een scalair attribuut: dezelfde cel twee keer is de laatste
+   waarde op de eerste plaats, dus een toetsdocument schrijft nooit een dubbele cel (EF-035 ontstaat er niet).
+5. **Eigen soorten `CELL_VALUE` en `CELL_EMPTY`** met `labels` op `Expectation`, en `cells` als derde variant van
+   `AttributeValue`, in plaats van `ATTRIBUTE_VALUE` met labels: een consument die op de soort schakelt, neemt een cel dan
+   niet voor een attribuut.
+6. **Een celwaarde wordt getypeerd tegen het attribuut** en heet in een typeerfout "het attribuut '<a>'" (geen nieuw
+   `PART` voor een cel).
+7. **Twee goldens in plaats van één**: `strandseizoen` draagt de vormen over twee dimensies, `seizoenboeking` de
+   `cellEmpty`.
+
+#### Wat niet lukte of buiten stap D bleef
+
+- Niets mislukt. Eén runner-fout gecorrigeerd: de eerste mutatierun las `SemanticTokensCorpusTest` uit de werkmap van de
+  hoofdcheckout; afgebroken op PID, herhaald vanuit de frontendmap (`-2.log` geldt).
+- Grenzen die blijven (de vormen die een regel ook niet leest): labels vóór het attribuut met "en"; een cel over een rol
+  (een situatie kent alleen eigen attributen); een attribuut met de naam van een eenheidswoord na een lidwoord.
+- **Samenvoeging met stap A.** Breidt stap A `jutterswet-strandseizoen` uit (de opdracht van A noemt die golden), dan
+  regenereert de `scenario.rgs` de nieuwe case-bestanden niet meer en meldt gate 16 `DIFF`/`SET DIFF` met naam: de nieuwe
+  verwachtingen moeten dan als bullets in `scenario.rgs`. Verder mogelijke raakpunten: `corpus/golden/README.md`, het
+  register en de catalogi (RGS-380 naast A's codes), `grammar/DIVERGENCES.md` (andere secties).
+- **Distributie (pin-bump).** `SituationToRequest` en `ScenarioData` (service) lezen van een `AttributeValue` alleen
+  `value()` en `timeline()`; bij een cel is `value()` null. `GoldenOverQuarkusTest.compare` schakelt op de soort zonder
+  `CELL_VALUE`/`CELL_EMPTY` (een statement-switch: compileert, slaat de verwachting over). Bij de pin-bump moet de
+  distributie een cel dragen of als `NonPortable` weigeren. Gecompileerd tegen de nieuwe records is niet gemeten; de
+  distributie gebruikt alleen accessors, geen constructor van `AttributeValue` of `Expectation` (grep).
+
+#### `make gates`
+
+Eén run op `9d2f091e7` (`logs/stapD-gates-1.log`, `out/gates/20261102-182340/summary.txt`), gestart nadat de gate-run van
+de toolchain-bouwer klaar was:
+
+```
+start 2026-11-02 18:23:40 9d2f091e7 card/dimensions-scenario
+ocaml rc=0 6s ocaml-build: rebuilt (no stamp _build/.gates-built; 6s)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 9s drools-jar: rebuilt (no shaded jar under backends/drools/target; 9s)
+01-self-contained rc=0 2s
+02-ir-schema rc=0 132s
+04-case-schema rc=0 9s
+03-verifier rc=0 39s
+05-oracle rc=0 22s
+06-clingo rc=0 267s
+07-noop rc=0 13s
+08-red rc=0 164s
+09-catala rc=0 6s
+10-regelspraak rc=0 228s
+11-toka-parity rc=0 221s
+12-drools rc=0 321s
+13-reftype rc=0 273s
+14-flogic rc=0 3s
+15-graph rc=0 47s
+16-scenario rc=0 43s
+17-readings rc=0 240s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-02 18:29:10 330s red=0
+```
+
+Uit de gate-logs: gate 10 `check-rgs-codes` 359 codes, 380 plaatsen; JUnit 1415 tests, 163 rgs-goldens; gate 16 40
+scenario-goldens, 136 case-bestanden en hun `ir.json` byte-gelijk; gate 11 29 PASS in ref en clingo; gate 12 299 codes;
+gate 17 306 goldens en 852 case-bestanden vergeleken, afwijkingen 0. Niet gemerged, niet gepusht; `git status --short` leeg.
