@@ -49,6 +49,22 @@ type outcome = {
   fault : fault option;
 }
 
+module Key = Map.Make (struct
+  type t = string * string
+
+  let compare = compare
+end)
+
+(* What a target held before any form wrote it: its value in the input world, or
+   what the creation that made the object gave it *)
+type held = Held_value of Value.t | Held_timeline of Timeline.t option
+
+(* The form whose write a target's current value is (RUNTIME-SEMANTICS ch. 5.2,
+   6.1). Where that form does not decide on its next evaluation the target gets
+   [base] back ([release]), so at a fixpoint a value stands only where a form
+   that decides there wrote it, whichever states the session passed. *)
+type owner = { owner_form : string; initialisation : bool; base : held }
+
 type t = {
   instances : instance SMap.t; (* by label *)
   order : string list; (* case declaration order, for determinism *)
@@ -56,12 +72,16 @@ type t = {
   outcomes : outcome list; (* only those with a deposit or a fault, in order of first arrival *)
   evaluating : (string * string * string option) list;
       (* the deposits of the evaluation under way, newest first; [close_evaluation] ends it *)
-  init_written : (string * string) list;
-      (* (label, norm attribute) whose current value an initialisation wrote
-         and no other writer has changed since (RUNTIME-SEMANTICS ch. 5.4):
-         the initialisation's own write does not switch its guard off, so
-         its value is re-evaluated under freshness like any attribute write,
-         while a value the case supplied or another writer placed does *)
+  owners : owner Key.t;
+      (* by (label, norm attribute): the form whose write the current value
+         or timeline is. An initialisation's own write does not switch its
+         guard off (RUNTIME-SEMANTICS ch. 5.4), so its value is re-evaluated
+         under freshness like any attribute write, while a value the case
+         supplied or another writer placed does *)
+  holders : (string list * bool) Key.t;
+      (* by (label, norm characteristic): the attributions that grant it, and
+         whether it held before any of them did. It holds while one of them
+         decides, or where it held before *)
   mints : (int * int) SMap.t;
       (* by label, for every minted instance: the stratum of the creation
          that minted it and its creation depth in that stratum, recorded at
@@ -70,7 +90,8 @@ type t = {
 }
 
 let empty =
-  { instances = SMap.empty; order = []; channel = []; outcomes = []; evaluating = []; init_written = []; mints = SMap.empty }
+  { instances = SMap.empty; order = []; channel = []; outcomes = []; evaluating = []; owners = Key.empty;
+    holders = Key.empty; mints = SMap.empty }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
@@ -147,17 +168,35 @@ let store_attr w ~label ~attr:name ~decl v =
   if Arith.equal (attr i name) v then (w, false)
   else (update w { i with attrs = SMap.add (norm name) v i.attrs }, true)
 
-(* A write by any writer but an initialisation takes the target out of
-   [init_written], also where it writes the value that stands: the value is that
-   writer's then, whichever fired first, and the initialisation does not decide
-   (ch. 5.4). That counts as a change: the guard of the initialisation reads it,
-   so its evaluation is not current until it has run again. *)
+let held_by_initialisation w key =
+  match Key.find_opt key w.owners with Some o -> o.initialisation | None -> false
+
+(* A write that no form holds, an allocation's or a creation's: the target is
+   nobody's to give back. A write by any writer but an initialisation takes the
+   target from the initialisation, also where it writes the value that stands:
+   the value is that writer's then, whichever fired first, and the
+   initialisation does not decide (ch. 5.4). That counts as a change: the guard
+   of the initialisation reads it, so its evaluation is not current until it
+   has run again. *)
 let write_attr w ~label ~attr:name ~decl v =
   let key = (label, norm name) in
-  let was_initialisation = List.mem key w.init_written in
-  let w = { w with init_written = List.filter (( <> ) key) w.init_written } in
+  let was_initialisation = held_by_initialisation w key in
+  let w = { w with owners = Key.remove key w.owners } in
   let w, changed = store_attr w ~label ~attr:name ~decl v in
   (w, changed || was_initialisation)
+
+(* what the target held before the form that holds it now, or now *)
+let base_of w key ~now = match Key.find_opt key w.owners with Some o -> o.base | None -> now
+
+(* The write of [form], a rule or a defaults group that decides: as [write_attr],
+   and the value is [form]'s until another writer changes it or [form] no longer
+   decides ([release]) *)
+let write_attr_by w ~form ~label ~attr:name ~decl v =
+  let key = (label, norm name) in
+  let was_initialisation = held_by_initialisation w key in
+  let base = base_of w key ~now:(Held_value (attr (get w label) name)) in
+  let w, changed = store_attr w ~label ~attr:name ~decl v in
+  ({ w with owners = Key.add key { owner_form = form; initialisation = false; base } w.owners }, changed || was_initialisation)
 
 (* The attribute values [after] holds and [before] did not, as (label, norm
    attribute, value) in case declaration order; an instance [before] lacks
@@ -178,18 +217,23 @@ let changed_attrs ~before ~after =
 (* An initialisation's guard (ch. 5.4): the target holds nothing, or nothing
    but what an initialisation wrote to it. *)
 let init_may_write w ~label ~attr:name =
-  attr (get w label) name = Value.Empty || List.mem (label, norm name) w.init_written
+  attr (get w label) name = Value.Empty || held_by_initialisation w (label, norm name)
 
-(* The write of an initialisation: as [write_attr], and a value it stores stays
-   its own until another writer changes it. Storing nothing holds no target: the
+(* The write of the initialisation [form]: as [write_attr_by], and the value it
+   stores is held as an initialisation's. Storing nothing holds no target: the
    guard admits an empty target anyway, and a held empty target would make every
    other writer's empty write a change, so the session would never settle. *)
-let write_attr_init w ~label ~attr:name ~decl v =
-  let w, changed = store_attr w ~label ~attr:name ~decl v in
+let write_attr_init w ~form ~label ~attr:name ~decl v =
   let key = (label, norm name) in
-  let others = List.filter (( <> ) key) w.init_written in
-  let holds = attr (get w label) name <> Value.Empty in
-  ({ w with init_written = (if holds then key :: others else others) }, changed)
+  let base = base_of w key ~now:(Held_value (attr (get w label) name)) in
+  let w, changed = store_attr w ~label ~attr:name ~decl v in
+  let owners =
+    if attr (get w label) name <> Value.Empty then
+      Key.add key { owner_form = form; initialisation = true; base } w.owners
+    else if held_by_initialisation w key then Key.remove key w.owners
+    else w.owners
+  in
+  ({ w with owners }, changed)
 
 (* a timeline write (ch. 3.11, the pro-rata target): idempotence
    compares segment lists exactly — same bounds, value-equal payloads.
@@ -208,12 +252,68 @@ let write_timeline w ~label ~attr:name (tl : Timeline.t) =
   | Some old when same old tl -> (w, false)
   | _ -> (update w { i with tls = SMap.add (norm name) tl i.tls }, true)
 
-(* characteristics are monotone within one evaluation (ch. 5.3):
-   default false, only ever set true *)
+(* the timeline write of [form], held as [write_attr_by] holds a value *)
+let write_timeline_by w ~form ~label ~attr:name (tl : Timeline.t) =
+  let key = (label, norm name) in
+  let base = base_of w key ~now:(Held_timeline (timeline (get w label) name)) in
+  let w, changed = write_timeline w ~label ~attr:name tl in
+  ({ w with owners = Key.add key { owner_form = form; initialisation = false; base } w.owners }, changed)
+
+(* [form] does not decide on [label]: where the target carries its write, the
+   target gets back what it held before any form wrote it (RUNTIME-SEMANTICS
+   ch. 5.2, 6.1). A value the form wrote on a state the session passes would
+   otherwise stand while its condition is false or its value leeg, and the end
+   state would depend on the order of the rules. *)
+let release w ~form ~label ~attr:name =
+  let key = (label, norm name) in
+  match Key.find_opt key w.owners with
+  | Some { owner_form; base; _ } when String.equal owner_form form -> (
+      let w = { w with owners = Key.remove key w.owners } in
+      let i = get w label in
+      match base with
+      | Held_value v ->
+          if Arith.equal (attr i name) v then (w, false)
+          else (update w { i with attrs = SMap.add (norm name) v i.attrs }, true)
+      | Held_timeline (Some before) -> write_timeline w ~label ~attr:name before
+      | Held_timeline None ->
+          if timeline i name = None then (w, false)
+          else (update w { i with tls = SMap.remove (norm name) i.tls }, true))
+  | _ -> (w, false)
+
+(* the characteristic set, held by no attribution: the case input's or a
+   creation's; [set_char_by] holds it for an attribution *)
 let set_char w ~label ~char =
   let i = get w label in
   if has_char i char then (w, false)
   else (update w { i with chars = norm char :: i.chars }, true)
+
+(* The attribution [form] decides on [label]: the characteristic holds, and
+   holds while one of the attributions that grant it decides (RUNTIME-SEMANTICS
+   ch. 5.3) *)
+let set_char_by w ~form ~label ~char =
+  let key = (label, norm char) in
+  let forms, before =
+    match Key.find_opt key w.holders with Some h -> h | None -> ([], has_char (get w label) char)
+  in
+  let w, changed = set_char w ~label ~char in
+  let forms = if List.mem form forms then forms else form :: forms in
+  ({ w with holders = Key.add key (forms, before) w.holders }, changed)
+
+(* The attribution [form] does not decide on [label]: the characteristic is
+   withdrawn where no other attribution grants it and it did not hold before *)
+let release_char w ~form ~label ~char =
+  let key = (label, norm char) in
+  match Key.find_opt key w.holders with
+  | Some (forms, before) when List.mem form forms -> (
+      match List.filter (fun f -> not (String.equal f form)) forms with
+      | _ :: _ as rest -> ({ w with holders = Key.add key (rest, before) w.holders }, false)
+      | [] ->
+          let w = { w with holders = Key.remove key w.holders } in
+          if before then (w, false)
+          else
+            let i = get w label in
+            (update w { i with chars = List.filter (fun c -> c <> norm char) i.chars }, true))
+  | _ -> (w, false)
 
 (* role links are naturally idempotent (ch. 5.5): linking an
    already-present target is a no-op. [keys] is the read-preference

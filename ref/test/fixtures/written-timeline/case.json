@@ -1,0 +1,130 @@
+{
+  "format" : "uchar-case-v0",
+  "asOfDate" : null,
+  "input" : {
+    "instances" : [ {
+      "label" : "J1",
+      "objectType" : "Jutter",
+      "attributes" : {
+        "jaardeel" : {
+          "timeline" : [ {
+            "from" : "2024-01-01",
+            "to" : "2025-01-01",
+            "value" : {
+              "number" : "4"
+            }
+          } ]
+        },
+        "score" : {
+          "number" : "10"
+        },
+        "jaartarief" : {
+          "timeline" : [ {
+            "from" : "2024-01-01",
+            "to" : "2025-01-01",
+            "value" : {
+              "number" : "366"
+            }
+          }, {
+            "from" : "2025-01-01",
+            "to" : "2026-01-01",
+            "value" : {
+              "number" : "365"
+            }
+          } ]
+        },
+        "teller" : {
+          "number" : "3"
+        }
+      },
+      "roles" : { },
+      "characteristics" : [ ],
+      "characteristicTimelines" : {
+        "borgplichtig" : [ {
+          "from" : "2024-03-01",
+          "to" : "2025-03-01"
+        } ]
+      }
+    }, {
+      "label" : "J2",
+      "objectType" : "Jutter",
+      "attributes" : {
+        "score" : {
+          "number" : "2"
+        },
+        "jaartarief" : {
+          "timeline" : [ {
+            "from" : "2024-01-01",
+            "to" : "2025-01-01",
+            "value" : {
+              "number" : "366"
+            }
+          }, {
+            "from" : "2025-01-01",
+            "to" : "2026-01-01",
+            "value" : {
+              "number" : "365"
+            }
+          } ]
+        },
+        "teller" : {
+          "number" : "8"
+        }
+      },
+      "roles" : { },
+      "characteristics" : [ ],
+      "characteristicTimelines" : {
+        "borgplichtig" : [ {
+          "from" : "2024-03-01",
+          "to" : "2025-03-01"
+        } ]
+      }
+    } ],
+    "parameters" : { }
+  },
+  "expected" : [ {
+    "kind" : "attributeValue",
+    "label" : "J1",
+    "attribute" : "teller",
+    "value" : {
+      "number" : "10"
+    }
+  }, {
+    "kind" : "attributeTimeline",
+    "label" : "J1",
+    "attribute" : "jaardeel",
+    "timeline" : [ {
+      "from" : "2024-01-01",
+      "to" : "2025-01-01",
+      "value" : {
+        "number" : "4"
+      }
+    } ]
+  }, {
+    "kind" : "attributeValue",
+    "label" : "J2",
+    "attribute" : "teller",
+    "value" : {
+      "number" : "2"
+    }
+  }, {
+    "kind" : "attributeTimeline",
+    "label" : "J2",
+    "attribute" : "jaardeel",
+    "timeline" : [ {
+      "from" : "2024-01-01",
+      "to" : "2025-01-01",
+      "value" : {
+        "number" : "306"
+      }
+    }, {
+      "from" : "2025-01-01",
+      "to" : "2026-01-01",
+      "value" : {
+        "number" : "59"
+      }
+    } ]
+  }, {
+    "kind" : "consistent"
+  } ]
+}

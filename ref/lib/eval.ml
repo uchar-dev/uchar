@@ -2963,7 +2963,7 @@ let clip_window window result =
   | None -> result
   | Some (lo, hi) -> if hi <= lo then [] else Timeline.clip result [ (lo, hi) ]
 
-let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
+let run_pro_rata ?window env w (self : World.instance) ~form ~ot ~attr value_node =
   let ot_decl = object_type env ot in
   match value_node with
   | Function_call
@@ -3031,8 +3031,8 @@ let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
         result = []
         && List.mem (norm ot, norm attr)
              (Ir_v0.Desugar.standing_temporal_targets env.doc)
-      then (w, false)
-      else World.write_timeline w ~label:self.label ~attr result
+      then World.release w ~form ~label:self.label ~attr
+      else World.write_timeline_by w ~form ~label:self.label ~attr result
   | Function_call
       { kind = Day_count; call_arguments = [];
         filter = Some c; grain = Some g; empty_fallback = None; dimension_selections = None; _ }
@@ -3074,8 +3074,8 @@ let run_pro_rata ?window env w (self : World.instance) ~ot ~attr value_node =
         result = []
         && List.mem (norm ot, norm attr)
              (Ir_v0.Desugar.standing_temporal_targets env.doc)
-      then (w, false)
-      else World.write_timeline w ~label:self.label ~attr result
+      then World.release w ~form ~label:self.label ~attr
+      else World.write_timeline_by w ~form ~label:self.label ~attr result
   | _ ->
       Value.faultc "REF-011"
         "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a \
@@ -3241,7 +3241,15 @@ let run_rule ?only env world (r : resolved_rule) =
           | Some Characteristic_attribution -> []
           | _ -> Ir_v0.Desugar.absorbed_on env.doc ~otype:ot ~attr
         in
-        over_subjects ~except ?only env world ~form:r.rr_pointer ~otype:ot ~rule:(rule_name r) (fun w self err ->
+        let form = r.rr_pointer in
+        over_subjects ~except ?only env world ~form ~otype:ot ~rule:(rule_name r) (fun w self err ->
+            (* where the rule does not decide, what it wrote on an earlier
+               state is given back (ch. 5.2, 6.1) *)
+            let release () =
+              match r.rr_presentation with
+              | Some Characteristic_attribution -> World.release_char w ~form ~label:self.label ~char:attr
+              | _ -> World.release w ~form ~label:self.label ~attr:member
+            in
             (* an initialisation whose guard blocks it does not decide, so neither
                its condition nor its value is evaluated (ch. 5.4, 7.1, 7.3) *)
             let blocked =
@@ -3256,22 +3264,23 @@ let run_rule ?only env world (r : resolved_rule) =
               | None, Some c -> eval_cond env w self ~err c
               | None, None -> true
             in
-            if not fire then (w, false)
+            if not fire then release ()
             else
               match r.rr_presentation with
               (* the value is the constant waar, checked before any subject
                  was taken ([characteristic_value_constant_true]) *)
-              | Some Characteristic_attribution -> World.set_char w ~label:self.label ~char:attr
+              | Some Characteristic_attribution -> World.set_char_by w ~form ~label:self.label ~char:attr
               | Some (Equation | Calculation) when temporal_target ->
                   let window = Option.map (window_of w self ~err) clip in
-                  run_pro_rata ?window env w self ~ot ~attr (req "RuleVersion.value" r.value_node)
+                  run_pro_rata ?window env w self ~form ~ot ~attr (req "RuleVersion.value" r.value_node)
               | Some (Equation | Calculation) ->
                   let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
                   (* ch. 7.8: on a standing target — and on a ch. 7.7
                      desugaring-domain target, whose defaults reading ref
                      replays natively — the rule decides like a default: a
-                     leeg evaluation writes nothing (the init/input
-                     decides); channel deposits of the evaluation
+                     leeg evaluation writes nothing and gives back what the
+                     rule wrote before (the init/input decides); channel
+                     deposits of the evaluation
                      persist as in any ordinary evaluation *)
                   if
                     v = Value.Empty
@@ -3279,9 +3288,9 @@ let run_rule ?only env world (r : resolved_rule) =
                           (Ir_v0.Desugar.standing_targets env.doc)
                        || List.mem (norm ot, norm member)
                             (Ir_v0.Desugar.desugared_targets env.doc))
-                  then (w, false)
+                  then release ()
                   else
-                    World.write_attr w ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr) v
+                    World.write_attr_by w ~form ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr) v
               | Some Initialisation ->
                   (* writes only where the target is empty (ch. 5.4) — apart
                      from its own write ([blocked] above). A case input and a
@@ -3293,7 +3302,7 @@ let run_rule ?only env world (r : resolved_rule) =
                      the initialisation computed against a read that another
                      rule had not yet written: the document order decided *)
                   let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
-                  World.write_attr_init w ~label:self.label ~attr:member
+                  World.write_attr_init w ~form ~label:self.label ~attr:member
                     ~decl:(attr_decl env ~otype:ot ~attr) v
               | None -> Value.fault "rule %S has no kind" (rule_name r))
     | _ -> Value.faultc ~params:[ ("rule", (rule_name r)) ] "REF-012" "rule %S: unsupported target shape" (rule_name r)
@@ -3817,18 +3826,26 @@ let run_defaults_group ?only env world ~world0 ~owner
           in
           decide ~env_at ~path:[] l.defaults
       in
+      (* where the group writes nothing, what it wrote on an earlier state is
+         given back (ch. 5.2, 6.1) *)
+      let release () =
+        match l0.pd_characteristic with
+        | Some k -> World.release_char w ~form ~label:self.label ~char:k
+        | None -> World.release w ~form ~label:self.label ~attr:(req "defaults attribute" l0.pd_attribute)
+      in
       match reconcile ~path:[] (List.map member_decision members) with
-      | Undecided -> (w, false)
+      | Undecided -> release ()
       | Conflict rule ->
           (* over-determination (ch. 7.2/7.9): no write, one channel fact —
              bare-keyed at the root, path-keyed for a nested exception group *)
-          (World.insert_error w ~rule ~subject:self.label ~code:(Some "EF-027"), false)
+          let w, changed = release () in
+          (World.insert_error w ~rule ~subject:self.label ~code:(Some "EF-027"), changed)
       | Decided (Char_dec true) ->
-          World.set_char w ~label:self.label ~char:(req "defaults characteristic" l0.pd_characteristic)
-      | Decided (Char_dec false) -> (w, false)
+          World.set_char_by w ~form ~label:self.label ~char:(req "defaults characteristic" l0.pd_characteristic)
+      | Decided (Char_dec false) -> release ()
       | Decided (Attr_dec v) ->
           let a = req "defaults attribute" l0.pd_attribute in
-          World.write_attr w ~label:self.label ~attr:a
+          World.write_attr_by w ~form ~label:self.label ~attr:a
             ~decl:(attr_decl env ~otype:owner ~attr:a)
             v)
 

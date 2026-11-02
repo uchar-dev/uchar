@@ -10903,6 +10903,165 @@ let () =
     (case_of ~attrs:[] ~chars:[]
        (expected [ value "toeslag" 5; on_channel "standaardtoeslag" "EF-031" ]))
 
+(* WV-6.1-written (ch. 6.1, "A write is read at the fixpoint"; ch. 5.3, 5.7): a
+   value, a timeline or a characteristic stands at the fixpoint only where a
+   form that decides there wrote it; a form that does not decide gives back what
+   the target held before it wrote. Each document runs in every order of its
+   rules, so the reader of the meldingsgetal also runs on the input 3 before the
+   rule meldingsgetal replaces it by the aantal getuigen. *)
+let () =
+  let attribute name = Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} name number_json in
+  let own name =
+    Printf.sprintf {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "Vondst", "source": {"snippet": "zijn %s"}}|}
+      name name
+  in
+  let number i =
+    Printf.sprintf {|{"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}|} i number_json i
+  in
+  let compare_with op name i =
+    Printf.sprintf {|{"node": "Comparison", "op": "%s", "left": %s, "right": %s, "source": {"snippet": "%s %s %d"}}|} op
+      (own name) (number i) name op i
+  in
+  let spoedeisend =
+    {|{"node": "CharacteristicCheck", "characteristic": "spoedeisend", "negated": false, "source": {"snippet": "hij spoedeisend is"}}|}
+  in
+  let rule ~name ~attribute:target ~value ?condition presentation =
+    ( name,
+      Printf.sprintf
+        {|{"node": "Rule", "name": "%s", "versions": [{"validity": {"node": "Validity"}, "target": %s, "value": %s%s, "initialisation": false, "presentation": "%s"}]}|}
+        name (own target) value
+        (match condition with None -> "" | Some c -> Printf.sprintf {|, "condition": %s|} c)
+        presentation )
+  in
+  let attribution ~name condition =
+    ( name,
+      Printf.sprintf
+        {|{"node": "Rule", "name": "%s", "versions": [{"validity": {"node": "Validity"}, "target": {"node": "AttributeReference", "attribute": "spoedeisend", "subjectType": "Vondst", "source": {"snippet": "spoedeisend"}}, "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}, "source": {"snippet": "waar"}}, "condition": %s, "initialisation": false}]}|}
+        name condition )
+  in
+  let count = rule ~name:"meldingsgetal" ~attribute:"meldingsgetal" ~value:(own "aantal getuigen") "calculation" in
+  let premium = rule ~name:"spoedpremie" ~attribute:"spoedpremie" ~value:(number 1) ~condition:(compare_with "less" "meldingsgetal" 5) "equation" in
+  (* the group on the wachtpremie: 9 where the aantal getuigen exceeds 50, else the spoedpremie *)
+  let group =
+    Printf.sprintf
+      {|{"node": "PrioritizedDefaults", "name": "wachtpremie", "subject": "Vondst", "attribute": "wachtpremie", "defaults": [{"node": "Default", "name": "volle wachtpremie", "justification": %s, "consequence": %s}, {"node": "Default", "name": "wachtpremie", "justification": {"node": "Compound", "quantifier": "all", "threshold": 0, "parts": [], "source": {"snippet": "altijd"}}, "consequence": %s}], "validity": {"node": "Validity"}}|}
+      (compare_with "greater" "aantal getuigen" 50) (number 9) (own "spoedpremie")
+  in
+  let doc ?(groups = []) rule_defs =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten", "attributes": [%s], "characteristics": [{"node": "Characteristic", "name": "spoedeisend", "kind": "adjectival"}]}], "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [], "prioritizedDefaults": [%s]}, "diagnostics": []}|}
+      (String.concat ", " (List.map attribute [ "aantal getuigen"; "meldingsgetal"; "boete"; "spoedpremie"; "wachtpremie" ]))
+      (String.concat ", " (List.map snd rule_defs))
+      (String.concat ", " groups)
+  in
+  let case_of ?(chars = []) attrs expected =
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [{"label": "V1", "objectType": "Vondst", "attributes": {%s}, "roles": {}, "characteristics": [%s]}], "parameters": {}}, "expected": [%s, {"kind": "consistent"}]}|}
+      (String.concat ", " (List.map (fun (a, v) -> Printf.sprintf {|"%s": {"number": "%d"}|} a v) attrs))
+      (String.concat ", " (List.map (Printf.sprintf {|"%s"|}) chars))
+      (String.concat ", " expected)
+  in
+  let value a v = Printf.sprintf {|{"kind": "attributeValue", "label": "V1", "attribute": "%s", "value": {"number": "%d"}}|} a v in
+  let empty a = Printf.sprintf {|{"kind": "attributeEmpty", "label": "V1", "attribute": "%s"}|} a in
+  let urgent present =
+    Printf.sprintf {|{"kind": "%s", "label": "V1", "characteristic": "spoedeisend"}|}
+      (if present then "characteristicPresent" else "characteristicAbsent")
+  in
+  let in_every_order ?groups ident rule_defs case_data =
+    List.iter
+      (fun order ->
+        plays
+          ~ident:(Printf.sprintf "%s [%s]" ident (String.concat ", " (List.map fst order)))
+          ~ir:(doc ?groups order) ~case_data (fun _ -> ()))
+      (orders rule_defs)
+  in
+  (* the golden jutterswet-geschreven-waarde-aan-fixpunt: at the fixpoint the
+     meldingsgetal is 10, so the spoedpremie the rule wrote on the input 3 goes,
+     and the input 7 comes back *)
+  in_every_order "WV-6.1-written-a" [ premium; count ]
+    (case_of [ ("aantal getuigen", 10); ("meldingsgetal", 3) ] [ value "meldingsgetal" 10; empty "spoedpremie" ]);
+  in_every_order "WV-6.1-written-a-input" [ premium; count ]
+    (case_of [ ("aantal getuigen", 10); ("meldingsgetal", 3); ("spoedpremie", 7) ] [ value "spoedpremie" 7 ]);
+  (* a standing reader of that spoedpremie computes leeg at the fixpoint, so it
+     writes nothing and its input 9 comes back (ch. 7.8) *)
+  in_every_order "WV-6.1-written-leeg"
+    [ premium; count; rule ~name:"wachtpremie" ~attribute:"wachtpremie" ~value:(own "spoedpremie") "calculation" ]
+    (case_of [ ("aantal getuigen", 10); ("meldingsgetal", 3); ("wachtpremie", 9) ]
+       [ empty "spoedpremie"; value "wachtpremie" 9 ]);
+  (* a defaults group that decides nothing at the fixpoint gives back its input
+     4; its flanks decide *)
+  in_every_order ~groups:[ group ] "WV-6.1-written-group" [ premium; count ]
+    (case_of [ ("aantal getuigen", 10); ("meldingsgetal", 3); ("wachtpremie", 4) ]
+       [ empty "spoedpremie"; value "wachtpremie" 4 ]);
+  in_every_order ~groups:[ group ] "WV-6.1-written-group-flank" [ premium; count ]
+    (case_of [ ("aantal getuigen", 2); ("meldingsgetal", 8); ("wachtpremie", 4) ]
+       [ value "spoedpremie" 1; value "wachtpremie" 1 ]);
+  in_every_order ~groups:[ group ] "WV-6.1-written-group-high" [ premium; count ]
+    (case_of [ ("aantal getuigen", 60); ("meldingsgetal", 3) ] [ empty "spoedpremie"; value "wachtpremie" 9 ]);
+  (* two writers (ch. 5.7, the golden jutterswet-twee-schrijvers-aan-fixpunt):
+     none decides at the fixpoint, so the input stands; one decides, also with
+     a leeg value *)
+  let two =
+    [ premium;
+      rule ~name:"spoedpremie bij veel meldingen" ~attribute:"spoedpremie" ~value:(own "boete")
+        ~condition:(compare_with "greater" "meldingsgetal" 20) "calculation";
+      count ]
+  in
+  in_every_order "WV-6.1-written-two" two
+    (case_of [ ("aantal getuigen", 10); ("meldingsgetal", 3) ] [ empty "spoedpremie" ]);
+  in_every_order "WV-6.1-written-two-input" two
+    (case_of [ ("aantal getuigen", 10); ("meldingsgetal", 30); ("boete", 4); ("spoedpremie", 7) ]
+       [ value "spoedpremie" 7 ]);
+  in_every_order "WV-6.1-written-two-one" two
+    (case_of [ ("aantal getuigen", 30); ("meldingsgetal", 3); ("boete", 4) ] [ value "spoedpremie" 4 ]);
+  in_every_order "WV-6.1-written-two-leeg" two
+    (case_of [ ("aantal getuigen", 30); ("meldingsgetal", 3); ("spoedpremie", 7) ] [ empty "spoedpremie" ]);
+  (* the characteristic (ch. 5.3, the golden jutterswet-kenmerk-aan-fixpunt): it
+     holds where an attribution decides at the fixpoint or the input sets it *)
+  let chars =
+    [ rule ~name:"spoedpremie" ~attribute:"spoedpremie" ~value:(number 1) ~condition:spoedeisend "equation";
+      attribution ~name:"spoedeisendheid bij weinig meldingen" (compare_with "less" "meldingsgetal" 5);
+      attribution ~name:"spoedeisendheid bij hoge boete" (compare_with "greater" "boete" 10);
+      count ]
+  in
+  in_every_order "WV-6.1-written-characteristic" chars
+    (case_of [ ("aantal getuigen", 10); ("meldingsgetal", 3) ] [ urgent false; empty "spoedpremie" ]);
+  in_every_order "WV-6.1-written-characteristic-other" chars
+    (case_of [ ("aantal getuigen", 10); ("meldingsgetal", 3); ("boete", 20) ] [ urgent true; value "spoedpremie" 1 ]);
+  in_every_order "WV-6.1-written-characteristic-input" chars
+    (case_of ~chars:[ "spoedeisend" ] [ ("aantal getuigen", 10); ("meldingsgetal", 3) ]
+       [ urgent true; value "spoedpremie" 1 ]);
+  (* the strata put every attribution above what it reads (ch. 6.3), so no
+     document above shows an attribution that decides on a state between; the
+     withdrawal is held on the fact base itself *)
+  let x = { World.label = "x"; otype = "Vondst"; attrs = World.SMap.empty; chars = []; left_side = World.SMap.empty;
+            tls = World.SMap.empty; ctls = World.SMap.empty } in
+  let w0 = World.add_instance World.empty x in
+  let holds w = World.has_char (World.get w "x") "spoedeisend" in
+  let w, _ = World.set_char_by w0 ~form:"a" ~label:"x" ~char:"spoedeisend" in
+  let w, _ = World.set_char_by w ~form:"b" ~label:"x" ~char:"spoedeisend" in
+  let w, changed = World.release_char w ~form:"a" ~label:"x" ~char:"spoedeisend" in
+  check "WV-6.1-written-holders-one-left" (holds w && not changed);
+  let w, changed = World.release_char w ~form:"b" ~label:"x" ~char:"spoedeisend" in
+  check "WV-6.1-written-holders-none-left" ((not (holds w)) && changed);
+  let w, _ = World.set_char w0 ~label:"x" ~char:"spoedeisend" in
+  let w, _ = World.set_char_by w ~form:"a" ~label:"x" ~char:"spoedeisend" in
+  let w, changed = World.release_char w ~form:"a" ~label:"x" ~char:"spoedeisend" in
+  check "WV-6.1-written-holders-input" (holds w && not changed);
+  (* the timeline (TmsTimelineWitnessTest B2): the jaardeel the rule computes
+     where the teller is below 5 goes where the teller is 10 at the fixpoint, and
+     the input [2024]=4 comes back, in both orders *)
+  List.iter
+    (fun order ->
+      let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+      let dir = "ref/test/fixtures/written-timeline/" in
+      plays
+        ~ident:("WV-6.1-written-timeline " ^ order)
+        ~ir:(read (dir ^ order ^ "/ir.json"))
+        ~case_data:(read (dir ^ "case.json"))
+        (fun _ -> ()))
+    [ "teller-first"; "jaardeel-first" ]
+
 (* The case reader at a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c):
    the attribute has a value per cell and none of its own, so a scalar or a
    timeline input on it, and an attributeValue, attributeEmpty or

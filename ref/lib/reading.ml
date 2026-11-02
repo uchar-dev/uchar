@@ -422,7 +422,7 @@ let rules json env ~world =
               else if not temporal then [ read_on ~form ~numbered env world self ~condition ~value ]
               else
                 let v = Eval.req "RuleVersion.value" r.value_node in
-                let write ?window () = ignore (Eval.run_pro_rata ?window env world self ~ot ~attr v) in
+                let write ?window () = ignore (Eval.run_pro_rata ?window env world self ~form ~ot ~attr v) in
                 match condition with
                 | Some (Time_window { starting_at; up_to; to_inclusive; _ } as condition) ->
                     [ read_clip ~form ~numbered env world self ~condition

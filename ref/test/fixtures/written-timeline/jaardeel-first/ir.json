@@ -1,0 +1,192 @@
+{
+  "format" : "uchar-ir-v1",
+  "model" : {
+    "objectTypes" : [ {
+      "node" : "ObjectType",
+      "name" : "Jutter",
+      "animate" : true,
+      "plural" : "Jutters",
+      "attributes" : [ {
+        "node" : "Attribute",
+        "name" : "score",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "teller",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "jaartarief",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        },
+        "timeline" : {
+          "node" : "TimelineFacet",
+          "granularity" : "year",
+          "count" : 1
+        }
+      }, {
+        "node" : "Attribute",
+        "name" : "jaardeel",
+        "datatype" : {
+          "node" : "Number",
+          "whole" : true,
+          "decimals" : 0,
+          "sign" : "unspecified"
+        },
+        "timeline" : {
+          "node" : "TimelineFacet",
+          "granularity" : "year",
+          "count" : 1
+        }
+      } ],
+      "characteristics" : [ {
+        "node" : "Characteristic",
+        "name" : "borgplichtig",
+        "kind" : "adjectival",
+        "timeline" : {
+          "node" : "TimelineFacet",
+          "granularity" : "month",
+          "count" : 1
+        }
+      } ]
+    } ],
+    "factTypes" : [ ],
+    "parameters" : [ ],
+    "domains" : [ ],
+    "unitSystems" : [ ],
+    "dimensions" : [ ],
+    "timelines" : [ ],
+    "dayKinds" : [ ]
+  },
+  "rules" : {
+    "rules" : [ {
+      "node" : "Rule",
+      "name" : "jaardeel",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "jaardeel",
+          "subjectType" : "Jutter",
+          "source" : {
+            "snippet" : "De jaardeel van een Jutter"
+          }
+        },
+        "value" : {
+          "node" : "BuiltinCall",
+          "kind" : "timeProportionalPart",
+          "arguments" : [ {
+            "node" : "AttributeReference",
+            "attribute" : "jaartarief",
+            "subjectType" : "Jutter",
+            "source" : {
+              "snippet" : "zijn jaartarief"
+            }
+          } ],
+          "filter" : {
+            "node" : "CharacteristicCheck",
+            "characteristic" : "borgplichtig",
+            "negated" : false,
+            "source" : {
+              "snippet" : "hij borgplichtig is"
+            }
+          },
+          "granularity" : "year",
+          "type" : {
+            "node" : "Number",
+            "whole" : true,
+            "decimals" : 0,
+            "sign" : "unspecified"
+          },
+          "source" : {
+            "snippet" : "het tijdsevenredig deel per year van zijn jaartarief"
+          }
+        },
+        "condition" : {
+          "node" : "Comparison",
+          "op" : "less",
+          "left" : {
+            "node" : "AttributeReference",
+            "attribute" : "teller",
+            "subjectType" : "Jutter",
+            "source" : {
+              "snippet" : "zijn teller"
+            }
+          },
+          "right" : {
+            "node" : "Literal",
+            "value" : {
+              "number" : "5"
+            },
+            "type" : {
+              "node" : "Number",
+              "whole" : true,
+              "decimals" : 0,
+              "sign" : "unspecified"
+            },
+            "source" : {
+              "snippet" : "5"
+            }
+          },
+          "source" : {
+            "snippet" : "less"
+          }
+        },
+        "initialisation" : false,
+        "presentation" : "calculation"
+      } ]
+    }, {
+      "node" : "Rule",
+      "name" : "teller",
+      "versions" : [ {
+        "validity" : {
+          "node" : "Validity"
+        },
+        "target" : {
+          "node" : "AttributeReference",
+          "attribute" : "teller",
+          "subjectType" : "Jutter",
+          "source" : {
+            "snippet" : "De teller van een Jutter"
+          }
+        },
+        "value" : {
+          "node" : "AttributeReference",
+          "attribute" : "score",
+          "subjectType" : "Jutter",
+          "source" : {
+            "snippet" : "zijn score"
+          }
+        },
+        "initialisation" : false,
+        "presentation" : "calculation"
+      } ]
+    } ],
+    "dayKindDefinitions" : [ ],
+    "objectCreations" : [ ],
+    "allocations" : [ ],
+    "consistencies" : [ ],
+    "uniquenesses" : [ ],
+    "factCreations" : [ ],
+    "startPointDeterminations" : [ ],
+    "ruleGroups" : [ ],
+    "prioritizedDefaults" : [ ]
+  },
+  "diagnostics" : [ ]
+}
