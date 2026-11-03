@@ -151,6 +151,44 @@ class TmsConditionPerPeriodWitnessTest {
         BothBranches.green(document(MODEL_A, List.of(gated)), c, "de poort van een voorwaarde zonder tijdlijn");
     }
 
+    /** "Het loon … als zijn strandloon plus zijn toeslag gedurende de tijd dat hij aan alle volgende voorwaarden voldoet:
+     *  hij is aangesteld, hij is actief": a member that reads no timeline holds on every day or on none, so on J1, actief,
+     *  the loon is that of A, and on J2, aangesteld as J1 and not actief, the empty timeline. */
+    static final String LOON_ACTIEF = computingRule("loon", "BEREKENING", "Jutter", "loon",
+            binary("plus", ownRead("strandloon", "Jutter"), ownRead("toeslag", "Jutter")),
+            compound("all", 0, List.of(check("aangesteld", false), check("actief", false))));
+
+    static JsonNode caseActief() throws Exception {
+        List<String> aangesteld = List.of(period("2024-02-01", "2024-06-01"));
+        return TmsTimelineDocuments.caseDocument(null, List.of(
+                        instance("J1", "Jutter", Map.of("strandloon", STRANDLOON, "toeslag", TOESLAG), List.of("actief"),
+                                Map.of("aangesteld", aangesteld), Map.of()),
+                        instance("J2", "Jutter", Map.of("strandloon", STRANDLOON, "toeslag", TOESLAG), List.of(),
+                                Map.of("aangesteld", aangesteld), Map.of())),
+                List.of(expectedTimeline("J1", "loon", List.of(segment("2024-02-01", "2024-03-01", "100"),
+                                segment("2024-03-01", "2024-04-01", "130"), segment("2024-04-01", "2024-05-01", "180"),
+                                segment("2024-05-01", "2024-06-01", "150"))),
+                        expectedTimeline("J2", "loon", List.of()), consistent()));
+    }
+
+    @Test void a_member_that_reads_no_timeline_holds_on_every_day_or_on_none() throws Exception {
+        BothBranches.green(document(MODEL_A, List.of(LOON_ACTIEF)), caseActief(), "een lid zonder tijdlijn");
+    }
+
+    /** "De premie … 25 gedurende de tijd dat zijn strandloon groter is dan 120" where the case gives the strandloon as
+     *  the asOfDate-bucket scalar: the condition reads the timeline whole and faults (RUNTIME-SEMANTICS ch. 8.4), and
+     *  its reading faults at the comparison. */
+    static JsonNode caseBucket() throws Exception {
+        return TmsTimelineDocuments.caseDocument("2024-02-15", List.of(instance("J1", "Jutter",
+                Map.of("strandloon", numberValue("130")), List.of(), Map.of(), Map.of())), List.of(consistent()));
+    }
+
+    @Test void a_condition_per_period_over_the_bucket_scalar_faults() throws Exception {
+        assertEquals("InputFormFault: fout in de regel \"premie\": a condition per period reads the time-dependent"
+                + " attribute \"strandloon\" of \"J1\" whole; the case supplies only the asOfDate-bucket scalar, which"
+                + " carries no period", TmsFaultWitnessTest.playBoth(document(MODEL_A, List.of(PREMIE)), caseBucket()));
+    }
+
     // ---------------- B: the whole-period qualifier per bucket ----------------
 
     static final String MODEL_B = TmsDocuments.model(List.of(objectType("Jutter", List.of(
@@ -453,6 +491,10 @@ class TmsConditionPerPeriodWitnessTest {
                 TmsTimelineDocuments.ir(MODEL_B, List.of(VOLLE_MAAND, ELKE_MAAND), List.of()), caseClash());
         TmsTimelineWitnessTest.write(out.resolve("c-botsing-omgekeerd"),
                 TmsTimelineDocuments.ir(MODEL_B, List.of(ELKE_MAAND, VOLLE_MAAND), List.of()), caseClash());
+        TmsTimelineWitnessTest.write(out.resolve("a-actief"),
+                TmsTimelineDocuments.ir(MODEL_A, List.of(LOON_ACTIEF), List.of()), caseActief());
+        TmsTimelineWitnessTest.write(out.resolve("a-emmerscalair"),
+                TmsTimelineDocuments.ir(MODEL_A, List.of(PREMIE), List.of()), caseBucket());
         TmsTimelineWitnessTest.write(out.resolve("c-jaardeel"),
                 TmsTimelineDocuments.ir(MODEL_JAARDEEL, List.of(JAARDEEL_BORG, JAARDEEL_WACHT), List.of()), caseJaardeel());
     }
