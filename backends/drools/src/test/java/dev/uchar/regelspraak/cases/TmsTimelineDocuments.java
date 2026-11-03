@@ -104,6 +104,22 @@ final class TmsTimelineDocuments {
         return "{\"from\":\"" + van + "\",\"to\":\"" + to + "\",\"value\":{\"number\":\"" + lexeme + "\"}}";
     }
 
+    /** One segment of a case timeline with an open {@code from}, {@code (−∞, tot)}, with the number {@code lexeme}
+     *  (RUNTIME-SEMANTICS ch. 3.1: the case format leaves the bound out). */
+    static String openTo(String to, String lexeme) {
+        return "{\"to\":\"" + to + "\",\"value\":{\"number\":\"" + lexeme + "\"}}";
+    }
+
+    /** One segment of a case timeline with an open {@code to}, {@code [van, +∞)}, with the number {@code lexeme}. */
+    static String openFrom(String van, String lexeme) {
+        return "{\"from\":\"" + van + "\",\"value\":{\"number\":\"" + lexeme + "\"}}";
+    }
+
+    /** The one segment of a case timeline with two open bounds, {@code (−∞, +∞)}, with the number {@code lexeme}. */
+    static String always(String lexeme) {
+        return "{\"value\":{\"number\":\"" + lexeme + "\"}}";
+    }
+
     /** A case timeline of {@code segments} ({@link #segment}). */
     static String timeline(List<String> segments) {
         return "{\"timeline\":[" + String.join(",", segments) + "]}";

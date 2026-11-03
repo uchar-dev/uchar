@@ -61,10 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * reference interpreter and the ASP runner answer 59 in 2025.
  * <li><b>A characteristic on a timeline as the target</b>: both refuse it, "temporal characteristic "borgplichtig":
  * temporal writes are not implemented".
- * <li><b>A sum of timelines over a set as the value of a timeline target</b>, the staggered contributors of ch. 3.5
- * (50 and 60, 10 and 10: 50, 70, 10): the reference interpreter refuses it, "temporal attribute "tariefsom" as a
- * target: temporal writes are not implemented", and the ASP runner, "a temporal target takes only the ch. 3.7 pro-rata
- * or ch. 3.8 day-count shape …".
  * <li><b>A rate whose denominator is not the unit of the grid</b>: 10 EUR/jr per month through 2024, in a document
  * that declares jr as twelve mnd, totals 10 EUR (ch. 3.6, the explicit rate operand), rounded towards zero to the 0
  * decimals of the target, since the restatement divides by twelve and the precision gate takes such a total only
@@ -94,7 +90,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * and a read or a write of a dimensioned attribute outside a cell, so the branch's refusals of those forms
  * (DROOLS-278 and DROOLS-275) are reached only by a document the verifier refuses.
  *
- * <p><b>Measured</b> 2026-11-03 on the documents of {@link #main}: the verifier passes all twelve. The suite does not
+ * <p><b>Measured</b> 2026-11-03 on the documents of {@link #main}: the verifier passes all eleven. The suite does not
  * run the verifier, which is a program outside the jar. <b>Red</b> on b9f77aa7, the code before timelines were
  * carried: every row on the refusal of the timeline as outside the trial, "… — het tijdsafhankelijke attribuut
  * 'jaardeel' van Jutter: tijdlijnen zijn buiten de proef van de truth-maintenance-tak", "… — een Aggregation total
@@ -179,30 +175,6 @@ class TmsTimelineRefusalWitnessTest {
                 List.of("transpiler SKIP: regel: borgplicht — het tijdsafhankelijke kenmerk 'borgplichtig' van"
                         + " Jutter als doel: deze tak draagt deze vorm nog niet; geen golden met cases"
                         + " schrijft er een (RUNTIME-SEMANTICS ch. 3.11)")));
-        // a sum of timelines over a set as the value of a timeline target, the staggered contributors of ch. 3.5
-        out.add(new Row("som-over-tijdlijnen", TmsTimelineDocuments.ir(TmsDocuments.model(List.of(
-                                objectType("Jutter", List.of(timeAttribute("tariefsom", WHOLE, "month")), List.of()),
-                                objectType("Vondst", List.of(timeAttribute("tarief", WHOLE, "month")), List.of())),
-                        List.of(factTypeOneToMany("bewaring", "jutter", "Jutter", "vondst", "Vondst", "vondsten"))),
-                        List.of(computingRule("tariefsom", "BEREKENING", "Jutter", "tariefsom", aggregation("sum",
-                                ownRead("tarief", "Vondst"), "Vondst", sourceRole("bewaring", "vondst"), "null", "null",
-                                WHOLE, "de som van de tarieven van zijn vondsten"), "null")), List.of()),
-                TmsTimelineDocuments.caseDocument(null, List.of(
-                                instance("J1", "Jutter", Map.of(), List.of(), Map.of(),
-                                        Map.of("vondsten", List.of("V1", "V2"))),
-                                instance("V1", "Vondst", Map.of("tarief", timeline(List.of(
-                                        segment("2024-01-01", "2024-02-01", "50"),
-                                        segment("2024-02-01", "2024-03-01", "60")))), List.of(), Map.of(), Map.of()),
-                                instance("V2", "Vondst", Map.of("tarief", timeline(List.of(
-                                        segment("2024-02-01", "2024-03-01", "10"),
-                                        segment("2024-03-01", "2024-04-01", "10")))), List.of(), Map.of(), Map.of())),
-                        List.of(expectedTimeline("J1", "tariefsom", List.of(segment("2024-01-01", "2024-02-01", "50"),
-                                segment("2024-02-01", "2024-03-01", "70"), segment("2024-03-01", "2024-04-01",
-                                        "10"))))),
-                List.of("transpiler SKIP: regel: tariefsom — een waarde van het tijdsafhankelijke doel 'tariefsom'"
-                        + " van Jutter die geen tijdsevenredig deel en geen dagentelling is ('de som van de tarieven van"
-                        + " zijn vondsten'): deze tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch."
-                        + " 3.4, 3.5, 3.11); geen golden met cases schrijft er een")));
         // a rate whose denominator is not the unit of the grid: 10 EUR/jr over the twelve months of 2024
         out.add(new Row("vreemde-noemer", TmsTimelineDocuments.ir(MODEL_RATE, List.of(WACHTSOM_RATE_ROUNDED),
                         List.of()),

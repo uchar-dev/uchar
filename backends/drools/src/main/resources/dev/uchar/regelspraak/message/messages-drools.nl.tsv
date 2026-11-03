@@ -128,7 +128,7 @@ DROOLS-101	een kenmerktoekenning met een andere waarde dan de constante waar (WF
 DROOLS-102	het tijdsafhankelijke kenmerk '{attribute}' van {declarant} als doel: deze tak draagt deze vorm nog niet; geen golden met cases schrijft er een (RUNTIME-SEMANTICS ch. 3.11)
 DROOLS-103	een tijdsafhankelijk doel met een tweede schrijver ('{attribute}' van {declarant} wordt ook geschreven door {writers}): deze tak draagt deze vorm nog niet; een doel met meer schrijvers blijft omheind (RUNTIME-SEMANTICS ch. 7.8), en geen golden met cases heeft er een
 DROOLS-104	een periodevenster in de voorwaarde van een regel met het tijdsafhankelijke doel '{attribute}' van {declarant}: daar knipt het venster de tijdlijn (RUNTIME-SEMANTICS ch. 3.10), en deze tak draagt deze vorm nog niet
-DROOLS-105	een waarde van het tijdsafhankelijke doel '{attribute}' van {declarant} die geen tijdsevenredig deel en geen dagentelling is ('{snippet}'): deze tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11); geen golden met cases schrijft er een
+DROOLS-105	een waarde van het tijdsafhankelijke doel '{attribute}' van {declarant} die geen tijdsevenredig deel, geen dagentelling en geen rekenen per periode met plus, min of een som is ('{snippet}'): deze tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11); geen golden met cases schrijft er een
 DROOLS-105.without-value	zonder waarde
 DROOLS-106	{description} per {sourceGranularity} naar het doel '{attribute}' met de granulariteit {targetGranularity}: de emmer is die van het doel ({ruleReference})
 DROOLS-107	{description} per {targetGranularity}: alleen een maand en een jaar zijn emmers (RUNTIME-SEMANTICS ch. 3.2)
@@ -336,6 +336,13 @@ DROOLS-298	het schrijven van een cel van het gedimensioneerde attribuut '{attrib
 DROOLS-299	{description} over het attribuut '{attribute}' ('{snippet}'): de labels [{labels}] noemen geen cel van zijn dimensies {dimensions}; een cel noemt één label van elke dimensie, label i een van dimensie i (WF-040)
 DROOLS-300	een macht met de gebroken exponent {exponent} ('{snippet}'): deze tak rekent een gebroken exponent waarvan teller en noemer ten hoogste {bound} zijn; daarboven zijn de gehele getallen van de macht en haar wortel te groot
 DROOLS-301	{description} in het attribuut '{attribute}' van {objectType}, dat de onbegrensde vorm heeft: een segment van deze tak houdt een decimaal, en een deel dat niet eindigt zou een decimaal van zestien cijfers worden
+DROOLS-302	de regel "{rule}" schrijft het tijdsafhankelijke attribuut '{attribute}' van {declarant} met het rekenen per periode van ch. 3.4/3.5 onder een voorwaarde: een voorwaarde per periode wordt niet uitgevoerd (RUNTIME-SEMANTICS ch. 3.11)
+DROOLS-303	deze operand van het rekenen per periode van ch. 3.4/3.5 wordt niet uitgevoerd ('{snippet}'): een operand is plus of min, de som van een tijdsafhankelijk attribuut over een verzameling, een eigen tijdsafhankelijk attribuut, een literal, een eigen scalair attribuut of een scalaire parameter, elk een getal (RUNTIME-SEMANTICS ch. 3.11)
+DROOLS-304	de tijdsafhankelijke parameter '{parameter}' als operand van het rekenen per periode van ch. 3.4/3.5 wordt niet uitgevoerd (RUNTIME-SEMANTICS ch. 3.11)
+DROOLS-305	een die/dat-subselectie op de som per periode ('{snippet}') wordt niet uitgevoerd (RUNTIME-SEMANTICS ch. 3.11)
+DROOLS-306	het rekenen per periode van ch. 3.4/3.5 herrekent de operand '{snippet}' van {unit} naar {targetUnit}: deze tak rekent een tijdlijn in één eenheid en draagt de herrekening niet
+DROOLS-307	het rekenen per periode van ch. 3.4/3.5 over '{snippet}', een waarde van de onbegrensde vorm of een die niet eindigt: een segment van deze tak houdt een decimaal
+DROOLS-308	de operand '{attribute}' van het rekenen per periode van ch. 3.4/3.5 ligt op een raster van {operandGranularity}, fijner dan het {targetGranularity}-raster van het doel: de granulariteit van elke operand is grover dan of gelijk aan die van het doel (RUNTIME-SEMANTICS ch. 3.4)
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)
@@ -366,6 +373,7 @@ EF-032.time	{function}: hour {hour}, minute {minute}, second {second} and millis
 EF-033	de schakels van het feittype "{factType}" vormen een kring door {cycle}: de vormen van een per object geordende kring rekenen per object langs de keten die deze relatie legt, en die keten moet eindigen (RUNTIME-SEMANTICS ch. 6.2)
 EF-034	{label}.{attribute}: de labels [{labels}] noemen geen cel van het attribuut, dat de dimensies {dimensions} heeft: een cel noemt één label van elke dimensie, in gedeclareerde volgorde (RUNTIME-SEMANTICS ch. 5.8c)
 EF-035	{label}.{attribute}: de cel [{labels}] staat twee keer in de invoer (RUNTIME-SEMANTICS ch. 5.8c)
+EF-036	het temporele totaal van "{attribute}" op "{label}" raakt een segment met een open grens dat {value} draagt: een andere waarde dan 0 over onbegrensd veel eenheden heeft geen totaal (ch. 3.6)
 FRAME.case-reads	{sentence}; de case leest het
 FRAME.case-sets	{sentence}; de case zet het
 FRAME.contract	contract: {sentence}
@@ -382,6 +390,7 @@ PART.and	en
 PART.member-kind.attribute	attribuut
 PART.member-kind.characteristic-kind	kenmerk
 PART.desc.time-dependent-target	een tijdsafhankelijk doel
+PART.desc.period-arithmetic	het rekenen per periode ('{snippet}')
 PART.desc.pro-rata-part	een tijdsevenredig deel ('{snippet}')
 PART.desc.day-count	een dagentelling ('{snippet}')
 PART.desc.unique-key	een uniciteitssleutel '{key}' van {type} op een tijdlijn

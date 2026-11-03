@@ -34,12 +34,29 @@ import java.util.Objects;
  * {@code getTot()} and {@code getWaarde()} ({@link RegelSpraakRuntime#get}) and make one through the public constructor
  * of {@code (LocalDate, LocalDate, BigDecimal)} ({@link RegelSpraakRuntime#newSegment}): given this class as their
  * segment class they compute with it as with the bean model's, and nothing in {@code runtime/} changes.
+ *
+ * <p>A timeline divides all time (ch. 3.1), so a segment may have an open bound: an open {@code from} is
+ * {@link #OPEN_FROM}, before every day, and an open {@code to} is {@link #OPEN_TO}, past every day. The two ends of the
+ * date range keep a clip, a complement and a comparison of two bounds what they are on a closed segment, as the
+ * reference interpreter keeps them with the ends of its integer range; only a fold that walks the buckets of a period
+ * or counts its units has to ask for one ({@link #open}). On a bean an open bound is null, as the case format leaves
+ * the bound out.
  */
 public record Period(LocalDate from, LocalDate to, BigDecimal value) {
+
+    /** The open {@code from} of a segment that begins before every day. */
+    public static final LocalDate OPEN_FROM = LocalDate.MIN;
+    /** The open {@code to} of a segment that runs past every day. */
+    public static final LocalDate OPEN_TO = LocalDate.MAX;
 
     public Period {
         Objects.requireNonNull(from, "van");
         Objects.requireNonNull(to, "to");
+    }
+
+    /** Whether this segment has an open bound (ch. 3.1). */
+    public boolean open() {
+        return from.equals(OPEN_FROM) || to.equals(OPEN_TO);
     }
 
     public LocalDate getVan() { return from; }
@@ -58,26 +75,35 @@ public record Period(LocalDate from, LocalDate to, BigDecimal value) {
     }
 
     @Override public String toString() {
-        return "[" + from + ", " + to + ")=" + (value == null ? "empty" : value.toPlainString());
+        return "[" + (from.equals(OPEN_FROM) ? "-inf" : from) + ", " + (to.equals(OPEN_TO) ? "+inf" : to) + ")="
+                + (value == null ? "empty" : value.toPlainString());
     }
 
     /** The timeline {@code segments} as this branch carries it, immutable and in the given order: from the segments a
-     *  bean holds, or from the list a runtime helper returns. Null, an absent timeline, stays null (ch. 3.1: an absent
-     *  timeline is not an empty one, ch. 3.6). */
+     *  bean holds, a null bound there an open one, or from the list a runtime helper returns. Null, an absent timeline,
+     *  stays null (ch. 3.1: an absent timeline is not an empty one, ch. 3.6). */
     public static List<Period> list(List<?> segments) {
         if (segments == null) return null;
         List<Period> out = new ArrayList<>(segments.size());
-        for (Object s : segments)
-            out.add(s instanceof Period t ? t : new Period((LocalDate) RegelSpraakRuntime.get(s, "van"),
-                    (LocalDate) RegelSpraakRuntime.get(s, "tot"), (BigDecimal) RegelSpraakRuntime.get(s, "waarde")));
+        for (Object s : segments) {
+            if (s instanceof Period t) {
+                out.add(t);
+                continue;
+            }
+            LocalDate from = (LocalDate) RegelSpraakRuntime.get(s, "van"), to = (LocalDate) RegelSpraakRuntime.get(s, "tot");
+            out.add(new Period(from == null ? OPEN_FROM : from, to == null ? OPEN_TO : to,
+                    (BigDecimal) RegelSpraakRuntime.get(s, "waarde")));
+        }
         return List.copyOf(out);
     }
 
     /** The timeline {@code timeline} as beans of the bean model's {@code segmentClass}, for the write-back: a new,
-     *  mutable list of new segments, so no bean shares a segment with another. */
+     *  mutable list of new segments, so no bean shares a segment with another; an open bound is null there. */
     public static List<Object> beans(List<Period> timeline, Class<?> segmentClass) {
         List<Object> out = new ArrayList<>(timeline.size());
-        for (Period t : timeline) out.add(RegelSpraakRuntime.newSegment(segmentClass, t.from, t.to, t.value));
+        for (Period t : timeline)
+            out.add(RegelSpraakRuntime.newSegment(segmentClass, t.from.equals(OPEN_FROM) ? null : t.from,
+                    t.to.equals(OPEN_TO) ? null : t.to, t.value));
         return out;
     }
 }

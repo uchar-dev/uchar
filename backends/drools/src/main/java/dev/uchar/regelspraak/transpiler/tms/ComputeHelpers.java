@@ -547,8 +547,21 @@ public final class ComputeHelpers {
      *  ("JAAR" or "MAAND"), with the test of code {@code testCode} and the bound {@code bound} of a comparison as the exact
      *  value it is, null where the test has none; complemented where the qualifier is negated ({@code niet}). */
     public static boolean wholePeriod(Object timeline, Object bound, String grid, int testCode, boolean wholePeriodNegated) {
+        // the fold walks the buckets of every segment it reads, and a segment with an open bound has no end to reach
+        // (ch. 3.1); a leeg segment is read as a gap and walked by no test but that of a characteristic
+        if (timeline != null) for (Object o : (List<?>) timeline)
+            if (((Period) o).open() && (testCode == CHARACTERISTIC_TEST || ((Period) o).value() != null))
+                throw new ComputeFault(OPEN_BUCKET_WALK);
         return RegelSpraakRuntime.rsGeheelPeriode((List<?>) timeline, grid, testCode, bound) != wholePeriodNegated;
     }
+
+    /** The code of the characteristic test of {@code rsGeheelPeriode}, which walks every segment it is given. */
+    private static final int CHARACTERISTIC_TEST = 7;
+
+    /** A fold over the buckets of a period with an open bound (RUNTIME-SEMANTICS ch. 3.1), in the reference
+     *  interpreter's words. */
+    static final String OPEN_BUCKET_WALK = "a fold over the buckets of a grid walks the buckets of a period with an"
+            + " open bound, which has no end to reach (ch. 3.1)";
 
     /** The stop triggers of a composite and of a quantifier fold (RUNTIME-SEMANTICS ch. 5.10): the verdict once
      *  {@code read} members are read, of which {@code touch} hold and {@code rest} are unread, or null while the
@@ -916,15 +929,20 @@ public final class ComputeHelpers {
     /** The contribution of the member {@code member} to the fold {@code fold} on {@code subject} by its value
      *  {@code value} ({@link Contribution}, RUNTIME-SEMANTICS ch. 3.4), or null where it contributes nothing: a leeg value is
      *  skipped (ch. 1.2). Where {@code total} is not null the value is the member's timeline and contributes its total
-     *  over time per that unit (ch. 3.6, the per-element fold), and nothing where the case gives the timeline as the
-     *  asOfDate-bucket scalar ({@link BucketScalar}), since the member's {@link MemberFault} stands instead. Where
+     *  over time per that unit (ch. 3.6, the per-element fold), an open segment of 0 adding 0, and nothing where the
+     *  case gives the timeline as the asOfDate-bucket scalar ({@link BucketScalar}) or where it has an open segment of
+     *  another value, whose total has none, since the member's {@link MemberFault} stands instead. Where {@code whole}
+     *  the value is the member's timeline and contributes itself, to the sum per period of ch. 3.5, and nothing where it
+     *  is the bucket scalar, for the same reason. Where
      *  {@code filled}, the contribution counts the member and carries no value; otherwise it carries the exact value,
      *  a decimal or a rational that does not terminate, which the exact folds add and compare
      *  ({@link ExactSumFunction}, {@link ExactMinimumFunction}, {@link ExactMaximumFunction}). */
     public static Contribution contribution(String fold, Object subject, Object member, Object value, String total,
-                                    boolean filled) {
-        if (total != null && value instanceof BucketScalar) return null;
-        Object v = total == null ? value : RegelSpraakRuntime.rsTijdTotaal((List<?>) value, total);
+                                    boolean filled, boolean whole) {
+        if ((total != null || whole) && value instanceof BucketScalar) return null;
+        if (total != null && PeriodArithmetic.openNonZero(value)) return null;
+        Object v = total == null ? value
+                : value == null ? null : RegelSpraakRuntime.rsTijdTotaal(PeriodArithmetic.withoutOpenZeros((List<?>) value), total);
         return v == null ? null : new Contribution(fold, subject, member, filled ? null : v);
     }
 

@@ -303,6 +303,8 @@ public class TestTermWitnessTest {
                         + " Const >)",
                 "keurlast van een jutter VORM: Compound ALLE 0(WithoutFault(RS_AGG_COMPARE(Division DIVIDED probe"
                         + " -1 (Read 2, Read 3), Const 2, Const >)), BUCKET_SCALAR(Read 5, Const true))",
+                "keurlast van een jutter VORM: Compound ALLE 0(WithoutFault(RS_AGG_COMPARE(Division DIVIDED probe"
+                        + " -1 (Read 2, Read 3), Const 2, Const >)), OPEN_NONZERO(Read 5))",
                 "keurlast van een jutter DEPOSIT probe 2: RS_AGG_COMPARE(Division DIVIDED probe 2 (Read 0, Read "
                         + "1), Const 2, Const >)"), trees(plans));
         assertEquals(List.of(
@@ -329,6 +331,19 @@ public class TestTermWitnessTest {
                 "keurlast van een jutter VORM 0.1 Call",
                 "keurlast van een jutter VORM 0.1.0 SlotValue",
                 "keurlast van een jutter VORM 0.1.1 Const Boolean",
+                "keurlast van een jutter VORM 0 Compound",
+                "keurlast van een jutter VORM 0.0 WithoutFault source 'zijn gewicht gedeeld door zijn deelnemers groter "
+                        + "is dan 2'",
+                "keurlast van een jutter VORM 0.0.0 Call source 'zijn gewicht gedeeld door zijn deelnemers groter "
+                        + "is dan 2'",
+                "keurlast van een jutter VORM 0.0.0.0 Division source 'zijn gewicht gedeeld door zijn deelnemers'",
+                "keurlast van een jutter VORM 0.0.0.0.0 SlotValue source 'zijn gewicht'",
+                "keurlast van een jutter VORM 0.0.0.0.1 SlotValue source 'zijn deelnemers'",
+                "keurlast van een jutter VORM 0.0.0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, "
+                        + "sign=ONBEPAALD, unit=null] source '2'",
+                "keurlast van een jutter VORM 0.0.0.2 Const String",
+                "keurlast van een jutter VORM 0.1 Call",
+                "keurlast van een jutter VORM 0.1.0 SlotValue",
                 "keurlast van een jutter DEPOSIT probe 2 0 Call source 'zijn gewicht gedeeld door zijn "
                         + "deelnemers groter is dan 2'",
                 "keurlast van een jutter DEPOSIT probe 2 0.0 Division source 'zijn gewicht gedeeld door zijn "

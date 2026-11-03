@@ -3,6 +3,7 @@ package dev.uchar.regelspraak.transpiler.tms.plan;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
 import dev.uchar.regelspraak.transpiler.tms.Period;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
 
 /**
  * A static function a {@link Term} calls, by its class and its name: a helper of the runtime, which the other branch
@@ -81,6 +82,23 @@ public enum StaticFunction {
     RS_DAY_COUNT_FROM(RegelSpraakRuntime.class, "rsAantalDagenInVanaf", false),
     /** A timeline as this branch carries it, a list of {@code Period}, from the segments a runtime helper returns. */
     PERIOD_LIST(Period.class, "list", false),
+    /** A scalar operand of the period arithmetic of ch. 3.4 as a timeline: the one segment with two open bounds, or
+     *  none where it is leeg (ch. 3.1). */
+    PERIOD_SCALAR(PeriodArithmetic.class, "scalar", false),
+    /** Plus per period of all time over two timelines, a leeg operand 0 (ch. 3.4). */
+    PERIOD_PLUS(PeriodArithmetic.class, "plus", false),
+    /** Min per period of all time over two timelines, a leeg operand 0 (ch. 3.4). */
+    PERIOD_MINUS(PeriodArithmetic.class, "minus", false),
+    /** The sum per period of the timelines a fold over a set collects, a leeg member skipped, with a fallback or none
+     *  (ch. 3.5). */
+    PERIOD_SUM(PeriodArithmetic.class, "sum", false),
+    /** The timeline a rule of period arithmetic writes: its filled segments, each under the write boundary of the
+     *  target's decimals, an {@code Integer} constant, and its attribute, a {@code String} constant (ch. 2.4, 3.1). */
+    PERIOD_WRITTEN(PeriodArithmetic.class, "written", true),
+    /** The total over time of a timeline on a grid, a {@code String} constant (ch. 3.6), the attribute a {@code String}
+     *  constant and the object whose timeline it is: an open segment of 0 adds 0, one of another value the fault
+     *  (EF-036). */
+    PERIOD_TOTAL(PeriodArithmetic.class, "total", true),
     /** A division (ch. 1.4, 1.2): a leeg dividend 0, a leeg divisor leeg with the §6.5 deposit to the probe, a numeric
      *  zero leeg with the deposit of ch. 1.4 point 4 to the probe; the exact quotient. The function of a
      *  {@link Term.Division}. It does not fault (card zero-division-channel), and counts as one that can: the plans of every form with a division are built on that, and changing it is a card of its own. */
@@ -222,6 +240,9 @@ public enum StaticFunction {
     /** Whether a value is the asOfDate-bucket scalar a case gives for a timeline (ch. 8.4), which a {@code Boolean}
      *  constant must equal: a part of a test a form composes itself. */
     BUCKET_SCALAR(ComputeHelpers.class, "bucketScalar", false),
+    /** Whether a timeline has a segment with an open bound whose value is not 0, whose total has none (ch. 3.6): a
+     *  part of a test a form composes itself. */
+    OPEN_NONZERO(PeriodArithmetic.class, "openNonZero", false),
     /** Whether the target of an initialisation is empty for its guard (RUNTIME-SEMANTICS ch. 5.4): another writer wrote
      *  leeg on the subject, by a count of such writers, or the subject's input on the target, which the plan reads off
      *  the bean ({@link Term.Input}), is leeg. A part of a test a form composes itself. */

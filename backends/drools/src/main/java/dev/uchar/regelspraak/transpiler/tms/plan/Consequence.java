@@ -299,10 +299,15 @@ public sealed interface Consequence {
          *  time per that unit, and nothing where the case gives it as the asOfDate-bucket scalar; where {@code filled},
          *  the member without a value, a count of the members whose value is gevuld. Where {@code cell} is not null
          *  the slot holds the map of the cells of a dimensioned attribute of the member, and the value is the cell of
-         *  that key ({@code ComputeHelpers.cell}): a cell of each member, which no form writes. */
-        record MemberValue(int value, String total, boolean filled, List<String> cell) implements Input {
+         *  that key ({@code ComputeHelpers.cell}): a cell of each member, which no form writes. Where {@code whole} the
+         *  slot holds the member's timeline, which contributes itself whole to the sum per period of RUNTIME-SEMANTICS
+         *  ch. 3.5, and nothing where the case gives it as the asOfDate-bucket scalar. */
+        record MemberValue(int value, String total, boolean filled, List<String> cell, boolean whole) implements Input {
             public MemberValue {
                 cell = cell == null ? null : List.copyOf(cell);
+                if (whole && (total != null || filled || cell != null))
+                    throw new IllegalArgumentException("een lid dat zijn tijdlijn heel bijdraagt, telt niet, draagt geen"
+                            + " totaal over de tijd bij en geen cel");
             }
         }
 
@@ -353,16 +358,21 @@ public sealed interface Consequence {
         }
     }
 
-    /** The fault of the member in slot {@code member} of the per-element fold {@code fold} over an attribute on a
-     *  timeline, which the case gives as the asOfDate-bucket scalar, a {@code MemberFault} on the fold's subject, the object
-     *  {@code subject} binds: the member's {@code place} in the fold's order, and the fault of the form of an input,
-     *  the sentence {@code voor}, the member and {@code na}, named in no rule yet, made by the route
-     *  {@link Route#INPUT_FORM_FAULT}. */
+    /** The fault of the member in slot {@code member} of a fold over an attribute on a timeline whose value the fold
+     *  cannot read, a {@code MemberFault} on the fold's subject, the object {@code subject} binds: the member's
+     *  {@code place} in the fold's order, and, named in no rule yet, where {@code openAttribute} is null, the fault of
+     *  the form of an input, the case giving the timeline as the asOfDate-bucket scalar, the sentence {@code before},
+     *  the member and {@code after}, made by the route {@link Route#INPUT_FORM_FAULT}; and where it is not, the fault
+     *  of a total of that attribute over the member's timeline in slot {@code timeline}, which has an open segment that
+     *  is not 0 (RUNTIME-SEMANTICS ch. 3.6, EF-036), made by the route {@link Route#OPEN_SEGMENT_FAULT}. */
     record MemberFault(String subject, String fold, int member, FoldPlace place, String before, String after,
-                   Insertion insertion) implements Consequence {
+                   String openAttribute, int timeline, Insertion insertion) implements Consequence {
         public MemberFault {
             if (place.reason() != PlaceReason.MEMBER_FAULT)
                 throw new IllegalArgumentException("de plaats van een lidfout is die van het lid, niet " + place.reason());
+            if ((openAttribute == null) == (timeline >= 0))
+                throw new IllegalArgumentException("een lidfout over een open segment leest de tijdlijn van het lid, en"
+                        + " alleen die");
         }
     }
 

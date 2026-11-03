@@ -1255,8 +1255,12 @@ final class DrlRendering {
                 case Consequence.FilterFault x -> filterFault(x, b);
                 case Consequence.MemberFault x -> insert(b, "    ", x.insertion(), "new " + typeName(MemberFault.class) + "("
                         + str(x.fold()) + ", " + x.subject() + ", " + variable(x.member()) + ", "
-                        + route(Route.INPUT_FORM_FAULT) + "(" + str(x.before()) + ", " + variable(x.member()) + ", "
-                        + str(x.after()) + ", null), " + foldPlace(x.place(), x.fold(), x.member(), null) + ")");
+                        + (x.openAttribute() == null
+                                ? route(Route.INPUT_FORM_FAULT) + "(" + str(x.before()) + ", " + variable(x.member()) + ", "
+                                        + str(x.after()) + ", null)"
+                                : route(Route.OPEN_SEGMENT_FAULT) + "(" + str(x.openAttribute()) + ", "
+                                        + variable(x.member()) + ", " + variable(x.timeline()) + ")")
+                        + ", " + foldPlace(x.place(), x.fold(), x.member(), null) + ")");
                 case Consequence.UniquenessKey x -> uniquenessKey(x, b);
                 case Consequence.UniquenessViolation x -> insert(b, "    ", x.insertion(), "new "
                         + typeName(UniquenessViolation.class) + "(" + str(x.uniqueness()) + ", " + x.subject() + ")");
@@ -1429,7 +1433,7 @@ final class DrlRendering {
                                     + variable(l.value()) + ", " + consequenceConstant(l.cell()).text() + ")")
                             .append(", ")
                             .append(l.total() == null ? "null" : str(l.total())).append(", ").append(l.filled())
-                            .append(");\n");
+                            .append(", ").append(l.whole()).append(");\n");
                     b.append("    if (v != null) {\n");
                     insert(b, "        ", x.insertion(), "v");
                     b.append("    }\n");

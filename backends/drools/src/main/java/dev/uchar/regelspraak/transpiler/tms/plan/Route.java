@@ -1,6 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms.plan;
 
 import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
 
 /**
  * A public static method of the branch that a rendering calls around the functions of a term ({@link Term}), by its
@@ -46,6 +47,9 @@ public enum Route {
     /** The fault of the form of an input, its sentence around the object, named in a rule, which
      *  {@link Consequence.InputFormFault} inserts. */
     INPUT_FORM_FAULT(ComputeHelpers.class, "inputFormFault"),
+    /** The fault of a total over a member's timeline that has an open segment that is not 0
+     *  ({@link Consequence.MemberFault}). */
+    OPEN_SEGMENT_FAULT(PeriodArithmetic.class, "openSegmentFault"),
     /** The keys of an instance in a source of a uniqueness, one per value a component on a timeline ever carries, which
      *  {@link Consequence.UniquenessKey} inserts. */
     UNIQUENESS_KEYS(ComputeHelpers.class, "uniquenessKeys"),

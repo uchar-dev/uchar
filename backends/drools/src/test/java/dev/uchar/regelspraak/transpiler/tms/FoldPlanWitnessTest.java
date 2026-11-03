@@ -120,7 +120,7 @@ class FoldPlanWitnessTest {
                         + " = [] Sein.gewicht VALUE]",
                 "  consequence Contribution [subject=$vouwonderwerp, fold=seingewicht van een post: vouw 1,"
                         + " member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
-                "    input MemberValue [value=1, total=null, filled=false]",
+                "    input MemberValue [value=1, total=null, filled=false, whole=false]",
                 "rule vakseinaantal van een kustvak: bijdrage aan vouw 2 | form vakseinaantal van een"
                         + " kustvak | group null",
                 "  readings [0 SUBJECT $onderwerp (onderwerp zelf)]",
@@ -157,7 +157,7 @@ class FoldPlanWitnessTest {
                 "    test 0.1 Const Boolean",
                 "  consequence Contribution [subject=$vouwonderwerp, fold=keurlast van een jutter: vouw 0,"
                         + " member=1, slots=[1, 2], size=3, insertion=LOGICAL]",
-                "    input MemberValue [value=2, total=MAAND, filled=false]",
+                "    input MemberValue [value=2, total=MAAND, filled=false, whole=false]",
                 "rule keurlast van een jutter: lidfout in vouw 0 | form keurlast van een jutter | group"
                         + " null",
                 "  readings [0 LIST_PLACES $lijstplaatsen_plaats_7 (lijstplaatsen 0), 1 LIST_PLACE"
@@ -190,8 +190,123 @@ class FoldPlanWitnessTest {
                         + " member=4, place=selection 0 [keurendeJutter 0 1] MEMBER_FAULT, before=the per-element temporal"
                         + " total of \"keurtarief\" over , after=: the case supplies an asOfDate-bucket scalar, which"
                         + " carries no period of its own; a set fold needs each member's own timeline (ch."
-                        + " 3.6/§7.1, ch. 8.4), insertion=LOGICAL]"),
+                        + " 3.6/§7.1, ch. 8.4), open=null, timeline=-1, insertion=LOGICAL]",
+                "rule keurlast van een jutter: lidfout in vouw 0 over een open segment | form keurlast van een"
+                        + " jutter | group null",
+                "  readings [0 LIST_PLACES $lijstplaatsen_plaats_17 (lijstplaatsen 0), 1 LIST_PLACE"
+                        + " $plaats_plaats_18 (lijstplaats 0), 2 INPUT $gekeurd (eigen ElementKey[objectType=vondst,"
+                        + " name=gekeurd, characteristic=true]), 3 TIJDLIJN $tijdlijn_3 (tijdlijn"
+                        + " ElementKey[objectType=vondst, name=keurtarief, characteristic=false]), 4 SUBJECT $onderwerp"
+                        + " (onderwerp zelf)]",
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_14: keurende jutter = $vouwonderwerp] beta []"
+                        + " bind [$gekeurd = [] Vondst.gekeurd WAAR]",
+                "  accumulation ListPlace $lijstplaats_plaats_15 alpha [plaats-veld_19: [[] field VALUE GELIJK"
+                        + " keurendeJutter]] join [] beta [plaats-lid_20: PLACE_OF $onderwerp [] {List<>, type null,"
+                        + " source null}] bind [$lijstplaatswaarde_plaats_16 = [] ListPlace.place VALUE] functions [COUNT"
+                        + " null -> $lijstplaatsen_plaats_17, MINIMUM $lijstplaatswaarde_plaats_16 -> $plaats_plaats_18]",
+                "  pattern State $stand_3 alpha [stand_21: [[] attribute VALUE GELIJK"
+                        + " ElementKey[objectType=vondst, name=keurtarief, characteristic=false]]] join"
+                        + " [stand-onderwerp_22: subject = $onderwerp] beta [] bind [$tijdlijn_3 = [] State.value VALUE]",
+                "  test voorwaarde_23 VORM probe -1 slots [2, 3] size 5: Compound ALLE 0(KENMERK(Read 2, Const"
+                        + " true), OPEN_NONZERO(Read 3))",
+                "    test 0 Compound",
+                "    test 0.0 Call source 'gekeurd zijn'",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "    test 0.1 Call",
+                "    test 0.1.0 SlotValue",
+                "  consequence MemberFault [subject=$vouwonderwerp, fold=keurlast van een jutter: vouw 0,"
+                        + " member=4, place=selection 0 [keurendeJutter 0 1] MEMBER_FAULT, before=null, after=null,"
+                        + " open=keurtarief, timeline=3, insertion=LOGICAL]"),
                 plans(golden("jutterswet-keurlast")));
+    }
+
+    @Test void a_sum_per_period_with_its_member_fault() throws Exception {
+        // the sum per period of ch. 3.5: each member contributes its whole timeline, and a member the case gives as the
+        // asOfDate-bucket scalar faults in the reference interpreter's words
+        assertEquals(List.of(
+                "rule vondstopbrengst van een jutter: bijdrage aan vouw 0 | form vondstopbrengst van een jutter"
+                        + " | group null",
+                "  readings [0 SUBJECT $onderwerp (onderwerp zelf), 1 TIJDLIJN $tijdlijn_1 (tijdlijn"
+                        + " ElementKey[objectType=vondst, name=opbrengst, characteristic=false])]",
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_10: aanmeldende jutter = $vouwonderwerp] beta"
+                        + " [] bind []",
+                "  pattern State $stand_1 alpha [stand_11: [[] attribute VALUE GELIJK"
+                        + " ElementKey[objectType=vondst, name=opbrengst, characteristic=false]]] join"
+                        + " [stand-onderwerp_12: subject = $onderwerp] beta [] bind [$tijdlijn_1 = [] State.value VALUE]",
+                "  consequence Contribution [subject=$vouwonderwerp, fold=vondstopbrengst van een jutter: vouw"
+                        + " 0, member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
+                "    input MemberValue [value=1, total=null, filled=false, whole=true]",
+                "rule vondstopbrengst van een jutter: lidfout in vouw 0 | form vondstopbrengst van een jutter |"
+                        + " group null",
+                "  readings [0 LIST_PLACES $lijstplaatsen_plaats_16 (lijstplaatsen 0), 1 LIST_PLACE"
+                        + " $plaats_plaats_17 (lijstplaats 0), 2 TIJDLIJN $tijdlijn_2 (tijdlijn"
+                        + " ElementKey[objectType=vondst, name=opbrengst, characteristic=false]), 3 SUBJECT $onderwerp"
+                        + " (onderwerp zelf)]",
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_13: aanmeldende jutter = $vouwonderwerp] beta"
+                        + " [] bind []",
+                "  accumulation ListPlace $lijstplaats_plaats_14 alpha [plaats-veld_18: [[] field VALUE GELIJK"
+                        + " aanmeldendeJutter]] join [] beta [plaats-lid_19: PLACE_OF $onderwerp [] {List<>, type null,"
+                        + " source null}] bind [$lijstplaatswaarde_plaats_15 = [] ListPlace.place VALUE] functions [COUNT"
+                        + " null -> $lijstplaatsen_plaats_16, MINIMUM $lijstplaatswaarde_plaats_15 -> $plaats_plaats_17]",
+                "  pattern State $stand_2 alpha [stand_20: [[] attribute VALUE GELIJK"
+                        + " ElementKey[objectType=vondst, name=opbrengst, characteristic=false]]] join"
+                        + " [stand-onderwerp_21: subject = $onderwerp] beta [] bind [$tijdlijn_2 = [] State.value VALUE]",
+                "  test voorwaarde_22 VORM probe -1 slots [2] size 4: Compound ALLE 0(BUCKET_SCALAR(Read 2,"
+                        + " Const true))",
+                "    test 0 Compound",
+                "    test 0.0 Call",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "  consequence MemberFault [subject=$vouwonderwerp, fold=vondstopbrengst van een jutter: vouw 0,"
+                        + " member=3, place=selection 0 [aanmeldendeJutter 0 1] MEMBER_FAULT, before=the period arithmetic"
+                        + " of ch. 3.4/3.5 reads the temporal attribute \"opbrengst\" of , after=; the case supplies only"
+                        + " the asOfDate-bucket scalar, which carries no period, open=null, timeline=-1,"
+                        + " insertion=LOGICAL]",
+                "rule gewaarborgde vondstopbrengst van een jutter: bijdrage aan vouw 1 | form gewaarborgde"
+                        + " vondstopbrengst van een jutter | group null",
+                "  readings [0 SUBJECT $onderwerp (onderwerp zelf), 1 TIJDLIJN $tijdlijn_1 (tijdlijn"
+                        + " ElementKey[objectType=vondst, name=opbrengst, characteristic=false])]",
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_34: aanmeldende jutter = $vouwonderwerp] beta"
+                        + " [] bind []",
+                "  pattern State $stand_1 alpha [stand_35: [[] attribute VALUE GELIJK"
+                        + " ElementKey[objectType=vondst, name=opbrengst, characteristic=false]]] join"
+                        + " [stand-onderwerp_36: subject = $onderwerp] beta [] bind [$tijdlijn_1 = [] State.value VALUE]",
+                "  consequence Contribution [subject=$vouwonderwerp, fold=gewaarborgde vondstopbrengst van een"
+                        + " jutter: vouw 1, member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
+                "    input MemberValue [value=1, total=null, filled=false, whole=true]",
+                "rule gewaarborgde vondstopbrengst van een jutter: lidfout in vouw 1 | form gewaarborgde"
+                        + " vondstopbrengst van een jutter | group null",
+                "  readings [0 LIST_PLACES $lijstplaatsen_plaats_40 (lijstplaatsen 0), 1 LIST_PLACE"
+                        + " $plaats_plaats_41 (lijstplaats 0), 2 TIJDLIJN $tijdlijn_2 (tijdlijn"
+                        + " ElementKey[objectType=vondst, name=opbrengst, characteristic=false]), 3 SUBJECT $onderwerp"
+                        + " (onderwerp zelf)]",
+                "  pattern Jutter $vouwonderwerp alpha [] join [] beta [] bind []",
+                "  subject Vondst $onderwerp alpha [] join [bereik_37: aanmeldende jutter = $vouwonderwerp] beta"
+                        + " [] bind []",
+                "  accumulation ListPlace $lijstplaats_plaats_38 alpha [plaats-veld_42: [[] field VALUE GELIJK"
+                        + " aanmeldendeJutter]] join [] beta [plaats-lid_43: PLACE_OF $onderwerp [] {List<>, type null,"
+                        + " source null}] bind [$lijstplaatswaarde_plaats_39 = [] ListPlace.place VALUE] functions [COUNT"
+                        + " null -> $lijstplaatsen_plaats_40, MINIMUM $lijstplaatswaarde_plaats_39 -> $plaats_plaats_41]",
+                "  pattern State $stand_2 alpha [stand_44: [[] attribute VALUE GELIJK"
+                        + " ElementKey[objectType=vondst, name=opbrengst, characteristic=false]]] join"
+                        + " [stand-onderwerp_45: subject = $onderwerp] beta [] bind [$tijdlijn_2 = [] State.value VALUE]",
+                "  test voorwaarde_46 VORM probe -1 slots [2] size 4: Compound ALLE 0(BUCKET_SCALAR(Read 2,"
+                        + " Const true))",
+                "    test 0 Compound",
+                "    test 0.0 Call",
+                "    test 0.0.0 SlotValue",
+                "    test 0.0.1 Const Boolean",
+                "  consequence MemberFault [subject=$vouwonderwerp, fold=gewaarborgde vondstopbrengst van een"
+                        + " jutter: vouw 1, member=3, place=selection 0 [aanmeldendeJutter 0 1] MEMBER_FAULT, before=the"
+                        + " period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"opbrengst\" of , after=; the"
+                        + " case supplies only the asOfDate-bucket scalar, which carries no period, open=null,"
+                        + " timeline=-1, insertion=LOGICAL]"),
+                plans(golden("jutterswet-maandloon")));
     }
 
     @Test void a_filter_that_deposits_and_fails() throws Exception {
@@ -381,7 +496,7 @@ class FoldPlanWitnessTest {
                         + " source null}] bind [$gewicht = [] Vondst.gewicht VALUE]",
                 "  consequence Contribution [subject=$vouwonderwerp, fold=laagste vondstgewicht van een jutter:"
                         + " vouw 0, member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
-                "    input MemberValue [value=1, total=null, filled=false]"),
+                "    input MemberValue [value=1, total=null, filled=false, whole=false]"),
                 plans(golden("jutterswet-vondstketen")));
     }
 
@@ -401,7 +516,7 @@ class FoldPlanWitnessTest {
                         + " type null, source null}] bind []]",
                 "  consequence Contribution [subject=$vouwonderwerp, fold=aantal gevulde bergplaatsen: vouw 0,"
                         + " member=0, slots=[0, 1], size=2, insertion=LOGICAL]",
-                "    input MemberValue [value=1, total=null, filled=true]",
+                "    input MemberValue [value=1, total=null, filled=true, whole=false]",
                 "rule havengeldtotaal van een Jutter: bijdrage aan vouw 1 | form havengeldtotaal van"
                         + " een Jutter | group null",
                 "  readings [0 INPUT $havengeld (eigen ElementKey[objectType=haven, name=havengeld,"
@@ -432,7 +547,7 @@ class FoldPlanWitnessTest {
                 "    test 0.0.2 Const String",
                 "  consequence Contribution [subject=$vouwonderwerp, fold=havengeldtotaal van een Jutter: vouw"
                         + " 1, member=3, slots=[0, 3], size=4, insertion=LOGICAL]",
-                "    input MemberValue [value=0, total=null, filled=false]",
+                "    input MemberValue [value=0, total=null, filled=false, whole=false]",
                 "rule havengeldtotaal van een Jutter: filterfout in vouw 1 | form havengeldtotaal van"
                         + " een Jutter | group null",
                 "  readings [0 LIST_PLACES $lijstplaatsen_plaats_20 (lijstplaatsen 0), 1 LIST_PLACE"
@@ -924,7 +1039,7 @@ class FoldPlanWitnessTest {
                 switch (b.input()) {
                     case Consequence.Input.Count t -> out.add("    input Count");
                     case Consequence.Input.MemberValue l -> out.add("    input MemberValue [value=" + l.value() + ", total="
-                            + l.total() + ", filled=" + l.filled() + "]");
+                            + l.total() + ", filled=" + l.filled() + ", whole=" + l.whole() + "]");
                     case Consequence.Input.Verdict o -> {
                         out.add("    input Verdict matrix " + TermTree.tree(o.matrix()));
                         TermTree.fields("      matrix", o.matrix(), "0", out);
@@ -946,7 +1061,7 @@ class FoldPlanWitnessTest {
             }
             case Consequence.MemberFault f -> out.add("  consequence MemberFault [subject=" + f.subject() + ", fold=" + f.fold()
                     + ", member=" + f.member() + ", place=" + place(f.place()) + ", before=" + f.before() + ", after=" + f.after()
-                    + ", insertion=" + f.insertion() + "]");
+                    + ", open=" + f.openAttribute() + ", timeline=" + f.timeline() + ", insertion=" + f.insertion() + "]");
             default -> throw new IllegalStateException("geen gevolg van een vouw: " + g);
         }
     }

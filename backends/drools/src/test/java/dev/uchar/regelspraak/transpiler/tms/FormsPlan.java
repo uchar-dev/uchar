@@ -417,7 +417,9 @@ final class FormsPlan {
 
     /** Fragments of the text that show the forms of the fold plan ({@link #folds}), one per form. */
     static final List<String> FOLD_FORMS = List.of("new Contribution(\"proefvouw: telling\", $vouwonderwerp, $onderwerp, null)",
-            "ComputeHelpers.contribution(\"proefvouw: som\"", "\"MAAND\", true)", "ComputeHelpers.verdict(", "matrix_oordeel(",
+            "ComputeHelpers.contribution(\"proefvouw: som\"", "\"MAAND\", true, false)",
+            "ComputeHelpers.contribution(\"proefvouw: som per periode\"", "null, false, true)", "ComputeHelpers.verdict(",
+            "matrix_oordeel(", "PeriodArithmetic.openSegmentFault(\"hoogte\", ",
             "lidtoets_lidtoets(", "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(sonde), ComputeHelpers.depositCodes(sonde))",
             "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null))", "plaats_lidtoets(",
             "ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER",
@@ -453,10 +455,13 @@ final class FormsPlan {
                 new Consequence.Input.Count(), List.of(0), 1, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidwaarde", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: som", 1,
-                new Consequence.Input.MemberValue(0, null, false, null), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, null, false, null, false), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("lidtijdlijn", "proef", null, table(heightSlot(), memberSlot(1)),
+                List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: som per periode", 1,
+                new Consequence.Input.MemberValue(0, null, false, null, true), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidwaarde per maand", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: totaal", 1,
-                new Consequence.Input.MemberValue(0, "MAAND", true, null), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, "MAAND", true, null, false), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("oordeel", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: oordeel", 1,
                 new Consequence.Input.Verdict(matrix), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
@@ -494,7 +499,14 @@ final class FormsPlan {
                         StaticFunction.PLACE_OF, O, List.of(new Term.Const(List.of(), null, null))))),
                 new Consequence.MemberFault(v, "proefvouw", 0, new Consequence.FoldPlace(0,
                         List.of(new Consequence.FoldPlace.Step("kustvak", 1, 2)), Consequence.PlaceReason.MEMBER_FAULT),
-                        "the total of ", ": a scalar", Consequence.Insertion.LOGICAL)));
+                        "the total of ", ": a scalar", null, -1, Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("lidfout over een open segment", "proef", null, table(heightSlot(), memberSlot(1),
+                placeSlot(2, ReadKind.LIST_PLACES, "$lijstplaatsen_1"), placeSlot(3, ReadKind.LIST_PLACE, "$plaats_1")),
+                List.of(foldSubject, member(post, v, height), places(1, "kustvak", new BetaTest("plaats-1",
+                        StaticFunction.PLACE_OF, O, List.of(new Term.Const(List.of(), null, null))))),
+                new Consequence.MemberFault(v, "proefvouw", 1, new Consequence.FoldPlace(0,
+                        List.of(new Consequence.FoldPlace.Step("kustvak", 2, 3)), Consequence.PlaceReason.MEMBER_FAULT),
+                        null, null, "hoogte", 0, Consequence.Insertion.LOGICAL)));
         return new Modelplan(List.of(), rules);
     }
 

@@ -9,6 +9,7 @@ import dev.uchar.regelspraak.transpiler.tms.Period;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
 import dev.uchar.regelspraak.transpiler.tms.InputFormFault;
+import dev.uchar.regelspraak.transpiler.tms.OpenSegmentFault;
 import dev.uchar.regelspraak.transpiler.tms.MemberTest;
 import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
 
@@ -358,7 +359,8 @@ final class SessionDump {
          *  object, the fault of two writers and the fault of the form of an input; any other sentence as it is. */
         String sentence(Throwable e) {
             Throwable named = e instanceof WritersConflict c ? c.named(this::inASentence)
-                    : e instanceof InputFormFault i ? i.named(this::inASentence) : e;
+                    : e instanceof InputFormFault i ? i.named(this::inASentence)
+                    : e instanceof OpenSegmentFault o ? o.named(this::inASentence) : e;
             return sentence(named.getMessage());
         }
 
@@ -556,7 +558,10 @@ final class SessionDump {
         if (v instanceof java.time.LocalDateTime d)
             return DATE_TIME.format(d) + (d.getNano() == 0 ? "" : String.format(".%03d", d.getNano() / 1_000_000));
         if (v instanceof String s) return quote(s);
-        if (v instanceof Period p) return "[" + p.from() + " " + p.to() + " " + canonical(p.value()) + "]";
+        // an open bound as "-", as the reference interpreter's trace writes it (RUNTIME-SEMANTICS ch. 3.1, 5.12)
+        if (v instanceof Period p)
+            return "[" + (p.from().equals(Period.OPEN_FROM) ? "-" : p.from().toString()) + " "
+                    + (p.to().equals(Period.OPEN_TO) ? "-" : p.to().toString()) + " " + canonical(p.value()) + "]";
         if (v instanceof List<?> l) {
             List<String> r = new ArrayList<>();
             for (Object x : l) r.add(canonical(x));

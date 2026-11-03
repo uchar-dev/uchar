@@ -341,6 +341,12 @@ final class ClosureRendering {
             case RS_DAY_COUNT_FROM -> x -> RegelSpraakRuntime.rsAantalDagenInVanaf((List<?>) x[0],
                     (String) x[1], (LocalDate) x[2], (Class<?>) x[3]);
             case PERIOD_LIST -> x -> Period.list((List<?>) x[0]);
+            case PERIOD_SCALAR -> x -> PeriodArithmetic.scalar(x[0]);
+            case PERIOD_PLUS -> x -> PeriodArithmetic.plus(x[0], x[1]);
+            case PERIOD_MINUS -> x -> PeriodArithmetic.minus(x[0], x[1]);
+            case PERIOD_SUM -> x -> PeriodArithmetic.sum(x[0], x[1]);
+            case PERIOD_WRITTEN -> x -> PeriodArithmetic.written(x[0], (Integer) x[1], (String) x[2]);
+            case PERIOD_TOTAL -> x -> PeriodArithmetic.total(x[0], (String) x[1], (String) x[2], x[3]);
             case DIVIDED -> x -> ComputeHelpers.divided(x[0], x[1], x[2]);
             case DIVIDED_ABS -> x -> ComputeHelpers.dividedAbs(x[0], x[1], x[2]);
             case RADICAND -> x -> ComputeHelpers.radicand(x[0], x[1]);
@@ -397,6 +403,7 @@ final class ClosureRendering {
             case CHANNEL -> x -> ComputeHelpers.channel(x[0]);
             case NIET -> x -> ComputeHelpers.not(x[0]);
             case BUCKET_SCALAR -> x -> ComputeHelpers.bucketScalar(x[0], (Boolean) x[1]);
+            case OPEN_NONZERO -> x -> PeriodArithmetic.openNonZero(x[0]);
             case TARGET_EMPTY -> x -> ComputeHelpers.targetEmpty(x[0], x[1]);
             case DIFFER -> x -> ComputeHelpers.differ(x[0]);
             case DUPLICATE -> x -> ComputeHelpers.duplicate(x[0]);

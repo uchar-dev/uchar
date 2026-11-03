@@ -94,21 +94,18 @@ class RoleFieldReaderWitnessTest {
         //     clingo  : TRANSLATION FAULT: a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape
         //     Drools exec-model : ERROR ConstraintEvaluationException
         //     Drools DRL-tekst  : EXCLUDE drl compile: Unable to Analyse Expression bewarendeJutter == $subject
-        // Like the far-side rolcheck: no golden of this shape can exist (ref writes no temporal target), so the gate
-        // is for the diagnosis. The refusal ALSO had to reach the caller's note — the temporal write arm printed the
+        // Like the far-side rolcheck, the gate is for the diagnosis: this branch has no bean field for the join. The refusal ALSO had to reach the caller's note — the temporal write arm printed the
         // generic Phase-F scope line and swallowed the reason until this card wired navReden through it.
         // Since L2 of the v1 wire migration the fold's join is its binding's, read by the one derivation every
         // fold seam shares (FactModelGenerator.rangeJoin), so the refusal is that derivation's sentence.
         Path ir = temporalSetSummation(), c = caseOf(tempoFoldCase());
-        // the exec-model branch refuses the sum before its join: it writes a timeline target only with a
-        // time-proportional part or a day count
+        // the sum per period of ch. 3.5 reaches the fold's join, whose element role is to-one and its sister to-many,
+        // so the range derivation refuses it, on both branches in one sentence
         CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                 () -> CaseRunner.playCase(ir, JSON.readTree(Files.readString(c)), DroolsBackend.Branch.EXEC_MODEL));
-        assertTrue(e.getMessage().contains("regel: bewaarlast van een jutter — een waarde van het tijdsafhankelijke doel"
-                + " 'bewaarlast' van Jutter die geen tijdsevenredig deel en geen dagentelling is ('de som van het"
-                + " bewaartarief van alle vondsten van de Jutter')"), e.getMessage());
-        // until card drl-teksttak-op-truth-maintenance the DRL-text branch reached the join and refused it there:
-        // "aggregatie-bereik: de wire-binding wijst de rol 'vondst' aan, wiens zusterrol 'bewarende jutter' MEERVOUDIG is"
+        assertTrue(e.getMessage().contains("regel: bewaarlast van een jutter — een Aggregation over de enkelvoudige"
+                + " elementrol 'vondst' wiens zusterrol 'bewarende jutter' meervoudig is ('de som van het bewaartarief van"
+                + " alle vondsten van de Jutter')"), e.getMessage());
         assertEquals(e.getMessage(), drlReason(ir, c));
     }
 

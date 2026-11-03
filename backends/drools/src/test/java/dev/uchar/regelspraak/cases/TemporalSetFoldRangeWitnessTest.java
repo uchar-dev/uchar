@@ -32,11 +32,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   binding    NAMES its range from one that does not, and the one that does not is not well-formed at all
  *   gestript   (verifier: WF-048 FAIL … 2 fact types relate 'Jutter' to 'Vondst').
  * </pre>
- * The rest of the square refuses ALL THREE, which is why no corpus golden can pin this form: ref answers
- * "EVALUATION FAULT: temporal attribute \"bewaarlast\" as a target: temporal writes are not implemented" and
- * clingo "TRANSLATION FAULT: a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape". The
- * timeline expectation below is therefore hand-computed and pinned HERE, in the only two executors that carry
- * the form.
+ * The sum per period of RUNTIME-SEMANTICS ch. 3.5 is the value of a rule on a temporal target in every executor,
+ * over all time; the corpus pins it in {@code jutterswet-maandloon}. The timeline expectation below is computed by
+ * hand: without a fallback the periods outside the members are a gap, so the per-period sum is 19 / 17 / 12 and
+ * nothing else, and both branches play it, over a unique pair and, by the wire's binding, over a repeated one.
  *
  * <p>Every model is an in-memory variant of ONE corpus golden ({@code jutterswet-tempovouw}); the golden's own
  * files are never touched, and it deliberately folds the §7.1 scalar TOTAAL, not this.
@@ -71,30 +70,19 @@ class TemporalSetFoldRangeWitnessTest {
               { "from": "2026-03-01", "to": "2026-04-01", "value": { "number": "12" } } ] } ] }
         """;
 
-    @Test void the_temporal_set_fold_over_a_unique_pair_is_refused() throws Exception {
-        // The regression mirror: ONE feittype over the pair. Green before this card as well — the row that says
-        // the new arm reached only the case the old one could not answer; since L2 of the v1 wire migration the
-        // binding decides here too.
-        bothRefuse(temporary("setvouw-uniek", setFold()), JSON.readTree(CASE),
+    @Test void the_temporal_set_fold_over_a_unique_pair_plays() throws Exception {
+        // The regression mirror: ONE feittype over the pair; since L2 of the v1 wire migration the binding decides
+        // here too.
+        BothBranches.green(temporary("setvouw-uniek", setFold()), JSON.readTree(CASE),
                 "per-period sum over a uniquely connected pair: 19 / 17 / 12");
     }
 
     @Test void the_temporal_set_fold_reads_the_wire_binding_on_a_repeated_pair() throws Exception {
         // THE ROW. A SECOND feittype relates Jutter to Vondst, so the by-pair search is ambiguous and only the
-        // ch. 4.3 binding names the relation. Same timeline, both branches — this fold now takes the same LAST
-        // arm the instance fold takes, out of the same shared derivation.
-        bothRefuse(temporary("setvouw-herhaald", repeatedPair()), JSON.readTree(CASE),
+        // ch. 4.3 binding names the relation. Same timeline, both branches — this fold takes the same LAST arm the
+        // instance fold takes, out of the same shared derivation.
+        BothBranches.green(temporary("setvouw-herhaald", repeatedPair()), JSON.readTree(CASE),
                 "the wire's range carries the fold over a repeated type pair");
-    }
-
-    /** Both branches refuse the rule by name, since the analysis writes a timeline target only with a
-     *  time-proportional part or a day count (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11), a form the destructive exec-model
-     *  branch carried, and the destructive DRL-text branch until card drl-teksttak-op-truth-maintenance, which played
-     *  {@code c} (the loss is accepted with card tms-omschakeling). */
-    private static void bothRefuse(Path ir, JsonNode c, String message) throws Exception {
-        BothBranches.refused(ir, c, "regel: bewaarlast van een jutter — een waarde van het tijdsafhankelijke doel"
-                + " 'bewaarlast' van Jutter die geen tijdsevenredig deel en geen dagentelling is ('de som van het"
-                + " bewaartarief van alle vondsten van de Jutter')", message);
     }
 
     @Test void the_set_fold_without_binding_is_a_document_error() throws Exception {

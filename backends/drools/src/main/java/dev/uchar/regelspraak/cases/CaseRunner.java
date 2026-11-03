@@ -24,6 +24,7 @@ import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.ComputeFault;
 import dev.uchar.regelspraak.transpiler.tms.EvaluationFaults;
+import dev.uchar.regelspraak.transpiler.tms.OpenSegmentFault;
 import dev.uchar.regelspraak.transpiler.tms.WriteBoundaryFault;
 import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
 
@@ -589,6 +590,7 @@ public final class CaseRunner {
             else if (c instanceof CaseDateFault d) kind = new FaultKind(d.code(), d.params());
             else if (c instanceof InputPrecisionFault d) kind = new FaultKind(d.code(), d.params());
             else if (c instanceof WriteBoundaryFault w) kind = new FaultKind(w.code(), w.params());
+            else if (c instanceof OpenSegmentFault o) kind = new FaultKind(o.code(), o.params());
             else if (c instanceof CaseInput.LinkCycleFault l) kind = new FaultKind(l.code(), l.params());
             else if (c instanceof CaseInput.CellFault f) kind = new FaultKind(f.code(), f.params());
             if (kind != null) {
@@ -768,7 +770,10 @@ public final class CaseRunner {
 
     /** The segments of a timeline value, with ref's load-time validation mirrored: at least one segment (an
      *  EXPECTATION may be empty — {@code emptyAllowed}), {@code from} before {@code to}, both boundaries on the
-     *  declared granularity grid, and the list ordered and non-overlapping as written. A malformed timeline is a
+     *  declared granularity grid, and the list ordered and non-overlapping as written. A segment that leaves out
+     *  {@code from} or {@code to} has an open bound (RUNTIME-SEMANTICS ch. 3.1), a null bound of its {@code Segment}:
+     *  it sits on no grid, only the first segment can begin open and only the last can end open, which the order check
+     *  holds. A malformed timeline is a
      *  hard failure, never a silent acceptance: the case schema (gate 4) and ref (gate 5) reject it first, so
      *  reaching it here means the corpus and this reader disagree. A grid that carries no case timeline is a
      *  not-carried form, refused where ref's loader refuses it and in its sentence, at position {@code site}
@@ -784,21 +789,30 @@ public final class CaseRunner {
         if (gran.variable())
             throw new Excluded(DroolsCode.TIMELINE_VARIABLE_START_GRID.reason("site", site));
         List<Object> out = new ArrayList<>();
+        // the end of the segment before, null before the first; an open end leaves no room for a segment after it
         LocalDate previousTo = null;
+        boolean openEnd = false;
         for (JsonNode sj : segs) {
-            LocalDate van = boundDate(sj, "from", field), to = boundDate(sj, "to", field);
-            if (!van.isBefore(to))
+            LocalDate van = openBound(sj, "from", field), to = openBound(sj, "to", field);
+            if (van != null && to != null && !van.isBefore(to))
                 throw new IllegalArgumentException("segment 'to' op '" + field + "' ligt niet na 'from'");
             if (gran.fixed() == null) calendarGridForInput(gran.gran(), site);
-            if (!bucket(gran, van)[0].equals(van) || !bucket(gran, to)[0].equals(to))
+            if (van != null && !bucket(gran, van)[0].equals(van) || to != null && !bucket(gran, to)[0].equals(to))
                 throw new IllegalArgumentException("segmentgrens op '" + field + "' ligt niet op het "
                         + gran.gran() + "-raster" + (gran.fixed() == null ? "" : " vanaf " + gran.fixed()));
-            if (previousTo != null && previousTo.isAfter(van))
+            if (openEnd || !out.isEmpty() && (van == null || previousTo.isAfter(van)))
                 throw new IllegalArgumentException("tijdlijnsegmenten op '" + field + "' zijn ongeordend of overlappen");
             previousTo = to;
+            openEnd = to == null;
             out.add(segment(van, to, segmentValue(sj.get("value"), field)));
         }
         return out;
+    }
+
+    /** The bound {@code field} of the segment {@code seg} of a timeline value, null where the segment leaves it out:
+     *  an open bound (RUNTIME-SEMANTICS ch. 3.1, {@code uchar-case-v0}). A bound that is there is a date. */
+    private static LocalDate openBound(JsonNode seg, String field, String where) {
+        return seg != null && seg.has(field) ? boundDate(seg, field, where) : null;
     }
 
     /** The grid a temporal member's case values sit on: its facet's granularity and count, its fixed start point,
@@ -1039,8 +1053,14 @@ public final class CaseRunner {
         if (segs.isEmpty()) return "(leeg)";
         List<String> out = new ArrayList<>();
         for (Object s : segs)
-            out.add("[" + segField(s, "van") + "," + segField(s, "tot") + ")=" + render(segField(s, "waarde")));
+            out.add("[" + bound(segField(s, "van"), "-inf") + "," + bound(segField(s, "tot"), "+inf") + ")="
+                    + render(segField(s, "waarde")));
         return String.join(" ", out);
+    }
+
+    /** A bound of a segment as a verdict line writes it, {@code open} for an open one (a null bound). */
+    private static String bound(Object bound, String open) {
+        return bound == null ? open : bound.toString();
     }
 
     private String characteristic(JsonNode v, boolean presentExpected) {
@@ -1168,7 +1188,8 @@ public final class CaseRunner {
             case "attributeTimeline" -> {
                 List<String> segs = new ArrayList<>();
                 for (JsonNode s : v.get("timeline"))
-                    segs.add("[" + s.get("from").asText() + "," + s.get("to").asText() + ")="
+                    segs.add("[" + (s.has("from") ? s.get("from").asText() : "-inf") + ","
+                            + (s.has("to") ? s.get("to").asText() : "+inf") + ")="
                             + render(valueToArg(s.get("value"), v.get("attribute").asText())));
                 yield segs.isEmpty() ? "(leeg)" : String.join(" ", segs);
             }

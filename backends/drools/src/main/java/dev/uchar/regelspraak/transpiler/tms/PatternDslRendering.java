@@ -224,11 +224,14 @@ final class PatternDslRendering {
                                 depositCodesAgain(filter, x.depositFlag(), w, what))));
             }
             case Consequence.FilterFault x -> filterFault(x);
-            case Consequence.MemberFault x -> consequenceItem(x.subject(), slotsOf(placeSlots(x.member(), x.place())),
+            case Consequence.MemberFault x -> consequenceItem(x.subject(), memberFaultSlots(x),
                     (drools, carrier, w) -> {
                         List<Integer> place = foldPlace(x.place(), x.fold(), w[x.member()], w);
                         insert(drools, x.insertion(), new MemberFault(x.fold(), carrier, w[x.member()],
-                                ComputeHelpers.inputFormFault(x.before(), w[x.member()], x.after(), null), place));
+                                x.openAttribute() == null
+                                        ? ComputeHelpers.inputFormFault(x.before(), w[x.member()], x.after(), null)
+                                        : PeriodArithmetic.openSegmentFault(x.openAttribute(), w[x.member()], w[x.timeline()]),
+                                place));
                     });
             case Consequence.Creation x -> creation(x);
             case Consequence.RelationLink x -> x.phase() < 0
@@ -281,7 +284,8 @@ final class PatternDslRendering {
                     insert(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()], null)));
             case Consequence.Input.MemberValue l -> consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) -> {
                 Object value = l.cell() == null ? w[l.value()] : ComputeHelpers.cell(w[l.value()], l.cell());
-                Contribution b = ComputeHelpers.contribution(g.fold(), carrier, w[g.member()], value, l.total(), l.filled());
+                Contribution b = ComputeHelpers.contribution(g.fold(), carrier, w[g.member()], value, l.total(), l.filled(),
+                        l.whole());
                 if (b != null) insert(drools, g.insertion(), b);
             });
             case Consequence.Input.Verdict o -> {
@@ -355,6 +359,15 @@ final class PatternDslRendering {
             places.add(w[s.place()]);
         }
         return ComputeHelpers.foldPlace(p.reason(), fold, member, p.selection(), fields, counts, places);
+    }
+
+    /** The slots the consequence of a member fault reads: the member, its place, and the member's timeline where the
+     *  fault names a value of it. */
+    private static List<Integer> memberFaultSlots(Consequence.MemberFault x) {
+        int[] place = placeSlots(x.member(), x.place());
+        int[] out = Arrays.copyOf(place, place.length + 1);
+        out[place.length] = x.timeline();
+        return slotsOf(out);
     }
 
     /** The slot {@code member} and the slots of the place {@code p}. */

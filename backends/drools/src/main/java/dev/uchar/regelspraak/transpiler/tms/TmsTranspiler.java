@@ -1369,6 +1369,8 @@ public final class TmsTranspiler {
                     ? new Fault(fault.subject(), fault.rule(), c.named(label))
                     : label != null && fault.fault() instanceof InputFormFault i
                     ? new Fault(fault.subject(), fault.rule(), i.named(label))
+                    : label != null && fault.fault() instanceof OpenSegmentFault o
+                    ? new Fault(fault.subject(), fault.rule(), o.named(label))
                     // the place of a value that does not fit is the object of the fact where the fault had none
                     : fault.fault() instanceof WriteBoundaryFault w
                     ? new Fault(fault.subject(), fault.rule(), w.named(fault.subject(), label, watch::inputPlace))
@@ -1900,7 +1902,8 @@ public final class TmsTranspiler {
     /**
      * A computation of an attribute on a timeline of the subject (RUNTIME-SEMANTICS ch. 3.11): the rule writes a whole
      * timeline at once, which a pro-rata part (ch. 3.7) or a day count (ch. 3.8) over the subject's own characteristic
-     * produces ({@link #timelineValue}), and inserts it as the {@link Value} of the target, an immutable
+     * produces ({@link #timelineValue}), or the period arithmetic of ch. 3.4 and 3.5 over all time
+     * ({@link #periodArithmetic}), and inserts it as the {@link Value} of the target, an immutable
      * {@code List<Period>}. On a standing temporal target ({@link StandingTargets#standingTemporal}: the target's one
      * version-free writer, ch. 7.8) an empty result is the temporal leeg and writes nothing, so the input timeline of the
      * target stands whole, and a result with a segment replaces it whole; elsewhere the rule writes the empty timeline
@@ -1909,10 +1912,12 @@ public final class TmsTranspiler {
      *
      * <p>Refused by name, each with no golden that has cases: any other writer of the target, a rule, an
      * initialisation, a defaults group or an allocation, since ch. 7.8 keeps a target with more writers fenced and
-     * the reference interpreter answers it in pass order; and any other value, among them a sum of timelines over a
-     * set (ch. 3.5) and the arithmetic of two timelines (ch. 3.4), which no golden of this branch's gap asks. Refused
-     * by name as well: a time window in the condition, which on a temporal target clips the timeline instead of
-     * gating the rule on the evaluation date (ch. 3.10); golden {@code jutterswet-pachtvenster} has it.
+     * the reference interpreter answers it in pass order; and any other value, among them the other operators of
+     * ch. 1.2 over timelines (spec/proposals/IMPLICIT-TIME.md, point 1). Refused by name as well: a time window in the
+     * condition, which on a temporal target clips the timeline instead of gating the rule on the evaluation date
+     * (ch. 3.10), golden {@code jutterswet-pachtvenster} has it; and any condition on a rule of period arithmetic, which
+     * would restrict the timeline per period (spec/proposals/IMPLICIT-TIME.md, point 3), as the reference interpreter
+     * and the ASP backend refuse it.
      */
     private List<RulePlan> timelineRule(ResolvedRule r, Expr.AttributeReference target) {
         Member member = timeMember(target.objectType(), target.attribute(), false, Msg.drools("PART.desc.time-dependent-target"));
@@ -1921,11 +1926,203 @@ public final class TmsTranspiler {
             throw new Refusal(DroolsCode.TIME_TARGET_SECOND_WRITER.reason("attribute", member.name(), "declarant", member.declarant().name, "writers", String.join(", ", others.stream().map(x -> "\"" + x + "\"").toList())));
         if (Condition.containsTimeWindow(r.condition()))
             throw new Refusal(DroolsCode.PERIOD_WINDOW_TIME_TARGET.reason("attribute", member.name(), "declarant", member.declarant().name));
-        if (!(r.value() instanceof Expr.FunctionCall f && (f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL
+        if (isPeriodArithmetic(r.value())) {
+            if (r.condition() != null)
+                throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_CONDITION.reason("rule", r.name(), "attribute", member.name(), "declarant", member.declarant().name));
+        } else if (!(r.value() instanceof Expr.FunctionCall f && (f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL
                 || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN)))
             throw new Refusal(DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.reason("attribute", member.name(), "declarant", member.declarant().name, "snippet", r.value() == null ? DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.part("without-value")
                     : snippet(r.value().source())));
         return writeRule(r, target.objectType(), member, null, Set.of(), !standingTargets.standingTemporal(target));
+    }
+
+    /** Whether {@code e}, the value of a rule on a temporal attribute, is the period arithmetic of RUNTIME-SEMANTICS
+     *  ch. 3.4 and 3.5: plus or min, or the sum over the members of a set; the reference interpreter and the ASP backend
+     *  ask the same of the value ({@code Eval.is_period_arithmetic}). */
+    private static boolean isPeriodArithmetic(Expr e) {
+        return e instanceof Expr.Binary b && (b.op() == Expr.BinOp.PLUS || b.op() == Expr.BinOp.MIN)
+                || e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM && f.elementObjectType() != null;
+    }
+
+    /** Whether a rule writes {@code member} by period arithmetic ({@link #isPeriodArithmetic}): such a timeline divides
+     *  all time, so the subject's own total reads it whole (RUNTIME-SEMANTICS ch. 3.6). */
+    private boolean periodArithmeticTarget(Member member) {
+        return computeRules.getOrDefault(member.key(), List.of()).stream().anyMatch(x -> isPeriodArithmetic(x.value()));
+    }
+
+    /**
+     * The timeline that the period arithmetic {@code value} writes into the target {@code target} of {@code subject}
+     * (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11), as a function of the values the rule binds ({@link PeriodArithmetic}):
+     * plus and min over all time, their operands plus or min again ({@link #periodOperand}), the sum over the members
+     * of a set ({@link #periodSum}), an own attribute on a timeline read whole, and a scalar, a literal, an own scalar
+     * attribute or a scalar parameter, that holds on every day. The written timeline holds the filled segments, a leeg
+     * period a gap, each under the write boundary of the target's decimals (ch. 2.4 point 1).
+     *
+     * <p>In a build with readings the nodes of the value read unreached, as the reference interpreter's trace reads
+     * them: its reading evaluates the value of a temporal target through the producer of ch. 3.7, so none of these
+     * nodes is observed there ({@link #unreached}).
+     *
+     * <p>Refused by name: a target that is no number, and one of the unbounded form, whose segment would hold a value
+     * that need not terminate ({@code PERIOD_ARITHMETIC_INEXACT}).
+     */
+    private Term periodArithmetic(Expr value, Member target, ObjectType subject, Reads reads) {
+        if (!target.datatype().isNumberLike())
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(value.source())));
+        if (target.datatype().unbounded())
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_INEXACT.reason("snippet", snippet(value.source())));
+        Term timeline = periodOperand(value, target, subject, reads);
+        return new Term.Call(StaticFunction.PERIOD_WRITTEN, List.of(timeline, constant(ceiling(target.datatype())),
+                constant(target.spelled())), source(value.source()));
+    }
+
+    /**
+     * One operand of the period arithmetic into {@code target} ({@link #periodArithmetic}) as a timeline: plus or min
+     * of two operands, the sum over a set, an own attribute on a timeline, read whole through its standing, so that a
+     * timeline a rule derives takes the result along and the asOfDate-bucket scalar of the case faults, in the reference
+     * interpreter's words (ch. 8.4); or a scalar operand ({@link #scalarOperand}). Refused by name, as the reference
+     * interpreter refuses them: a time-dependent parameter (spec/proposals/IMPLICIT-TIME.md VB 2.3), a read over a path
+     * or of another object, an operand that is no number, and every other node; refused as well, by the rule of ch. 3.4,
+     * an operand on a finer grid than the target's, and as a limit of this branch a restatement between two units.
+     */
+    private Term periodOperand(Expr e, Member target, ObjectType subject, Reads reads) {
+        if (anchored.contains(e)) throw new Refusal(DroolsCode.ANCHORED_FORM_NOT_CARRIED.reason("snippet", snippet(e.source())));
+        String source = source(e.source());
+        if (e instanceof Expr.Binary b && (b.op() == Expr.BinOp.PLUS || b.op() == Expr.BinOp.MIN)) {
+            Term left = periodOperand(b.left(), target, subject, reads), right = periodOperand(b.right(), target, subject, reads);
+            return new Term.Call(b.op() == Expr.BinOp.PLUS ? StaticFunction.PERIOD_PLUS : StaticFunction.PERIOD_MINUS,
+                    List.of(left, right), source);
+        }
+        if (e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM && f.elementObjectType() != null)
+            return periodSum(f, target, reads);
+        if (e instanceof Expr.ParameterRef p && p.parameter() != null && p.parameter().granularity() != null)
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_TIME_PARAMETER.reason("parameter", p.parameter().name()));
+        if (e instanceof Expr.AttributeReference a && a.attribute() != null && a.objectType() != null) {
+            if (navigationBindings.containsKey(a) || !subject.chain().contains(a.objectType()))
+                throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(a.source())));
+            if (declared(subject, a.attribute(), false).time() == null) return scalarOperand(a, target, reads);
+            Member operand = timeMember(subject, a.attribute(), false,
+                    Msg.drools("PART.desc.period-arithmetic", "snippet", snippet(a.source())));
+            periodMember(operand, a, target);
+            int timeline = reads.timeline(operand);
+            int subjectType = reads.member();
+            reads.markFail();
+            return complete(timeline, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \""
+                    + operand.name() + "\" of ", subjectType, "; the case supplies only the asOfDate-bucket scalar, which"
+                    + " carries no period", source);
+        }
+        if (e instanceof Expr.Literal || e instanceof Expr.ParameterRef) return scalarOperand(e, target, reads);
+        throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(e.source())));
+    }
+
+    /** {@code member}, an attribute on a timeline that the period arithmetic into {@code target} reads at {@code read},
+     *  where it may: a number, on a grid as coarse as the target's or coarser (RUNTIME-SEMANTICS ch. 3.4), in a unit
+     *  that needs no restatement into the target's ({@link #periodUnit}). */
+    private void periodMember(Member member, Expr read, Member target) {
+        if (!member.datatype().isNumberLike())
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(read.source())));
+        if (member.time().ordinal() < target.time().ordinal())
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_FINER_OPERAND.reason("attribute", member.name(),
+                    "operandGranularity", member.time(), "targetGranularity", target.time()));
+        periodUnit(member.datatype().unitOf(), read, target);
+    }
+
+    /** Refuses a restatement of an operand in {@code unit} into the unit of {@code target}: this branch computes the
+     *  timeline in one unit, where RUNTIME-SEMANTICS ch. 3.4 restates the right operand into the left one's and ch. 3.5
+     *  each contributor into the target's. A unitless side adopts the other's (ch. 2.6); two units that do not
+     *  convert fault while the model is built, as every restatement does ({@link UnitConflict}). */
+    private static void periodUnit(Unit unit, Expr read, Member target) {
+        Unit destination = target.datatype().unitOf();
+        UnitConflict.requireRescalable(unit, destination, "een operand van het rekenen per periode");
+        if (unit != null && destination != null && unit.requiredConversion(destination))
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_RESTATEMENT.reason("snippet", snippet(read.source()),
+                    "unit", unit.rendering(), "targetUnit", destination.rendering()));
+    }
+
+    /** A scalar operand {@code e} of the period arithmetic into {@code target}, a literal, an own scalar attribute or a
+     *  scalar parameter, evaluated as any value of the rule and held on every day (RUNTIME-SEMANTICS ch. 3.1, 3.4). It
+     *  is a number in a unit that needs no restatement ({@link #periodUnit}); a literal that does not terminate and an
+     *  attribute of the unbounded form, whose value need not, are refused as a limit of this branch, whose segment holds
+     *  a decimal. */
+    private Term scalarOperand(Expr e, Member target, Reads reads) {
+        Datatype type = eff.typeOf(e);
+        if (!type.isNumberLike())
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(e.source())));
+        periodUnit(eff.unitOf(e), e, target);
+        Term v = value(e, reads);
+        if (e instanceof Expr.AttributeReference && type.unbounded()
+                || v instanceof Term.Const c && c.value() instanceof Breuk b && !b.isTerminerend())
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_INEXACT.reason("snippet", snippet(e.source())));
+        return new Term.Call(StaticFunction.PERIOD_SCALAR, List.of(v), source(e.source()));
+    }
+
+    /**
+     * The sum per period of a member's attribute on a timeline over the members of a set (RUNTIME-SEMANTICS ch. 3.5),
+     * an operand of the period arithmetic into {@code target}: an accumulate in this rule's left-hand side over the
+     * contributions of the fold's contribution rules, each member's whole timeline ({@link #contributionRules}), a
+     * member without one contributing nothing, and the sum of them per period, a leeg member skipped and an all-leeg
+     * period leeg or the fallback, which holds on every day ({@link PeriodArithmetic#sum}). A member whose timeline the
+     * case gives as the asOfDate-bucket scalar faults where the evaluation reaches the fold, the first in fold order,
+     * in the reference interpreter's words ({@link #readFold}).
+     *
+     * <p>Refused by name: a die/dat subselection, as the reference interpreter and the ASP backend refuse it; a member
+     * that is no attribute on a timeline of the element type or is read over a path; a fold without a range, which is
+     * ill-formed (WF-083); and a fold over a relation a form creates, whose made links have no place in the fold order
+     * that names the member given as the bucket scalar.
+     */
+    private Term periodSum(Expr.FunctionCall f, Member target, Reads reads) {
+        String fragment = source(f.source());
+        if (f.filter() != null) throw new Refusal(DroolsCode.PERIOD_SUM_SUBSELECTION.reason("snippet", snippet(f.source())));
+        ObjectType elem = f.elementObjectType();
+        if (f.dimensionSelections() != null || f.arguments().size() != 1
+                || !(f.arguments().get(0) instanceof Expr.AttributeReference a) || a.attribute() == null
+                || navigationBindings.containsKey(a) || declared(elem, a.attribute(), false).time() == null)
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(f.source())));
+        if (!sourcePaths.containsKey(f) && !roleBindings.containsKey(f))
+            throw new Refusal(DroolsCode.AGGREGATION_WITHOUT_SOURCE_PATH.reason("kind", f.kind(), "snippet", snippet(f.source())));
+        Member member = timeMember(elem, a.attribute(), false, Msg.drools("PART.desc.period-arithmetic", "snippet",
+                snippet(f.source())));
+        periodMember(member, a, target);
+        RoleBindingRef source = roleBindings.get(f);
+        if (source != null && source.factType() != null && createdRelations.contains(Namen.norm(source.factType())))
+            throw new Refusal(DroolsCode.CREATED_LINK_FOLD_ORDER.reason("kind", f.kind(), "attribute", a.attribute(), "factType", source.factType(), "snippet", snippet(f.source())));
+        Fold v = foldFor(f, reads, (key, name) -> {
+            List<RulePlan> rules = new ArrayList<>();
+            List<Reads> readings = new ArrayList<>();
+            contributionRules(key, name, Expr.FunctionKind.SOM, reads.subject, elem, range(f, reads.subject, elem), 0,
+                    null, a, null, rules, readings, true);
+            return new Fold(key, List.copyOf(rules), List.copyOf(readings), false, false, false, false, true);
+        });
+        int[] i = reads.fold(v, Accumulation.Kind.LIST);
+        Term fallback = f.emptyFallback() == null ? constant(null) : scalarOperandValue(f.emptyFallback(), target, reads);
+        return readFold(v, i, reads, new Term.Call(StaticFunction.PERIOD_SUM, List.of(new Term.SlotValue(i[1], null),
+                fallback), fragment), fragment);
+    }
+
+    /** The fallback {@code e} of a sum per period, a scalar that fills an all-leeg period (RUNTIME-SEMANTICS ch. 3.5),
+     *  as {@link #scalarOperand} admits it, as a value and not a timeline. */
+    private Term scalarOperandValue(Expr e, Member target, Reads reads) {
+        return ((Term.Call) scalarOperand(e, target, reads)).arguments().get(0);
+    }
+
+    /** Notes every node of the period arithmetic {@code value} as unreached in a build with readings, but the members
+     *  of a sum, which a fold evaluates per member and which have no reading of their own (RUNTIME-SEMANTICS ch. 5.12):
+     *  as the reference interpreter's trace reads them, whose reading evaluates the value of a temporal target through
+     *  the producer of ch. 3.7 and so observes none of them. A fresh term that no evaluation reaches is the note. */
+    private void unreached(Expr value) {
+        if (noted == null || memberwise > 0) return;
+        Set<Object> perMember = Collections.newSetFromMap(new IdentityHashMap<>());
+        perMember(value, perMember);
+        for (Object n : positions.subtree(value))
+            if (!perMember.contains(n)) noted.put(n, new Term.Const(null, null, null));
+    }
+
+    /** Adds the nodes of the members of every sum in the period arithmetic {@code e} to {@code out}. */
+    private void perMember(Expr e, Set<Object> out) {
+        if (e instanceof Expr.Binary b) {
+            perMember(b.left(), out);
+            perMember(b.right(), out);
+        } else if (e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM)
+            for (Expr a : f.arguments()) out.addAll(positions.subtree(a));
     }
 
     /**
@@ -2201,11 +2398,13 @@ public final class TmsTranspiler {
         // the write boundary: the value restated into the target's declared unit (RUNTIME-SEMANTICS ch. 2.4, 2.6), and
         // where the declaration bounds the decimals, the fault of a value that does not fit them (ch. 2.4 point 1); a
         // timeline is written as its producer computes it, as in the reference interpreter (ch. 3.7)
-        Term value = member.time() != null
-                ? timelineValue((Expr.FunctionCall) r.value(), member, subject, reads)
+        boolean periodArithmetic = member.time() != null && isPeriodArithmetic(r.value());
+        Term value = periodArithmetic ? periodArithmetic(r.value(), member, subject, reads)
+                : member.time() != null ? timelineValue((Expr.FunctionCall) r.value(), member, subject, reads)
                 : fitted(restated(value(r.value(), reads), eff.unitOf(r.value()), member.datatype().unitOf(),
                         "een §4 schrijfgrens naar het doel"), member, null);
         if (member.time() != null) note(r.value(), value);
+        if (periodArithmetic) unreached(r.value());
         Noted noted = endReading();
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
@@ -5392,7 +5591,7 @@ public final class TmsTranspiler {
             List<RulePlan> rules = new ArrayList<>();
             List<Reads> readings = new ArrayList<>();
             boolean canFail = contributionRules(key, name, kind, reads.subject, elem, range(f, reads.subject, elem), 0,
-                    f.filter(), member, labels, rules, readings);
+                    f.filter(), member, labels, rules, readings, false);
             refuseMixedDeposits(name, Collections.singletonList(f.filter()));
             return new Fold(key, List.copyOf(rules), List.copyOf(readings), canFail, deposits(f.filter()), false, false,
                     timelineMember);
@@ -5460,11 +5659,16 @@ public final class TmsTranspiler {
      * clip's presence turns absence into 0), and the bucket scalar faults, before the clause is evaluated, as in the
      * reference interpreter. The runtime's helpers compute this, with {@link Period} as their segment class.
      *
+     * <p>The total without a clause over a timeline that period arithmetic writes (ch. 3.4, 3.5) takes neither: such a
+     * timeline divides all time, so it is totalled whole, no asOfDate bucket enters, and an absent one totals 0 (ch. 3.6);
+     * an open segment of 0 adds 0, and one of another value faults (EF-036, {@link PeriodArithmetic#total}). The clip
+     * keeps the open bound of a fragment it cuts from an open segment, and its total faults alike.
+     *
      * <p>Refused by name: an X over a path or of another type than the subject (WF-083 (c)), one that is not a number
      * (WF-091), a rate over a grid whose unit the document does not declare as one unit or whose denominator is not that
-     * unit ({@link #integrable}), and the total without a clause over a timeline a form writes: the reference
-     * interpreter takes that total only of the case's scalar on the period of the evaluation date and faults on a full
-     * timeline (ch. 3.6), so no executor confirms it, and no golden has it.
+     * unit ({@link #integrable}), and the total without a clause over a timeline another form writes, a pro-rata part or
+     * a day count: the reference interpreter takes that total only of the case's scalar on the period of the evaluation
+     * date and faults on a full timeline (ch. 3.6), so no executor confirms it, and no golden has it.
      */
     private Term ownTotal(Expr.FunctionCall f, Reads reads) {
         Msg description = Msg.drools("PART.desc.own-total", "snippet", snippet(f.source()));
@@ -5472,7 +5676,8 @@ public final class TmsTranspiler {
         if (a.objectType() != reads.subject || navigationBindings.containsKey(a))
             throw new Refusal(DroolsCode.OWN_TOTAL_FOREIGN_ATTRIBUTE.reason("description", description));
         Member member = integrable(timeMember(reads.subject, a.attribute(), false, description), description);
-        if (f.filter() == null && writers.containsKey(member.key()))
+        boolean periodArithmetic = f.filter() == null && periodArithmeticTarget(member);
+        if (f.filter() == null && writers.containsKey(member.key()) && !periodArithmetic)
             throw new Refusal(DroolsCode.TOTAL_NO_CUT_WRITTEN.reason("description", description, "member", member.name()));
         int timeline = reads.timeline(member);
         int subjectType = reads.member();
@@ -5480,6 +5685,13 @@ public final class TmsTranspiler {
         String gran = member.time().name();
         String name = member.name();
         String source = source(f.source());
+        if (periodArithmetic) {
+            Term whole = complete(timeline, "the temporal total of \"" + name + "\" needs the full timeline; ",
+                    subjectType, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", source(a.source()));
+            note(a, whole);
+            return new Term.Call(StaticFunction.PERIOD_TOTAL, List.of(whole, constant(gran), constant(name),
+                    new Term.SlotValue(subjectType, null)), source);
+        }
         if (f.filter() == null) {
             int date = reads.evaluationDate();
             Term input = new Term.SlotValue(timeline, source(a.source()));
@@ -5491,7 +5703,8 @@ public final class TmsTranspiler {
                 " supplies only the asOfDate-bucket scalar", source(a.source()));
         note(a, whole);
         Term cut = clip(f.filter(), reads, description, name, whole, whole);
-        return new Term.Call(StaticFunction.RS_TIME_TOTAL, List.of(cut, constant(gran)), source);
+        return new Term.Call(StaticFunction.PERIOD_TOTAL, List.of(cut, constant(gran), constant(name),
+                new Term.SlotValue(subjectType, null)), source);
     }
 
     /** The timeline bound at slot {@code timeline}, which a form reads whole, or the fault in the sentence {@code voor},
@@ -5825,7 +6038,7 @@ public final class TmsTranspiler {
                     throw new Refusal(DroolsCode.UNION_BRANCH_WITHOUT_TYPE.reason("snippet", snippet(t.source())));
                 canFail |= contributionRules(key, name + ", selectie " + k, Expr.FunctionKind.AANTAL, subject,
                         t.elementType(), oneStepRange(t.sourceRole(), subject, t.elementType(), snippet(t.source())), k,
-                        t.filter(), null, null, rules, readings);
+                        t.filter(), null, null, rules, readings, false);
                 deposits |= deposits(t.filter());
                 filters.add(t.filter());
             }
@@ -5843,13 +6056,14 @@ public final class TmsTranspiler {
      * it, where the filter can fault, the rule that inserts the member's {@link FilterFault} ({@link #filterFaultRule}),
      * and where the filter can deposit, the rule that inserts the member's {@link FilterDeposit}
      * ({@link #filterDepositRule}); {@code selection} is the number of the selection of an instance-set union, 0 for any
-     * other fold. The rules go into {@code out} and their reads into {@code readings}, to be registered with the form;
-     * returns whether the filter can fault.
+     * other fold. Where {@code whole}, the fold is the sum per period of RUNTIME-SEMANTICS ch. 3.5 and a member's value is
+     * its whole timeline ({@link #periodSum}). The rules go into {@code out} and their reads into {@code readings}, to be
+     * registered with the form; returns whether the filter can fault.
      */
     private boolean contributionRules(String key, String name, Expr.FunctionKind kind, ObjectType subject,
                                    ObjectType elem, Range range, int selection, Condition filter,
                                    Expr.AttributeReference arg, List<String> cell, List<RulePlan> out,
-                                   List<Reads> readings) {
+                                   List<Reads> readings, boolean whole) {
         Reads reads = contributionReads(subject, elem, range.join());
         Set<Integer> read = reads.follow();
         Term testTerm = filter == null ? null : conditionTerm(filter, reads);
@@ -5871,15 +6085,17 @@ public final class TmsTranspiler {
                 cellKey = cellKey(elem, arg.attribute(), cell, description, arg.source());
                 memberValue = dimensionedMember(elem, arg.attribute());
             }
-        } else memberValue = arg == null ? null : declared(elem, arg.attribute(), false).time() == null
+        } else memberValue = arg == null ? null : whole ? timeMember(elem, arg.attribute(), false,
+                        Msg.drools("PART.desc.period-arithmetic", "snippet", snippet(arg.source())))
+                : declared(elem, arg.attribute(), false).time() == null
                 ? member(elem, arg.attribute(), false) : integrable(timeMember(elem, arg.attribute(), false,
                         Msg.drools("PART.desc.member-total", "snippet", snippet(arg.source()))), Msg.drools("PART.desc.member-total-plain"));
         int value = memberValue == null ? -1 : memberValue.time() == null ? reads.own(memberValue) : reads.timeline(memberValue);
-        String total = memberValue == null || memberValue.time() == null ? null : memberValue.time().name();
+        String total = memberValue == null || memberValue.time() == null || whole ? null : memberValue.time().name();
         reads.stop();
         List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
         Consequence.Input input = kind == Expr.FunctionKind.AANTAL ? new Consequence.Input.Count()
-                : new Consequence.Input.MemberValue(value, total, kind == Expr.FunctionKind.AANTAL_GEVULDE, cellKey);
+                : new Consequence.Input.MemberValue(value, total, kind == Expr.FunctionKind.AANTAL_GEVULDE, cellKey, whole);
         String formName = model.emittedRuleName(form);
         out.add(as(RuleOrigin.Role.FOLD_CONTRIBUTION, reads.rulePlan(formName + ": bijdrage aan " + name, items,
                 new Consequence.Contribution(FOLD_SUBJECT, key, member, input, List.copyOf(use), reads.size(),
@@ -5887,8 +6103,10 @@ public final class TmsTranspiler {
         readings.add(reads);
         if (canFail) out.add(filterFaultRule(key, formName + ": filterfout in " + name, subject, elem, range,
                 selection, filter, readings::add));
-        if (total != null) out.add(memberFaultRule(key, formName + ": lidfout in " + name, subject, elem, range,
-                selection, filter, memberValue, readings::add));
+        if (total != null || whole) out.add(memberFaultRule(key, formName + ": lidfout in " + name, subject, elem, range,
+                selection, filter, memberValue, readings::add, whole ? MemberFaultKind.PERIOD_BUCKET : MemberFaultKind.BUCKET));
+        if (total != null) out.add(memberFaultRule(key, formName + ": lidfout in " + name + " over een open segment", subject,
+                elem, range, selection, filter, memberValue, readings::add, MemberFaultKind.OPEN_SEGMENT));
         if (deposits(filter)) out.add(filterDepositRule(key, formName + ": filterdeponering in " + name, subject,
                 elem, range, filter, readings::add));
         return canFail;
@@ -5969,9 +6187,15 @@ public final class TmsTranspiler {
      * A member whose filter faults has its {@link FilterFault} instead, which the reading form meets first. A member whose
      * place the input did not state has no place in the fold order: the consequence throws, naming the field, as the
      * filter fault rule does.
+     *
+     * <p>{@code kind} says what the member's fault is: the bucket scalar under the per-element total, the same under the
+     * sum per period of ch. 3.5, each in the reference interpreter's words, or, under the per-element total, a timeline
+     * with an open segment whose value is not 0, whose total has none (ch. 3.6, EF-036), the test then that the member's
+     * timeline has one ({@link PeriodArithmetic#openNonZero}).
      */
     private RulePlan memberFaultRule(String key, String ruleName, ObjectType subject, ObjectType elem, Range range,
-                                   int selection, Condition filter, Member memberValue, Consumer<Reads> recorder) {
+                                   int selection, Condition filter, Member memberValue, Consumer<Reads> recorder,
+                                   MemberFaultKind kind) {
         List<Consequence.FoldPlace.Step> places = new ArrayList<>();
         Reads reads = contributionReads(subject, elem, l -> places.addAll(range.perRoute().apply(l)));
         Set<Integer> read = reads.follow();
@@ -5984,15 +6208,36 @@ public final class TmsTranspiler {
         int value = reads.timeline(memberValue);
         reads.stop();
         int member = reads.member();
-        bucket.add(bucketScalar(value, true));
+        bucket.add(kind == MemberFaultKind.OPEN_SEGMENT
+                ? new Term.Call(StaticFunction.OPEN_NONZERO, List.of(new Term.SlotValue(value, null)), null)
+                : bucketScalar(value, true));
         List<LhsItem> items = reads.plan(TestItem.Role.VORM, all(bucket), read);
         recorder.accept(reads);
-        return as(RuleOrigin.Role.FOLD_MEMBER_FAULT, reads.rulePlan(ruleName, items,
-                new Consequence.MemberFault(FOLD_SUBJECT, key, member,
-                        new Consequence.FoldPlace(selection, places, Consequence.PlaceReason.MEMBER_FAULT),
-                        "the per-element temporal total of \"" + memberValue.name() + "\" over ", ": the case supplies an"
-                        + " asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own"
-                        + " timeline (ch. 3.6/§7.1, ch. 8.4)", Consequence.Insertion.LOGICAL)));
+        Consequence.FoldPlace place = new Consequence.FoldPlace(selection, places, Consequence.PlaceReason.MEMBER_FAULT);
+        String name = memberValue.name();
+        return as(RuleOrigin.Role.FOLD_MEMBER_FAULT, reads.rulePlan(ruleName, items, switch (kind) {
+            case BUCKET -> new Consequence.MemberFault(FOLD_SUBJECT, key, member, place,
+                    "the per-element temporal total of \"" + name + "\" over ", ": the case supplies an asOfDate-bucket"
+                    + " scalar, which carries no period of its own; a set fold needs each member's own timeline"
+                    + " (ch. 3.6/§7.1, ch. 8.4)", null, -1, Consequence.Insertion.LOGICAL);
+            case PERIOD_BUCKET -> new Consequence.MemberFault(FOLD_SUBJECT, key, member, place,
+                    "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"" + name + "\" of ",
+                    "; the case supplies only the asOfDate-bucket scalar, which carries no period", null, -1,
+                    Consequence.Insertion.LOGICAL);
+            case OPEN_SEGMENT -> new Consequence.MemberFault(FOLD_SUBJECT, key, member, place, null, null, name, value,
+                    Consequence.Insertion.LOGICAL);
+        }));
+    }
+
+    /** What a member of a fold over an attribute on a timeline brings that the fold cannot read
+     *  ({@link #memberFaultRule}). */
+    private enum MemberFaultKind {
+        /** The asOfDate-bucket scalar, under the per-element total of ch. 3.6. */
+        BUCKET,
+        /** The asOfDate-bucket scalar, under the sum per period of ch. 3.5. */
+        PERIOD_BUCKET,
+        /** A timeline with an open segment that is not 0, under the per-element total (EF-036). */
+        OPEN_SEGMENT
     }
 
     /** The reads of a contribution rule, planned: the member is the subject, the fold's subject is bound before it
