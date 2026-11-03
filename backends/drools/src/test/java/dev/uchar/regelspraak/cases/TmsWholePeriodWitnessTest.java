@@ -107,19 +107,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p><b>R</b>: the forms the branch does not fold are refused by name: the negation inside the qualifier of a
  * characteristic check, a comparison over a timeline read over a path, and one between two timelines.
  *
- * <p><b>Measured</b> (2026-11-02, every document of {@link #main}, every order, each case; the verifier passes every
+ * <p><b>Measured</b> (2026-11-03, every document of {@link #main}, every order, each case; the verifier passes every
  * one). B and C: the reference interpreter's runner and the ASP runner pass every order of both cases (13 expectations
- * each). A: the reference interpreter passes all 24 orders of both cases (21 expectations): a premie its rule wrote on
- * the input state, before the day count replaced the input, is given back where the condition is false at the
- * fixpoint (RUNTIME-SEMANTICS ch. 6.1, "A write is read at the fixpoint"). The ASP runner refuses a whole-period
- * comparison against an attribute bound at translation ("CLINGO-010: a whole-period comparison against a bound other
- * than a literal or a scalar parameter is not translated …"). A3: the reference interpreter answers "MISMATCH:
- * J5.ongelijkpremie = 10, expected leeg" in every order, its comparison of ch. 1.2 making "ongelijk aan" against leeg
- * true per day, where ch. 3.9 makes a leeg bound fail every day (no golden and no test of its own suite has the case);
- * the ASP runner refuses the attribute bound. E: the reference interpreter passes J1 and S1 without a fault, reading
- * the bucket scalar as no timeline, which passes (trouwpremie and werftoeslag 10), and passes J2 and J3 (4
- * expectations); the ASP runner answers S1's werftoeslag 10 and refuses the attribute bound of J1, J2 and J3. This
- * branch follows ch. 8.4 there, as for the pro-rata base of
+ * each). A: both pass all 24 orders of both cases (21 expectations): a premie its rule wrote on the input state, before
+ * the day count replaced the input, is given back where the condition is false at the fixpoint (RUNTIME-SEMANTICS
+ * ch. 6.1, "A write is read at the fixpoint"). A3: both pass every order of both cases (5 expectations): a leeg bound
+ * fails every day, the inequality included (golden {@code jutterswet-gehele-jaar-lege-grens}). E: both pass J1 and S1
+ * without a fault, reading the bucket scalar as no timeline, which passes (trouwpremie and werftoeslag 10), and pass
+ * J2 and J3 (4 expectations). This branch follows ch. 8.4 there, as for the pro-rata base of
  * {@code TmsInputFormWitnessTest}. R: the reference interpreter and the ASP runner both carry the inner negation of
  * the check, and both refuse the other two forms ("whole-period qualifier on a comparison whose operands are not a
  * time-dependent attribute of "Schuit" and a scalar bound", "… between TWO time-dependent operands has no ch. 3.9
