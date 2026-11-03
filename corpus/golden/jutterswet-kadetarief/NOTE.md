@@ -11,7 +11,7 @@ Hand computation, `case.json`, `asOfDate` 2026-03-15:
 | fold | input | calculation | result |
 |---|---|---|---|
 | `havengeld per meter` of H1 | `havengeldtarief` 10 at the date, the bucket of March | 10 × 1 month | 10 `€/m` |
-| `havengeld per meter` of H2 | no tariff | | leeg |
+| `havengeld per meter` of H2 | no tariff | an absent timeline totals 0 | 0 `€/m` |
 | `kadeopbrengst per meter` of H1, S1 | 12 from January to April | 12 × 3 months = 36 | |
 | `kadeopbrengst per meter` of H1, S2 | 7 in January, 5 in February | 7 + 5 = 12 | |
 | `kadeopbrengst per meter` of H1 | S1 and S2 | 36 + 12 | 48 `€/m` |

@@ -193,9 +193,11 @@ golden caseless:
 
 The case pins the four hand-computed absolutes below plus the temporal
 route this NOTE also measures — `J1.bewaargeld = 10 €` over the
-asOfDate month bucket of a `10 €/mnd` rate, `J2.bewaargeld` leeg (an
-absent timeline totals to leeg) — and `consistent`. Seven expectations,
-replayed identically by `ref`, `backends/clingo` and the Drools backend.
+asOfDate month bucket of a `10 €/mnd` rate, `J2.bewaargeld` 0 (an absent
+timeline is leeg on every day and totals 0, ch. 3.6) — and `consistent`. Seven
+expectations, replayed identically by `ref` and `backends/clingo`; the Drools
+backend still answers leeg for `J2.bewaargeld` (gate 12's value-divergence
+list).
 
 What stays refused, in both executors: a `minimum`/`maximum` over a
 temporal set attribute — a ranking fold has no defined moment to rank at.

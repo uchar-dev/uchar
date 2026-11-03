@@ -63,8 +63,8 @@
             "name": "toelagesom",
             "datatype": {
               "node": "Number",
-              "whole": true,
-              "decimals": 0,
+              "whole": false,
+              "decimals": 2,
               "sign": "unspecified"
             }
           },
@@ -306,35 +306,49 @@
               }
             },
             "value": {
-              "node": "Aggregation",
-              "kind": "total",
-              "arguments": [
-                {
-                  "node": "AttributeReference",
-                  "attribute": "stormtoelage",
-                  "subjectType": "Jutter",
-                  "source": {
-                    "snippet": "zijn stormtoelage"
+              "node": "Rounding",
+              "base": {
+                "node": "Aggregation",
+                "kind": "total",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "stormtoelage",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn stormtoelage"
+                    }
                   }
-                }
-              ],
-              "elementType": "Jutter",
-              "filter": {
-                "node": "CharacteristicCheck",
-                "characteristic": "wachtplichtig",
-                "negated": false,
+                ],
+                "elementType": "Jutter",
+                "filter": {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "wachtplichtig",
+                  "negated": false,
+                  "source": {
+                    "snippet": "gedurende de tijd dat hij wachtplichtig is"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "gedurende de tijd dat hij wachtplichtig is"
+                  "snippet": "het totaal van zijn stormtoelage gedurende de tijd dat hij wachtplichtig is"
                 }
               },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
               "type": {
                 "node": "Number",
-                "whole": true,
-                "decimals": 0,
+                "whole": false,
+                "decimals": 2,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "het totaal van zijn stormtoelage gedurende de tijd dat hij wachtplichtig is"
+                "snippet": "(het totaal van zijn stormtoelage gedurende de tijd dat hij wachtplichtig is) rekenkundig afgerond op 2 decimalen"
               }
             },
             "initialisation": false,

@@ -23,7 +23,7 @@ Jutterswet, whose penningjaar is the calendar year (art. 3b).
   characteristic facet, `fixedStart: "2024-09-30"`. No executor reads a
   characteristic's grid (its timeline is its true periods, day-precise); the
   facet carries it so the declaration is written whole.
-- `toelagesom`, a scalar.
+- `toelagesom`, a scalar with two decimals.
 - `maandtoelage`, `voor elke maand startend op dag 31 van de maand`: the same
   inline month grid as `maandwachtdagen`, supplied as a scalar case value;
   `maandtoelagesom`, a scalar.
@@ -38,8 +38,9 @@ Jutterswet, whose penningjaar is the calendar year (art. 3b).
   wachtplichtig is" into `stormwachtdagen`, the same count "in de maand" into
   `maandwachtdagen` (ch. 3.8; each stated bucket equals its target's
   granularity, WF-058), "het totaal van zijn stormtoelage gedurende de tijd
-  dat hij wachtplichtig is" into `toelagesom` (ch. 3.6), "het totaal van zijn
-  maandtoelage" into `maandtoelagesom` and the same total of `weektoelage` and
+  dat hij wachtplichtig is" rounded half away from zero to two decimals into
+  `toelagesom` (ch. 3.6), "het totaal van zijn maandtoelage" into
+  `maandtoelagesom` and the same total of `weektoelage` and
   of `kwartaaltoelage` into their sums: the subject's own total over the
   asOfDate bucket, where a scalar case value is the value of the period of the
   member's grid that holds the evaluation date (ch. 3.2, 3.6); and two
@@ -85,8 +86,13 @@ segment over two storm years.
 - `maandwachtdagen`: 28 and 29 September in [2024-08-31, 2024-09-30) → **2**;
   30 September, 1 and 2 October in [2024-09-30, 2024-10-31) → **3**. The wall
   of 30 September is the 31st clamped.
-- `toelagesom`: the clip leaves [2024-09-28, 2024-10-03), five days, zero
-  whole years (ch. 3.6 floors per fragment) → **0**.
+- `toelagesom`: the clip leaves [2024-09-28, 2024-10-03), five days of one
+  segment; the total counts each day by the storm year that holds it (ch. 3.6,
+  a part of a unit by its days): 28–30 September are 3 of the 366 days of
+  [2023-10-01, 2024-10-01), which holds 29 February 2024, and 1–2 October are 2
+  of the 365 days of [2024-10-01, 2025-10-01), so 100 × 3/366 + 100 × 2/365 =
+  6090/4453 → rounded **1.37**. On the calendar year 2024 the same five days
+  would be 100 × 5/366.
 
 **case2-heel-stormjaar** — J1 wachtplichtig on [2024-10-01, 2025-10-01), one
 whole storm year; `stormtoelage` 120 on the same period.
@@ -107,8 +113,7 @@ the leap day; no `stormtoelage`.
 - `maandwachtdagen`: 27 and 28 February in [2024-01-31, 2024-02-29) → **2**;
   29 February and 1 March in [2024-02-29, 2024-03-31) → **2**.
 - `stormwachtdagen`: [2023-10-01, 2024-10-01) → **4**.
-- `toelagesom`: an absent value timeline under the clip totals **0**, never
-  leeg (ch. 3.6).
+- `toelagesom`: an absent value timeline under the clip totals **0** (ch. 3.6).
 
 **case4-geen-wacht** — J1 without a wachtplichtig period; `stormtoelage` 120 on
 [2024-10-01, 2025-10-01).
@@ -117,7 +122,7 @@ the leap day; no `stormtoelage`.
   are **0** on all time, one segment (−∞, +∞).
 - `toelagesom`: the clip over no period → **0**.
 - `maandtoelagesom`, `weektoelagesom` and `kwartaaltoelagesom`: no scalar
-  value, and the total of an absent member is **leeg** (ch. 3.6).
+  value; an absent timeline is leeg on every day and totals **0** (ch. 3.6).
 - `stormpremie` **50**: the counts read 0 on every day, a value. `maandpremie`
   **leeg**: 0 is not greater than 0 in any month.
 
@@ -144,8 +149,8 @@ scalar; J1 wachtplichtig on [2024-02-28, 2024-03-01).
   30 + 31 + 30 + 31 + 1 = 365: [2024-12-31, 2025-01-31) holds 1–30 January →
   30, [2025-01-31, 2025-02-28) holds 31 January and 1–27 February → 28, and
   so on to [2025-12-31, 2026-01-31), which holds 31 December alone → 1.
-- `toelagesom` **0** (no `stormtoelage`); `maandtoelagesom` **leeg** (no
-  `maandtoelage`).
+- `toelagesom` **0** (no `stormtoelage`); `maandtoelagesom` **0** (no
+  `maandtoelage`, an absent timeline).
 - `stormpremie` **50**: the storm years before [2024-10-01, 2025-10-01) read
   0, so the calendar year 2024 reads a value on all its 366 days.
 - `maandpremie` **leeg**: December 2024 reads 0 on 1–30 December, before the
@@ -173,9 +178,14 @@ wachtplichtig on [2025-02-10, 2025-02-17).
 
 ## Executors
 
-`ref`, clingo and both Drools branches replay the seven cases with these
-values (measured 2026-09-26: `oracle: PASS` and `clingo: PASS` per case,
-`PLAYED 7` in the exec-model branch and in the DRL-text branch). `ref` lays
+`ref` and clingo replay the seven cases with these values (`oracle: PASS`
+and `clingo: PASS` per case, measured 2026-11-03). Both Drools branches play
+them with the values before the part of a unit and the absent total (ch. 3.6,
+IMPLICIT-TIME 12a and 12c): `toelagesom` 0 in case 1 and the three sums leeg in
+cases 4 and 6, listed in gate 12's value-divergence list. The rounding of
+`toelagesom` is what lets the ASP backend carry the total: its weights have the
+denominator 365 × 366 of the two storm years, which a rounding divides away
+(`backends/clingo/README.md` [V8]); 6090/4453 itself has no decimal form. `ref` lays
 the grid in one function (`Timeline.grid_bucket`), which the ASP backend's
 bucket calendar and its total over the asOfDate bucket call as well; the
 Drools branches hand the doel's constant anchor to the anchored producers a

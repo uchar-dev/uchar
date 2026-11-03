@@ -50,7 +50,7 @@
   "expected": [
     { "kind": "attributeValue", "label": "H1", "attribute": "kadeopbrengst per meter", "value": { "number": "48" } },
     { "kind": "attributeValue", "label": "H1", "attribute": "havengeld per meter", "value": { "number": "10" } },
-    { "kind": "attributeEmpty", "label": "H2", "attribute": "havengeld per meter" },
+    { "kind": "attributeValue", "label": "H2", "attribute": "havengeld per meter", "value": { "number": "0" } },
     { "kind": "attributeValue", "label": "H2", "attribute": "kadeopbrengst per meter", "value": { "number": "0" } },
     { "kind": "consistent" }
   ]

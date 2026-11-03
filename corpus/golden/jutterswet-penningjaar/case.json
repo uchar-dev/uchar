@@ -34,7 +34,7 @@
     { "kind": "attributeValue", "label": "J2", "attribute": "totaal aangemelde vondsten", "value": { "number": "3" } },
     { "kind": "characteristicAbsent", "label": "J2", "characteristic": "penninggerechtigd" },
     { "kind": "characteristicPresent", "label": "J2", "characteristic": "aanmeldplichtig" },
-    { "kind": "attributeEmpty", "label": "J3", "attribute": "totaal aangemelde vondsten" },
+    { "kind": "attributeValue", "label": "J3", "attribute": "totaal aangemelde vondsten", "value": { "number": "0" } },
     { "kind": "characteristicAbsent", "label": "J3", "characteristic": "penninggerechtigd" },
     { "kind": "characteristicPresent", "label": "J3", "characteristic": "aanmeldplichtig" },
     { "kind": "consistent" }

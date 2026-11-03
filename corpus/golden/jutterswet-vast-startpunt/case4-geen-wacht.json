@@ -59,19 +59,28 @@
       }
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeValue",
       "label": "J1",
-      "attribute": "maandtoelagesom"
+      "attribute": "maandtoelagesom",
+      "value": {
+        "number": "0"
+      }
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeValue",
       "label": "J1",
-      "attribute": "weektoelagesom"
+      "attribute": "weektoelagesom",
+      "value": {
+        "number": "0"
+      }
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeValue",
       "label": "J1",
-      "attribute": "kwartaaltoelagesom"
+      "attribute": "kwartaaltoelagesom",
+      "value": {
+        "number": "0"
+      }
     },
     {
       "kind": "attributeValue",

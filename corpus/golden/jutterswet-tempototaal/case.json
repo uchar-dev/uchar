@@ -47,7 +47,7 @@
     { "kind": "attributeValue", "label": "J1", "attribute": "bewaargeld", "value": { "number": "10" } },
     { "kind": "attributeValue", "label": "J2", "attribute": "bewaarlast", "value": { "number": "0" } },
     { "kind": "attributeEmpty", "label": "J2", "attribute": "bewaarsom" },
-    { "kind": "attributeEmpty", "label": "J2", "attribute": "bewaargeld" },
+    { "kind": "attributeValue", "label": "J2", "attribute": "bewaargeld", "value": { "number": "0" } },
     { "kind": "consistent" }
   ]
 }

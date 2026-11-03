@@ -5,7 +5,7 @@ Objecttype de Jutter (mv: Jutters) (bezield)
     de stormwachtdagen Numeriek (niet-negatief geheel getal) voor elke stormjaar;
     de maandwachtdagen Numeriek (niet-negatief geheel getal) voor elke maand startend op dag 31 van de maand;
     de stormtoelage Numeriek (geheel getal) voor elke stormjaar;
-    de toelagesom Numeriek (geheel getal);
+    de toelagesom Numeriek (getal met 2 decimalen);
     de maandtoelage Numeriek (geheel getal) voor elke maand startend op dag 31 van de maand;
     de maandtoelagesom Numeriek (geheel getal);
     de weektoelage Numeriek (geheel getal) voor elke week startend op 30-9-2024;
@@ -25,7 +25,7 @@ Regel maandwachtdagen van een jutter
 
 Regel toelagesom van een jutter
     geldig altijd
-        De toelagesom van een Jutter moet gesteld worden op (het totaal van zijn stormtoelage gedurende de tijd dat hij wachtplichtig is).
+        De toelagesom van een Jutter moet gesteld worden op (het totaal van zijn stormtoelage gedurende de tijd dat hij wachtplichtig is) rekenkundig afgerond op 2 decimalen.
 
 Regel maandtoelagesom van een jutter
     geldig altijd

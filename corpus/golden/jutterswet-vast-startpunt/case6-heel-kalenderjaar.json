@@ -174,9 +174,12 @@
       }
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeValue",
       "label": "J1",
-      "attribute": "maandtoelagesom"
+      "attribute": "maandtoelagesom",
+      "value": {
+        "number": "0"
+      }
     },
     {
       "kind": "attributeValue",
