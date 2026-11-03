@@ -689,3 +689,4 @@ RGS-372	het toe te kennen resultaat kan {valueDecimals} decimalen hebben, meer d
 RGS-373	eenheidstelsel '{unitSystem}': de eenheid '{unit}' uit {unitFamily} is gedeclareerd als een veelvoud van '{canonical}' uit {canonicalFamily}, maar tussen die twee families van de kalender bestaat geen vaste omrekenfactor: een maand of een jaar telt geen vast aantal dagen. Het totaal over een tijdlijn rekent tussen de families met de werkelijke lengte van de kalendereenheid (RUNTIME-SEMANTICS ch. 3.6); laat deze omrekening weg (binnen één familie, zoals jr = 12 mnd of wk = 7 dg, blijft een factor toegestaan)
 RGS-373.day-family	de dagfamilie (dag, week)
 RGS-373.month-family	de maandfamilie (maand, kwartaal, jaar)
+RGS-374	de tijdlijn van {operand} ligt op het raster per {operandGrid}, dat niet past in het raster per {targetGrid} van het doel {target}: het doel kan haar knips niet dragen (WF-126)

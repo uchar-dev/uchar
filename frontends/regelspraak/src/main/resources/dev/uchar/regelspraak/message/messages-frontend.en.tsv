@@ -689,3 +689,4 @@ RGS-372	the value can carry {valueDecimals} decimals, more than the {targetDecim
 RGS-373	unit system '{unitSystem}': the unit '{unit}' of {unitFamily} is declared as a multiple of '{canonical}' of {canonicalFamily}: between the two families of the calendar no factor is fixed, since a month or a year has no fixed number of days, and the temporal total integrates across them by the actual length of the calendar unit (RUNTIME-SEMANTICS ch. 3.6)
 RGS-373.day-family	the day family (dag, week)
 RGS-373.month-family	the month family (maand, kwartaal, jaar)
+RGS-374	the timeline of {operand} lies on the grid of every {operandGrid}, which does not fit the grid of every {targetGrid} of the target {target}: the target cannot carry its cuts (WF-126)

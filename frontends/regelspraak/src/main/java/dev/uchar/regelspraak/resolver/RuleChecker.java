@@ -4804,8 +4804,77 @@ final class RuleChecker {
         Typing.Coded error = Typing.assignment(targetType, valueType, ExpressionBuilder.unitlessNumberLiteral(valueExpr));
         if (error == null)
             error = Typing.precisionGate(targetType, timelineTarget(targetExpr) && proRata(valueExpr), valueExpr, model);
+        if (error == null && timelineTarget(targetExpr))
+            error = gridFit((Expr.AttributeReference) targetExpr, valueExpr, condition);
         if (error != null)
             model.diagnostics.add(error.frame("category", "category", category.name().toLowerCase()).at(Severity.ERROR, line));
+    }
+
+    /** IR-SPEC WF-126 (RegelSpraak typeringen §3): a timeline that the value or the condition of a rule on a
+     *  timeline target reads per period lies on a grid that fits the target's, so the target can carry each cut it
+     *  makes — a timeline for every month cannot carry a cut on a day inside a month. Judged on the granularities:
+     *  every grid fits the day; a month, quarter or year fits a target of that family no coarser than itself; any
+     *  other pair fits where it is one granularity, and a start point off the calendar is the verifier's to judge.
+     *  The producers with a grid of their own (the time-proportional part, the day count) and the operand of a
+     *  whole-period qualifier follow their own rule; the qualifier itself is a timeline on the grid it names. */
+    private static Typing.Coded gridFit(Expr.AttributeReference target, Expr value, Condition condition) {
+        Granularity grid = target.objectType().granularityOf(target.attribute());
+        java.util.List<Map.Entry<String, Granularity>> read = new java.util.ArrayList<>();
+        valueTimelines(value, read);
+        if (condition != null) conditionTimelines(condition, target.objectType(), read);
+        for (Map.Entry<String, Granularity> e : read)
+            if (!fits(e.getValue(), grid))
+                return new Typing.Coded("RGS-374", Diagnostic.params("operand", e.getKey(),
+                        "operandGrid", e.getValue().name().toLowerCase(), "target", target.attribute(),
+                        "targetGrid", grid.name().toLowerCase()));
+        return null;
+    }
+
+    private static boolean fits(Granularity operand, Granularity target) {
+        if (target == Granularity.DAG || operand == target) return true;
+        int o = months(operand), t = months(target);
+        return o > 0 && t > 0 && o % t == 0;
+    }
+
+    private static int months(Granularity g) {
+        return switch (g) { case MAAND -> 1; case KWARTAAL -> 3; case JAAR -> 12; default -> 0; };
+    }
+
+    private static void valueTimelines(Expr e, java.util.List<Map.Entry<String, Granularity>> read) {
+        if (e instanceof Expr.Binary b) {
+            valueTimelines(b.left(), read);
+            valueTimelines(b.right(), read);
+        } else if (e instanceof Expr.AttributeReference a && a.navigationRole() == null && a.objectType() != null
+                && a.objectType().granularityOf(a.attribute()) != null) {
+            read.add(Map.entry(a.attribute(), a.objectType().granularityOf(a.attribute())));
+        } else if (e instanceof Expr.ParameterRef p && p.parameter().granularity() != null) {
+            read.add(Map.entry(p.parameter().name(), p.parameter().granularity()));
+        } else if (e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM && f.arguments().size() == 1
+                && f.arguments().get(0) instanceof Expr.AttributeReference a && a.objectType() != null
+                && a.objectType().granularityOf(a.attribute()) != null) {
+            read.add(Map.entry(a.attribute(), a.objectType().granularityOf(a.attribute())));
+        }
+    }
+
+    private static void conditionTimelines(Condition c, ObjectType subject, java.util.List<Map.Entry<String, Granularity>> read) {
+        Condition.WholePeriod period =
+                c instanceof Condition.CharacteristicCheck k ? k.period()
+                : c instanceof Condition.Comparison k ? k.period()
+                : c instanceof Condition.Predicate k ? k.period() : null;
+        if (period != null) {
+            read.add(Map.entry(period.year() ? "het gehele jaar" : "de gehele maand",
+                    period.year() ? Granularity.JAAR : Granularity.MAAND));
+        } else if (c instanceof Condition.CharacteristicCheck k && k.navigation() == null
+                && subject.characteristicGranularityOf(k.characteristic()) != null) {
+            read.add(Map.entry(k.characteristic(), subject.characteristicGranularityOf(k.characteristic())));
+        } else if (c instanceof Condition.Comparison k) {
+            for (Expr side : java.util.List.of(k.left(), k.right()))
+                if (side instanceof Expr.AttributeReference a && a.navigationRole() == null && a.objectType() != null
+                        && a.objectType().granularityOf(a.attribute()) != null)
+                    read.add(Map.entry(a.attribute(), a.objectType().granularityOf(a.attribute())));
+        } else if (c instanceof Condition.Compound k) {
+            for (Condition part : k.components()) conditionTimelines(part, subject, read);
+        }
     }
 
     /** Whether a rule target is an attribute with a timeline, whose pro-rata write stands outside the precision gate
