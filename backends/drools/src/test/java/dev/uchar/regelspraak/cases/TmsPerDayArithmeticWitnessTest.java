@@ -79,8 +79,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * on the route of the asOfDate bucket: 10 €/dg and 7 €/wk over the bucket of February 2024 on a month grid total 290 €
  * and 29 €.
  *
- * <p><b>D, what the branch refuses by name</b> and <b>E, the faults</b> of these forms, each in the same sentence on
- * both branches.
+ * <p><b>D, what the branch refuses by name</b> and <b>E, the faults</b> of these forms and the case reader's hold on a
+ * time-dependent parameter, each in the same sentence on both branches.
  *
  * <p><b>Measured</b> 2026-11-03 on the documents of {@link #main}, A, B, C and the bucket route: the reference
  * interpreter's runner and the ASP runner give the expectations here.
@@ -350,6 +350,30 @@ class TmsPerDayArithmeticWitnessTest {
                 List.of(), Map.of(), Map.of())), Map.of(), List.of(consistent()));
         assertEquals("ComputeFault: fout in de regel \"dagrente\": parameter \"rentevoet\" is unbound in this case"
                 + " (binding is fail-fast, ch. 5.7)", TmsFaultWitnessTest.playBoth(document(MODEL_C, List.of(DAGRENTE)), c));
+    }
+
+    /** The case reader reads a parameter as the reference interpreter's case loader does: a time-dependent parameter
+     *  takes a timeline and a scalar one a value, either in the other form is a defective case, and a segment of the
+     *  timeline that the declared decimals do not hold is refused at the input (EF-004). */
+    @Test void the_case_reader_holds_a_time_dependent_parameter_to_its_timeline() throws Exception {
+        Path ir = document(MODEL_C, List.of(DAGRENTE));
+        List<String> a1 = List.of(instance("A1", "Afdracht", Map.of("afdrachtbedrag", numberValue("10000")), List.of(),
+                Map.of(), Map.of()));
+        assertEquals("IllegalArgumentException: parameter rentevoet: a scalar value on a granular parameter (it takes a"
+                + " timeline)", TmsFaultWitnessTest.playBoth(ir, caseWith(null, a1, Map.of("rentevoet", numberValue("0.04")),
+                List.of(consistent()))));
+        String scalar = TmsDocuments.modelWith(List.of(objectType("Afdracht", List.of(
+                        TmsDocuments.attribute("afdrachtbedrag", numberType(true, 0, EUR))), List.of())), List.of(),
+                List.of(TmsDocuments.parameter("rentevoet", numberType(false, 2, null))),
+                List.of(unitSystem("Munt", List.of(EUR))));
+        assertEquals("IllegalArgumentException: parameter rentevoet: a timeline value on a non-granular parameter",
+                TmsFaultWitnessTest.playBoth(document(scalar, List.of()), caseWith(null, a1,
+                        Map.of("rentevoet", RENTEVOET), List.of(consistent()))));
+        String fine = "{\"timeline\":[" + openTo("2026-02-01", "0.045") + "]}";
+        assertEquals("InputPrecisionFault: invoer parameter rentevoet = 0.045 past niet in 2 decimalen: een casewaarde"
+                + " waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS"
+                + " ch. 2.4, 5.7)",
+                TmsFaultWitnessTest.playBoth(ir, caseWith(null, a1, Map.of("rentevoet", fine), List.of(consistent()))));
     }
 
     /** 100/−28 is −25/7, which does not terminate: the unbounded form holds it exactly in the reference interpreter,
