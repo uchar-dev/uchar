@@ -3026,25 +3026,32 @@ let () =
       check "WV-3.5-d-720" (Q.equal v (q "720") && Ir_v0.Units.denominator u = Some jr)
   | _ -> check "WV-3.5-d-720" false)
 
-(* WV-3.1-open: an open segment holds every day past its bound, so a fold over
-   the buckets it touches has no end; the fold is refused by name (ch. 3.11).
-   A condition without a timeline on a rule whose value is period arithmetic
-   gates it (ch. 3.3): leeftijd 20 > 18, so the rule writes 5 plus the
-   strandloon over all time *)
+(* WV-3.1-open: an open segment holds every day past its bound, and every
+   bucket inside it reads its value on every day, so a fold over the buckets it
+   touches reads one of them for all (ch. 3.9): 5 on all time is greater than 0
+   in every year and not greater than 5 in any. A condition without a timeline
+   on a rule whose value is period arithmetic gates it (ch. 3.3): leeftijd 20 >
+   18, so the rule writes 5 plus the strandloon over all time *)
 let () =
   let five = [ { Timeline.s_from = Timeline.open_from; s_to = Timeline.open_to; s_value = n "5" } ] in
-  expect_fault_msg "WV-3.1-open-bucket-walk"
-    (fun () -> Timeline.whole_period_value Ir_v0.Ast.Year ~tl:five (fun _ -> true))
-    "walks the buckets of a period with an open bound";
+  let positive v = match v with Value.Num (x, _) -> Q.gt x Q.zero | _ -> false in
+  let above_five v = match v with Value.Num (x, _) -> Q.gt x (Q.of_int 5) | _ -> false in
+  check "WV-3.1-open-bucket-walk" (Timeline.whole_period_value Ir_v0.Ast.Year ~tl:five positive);
+  check "WV-3.1-open-bucket-walk-onwaar" (not (Timeline.whole_period_value Ir_v0.Ast.Year ~tl:five above_five));
+  (* an open segment beside a closed one: 0 until 2024 fails "greater than 0"
+     in the years before 2024, which only the bucket beside its bound stands
+     for *)
+  let zero_then_five =
+    [ { Timeline.s_from = Timeline.open_from; s_to = day "2024-01-01"; s_value = n "0" };
+      { Timeline.s_from = day "2024-01-01"; s_to = Timeline.open_to; s_value = n "5" } ]
+  in
+  check "WV-3.1-open-bucket-walk-buur" (not (Timeline.whole_period_value Ir_v0.Ast.Year ~tl:zero_then_five positive));
   let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
   let dir = "ref/test/fixtures/period-arithmetic/" in
-  List.iter
-    (fun (fixture, frag) ->
-      with_files ~ir:(read (dir ^ fixture ^ "/ir.json")) ~case_data:(read (dir ^ fixture ^ "/case.json"))
-        (fun findings _ evaluate ->
-          check ("WV-3.11-" ^ fixture ^ ": verifier-clean") (findings = []);
-          expect_fault_msg ("WV-3.11-" ^ fixture) evaluate frag))
-    [ ("open-whole-period", "walks the buckets of a period with an open bound") ];
+  (* the maandloon, 5 plus the strandloon, is 5 before and after 2024 and 15
+     in it, greater than 0 in every year, so the loonpremie is 50 *)
+  plays ~ident:"WV-3.11-open-whole-period" ~ir:(read (dir ^ "open-whole-period/ir.json"))
+    ~case_data:(read (dir ^ "open-whole-period/case.json")) (fun _ -> ());
   plays ~ident:"WV-3.11-condition" ~ir:(read (dir ^ "condition/ir.json")) ~case_data:(read (dir ^ "condition/case.json"))
     (fun _ -> ());
   (* ch. 3.6: the own total of a period-arithmetic target over a pro-rata part:
@@ -5989,21 +5996,18 @@ let () =
   check "WV-3.10-eigen-grens-voor" (gate (Some "2024-01-01") own_bound = false);
   check "WV-3.10-lege-grens-matcht-nooit"
     (gate ~world:empty_w ~label:"V2" (Some "2024-06-15") own_bound = false);
-  (* the bound shape ch. 3.10's mirror note defers, refused by name and with
-     the PHASE tail the ASP backend's twin sentence differs in *)
+  (* a bound that reads more than the subject, the parameters and literals —
+     here an attribute of a type the subject does not satisfy — refused by
+     name and with the PHASE tail the ASP backend's twin sentence differs in
+     (WF-111) *)
+  let foreign_bound : Ir_v0.Ast.condition_expr =
+    Time_window
+      { starting_at = Some (aref "meldatum" "Strandvak"); up_to = None; to_inclusive = false; source_name = None }
+  in
   expect_fault_msg "WV-3.10-grens-buiten-de-mirror-note"
-    (fun () ->
-      gate (Some "2024-06-15")
-        (Time_window
-           { starting_at = Some (Parameter_ref { parameter = Some "peildatum"; source_name = None });
-             up_to = None; to_inclusive = false; source_name = None }))
-    "neither a date literal nor an own scalar date attribute of the subject";
-  expect_fault_msg "WV-3.10-grens-fasestaart"
-    (fun () ->
-      gate (Some "2024-06-15")
-        (Time_window
-           { starting_at = Some (Parameter_ref { parameter = Some "peildatum"; source_name = None });
-             up_to = None; to_inclusive = false; source_name = None }))
+    (fun () -> gate (Some "2024-06-15") foreign_bound)
+    "which the subject does not satisfy";
+  expect_fault_msg "WV-3.10-grens-fasestaart" (fun () -> gate (Some "2024-06-15") foreign_bound)
     "Declined at evaluation";
   (* WF-042's bound-less window has no gate to compute *)
   expect_fault_msg "WV-3.10-venster-zonder-grens"
@@ -6119,24 +6123,22 @@ let () =
      = [ seg "2024-07-01" "2025-01-01" "10"; seg "2025-01-01" "2025-04-01" "12" ]);
   (* a window that misses the produced timeline leaves nothing of it *)
   check "WV-3.10-clip-gemist" (written_value (window ~up_to:"2024-01-01" ()) = []);
-  (* the window as a MEMBER of a composite on a temporal target stays
-     refused by name, with the phase tail the ASP backend's twin differs in *)
+  (* the window as a MEMBER of a composite on a temporal target holds on its
+     days, as every member holds on its periods (ch. 3.10): alone under all it
+     cuts as the whole window does *)
   let one_member =
     Ir_v0.Ast.Compound
       { quantifier_kind = All; cutoff = 0; components = [ window ~starting_at:"2025-01-01" () ]; source_name = None }
   in
-  expect_fault_msg "WV-3.10-clip-als-lid-geweigerd"
-    (fun () -> written_value one_member)
-    "inside a composite on the temporal target";
-  expect_fault_msg "WV-3.10-clip-als-lid-fasestaart" (fun () -> written_value one_member)
-    "Declined at evaluation";
+  check "WV-3.10-clip-als-lid" (written_value one_member = [ seg "2025-01-01" "2026-01-01" "12" ]);
   (* the CHARACTERISTIC target, which declares its timeline in a different
      table (kenmerkGranulariteit). Reading the attribute table alone let this
      document through as a scalar target — measured 2026-09-20 in the ASP
      backend, which then PLAYED the gate on a timeline. Pinned here so the two
-     tables stay asked apart; the clip is refused on it because no temporal
-     characteristic is written (ch. 3.11). *)
-  let kdoc =
+     tables stay asked apart: the characteristic holds in the days of the
+     window, whatever the evaluation date (ch. 3.11); a window with an open
+     bound would make it hold unboundedly, which is refused by name *)
+  let kdoc cond =
     { empty_doc with
       object_types =
         [ (let n, o = ot "Vondst" [] [ "geborgen" ] in
@@ -6145,13 +6147,18 @@ let () =
         [ rr "berging van een vondst" Characteristic_attribution
             (Some (aref "geborgen" "Vondst"))
             (Some (litv "waar" Boolean))
-            (Some (window ~starting_at:"2024-01-01" ())) ] }
+            (Some cond) ] }
   in
   let kw = World.add_instance World.empty (inst "V1" "Vondst" []) in
-  let kenv = { (env_of kdoc) with as_of = Some "2024-06-15" } in
-  expect_fault_msg "WV-3.10-tijdlijnKENMERKdoel-is-de-clip"
-    (fun () -> Eval.run_rule kenv kw (List.hd kdoc.resolved_rules))
-    "is ch. 3.10's CLIP over a characteristic timeline"
+  let kenv d = { (env_of d) with as_of = Some "2027-06-15" } in
+  let bounded = kdoc (window ~starting_at:"2024-01-01" ~up_to:"2025-01-01" ()) in
+  let kw', _ = Eval.run_rule (kenv bounded) kw (List.hd bounded.resolved_rules) in
+  check "WV-3.10-tijdlijnKENMERKdoel-is-de-clip"
+    (World.SMap.find_opt "geborgen" (World.get kw' "V1").ctls = Some [ (day "2024-01-01", day "2025-01-01") ]);
+  let unbounded = kdoc (window ~starting_at:"2024-01-01" ()) in
+  let kw', _ = Eval.run_rule (kenv unbounded) kw (List.hd unbounded.resolved_rules) in
+  check "WV-3.10-tijdlijnKENMERKdoel-open-grens"
+    (List.exists (fun (f : World.fault) -> substring f.fault_text "have an open bound") (World.standing_faults kw'))
 
 (* WV-3.10-clip-dagtelling: ch. 3.10's sentence for the segment-cutting
    clause, verbatim — "A monthly day count of 31 cut at the fifth of the
@@ -6204,7 +6211,9 @@ let () =
       (Option.value (World.timeline (World.get w' "V1") "zomerdagen") ~default:[])
   in
   check "WV-3.10-clip-dagtelling-31-gesneden-op-de-vijfde"
-    (tl = [ (day_number "2025-07-05", day_number "2025-08-01", Value.to_string (n "31")) ])
+    (tl
+    = [ (day_number "2025-07-05", day_number "2025-08-01", Value.to_string (n "31"));
+        (day_number "2025-08-01", Timeline.open_to, Value.to_string (n "0")) ])
 
 (* --- ch. 5.7a: what a supplied role link establishes -------------------- *)
 
@@ -12354,10 +12363,11 @@ let () =
      minimumdagen is the day count of rentedragend gedurende de tijd dat hij
      verzuimd is, 31 in December and 31 in January. WV-3.9-per-emmer, the
      toetsdagen: the same count gedurende de tijd dat hij niet gedurende de
-     gehele maand rentedragend is, 15 in November and 12 in March (with the
-     day count as it is, which writes no 0 in a month without a true day).
-     WV-5.7-per-dag: the rentedagen of two writers, 30 in a whole month and the
-     day count in another: 15, 30 on [2025-12-01, 2026-03-01), 12 *)
+     gehele maand rentedragend is, 0 until 2025-11-01, 15 in November, 12 in
+     March and 0 from 2026-04-01 (the count is 0 in a month without a true
+     day, IMPLICIT-TIME 7a). WV-5.7-per-dag: the rentedagen of two writers, 30
+     in a whole month and the day count in another: 0, 15, 30 on [2025-12-01,
+     2026-03-01), 12, 0 *)
   plays ~ident:"WV-3.10-voorwaarde-per-periode" ~ir:(read (dir ^ "afdracht/ir.json"))
     ~case_data:(read (dir ^ "afdracht/case.json")) (fun _ -> ());
   (* WV-5.7-per-dag, the writer of the count without its condition: both decide
@@ -12390,6 +12400,58 @@ let () =
      six months aangesteld, 150 *)
   plays ~ident:"WV-3.6-totaal-onder-voorwaarde" ~ir:(read (dir ^ "totaal-onder-voorwaarde/ir.json"))
     ~case_data:(read (dir ^ "totaal-onder-voorwaarde/case.json")) (fun _ -> ())
+
+(* --- a time-dependent characteristic within a window, the day count over all
+   time and its day-kind test (RUNTIME-SEMANTICS ch. 3.8, 3.10, 3.11; the worked
+   examples of spec/proposals/IMPLICIT-TIME.md points 6 and 7, on the documents
+   of ref/test/fixtures/conditions-per-period) ------------------------------ *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/conditions-per-period/" in
+  (* WV-3.10-kenmerk-venster: "Een Afdracht is rentedragend van zijn vervaldatum
+     plus 1 dg tot en met zijn betaaldatum." Geval 1 (verval 2025-11-15, betaald
+     2026-03-12): rentedragend on [2025-11-16, 2026-03-13). Geval 2 (verval
+     2028-02-10, betaald 2028-04-04): on [2028-02-11, 2028-04-05). A leeg
+     betaaldatum: rentedragend nowhere. The rentedagen count it, 0 in every
+     month without a rentedragend day *)
+  plays ~ident:"WV-3.10-kenmerk-venster" ~ir:(read (dir ^ "kenmerk-venster/ir.json"))
+    ~case_data:(read (dir ^ "kenmerk-venster/case.json")) (fun final ->
+      let periods label = World.SMap.find_opt "rentedragend" (World.get final label).ctls in
+      check "WV-3.10-kenmerk-venster-geval-1" (periods "A1" = Some [ (day "2025-11-16", day "2026-03-13") ]);
+      check "WV-3.10-kenmerk-venster-geval-2" (periods "A2" = Some [ (day "2028-02-11", day "2028-04-05") ]);
+      check "WV-3.10-kenmerk-venster-lege-grens" (periods "A3" = Some []));
+  (* WV-3.8-nul-en-dagsoort: geval 2, rentedragend on [2028-02-11, 2028-04-05), a
+     day kind schrikkeldag (month 2, day 29); "het aantal dagen in de maand dat
+     hij rentedragend is en de dag geen schrikkeldag is" in a target with the
+     unit dg/mnd: 0 until 2028-02-01, 18 on [2028-02-01, 2028-03-01), 31 on
+     [2028-03-01, 2028-04-01), 4 on [2028-04-01, 2028-05-01), 0 from
+     2028-05-01. Without the day-kind test February is 19 *)
+  plays ~ident:"WV-3.8-nul-en-dagsoort" ~ir:(read (dir ^ "nul-en-dagsoort/ir.json"))
+    ~case_data:(read (dir ^ "nul-en-dagsoort/case.json")) (fun final ->
+      match World.timeline (World.get final "A1") "rentedagen" with
+      | Some ({ s_value = Value.Num (_, Value.Unit u); _ } :: _) ->
+          check "WV-3.8-nul-en-dagsoort-eenheid" (Ir_v0.Units.render u = "dg/mnd")
+      | _ -> check "WV-3.8-nul-en-dagsoort-eenheid" false);
+  (* WV-3.10-venster-als-lid: the day count of wachtplichtig gedurende de tijd dat
+     hij aangesteld is and it is the period from 2024-03-01 to 2024-07-01: the
+     window holds on its days, so the count is cut to [2024-03-01, 2024-07-01)
+     of aangesteld [2024-02-01, 2024-08-01): 9, 0, 20, 0 *)
+  plays ~ident:"WV-3.10-venster-als-lid" ~ir:(read (dir ^ "venster-als-lid/ir.json"))
+    ~case_data:(read (dir ^ "venster-als-lid/case.json")) (fun _ -> ());
+  (* WV-3.10-venster-rekenen: the seizoensloon, the strandloon plus 5 from
+     2024-03-01 to 2024-06-01: 15 on the window, nothing outside it *)
+  plays ~ident:"WV-3.10-venster-rekenen" ~ir:(read (dir ^ "venster-rekenen/ir.json"))
+    ~case_data:(read (dir ^ "venster-rekenen/case.json")) (fun _ -> ());
+  (* formulation A of IMPLICIT-TIME §4, end to end: the anchor
+     jutterswet-verzuimrente-30-360 with its maandrente and verzuimrente in the
+     unbounded form and without the roundings. Geval 1: 16 2/3, 33 1/3 in
+     December and January, 41 2/3, 16 2/3, totaal 141 2/3 €; geval 2: 25,
+     41 2/3, 5 5/9, totaal 72 2/9 € *)
+  List.iter
+    (fun c ->
+      plays ~ident:("WV-3.11-formulering-A-onafgerond-" ^ c) ~ir:(read (dir ^ "verzuimrente-onafgerond/ir.json"))
+        ~case_data:(read (dir ^ "verzuimrente-onafgerond/" ^ c ^ ".json")) (fun _ -> ()))
+    [ "case1"; "case2" ]
 
 (* WV-5.7-per-dag-invoer: two writers of one timeline target, each deciding its
    own segments, over an input timeline 7 on 2024. The input stands on the days
@@ -12437,12 +12499,12 @@ let () =
         line 1 "1 BuiltinCall [[2025-12-01 2026-01-01 31], [2026-01-01 2026-02-01 31]]";
         line 1 "2 CharacteristicCheck [[2025-11-16 2026-03-13 empty]]"; line 1 "HOLDS";
         line 2 "0 CharacteristicCheck [[- 2025-12-01 empty], [2026-03-01 - empty]]";
-        line 2 "1 BuiltinCall [[2025-11-01 2025-12-01 15], [2026-03-01 2026-04-01 12]]";
+        line 2 "1 BuiltinCall [[- 2025-11-01 0], [2025-11-01 2025-12-01 15], [2026-03-01 2026-04-01 12], [2026-04-01 - 0]]";
         line 2 "2 CharacteristicCheck [[2025-11-16 2026-03-13 empty]]"; line 2 "HOLDS";
         line 3 "0 CharacteristicCheck [[2025-12-01 2026-03-01 empty]]";
         line 3 "1 Literal [[2025-12-01 2026-03-01 30]]"; line 3 "HOLDS";
         line 4 "0 CharacteristicCheck [[- 2025-12-01 empty], [2026-03-01 - empty]]";
-        line 4 "1 BuiltinCall [[2025-11-01 2025-12-01 15], [2026-03-01 2026-04-01 12]]";
+        line 4 "1 BuiltinCall [[- 2025-11-01 0], [2025-11-01 2025-12-01 15], [2026-03-01 2026-04-01 12], [2026-04-01 - 0]]";
         line 4 "2 CharacteristicCheck [[2025-11-16 2026-03-13 empty]]"; line 4 "HOLDS" ]
   in
   check "WV-5.12-voorwaarde-per-periode" (got = expected);

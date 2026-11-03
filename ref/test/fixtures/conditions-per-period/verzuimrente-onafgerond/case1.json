@@ -1,0 +1,146 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-12",
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Afdracht",
+        "attributes": {
+          "afdrachtbedrag": {
+            "number": "10000"
+          },
+          "vervaldatum": {
+            "date": "2025-11-15"
+          },
+          "betaaldatum": {
+            "date": "2026-03-12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "verzuimrentevoet": {
+        "timeline": [
+          {
+            "to": "2026-02-01",
+            "value": {
+              "number": "0.04"
+            }
+          },
+          {
+            "from": "2026-02-01",
+            "value": {
+              "number": "0.05"
+            }
+          }
+        ]
+      },
+      "rentejaar": {
+        "number": "360"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "A1",
+      "attribute": "rentedagen",
+      "timeline": [
+        {
+          "to": "2025-11-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2025-11-01",
+          "to": "2025-12-01",
+          "value": {
+            "number": "15"
+          }
+        },
+        {
+          "from": "2025-12-01",
+          "to": "2026-03-01",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2026-03-01",
+          "to": "2026-04-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2026-04-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "A1",
+      "attribute": "maandrente",
+      "timeline": [
+        {
+          "to": "2025-11-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2025-11-01",
+          "to": "2025-12-01",
+          "value": {
+            "number": "50/3"
+          }
+        },
+        {
+          "from": "2025-12-01",
+          "to": "2026-02-01",
+          "value": {
+            "number": "100/3"
+          }
+        },
+        {
+          "from": "2026-02-01",
+          "to": "2026-03-01",
+          "value": {
+            "number": "125/3"
+          }
+        },
+        {
+          "from": "2026-03-01",
+          "to": "2026-04-01",
+          "value": {
+            "number": "50/3"
+          }
+        },
+        {
+          "from": "2026-04-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "A1",
+      "attribute": "verzuimrente",
+      "value": {
+        "number": "425/3"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

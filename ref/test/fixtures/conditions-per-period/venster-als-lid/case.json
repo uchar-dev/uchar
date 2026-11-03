@@ -1,0 +1,74 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "wachtplichtig": [
+            {
+              "from": "2024-01-20",
+              "to": "2024-03-10"
+            },
+            {
+              "from": "2024-05-05",
+              "to": "2024-05-25"
+            }
+          ],
+          "aangesteld": [
+            {
+              "from": "2024-02-01",
+              "to": "2024-08-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "wachtdagen",
+      "timeline": [
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "9"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "to": "2024-05-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-05-01",
+          "to": "2024-06-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2024-06-01",
+          "to": "2024-07-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -359,6 +359,13 @@ let rec reads_timeline (doc : document) ~(ot : string) (c : condition_expr) =
       List.exists qualified (Option.to_list kv_filter @ Option.to_list kv_test)
   | Time_window _ | Role_membership _ | Rule_status_check _ | Identity_check _ | Condition_unresolved _ -> false
 
+(* Whether a condition on a rule of a timeline target is read per period: it
+   reads a timeline ([reads_timeline]) or holds a period window, whose periods
+   are the window's days (ch. 3.10), as a member of a composite too. Static,
+   so the ASP backend asks it here as well. *)
+let read_per_period (doc : document) ~(ot : string) (c : condition_expr) =
+  reads_timeline doc ~ot c || contains_time_window c
+
 
 (* ch. 3.10's v0 mirror note carries TWO bounds on the window and this is the
    second: v0's backends "refuse the condition under counting quantifiers".
@@ -934,12 +941,13 @@ let target_member env (target : expr option) =
    min, verminderd met, maal, both divisions, percentage van), the sum over the
    members of a set, and an operand of those standing alone — a scalar, which
    holds on every day, a time-dependent attribute or parameter, read whole
-   (ch. 3.1, 3.11). *)
-let is_period_arithmetic (e : expr) =
+   (ch. 3.1, 3.11) — each of them rounded per day as well (ch. 2.5). *)
+let rec is_period_arithmetic (e : expr) =
   match e with
   | Binary { op = Plus | Min | Reduced_by | Times | Divided_by | Divided_by_abs | Percentage_of; _ } -> true
   | Function_call { kind = Sum_function; element_object_type = Some _; _ } -> true
   | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } | Parameter_ref _ -> true
+  | Rounding { base_expr = Some b; _ } -> is_period_arithmetic b
   | _ -> false
 
 (* Whether a rule writes [attr] of [otype] as ch. 3.4/3.5 period arithmetic.
@@ -2510,22 +2518,26 @@ and eval_dimension_fold env world self ~err ~kind ~call_arguments ~empty_fallbac
 and window_bounds env world (self : World.instance) ~err starting_at up_to =
   let bound side e =
     (* the shape of an anchored bound is judged on the form subject (ch. 3.4a) *)
-    (match unanchored env self e with
-     | _, _, Literal _ -> ()
-     | env, self, Attribute_reference
-         { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ }
-       when own_read env self otn && not (Ir_v0.Checks.attr_temporal (object_type env otn) a) ->
-         ()
-     | _ ->
+    (let env, self, e = unanchored env self e in
+     let temporal_param p =
+       match Ir_v0.Checks.find_ci env.doc.parameters p with Some { par_granularity = Some _; _ } -> true | _ -> false
+     in
+     match
+       Ir_v0.Checks.window_bound_misfit ~own:(own_read env self)
+         ~temporal_attr:(fun otn a -> Ir_v0.Checks.attr_temporal (object_type env otn) a)
+         ~temporal_param e
+     with
+     | None -> ()
+     | Some what ->
          (* the phase tail is load-bearing, the WF-044 sisters' pattern:
             the ASP backend refuses the same bound in the same words and
             a pin that stopped before the tail could not tell the two
             phases apart, so a swap would pass unseen *)
          Value.fault
-           "the %s bound of a period condition is neither a date literal nor an own scalar \
-            date attribute of the subject, the only two shapes WF-111 admits: the document is \
-            not well-formed. Declined at evaluation"
-           side);
+           "the %s bound of a period condition is %s, and WF-111 admits a day-precise date expression \
+            over the subject, the parameters and literals: the document is not well-formed. Declined at \
+            evaluation"
+           side what);
     eval_expr env world self ~err e
   in
   let v = match starting_at with Some e -> Some (bound "from" e) | None -> None in
@@ -3172,10 +3184,20 @@ let rec cond_periods env w (self : World.instance) ~err ~(target : Timeline.grid
     let b = Timeline.whole_buckets g inner in
     if gp.gp_negated then Timeline.complement_all b else b
   in
-  if not (reads_timeline env.doc ~ot:self.otype c) then
+  if not (read_per_period env.doc ~ot:self.otype c) then
     record (if eval_cond_node env w self ~err c then Timeline.all_time else [])
   else
     match c with
+    | Time_window { starting_at; up_to; to_inclusive; _ } ->
+        (* the window holds on its days, from inclusive, to exclusive unless
+           "tot en met"; a leeg bound puts no day in it (ch. 3.10) *)
+        record
+          (match window_bounds env w self ~err starting_at up_to with
+          | Some None, _ | _, Some None -> []
+          | dv, dt ->
+              let lo = match dv with Some (Some z) -> z | _ -> Timeline.open_from in
+              let hi = match dt with Some (Some z) -> if to_inclusive then z + 1 else z | _ -> Timeline.open_to in
+              if lo < hi then [ (lo, hi) ] else [])
     | Characteristic_check { characteristic = Some k; navigation_binding = None; negation; holder; time_period; _ } ->
         (match owner_hosts env.doc ~otype:self.otype ~subj:env.subj ~characteristic:(Some k) holder with
         | Narrowing e -> narrowing_refused ~characteristic:(Some k) e "a condition per period"
@@ -3256,12 +3278,7 @@ let rec cond_periods env w (self : World.instance) ~err ~(target : Timeline.grid
                  @ List.map (fun (v, t) -> { Timeline.s_from = v; s_to = t; s_value = Value.Empty }) gaps));
             inner)
     | Compound { quantifier_kind; cutoff; components; _ } ->
-        if List.exists contains_time_window components then
-          Value.fault
-            "a period condition inside a composite on the temporal target %S: ch. 3.10 specifies the clip for \
-             the window as the rule's whole condition and says nothing about what the other members do to a \
-             timeline. Declined at evaluation"
-            attr;
+        period_under_count_quantifier quantifier_kind components;
         let parts = List.map (cond_periods env w self ~err ~target ~attr) components in
         let n = List.length parts in
         let cs =
@@ -3432,6 +3449,15 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
       let members = fold_members ?binding:source_role ?path:source_path env w self ~element:el in
       let fallback = Option.map (eval_expr env w self ~err) empty_fallback in
       seen (Timeline.summed ?fallback ~target_unit (List.map (fun i -> whole i x) members))
+  | Rounding { base_expr = Some b; mode_kind; decimal_places; _ } when is_period_arithmetic b ->
+      (* ch. 2.5 per day: each segment of the base rounded, its leeg periods
+         gaps as before *)
+      let tl = period_timeline env w self ~err ~target ~attr ~target_unit b in
+      seen
+        (Timeline.coalesce
+           (List.map
+              (fun (s : Timeline.segment) -> { s with s_value = Arith.round_v mode_kind decimal_places s.s_value })
+              tl))
   | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } ->
       scalar_everywhere env w self ~err ~root e
   | Parameter_ref { parameter = Some p; _ } -> (
@@ -3485,7 +3511,62 @@ let run_period_arithmetic ?periods env w (self : World.instance) ~err ~form ~ot 
   read_whole value_node (Some result);
   write_produced env w self ~form ~ot ~attr result
 
-let run_pro_rata ?periods env w (self : World.instance) ~form ~ot ~attr value_node =
+(* The true periods of the condition of a day count (WF-058, ch. 3.8): its own
+   time-dependent characteristic, and of its days those on which each day-kind
+   test of the counted day holds (IMPLICIT-TIME 7b); over more than one
+   characteristic it is refused by name, as in the ASP backend (no corpus case). The
+   day-kind test is the predicate of the day alone (ch. 3.8, the day-kind
+   forms), so it is asked of each counted day as it is asked of the bound day
+   of a definition. *)
+let day_count_periods env w (self : World.instance) ~err (c : condition_expr) : (int * int) list =
+  let ot_decl = object_type env self.otype in
+  let refused () =
+    Value.faultc "REF-010"
+      "unsupported day-count condition shape (an own temporal characteristic, or an all composite of such \
+       checks and day-kind tests of the counted day; no corpus case for more)"
+  in
+  match Ir_v0.Checks.day_count_filter c with
+  | Some (_ :: _ :: _, _) -> Value.fault "a day count over more than one characteristic is not executed (no corpus case)"
+  | Some ([ k ], day_kinds) ->
+      if not (characteristic_temporal ot_decl k) then
+        Value.fault "gedurende over %S, which is not a temporal characteristic" k;
+      let base = Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[] in
+      if day_kinds = [] then base
+      else begin
+        Timeline.refuse_open_periods "a day-kind test in a day count" base;
+        let counted d = List.for_all (fun (k, negation) -> day_kind_matches env w self ~err k d <> negation) day_kinds in
+        (* the runs of counted days, in order *)
+        List.concat_map
+          (fun (v, t) ->
+            let rec runs d start acc =
+              if d >= t then List.rev (match start with Some a -> (a, d) :: acc | None -> acc)
+              else
+                match (counted d, start) with
+                | true, None -> runs (d + 1) (Some d) acc
+                | true, Some _ -> runs (d + 1) start acc
+                | false, Some a -> runs (d + 1) None ((a, d) :: acc)
+                | false, None -> runs (d + 1) None acc
+            in
+            runs v None [])
+          base
+      end
+  | _ -> refused ()
+
+(* The unit of a day count (IMPLICIT-TIME VB 7.2): days per unit of its bucket
+   where the target declares a unit, which WF-058 makes that one; the bare
+   number in a target without one *)
+let day_count_unit env ~ot ~attr (g : Ir_v0.Ast.grain) =
+  match attr_decl env ~otype:ot ~attr with
+  | Some (Number { measure_unit = Some u; _ }) ->
+      if not (Ir_v0.Checks.day_count_unit_fits g u) then
+        Value.fault
+          "the day count writes days per %s, and its target %S declares another unit: the document is not \
+           well-formed (WF-058)"
+          (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity g) attr;
+      Value.Unit u
+  | _ -> Value.Unitless
+
+let run_pro_rata ?periods env w (self : World.instance) ~err ~form ~ot ~attr value_node =
   let ot_decl = object_type env ot in
   match value_node with
   | Function_call
@@ -3567,23 +3648,24 @@ let run_pro_rata ?periods env w (self : World.instance) ~form ~ot ~attr value_no
         Value.fault
           "day-count bucket granularity differs from the target's declared granularity";
       clip_member_qualifications c;
-      let true_periods =
-        match c with
-        | Characteristic_check { characteristic = Some k; navigation_binding = None; negation = false; _ } ->
-            if not (characteristic_temporal ot_decl k) then
-              Value.fault "gedurende over %S, which is not a temporal characteristic" k;
-            Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]
-        | _ ->
-            Value.faultc "REF-010"
-              "unsupported day-count condition shape (an own temporal characteristic; no corpus \
-               case for more)"
-      in
+      let true_periods = day_count_periods env w self ~err c in
       (* the target's periods: the calendar's, or its fixed start point's
          (ch. 3.2) *)
       held_over c (as_periods true_periods);
+      (match c with
+      | Compound { components; _ } ->
+          List.iter
+            (fun (m : condition_expr) ->
+              match m with
+              | Characteristic_check { characteristic = Some k; _ } ->
+                  held_over m (as_periods (Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[]))
+              (* a day-kind test, with the days it lets count *)
+              | _ -> held_over m (as_periods true_periods))
+            components
+      | _ -> ());
+      let unit = day_count_unit env ~ot ~attr g in
       let result =
-        clip_periods periods
-          (Timeline.count_days_in_grid (Timeline.attr_grid env.doc ot_decl attr) true_periods)
+        clip_periods periods (Timeline.day_count ~unit (Timeline.attr_grid env.doc ot_decl attr) true_periods)
       in
       read_whole value_node (Some result);
       (* the ch. 7.8 timeline arm, as for pro-rata *)
@@ -3658,6 +3740,28 @@ let characteristic_value_constant_true (r : resolved_rule) ~ot ~attr =
          at evaluation"
         (rule_name r) attr ot value_node
 
+(* A time-dependent characteristic target is written within a period window
+   (ch. 3.10, 3.11): the window, with the rest of the condition read per period,
+   bounds the periods in which it holds. Without a window, by two rules, or over
+   a case-supplied timeline it is refused by name, before any subject is taken
+   (no corpus case). *)
+let characteristic_window_refusals env (r : resolved_rule) ~ot ~attr =
+  (match r.rr_condition with
+  | Some c when contains_time_window c -> ()
+  | _ ->
+      Value.fault
+        "the time-dependent characteristic %S of %S is written within a period window (ch. 3.10, 3.11); \
+         without one it is not executed (no corpus case)"
+        attr ot);
+  let writes (r' : resolved_rule) =
+    r'.rr_presentation = Some Characteristic_attribution
+    && match target_member env r'.objective with
+       | Some (ot', a, _) -> norm a = norm attr && Ir_v0.Checks.populations_overlap env.doc ot ot'
+       | None -> false
+  in
+  if List.length (List.filter writes env.doc.resolved_rules) >= 2 then
+    Value.fault "two rules write the time-dependent characteristic %S of %S: not executed (no corpus case)" attr ot
+
 let run_rule ?only env world (r : resolved_rule) =
   if not (applies env r.rr_validity) then (world, false)
   else
@@ -3692,31 +3796,18 @@ let run_rule ?only env world (r : resolved_rule) =
           | Some Characteristic_attribution -> characteristic_temporal (object_type env ot) attr
           | _ -> temporal_target
         in
-        (* ch. 3.10's CLIP: on a timeline target the window
-           is taken off the condition position — it gates nothing — and cuts
-           the producer's result per subject instead. Two positions stay
-           refused by name, both before any subject is taken: a
-           characteristic target, whose timeline this executor never writes
-           (ch. 3.11), and the window as a composite MEMBER, where the chapter
-           says nothing about what the other members do to a timeline. *)
+        (* ch. 3.10's CLIP: on a timeline attribute target a window that is
+           the whole condition is taken off the condition position — it gates
+           nothing — and cuts the producer's result per subject instead. A
+           window as a member of a composite is read per period with the
+           other members ([cond_periods]), and so is every condition of a
+           time-dependent characteristic target ([write_characteristic]). *)
         let clip =
-          if target_timeline && Option.fold ~none:false ~some:contains_time_window r.rr_condition then
-            match (r.rr_presentation, r.rr_condition) with
-            | Some Characteristic_attribution, _ ->
-                Value.faultc ~params:[ ("characteristic", attr) ] "EF-023"
-                  "a period condition on the temporal characteristic target %S is ch. 3.10's \
-                   CLIP over a characteristic timeline, and no temporal characteristic is written \
-                   here (ch. 3.11), so there is no timeline to cut. Declined at evaluation"
-                  attr
-            | _, Some (Time_window { starting_at; up_to; to_inclusive; _ }) ->
-                Some (starting_at, up_to, to_inclusive)
-            | _ ->
-                Value.fault
-                  "a period condition inside a composite on the temporal target %S: ch. 3.10 \
-                   specifies the clip for the window as the rule's whole condition and says \
-                   nothing about what the other members do to a timeline. Declined at evaluation"
-                  attr
-          else None
+          match (r.rr_presentation, r.rr_condition) with
+          | Some Characteristic_attribution, _ -> None
+          | _, Some (Time_window { starting_at; up_to; to_inclusive; _ }) when target_timeline ->
+              Some (starting_at, up_to, to_inclusive)
+          | _ -> None
         in
         (* the window for one subject: a leeg bound puts no day in it *)
         let window_of w self ~err (starting_at, up_to, incl) =
@@ -3731,14 +3822,14 @@ let run_rule ?only env world (r : resolved_rule) =
            and ch. 3.8 day-count targets and the period arithmetic of ch. 3.4
            and 3.5; every other temporal target refuses — never silently coerce
            a scalar into a timeline *)
+        let temporal_characteristic = r.rr_presentation = Some Characteristic_attribution && target_timeline in
         (match r.rr_presentation with
         | Some Characteristic_attribution ->
-            if characteristic_temporal (object_type env ot) attr then
-              Value.fault "temporal characteristic %S: temporal writes are not implemented" attr;
-            characteristic_value_constant_true r ~ot ~attr
+            characteristic_value_constant_true r ~ot ~attr;
+            if temporal_characteristic then characteristic_window_refusals env r ~ot ~attr
         | _ ->
             if temporal_target then
-              match r.value_node with
+              match Option.map Ir_v0.Checks.let_bound_value r.value_node with
               | Some (Function_call { kind = Time_proportional_part | Day_count; _ }) -> ()
               | Some v when is_period_arithmetic v -> ()
               | _ ->
@@ -3751,14 +3842,9 @@ let run_rule ?only env world (r : resolved_rule) =
            holds on every day or on none and gates the rule as before *)
         let per_period =
           temporal_target && clip = None
-          && Option.fold ~none:false ~some:(reads_timeline env.doc ~ot) r.rr_condition
+          && Option.fold ~none:false ~some:(read_per_period env.doc ~ot) r.rr_condition
         in
         let several = temporal_target && List.length (timeline_writers env ~ot ~attr) >= 2 in
-        (match (clip, r.value_node) with
-        | Some _, Some v when temporal_target && is_period_arithmetic v ->
-            Value.fault "a period window as the condition of the period arithmetic of %S is not executed (no corpus case)"
-              attr
-        | _ -> ());
         (* SUBTYPING §4.1 rules 1 and 4: where inheritance brings a defaults
            stack to this target, this rule is that stack's BASE and is
            written by the group, not here. The exclusion is per CONCRETE
@@ -3775,6 +3861,8 @@ let run_rule ?only env world (r : resolved_rule) =
                state is given back (ch. 5.2, 6.1) *)
             let release () =
               match r.rr_presentation with
+              | Some Characteristic_attribution when temporal_characteristic ->
+                  World.release_char_timeline w ~form ~label:self.label ~char:attr
               | Some Characteristic_attribution -> World.release_char w ~form ~label:self.label ~char:attr
               | _ when several -> World.release_timeline_part w ~form ~label:self.label ~attr
               | _ -> World.release w ~form ~label:self.label ~attr:member
@@ -3790,13 +3878,29 @@ let run_rule ?only env world (r : resolved_rule) =
               &&
               match (clip, r.rr_condition) with
               | Some _, _ -> true
-              | None, Some _ when per_period -> true
+              | None, Some _ when per_period || temporal_characteristic -> true
               | None, Some c -> eval_cond env w self ~err c
               | None, None -> true
             in
             if not fire then release ()
             else
               match r.rr_presentation with
+              (* a time-dependent characteristic holds in the periods of its
+                 condition, the window among them (ch. 3.11) *)
+              | Some Characteristic_attribution when temporal_characteristic ->
+                  let c = req "RuleVersion.condition" r.rr_condition in
+                  let grid =
+                    match Ir_v0.Checks.find_ci (object_type env ot).characteristic_granularity attr with
+                    | Some (Some g) -> Timeline.calendar_grid g
+                    | _ -> Value.fault "temporal characteristic %S without a granularity" attr
+                  in
+                  let periods = cond_periods env w self ~err ~target:grid ~attr c in
+                  if List.exists (fun (v, t) -> v = Timeline.open_from || t = Timeline.open_to) periods then
+                    Value.fault
+                      "the periods in which the time-dependent characteristic %S of %S holds have an open \
+                       bound: a characteristic holds in bounded periods only (no corpus case)"
+                      attr self.label;
+                  World.write_char_timeline_by w ~form ~label:self.label ~char:attr periods
               (* the value is the constant waar, checked before any subject
                  was taken ([characteristic_value_constant_true]) *)
               | Some Characteristic_attribution -> World.set_char_by w ~form ~label:self.label ~char:attr
@@ -3811,9 +3915,9 @@ let run_rule ?only env world (r : resolved_rule) =
                         Some (cond_periods env w self ~err ~target ~attr c)
                     | _ -> None
                   in
-                  let value = req "RuleVersion.value" r.value_node in
+                  let value = Ir_v0.Checks.let_bound_value (req "RuleVersion.value" r.value_node) in
                   if is_period_arithmetic value then run_period_arithmetic ?periods env w self ~err ~form ~ot ~attr value
-                  else run_pro_rata ?periods env w self ~form ~ot ~attr value
+                  else run_pro_rata ?periods env w self ~err ~form ~ot ~attr value
               | Some (Equation | Calculation) ->
                   let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
                   (* ch. 7.8: on a standing target — and on a ch. 7.7

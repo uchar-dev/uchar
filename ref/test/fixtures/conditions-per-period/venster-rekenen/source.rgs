@@ -1,0 +1,7 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het strandloon Numeriek (geheel getal) voor elke maand;
+    het seizoensloon Numeriek (geheel getal) voor elke maand;
+
+Regel seizoensloon van een jutter
+    geldig altijd
+        Het seizoensloon van een Jutter moet berekend worden als zijn strandloon plus 5 van dd. 01-03-2024 tot dd. 01-06-2024.

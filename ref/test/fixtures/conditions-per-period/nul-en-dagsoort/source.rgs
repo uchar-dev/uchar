@@ -1,0 +1,27 @@
+Eenheidsysteem Rentetijd
+    de dag (mv: dagen) dg
+    de maand (mv: maanden) mnd
+
+Dagsoort de schrikkeldag (mv: schrikkeldagen);
+
+Objecttype de Afdracht (mv: Afdrachten)
+    is rentedragend kenmerk (bijvoeglijk) voor elke dag;
+    de rentedagen Numeriek (niet-negatief geheel getal) met eenheid dg/mnd voor elke maand;
+    de kale dagen Numeriek (niet-negatief geheel getal) met eenheid dg/mnd voor elke maand;
+
+Regel schrikkeldag
+    geldig altijd
+        Een dag is een schrikkeldag
+        indien er aan alle volgende voorwaarden wordt voldaan:
+        - de maand uit de dag gelijk is aan 2
+        - de dag uit de dag gelijk is aan 29.
+
+Regel rentedagen
+    geldig altijd
+        De rentedagen van een Afdracht moet berekend worden als het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt voldaan:
+        - hij is rentedragend
+        - de dag is geen schrikkeldag.
+
+Regel kale dagen
+    geldig altijd
+        De kale dagen van een Afdracht moet berekend worden als het aantal dagen in de maand dat hij rentedragend is.

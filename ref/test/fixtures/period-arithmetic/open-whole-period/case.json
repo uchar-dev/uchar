@@ -27,6 +27,14 @@
   },
   "expected": [
     {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "loonpremie",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
       "kind": "consistent"
     }
   ]

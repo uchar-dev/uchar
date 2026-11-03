@@ -238,6 +238,22 @@ let count_days_in_grid (gr : grid) (true_periods : (int * int) list) : t =
     acc []
   |> List.rev
 
+(* ch. 3.8 "aantal dagen in (de maand / het jaar)" as a timeline over all time
+   (IMPLICIT-TIME 7a): the count of every period of the grid with a true day,
+   one segment each as [count_days_in_grid] gives them, and 0 in every period
+   without one — each run of such periods one segment, open where it reaches
+   before the first counted period or past the last, and the whole of time
+   where no period counts. The values carry [unit]. *)
+let day_count ?(unit = Value.Unitless) (gr : grid) (true_periods : (int * int) list) : t =
+  let zero v t = { s_from = v; s_to = t; s_value = Value.Num (Q.zero, unit) } in
+  let rec fill prev = function
+    | [] -> [ zero prev open_to ]
+    | s :: rest ->
+        let s = match s.s_value with Value.Num (q, _) -> { s with s_value = Value.Num (q, unit) } | _ -> s in
+        (if s.s_from > prev then [ zero prev s.s_from ] else []) @ (s :: fill s.s_to rest)
+  in
+  fill open_from (count_days_in_grid gr true_periods)
+
 let count_days_in (g : Ir_v0.Ast.grain) (true_periods : (int * int) list) : t =
   count_days_in_grid (calendar_grid g) true_periods
 
@@ -305,8 +321,22 @@ let entire_period_characteristic (g : Ir_v0.Ast.grain) ~(negation : bool)
 
    The QUALIFIER's own negation ("niet gedurende …") is not here: it
    complements the folded result, which the caller does. *)
+(* The part of a segment a fold over the buckets of [g] reads (ch. 3.9): an
+   open segment touches unboundedly many buckets, and every one of them that
+   lies inside it reads its value on every day, so the two buckets nearest its
+   finite bound — the one that holds the bound and the one beside it, inside
+   the segment — stand for all of them; a segment open on both sides is read
+   on one bucket. A segment with two bounds is read whole. *)
+let fold_part (g : Ir_v0.Ast.grain) (s : segment) : segment =
+  let start_of d = fst (bucket g d) and end_of d = snd (bucket g d) in
+  match (s.s_from = open_from, s.s_to = open_to) with
+  | false, false -> s
+  | true, false -> { s with s_from = start_of (start_of (s.s_to - 1) - 1) }
+  | false, true -> { s with s_to = end_of (end_of s.s_from) }
+  | true, true -> { s with s_from = start_of 0; s_to = end_of 0 }
+
 let whole_period_value (g : Ir_v0.Ast.grain) ~(tl : t) (pred : Value.t -> bool) : bool =
-  let segs = List.filter (fun s -> s.s_value <> Empty) (normalise tl) in
+  let segs = List.map (fold_part g) (List.filter (fun s -> s.s_value <> Empty) (normalise tl)) in
   let interval s = (s.s_from, s.s_to) in
   let day_count (b : segment) =
     match b.s_value with
@@ -349,7 +379,9 @@ let whole_period_value (g : Ir_v0.Ast.grain) ~(tl : t) (pred : Value.t -> bool) 
    "niet leeg" holds on exactly the days "gevuld" does, so the caller passes
    the sister test. The qualifier's own negation is the caller's too. *)
 let whole_period_empty_filled (g : Ir_v0.Ast.grain) ~(populated : bool) ~(tl : t) : bool =
-  let filled_segs = List.filter (fun s -> match s.s_value with Empty -> false | _ -> true) (normalise tl) in
+  let filled_segs =
+    List.map (fold_part g) (List.filter (fun s -> match s.s_value with Empty -> false | _ -> true) (normalise tl))
+  in
   List.for_all
     (fun (b : segment) ->
       let days_b = b.s_to - b.s_from in

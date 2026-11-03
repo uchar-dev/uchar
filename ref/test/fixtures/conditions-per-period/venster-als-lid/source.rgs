@@ -1,0 +1,10 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is wachtplichtig kenmerk (bijvoeglijk) voor elke dag;
+    is aangesteld kenmerk (bijvoeglijk) voor elke maand;
+    de wachtdagen Numeriek (niet-negatief geheel getal) voor elke maand;
+
+Regel wachtdagen van een jutter
+    geldig altijd
+        De wachtdagen van een Jutter moet berekend worden als (het aantal dagen in de maand dat hij wachtplichtig is) gedurende de tijd dat er aan alle volgende voorwaarden wordt voldaan:
+        - hij is aangesteld
+        - het is de periode van dd. 01-03-2024 tot dd. 01-07-2024.

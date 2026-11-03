@@ -87,6 +87,9 @@ type t = {
          that minted it and its creation depth in that stratum, recorded at
          the making (RUNTIME-SEMANTICS ch. 5.5, the creation budget). An
          input instance has no entry; its depth is 0 in every stratum *)
+  char_writes : string Key.t;
+      (* by (label, norm characteristic), for a time-dependent characteristic:
+         the form whose write its true periods are *)
   parts : (Timeline.t option * (int * string * Timeline.t) list) Key.t;
       (* by (label, norm attribute), for a timeline target of two or more
          writers: what it held before any of them wrote, and per writer the
@@ -97,7 +100,7 @@ type t = {
 
 let empty =
   { instances = SMap.empty; order = []; channel = []; outcomes = []; evaluating = []; owners = Key.empty;
-    holders = Key.empty; mints = SMap.empty; parts = Key.empty }
+    holders = Key.empty; mints = SMap.empty; char_writes = Key.empty; parts = Key.empty }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
@@ -387,6 +390,32 @@ let release_char w ~form ~label ~char =
           else
             let i = get w label in
             (update w { i with chars = List.filter (fun c -> c <> norm char) i.chars }, true))
+  | _ -> (w, false)
+
+(* The write of [form] on a time-dependent characteristic: it holds in
+   [periods] and nowhere else (ch. 3.11). Its first write finds no true periods,
+   since the case supplies none for a characteristic a rule writes (Eval refuses
+   that before). *)
+let write_char_timeline_by w ~form ~label ~char periods =
+  let key = (label, norm char) in
+  let i = get w label in
+  let before = SMap.find_opt (norm char) i.ctls in
+  if (not (Key.mem key w.char_writes)) && Option.value before ~default:[] <> [] then
+    Value.fault
+      "the case supplies true periods of the time-dependent characteristic %S of %S, which a rule writes: not \
+       executed (no corpus case)"
+      char label;
+  let w = { w with char_writes = Key.add key form w.char_writes } in
+  if before = Some periods then (w, false) else (update w { i with ctls = SMap.add (norm char) periods i.ctls }, true)
+
+(* [form] does not decide on [label]: the characteristic it wrote holds nowhere *)
+let release_char_timeline w ~form ~label ~char =
+  let key = (label, norm char) in
+  match Key.find_opt key w.char_writes with
+  | Some f when String.equal f form ->
+      let w = { w with char_writes = Key.remove key w.char_writes } in
+      let i = get w label in
+      if SMap.mem (norm char) i.ctls then (update w { i with ctls = SMap.remove (norm char) i.ctls }, true) else (w, false)
   | _ -> (w, false)
 
 (* role links are naturally idempotent (ch. 5.5): linking an

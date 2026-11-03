@@ -1,0 +1,159 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Afdracht",
+        "attributes": {
+          "vervaldatum": {
+            "date": "2025-11-15"
+          },
+          "betaaldatum": {
+            "date": "2026-03-12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "A2",
+        "objectType": "Afdracht",
+        "attributes": {
+          "vervaldatum": {
+            "date": "2028-02-10"
+          },
+          "betaaldatum": {
+            "date": "2028-04-04"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "A3",
+        "objectType": "Afdracht",
+        "attributes": {
+          "vervaldatum": {
+            "date": "2025-11-15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "A1",
+      "attribute": "rentedagen",
+      "timeline": [
+        {
+          "to": "2025-11-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2025-11-01",
+          "to": "2025-12-01",
+          "value": {
+            "number": "15"
+          }
+        },
+        {
+          "from": "2025-12-01",
+          "to": "2026-01-01",
+          "value": {
+            "number": "31"
+          }
+        },
+        {
+          "from": "2026-01-01",
+          "to": "2026-02-01",
+          "value": {
+            "number": "31"
+          }
+        },
+        {
+          "from": "2026-02-01",
+          "to": "2026-03-01",
+          "value": {
+            "number": "28"
+          }
+        },
+        {
+          "from": "2026-03-01",
+          "to": "2026-04-01",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2026-04-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "A2",
+      "attribute": "rentedagen",
+      "timeline": [
+        {
+          "to": "2028-02-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2028-02-01",
+          "to": "2028-03-01",
+          "value": {
+            "number": "19"
+          }
+        },
+        {
+          "from": "2028-03-01",
+          "to": "2028-04-01",
+          "value": {
+            "number": "31"
+          }
+        },
+        {
+          "from": "2028-04-01",
+          "to": "2028-05-01",
+          "value": {
+            "number": "4"
+          }
+        },
+        {
+          "from": "2028-05-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "A3",
+      "attribute": "rentedagen",
+      "timeline": [
+        {
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Eenheidsysteem Rentetijd
+    de dag (mv: dagen) dg
+    de maand (mv: maanden) mnd
+    het jaar (mv: jaren) jr
+
+Dagsoort de schrikkeldag (mv: schrikkeldagen);
+
+Parameter de verzuimrentevoet : Numeriek (getal met 2 decimalen) met eenheid 1/jr voor elke maand;
+Parameter het rentejaar : Numeriek (geheel getal) met eenheid dg/jr;
+
+Objecttype de Afdracht (mv: Afdrachten)
+    het afdrachtbedrag Numeriek (geheel getal) met eenheid €;
+    de vervaldatum Datum in dagen;
+    de betaaldatum Datum in dagen;
+    is rentedragend kenmerk (bijvoeglijk) voor elke dag;
+    de rentedagen Numeriek (niet-negatief geheel getal) met eenheid dg/mnd voor elke maand;
+    de maandrente Numeriek (getal) met eenheid €/mnd voor elke maand;
+    de verzuimrente Numeriek (getal) met eenheid €;
+
+Regel schrikkeldag
+    geldig altijd
+        Een dag is een schrikkeldag
+        indien er aan alle volgende voorwaarden wordt voldaan:
+        - de maand uit de dag gelijk is aan 2
+        - de dag uit de dag gelijk is aan 29.
+
+Regel rentedragend
+    geldig altijd
+        Een Afdracht is rentedragend van zijn vervaldatum plus 1 dg tot en met zijn betaaldatum.
+
+Regel rentedagen in een gehele maand
+    geldig altijd
+        De rentedagen van een Afdracht moet gesteld worden op 30 dg/mnd gedurende de tijd dat hij gedurende de gehele maand rentedragend is.
+
+Regel rentedagen in een gedeeltelijke maand
+    geldig altijd
+        De rentedagen van een Afdracht moet berekend worden als de getelde dagen gedurende de tijd dat hij niet gedurende de gehele maand rentedragend is.
+        Daarbij geldt:
+            de getelde dagen is het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt voldaan:
+            - hij is rentedragend
+            - de dag is geen schrikkeldag.
+
+Regel maandrente
+    geldig altijd
+        De maandrente van een Afdracht moet berekend worden als de verzuimrentevoet maal zijn rentedagen maal zijn afdrachtbedrag gedeeld door het rentejaar.
+
+Regel verzuimrente
+    geldig altijd
+        De verzuimrente van een Afdracht moet berekend worden als het totaal van zijn maandrente.

@@ -1,0 +1,109 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Afdracht",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "rentedragend": [
+            {
+              "from": "2028-02-11",
+              "to": "2028-04-05"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "A1",
+      "attribute": "rentedagen",
+      "timeline": [
+        {
+          "to": "2028-02-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2028-02-01",
+          "to": "2028-03-01",
+          "value": {
+            "number": "18"
+          }
+        },
+        {
+          "from": "2028-03-01",
+          "to": "2028-04-01",
+          "value": {
+            "number": "31"
+          }
+        },
+        {
+          "from": "2028-04-01",
+          "to": "2028-05-01",
+          "value": {
+            "number": "4"
+          }
+        },
+        {
+          "from": "2028-05-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "A1",
+      "attribute": "kale dagen",
+      "timeline": [
+        {
+          "to": "2028-02-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2028-02-01",
+          "to": "2028-03-01",
+          "value": {
+            "number": "19"
+          }
+        },
+        {
+          "from": "2028-03-01",
+          "to": "2028-04-01",
+          "value": {
+            "number": "31"
+          }
+        },
+        {
+          "from": "2028-04-01",
+          "to": "2028-05-01",
+          "value": {
+            "number": "4"
+          }
+        },
+        {
+          "from": "2028-05-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

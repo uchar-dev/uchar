@@ -1,0 +1,16 @@
+Eenheidsysteem Rentetijd
+    de dag (mv: dagen) dg
+
+Objecttype de Afdracht (mv: Afdrachten)
+    de vervaldatum Datum in dagen;
+    de betaaldatum Datum in dagen;
+    is rentedragend kenmerk (bijvoeglijk) voor elke dag;
+    de rentedagen Numeriek (niet-negatief geheel getal) voor elke maand;
+
+Regel rentedragend
+    geldig altijd
+        Een Afdracht is rentedragend van zijn vervaldatum plus 1 dg tot en met zijn betaaldatum.
+
+Regel rentedagen
+    geldig altijd
+        De rentedagen van een Afdracht moet berekend worden als het aantal dagen in de maand dat hij rentedragend is.

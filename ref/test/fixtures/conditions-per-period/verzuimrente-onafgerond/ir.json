@@ -1,0 +1,950 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Afdracht",
+        "animate": false,
+        "plural": "Afdrachten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "afdrachtbedrag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vervaldatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "betaaldatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "rentedagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Rentetijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "mnd",
+                  "system": "Rentetijd",
+                  "canonical": "mnd",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "maandrente",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "mnd",
+                  "system": "Rentetijd",
+                  "canonical": "mnd",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verzuimrente",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "rentedragend",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "day",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "verzuimrentevoet",
+        "datatype": {
+          "node": "Number",
+          "whole": false,
+          "decimals": 2,
+          "sign": "unspecified",
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "jr",
+              "system": "Rentetijd",
+              "canonical": "jr",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              },
+              "exponent": -1
+            }
+          ]
+        },
+        "timeline": {
+          "node": "TimelineFacet",
+          "granularity": "month",
+          "count": 1
+        }
+      },
+      {
+        "node": "Parameter",
+        "name": "rentejaar",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified",
+          "unit": [
+            {
+              "node": "Unit",
+              "abbreviation": "dg",
+              "system": "Rentetijd",
+              "canonical": "dg",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              }
+            },
+            {
+              "node": "Unit",
+              "abbreviation": "jr",
+              "system": "Rentetijd",
+              "canonical": "jr",
+              "factorToCanonical": {
+                "num": 1,
+                "den": 1
+              },
+              "exponent": -1
+            }
+          ]
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
+          }
+        ]
+      },
+      {
+        "node": "UnitSystem",
+        "name": "Rentetijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Rentetijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "mnd",
+            "system": "Rentetijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "maand"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "jr",
+            "system": "Rentetijd",
+            "canonical": "jr",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "jaar"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [
+      {
+        "node": "DayKind",
+        "name": "schrikkeldag",
+        "plural": "schrikkeldagen"
+      }
+    ]
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "rentedragend",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rentedragend",
+              "subjectType": "Afdracht",
+              "source": {
+                "snippet": "Een Afdracht is rentedragend"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "vervaldatum",
+                  "subjectType": "Afdracht",
+                  "source": {
+                    "snippet": "zijn vervaldatum"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "1"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified",
+                    "unit": [
+                      {
+                        "node": "Unit",
+                        "abbreviation": "dg",
+                        "system": "Rentetijd",
+                        "canonical": "dg",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        }
+                      }
+                    ]
+                  },
+                  "source": {
+                    "snippet": "1 dg"
+                  }
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "zijn vervaldatum plus 1 dg"
+                }
+              },
+              "to": {
+                "node": "AttributeReference",
+                "attribute": "betaaldatum",
+                "subjectType": "Afdracht",
+                "source": {
+                  "snippet": "zijn betaaldatum"
+                }
+              },
+              "toInclusive": true,
+              "source": {
+                "snippet": "van zijn vervaldatum plus 1 dg tot en met zijn betaaldatum"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rentedagen in een gehele maand",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rentedagen",
+              "subjectType": "Afdracht",
+              "source": {
+                "snippet": "De rentedagen van een Afdracht"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "30"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Rentetijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "mnd",
+                    "system": "Rentetijd",
+                    "canonical": "mnd",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "30 dg/mnd"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "rentedragend",
+              "negated": false,
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "month",
+                "negated": false
+              },
+              "source": {
+                "snippet": "hij gedurende de gehele maand rentedragend is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rentedagen in een gedeeltelijke maand",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rentedagen",
+              "subjectType": "Afdracht",
+              "source": {
+                "snippet": "De rentedagen van een Afdracht"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "binder": "getelde dagen",
+              "value": {
+                "node": "BuiltinCall",
+                "kind": "dayCount",
+                "arguments": [],
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "all",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "CharacteristicCheck",
+                      "characteristic": "rentedragend",
+                      "negated": false,
+                      "source": {
+                        "snippet": "hij is rentedragend"
+                      }
+                    },
+                    {
+                      "node": "Predicate",
+                      "kind": "dayKind",
+                      "operand": {
+                        "node": "BoundDay",
+                        "type": {
+                          "node": "Date",
+                          "precision": "day"
+                        },
+                        "source": {
+                          "snippet": "de dag"
+                        }
+                      },
+                      "dayKind": "schrikkeldag",
+                      "negated": true,
+                      "digits": 0,
+                      "source": {
+                        "snippet": "de dag is geen schrikkeldag"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "er aan alle volgende voorwaarden wordt voldaan: - hij is rentedragend - de dag is geen schrikkeldag"
+                  }
+                },
+                "granularity": "month",
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt voldaan: - hij is rentedragend - de dag is geen schrikkeldag"
+                }
+              },
+              "body": {
+                "node": "BinderRef",
+                "name": "getelde dagen",
+                "source": {
+                  "snippet": "de getelde dagen"
+                }
+              },
+              "source": {
+                "snippet": "de getelde dagen is het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt voldaan: - hij is rentedragend - de dag is geen schrikkeldag"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "rentedragend",
+              "negated": false,
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "month",
+                "negated": true
+              },
+              "source": {
+                "snippet": "hij niet gedurende de gehele maand rentedragend is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "maandrente",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "maandrente",
+              "subjectType": "Afdracht",
+              "source": {
+                "snippet": "De maandrente van een Afdracht"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
+                "node": "Binary",
+                "op": "times",
+                "left": {
+                  "node": "Binary",
+                  "op": "times",
+                  "left": {
+                    "node": "ParameterReference",
+                    "parameter": "verzuimrentevoet",
+                    "source": {
+                      "snippet": "de verzuimrentevoet"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "rentedagen",
+                    "subjectType": "Afdracht",
+                    "source": {
+                      "snippet": "zijn rentedagen"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified",
+                    "unit": [
+                      {
+                        "node": "Unit",
+                        "abbreviation": "dg",
+                        "system": "Rentetijd",
+                        "canonical": "dg",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        }
+                      },
+                      {
+                        "node": "Unit",
+                        "abbreviation": "jr",
+                        "system": "Rentetijd",
+                        "canonical": "jr",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        },
+                        "exponent": -1
+                      },
+                      {
+                        "node": "Unit",
+                        "abbreviation": "mnd",
+                        "system": "Rentetijd",
+                        "canonical": "mnd",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        },
+                        "exponent": -1
+                      }
+                    ]
+                  },
+                  "source": {
+                    "snippet": "de verzuimrentevoet maal zijn rentedagen"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "afdrachtbedrag",
+                  "subjectType": "Afdracht",
+                  "source": {
+                    "snippet": "zijn afdrachtbedrag"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    },
+                    {
+                      "node": "Unit",
+                      "abbreviation": "dg",
+                      "system": "Rentetijd",
+                      "canonical": "dg",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    },
+                    {
+                      "node": "Unit",
+                      "abbreviation": "jr",
+                      "system": "Rentetijd",
+                      "canonical": "jr",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      },
+                      "exponent": -1
+                    },
+                    {
+                      "node": "Unit",
+                      "abbreviation": "mnd",
+                      "system": "Rentetijd",
+                      "canonical": "mnd",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      },
+                      "exponent": -1
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "de verzuimrentevoet maal zijn rentedagen maal zijn afdrachtbedrag"
+                }
+              },
+              "right": {
+                "node": "ParameterReference",
+                "parameter": "rentejaar",
+                "source": {
+                  "snippet": "het rentejaar"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "mnd",
+                    "system": "Rentetijd",
+                    "canonical": "mnd",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "de verzuimrentevoet maal zijn rentedagen maal zijn afdrachtbedrag gedeeld door het rentejaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "verzuimrente",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "verzuimrente",
+              "subjectType": "Afdracht",
+              "source": {
+                "snippet": "De verzuimrente van een Afdracht"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "maandrente",
+                  "subjectType": "Afdracht",
+                  "source": {
+                    "snippet": "zijn maandrente"
+                  }
+                }
+              ],
+              "elementType": "Afdracht",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "het totaal van zijn maandrente"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [
+      {
+        "node": "DayKindDefinition",
+        "dayKind": "schrikkeldag",
+        "condition": {
+          "node": "Compound",
+          "quantifier": "all",
+          "threshold": 0,
+          "parts": [
+            {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "BuiltinCall",
+                "kind": "monthOf",
+                "arguments": [
+                  {
+                    "node": "BoundDay",
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "source": {
+                      "snippet": "de dag"
+                    }
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "de maand uit de dag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "source": {
+                "snippet": "de maand uit de dag gelijk is aan 2"
+              }
+            },
+            {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "BuiltinCall",
+                "kind": "dayOf",
+                "arguments": [
+                  {
+                    "node": "BoundDay",
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "source": {
+                      "snippet": "de dag"
+                    }
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "de dag uit de dag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "29"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "29"
+                }
+              },
+              "source": {
+                "snippet": "de dag uit de dag gelijk is aan 29"
+              }
+            }
+          ],
+          "source": {
+            "snippet": "er aan alle volgende voorwaarden wordt voldaan: - de maand uit de dag gelijk is aan 2 - de dag uit de dag gelijk is aan 29"
+          }
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
