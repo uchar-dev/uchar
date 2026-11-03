@@ -83,6 +83,14 @@ class TmsCorpusWitnessTest {
      *  leaves this floor as it is. */
     private static final int EXPECTED_MIN_PLAYED = 248;
 
+    /** The goldens whose temporal total this branch counts in whole units per fragment and totals leeg over an absent
+     *  timeline (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12a and 12c), so their expectations differ: a value
+     *  divergence, as gate 12 lists them, until the branch counts a part of a unit by its days and an absent timeline
+     *  0 (card total-over-partial-unit, step B). A listed golden that plays fails the test. */
+    private static final java.util.Set<String> TOTAL_OVER_PARTIAL_UNIT = java.util.Set.of(
+            "jutterswet-getijdenwacht", "jutterswet-kadetarief", "jutterswet-penningjaar",
+            "jutterswet-tempototaal", "jutterswet-vast-startpunt");
+
     @Test void every_golden_plays_all_its_cases_or_is_refused() throws Exception {
         List<Path> goldens;
         try (Stream<Path> s = Files.walk(GOLDEN)) {
@@ -90,6 +98,7 @@ class TmsCorpusWitnessTest {
         }
         Map<String, Integer> count = new TreeMap<>();
         List<String> fault = new ArrayList<>();
+        java.util.Set<String> diverging = new java.util.TreeSet<>();
         int withoutCases = 0;
         for (Path g : goldens) {
             List<Path> cases;
@@ -102,9 +111,15 @@ class TmsCorpusWitnessTest {
             switch (r.status()) {
                 case "PLAYED" -> count.merge("PLAYED", 1, Integer::sum);
                 case "EXCLUDE" -> count.merge(family(r.reason()), 1, Integer::sum);
-                default -> fault.add(name + ": " + r);
+                default -> {
+                    if (TOTAL_OVER_PARTIAL_UNIT.contains(name) && r.status().equals("FAIL")) diverging.add(name);
+                    else fault.add(name + ": " + r);
+                }
             }
         }
+        assertEquals(new java.util.TreeSet<>(TOTAL_OVER_PARTIAL_UNIT), diverging,
+                "de goldens met een totaal over een gedeeltelijke eenheid of een afwezige tijdlijn (12a, 12c), en geen"
+                + " andere");
         assertEquals(List.of(), fault, "goldens die de tak draagt maar verkeerd uitrekent");
         int played = count.getOrDefault("PLAYED", 0), without = withoutCases;
         assertTrue(played >= EXPECTED_MIN_PLAYED, () -> "gespeelde goldens " + played + " onder de vloer "

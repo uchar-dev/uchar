@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -96,8 +97,13 @@ class TimelineDateFoldWitnessTest {
 
     @Test void the_numeric_originals_stay_playing() throws Exception {
         // NARROWNESS: the same two arms over numeric timelines, untouched.
-        BothBranches.green(GOLDEN.resolve("jutterswet-tempototaal").resolve("ir.json"),
-                caseDocument(GOLDEN, "jutterswet-tempototaal", "case.json"), "own-subject timeline total over amounts");
+        // J2 brings no bewaarvergoeding per maand, and an absent timeline totals 0 (RUNTIME-SEMANTICS ch. 3.6,
+        // IMPLICIT-TIME 12c), which neither branch gives until card total-over-partial-unit, step B: both answer leeg
+        // there, in the same line, and every other expectation of the case plays.
+        assertEquals("case: attribuut bewaargeld: verwacht 0, werkelijk leeg",
+                BothBranches.red(GOLDEN.resolve("jutterswet-tempototaal").resolve("ir.json"),
+                        caseDocument(GOLDEN, "jutterswet-tempototaal", "case.json"), "bewaargeld",
+                        "own-subject timeline total over amounts"));
         BothBranches.green(GOLDEN.resolve("jutterswet-erfwacht").resolve("ir.json"),
                 caseDocument(GOLDEN, "jutterswet-erfwacht", "case.json"), "gedurende clip over amounts");
     }

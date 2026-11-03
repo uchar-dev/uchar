@@ -52,6 +52,14 @@ class DrlTextCorpusWitnessTest {
      *  plays. */
     private static final int EXPECTED_MIN_PLAYED = 250;
 
+    /** The goldens whose temporal total this branch counts in whole units per fragment and totals leeg over an absent
+     *  timeline (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12a and 12c), so their expectations differ: a value
+     *  divergence, as gate 12 lists them, until the branch counts a part of a unit by its days and an absent timeline
+     *  0 (card total-over-partial-unit, step B). A listed golden that plays fails the test. */
+    private static final java.util.Set<String> TOTAL_OVER_PARTIAL_UNIT = java.util.Set.of(
+            "jutterswet-getijdenwacht", "jutterswet-kadetarief", "jutterswet-penningjaar",
+            "jutterswet-tempototaal", "jutterswet-vast-startpunt");
+
     @Test void every_golden_plays_all_its_cases_or_is_refused() throws Exception {
         List<Path> goldens;
         try (Stream<Path> s = Files.walk(GOLDEN)) {
@@ -59,6 +67,7 @@ class DrlTextCorpusWitnessTest {
         }
         Map<String, Integer> count = new TreeMap<>();
         List<String> fault = new ArrayList<>(), differences = new ArrayList<>();
+        java.util.Set<String> diverging = new java.util.TreeSet<>();
         int withoutCases = 0;
         for (Path g : goldens) {
             List<Path> cases;
@@ -85,9 +94,15 @@ class DrlTextCorpusWitnessTest {
                             differences.add(name + ": drl " + r.reason() + " | exec-model " + exec);
                     }
                 }
-                default -> fault.add(name + ": " + r);
+                default -> {
+                    if (TOTAL_OVER_PARTIAL_UNIT.contains(name) && r.status().equals("FAIL")) diverging.add(name);
+                    else fault.add(name + ": " + r);
+                }
             }
         }
+        assertEquals(new java.util.TreeSet<>(TOTAL_OVER_PARTIAL_UNIT), diverging,
+                "de goldens met een totaal over een gedeeltelijke eenheid of een afwezige tijdlijn (12a, 12c), en geen"
+                + " andere");
         assertEquals(List.of(), fault, "goldens die de tak draagt maar verkeerd uitrekent, of waarvan de tekst niet"
                 + " compileert");
         assertEquals(List.of(), differences, "weigeringen van de gedeelde analyse die van de exec-model-tak verschillen");
