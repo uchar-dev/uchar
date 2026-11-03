@@ -2,9 +2,9 @@
 
 *Status: VOORSTEL · 2026-11-03 · werkproza, niet normatief. Fase 0 van de kaart
 `backlog/doing/20261010-impliciete-tijd.md`. Dit document verandert geen spec, schema, verifier,
-uitvoerder of corpus; het staat buiten elke zone van gate 1. Gemeten op main `27cfd3dfa`
-(regelnummers van uchar op die commit; de meting in §5 draaide op dezelfde code, en een eerdere
-run op `95947ae0f` gaf dezelfde uitkomst per document).*
+uitvoerder of corpus; het staat buiten elke zone van gate 1. Gemeten op main `b3feb3882`
+(regelnummers van uchar op die commit; de meting in §5 draaide op dezelfde code; eerdere runs op
+`95947ae0f` en `27cfd3dfa` staan in §5).*
 
 *Bronnen, alleen met nummer en in eigen woorden aangehaald. (1) De RegelSpraak-specificatie
 v2.3.0 van de Belastingdienst: het hoofddocument als "spec §…", het document met de typeringen als
@@ -86,7 +86,7 @@ eenmalig (punt 10).
 
 Elk punt: de vraag; de lezingen (uchar nu, ALEF, de specificatie); de aanbeveling met reden; de
 voorlopige besluiten; een uitgewerkt voorbeeld met absolute waarden, dat `ref/test/` letterlijk kan
-overnemen (de voorgestelde testnaam staat erbij). "RS" is `spec/RUNTIME-SEMANTICS.md` op `27cfd3dfa`.
+overnemen (de voorgestelde testnaam staat erbij). "RS" is `spec/RUNTIME-SEMANTICS.md` op `b3feb3882`.
 De voorbeelden gebruiken, waar ze over de ankercasus gaan, de getallen van §4.
 
 ### Punt 1 — Rekenen per periode
@@ -436,10 +436,10 @@ telling?
 - *uchar nu.* (a) Een emmer zonder ware dag geeft niets (RS ch. 3.8 r. 2261), gepind door het anker
   `corpus/golden/anchor/jutterswet-dagentelling` (twee segmenten voor `borgdagen`). (b) De voorwaarde
   is een eigen tijdsafhankelijk kenmerk (WF-058, RS r. 2266–2270); rijkere vormen worden geweigerd.
-  Gemeten (§5, `p07a`): **de frontend laat een samengestelde voorwaarde stil weg** (de `dayCount` in
-  het IR heeft geen `filter` en er is geen diagnose); de verifier weigert met WF-058, ref met
-  REF-011, clingo met CLINGO-024 en Drools met DROOLS-114. Dat is de klasse van de bugkaart
-  `20261012-dagentelling-onbekende-voorwaarde`. (c) Geen eenheid (`ref/lib/timeline.ml` r. 221);
+  Gemeten (§5, `p07a`): de frontend schrijft een samengestelde voorwaarde als `Unresolved`-filter met
+  een waarschuwing (sinds de kaart `20261012-dagentelling-onbekende-voorwaarde`, geland op
+  `b3feb3882`; op `27cfd3dfa` liet ze de voorwaarde nog stil weg); de verifier weigert met WF-058, ref
+  met REF-010, clingo met CLINGO-024 en Drools met DROOLS-114. (c) Geen eenheid (`ref/lib/timeline.ml` r. 221);
   de verifier weigert een telling in een doel met eenheid dg/mnd (WF-023, gemeten), en clingo ook
   (gemeten: "day-count into a unit-carrying target is not translated").
 - *ALEF.* (a) `getDuration` is de telling per periode aangevuld met 0 (`time/TimeLine.java`
@@ -715,8 +715,10 @@ ankerwaarde maar een vraag van punt 2 en 6.
 
 ## 5. De meting
 
-Gemeten op main `27cfd3dfa` (de branch `card/implicit-time` stond er zonder codewijziging op; dezelfde
-uitkomst per document als een eerdere run op `95947ae0f`), met de
+Gemeten op main `b3feb3882` (de branch `card/implicit-time` stond er zonder codewijziging op). Twee
+eerdere runs, op `95947ae0f` en op `27cfd3dfa`, gaven per document dezelfde regel, behalve bij `p07a`:
+daar liet de frontend de samengestelde voorwaarde van de dagentelling tot `b3feb3882` stil weg (geen
+filter, geen diagnose), gaf ref REF-011 en noemde Drools "(no condition)". Gemeten met de
 frontend (`make -C frontends/regelspraak ir`), de verifier, ref (`runner.exe`), clingo
 (`clingo_runner.exe`) en de Drools-jar in beide takken (zonder vlag en met `--drl`), gebouwd in de
 worktree. De documenten staan buiten de repo onder `werk/implicit-time/meting/`; de commando's in het
@@ -739,7 +741,7 @@ rij geven beide Drools-takken dezelfde zin.
 | `p05-twee-schrijvers` | twee schrijvers (5) | IR | Z3 | Z4 | Z8 | D103 |
 | `p06a-kenmerk-van-datum-plus-duur-tot-en-met` | kenmerk binnen venster, berekende grens (6) | Z1 | — | — | — | — |
 | `p06b-kenmerk-van-attribuut-tot-en-met` | kenmerk binnen venster (6) | IR | PASS | Z5 | Z5 | D102 |
-| `p07a-dagentelling-met-dagsoorttoets` | samengestelde voorwaarde met dagsoort (7b) | IR, voorwaarde stil weg | Z3, Z12 | Z6 | Z7 | D114 |
+| `p07a-dagentelling-met-dagsoorttoets` | samengestelde voorwaarde met dagsoort (7b) | IR met Z17 | Z3, Z12 | Z6 | Z7 | D114 |
 | `p07b-dagentelling-onder-voorwaarde` | telling in dg/mnd onder niet-gehele maand (4, 7c) | IR | Z3 | Z13 | Z9 | Z13 |
 | `p07c-…-zonder-eenheid` | dezelfde telling zonder eenheid (4) | IR | PASS | Z13 | Z13 | Z13 |
 | `p08-fijnere-operand` | parameter per dag in maanddoel (8) | IR | PASS | Z14 | Z14 | D105 |
@@ -754,31 +756,32 @@ Zinnen (letterlijk zoals de uitvoerder ze schrijft; "…" vervangt alleen het re
 - **Z3** (verifier): `WF-023.incompatible-units FAIL /rules/rules/…/versions/0: assignment across incompatible units: value unit 'geen', target unit 'dg/mnd'`
 - **Z4** (ref, zonder code): `EVALUATION FAULT: temporal attribute "…" as a target: temporal writes are not implemented`
 - **Z5** (ref en clingo, EF-023): `EF-023: a period condition on the temporal characteristic target "rentedragend" is ch. 3.10's CLIP over a characteristic timeline, and no temporal characteristic is written here (ch. 3.11), so there is no timeline to cut. Declined at evaluation` (clingo: `TRANSLATION FAULT: …` en `Declined in translation`)
-- **Z6** (ref, REF-011): `EVALUATION FAULT: REF-011: a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a gedurende condition over an own temporal characteristic); no corpus case for more`
+- **Z6** (ref, REF-010): `EVALUATION FAULT: REF-010: unsupported day-count condition shape (an own temporal characteristic; no corpus case for more)`
 - **Z7** (clingo, CLINGO-024): `TRANSLATION FAULT: CLINGO-024: a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a gedurende condition over an own temporal characteristic); no corpus case for more`
 - **Z8** (clingo): `TRANSLATION FAULT: two computing rules write the temporal target "rentedagen", and a divergence between their timelines is not translated (no corpus case)`
 - **Z9** (clingo): `TRANSLATION FAULT: day-count into a unit-carrying target is not translated (no corpus case)`
 - **Z10** (ref): `EVALUATION FAULT: temporal characteristic "verzuimd" in a scalar condition is refused (ch. 3.3)`
 - **Z11** (clingo, geen weigering): `MISMATCH: A1.minimumdagen timeline = (empty), expected [20423,20454)=31 [20454,20485)=31` — clingo leest het tijdsafhankelijke kenmerk in de voorwaarde als scalair en schrijft niets, waar ref weigert.
-- **Z12** (verifier): `WF-058.day-count-condition FAIL /rules/rules/0/versions/0/value: dayCount without a gedurende condition`
+- **Z12** (verifier): `WF-058.condition-not-check FAIL /rules/rules/0/versions/0/value/filter: the day-count gedurende condition is an own temporal characteristic check`
 - **Z13** (geen weigering; alle vier schrijven de vouw van ch. 3.9 als poort): ref `MISMATCH: A1.rentedagen = [2025-11-01,2025-12-01)=15 [2025-12-01,2026-01-01)=31 [2026-01-01,2026-02-01)=31 [2026-02-01,2026-03-01)=28 [2026-03-01,2026-04-01)=12, expected [2025-11-01,2025-12-01)=15 [2026-03-01,2026-04-01)=12`; clingo (in `p07c`) en Drools (`FAIL case.json: …`) dezelfde vijf maanden. In `p07b` schrijft ref een telling zonder eenheid in een doel met dg/mnd zonder fout (RS ch. 2.6 regel 6 vraagt er een).
 - **Z14** (ref en clingo, de lader): `CASE ERROR: parameter dagrentevoet: the declared grid is day, which every day boundary sits on, yet this loader checks a timeline's grid through the calendar bucketing and v0 defines buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the case`
 - **Z15** (ref): `EVALUATION FAULT: bucketing is defined for month and year only (ch. 3.2)`
+- **Z17** (frontend, waarschuwing; het filter wordt een `Unresolved`): `WARNING (line …): onopgelost: een dagentelling telt alleen de dagen waarop het onderwerp zelf één tijdsafhankelijk kenmerk heeft, in de vorm 'dat hij <kenmerk> is' of 'dat hij <kenmerk> heeft'; deze voorwaarde heeft die vorm niet (§13.4.17.57, RUNTIME-SEMANTICS ch. 3.8) — 'er aan alle volgende voorwaarden wordt voldaan: - hij is rentedragend - de dag is geen schrikkeldag' blijft als marker op de wire staan`
 - **Z16** (clingo): `TRANSLATION FAULT: the noemer strip of the temporal total of "dagrente" restates a EUR/jr value into a dg grid by a declared factor other than 1, which this integer encoding does not carry (ref applies the exact factor); only a denominator identical to the grid unit cancels here`
 - **D102**: `EXCLUDE DROOLS-102: transpiler SKIP: regel: rentedragend — the time-dependent characteristic 'rentedragend' of Afdracht as target: this branch does not yet carry this form; no golden with cases writes one (RUNTIME-SEMANTICS ch. 3.11)`
 - **D103**: `EXCLUDE DROOLS-103: transpiler SKIP: regel: rentedagen in een gehele maand — a time-dependent target with a second writer ('rentedagen' of Afdracht is also written by "rentedagen in een gedeeltelijke maand"): this branch does not yet carry this form; a target with more writers stays fenced (RUNTIME-SEMANTICS ch. 7.8), and no golden with cases has one`
 - **D105**: `EXCLUDE DROOLS-105: transpiler SKIP: regel: … — a value of the time-dependent target '…' of Afdracht that is neither a time-proportional part nor a day count ('…'): this branch does not yet carry this form (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11); no golden with cases writes one`
-- **D114**: `EXCLUDE DROOLS-114: transpiler SKIP: regel: rentedagen — a day count ('het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt voldaan: - hij is rentedragend - de dag is geen schrikkeldag') with a condition that is not a characteristic of the subject (no condition): this branch does not yet carry this form; the reference interpreter takes only an own time-dependent characteristic (RUNTIME-SEMANTICS ch. 3.7, 3.8)`
+- **D114**: `EXCLUDE DROOLS-114: transpiler SKIP: regel: rentedagen — a day count ('het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt voldaan: - hij is rentedragend - de dag is geen schrikkeldag') with a condition that is not a characteristic of the subject ('er aan alle volgende voorwaarden wordt voldaan: - hij is rentedragend - de dag is geen schrikkeldag'): this branch does not yet carry this form; the reference interpreter takes only an own time-dependent characteristic (RUNTIME-SEMANTICS ch. 3.7, 3.8)`
 - **D228**: `EXCLUDE DROOLS-228: transpiler SKIP: regel: verzuimrente — a total over its own timeline ('het totaal van zijn dagrente') over 'dagrente' with the rate EUR/jr on a grid of DAG: the denominator is not the unit of the grid, and this branch does not recalculate it (RUNTIME-SEMANTICS ch. 3.6); no golden with cases has it`
 - **D271**: `EXCLUDE DROOLS-271: transpiler SKIP: regel: minimumdagen in een verzuimde maand — the time-dependent characteristic 'verzuimd' of Afdracht at a place that reads or writes one value: this branch reads a timeline only in a total, the clip of it, a time-proportional part, a day count and a uniqueness key, and writes it only with a time-proportional part or a day count (RUNTIME-SEMANTICS ch. 3.3, 3.6–3.8, 3.11, 5.9)`
 
-Vijf bevindingen die buiten de besluitpunten om gaan; geen ervan is in deze kaart gerepareerd:
+Bevindingen die buiten de besluitpunten om gaan; geen ervan is in deze kaart gerepareerd:
 
 1. **De frontend crasht** (Z2) op een variabele die een dagentelling met een samengestelde voorwaarde
    bevat: een Java-uitzondering in plaats van een diagnose.
-2. **De frontend laat een samengestelde voorwaarde van een dagentelling stil weg** (`p07a`): het IR
-   heeft een `dayCount` zonder `filter`, zonder diagnose. Dezelfde klasse als de bugkaart
-   `20261012-dagentelling-onbekende-voorwaarde`.
+2. *Opgelost op `b3feb3882`:* tot die commit liet de frontend een samengestelde voorwaarde van een
+   dagentelling stil weg (`p07a`: een `dayCount` zonder `filter`, zonder diagnose); de kaart
+   `20261012-dagentelling-onbekende-voorwaarde` maakt er een waarschuwing en een `Unresolved` van (Z17).
 3. **clingo weigert een tijdsafhankelijk kenmerk in de voorwaarde van een regel met een
    tijdsafhankelijk doel niet** (Z11): het schrijft een lege tijdlijn, waar ref met de zin van ch. 3.3
    weigert. Een stille afwijking tussen twee uitvoerders.
@@ -788,7 +791,7 @@ Vijf bevindingen die buiten de besluitpunten om gaan; geen ervan is in deze kaar
    verifier WF-023 geeft en ch. 2.6 regel 6 een fout vraagt.
 
 Bevinding 3 en 5 zijn bestaande fouten in ref of clingo en horen volgens de afspraak een eigen kaart;
-1 en 2 horen bij de frontend (2 bij de bestaande kaart). De hoofdsessie legt ze vast.
+1 en 4 horen bij de frontend en de verifier. De hoofdsessie legt ze vast.
 
 ALEF-kolom: gelezen én gedraaid (zie de kop). Formulering A en B volledig, met dezelfde vijf waarden
 als §4.
