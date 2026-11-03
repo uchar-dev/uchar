@@ -29,6 +29,9 @@ Objecttype de Jutter (mv: Jutters) (bezield)
     de totaalheffing Numeriek (geheel getal) met eenheid €/dg;
     de opbrengstheffing Numeriek (geheel getal) met eenheid €/dg;
     de schattingsheffing Numeriek (geheel getal) met eenheid €/dg;
+    het vondstdeel Numeriek (getal met 2 decimalen) met eenheid € voor elke dag;
+    het dagwaardedeel Numeriek (getal met 2 decimalen) met eenheid €;
+    de dagwaardeheffing Numeriek (getal met 2 decimalen) met eenheid €/dg;
 
 Objecttype de Vondst (mv: Vondsten)
     de opbrengst Numeriek (geheel getal) met eenheid € voor elke dag;
@@ -103,3 +106,15 @@ Regel opbrengstheffing van een jutter
 Regel schattingsheffing van een jutter
     geldig altijd
         De schattingsheffing van een Jutter moet berekend worden als (de som van de schatting van alle vondsten van de Jutter of 0 als die er niet zijn) maal zijn heffingsfactor.
+
+Regel vondstdeel van een jutter
+    geldig altijd
+        Het vondstdeel van een Jutter moet berekend worden als 10% van zijn vondstwaarde.
+
+Regel dagwaardedeel van een jutter
+    geldig altijd
+        Het dagwaardedeel van een Jutter moet berekend worden als 25% van zijn dagwaardebedrag.
+
+Regel dagwaardeheffing van een jutter
+    geldig altijd
+        De dagwaardeheffing van een Jutter moet berekend worden als (25% van zijn dagwaardebedrag) maal zijn heffingsfactor.

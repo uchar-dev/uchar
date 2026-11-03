@@ -598,6 +598,88 @@
                 }
               ]
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "vondstdeel",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "day",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "dagwaardedeel",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "dagwaardeheffing",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
           }
         ],
         "characteristics": []
@@ -2064,6 +2146,257 @@
               },
               "source": {
                 "snippet": "(de som van de schatting van alle vondsten van de Jutter of 0 als die er niet zijn) maal zijn heffingsfactor"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vondstdeel van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vondstdeel",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het vondstdeel van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "percentageOf",
+              "left": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "10"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "vondstwaarde",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn vondstwaarde"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "10% van zijn vondstwaarde"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "dagwaardedeel van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "dagwaardedeel",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het dagwaardedeel van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "percentageOf",
+              "left": {
+                "node": "Literal",
+                "value": {
+                  "number": "25"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "25"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "dagwaardebedrag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn dagwaardebedrag"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "25% van zijn dagwaardebedrag"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "dagwaardeheffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "dagwaardeheffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De dagwaardeheffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "Binary",
+                "op": "percentageOf",
+                "left": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "25"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "25"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "dagwaardebedrag",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn dagwaardebedrag"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "25% van zijn dagwaardebedrag"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "heffingsfactor",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn heffingsfactor"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "(25% van zijn dagwaardebedrag) maal zijn heffingsfactor"
               }
             },
             "initialisation": false,

@@ -910,10 +910,7 @@ returns `None` at those positions and its fences (`unit_free_ok`,
 `units_identical_ok`) then *fault* rather than compute with a unit it could
 not derive, whereas the Drools backend has no such fence and computes with
 the annotation — the behaviour it had before this clause, deliberately
-unchanged. The Drools backend also reads the annotation of a scalar
-percentage-of (measured 2026-11-03: a twisted annotation writes 6000000 for
-60), so gate 13 keeps that position in this class until the backend derives
-it too. **Zero** unit-bearing annotations in the
+unchanged. **Zero** unit-bearing annotations in the
 corpus sit at such a position, so the class is empty today and the
 difference between the two answers is unobservable. The clamp that reports
 the first witness is step 6 of `scripts/check-reftype-derivation.sh`. Note

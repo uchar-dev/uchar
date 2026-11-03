@@ -31,8 +31,8 @@
 #      Table and clamp key on the POSITION CLASS, which for a Binary is (node, op) and for an
 #      Aggregation or a BuiltinCall (node, kind) — ch. 2.10 splits those node kinds by OPERATOR,
 #      not by node.
-#      plus/minus/reducedBy/times/dividedBy/dividedByAbs and the six value aggregations derive their
-#      result unit; power, percentageOf, an absolute value, a root and the date/time extractors are
+#      plus/minus/reducedBy/times/dividedBy/dividedByAbs/percentageOf and the six value aggregations
+#      derive their result unit; power, an absolute value, a root and the date/time extractors are
 #      ch. 2.10's FOURTH class, where v0 derives nothing. Keying on the node alone would twist a
 #      unit-bearing power as though it sat at a derived position, and then report whatever
 #      came out as a consumer defect — a wrong diagnosis where the honest answer
@@ -183,7 +183,7 @@
 # Neither twisted nor exempt is NOT silently skipped any more (step 6), and the clamp separates
 # two different arrivals:
 #   - a ch. 2.10 FOURTH-CLASS branch of a node kind the table otherwise carries — a unit-bearing
-#     Binary/power, /percentageOf, or a BuiltinCall absolute value, root or
+#     Binary/power, or a BuiltinCall absolute value, root or
 #     date/time extractor. v0 derives no result unit there, so a twist would probe a rule that
 #     does not exist; the gate reports the witness instead. What that witness must buy is a
 #     derivation rule (or a fence) — never a wider licence to read the wire.
@@ -354,11 +354,11 @@ from fractions import Fraction
 EXPONENT = {"Binary": 5, "Let": 6, "Aggregation": 7, "Rounding": 8, "Clamp": 9}
 # ch. 2.10 clause 2 splits Binary by OPERATOR and an Aggregation by KIND, not by node: only these
 # branches DERIVE a result unit (an additive result carries the left unit / a unitless side adopts
-# the other; a times and a quotient add and subtract the exponents of their factors; §4.6 Eenheid1
-# hands a value aggregation
+# the other; a times and a quotient add and subtract the exponents of their factors; a percentage-of
+# carries its right operand's, ch. 2.6 rule 7; §4.6 Eenheid1 hands a value aggregation
 # its first operand's). Every OTHER op/kind of those two node kinds is ch. 2.10's FOURTH class — v0
 # derives nothing there, so it is neither twistable nor exempt, and the clamp reports it.
-DERIVED_OP = {"plus", "minus", "reducedBy", "times", "dividedBy", "dividedByAbs"}
+DERIVED_OP = {"plus", "minus", "reducedBy", "times", "dividedBy", "dividedByAbs", "percentageOf"}
 DERIVED_KIND = {"sum", "total", "minimum", "maximum", "first", "last"}
 # A BuiltinCall is a node kind the table carries with no derived branch at all: an absolute value,
 # a root and the date/time extractors are the fourth class, and the two duration kinds are exempt
@@ -1358,7 +1358,7 @@ n_uncovered=$((n_fourth + n_unknown))
 if [ "$n_fourth" -gt 0 ]; then
     echo 'FAIL: a unit-bearing annotation sits at a node kind whose result unit v0 does not derive —' >&2
     echo '      the §2.10 fourth-class witness has arrived. The node kind is one the twist table carries,' >&2
-    echo '      but THIS operator/kind branch has no join rule (power, percentageOf, an' >&2
+    echo '      but THIS operator/kind branch has no join rule (power, an' >&2
     echo '      absolute value, a root, a date/time extractor), so a twist here would' >&2
     echo '      probe a rule that does not exist and report its absence as a consumer defect. What the' >&2
     echo '      witness must buy is a derivation rule (or a fence) — never a wider licence to read the' >&2

@@ -195,6 +195,46 @@
       }
     },
     {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "vondstdeel",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "60"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "to": "2024-06-01",
+          "value": {
+            "number": "60"
+          }
+        },
+        {
+          "from": "2024-06-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
       "kind": "consistent"
     }
   ]

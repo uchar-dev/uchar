@@ -197,6 +197,22 @@
       }
     },
     {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "dagwaardedeel",
+      "value": {
+        "number": "60"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "dagwaardeheffing",
+      "value": {
+        "number": "120"
+      }
+    },
+    {
       "kind": "consistent"
     }
   ]

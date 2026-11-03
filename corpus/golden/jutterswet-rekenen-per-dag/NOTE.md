@@ -28,6 +28,7 @@ empty rule of ch. 1.2 decides its value there and its declaration its unit
 | `nettoafdracht` (whole) | (vondstwaarde verminderd met vondstkorting) maal afdrachttarief | €/dg |
 | `teruggerekende vondstwaarde` (unbounded) | (vondstwaarde gedeeld door zoekduur) maal zoekduur | € |
 | `afdrachttotaal` (scalar, whole) | the total of the dagafdracht | €, ch. 3.6 over a day grid |
+| `vondstdeel` (2 decimals) | 10% van zijn vondstwaarde | €, the right operand's (ch. 2.6, rule 7) |
 
 The third part folds over a set: a `Jutter` is linked to `Vondsten` (the
 fact type `aanmelding`), each with an `opbrengst` in € on a day grid, a
@@ -49,6 +50,13 @@ som, scalar and per period.
 | `totaalheffing` (scalar, whole) | (the total of the gewaarborgde vondstheffing) maal heffingsfactor | €/dg; the total in € |
 | `opbrengstheffing` (scalar, whole) | (the total of the opbrengst of all vondsten) maal heffingsfactor | €/dg; the per-element total (§7.1) in € |
 | `schattingsheffing` (scalar, whole) | (the sum of the schatting of all vondsten, or 0) maal heffingsfactor | €/dg |
+| `dagwaardedeel` (scalar, 2 decimals) | 25% van zijn dagwaardebedrag | €, the right operand's (ch. 2.6, rule 7) |
+| `dagwaardeheffing` (scalar, 2 decimals) | (25% van zijn dagwaardebedrag) maal heffingsfactor | €/dg |
+
+A percentage of a value with a unit carries that unit and takes no factor
+(ch. 2.6, rule 7): 25% of 240 € is 60 €. Gate 13 twists the annotation of
+the percentage, and every executor derives the unit from the right
+operand's declaration (ch. 2.10).
 
 A period where a value is leeg is a gap of the written timeline (ch. 3.1).
 The expectations were computed by hand before any executor saw the
@@ -92,7 +100,9 @@ gave 4800 × 70 + 7200 × 30 = 552 000, which the case now pins.
   the product coalesces it into €. teruggerekende vondstwaarde 0 before
   2024, 600 in January and February, 0 in March (leeg ÷ 30 dg is 0 in
   €/dg, times 30 dg is 0 €), 600 in April and May, 0 from 2024-06-01.
-  afdrachttotaal 1200 × 29 days + 1200 × 30 days = 70 800 €. No §9.5
+  afdrachttotaal 1200 × 29 days + 1200 × 30 days = 70 800 €. vondstdeel
+  0 until 2024-01-01, 60 € in January and February, 0 in March (10% of
+  leeg coalesces to 0), 60 € in April and May, 0 from 2024-06-01. No §9.5
   fact.
 - `case5-lege-verzameling`: no vondst; afdrachttarief 2 /dg on
   [2024-02-01, 2024-05-01), heffingsfactor 2 /dg, werkduur 30 dg. The sum
@@ -102,8 +112,9 @@ gave 4800 × 70 + 7200 × 30 = 552 000, which the case now pins.
   no member is 0 €/dg, times 30 dg 0 €; the gewaarborgde vondstheffing is
   0 on all time, so its total has no contributing segment: 0 €, times 2 /dg
   0 €/dg; the per-element total of the opbrengst over no member is 0 €; the
-  som of the schatting is its fallback 0 in €. Every target 0. No §9.5
-  fact.
+  som of the schatting is its fallback 0 in €. Every target 0, the
+  dagwaardedeel and the dagwaardeheffing too (25% of 0 €, and that times
+  2 /dg). No §9.5 fact.
 - `case6-vondst-zonder-waarde`: as case 5, with one vondst whose opbrengst
   is 0 on all time and which has no dagwaarde and no schatting. The sum per
   period of the opbrengst is 0 € on all time; the total of that one member
@@ -121,7 +132,8 @@ gave 4800 × 70 + 7200 × 30 = 552 000, which the case now pins.
   the fallback. dagwaardebedrag (5 + 3) × 30 = 240 €; totaalheffing
   (60 × 17 + 180 × 14 + 120 × 15) × 2 = 5340 × 2 = 10 680 €/dg;
   opbrengstheffing (60 × 60 + 30 × 31) × 2 = 4530 × 2 = 9060 €/dg;
-  schattingsheffing 100 × 2 = 200 €/dg. No §9.5 fact.
+  schattingsheffing 100 × 2 = 200 €/dg; dagwaardedeel 25% of 240 € = 60 €,
+  dagwaardeheffing 60 € × 2 /dg = 120 €/dg. No §9.5 fact.
 
 ## Executors
 
