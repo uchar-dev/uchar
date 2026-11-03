@@ -15,6 +15,20 @@ ch. 1.2, written by rules. A `Jutter` has a `strandloon` and a
 | `strandheffing` (2 decimals) | 10% van zijn strandloon | both coalesce |
 | `jaarproduct` (scalar, whole) | the total of the loonproduct | ch. 3.6 over a day grid |
 
+The second half of the document carries units: a `vondstwaarde` and a
+`vondstkorting` in €, an `afdrachttarief` in 1/dg and a `zoekduur` in dg,
+all whole numbers on a day grid. Where an operand is leeg in a period, the
+empty rule of ch. 1.2 decides its value there and its declaration its unit
+(ch. 2.10): a product with a leeg factor carries the unit of both factors
+(ch. 2.6, rule 2), per period as well (ch. 3.4).
+
+| target (day grid) | value | unit |
+|---|---|---|
+| `dagafdracht` (whole) | afdrachttarief maal vondstwaarde | €/dg |
+| `nettoafdracht` (whole) | (vondstwaarde verminderd met vondstkorting) maal afdrachttarief | €/dg |
+| `teruggerekende vondstwaarde` (unbounded) | (vondstwaarde gedeeld door zoekduur) maal zoekduur | € |
+| `afdrachttotaal` (scalar, whole) | the total of the dagafdracht | €, ch. 3.6 over a day grid |
+
 A period where a value is leeg is a gap of the written timeline (ch. 3.1).
 The expectations were computed by hand before any executor saw the
 document. One was wrong: the jaarproduct of case 2 was written down as
@@ -46,8 +60,21 @@ gave 4800 × 70 + 7200 × 30 = 552 000, which the case now pins.
   the one segment (−∞, +∞), a quotient leeg ÷ leeg is 0 there too, and the
   nettoloon (leeg verminderd met leeg is leeg) has no segment; no §9.5
   fact; jaarproduct 0, since the open segment carries 0 (ch. 3.6).
+- `case4-gat-met-eenheid`: the operands with a unit, each with a gap.
+  vondstwaarde 600 € on [2024-01-01, 2024-03-01) and [2024-04-01,
+  2024-06-01), so leeg in March; afdrachttarief 2 /dg on [2024-02-01,
+  2024-05-01); zoekduur 30 dg on [2024-01-01, 2024-06-01); vondstkorting
+  100 € on [2024-01-01, 2024-03-01). dagafdracht 0 until 2024-02-01 (the
+  tarief leeg), 1200 in February, 0 in March (the vondstwaarde leeg), 1200
+  in April, 0 from 2024-05-01. nettoafdracht: the same, but 500 × 2 = 1000
+  in February; in March the difference is leeg (its left operand is), and
+  the product coalesces it into €. teruggerekende vondstwaarde 0 before
+  2024, 600 in January and February, 0 in March (leeg ÷ 30 dg is 0 in
+  €/dg, times 30 dg is 0 €), 600 in April and May, 0 from 2024-06-01.
+  afdrachttotaal 1200 × 29 days + 1200 × 30 days = 70 800 €. No §9.5
+  fact.
 
 ## Executors
 
 `ref`, the ASP backend and both branches of the Drools backend play the
-three cases.
+four cases.

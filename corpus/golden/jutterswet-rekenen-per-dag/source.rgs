@@ -1,3 +1,9 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Eenheidsysteem Tijd
+    de dag (mv: dagen) dg
+
 Objecttype de Jutter (mv: Jutters) (bezield)
     het strandloon Numeriek (geheel getal) voor elke dag;
     de stormtoeslag Numeriek (geheel getal) voor elke dag;
@@ -7,6 +13,14 @@ Objecttype de Jutter (mv: Jutters) (bezield)
     de afgekapte loonverhouding Numeriek (getal met 5 decimalen) voor elke dag;
     de strandheffing Numeriek (getal met 2 decimalen) voor elke dag;
     het jaarproduct Numeriek (geheel getal);
+    de vondstwaarde Numeriek (geheel getal) met eenheid € voor elke dag;
+    het afdrachttarief Numeriek (geheel getal) met eenheid 1/dg voor elke dag;
+    de zoekduur Numeriek (geheel getal) met eenheid dg voor elke dag;
+    de vondstkorting Numeriek (geheel getal) met eenheid € voor elke dag;
+    de dagafdracht Numeriek (geheel getal) met eenheid €/dg voor elke dag;
+    de nettoafdracht Numeriek (geheel getal) met eenheid €/dg voor elke dag;
+    de teruggerekende vondstwaarde Numeriek (getal) met eenheid € voor elke dag;
+    het afdrachttotaal Numeriek (geheel getal) met eenheid €;
 
 Regel loonproduct van een jutter
     geldig altijd
@@ -31,3 +45,19 @@ Regel strandheffing van een jutter
 Regel jaarproduct van een jutter
     geldig altijd
         Het jaarproduct van een Jutter moet gesteld worden op het totaal van zijn loonproduct.
+
+Regel dagafdracht van een jutter
+    geldig altijd
+        De dagafdracht van een Jutter moet berekend worden als zijn afdrachttarief maal zijn vondstwaarde.
+
+Regel nettoafdracht van een jutter
+    geldig altijd
+        De nettoafdracht van een Jutter moet berekend worden als (zijn vondstwaarde verminderd met zijn vondstkorting) maal zijn afdrachttarief.
+
+Regel teruggerekende vondstwaarde van een jutter
+    geldig altijd
+        De teruggerekende vondstwaarde van een Jutter moet berekend worden als (zijn vondstwaarde gedeeld door zijn zoekduur) maal zijn zoekduur.
+
+Regel afdrachttotaal van een jutter
+    geldig altijd
+        Het afdrachttotaal van een Jutter moet gesteld worden op het totaal van zijn dagafdracht.

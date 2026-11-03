@@ -1,0 +1,201 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstwaarde": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-03-01",
+                "value": {
+                  "number": "600"
+                }
+              },
+              {
+                "from": "2024-04-01",
+                "to": "2024-06-01",
+                "value": {
+                  "number": "600"
+                }
+              }
+            ]
+          },
+          "afdrachttarief": {
+            "timeline": [
+              {
+                "from": "2024-02-01",
+                "to": "2024-05-01",
+                "value": {
+                  "number": "2"
+                }
+              }
+            ]
+          },
+          "zoekduur": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-06-01",
+                "value": {
+                  "number": "30"
+                }
+              }
+            ]
+          },
+          "vondstkorting": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-03-01",
+                "value": {
+                  "number": "100"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "dagafdracht",
+      "timeline": [
+        {
+          "to": "2024-02-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "1200"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "to": "2024-05-01",
+          "value": {
+            "number": "1200"
+          }
+        },
+        {
+          "from": "2024-05-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "nettoafdracht",
+      "timeline": [
+        {
+          "to": "2024-02-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "1000"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "to": "2024-05-01",
+          "value": {
+            "number": "1200"
+          }
+        },
+        {
+          "from": "2024-05-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "teruggerekende vondstwaarde",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "600"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "to": "2024-06-01",
+          "value": {
+            "number": "600"
+          }
+        },
+        {
+          "from": "2024-06-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "afdrachttotaal",
+      "value": {
+        "number": "70800"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
