@@ -258,6 +258,12 @@ EXCLUDE_KNOWN=(
   #       gate is what carries this: with a SECOND computing rule on the target the v0 erase is unretired and
   #       a leeg source still wipes the input (ref agrees) — pinned by StandingScalarNormWitnessTest, dual-branch since 2026-09-18 (BothBranches), with
   #       the version flank beside it.
+  "anchor/jutterswet-dagentelling|7a: 0 in een emmer zonder ware dag; Drools volgt in stap B deel ii. The day count is 0 in every bucket without a true day, over all time (RUNTIME-SEMANTICS ch. 3.8; maintainer decision 2026-11-03, spec/proposals/IMPLICIT-TIME.md 7a); measured 2026-11-03 (card conditions-per-period, step A part ii): both branches count the buckets with a true day only and write no 0"
+  "jutterswet-dagentelling-rgs|7a: 0 in een emmer zonder ware dag; Drools volgt in stap B deel ii. The day count is 0 in every bucket without a true day, over all time (RUNTIME-SEMANTICS ch. 3.8; maintainer decision 2026-11-03, spec/proposals/IMPLICIT-TIME.md 7a); measured 2026-11-03 (card conditions-per-period, step A part ii): both branches count the buckets with a true day only and write no 0"
+  "jutterswet-loon-per-periode|7a: 0 in een emmer zonder ware dag; Drools volgt in stap B deel ii. The day count is 0 in every bucket without a true day, over all time (RUNTIME-SEMANTICS ch. 3.8; maintainer decision 2026-11-03, spec/proposals/IMPLICIT-TIME.md 7a); measured 2026-11-03 (card conditions-per-period, step A part ii): both branches count the buckets with a true day only and write no 0, so the zeros cut to aangesteld are missing"
+  "jutterswet-vast-startpunt|7a: 0 in een emmer zonder ware dag; Drools volgt in stap B deel ii. The day count is 0 in every bucket without a true day, over all time (RUNTIME-SEMANTICS ch. 3.8; maintainer decision 2026-11-03, spec/proposals/IMPLICIT-TIME.md 7a); measured 2026-11-03 (card conditions-per-period, step A part ii): both branches count the buckets with a true day only and write no 0, and the whole-period tests over the counts read the zeros (stormpremie 50 in case 6 and 7, maandpremie leeg in case 4)"
+  "jutterswet-wachtdagen-twee-schrijvers|7a: 0 in een emmer zonder ware dag; Drools volgt in stap B deel ii. The day count is 0 in every bucket without a true day, over all time (RUNTIME-SEMANTICS ch. 3.8; maintainer decision 2026-11-03, spec/proposals/IMPLICIT-TIME.md 7a); measured 2026-11-03 (card conditions-per-period, step A part ii): both branches count the buckets with a true day only and write no 0, so the zeros of the second writer are missing"
+  "jutterswet-wachtmaanden|7a: 0 in een emmer zonder ware dag; Drools volgt in stap B deel ii. The day count is 0 in every bucket without a true day, over all time (RUNTIME-SEMANTICS ch. 3.8; maintainer decision 2026-11-03, spec/proposals/IMPLICIT-TIME.md 7a); measured 2026-11-03 (card conditions-per-period, step A part ii): both branches count the buckets with a true day only and write no 0, so the zeros of toeslagdagen are missing"
 )
 
 known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]:-}"; do [ -n "$e" ] || continue; [ "${e%%|*}" = "$n" ] && { echo "${e#*|}"; return 0; }; done; return 1; }
@@ -297,14 +303,17 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-aanmeldquotum|EXCLUDE DROOLS-023|loader Refusal: Expr:TemporalRead — the v0 backend has no temporal-read lowering"
   "anchor/jutterswet-aanspraaktelling|EXCLUDE DROOLS-002|loader Refusal: functionDefs — no function section in the v0 backend"
   "anchor/jutterswet-beschikkingsom|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "anchor/jutterswet-dagentelling|DIVERGE|7a: 0 in een emmer zonder ware dag; Drools volgt in stap B deel ii (EXCLUDE_KNOWN)"
   "anchor/jutterswet-bootberging|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Vondst) has no bean field: the role 'geborgen vondst' on Boot is to-many, so its storage is the field at the far end, and the bean model derives none there either, both ends being to-many (§13.3.9). The WF-102 path itself is CARRIED since 2026-09-18 (card drools-bronpad); the middle relation 'berging' declares BOTH roles to-many, and lifting that is a bean-model change (a collection-valued representation for many-to-many) with channel consequences of its own. Since card tms-omschakeling (2026-10-10) the exec-model branch is the lowering with truth maintenance and refuses the golden in this sentence, as the destructive lowering did"
   "anchor/jutterswet-gemeenteberging|EXCLUDE DROOLS-161|transpiler SKIP: the path of the fact creation 'berging door de kustgemeente' steps over 'aanmelding', both of whose roles are to-many, and the bean model has no field for that (§13.3.9). Until card tms-omschakeling (2026-10-10) the destructive lowering refused the golden on another form first, the count 'aantal bergende gemeenten van een vondst' over a to-one element role whose sister role is to-many: one bean field carries both directions, a CONSERVATIVE refusal since 2026-09-10 whose old ground (the directed reading) RUNTIME-SEMANTICS ch. 5.7a withdrew"
   "anchor/jutterswet-penningvintage|EXCLUDE DROOLS-023|loader Refusal: Expr:TemporalRead"
   "anchor/jutterswet-staffelvergoeding|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "anchor/jutterswet-toelagegronden|EXCLUDE DROOLS-054|bean name collision, refused before either branch lowers the document: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property, Jutter.toelage, which carries the attribute, and a defaults group writes the characteristic (v0 bean-model limit, not a defaults divergence). Until 2026-09-28 the transpiler's defaults fence refused it one phase later, on the same limit"
+  "anchor/jutterswet-verzuimrente-30-360|EXCLUDE DROOLS-102|transpiler SKIP: regel: rentedragend — the time-dependent characteristic 'rentedragend' of Afdracht as target (RUNTIME-SEMANTICS ch. 3.10, 3.11): measured 2026-11-03 (card conditions-per-period, step A part ii)"
   "anchor/jutterswet-vondstdossier|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "closed-runtime-division-by-zero|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a red case until card zero-division-channel (2026-10-19), excluded in check-red.sh on the same refusal"
   "jutterswet-aanspraakherziening|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
+  "jutterswet-dagentelling-rgs|DIVERGE|7a: 0 in een emmer zonder ware dag; Drools volgt in stap B deel ii (EXCLUDE_KNOWN)"
   "jutterswet-dossierrecht-catala|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-dossierspelling|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-halfstokspelling|EXCLUDE DROOLS-054|bean name collision: the characteristic 'half stok' of Sein falls on the bean property Sein.halfStok of the attribute 'half-stok', has no field of its own, and a rule writes it. Measured 2026-09-28 before the refusal: both branches played the golden and answered two wrong values (a rouwmelding of 1 where ref and clingo keep it leeg, and the characteristic read from the registration), so its pins are a ref = clingo pair"
@@ -321,6 +330,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-kinderprocent|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-muntketen|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Munt) has no bean field: the same many-to-many 'berging' as bootberging above — NOT the subtype landing it was written for, which the walk does carry (SourcePathChainWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
   "jutterswet-meldplichtspoor|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "jutterswet-loon-per-periode|DIVERGE|7a: 0 in een emmer zonder ware dag; Drools volgt in stap B deel ii (EXCLUDE_KNOWN)"
   "jutterswet-meldtermijnen|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-pachtvenster|EXCLUDE DROOLS-104|transpiler SKIP: regel 'jaarpacht van een strandpachter' — a period window in the condition of a rule with the temporal target 'jaarpacht': there the window clips the timeline (RUNTIME-SEMANTICS ch. 3.10), and the branch does not carry the form yet, as the DRL-text branch does not. The clip is built in ref and clingo since 2026-09-23 (card tijdvenster-conditie-normeren); the branch refuses the form by name, before the KieBase is built"
   "jutterswet-penningbeschikking-catala|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
@@ -330,6 +340,9 @@ EXPECTED_CHANNEL=(
   "jutterswet-vaarwaterspelling|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
+  "jutterswet-vast-startpunt|DIVERGE|7a: 0 in een emmer zonder ware dag; Drools volgt in stap B deel ii (EXCLUDE_KNOWN)"
+  "jutterswet-wachtdagen-twee-schrijvers|DIVERGE|7a: 0 in een emmer zonder ware dag; Drools volgt in stap B deel ii (EXCLUDE_KNOWN)"
+  "jutterswet-wachtmaanden|DIVERGE|7a: 0 in een emmer zonder ware dag; Drools volgt in stap B deel ii (EXCLUDE_KNOWN)"
   "jutterswet-waarderingsinvoer|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "synth3-armlichaam|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
   "synth3-besluitschakel|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
@@ -340,6 +353,7 @@ EXPECTED_CHANNEL=(
   "synth3-standtarief|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
   "synth3-vangstsom|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
+  "time-window-timeline-characteristic|EXCLUDE DROOLS-102|transpiler SKIP: regel: berging van een vondst — the time-dependent characteristic 'geborgen' of Vondst as target (RUNTIME-SEMANTICS ch. 3.10, 3.11): measured 2026-11-03 (card conditions-per-period, step A part ii), when the document left corpus/red"
 )
 # The count that closes the one direction a played-by-default list cannot see. It moves ONLY with a
 # corpus change, and it moves TOGETHER with the list: a golden that starts playing leaves the list
@@ -1511,7 +1525,11 @@ EXPECTED_CHANNEL=(
 # per period on rules of a timeline target and a scalar as the whole value (RUNTIME-SEMANTICS ch. 3.10, 3.11),
 # jutterswet-wachtmaanden, the whole-period qualifier per bucket (ch. 3.9), and jutterswet-wachtdagen-twee-schrijvers,
 # two writers of one timeline target per day (ch. 5.7). They play on both with PLAYED 3, 3 and 3.
-EXPECTED_PLAYED=325
+# 319 since the card conditions-per-period (step A part ii, 2026-11-03): the day count is 0 in a bucket without a true
+# day over all time (IMPLICIT-TIME 7a), which neither branch writes yet, so the six goldens with a day count it played
+# (anchor/jutterswet-dagentelling, jutterswet-dagentelling-rgs, jutterswet-loon-per-periode, jutterswet-vast-startpunt,
+# jutterswet-wachtdagen-twee-schrijvers, jutterswet-wachtmaanden) are value divergences until step B part ii.
+EXPECTED_PLAYED=319
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
