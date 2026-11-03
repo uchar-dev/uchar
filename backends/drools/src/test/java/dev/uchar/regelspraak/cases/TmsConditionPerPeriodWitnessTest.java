@@ -175,6 +175,22 @@ class TmsConditionPerPeriodWitnessTest {
         BothBranches.green(document(MODEL_A, List.of(LOON_ACTIEF)), caseActief(), "een lid zonder tijdlijn");
     }
 
+    /** "De premie … 25 gedurende de tijd dat 120 kleiner is dan zijn strandloon": the timeline on the right, its
+     *  operator reversed, so the premie is that of A, 25 on [2024-04-01, 2024-07-01). */
+    static final String PREMIE_RIGHT = computingRule("premie", "GELIJKSTELLING", "Jutter", "premie", number("25"),
+            comparison("less", number("120"), ownRead("strandloon", "Jutter")));
+
+    static JsonNode caseRight() throws Exception {
+        return TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter",
+                        Map.of("strandloon", STRANDLOON), List.of(), Map.of(), Map.of())),
+                List.of(expectedTimeline("J1", "premie", List.of(segment("2024-04-01", "2024-07-01", "25"))),
+                        consistent()));
+    }
+
+    @Test void a_comparison_with_the_timeline_on_the_right_reverses_its_operator() throws Exception {
+        BothBranches.green(document(MODEL_A, List.of(PREMIE_RIGHT)), caseRight(), "de tijdlijn rechts");
+    }
+
     /** "De premie … 25 gedurende de tijd dat zijn strandloon groter is dan 120" where the case gives the strandloon as
      *  the asOfDate-bucket scalar: the condition reads the timeline whole and faults (RUNTIME-SEMANTICS ch. 8.4), and
      *  its reading faults at the comparison. */
@@ -184,9 +200,17 @@ class TmsConditionPerPeriodWitnessTest {
     }
 
     @Test void a_condition_per_period_over_the_bucket_scalar_faults() throws Exception {
+        Path ir = document(MODEL_A, List.of(PREMIE));
         assertEquals("InputFormFault: fout in de regel \"premie\": a condition per period reads the time-dependent"
                 + " attribute \"strandloon\" of \"J1\" whole; the case supplies only the asOfDate-bucket scalar, which"
-                + " carries no period", TmsFaultWitnessTest.playBoth(document(MODEL_A, List.of(PREMIE)), caseBucket()));
+                + " carries no period", TmsFaultWitnessTest.playBoth(ir, caseBucket()));
+        // the fault stands at the read that raised it and fails the reading, and nothing after it is reached
+        // (RUNTIME-SEMANTICS ch. 5.12)
+        Path c = Files.writeString(Files.createTempFile("tms-emmerscalair", ".json"), caseBucket().toString());
+        c.toFile().deleteOnExit();
+        String r = "reading /rules/rules/0/versions/0 \"J1\" ";
+        readings(ir, c, List.of("case " + c.getFileName(), r + "0 Comparison unreached", r + "1 AttributeReference fault -",
+                r + "2 Literal unreached", r + "3 Literal unreached", r + "FAULTS", "READINGS 1"));
     }
 
     // ---------------- B: the whole-period qualifier per bucket ----------------
@@ -493,6 +517,8 @@ class TmsConditionPerPeriodWitnessTest {
                 TmsTimelineDocuments.ir(MODEL_B, List.of(ELKE_MAAND, VOLLE_MAAND), List.of()), caseClash());
         TmsTimelineWitnessTest.write(out.resolve("a-actief"),
                 TmsTimelineDocuments.ir(MODEL_A, List.of(LOON_ACTIEF), List.of()), caseActief());
+        TmsTimelineWitnessTest.write(out.resolve("a-tijdlijn-rechts"),
+                TmsTimelineDocuments.ir(MODEL_A, List.of(PREMIE_RIGHT), List.of()), caseRight());
         TmsTimelineWitnessTest.write(out.resolve("a-emmerscalair"),
                 TmsTimelineDocuments.ir(MODEL_A, List.of(PREMIE), List.of()), caseBucket());
         TmsTimelineWitnessTest.write(out.resolve("c-jaardeel"),
