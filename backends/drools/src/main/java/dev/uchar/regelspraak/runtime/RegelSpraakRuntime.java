@@ -994,13 +994,13 @@ public final class RegelSpraakRuntime {
      *  each calendar bucket (MAAND|JAAR) the timeline touches? Bucket the {@code List<Segment>} timeline by calendar
      *  period (like {@link #rsAantalDagenIn}); a bucket is "touched" if a segment overlaps it — for a value test only a
      *  segment carrying a value, since a leeg segment reads as a gap (RUNTIME-SEMANTICS ch. 3.9) — and PASSES only
-     *  when the per-segment check holds for the bucket's WHOLE calendar length (a gap, a leeg segment or a contrary
-     *  segment leaves fewer satisfying days than the period has → fail). Returns the AND over all touched buckets — and {@code true}
-     *  for an empty/leeg timeline (no period to violate; the caller's NIET-prefix complements). {@code toets}: 0..5 =
-     *  KLEINER/KLEINER_OF_GELIJK/GROTER/GROTER_OF_GELIJK/GELIJK/ONGELIJK of {@code waarde} vs {@code grens} (a leeg
-     *  waarde never satisfies), 6 = GEVULD (any non-leeg waarde), 7 = covered (a §8.2 kenmerk true-period — any
-     *  covering segment), 8 = LEEG (a leeg waarde). The single implementation (single-runtime
-     *  principle). */
+     *  when the check holds for the bucket's WHOLE calendar length. A gap day, and a day under a leeg segment, reads
+     *  leeg and satisfies the check where a leeg moment does ({@link #segmentVoldoet} on null): the leeg test, "gelijk
+     *  aan" against a leeg grens and "ongelijk aan" against a filled one. Returns the AND over all touched buckets —
+     *  and {@code true} for an empty/leeg timeline (no period to violate; the caller's NIET-prefix complements).
+     *  {@code toets}: 0..5 = KLEINER/KLEINER_OF_GELIJK/GROTER/GROTER_OF_GELIJK/GELIJK/ONGELIJK of {@code waarde} vs
+     *  {@code grens}, 6 = GEVULD (any non-leeg waarde), 7 = covered (a §8.2 kenmerk true-period — any covering
+     *  segment), 8 = LEEG (a leeg waarde). The single implementation (single-runtime principle). */
     public static boolean rsGeheelPeriode(List<?> tijdlijn, String granulariteit, int toets, Object grens) {
         if (tijdlijn == null) return true;
         boolean jaar = "JAAR".equals(granulariteit);
@@ -1010,8 +1010,8 @@ public final class RegelSpraakRuntime {
             LocalDate van = segVan(o), tot = segTot(o);
             if (van == null || tot == null || !van.isBefore(tot)) continue;
             // RUNTIME-SEMANTICS ch. 3.9 reads every value test off read (ch. 3.1): a leeg segment reads as a gap, so it
-            // touches no bucket and none of its days satisfies a test, the comparisons included (decided 2026-09-26).
-            // The kenmerk check (7) is exempt: a true-period segment carries no value at all.
+            // touches no bucket and its days are counted as gap days below. The kenmerk check (7) is exempt: a
+            // true-period segment carries no value at all.
             if (toets != 7 && segWaarde(o) == null) continue;
             boolean ok = segmentVoldoet(toets, segWaarde(o), grens);
             LocalDate cursor = jaar ? van.withDayOfYear(1) : van.withDayOfMonth(1);
@@ -1027,31 +1027,33 @@ public final class RegelSpraakRuntime {
                 cursor = next;
             }
         }
+        // a gap day of a kenmerk is a day the kenmerk does not hold
+        boolean gatVoldoet = toets != 7 && segmentVoldoet(toets, null, grens);
         for (Map.Entry<LocalDate, Long> en : geraaktDagen.entrySet()) {
             LocalDate bucket = en.getKey();
             LocalDate eind = jaar ? bucket.plusYears(1) : bucket.plusMonths(1);
             long totaal = ChronoUnit.DAYS.between(bucket, eind);
-            long goed = goedDagen.getOrDefault(bucket, 0L);
-            // §8.2 LEEG (toets 8): a GAP day carries no value, so it is ALSO leeg — only the TOUCHED days must be
-            // leeg-satisfying (compare against the bucket's touched days). That is RUNTIME-SEMANTICS ch. 3.9's days(B)
-            // threshold with a gap day counted as a leeg day, and it passes exactly when no segment carries a value.
-            // Every other check requires the WHOLE calendar period to satisfy (a gap leaves fewer satisfying days than
-            // the period has -> fail).
-            long drempel = toets == 8 ? en.getValue() : totaal;
-            if (goed < drempel) return false;   // a moment in this calendar period fails the check
+            // RUNTIME-SEMANTICS ch. 3.9: one threshold, days(B), for every check; the days of the bucket that no
+            // segment with a value covers read leeg and count where a leeg moment satisfies the check
+            long goed = goedDagen.getOrDefault(bucket, 0L) + (gatVoldoet ? totaal - en.getValue() : 0L);
+            if (goed < totaal) return false;   // a moment in this calendar period fails the check
         }
         return true;
     }
 
-    /** Whether one timeline segment's value satisfies the §8.2 per-moment check ({@code toets} encoding per
-     *  {@link #rsGeheelPeriode}). A leeg (null) value satisfies only the "covered" check (toets 7); every value
-     *  comparison treats leeg as not-holding. */
+    /** Whether one moment's value satisfies the §8.2 per-moment check ({@code toets} encoding per
+     *  {@link #rsGeheelPeriode}), a leeg (null) value or grens read as RUNTIME-SEMANTICS ch. 1.2 reads it: an ordering
+     *  is onwaar on a leeg side, "gelijk aan" holds on two leeg sides and "ongelijk aan" on exactly one. The "covered"
+     *  check (toets 7) holds on every covering segment. */
     private static boolean segmentVoldoet(int toets, BigDecimal w, Object grens) {
         if (toets == 7) return true;       // §8.2 kenmerk: a covering segment = the kenmerk holds here
         if (toets == 8) return w == null;  // §8.2 leeg: this moment carries NO value (the inverse of gevuld)
-        if (w == null) return false;       // leeg: no value at this moment -> the check does not hold
-        if (toets == 6) return true;       // §8.2 gevuld: a non-leeg value
-        if (grens == null) return false;   // §5.1 a comparison with a leeg grens is onwaar (never crash on compareTo(null))
+        if (toets == 6) return w != null;  // §8.2 gevuld: a non-leeg value
+        if (w == null || grens == null) {
+            if (toets == 4) return w == null && grens == null;   // §5.3 numeric equality: both leeg
+            if (toets == 5) return (w == null) != (grens == null); // §5.6 inequality: exactly one leeg
+            return false;                  // §5.1 an ordering with a leeg side is onwaar (never crash on compareTo(null))
+        }
         int c = exactCompare(w, grens);
         switch (toets) {
             case 0:  return c < 0;

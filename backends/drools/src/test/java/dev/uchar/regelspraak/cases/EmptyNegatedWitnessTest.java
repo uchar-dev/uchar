@@ -140,14 +140,13 @@ class EmptyNegatedWitnessTest {
         assertFalse(RegelSpraakRuntime.rsGeheelPeriode(halfAndEmpty, "JAAR", 8, null), "leeg: a half year of 4");
     }
 
-    /** The same for the comparisons (RUNTIME-SEMANTICS ch. 3.9, decided 2026-09-26): a leeg segment reads as a gap for
-     *  every test, so it touches no bucket and none of its days satisfies a comparison, the inequality included —
-     *  the chapter's worked examples, tested under the year grid ({@code test} 2 is "groter dan", 5 "ongelijk aan").
-     *  No golden can carry the form: the case format has no leeg value, and only this backend writes a leeg segment
-     *  to a member (the temporal sum of ch. 3.5), which ref and the ASP backend do not write; ref's suite pins the
-     *  same fold on its own timeline ({@code WV-3.9-vgl-leeg-segment-*}). Before that date the comparisons counted the
-     *  segment's bucket as touched, so over the first timeline below "gevuld" held while "groter dan 40" and "ongelijk
-     *  aan 40" failed. */
+    /** The same for the comparisons (RUNTIME-SEMANTICS ch. 3.9): a leeg segment reads as a gap for every test, so it
+     *  touches no bucket and its days read leeg, which satisfies a comparison where ch. 1.2 makes a leeg side satisfy
+     *  it — "ongelijk aan" a filled bound, never an ordering — the chapter's worked examples, tested under the year
+     *  grid ({@code test} 2 is "groter dan", 5 "ongelijk aan"). No golden can carry the form: the case format has no
+     *  leeg value, and only this backend writes a leeg segment to a member (the temporal sum of ch. 3.5), which ref
+     *  and the ASP backend do not write; ref's suite pins the same fold on its own timeline
+     *  ({@code WV-3.9-vgl-leeg-segment-*}). */
     @Test void an_empty_segment_also_touches_no_bucket_for_a_comparison() {
         BigDecimal forty = new BigDecimal("40");
         List<Object> between = List.of(new Seg("2025-01-01", "2026-01-01", "50"),
@@ -157,7 +156,9 @@ class EmptyNegatedWitnessTest {
         assertTrue(RegelSpraakRuntime.rsGeheelPeriode(between, "JAAR", 5, forty), "≠ 40: 2026 is not touched");
         List<Object> halfAndEmpty = List.of(new Seg("2026-01-01", "2026-07-01", "50"),
                 new Seg("2026-07-01", "2027-01-01", null));
-        assertFalse(RegelSpraakRuntime.rsGeheelPeriode(halfAndEmpty, "JAAR", 5, forty), "≠ 40: 181 of 365 days");
+        assertTrue(RegelSpraakRuntime.rsGeheelPeriode(halfAndEmpty, "JAAR", 5, forty),
+                "≠ 40: 181 days 50 and 184 leeg days, 365 of 365");
+        assertFalse(RegelSpraakRuntime.rsGeheelPeriode(halfAndEmpty, "JAAR", 2, forty), "> 40: 181 of 365 days");
         List<Object> onlyEmpty = List.of(new Seg("2026-01-01", "2027-01-01", null));
         assertTrue(RegelSpraakRuntime.rsGeheelPeriode(onlyEmpty, "JAAR", 2, forty), "> 40: no bucket is touched");
     }

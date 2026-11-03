@@ -6377,7 +6377,8 @@ public final class TmsTranspiler {
      * satisfies the comparison with a bound on every day of every calendar year or month it touches
      * ({@link #wholePeriod}). One side is an own attribute on a timeline, the other the bound, a value of the rule like
      * any other, evaluated whatever the timeline holds, as the reference interpreter evaluates it, and restated into the
-     * timeline's unit (ch. 2.6); a leeg bound fails every day, never a fault. Where the timeline stands on the right, the
+     * timeline's unit (ch. 2.6); a leeg bound and a leeg day are leeg sides, read with ch. 1.2 on every day, never a
+     * fault. Where the timeline stands on the right, the
      * operator is reversed, never negated: on a leeg day the two differ. Refused by name, as the reference interpreter
      * folds none of them: a timeline read over a path (ch. 3.12: it folds no navigated comparison), two timelines, no
      * timeline, a date ordering (ch. 3.12) and a side that is no number. A bound read over a path is a value like any
@@ -6491,8 +6492,9 @@ public final class TmsTranspiler {
      * the runtime folds it ({@code rsGeheelPeriode}): for every calendar year or month the
      * timeline touches, the days on which the test holds must be all the days of that bucket. The grid is the
      * qualifier's own, "het gehele jaar" or "de gehele maand", never the member's grid nor the session's, so the fold
-     * reads no evaluation date and a session without one answers. A leeg segment reads as a gap: it touches no bucket
-     * and satisfies no test but the leeg test. A timeline without segments, and a null one, touch no bucket and pass,
+     * reads no evaluation date and a session without one answers. A leeg segment reads as a gap: it touches no bucket,
+     * and a gap day reads leeg, which satisfies the leeg test and a comparison where ch. 1.2 makes a leeg side satisfy
+     * it. A timeline without segments, and a null one, touch no bucket and pass,
      * so the qualifier's own negation ("niet gedurende …"), which complements the folded verdict, fails on them. The
      * bound of a comparison is read as a decimal ({@code toBd}), after the timeline.
      * The timeline of an attribute is read whole, so its input given as the asOfDate-bucket scalar faults

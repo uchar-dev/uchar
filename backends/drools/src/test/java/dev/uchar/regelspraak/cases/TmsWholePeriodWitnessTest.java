@@ -62,8 +62,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * covered: trouwpremie leeg, stilpremie 30, where the grid of the member, a month, would give 10. J3, never
  * wachtplichtig, with wachtdagen 25 in every month of 2024 as input, which the count does not replace (ch. 7.8): 10, 20,
  * leeg. J4, without periods and without input: the timeline has no segments, touches no bucket and passes, and its
- * negation fails: 10, 20, leeg. J5, as J1 without a drempel: a leeg bound fails every day, never a fault: trouwpremie
- * leeg, stilpremie 30, vulpremie 20. Every order of the four rules; beside them the generated rules in a hundred sampled
+ * negation fails: 10, 20, leeg. J5, as J1 without a drempel: a leeg bound satisfies no ordering, never a fault:
+ * trouwpremie leeg, stilpremie 30, vulpremie 20. Every order of the four rules; beside them the generated rules in a hundred sampled
  * orders on a J2 of its own, where the trouwpremie of 10 that the timeline's input answers stands in some order on the
  * way and is gone at the fixpoint.
  *
@@ -87,11 +87,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * no denial, krap only. V3: B6 in the first half: one denial, krap and paraat. V4 without boats: krap only. Every order
  * of the four rules.
  *
- * <p><b>A3, the equalities against a leeg bound.</b> "De ongelijkpremie … op 10 indien zijn wachtdagen gedurende het
- * gehele jaar ongelijk is aan zijn drempel" and the gelijkpremie, 20, with "gelijk aan". J1 (drempel 20, wachtplichtig
- * through 2024): no day equals 20, ongelijkpremie 10, gelijkpremie leeg. J5 (no drempel): a leeg bound fails every
- * day, the inequality included (ch. 3.9: "A leeg comparison bound makes the test false"), both leeg. Every order of the
- * three rules.
+ * <p><b>A3, the equalities against a leeg day.</b> "De ongelijkpremie … op 10 indien zijn wachtdagen gedurende het
+ * gehele jaar ongelijk is aan zijn drempel" and the gelijkpremie, 20, with "gelijk aan". Each day asks the comparison of
+ * ch. 1.2, a leeg bound and a gap day being leeg sides (ch. 3.9). J1 (drempel 20, wachtplichtig through 2024): no day
+ * equals 20, ongelijkpremie 10, gelijkpremie leeg. J5 (no drempel, wachtplichtig through 2024): every day holds a count,
+ * which is unequal to the leeg bound: ongelijkpremie 10, gelijkpremie leeg. J7 (drempel 20, wachtplichtig in January
+ * 2024 only): 31 in January and 335 gap days, each unequal to 20: ongelijkpremie 10, gelijkpremie leeg. J8 (no drempel,
+ * wachtplichtig in January 2024 only): 31 days unequal to leeg, 335 gap days equal to it: both leeg. Every order of
+ * the three rules, on both branches.
  *
  * <p><b>E, the input given as the asOfDate-bucket scalar</b> (ch. 8.4): the fold reads the full timeline, so a bucket
  * scalar faults where the evaluation reaches the fold, and a timeline a rule derives replaces it. "Een Jutter is
@@ -111,8 +114,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * one). B and C: the reference interpreter's runner and the ASP runner pass every order of both cases (13 expectations
  * each). A: both pass all 24 orders of both cases (21 expectations): a premie its rule wrote on the input state, before
  * the day count replaced the input, is given back where the condition is false at the fixpoint (RUNTIME-SEMANTICS
- * ch. 6.1, "A write is read at the fixpoint"). A3: both pass every order of both cases (5 expectations): a leeg bound
- * fails every day, the inequality included (golden {@code jutterswet-gehele-jaar-lege-grens}). E: both pass J1 and S1
+ * ch. 6.1, "A write is read at the fixpoint"). A3: both pass every order of both cases (9 expectations): a leeg day
+ * read with ch. 1.2 (golden {@code jutterswet-gehele-jaar-lege-grens}). E: both pass J1 and S1
  * without a fault, reading the bucket scalar as no timeline, which passes (trouwpremie and werftoeslag 10), and pass
  * J2 and J3 (4 expectations). This branch follows ch. 8.4 there, as for the pro-rata base of
  * {@code TmsInputFormWitnessTest}. R: the reference interpreter and the ASP runner both carry the inner negation of
@@ -303,19 +306,40 @@ class TmsWholePeriodWitnessTest {
 
     static final List<String> RULES_A3 = List.of(WACHTDAGEN, NOT_EQUAL_PREMIE, EQUAL_PREMIE);
 
+    static final Map<String, List<String>> JANUARY_2024 = Map.of("wachtplichtig",
+            List.of(period("2024-01-01", "2024-02-01")));
+
     static List<String> instancesA3() {
         return List.of(instance("J1", "Jutter", Map.of("drempel", numberValue("20")), List.of(), WHOLE_2024, Map.of()),
-                instance("J5", "Jutter", Map.of(), List.of(), WHOLE_2024, Map.of()));
+                instance("J5", "Jutter", Map.of(), List.of(), WHOLE_2024, Map.of()),
+                instance("J7", "Jutter", Map.of("drempel", numberValue("20")), List.of(), JANUARY_2024, Map.of()),
+                instance("J8", "Jutter", Map.of(), List.of(), JANUARY_2024, Map.of()));
     }
 
     static List<String> expectationsA3() {
         return List.of(value("J1", "ongelijkpremie", "10"), value("J1", "gelijkpremie", null),
-                value("J5", "ongelijkpremie", null), value("J5", "gelijkpremie", null), consistent());
+                value("J5", "ongelijkpremie", "10"), value("J5", "gelijkpremie", null),
+                value("J7", "ongelijkpremie", "10"), value("J7", "gelijkpremie", null),
+                value("J8", "ongelijkpremie", null), value("J8", "gelijkpremie", null), consistent());
     }
 
-    @Test void an_empty_bound_fails_every_day_also_for_not_equal_to() throws Exception {
+    /** {@link #inEveryOrder} on both branches ({@link TmsFaultWitnessTest#playBoth}), which must give one outcome. */
+    static List<String> inEveryOrderOnBothBranches(String model, List<String> rules, List<JsonNode> cases)
+            throws Exception {
+        List<String> out = new ArrayList<>();
+        for (List<String> order : TmsDocuments.permutations(rules)) {
+            List<String> names = TmsDocuments.ruleNames(order);
+            Path ir = TmsTimelineDocuments.document(model, order, List.of());
+            for (int i = 0; i < cases.size(); i++)
+                out.add(names + " zaak " + i + " " + TmsFaultWitnessTest.playBoth(ir, cases.get(i)));
+        }
+        return out;
+    }
+
+    @Test void a_leeg_day_is_read_with_the_comparison_of_chapter_1_2_in_every_order_on_both_branches()
+            throws Exception {
         List<JsonNode> cases = cases(instancesA3(), expectationsA3());
-        assertEquals(played(RULES_A3, cases.size()), inEveryOrder(MODEL_A3, RULES_A3, cases));
+        assertEquals(played(RULES_A3, cases.size()), inEveryOrderOnBothBranches(MODEL_A3, RULES_A3, cases));
     }
 
     // ---------------- B: a step over a to-one role ----------------
