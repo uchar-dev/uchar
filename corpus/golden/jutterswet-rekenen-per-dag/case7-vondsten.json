@@ -1,0 +1,203 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "afdrachttarief": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-03-01",
+                "value": {
+                  "number": "2"
+                }
+              }
+            ]
+          },
+          "heffingsfactor": {
+            "number": "2"
+          },
+          "werkduur": {
+            "number": "30"
+          }
+        },
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "opbrengst": {
+            "timeline": [
+              {
+                "from": "2024-02-01",
+                "to": "2024-04-01",
+                "value": {
+                  "number": "60"
+                }
+              }
+            ]
+          },
+          "dagwaarde": {
+            "number": "5"
+          },
+          "schatting": {
+            "number": "100"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "opbrengst": {
+            "timeline": [
+              {
+                "from": "2024-01-15",
+                "to": "2024-02-15",
+                "value": {
+                  "number": "30"
+                }
+              }
+            ]
+          },
+          "dagwaarde": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "vondstheffing",
+      "timeline": [
+        {
+          "to": "2024-01-15",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-15",
+          "to": "2024-02-01",
+          "value": {
+            "number": "60"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "to": "2024-02-15",
+          "value": {
+            "number": "180"
+          }
+        },
+        {
+          "from": "2024-02-15",
+          "to": "2024-03-01",
+          "value": {
+            "number": "120"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "gewaarborgde vondstheffing",
+      "timeline": [
+        {
+          "to": "2024-01-15",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-15",
+          "to": "2024-02-01",
+          "value": {
+            "number": "60"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "to": "2024-02-15",
+          "value": {
+            "number": "180"
+          }
+        },
+        {
+          "from": "2024-02-15",
+          "to": "2024-03-01",
+          "value": {
+            "number": "120"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "dagwaardebedrag",
+      "value": {
+        "number": "240"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "totaalheffing",
+      "value": {
+        "number": "10680"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "opbrengstheffing",
+      "value": {
+        "number": "9060"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "schattingsheffing",
+      "value": {
+        "number": "200"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

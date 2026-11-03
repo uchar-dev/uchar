@@ -21,6 +21,24 @@ Objecttype de Jutter (mv: Jutters) (bezield)
     de nettoafdracht Numeriek (geheel getal) met eenheid €/dg voor elke dag;
     de teruggerekende vondstwaarde Numeriek (getal) met eenheid € voor elke dag;
     het afdrachttotaal Numeriek (geheel getal) met eenheid €;
+    de heffingsfactor Numeriek (geheel getal) met eenheid 1/dg;
+    de werkduur Numeriek (geheel getal) met eenheid dg;
+    de vondstheffing Numeriek (geheel getal) met eenheid €/dg voor elke dag;
+    de gewaarborgde vondstheffing Numeriek (geheel getal) met eenheid €/dg voor elke dag;
+    het dagwaardebedrag Numeriek (geheel getal) met eenheid €;
+    de totaalheffing Numeriek (geheel getal) met eenheid €/dg;
+    de opbrengstheffing Numeriek (geheel getal) met eenheid €/dg;
+    de schattingsheffing Numeriek (geheel getal) met eenheid €/dg;
+
+Objecttype de Vondst (mv: Vondsten)
+    de opbrengst Numeriek (geheel getal) met eenheid € voor elke dag;
+    de dagwaarde Numeriek (geheel getal) met eenheid €/dg;
+    de schatting Numeriek (geheel getal) met eenheid €;
+
+Feittype aanmelding
+    de aanmeldende jutter Jutter
+    de vondst (mv: vondsten) Vondst
+Eén aanmeldende jutter telt meerdere vondsten
 
 Regel loonproduct van een jutter
     geldig altijd
@@ -61,3 +79,27 @@ Regel teruggerekende vondstwaarde van een jutter
 Regel afdrachttotaal van een jutter
     geldig altijd
         Het afdrachttotaal van een Jutter moet gesteld worden op het totaal van zijn dagafdracht.
+
+Regel vondstheffing van een jutter
+    geldig altijd
+        De vondstheffing van een Jutter moet berekend worden als (de som van de opbrengst van alle vondsten van de Jutter) maal zijn afdrachttarief.
+
+Regel gewaarborgde vondstheffing van een jutter
+    geldig altijd
+        De gewaarborgde vondstheffing van een Jutter moet berekend worden als (de som van de opbrengst van alle vondsten van de Jutter of 0 als die er niet zijn) maal zijn afdrachttarief.
+
+Regel dagwaardebedrag van een jutter
+    geldig altijd
+        Het dagwaardebedrag van een Jutter moet berekend worden als (het totaal van de dagwaarde van alle vondsten van de Jutter) maal zijn werkduur.
+
+Regel totaalheffing van een jutter
+    geldig altijd
+        De totaalheffing van een Jutter moet berekend worden als (het totaal van zijn gewaarborgde vondstheffing) maal zijn heffingsfactor.
+
+Regel opbrengstheffing van een jutter
+    geldig altijd
+        De opbrengstheffing van een Jutter moet berekend worden als (het totaal van de opbrengst van alle vondsten van de Jutter) maal zijn heffingsfactor.
+
+Regel schattingsheffing van een jutter
+    geldig altijd
+        De schattingsheffing van een Jutter moet berekend worden als (de som van de schatting van alle vondsten van de Jutter of 0 als die er niet zijn) maal zijn heffingsfactor.
