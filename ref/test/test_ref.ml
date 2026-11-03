@@ -8200,6 +8200,40 @@ let () =
   check "WV-3.9-vgl-leeg-segment-ongelijk-is-een-gat"
     (not (ev ~op:Not_equal [ seg "2026-01-01" "2026-07-01" (n "50"); seg "2026-07-01" "2027-01-01" empty_value ]));
   check "WV-3.9-vgl-leeg-segment-alleen" (ev [ seg "2026-01-01" "2027-01-01" empty_value ]);
+  (* "A leeg comparison bound makes the test false, never a fault" (ch. 3.9):
+     the test is the one each day asks, so no day satisfies it for any
+     comparison, the inequality included, which ch. 1.2 makes true for a
+     filled value against leeg. A touched bucket then fails and the
+     qualifier's negation holds; a timeline without segments touches no
+     bucket and passes whatever the bound. The bound is the subject's own
+     scalar attribute, left out of the instance. *)
+  let bound_doc =
+    let name, o = kv_berger in
+    { empty_doc with object_types = [ (name, { o with attributes = o.attributes @ [ ("grens", Some num0) ] }) ] }
+  in
+  let ev_bound ?(not_flag = false) ~bound op tl =
+    let i =
+      { (inst "B1" "Berger" (match bound with Some b -> [ ("grens", n b) ] | None -> [])) with
+        World.tls = World.SMap.add "dagvergoeding" tl World.SMap.empty }
+    in
+    let w = World.add_instance World.empty i in
+    Eval.eval_cond (env_of bound_doc) w (World.get w "B1") ~err:no_err
+      (Comparison
+         { op; left_side = Some (aref "dagvergoeding" "Berger"); right_side = Some (aref "grens" "Berger");
+           time_period = Some { gp_granularity = true; gp_negated = not_flag }; source_name = None })
+  in
+  List.iter
+    (fun (ident, (op : Ir_v0.Ast.compare_op)) ->
+      check ("WV-3.9-empty-bound-" ^ ident ^ "-whole-year") (not (ev_bound ~bound:None op (whole_year "50")));
+      check ("WV-3.9-empty-bound-" ^ ident ^ "-half-year") (not (ev_bound ~bound:None op (half_year "50")));
+      check ("WV-3.9-empty-bound-" ^ ident ^ "-negated") (ev_bound ~not_flag:true ~bound:None op (whole_year "50"));
+      check ("WV-3.9-empty-bound-" ^ ident ^ "-no-segments") (ev_bound ~bound:None op []))
+    [ ("less", Less); ("less-or-equal", Less_or_equal); ("greater", Greater);
+      ("greater-or-equal", Greater_or_equal); ("equal", Equal); ("not-equal", Not_equal) ];
+  (* the same document with the bound filled answers by value *)
+  check "WV-3.9-filled-bound-not-equal" (ev_bound ~bound:(Some "40") Not_equal (whole_year "50"));
+  check "WV-3.9-filled-bound-not-equal-on-the-bound" (not (ev_bound ~bound:(Some "50") Not_equal (whole_year "50")));
+  check "WV-3.9-filled-bound-equal" (ev_bound ~bound:(Some "50") Equal (whole_year "50"));
   (* a non-time-dependent operand keeps WF-043's refusal *)
   expect_fault_msg "WV-3.9-vgl-niet-tijdsafhankelijk"
     (fun () ->
