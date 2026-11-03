@@ -302,7 +302,6 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-penningvintage|EXCLUDE DROOLS-023|loader Refusal: Expr:TemporalRead"
   "anchor/jutterswet-staffelvergoeding|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "anchor/jutterswet-toelagegronden|EXCLUDE DROOLS-054|bean name collision, refused before either branch lowers the document: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property, Jutter.toelage, which carries the attribute, and a defaults group writes the characteristic (v0 bean-model limit, not a defaults divergence). Until 2026-09-28 the transpiler's defaults fence refused it one phase later, on the same limit"
-  "anchor/jutterswet-verzuimrente-dagen|EXCLUDE DROOLS-105|transpiler SKIP: regel 'dagrente' — maal over a time-dependent parameter and a scalar as the value of the temporal target 'dagrente', which neither branch carries: an operator of ch. 1.2 read per day over all time (RUNTIME-SEMANTICS ch. 3.4) and the calendar total of ch. 3.6, built in ref and clingo since card timeline-arithmetic-per-period (step A, 2026-11-03); step B carries them, and until then the anchor's pins are a ref = clingo pair"
   "anchor/jutterswet-vondstdossier|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "closed-runtime-division-by-zero|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a red case until card zero-division-channel (2026-10-19), excluded in check-red.sh on the same refusal"
   "jutterswet-aanspraakherziening|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
@@ -329,7 +328,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-penningstaffel-catala|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-postenheffing|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-premiespelling|EXCLUDE DROOLS-070|bean name collision: the object types 'RechtOpPremie' and 'Recht op premie' fall on one fact class, dev.uchar.regelspraak.facts.RechtOpPremie. Measured 2026-09-28 before the refusal: both branches crashed compiling the generated beans (cyclic inheritance), so its pins are a ref = clingo pair"
-  "jutterswet-rekenen-per-dag|EXCLUDE DROOLS-105|transpiler SKIP: regel 'loonproduct van een jutter' — maal over two timelines as the value of the temporal target 'loonproduct', which neither branch carries, nor verminderd met, both divisions and percentage van per day (RUNTIME-SEMANTICS ch. 3.4), built in ref and clingo since card timeline-arithmetic-per-period (step A, 2026-11-03); step B carries them, and until then the golden's pins are a ref = clingo pair"
   "jutterswet-vaarwaterspelling|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
@@ -1508,7 +1506,11 @@ EXPECTED_CHANNEL=(
 # 320 since the card timeline-arithmetic-by-rule (step B, 2026-11-03): the golden jutterswet-maandloon, plus, min and
 # the sum per period of RUNTIME-SEMANTICS ch. 3.4 and 3.5 as the value of a rule, over all time with open segments,
 # and the total over such a timeline. It plays on both with PLAYED 5.
-EXPECTED_PLAYED=320
+# 322 since the card timeline-arithmetic-per-period (step B, 2026-11-03): the anchor jutterswet-verzuimrente-dagen, a
+# time-dependent parameter maal a scalar per day and the total of a rate per year over a day grid by the calendar
+# (RUNTIME-SEMANTICS ch. 3.4, 3.6), and the golden jutterswet-rekenen-per-dag, maal, verminderd met, both divisions and
+# percentage van per day on a day grid and the total over it. They play on both with PLAYED 2 and 3.
+EXPECTED_PLAYED=322
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
