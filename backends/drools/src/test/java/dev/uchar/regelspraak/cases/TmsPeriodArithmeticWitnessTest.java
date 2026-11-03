@@ -78,9 +78,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * <p><b>E, what the branch refuses by name</b>, each in the same sentence on both branches.
  *
  * <p><b>Measured</b> 2026-11-03 on the documents of {@link #main}, A, B and the two plays of C: the verifier, the
- * reference interpreter's runner and the ASP runner pass all four. <b>Red</b> on 53ab929d5, before the period arithmetic was carried:
- * A, B, C and E on "EXCLUDE DROOLS-105: … die geen tijdsevenredig deel en geen dagentelling is …", D on the case
- * reader's "segment op 'strandloon' mist een 'from'-datum".
+ * reference interpreter's runner and the ASP runner pass all four. <b>Red</b> on 53ab929d5, before the period
+ * arithmetic was carried: all eleven tests, A, B, the own total, the bucket scalars, the write boundary, D and E on the
+ * refusal "transpiler SKIP: regel: … — een waarde van het tijdsafhankelijke doel … die geen tijdsevenredig deel en geen
+ * dagentelling is …", and the clip, the per-element total and the whole-period qualifier on the case reader's "segment
+ * op '…' mist een 'from'-datum".
  */
 class TmsPeriodArithmeticWitnessTest {
 
@@ -277,6 +279,11 @@ class TmsPeriodArithmeticWitnessTest {
                 + " raakt een segment met een open grens dat 5 draagt: een andere waarde dan 0 over onbegrensd veel"
                 + " eenheden heeft geen totaal (ch. 3.6)", TmsFaultWitnessTest.playBoth(ir,
                 setCase(timeline(List.of(openTo("2024-02-01", "5"))), v2, List.of(consistent()))));
+        // an open end runs past every day: no unit count reaches it
+        assertEquals("OpenSegmentFault: fout in de regel \"vondsttotaal\": het temporele totaal van \"opbrengst\" op \"V1\""
+                + " raakt een segment met een open grens dat 4 draagt: een andere waarde dan 0 over onbegrensd veel"
+                + " eenheden heeft geen totaal (ch. 3.6)", TmsFaultWitnessTest.playBoth(ir,
+                setCase(timeline(List.of(openFrom("2024-02-01", "4"))), v2, List.of(consistent()))));
         BothBranches.green(ir, setCase(timeline(List.of(openTo("2024-02-01", "0"), segment("2024-02-01", "2024-04-01", "5"))),
                 v2, List.of(value("J1", "vondsttotaal", "13"), consistent())), "2 × 5 + 3, the open 0 adds 0");
     }
