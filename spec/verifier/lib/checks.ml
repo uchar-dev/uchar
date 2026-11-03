@@ -5787,7 +5787,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
                        ]
                    | _ -> [])
                | _ -> [])
-           | Some _ -> [])
+           (* the condition is a check of an own characteristic, as WF-055 and
+              WF-058 hold the other two clips: any other condition — a
+              comparison, a composite, a check over a role, an Unresolved
+              marker — gives no true periods of the subject to prorate over *)
+           | Some c ->
+               [ v ~params:[("node", Spelling.cond_node c)] "WF-056.condition-not-check" (sub "filter")
+                   ("the pro-rata gedurende condition is an own temporal characteristic check, and this "
+                  ^ Spelling.cond_node c ^ " is not one") ])
            @
            match f.call_arguments with
            | [ Attribute_reference { attribute_ref = Some b; object_type = Some bot; _ } ] -> (

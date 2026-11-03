@@ -236,6 +236,21 @@ let expr_node (e : expr) : string =
   | Filter_list _ -> "FilterList"
   | List_length _ -> "ListLength"
 
+(* The wire node name of an in-memory condition (IR-SPEC ch. 4.5), as
+   [expr_node] names an expression. *)
+let cond_node (c : condition_expr) : string =
+  match c with
+  | Comparison _ -> "Comparison"
+  | Predicate _ -> "Predicate"
+  | Characteristic_check _ -> "CharacteristicCheck"
+  | Role_membership _ -> "RoleMembership"
+  | Time_window _ -> "TimeWindow"
+  | Compound _ -> "Compound"
+  | Quantifier_fold _ -> "QuantifierFold"
+  | Identity_check _ -> "IdentityCheck"
+  | Rule_status_check _ -> "Regelversie"
+  | Condition_unresolved _ -> "Unresolved"
+
 (* The node name with its indefinite article, as a refusal sentence names
    the node ("a Literal", "an Unresolved"). The Drools loader spells the
    article by the same rule, on the first letter of the name. *)
