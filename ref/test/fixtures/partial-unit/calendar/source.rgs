@@ -1,0 +1,15 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Eenheidsysteem Tijd
+    de dag (mv: dagen) dg
+    de maand (mv: maanden) mnd
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
+    het dagtarief Numeriek (geheel getal) met eenheid €/dg voor elke maand;
+    de dagsom Numeriek (getal met 2 decimalen) met eenheid €;
+
+Regel dagsom van een jutter
+    geldig altijd
+        De dagsom van een Jutter moet gesteld worden op (het totaal van zijn dagtarief gedurende de tijd dat hij wachtplichtig is) rekenkundig afgerond op 2 decimalen.

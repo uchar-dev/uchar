@@ -3582,8 +3582,11 @@ let () =
   (* end to end (ref/test/fixtures/partial-unit, shared with the ASP backend's
      suite): the clip and the subject's own total of a timeline a rule writes
      under a condition per period count half of April by its days, 30 × (15/30 +
-     1) = 45 and 30 × 15/30 + 30 × 15/30 = 30; and 120 per year over five days of
-     2024 is 100/61 in the unbounded form *)
+     1) = 45 and 30 × 15/30 + 30 × 15/30 = 30; 120 per year over five days of
+     2024 is 100/61 in the unbounded form; and the calendar measures a part of a
+     month in days, 10 €/dg over 14 days of January and 20 of February, 340 €;
+     and a timeline a rule of ch. 3.4 does not write, its condition false, is
+     absent and totals 0 (point 12c) *)
   let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
   let dir = "ref/test/fixtures/partial-unit/" in
   List.iter
@@ -3591,7 +3594,9 @@ let () =
       plays ~ident ~ir:(read (dir ^ sub ^ "/ir.json")) ~case_data:(read (dir ^ sub ^ "/" ^ case)) (fun _ -> ()))
     [ ("WV-3.6-naar-rato-anderhalve-maand", "exact", "case1-anderhalve-maand.json");
       ("WV-3.6-naar-rato-gesplitste-maand", "exact", "case2-gesplitste-maand.json");
-      ("WV-3.6-naar-rato-onafgerond", "unrounded", "case.json") ]
+      ("WV-3.6-naar-rato-onafgerond", "unrounded", "case.json");
+      ("WV-3.6-naar-rato-kalender", "calendar", "case.json");
+      ("WV-3.6-afwezig-geschreven", "absent-written", "case.json") ]
 
 (* WV-3.2: anchored month walls clamp from the anchor, never from the
    previous wall *)

@@ -1,0 +1,13 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de leeftijd Numeriek (geheel getal);
+    het strandloon Numeriek (geheel getal) voor elke maand;
+    het maandloon Numeriek (geheel getal) voor elke maand;
+    het jaarloon Numeriek (geheel getal);
+
+Regel maandloon van een jutter
+    geldig altijd
+        Het maandloon van een Jutter moet berekend worden als zijn strandloon plus 0 indien zijn leeftijd groter is dan 18.
+
+Regel jaarloon van een jutter
+    geldig altijd
+        Het jaarloon van een Jutter moet gesteld worden op het totaal van zijn maandloon.

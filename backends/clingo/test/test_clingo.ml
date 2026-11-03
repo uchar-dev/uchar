@@ -17254,7 +17254,9 @@ let () =
    days, on ref's documents (ref/test/fixtures/partial-unit): the clip and the
    subject's own total of a timeline a rule writes under a condition per period
    over half of April, which this encoding lays over a denominator and divides
-   away exactly; a total that denominator does not divide, refused by name where
+   away exactly; the calendar's measure of a part of a month under a rounding; the
+   total 0 of a timeline a gated rule does not write; a total that denominator
+   does not divide, refused by name where
    ref holds the exact value (README [V8]); and a de som van over a set whose
    members bring no timeline, which totals 0 per member *)
 let () =
@@ -17266,6 +17268,13 @@ let () =
       ref_matches ~name:("a part of a unit: " ^ case) ~ir ~case_text;
       clingo_matches ~name:("a part of a unit: " ^ case) ~ir ~case_text)
     [ "case1-anderhalve-maand.json"; "case2-gesplitste-maand.json" ];
+  List.iter
+    (fun (sub, name) ->
+      let ir = read (dir ^ sub ^ "/ir.json") and case_text = read (dir ^ sub ^ "/case.json") in
+      ref_matches ~name ~ir ~case_text;
+      clingo_matches ~name ~ir ~case_text)
+    [ ("calendar", "a part of a unit: the calendar over parts of months");
+      ("absent-written", "the total of a timeline a rule of ch. 3.4 does not write") ];
   pinned_loud ~entry:"V8" ~name:"a part of a unit: unrounded" ~ir:(read (dir ^ "unrounded/ir.json"))
     ~case_text:(read (dir ^ "unrounded/case.json"))
     ~needle:"counts a part of a unit of its grid by its days";
