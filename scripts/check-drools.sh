@@ -1492,7 +1492,11 @@ EXPECTED_CHANNEL=(
 # 316 since the card static-precision-gate (2026-11-02): the golden jutterswet-precisiepoort, the writes the precision
 # gate of WF-023 admits (RUNTIME-SEMANTICS ch. 2.3, 2.4 point 4), a quotient into the unbounded form among them. It plays
 # on both with PLAYED 2. The goldens the gate refused carry a rounding now and play as before.
-EXPECTED_PLAYED=316
+# 317 since the card runtime-tijdconditie-leeg (2026-11-03): the golden jutterswet-peilwacht, a clip by "gelijk aan" and
+# "ongelijk aan" read per period by the comparison of ch. 1.2 (RUNTIME-SEMANTICS ch. 3.6): a gap in the compared timeline
+# and a leeg bound read leeg, written in RegelSpraak with hand-computed cases. rsTijdConditie takes the gaps within the
+# clipped timeline (DROOLS-222 retired). It plays on both with PLAYED 3.
+EXPECTED_PLAYED=317
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

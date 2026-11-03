@@ -1,0 +1,63 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "wachtvergoeding per maand": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-07-01",
+                "value": {
+                  "number": "100"
+                }
+              }
+            ]
+          },
+          "peilstand": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-02-01",
+                "value": {
+                  "number": "1000"
+                }
+              }
+            ]
+          },
+          "drempelstand": {
+            "number": "1000"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "peilsom",
+      "value": {
+        "number": "100"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "afwijksom",
+      "value": {
+        "number": "500"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

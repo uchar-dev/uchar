@@ -1,0 +1,14 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de wachtvergoeding per maand Numeriek (geheel getal) voor elke maand;
+    de peilstand Numeriek (geheel getal) voor elke maand;
+    de drempelstand Numeriek (geheel getal);
+    de peilsom Numeriek (geheel getal);
+    de afwijksom Numeriek (geheel getal);
+
+Regel peilsom van een jutter
+    geldig altijd
+        De peilsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn peilstand gelijk is aan zijn drempelstand).
+
+Regel afwijksom van een jutter
+    geldig altijd
+        De afwijksom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn peilstand ongelijk is aan zijn drempelstand).
