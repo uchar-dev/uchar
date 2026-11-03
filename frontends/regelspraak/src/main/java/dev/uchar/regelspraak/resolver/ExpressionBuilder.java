@@ -1475,28 +1475,13 @@ final class ExpressionBuilder {
                 if (!(filter instanceof Condition.Unresolved)) filter = new Condition.Unresolved(dimSource, null);
             }
         }
-        // §13.4.17.57 "het aantal dagen in <de maand|het jaar> dat <conditie>": the post-"dat" condition is a
-        // DIRECT grammar child (not a conditiebijexpressie), so it is otherwise dropped. Structure a simple
-        // single-period subject temporal-kenmerk membership into a Condition.CharacteristicCheck (reusing the gedurende path's
-        // resolver) so the transpiler can count true-days per period; anything else (a comparison / compound /
-        // navigated / non-temporal condition) leaves the filter unset -> the transpiler markers.
         RegelSpraakModel.Granularity operatorGran = null;
         if (kind == Expr.FunctionKind.AANTAL_DAGEN_IN && f instanceof AantalDagenFuncContext adf) {
             // §13.4.17.57/§4.21 carry the operator's "in <de maand|het jaar>" bucket unit so the transpiler can
             // require it to MATCH the doel's tijdlijn rather than silently bucketing by the doel's unit.
             operatorGran = adf.MAAND() != null ? RegelSpraakModel.Granularity.MAAND
                     : (adf.JAAR() != null ? RegelSpraakModel.Granularity.JAAR : null);
-            if (adf.toplevelElementaireVoorwaarde() != null && !(filter instanceof Condition.CharacteristicCheck)) {
-                ToplevelElementaireVoorwaardeContext c = adf.toplevelElementaireVoorwaarde();
-                Condition.CharacteristicCheck k = temporalCharacteristicCheckFromOperator(c.toplevelOperator(), null, source(adf));  // §8.3.1 toplevel = vragende only
-                if (k != null) filter = k;
-            } else if (adf.toplevelSamengesteldeVoorwaarde() != null && !(filter instanceof Condition.Compound)) {
-                // §8.4.2 a COMPOUND "dat er aan alle / ten minste 1 van de volgende voorwaarden wordt voldaan: …" —
-                // the same temporal-kenmerk compound as a gedurende; the transpiler buckets the days the COMBINED
-                // condition (intersection for ALLE / union for ten-minste-1 of the bullets) holds.
-                Condition compound = duringCompound(adf.toplevelSamengesteldeVoorwaarde(), source(adf));
-                if (compound != null) filter = compound;
-            }
+            filter = dayCountCondition(adf);
         } else if (kind == Expr.FunctionKind.TIJDSEVENREDIG_DEEL && f instanceof TijdsevenredigFuncContext tvf) {
             // §13.4.17.58/§7.3.2 carry the operator's "per <maand|jaar>" bucket unit; the transpiler requires it to
             // MATCH the doel's tijdlijn ("de knips ... moeten passen op de tijdlijn van het attribuut", §7.3.2).
@@ -1986,6 +1971,8 @@ final class ExpressionBuilder {
         if (c.expressie() == null || c.toplevelOperator() == null
                 || c.toplevelOperator().vergelijkingsTekenGesplitst() == null || c.toplevelOperator().expressie() == null)
             return null;
+        // a clip member carries no whole-period qualifier (WF-097): the comparison without it says something else
+        if (c.toplevelOperator().gehelePeriodevergelijking() != null) return null;
         Expr lhs = build(c.expressie());
         Expr rhs = build(c.toplevelOperator().expressie());
         if (!isTemporalSubjectAttr(lhs) && !isTemporalSubjectAttr(rhs)) return null;   // a static single condition is no gedurende
@@ -2010,6 +1997,7 @@ final class ExpressionBuilder {
         if (c.expressie() == null || top == null || top.kaleNaam() == null) return null;
         boolean membership = top.IS() != null || top.ZIJN() != null || top.HEEFT() != null || top.HEBBEN() != null;
         if (!membership) return null;                                                   // not an is/heeft kenmerkcheck
+        if (top.gehelePeriodevergelijking() != null) return null;                       // no qualifier on a clip member (WF-097)
         if (!(build(c.expressie()) instanceof Expr.AttributeReference a) || a.navigationRole() == null || a.objectType() == null)
             return null;                                                                // not a to-one role navigation
         ObjectType target = model.roleTargetTypeToSubject(a.objectType(), a.attribute());
@@ -2021,25 +2009,70 @@ final class ExpressionBuilder {
         return new Condition.CharacteristicCheck(characteristic, a.navigationRole(), false, source);
     }
 
+    /** §13.4.17.57 the condition after "dat" in "het aantal dagen in &lt;de maand|het jaar&gt; dat &lt;conditie&gt;", a
+     *  direct child of the call. A day count counts the days on which the subject has one own single-period
+     *  time-dependent characteristic (RUNTIME-SEMANTICS ch. 3.8; WF-058 refuses every other condition, a negated check
+     *  and a compound among them), so that check is the one condition it lowers. Every other condition stays on the
+     *  wire as a marker whose reason the survivor sweep reports: a count without its condition counts the days of no
+     *  condition, and a characteristic of another object read as the subject's own counts the wrong days. A membership
+     *  name that binds no characteristic of the subject is named, as the sweep names one in a rule condition. */
+    private Condition dayCountCondition(AantalDagenFuncContext adf) {
+        ToplevelElementaireVoorwaardeContext c = adf.toplevelElementaireVoorwaarde();
+        ParserRuleContext written = c != null ? c
+                : adf.toplevelSamengesteldeVoorwaarde() != null ? adf.toplevelSamengesteldeVoorwaarde() : adf.expressie();
+        // only a syntax error leaves the call without its condition, and its ERROR blocks the document
+        Source marked = written != null ? source(written) : source(adf);
+        ToplevelOperatorContext op = c == null ? null : c.toplevelOperator();
+        if (op != null && op.kaleNaam() != null && currentSubject != null) {
+            // the operator names the characteristic and the onderwerp before it says whose: a navigation reads another
+            // object, and the operator's name alone would bind the subject's own characteristic of that name
+            boolean navigated = c.expressie() != null && build(c.expressie()) instanceof Expr.AttributeReference a
+                    && a.navigationRole() != null;
+            if (!navigated) {
+                Condition.CharacteristicCheck k = temporalCharacteristicCheckFromOperator(op, null, source(adf));
+                if (k != null && !k.negation()) return k;
+                if (boundCharacteristic(src(op.kaleNaam())) == null)
+                    return new Condition.Unresolved(marked, Msg.frontend("RGS-092.day-count-name-unbound",
+                            "name", src(op.kaleNaam()), "subject", currentSubject.name));
+            }
+        }
+        return new Condition.Unresolved(marked, Msg.frontend("RGS-092.day-count-condition-form"));
+    }
+
     /** Resolve an elementaire "is/heeft (geen/niet) (een/het) &lt;kenmerk&gt;" membership operator into a
      *  single-period temporal {@link Condition.CharacteristicCheck} of the subject (negation + article-strip handled), or null
-     *  when it is not one — a comparison, a non-temporal / multi-period / navigated kenmerk, or a role/possession.
-     *  Shared by the single gedurende condition and each bullet of a compound one. */
+     *  when it is not one — a comparison, a non-temporal / multi-period / navigated kenmerk, a role/possession, or a
+     *  membership with a whole-period qualifier, which neither a clip member (WF-097) nor the day count's condition
+     *  (WF-058) carries: the check without it would say something else than the source.
+     *  Shared by the single gedurende condition, each bullet of a compound one and the day count's condition. */
     private Condition.CharacteristicCheck temporalCharacteristicCheckFromOperator(ToplevelOperatorContext top, NonToplevelOperatorContext non, Source source) {
-        KaleNaamContext kn; boolean isVerb, hasVerb;
+        KaleNaamContext kn; boolean isVerb, hasVerb; GehelePeriodevergelijkingContext period;
         if (top != null) {
             kn = top.kaleNaam(); isVerb = top.IS() != null || top.ZIJN() != null;
             hasVerb = top.HEEFT() != null || top.HEBBEN() != null;
+            period = top.gehelePeriodevergelijking();
         } else if (non != null) {
             kn = non.kaleNaam(); isVerb = non.IS() != null || non.ZIJN() != null;
             hasVerb = non.HEEFT() != null || non.HEBBEN() != null;
+            period = non.gehelePeriodevergelijking();
         } else return null;
         if (kn == null || (!isVerb && !hasVerb)) return null;         // an "is/heeft <kenmerk>" membership (§3.5)
+        if (period != null) return null;
+        BoundCharacteristic b = boundCharacteristic(src(kn));
+        if (b == null || currentSubject.characteristicGranularityOf(b.characteristic()) == null
+                || currentSubject.characteristicTimelineCountOf(b.characteristic()) != null) return null;
+        return new Condition.CharacteristicCheck(b.characteristic(), null, b.negation(), source);
+    }
+
+    /** The characteristic of the subject a written membership name binds, and whether a leading "geen"/"niet" negates
+     *  it; null when the name binds none. */
+    private record BoundCharacteristic(String characteristic, boolean negation) {}
+
+    private BoundCharacteristic boundCharacteristic(String written) {
         // §8.1.8.1/.2 a "geen"/"niet" before the kenmerk negates the membership ("hij geen recht ... heeft" / "hij
         // niet rechthebbend is"); the negator lexes into the bareName (no GEEN/NIET token here), so try the
         // verbatim name first (a kenmerk literally beginning with geen/niet still binds positively), then a stripped
         // form. A negated gedurende clips the value timeline to the kenmerk's FALSE periods (the complement).
-        String written = src(kn);
         boolean negation = false;
         String characteristic = CharacteristicMatcher.find(currentSubject, written);
         if (characteristic == null && (written.regionMatches(true, 0, "geen ", 0, 5)
@@ -2055,9 +2088,7 @@ final class ExpressionBuilder {
             String withoutArticle = written.replaceFirst("^(?i)(de|het|een)\\s+", "").trim();
             if (!withoutArticle.equals(written)) characteristic = CharacteristicMatcher.find(currentSubject, withoutArticle);
         }
-        if (characteristic == null || currentSubject.characteristicGranularityOf(characteristic) == null
-                || currentSubject.characteristicTimelineCountOf(characteristic) != null) return null;
-        return new Condition.CharacteristicCheck(characteristic, null, negation, source);
+        return characteristic == null ? null : new BoundCharacteristic(characteristic, negation);
     }
 
     /** §8.4.2 a COMPOUND tijdsafhankelijke conditie on a temporal totaal: an ALLE (intersect the true-period sets)
@@ -2105,6 +2136,10 @@ final class ExpressionBuilder {
      *  verschillende waarden op verschillende momenten"; a comparison on a List&lt;Segment&gt; read is time-varying and
      *  would lower to a List-vs-scalar term that fails the whole DRL build — reject so the compound markers). */
     private Condition.Comparison nonTemporalComparison(ElementaireVoorwaardeContext ev) {
+        // a clip member carries no whole-period qualifier (WF-097): the guard without it says something else
+        if ((ev.toplevelOperator() != null && ev.toplevelOperator().gehelePeriodevergelijking() != null)
+                || (ev.nonToplevelOperator() != null && ev.nonToplevelOperator().gehelePeriodevergelijking() != null))
+            return null;
         Expr left = ev.expressie() != null ? build(ev.expressie()) : null;
         if (left == null) return null;
         Condition.Comparison v = null;

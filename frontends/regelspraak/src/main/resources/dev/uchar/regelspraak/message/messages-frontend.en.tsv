@@ -321,6 +321,8 @@ RGS-092.no-characteristic-no-role	the written name binds no characteristic and n
 RGS-092.characteristic-on-sibling-subtypes	the name '{name}' binds no characteristic and no role of the subject '{subject}', and more than one type below it declares the characteristic: {declarants}; a characteristic check reads the characteristic of one type below the subject (IR-SPEC ch. 4.6 (q2)), so the name designates none of them
 RGS-092.whole-period-role	the check 'gedurende de/het gehele <periode>' belongs to a characteristic check over a time-dependent subject; over this membership form (a §8.1.7 role check) it has no defined meaning (§8.2)
 RGS-092.negation-form	the form 'is niet een <naam>' bound no characteristic and no role of the subject (§8.1.8.3), so there is nothing to negate
+RGS-092.day-count-name-unbound	the condition of a day count names '{name}', which is no characteristic of the subject '{subject}'; a day count counts the days on which the subject has a characteristic (§13.4.17.57)
+RGS-092.day-count-condition-form	a day count counts only the days on which the subject itself has one time-dependent characteristic, in the form 'dat hij <kenmerk> is' or 'dat hij <kenmerk> heeft'; this condition does not have that form (§13.4.17.57, RUNTIME-SEMANTICS ch. 3.8)
 RGS-093	head form: 'is {word}' lacks the article — a supertype is written as 'is een {word}'
 RGS-094	head form: the 'is een' clause stands after the (mv: …) group — it belongs directly after the objecttype name, before (mv: …) and (bezield)
 RGS-095	scenario: the document carries no scenario, so no case file can be written

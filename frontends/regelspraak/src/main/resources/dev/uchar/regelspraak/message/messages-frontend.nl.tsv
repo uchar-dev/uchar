@@ -321,6 +321,8 @@ RGS-092.no-characteristic-no-role	de geschreven naam bindt geen kenmerk en geen 
 RGS-092.characteristic-on-sibling-subtypes	de naam '{name}' bindt geen kenmerk en geen rol van het onderwerp '{subject}', en meer dan één type eronder declareert het kenmerk: {declarants}; een kenmerkcheck leest het kenmerk van één type onder het onderwerp (IR-SPEC ch. 4.6 (q2)), dus de naam wijst er geen aan
 RGS-092.whole-period-role	de controle 'gedurende de/het gehele <periode>' hoort bij een kenmerkcontrole over een tijdsafhankelijk onderwerp; over deze lidmaatschapsvorm (een §8.1.7-rolcontrole) heeft zij geen omschreven betekenis (§8.2)
 RGS-092.negation-form	de vorm 'is niet een <naam>' bond geen kenmerk en geen rol van het onderwerp (§8.1.8.3), dus er is niets om te ontkennen
+RGS-092.day-count-name-unbound	de voorwaarde van een dagentelling noemt '{name}', en dat is geen kenmerk van het onderwerp '{subject}'; een dagentelling telt de dagen waarop het onderwerp een kenmerk heeft (§13.4.17.57)
+RGS-092.day-count-condition-form	een dagentelling telt alleen de dagen waarop het onderwerp zelf één tijdsafhankelijk kenmerk heeft, in de vorm 'dat hij <kenmerk> is' of 'dat hij <kenmerk> heeft'; deze voorwaarde heeft die vorm niet (§13.4.17.57, RUNTIME-SEMANTICS ch. 3.8)
 RGS-093	kopvorm: 'is {word}' mist het lidwoord — een supertype wordt geschreven als 'is een {word}'
 RGS-094	kopvorm: de 'is een'-clausule staat achter de (mv: …)-groep — zij hoort direct na de objecttypenaam, vóór (mv: …) en (bezield)
 RGS-095	scenario: het document draagt geen scenario, dus er valt geen casebestand te schrijven
