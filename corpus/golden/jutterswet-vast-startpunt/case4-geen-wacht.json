@@ -30,13 +30,25 @@
       "kind": "attributeTimeline",
       "label": "J1",
       "attribute": "stormwachtdagen",
-      "timeline": []
+      "timeline": [
+        {
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
     },
     {
       "kind": "attributeTimeline",
       "label": "J1",
       "attribute": "maandwachtdagen",
-      "timeline": []
+      "timeline": [
+        {
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
     },
     {
       "kind": "attributeValue",
@@ -70,12 +82,9 @@
       }
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeEmpty",
       "label": "J1",
-      "attribute": "maandpremie",
-      "value": {
-        "number": "20"
-      }
+      "attribute": "maandpremie"
     },
     {
       "kind": "consistent"

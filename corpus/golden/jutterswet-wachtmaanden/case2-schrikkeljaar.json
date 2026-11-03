@@ -28,6 +28,12 @@
       "attribute": "toeslagdagen",
       "timeline": [
         {
+          "to": "2028-02-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
           "from": "2028-02-01",
           "to": "2028-03-01",
           "value": {
@@ -39,6 +45,12 @@
           "to": "2028-05-01",
           "value": {
             "number": "4"
+          }
+        },
+        {
+          "from": "2028-05-01",
+          "value": {
+            "number": "0"
           }
         }
       ]

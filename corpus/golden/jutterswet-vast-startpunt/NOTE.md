@@ -49,12 +49,13 @@ Jutterswet, whose penningjaar is the calendar year (art. 3b).
   groter is dan 0".
 
 The qualifier folds over the calendar year or month it names, not over the
-grid of the tested member (ch. 3.2, 3.9). A day count on a fixed grid writes
-whole periods of that grid, so its first and last period each reach into a
-calendar bucket they cover only in part, and both tests fail on every
-timeline that holds a period: the storm years start on 1 October and the
-month grid on the 31st, never on the first day of a calendar bucket. They
-pass only vacuously, on a timeline without periods.
+grid of the tested member (ch. 3.2, 3.9). A day count writes 0 in every period
+of its grid without a wacht day, over all time (ch. 3.8; IMPLICIT-TIME 7a), so
+both counts read a value on every day: the gevuld test holds in every calendar
+year, and `stormpremie` is 50 wherever it is pinned. The test "groter dan 0"
+fails on every month that holds a day of a period of 0, and every timeline
+here has one, before its first counted period or after its last, so
+`maandpremie` is leeg wherever it is pinned.
 
 Every case carries an evaluation date, because that total needs one: `ref`
 faults without it ("needs the evaluation date"). Cases 1 to 4 supply no scalar
@@ -67,6 +68,11 @@ previous wall: ... 2024-01-31, 2024-02-29, 2024-03-31, 2024-04-30, ...
 2024-08-31, 2024-09-30, 2024-10-31, ... 2025-01-31, 2025-02-28, 2025-03-31, ...
 
 ## Cases (hand-computed)
+
+Each day count is 0 in every period of its grid without a wacht day: before
+its first counted period and after its last as one open segment each, and on
+all time where no period counts (ch. 3.8). The bullets name the counted
+periods.
 
 **case1-stormjaargrens** — J1 wachtplichtig on [2024-09-28, 2024-10-03), five
 days across 1 October; `stormtoelage` 100 on [2023-10-01, 2025-10-01), one
@@ -107,13 +113,13 @@ the leap day; no `stormtoelage`.
 **case4-geen-wacht** — J1 without a wachtplichtig period; `stormtoelage` 120 on
 [2024-10-01, 2025-10-01).
 
-- Both day counts write no period: `stormwachtdagen` and `maandwachtdagen`
-  are **empty** timelines.
+- Both day counts count no period: `stormwachtdagen` and `maandwachtdagen`
+  are **0** on all time, one segment (−∞, +∞).
 - `toelagesom`: the clip over no period → **0**.
 - `maandtoelagesom`, `weektoelagesom` and `kwartaaltoelagesom`: no scalar
   value, and the total of an absent member is **leeg** (ch. 3.6).
-- `stormpremie` **50** and `maandpremie` **20**: the day counts hold no period,
-  touch no bucket, and both tests pass vacuously.
+- `stormpremie` **50**: the counts read 0 on every day, a value. `maandpremie`
+  **leeg**: 0 is not greater than 0 in any month.
 
 **case5-geklemde-maand** — evaluation date 2024-02-15; `maandtoelage` 10 as a
 scalar; J1 wachtplichtig on [2024-02-28, 2024-03-01).
@@ -140,10 +146,10 @@ scalar; J1 wachtplichtig on [2024-02-28, 2024-03-01).
   so on to [2025-12-31, 2026-01-31), which holds 31 December alone → 1.
 - `toelagesom` **0** (no `stormtoelage`); `maandtoelagesom` **leeg** (no
   `maandtoelage`).
-- `stormpremie` **leeg**: the period [2024-10-01, 2025-10-01) touches the
-  calendar year 2024, which reads a value on 92 of its 366 days.
-- `maandpremie` **leeg**: the period [2024-12-31, 2025-01-31) touches December
-  2024, which reads a value (30) on 1 of its 31 days.
+- `stormpremie` **50**: the storm years before [2024-10-01, 2025-10-01) read
+  0, so the calendar year 2024 reads a value on all its 366 days.
+- `maandpremie` **leeg**: December 2024 reads 0 on 1–30 December, before the
+  period [2024-12-31, 2025-01-31).
 
 The case's own dates all lie in 2025, while the two periods reach into 2024
 and 2026: the bucket of 2024 is one no case input touches.
@@ -162,8 +168,8 @@ wachtplichtig on [2025-02-10, 2025-02-17).
   2025-02-28, one whole month → **10**.
 - `stormwachtdagen`: [2024-10-01, 2025-10-01) → **7**; `maandwachtdagen`:
   [2025-01-31, 2025-02-28) → **7**; `toelagesom` **0**.
-- `stormpremie` **leeg** (the storm year touches 2024); `maandpremie`
-  **leeg** (the month period touches January 2025 on its 31st alone).
+- `stormpremie` **50** (every day reads a value, 0 or 7); `maandpremie`
+  **leeg** (January 2025 reads 0 until the 31st).
 
 ## Executors
 

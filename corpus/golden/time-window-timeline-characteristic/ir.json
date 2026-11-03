@@ -7,7 +7,23 @@
         "name": "Vondst",
         "animate": false,
         "plural": "Vondsten",
-        "attributes": [],
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bergdagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "year",
+              "count": 1
+            }
+          }
+        ],
         "characteristics": [
           {
             "node": "Characteristic",
@@ -94,6 +110,50 @@
               }
             },
             "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bergdagen van een vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "bergdagen",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De bergdagen van een Vondst"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "dayCount",
+              "arguments": [],
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "geborgen",
+                "negated": false,
+                "source": {
+                  "snippet": "dat hij geborgen is"
+                }
+              },
+              "granularity": "year",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal dagen in het jaar dat hij geborgen is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
           }
         ]
       }

@@ -69,12 +69,6 @@
 #   - jutterswet-borgdeel/case5-input-blijft.json: the temporal
 #     standing (ch. 7.8, timeline arm) — a non-deciding pro-rata fold
 #     (empty result) leaves the input timeline standing whole.
-#   - jutterswet-dagentelling/case3-leeg.json: the ch. 3.8 day count
-#     over no condition periods writes nothing — empty stays empty
-#     (never written) IS the assertion.
-#   - jutterswet-dagentelling/case4-input-blijft.json: the temporal
-#     standing for the day count — a non-deciding count leaves the
-#     input timeline standing whole (ch. 7.8, timeline arm).
 #   - jutterswet-staffelvergoeding/case3-afwezig.json: the leeg-list
 #     propagation of ch. 10.3 — with the staffelbedragen parameter absent
 #     (read leeg), the Fold propagates leeg and vergoeding stays empty; the
@@ -178,13 +172,6 @@
 #     unordered group as a group-default above the base (the dialect's shape)
 #     where the anchor nests it in the base; its other three cases decide
 #     observably and are not survivors.
-#   - jutterswet-dagentelling-rgs/case3-leeg.json and
-#     jutterswet-dagentelling-rgs/case4-input-blijft.json: the RegelSpraak
-#     twin of anchor/jutterswet-dagentelling, byte-identical cases, the
-#     anchor's two reasons — a day count over no condition periods writes
-#     nothing, and a count that decides nothing leaves the case-supplied input
-#     timeline standing whole (ch. 7.8); the absence and the standing are the
-#     assertions. Its other two cases decide and are not survivors.
 #   - jutterswet-opgave-boven-berekening/case11-bergloon-zelf-staat.json: the
 #     initialisation default at the bottom of the group the opgave marker
 #     generates (grammar/DIVERGENCES.md §7) on an input target — no opgave
@@ -233,8 +220,6 @@ corpus/golden/jutterswet-penningrecht-catala/case4-hardheidsgrens.json
 corpus/golden/jutterswet-penningrecht/case3-stilte.json
 corpus/golden/jutterswet-penningrecht/case4-hardheidsgrens.json
 corpus/golden/anchor/jutterswet-borgdeel/case5-input-blijft.json
-corpus/golden/anchor/jutterswet-dagentelling/case3-leeg.json
-corpus/golden/anchor/jutterswet-dagentelling/case4-input-blijft.json
 corpus/golden/anchor/jutterswet-staffelvergoeding/case3-afwezig.json
 corpus/golden/anchor/jutterswet-aanspraaktelling/case3-afwezig.json
 corpus/golden/anchor/jutterswet-nestuitzondering/case8-niets.json
@@ -255,8 +240,6 @@ corpus/golden/jutterswet-bergingsdrempel/case4-onder-noodweer.json
 corpus/golden/jutterswet-wachtgeld/case4-geen.json
 corpus/golden/anchor/ww-herleving-inkomen/case7-invoer-staat-tegen-blokkade.json
 corpus/golden/jutterswet-nestkenmerk-rgs/case1-y-wint.json
-corpus/golden/jutterswet-dagentelling-rgs/case3-leeg.json
-corpus/golden/jutterswet-dagentelling-rgs/case4-input-blijft.json
 corpus/golden/jutterswet-opgave-boven-berekening/case11-bergloon-zelf-staat.json
 corpus/golden/ww-herleving-inkomen-rgs/case7-invoer-staat-tegen-blokkade.json
 corpus/golden/jutterswet-voorwaardelijke-initialisatie/case2-voorwaarde-onwaar.json

@@ -37,7 +37,9 @@ document; no case has an evaluation date, which none of the forms reads.
   where strandloon > 100 (a gap reads leeg, and no ordering holds on it);
   aangestelde hoge loon 180 and 150 on April–July; aanstellingspremie 25 on
   [2024-02-01, 2024-08-01), one segment; wachtdagen February 29 (2024 is a
-  leap year), March 9 and May 20, January's 12 cut away.
+  leap year), March 9, April 0, May 20 and 0 on [2024-06-01, 2024-08-01), the
+  count's 0 in every month without a wachtplichtig day (ch. 3.8) cut to
+  aangesteld, January's 12 cut away.
 - `case2-nooit-aangesteld`: no aangesteld periods, not erkend, strandloon
   120 on January–February. Every target under aangesteld is empty, the
   vrije loon is the whole sum (0, 120, 0), the erkende loon is not
@@ -45,4 +47,6 @@ document; no case has an evaluation date, which none of the forms reads.
 - `case3-aaneengesloten-perioden`: aangesteld on January, and on March and
   April as two adjacent periods, which are one period of the condition: the
   premie is 25 on January and 25 on [2024-03-01, 2024-05-01), one segment;
-  the vrije loon 200 in February between its two open segments of 0.
+  the vrije loon 200 in February between its two open segments of 0; no
+  wachtplichtig day, so the wachtdagen are the count's 0, cut to January and
+  to [2024-03-01, 2024-05-01).

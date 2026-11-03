@@ -18,13 +18,25 @@
       "kind": "attributeTimeline",
       "label": "J1",
       "attribute": "borgdagen",
-      "timeline": []
+      "timeline": [
+        {
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
     },
     {
       "kind": "attributeTimeline",
       "label": "J1",
       "attribute": "jaardagen",
-      "timeline": []
+      "timeline": [
+        {
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
     },
     {
       "kind": "consistent"

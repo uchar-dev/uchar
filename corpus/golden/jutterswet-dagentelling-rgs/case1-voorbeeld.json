@@ -32,6 +32,12 @@
       "attribute": "borgdagen",
       "timeline": [
         {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
           "from": "2024-01-01",
           "to": "2024-02-01",
           "value": {
@@ -44,6 +50,12 @@
           "value": {
             "number": "13"
           }
+        },
+        {
+          "from": "2024-03-01",
+          "value": {
+            "number": "0"
+          }
         }
       ]
     },
@@ -53,10 +65,22 @@
       "attribute": "jaardagen",
       "timeline": [
         {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
           "from": "2024-01-01",
           "to": "2025-01-01",
           "value": {
             "number": "36"
+          }
+        },
+        {
+          "from": "2025-01-01",
+          "value": {
+            "number": "0"
           }
         }
       ]

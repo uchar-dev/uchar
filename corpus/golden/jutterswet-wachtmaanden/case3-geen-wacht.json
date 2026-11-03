@@ -30,7 +30,13 @@
       "kind": "attributeTimeline",
       "label": "J1",
       "attribute": "toeslagdagen",
-      "timeline": []
+      "timeline": [
+        {
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
     },
     {
       "kind": "attributeTimeline",

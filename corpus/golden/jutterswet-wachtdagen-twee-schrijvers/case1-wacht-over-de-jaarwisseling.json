@@ -28,6 +28,12 @@
       "attribute": "wachtdagen",
       "timeline": [
         {
+          "to": "2025-11-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
           "from": "2025-11-01",
           "to": "2025-12-01",
           "value": {
@@ -46,6 +52,12 @@
           "to": "2026-04-01",
           "value": {
             "number": "12"
+          }
+        },
+        {
+          "from": "2026-04-01",
+          "value": {
+            "number": "0"
           }
         }
       ]

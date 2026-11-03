@@ -40,6 +40,12 @@
       "attribute": "stormwachtdagen",
       "timeline": [
         {
+          "to": "2023-10-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
           "from": "2023-10-01",
           "to": "2024-10-01",
           "value": {
@@ -52,6 +58,12 @@
           "value": {
             "number": "2"
           }
+        },
+        {
+          "from": "2025-10-01",
+          "value": {
+            "number": "0"
+          }
         }
       ]
     },
@@ -60,6 +72,12 @@
       "label": "J1",
       "attribute": "maandwachtdagen",
       "timeline": [
+        {
+          "to": "2024-08-31",
+          "value": {
+            "number": "0"
+          }
+        },
         {
           "from": "2024-08-31",
           "to": "2024-09-30",
@@ -72,6 +90,12 @@
           "to": "2024-10-31",
           "value": {
             "number": "3"
+          }
+        },
+        {
+          "from": "2024-10-31",
+          "value": {
+            "number": "0"
           }
         }
       ]

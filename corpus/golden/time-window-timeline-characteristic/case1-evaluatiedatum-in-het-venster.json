@@ -1,0 +1,47 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2024-06-15",
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "V1",
+      "attribute": "bergdagen",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2025-01-01",
+          "value": {
+            "number": "366"
+          }
+        },
+        {
+          "from": "2025-01-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

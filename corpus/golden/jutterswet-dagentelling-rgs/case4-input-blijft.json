@@ -32,10 +32,8 @@
       "attribute": "borgdagen",
       "timeline": [
         {
-          "from": "2024-03-01",
-          "to": "2024-04-01",
           "value": {
-            "number": "99"
+            "number": "0"
           }
         }
       ]

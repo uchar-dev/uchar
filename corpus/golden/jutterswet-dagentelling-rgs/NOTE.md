@@ -44,8 +44,9 @@ ref and clingo replay the four cases with the pinned values. The Drools
 backend plays them in both branches, exec-model and DRL text, `PLAYED 4` each,
 as it plays the anchor (measured 2026-09-25).
 
-Two of the four cases survive a no-op run for the anchor's reasons, and gate 7
-lists them beside the anchor's: `case3-leeg` (a count over no condition
-periods writes nothing, and that absence is the assertion) and
-`case4-input-blijft` (a count that decides nothing leaves the case-supplied
-input timeline standing whole, ch. 7.8).
+The count is 0 in every bucket without a borgplichtig day, over all time
+(ch. 3.8; IMPLICIT-TIME 7a): before the first counted bucket and after the
+last as one open segment each, and on all time in `case3-leeg`. So the count
+decides in every case, and in `case4-input-blijft` it writes 0 on all time over
+the case-supplied input (ch. 7.8 leaves an input standing only where a fold
+decides nothing). No case survives a no-op run.
