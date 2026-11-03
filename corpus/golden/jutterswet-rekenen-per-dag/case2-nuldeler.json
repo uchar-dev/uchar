@@ -1,0 +1,261 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "strandloon": {
+            "timeline": [
+              {
+                "from": "2024-01-10",
+                "to": "2024-12-20",
+                "value": {
+                  "number": "120"
+                }
+              }
+            ]
+          },
+          "stormtoeslag": {
+            "timeline": [
+              {
+                "from": "2024-02-05",
+                "to": "2024-04-15",
+                "value": {
+                  "number": "40"
+                }
+              },
+              {
+                "from": "2024-06-01",
+                "to": "2024-08-01",
+                "value": {
+                  "number": "0"
+                }
+              },
+              {
+                "from": "2024-09-03",
+                "to": "2024-10-03",
+                "value": {
+                  "number": "60"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "loonproduct",
+      "timeline": [
+        {
+          "to": "2024-02-05",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-02-05",
+          "to": "2024-04-15",
+          "value": {
+            "number": "4800"
+          }
+        },
+        {
+          "from": "2024-04-15",
+          "to": "2024-09-03",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-09-03",
+          "to": "2024-10-03",
+          "value": {
+            "number": "7200"
+          }
+        },
+        {
+          "from": "2024-10-03",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "nettoloon",
+      "timeline": [
+        {
+          "from": "2024-01-10",
+          "to": "2024-02-05",
+          "value": {
+            "number": "120"
+          }
+        },
+        {
+          "from": "2024-02-05",
+          "to": "2024-04-15",
+          "value": {
+            "number": "80"
+          }
+        },
+        {
+          "from": "2024-04-15",
+          "to": "2024-09-03",
+          "value": {
+            "number": "120"
+          }
+        },
+        {
+          "from": "2024-09-03",
+          "to": "2024-10-03",
+          "value": {
+            "number": "60"
+          }
+        },
+        {
+          "from": "2024-10-03",
+          "to": "2024-12-20",
+          "value": {
+            "number": "120"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "loonverhouding",
+      "timeline": [
+        {
+          "to": "2024-01-10",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-02-05",
+          "to": "2024-04-15",
+          "value": {
+            "number": "3"
+          }
+        },
+        {
+          "from": "2024-09-03",
+          "to": "2024-10-03",
+          "value": {
+            "number": "2"
+          }
+        },
+        {
+          "from": "2024-12-20",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "afgekapte loonverhouding",
+      "timeline": [
+        {
+          "to": "2024-01-10",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-02-05",
+          "to": "2024-04-15",
+          "value": {
+            "number": "3"
+          }
+        },
+        {
+          "from": "2024-09-03",
+          "to": "2024-10-03",
+          "value": {
+            "number": "2"
+          }
+        },
+        {
+          "from": "2024-12-20",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "strandheffing",
+      "timeline": [
+        {
+          "to": "2024-01-10",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-10",
+          "to": "2024-12-20",
+          "value": {
+            "number": "12"
+          }
+        },
+        {
+          "from": "2024-12-20",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "jaarproduct",
+      "value": {
+        "number": "552000"
+      }
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "loonverhouding van een jutter",
+      "label": "J1",
+      "code": "EF-031"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "loonverhouding van een jutter",
+      "label": "J1",
+      "code": "EF-005"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "afgekapte loonverhouding van een jutter",
+      "label": "J1",
+      "code": "EF-031"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "afgekapte loonverhouding van een jutter",
+      "label": "J1",
+      "code": "EF-005"
+    }
+  ]
+}

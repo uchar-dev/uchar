@@ -8,8 +8,8 @@ from the normative semantics (`spec/RUNTIME-SEMANTICS.md`), and no
 emitter, interpreter, or solver output is ever pasted back in.
 
 Anchor cases differ from the emitted goldens one directory up in two
-ways: there is no `source.rgs` (the `ir.json` is authored directly against
-`spec/IR-SPEC.md`), and they may carry the optional **extension fields**
+ways: as a rule there is no `source.rgs` (the `ir.json` is authored directly
+against `spec/IR-SPEC.md`), and they may carry the optional **extension fields**
 of the decided wire-entry discipline (IR-SPEC, Method) — v1 constructs
 ahead of the pinned emitter. Extensions graduate: the 2026-08-17 pin
 bump made the emitter produce `verbindendeRol` and `bronRol`; the
@@ -19,7 +19,10 @@ golden). Only `TemporalRead` and the prioritized defaults remain
 anchor-pioneered — they have no surface syntax in the toolchain yet.
 Everything else holds unchanged: schema-valid and byte-round-tripping (gate 2),
 verifier-clean (gate 3), case files valid (gate 4), and replayed with
-exact expectation match by both executors (gates 5 and 6).
+exact expectation match by both executors (gates 5 and 6). One anchor
+carries a `source.rgs`, `jutterswet-verzuimrente-dagen`: its `ir.json` is
+the RegelSpraak frontend's emission (gate 10), and its expectations are
+computed by hand like every other anchor's.
 
 | Case | Exercises |
 |---|---|
@@ -41,3 +44,4 @@ exact expectation match by both executors (gates 5 and 6).
 | `jutterswet-kustwacht` | the navigated read (WF-053; ch. 5.8 worked example verbatim): all three navigated shapes — by-name single hop (`navigatieRol` "post", bound), the two-hop chain (`navigatiePad` ["post","kustvak"], both hops bound), and the by-pair shape (a directly named `Kustvak`, bindingless — the unique type-pair derivation) — plus the navigated characteristic check both bound and bindingless. Case 1: full links, absolute values through every shape (15/8, 7/2, 7/2) and the check both ways. Case 2, the emptiness square: a wachter without a post reads leeg at hop one, a post without a kustvak makes the chain leeg at hop two (the short-circuit) while its own hop still reads 9, and the negated check separates them — the linked wachter whose post lacks the characteristic IS rustwacht, the linkless one is NOT (the ch. 5.8 asymmetry: negation does not resurrect an absent relation). The five `wf053-*` negatives pin the static side; `attributeEmpty` pins every leeg read |
 | `jutterswet-jutleeftijd` | the ch. 3.8 calendar kernel (WF-038): tijdsduur, absolute tijdsduur and the packed-month rule, hand-computed. Three rules on one date pair — jutleeftijd (hele jaren), kwartaalspan (hele kwartalen, signed) and maandafstand (absolute, hele maanden). Case 1 the leap child (29-02-2004 → 28-02-2026 = 21 jaren / 87 kwartalen / 263 maanden, the packed difference 8447 quot 32); case 2 one day later (22 / 88 / 264); case 3 the leeg corner (a geboortedatum-less jutter reads all three leeg — never 0 — beside a filled twin refuting the no-op reading); case 4 the negative span (−7 maanden → jaren 0, kwartalen **−2** toward zero, absolute 7 — the signed-truncation pin, and the differential witness that gringo's toward-zero division is the ch. 3.8 quot); case 5 clamp-not-inverse (31-01-2024 → 29-02-2024 = 0 whole months although +1 maand lands exactly there) |
 | `jutterswet-strandrechtketen` | object-type inheritance in the kernel (IR-SPEC ch. 2.2, `supertype`; RUNTIME-SEMANTICS ch. 7.10): `Wrakrecht is een Strandrecht` plus an aggregating `Kustgemeente`, and the six cells of ch. 7.10.1 as absolute values with `grondslag` 10,00 everywhere. Four cases carrying the four proof moments: **case 1** the supertype's bare rule firing for a subtype instance (registratiekosten **5,00** on both) and extensional quantification (uitkeringstotaal **30,00**, registertal **2** — a non-extensional reading gives 10,00 and 1, so it fails loudly against a flat implementation), with base override 10,00 / **20,00**; **case 2** the inherited exception outranking the subtype's own base (99,00 / **99,00**, total 198,00) — cells 3 and 4 together are the pair a flat lowering cannot produce at once; **case 3** the subtype's own exception over its own base (bergingsdiepte 25 → **55,00**), the cell that catches a lowering which silently drops it; **case 4** the same value with `betwist` as well, so the inherited and the own exception are applicable together — **55,00**, an ordinary write, `consistent`, which separates child-wins from parent-wins (99,00) and from an unordered reading (no write plus a §9.5 fact). Replayed by gates 5, 6 and 12 |
+| `jutterswet-verzuimrente-dagen` | an operator of ch. 1.2 read per day over all time with a time-dependent parameter as an operand (RUNTIME-SEMANTICS ch. 3.4), and the temporal total across the day and the month family of time units by the calendar (ch. 3.6): formulation B of `spec/proposals/IMPLICIT-TIME.md` §4. The dagrente in €/jr on a day grid is the verzuimrentevoet (0,04 /jr until 2026-02-01, 0,05 /jr after, open bounds) maal the afdrachtbedrag of 10 000 €: 400 and 500, both segments open; the verzuimrente is the total of the dagrente during the case-supplied `rentedragend`, a day weighing 1/365 or 1/366 of its year, rounded to the cent. Case 1: 400 × 77/365 + 500 × 40/365 = 139 13/73 € → 139,18 €; case 2, in the leap year 2028: 500 × 54/366 = 73 47/61 € → 73,77 € (73,97 € with `jr = 365 dg`, which WF-009 refuses). The exact totals are pinned in `ref/`'s suite; the ASP backend holds no non-decimal value, hence the rounding (`NOTE.md`) |

@@ -1,0 +1,33 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het strandloon Numeriek (geheel getal) voor elke dag;
+    de stormtoeslag Numeriek (geheel getal) voor elke dag;
+    het loonproduct Numeriek (geheel getal) voor elke dag;
+    het nettoloon Numeriek (geheel getal) voor elke dag;
+    de loonverhouding Numeriek (getal) voor elke dag;
+    de afgekapte loonverhouding Numeriek (getal met 5 decimalen) voor elke dag;
+    de strandheffing Numeriek (getal met 2 decimalen) voor elke dag;
+    het jaarproduct Numeriek (geheel getal);
+
+Regel loonproduct van een jutter
+    geldig altijd
+        Het loonproduct van een Jutter moet berekend worden als zijn strandloon maal zijn stormtoeslag.
+
+Regel nettoloon van een jutter
+    geldig altijd
+        Het nettoloon van een Jutter moet berekend worden als zijn strandloon verminderd met zijn stormtoeslag.
+
+Regel loonverhouding van een jutter
+    geldig altijd
+        De loonverhouding van een Jutter moet berekend worden als zijn strandloon gedeeld door zijn stormtoeslag.
+
+Regel afgekapte loonverhouding van een jutter
+    geldig altijd
+        De afgekapte loonverhouding van een Jutter moet berekend worden als zijn strandloon gedeeld door (ABS) zijn stormtoeslag.
+
+Regel strandheffing van een jutter
+    geldig altijd
+        De strandheffing van een Jutter moet berekend worden als 10% van zijn strandloon.
+
+Regel jaarproduct van een jutter
+    geldig altijd
+        Het jaarproduct van een Jutter moet gesteld worden op het totaal van zijn loonproduct.
