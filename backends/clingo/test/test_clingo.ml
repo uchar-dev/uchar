@@ -4333,7 +4333,7 @@ let kv_doc ?(quantifier_kind = "all") ?cutoff ?(test = kv_whole ()) ?filter
 
 (* the SCALAR form of the same clause: no quantifier, the subject reads its
    own timeline. One rule on Schuit, so a case pins it per member. *)
-let gpv_doc ?(test = kv_whole ()) () =
+let gpv_doc ?(object_types = kv_object_types) ?(test = kv_whole ()) () =
   Printf.sprintf
     {|{
   "format": "uchar-ir-v1",
@@ -4359,7 +4359,7 @@ let gpv_doc ?(test = kv_whole ()) () =
   "diagnostics": []
 }
 |}
-    kv_object_types kv_fact_types kv_num0 test
+    object_types kv_fact_types kv_num0 test
 
 (* one month-grid-aligned segment: [van, tot) at [waarde] *)
 let seg ~van ~up_to ~value_node =
@@ -4414,6 +4414,82 @@ let gpv_case ~timeline_state ~truth =
     (if truth then
        {|{ "kind": "attributeValue", "label": "S1", "attribute": "toeslag", "value": { "number": "5" } }|}
      else {|{ "kind": "attributeEmpty", "label": "S1", "attribute": "toeslag" }|})
+
+(* the scalar form's types with a scalar grens on Schuit beside its vangst
+   timeline: the bound the subject reads of its own *)
+let gpv_bound_types ~vangst_decimals ~grens_decimals =
+  let num d =
+    Printf.sprintf {|{ "node": "Number", "whole": %b, "decimals": %d, "sign": "unspecified" }|} (d = 0) d
+  in
+  {|{ "node": "ObjectType", "name": "Werf", "animate": false, "plural": "Werven",
+      "attributes": [ { "node": "Attribute", "name": "keur", "datatype": |} ^ kv_num0 ^ {| } ],
+      "characteristics": [] },
+    { "node": "ObjectType", "name": "Schuit", "animate": false, "plural": "Schuiten",
+      "attributes": [
+        { "node": "Attribute", "name": "vangst", "datatype": |} ^ num vangst_decimals ^ {|,
+          "timeline": { "node": "TimelineFacet", "granularity": "month", "count": 1 } },
+        { "node": "Attribute", "name": "grens", "datatype": |} ^ num grens_decimals ^ {| },
+        { "node": "Attribute", "name": "toeslag", "datatype": |} ^ kv_num0 ^ {| } ],
+      "characteristics": [] }|}
+
+let gpv_grens_ref =
+  {|{ "node": "AttributeReference", "attribute": "grens", "subjectType": "Schuit",
+      "source": { "snippet": "de grens van de Schuit" } }|}
+
+(* [gpv_case] with the grens, absent where [grens] is None *)
+let gpv_bound_case ~timeline_state ~grens ~truth =
+  let attributes =
+    (if timeline_state = "" then [] else [ Printf.sprintf {|"vangst": { "timeline": [ %s ] }|} timeline_state ])
+    @ match grens with Some g -> [ Printf.sprintf {|"grens": { "number": "%s" }|} g ] | None -> []
+  in
+  Printf.sprintf
+    {|{
+  "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  "input": { "instances": [
+      { "label": "S1", "objectType": "Schuit", "attributes": { %s }, "roles": {}, "characteristics": [] }
+    ], "parameters": {} },
+  "expected": [ %s, { "kind": "consistent" } ]
+}
+|}
+    (String.concat ", " attributes)
+    (if truth then
+       {|{ "kind": "attributeValue", "label": "S1", "attribute": "toeslag", "value": { "number": "5" } }|}
+     else {|{ "kind": "attributeEmpty", "label": "S1", "attribute": "toeslag" }|})
+
+let () =
+  (* ch. 3.9, the subject's own attribute as the bound: "a leeg comparison
+     bound makes the test false" on every day, for every comparison, the
+     inequality included; the qualifier's negation complements the fold, and
+     a timeline without segments passes whatever the bound. Each row in ref
+     and here, with the grens at the timeline's scale and finer. *)
+  let row ~name ?(op = "greater") ?(not_flag = "false") ?(grens_decimals = 0) ~timeline_state ~grens ~truth () =
+    let ir =
+      gpv_doc ~object_types:(gpv_bound_types ~vangst_decimals:0 ~grens_decimals)
+        ~test:(kv_whole ~op ~not_flag ~right_side:gpv_grens_ref ()) ()
+    and case_text = gpv_bound_case ~timeline_state ~grens ~truth in
+    ref_matches ~name ~ir ~case_text;
+    clingo_matches ~name ~ir ~case_text
+  in
+  List.iter
+    (fun op ->
+      row ~name:("ch3.9 empty bound " ^ op ^ " whole year") ~op ~timeline_state:(whole_year "50") ~grens:None
+        ~truth:false ();
+      row ~name:("ch3.9 empty bound " ^ op ^ " negated") ~op ~not_flag:"true" ~timeline_state:(whole_year "50")
+        ~grens:None ~truth:true ();
+      row ~name:("ch3.9 empty bound " ^ op ^ " no segments") ~op ~timeline_state:"" ~grens:None ~truth:true ())
+    [ "less"; "lessOrEqual"; "greater"; "greaterOrEqual"; "equal"; "notEqual" ];
+  row ~name:"ch3.9 own bound not-equal filled" ~op:"notEqual" ~timeline_state:(whole_year "50")
+    ~grens:(Some "40") ~truth:true ();
+  row ~name:"ch3.9 own bound not-equal on the bound" ~op:"notEqual" ~timeline_state:(whole_year "50")
+    ~grens:(Some "50") ~truth:false ();
+  row ~name:"ch3.9 own bound equal filled" ~op:"equal" ~timeline_state:(whole_year "50") ~grens:(Some "50")
+    ~truth:true ();
+  row ~name:"ch3.9 own bound greater half year" ~timeline_state:(half_year "50") ~grens:(Some "40")
+    ~truth:false ();
+  row ~name:"ch3.9 own bound finer than the timeline" ~grens_decimals:2 ~timeline_state:(whole_year "50")
+    ~grens:(Some "49.99") ~truth:true ();
+  row ~name:"ch3.9 own bound finer than the timeline, above" ~grens_decimals:2 ~timeline_state:(whole_year "50")
+    ~grens:(Some "50.01") ~truth:false ()
 
 let () =
   (* THE SCALAR ch. 3.9 TABLE — the four rows the characteristic form pins,
@@ -4876,20 +4952,27 @@ let () =
          ())
     ~case_text:(gpv_case ~timeline_state:"" ~truth:true)
     ~needle:"no time-dependent attribute of \"Schuit\" among its operands";
-  (* the bound rides INSIDE the per-segment rule, so only a ground or
-     subject-free one is carried *)
-  faults_with ~name:"ch3.9 bound that the subject reads"
+  (* the bound rides INSIDE the per-segment rule, so only a ground, a
+     subject-free or an own one is carried: a bound over a path is refused *)
+  faults_with ~name:"ch3.9 bound over a path"
     ~ir:
       (gpv_doc
          ~test:
            (kv_whole
               ~right_side:
-                ({|{ "node": "AttributeReference", "attribute": "toeslag", "subjectType": "Schuit",
-                     "source": { "snippet": "de toeslag van de Schuit" } }|})
+                ({|{ "node": "AttributeReference", "attribute": "keur", "subjectType": "Werf",
+                     "source": { "snippet": "de keur van de werf van de Schuit" },
+                     "path": [ { "node": "RoleBinding", "factType": "ligplaats", "role": "werf" } ] }|})
               ())
          ())
     ~case_text:(gpv_case ~timeline_state:(whole_year "50") ~truth:true)
-    ~needle:"other than a literal or a scalar parameter";
+    ~needle:"other than a literal, a scalar parameter or a numeric attribute of the subject's own";
+  (* an own bound coarser than the timeline is refused: the harmonisation
+     would multiply its value, which no fence measures *)
+  faults_with ~name:"ch3.9 own bound coarser than the timeline"
+    ~ir:(gpv_doc ~object_types:(gpv_bound_types ~vangst_decimals:2 ~grens_decimals:0) ~test:(kv_whole ~right_side:gpv_grens_ref ()) ())
+    ~case_text:(gpv_bound_case ~timeline_state:(whole_year "50") ~grens:(Some "40") ~truth:true)
+    ~needle:"at the timeline's scale or finer";
   (* two timelines under one qualifier is a different fold *)
   faults_with ~name:"ch3.9 two timelines under one qualifier"
     ~ir:(gpv_doc ~test:(kv_whole ~right_side:kv_vangst_ref ()) ())

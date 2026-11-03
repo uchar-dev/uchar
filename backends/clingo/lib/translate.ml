@@ -7343,16 +7343,20 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
     (Option.bind right_side (eff_unit ctx));
   (* THE BOUND. It rides inside the per-segment _g rule, whose only bound
      variables are the timeline's own S, its segment bounds and its value, so
-     it may contribute a GROUND term or a subject-free join and nothing else.
-     A literal contributes no atom at all; a scalar parameter contributes
-     param/2, keyed by name. Anything richer — an attribute read, an
-     arithmetic composite, a fold — either names the caller's subject or
-     deposits a range fence keyed on it, neither of which this rule can
-     carry, so it is refused by name. A bound parameter is never leeg (the
-     case reader admits no leeg parameter value), and one the case does not
-     bind is no leeg bound either: ref faults on it, and so does the shared
-     fail-fast its read carries here, where the join alone would have folded
-     no satisfying day into a false test — and, under `niet`, a true one. *)
+     it may contribute a GROUND term, a subject-free join, or a join on that S
+     and nothing else. A literal contributes no atom at all; a scalar
+     parameter contributes param/2, keyed by name; a numeric attribute of the
+     subject's own contributes val/3 on S, which is the subject, since the
+     timeline is the subject's own. Anything richer — a navigated read, an
+     arithmetic composite, a fold — names objects or deposits a range fence
+     this rule cannot carry, so it is refused by name. A bound parameter is
+     never leeg (the case reader admits no leeg parameter value), and one the
+     case does not bind is no leeg bound either: ref faults on it, and so does
+     the shared fail-fast its read carries here. A leeg attribute bound
+     derives no val/3, so no day satisfies and every touched bucket fails:
+     ch. 3.9's "a leeg comparison bound makes the test false", while a
+     timeline without segments touches no bucket and passes. *)
+  let sa = pow10 (attr_decimals ctx ~otype:subject_ot ~attr:a) in
   let batoms, bterm, sb =
     match bound with
     | Literal _ | Parameter_ref _ ->
@@ -7360,13 +7364,22 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
            shared fail-fast's guard needs, since the bound is read where the
            comparison is — for this subject, inside its enclosing context *)
         expr_term ctx ~subject ~subject_ot bound
+    | Attribute_reference { attribute_ref = Some b; navigation_bindings = None; _ }
+      when (match attr_datatype ctx ~otype:subject_ot ~attr:b with
+            | Some (Number _ | Percentage _) -> true
+            | _ -> false)
+           && pow10 (attr_decimals ctx ~otype:subject_ot ~attr:b) >= sa ->
+        (* a scale coarser than the timeline's would multiply the bound's
+           value, which no fence measures; the fence below measures the
+           segments, which a finer bound multiplies *)
+        member_read ctx ~subject:"S" ~subject_ot ~member:b bound
     | _ ->
         faultc "CLINGO-010"
-          "a whole-period comparison against a bound other than a literal or a scalar parameter \
-           is not translated: the bound rides inside the per-segment rule, which binds only the \
+          "a whole-period comparison against a bound other than a literal, a scalar parameter or \
+           a numeric attribute of the subject's own at the timeline's scale or finer is not \
+           translated: the bound rides inside the per-segment rule, which binds only the \
            timeline's own subject (no corpus case)"
   in
-  let sa = pow10 (attr_decimals ctx ~otype:subject_ot ~attr:a) in
   let sym =
     match op with
     | Equal -> "=="
