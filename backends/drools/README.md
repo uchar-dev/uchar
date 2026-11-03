@@ -645,8 +645,10 @@ compared timeline leeg; by a sum or a total per member of a set (ch. 3.6, the
 per-element fold), where each member's timeline collapses over time in its contribution rule and a member without one
 contributes nothing; and as a uniqueness key, which reads ever-uniqueness (ch. 5.9): one key per value the timeline
 ever carries. It is written whole, by a pro-rata part (ch. 3.7) or a day count (ch. 3.8), on the calendar grid or
-from a fixed start point (ch. 3.2), or by the period arithmetic of ch. 3.4 and 3.5 over all time (below). On a standing
-temporal target (ch. 7.8) an empty result writes nothing and leaves
+from a fixed start point (ch. 3.2), or by the period arithmetic of ch. 3.4 and 3.5 over all time (below). The day count
+is over all time: the true days per bucket with a true day, one segment each, and 0 on every run of buckets without
+one, open before the first and after the last (`PeriodArithmetic.dayCount`). On a standing temporal target (ch. 7.8)
+an empty result, which a day count gives only where its rule's condition cuts it to nothing, writes nothing and leaves
 the input whole; elsewhere it writes the empty timeline (ch. 1.2g), which the write-back puts on the bean as an empty
 list, while a target never written stays null. A characteristic on a timeline is input only, read as its true
 periods; the case reader refuses one given in the flat list of characteristics, for every branch. Witnesses
@@ -676,7 +678,9 @@ the operands of an additive operator in one unit, a product and a quotient with 
 the result in the target's unit (else DROOLS-306). The subject's own total of such a timeline reads it whole, an
 absent one 0, and so do the clip and the per-element fold over a set: an open segment of 0 adds 0, one of another
 value faults with EF-036 (`OpenSegmentFault`, the attribute and the label of the object whose timeline it is). The
-whole-period qualifier over an open segment faults, since its fold has no end to walk to (ch. 3.1). An operand that
+whole-period qualifier reads an open segment of a value on the bucket that holds its finite bound and the one beside it
+inside the segment, which stand for every bucket the segment covers (ch. 3.1, 3.9; `ComputeHelpers.foldPart`), and a
+segment open on both sides on one bucket. An operand that
 the case gives as the asOfDate-bucket scalar faults in the reference interpreter's words. In a build with readings the
 nodes of such a value read unreached on a rule without a condition, as the reference interpreter's trace reads them;
 on a rule with a condition each node reads the timeline it reads or computes, a scalar its value, and the root the

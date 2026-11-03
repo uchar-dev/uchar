@@ -2482,7 +2482,8 @@ public final class TmsTranspiler {
      * leeg there or absent giving no segment, each segment under the write boundary of the target's decimals
      * ({@link ComputeHelpers#proRata}, ch. 2.4); and the runtime's {@code rsAantalDagenIn} the true days per touched
      * bucket, a whole number every target holds, on the calendar or from the anchor of the target's fixed start point
-     * ({@code rsAantalDagenInVanaf}, ch. 3.2). Neither coalesces adjacent equal buckets (ch. 3.7). Where the rule's
+     * ({@code rsAantalDagenInVanaf}, ch. 3.2), and 0 on all time outside those buckets
+     * ({@link PeriodArithmetic#dayCount}). Neither coalesces adjacent equal buckets (ch. 3.7). Where the rule's
      * condition is read per period, {@code held} is the term of its periods, and the result is restricted to them
      * ({@link #periodCondition}, ch. 3.10). The
      * pro-rata part reads its base whole, bucket by bucket, so a base the case gives as the asOfDate-bucket scalar
@@ -2521,7 +2522,7 @@ public final class TmsTranspiler {
                             constant(Period.class)), null)
                     : new Term.Call(StaticFunction.RS_DAY_COUNT_FROM, List.of(periods, constant(gran),
                             constant(anchor), constant(Period.class)), null);
-            return clipped(held, new Term.Call(StaticFunction.PERIOD_LIST, List.of(days), source(f.source())));
+            return clipped(held, new Term.Call(StaticFunction.PERIOD_DAY_COUNT, List.of(days), source(f.source())));
         }
         if (f.arguments().size() != 1 || !(f.arguments().get(0) instanceof Expr.AttributeReference b)
                 || b.attribute() == null || b.objectType() != subject || navigationBindings.containsKey(b))

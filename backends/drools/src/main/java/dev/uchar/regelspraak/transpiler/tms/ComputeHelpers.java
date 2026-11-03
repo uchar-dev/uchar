@@ -545,14 +545,43 @@ public final class ComputeHelpers {
     /** The fold of the whole-period qualifier (RUNTIME-SEMANTICS ch. 3.9) as the runtime folds it
      *  ({@code rsGeheelPeriode}): over {@code timeline}, a list of segments or null, on the grid {@code grid}
      *  ("JAAR" or "MAAND"), with the test of code {@code testCode} and the bound {@code bound} of a comparison as the exact
-     *  value it is, null where the test has none; complemented where the qualifier is negated ({@code niet}). */
+     *  value it is, null where the test has none; complemented where the qualifier is negated ({@code niet}). A
+     *  segment of a value with an open bound is read on its part {@link #foldPart}; the true periods of a
+     *  characteristic with an open bound fault, since that fold walks every bucket of them (ch. 3.1). */
     public static boolean wholePeriod(Object timeline, Object bound, String grid, int testCode, boolean wholePeriodNegated) {
-        // the fold walks the buckets of every segment it reads, and a segment with an open bound has no end to reach
-        // (ch. 3.1); a leeg segment is read as a gap and walked by no test but that of a characteristic
-        if (timeline != null) for (Object o : (List<?>) timeline)
-            if (((Period) o).open() && (testCode == CHARACTERISTIC_TEST || ((Period) o).value() != null))
-                throw new ComputeFault(OPEN_BUCKET_WALK);
-        return RegelSpraakRuntime.rsGeheelPeriode((List<?>) timeline, grid, testCode, bound) != wholePeriodNegated;
+        List<Object> read = null;
+        if (timeline != null) {
+            read = new ArrayList<>();
+            for (Object o : (List<?>) timeline) {
+                Period p = (Period) o;
+                if (p.open() && testCode == CHARACTERISTIC_TEST) throw new ComputeFault(OPEN_BUCKET_WALK);
+                // a leeg segment is a gap, which the fold of a value test walks by no segment
+                if (p.open() && p.value() == null) continue;
+                read.add(p.open() ? foldPart(p, grid) : p);
+            }
+        }
+        return RegelSpraakRuntime.rsGeheelPeriode(read, grid, testCode, bound) != wholePeriodNegated;
+    }
+
+    /** The part of the segment {@code p} with an open bound that the fold of the whole-period qualifier on the grid
+     *  {@code grid} reads (RUNTIME-SEMANTICS ch. 3.1, 3.9): every bucket that lies inside such a segment reads its
+     *  value on every day, so the bucket that holds its finite bound and the one beside it inside the segment stand for
+     *  all of them, and a segment open on both sides is read on one bucket, as the reference interpreter reads it. */
+    static Period foldPart(Period p, String grid) {
+        boolean year = switch (grid) {
+            case "JAAR" -> true;
+            case "MAAND" -> false;
+            default -> throw new IllegalArgumentException("de gehele-periodekwalificator kent geen raster " + grid);
+        };
+        java.util.function.UnaryOperator<LocalDate> start = d -> year ? d.withDayOfYear(1) : d.withDayOfMonth(1);
+        java.util.function.UnaryOperator<LocalDate> end = d -> year ? start.apply(d).plusYears(1) : start.apply(d).plusMonths(1);
+        boolean openFrom = p.from().equals(Period.OPEN_FROM), openTo = p.to().equals(Period.OPEN_TO);
+        if (openFrom && openTo) {
+            LocalDate epoch = LocalDate.of(1970, 1, 1);
+            return new Period(start.apply(epoch), end.apply(epoch), p.value());
+        }
+        if (openFrom) return new Period(start.apply(start.apply(p.to().minusDays(1)).minusDays(1)), p.to(), p.value());
+        return new Period(p.from(), end.apply(end.apply(p.from())), p.value());
     }
 
     /** The code of the characteristic test of {@code rsGeheelPeriode}, which walks every segment it is given. */

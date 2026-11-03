@@ -83,6 +83,9 @@ public enum StaticFunction {
     RS_DAY_COUNT_FROM(RegelSpraakRuntime.class, "rsAantalDagenInVanaf", false),
     /** A timeline as this branch carries it, a list of {@code Period}, from the segments a runtime helper returns. */
     PERIOD_LIST(Period.class, "list", false),
+    /** The day count over all time (ch. 3.8) from the counted buckets a runtime helper returns: 0 on every period
+     *  outside them. */
+    PERIOD_DAY_COUNT(PeriodArithmetic.class, "dayCount", false),
     /** A scalar operand of the period arithmetic of ch. 3.4 as a timeline: the one segment with two open bounds, or
      *  none where it is leeg (ch. 3.1). */
     PERIOD_SCALAR(PeriodArithmetic.class, "scalar", false),

@@ -47,7 +47,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * over a to-one role reaches, over the calendar years or months it touches. Every timeline the documents fold is a day
  * count ("het aantal dagen in de maand dat …", ch. 3.8) that another rule derives, so the fold reads what is derived
  * later, in every order of the rules; each case is replayed with an evaluation date and in a session without one, with
- * the same expectations, since the qualifier's grid is its own and no evaluation date is read.
+ * the same expectations, since the qualifier's grid is its own and no evaluation date is read. Each count is written
+ * "gedurende de tijd dat hij niet gedurende de gehele maand niet … is", a condition read per period that holds in the
+ * months with a true day (ch. 3.9, per bucket, ch. 3.10): a count over all time is 0 in every month without a true day
+ * (ch. 3.8), and the condition keeps it to the months it counts, so a month without a true day stays a gap, which the
+ * fold reads, and a subject without a true day gets no timeline, so its input stands (ch. 7.8).
  *
  * <p><b>A, the subject's own timeline.</b> "De wachtdagen van een Jutter moet berekend worden als het aantal dagen in de
  * maand dat hij wachtplichtig is"; "De trouwpremie … op 10 indien zijn wachtdagen gedurende het gehele jaar groter is
@@ -110,8 +114,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p><b>R</b>: the forms the branch does not fold are refused by name: the negation inside the qualifier of a
  * characteristic check, a comparison over a timeline read over a path, and one between two timelines.
  *
- * <p><b>Measured</b> (2026-11-03, every document of {@link #main}, every order, each case; the verifier passes every
- * one). B and C: the reference interpreter's runner and the ASP runner pass every order of both cases (13 expectations
+ * <p><b>Measured</b> (2026-11-03, every document of {@link #main}, every order, each case, the counts with their
+ * condition; the verifier passes every one). B and C: the reference interpreter's runner and the ASP runner pass every order of both cases (13 expectations
  * each). A: both pass all 24 orders of both cases (21 expectations): a premie its rule wrote on the input state, before
  * the day count replaced the input, is given back where the condition is false at the fixpoint (RUNTIME-SEMANTICS
  * ch. 6.1, "A write is read at the fixpoint"). A3: both pass every order of both cases (9 expectations): a leeg day
@@ -195,8 +199,14 @@ class TmsWholePeriodWitnessTest {
             TmsDocuments.attribute("stilpremie", WHOLE)),
             List.of(timeCharacteristic("wachtplichtig", "month")))), List.of());
 
+    /** "gedurende de tijd dat hij niet gedurende de gehele maand niet {@code characteristic} is": the months with a true
+     *  day of {@code characteristic}, which keep a day count to the months it counts (class comment). */
+    static String countedMonths(String characteristic) {
+        return TmsConditionPerPeriodWitnessTest.wholePeriodCheck(characteristic, true, "month", true);
+    }
+
     static final String WACHTDAGEN = computingRule("wachtdagen", "BEREKENING", "Jutter", "wachtdagen",
-            dayCount(check("wachtplichtig", false), "month"), "null");
+            dayCount(check("wachtplichtig", false), "month"), countedMonths("wachtplichtig"));
     static final String TROUWPREMIE = premie("trouwpremie", "Jutter", "trouwpremie", "10",
             wholeComparison("greater", ownRead("wachtdagen", "Jutter"), ownRead("drempel", "Jutter"), whole(true, false),
                     "zijn wachtdagen gedurende het gehele jaar groter is dan zijn drempel"));
@@ -352,7 +362,7 @@ class TmsWholePeriodWitnessTest {
             List.of(TmsDocuments.factTypeOneToMany("ligplaats", "werf", "Werf", "schuit", "Schuit", "schuiten")));
 
     static final String HAVENDAGEN = computingRule("havendagen", "BEREKENING", "Werf", "havendagen",
-            dayCount(check("open", false), "month"), "null");
+            dayCount(check("open", false), "month"), countedMonths("open"));
     static final String WERF_HAVENDAGEN = TmsDocuments.pathRead("havendagen", "Werf", "ligplaats", "werf");
     static final String WERFTOESLAG = premie("werftoeslag", "Schuit", "werftoeslag", "10",
             wholePredicate("filled", WERF_HAVENDAGEN, whole(true, false),
@@ -412,7 +422,7 @@ class TmsWholePeriodWitnessTest {
             List.of(TmsDocuments.factTypeOneToMany("indeling", "vloot", "Vloot", "boot", "Boot", "boten")));
 
     static final String SAILING_DAYS = computingRule("vaardagen", "BEREKENING", "Boot", "vaardagen",
-            dayCount(check("uitgevaren", false), "month"), "null");
+            dayCount(check("uitgevaren", false), "month"), countedMonths("uitgevaren"));
 
     /** "Een Vloot is {@code doel} indien de vaardagen van {@code description} van de boten van de Vloot niet gedurende het gehele
      *  jaar groter is dan 20". */

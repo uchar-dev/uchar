@@ -52,14 +52,6 @@ class DrlTextCorpusWitnessTest {
      *  plays. */
     private static final int EXPECTED_MIN_PLAYED = 250;
 
-    /** The goldens whose day count this branch writes without its 0 over all time (RUNTIME-SEMANTICS ch. 3.8,
-     *  IMPLICIT-TIME 7a), so their timeline expectations differ: a value divergence, as gate 12 lists them, until the
-     *  branch writes the 0 (card conditions-per-period, step B part ii). A listed golden that plays fails the test. */
-    private static final java.util.Set<String> DAY_COUNT_WITHOUT_ZERO = java.util.Set.of(
-            "anchor/jutterswet-dagentelling", "jutterswet-dagentelling-rgs", "jutterswet-loon-per-periode",
-            "jutterswet-vast-startpunt", "jutterswet-wachtdagen-twee-schrijvers", "jutterswet-wachtmaanden");
-
-
     @Test void every_golden_plays_all_its_cases_or_is_refused() throws Exception {
         List<Path> goldens;
         try (Stream<Path> s = Files.walk(GOLDEN)) {
@@ -67,7 +59,6 @@ class DrlTextCorpusWitnessTest {
         }
         Map<String, Integer> count = new TreeMap<>();
         List<String> fault = new ArrayList<>(), differences = new ArrayList<>();
-        java.util.Set<String> diverging = new java.util.TreeSet<>();
         int withoutCases = 0;
         for (Path g : goldens) {
             List<Path> cases;
@@ -94,14 +85,9 @@ class DrlTextCorpusWitnessTest {
                             differences.add(name + ": drl " + r.reason() + " | exec-model " + exec);
                     }
                 }
-                default -> {
-                    if (DAY_COUNT_WITHOUT_ZERO.contains(name) && r.status().equals("FAIL")) diverging.add(name);
-                    else fault.add(name + ": " + r);
-                }
+                default -> fault.add(name + ": " + r);
             }
         }
-        assertEquals(new java.util.TreeSet<>(DAY_COUNT_WITHOUT_ZERO), diverging,
-                "de goldens met een dagentelling zonder haar 0 (7a), en geen andere");
         assertEquals(List.of(), fault, "goldens die de tak draagt maar verkeerd uitrekent, of waarvan de tekst niet"
                 + " compileert");
         assertEquals(List.of(), differences, "weigeringen van de gedeelde analyse die van de exec-model-tak verschillen");

@@ -68,7 +68,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * of 0 it is 2 × 10 + 1 × 10 = 30; the per-element total faults naming the member whose timeline has an open segment
  * of 5, and adds an open segment of 0 as 0, 2 × 5 + 3 = 13; a period-arithmetic operand and a member of a sum per
  * period given as the asOfDate-bucket scalar fault in the reference interpreter's words; the whole-period qualifier
- * over an open segment has no end to walk to (ch. 3.1); a segment that does not fit the decimals of the target faults
+ * reads an open segment of a value on the buckets beside its finite bound (ch. 3.1, 3.9); a segment that does not fit
+ * the decimals of the target faults
  * at the write boundary (ch. 2.4, EF-006).
  *
  * <p><b>D, the case reader.</b> A segment without {@code from} after another is out of order; a mismatch names an open
@@ -307,17 +308,23 @@ class TmsPeriodArithmeticWitnessTest {
                 + " carries no period", TmsFaultWitnessTest.playBoth(ir, member));
     }
 
-    @Test void the_whole_period_qualifier_over_an_open_segment_has_no_end_to_walk_to() throws Exception {
+    /** The whole-period qualifier over a value with an open segment reads the segment on the buckets beside its finite
+     *  bound (RUNTIME-SEMANTICS ch. 3.1, 3.9): J1's bedrag 10 until 2024-01-01 and 10 in 2024 is greater than 5 in every
+     *  year it touches, J2's 10 until 2024-01-01 and 3 in 2024 is not. */
+    @Test void the_whole_period_qualifier_reads_an_open_segment_on_the_buckets_beside_its_bound() throws Exception {
         String model = TmsDocuments.model(List.of(objectType("Jutter", List.of(timeAttribute("bedrag", WHOLE, "month")),
                 List.of(characteristic("vast")))), List.of());
         Path ir = document(model, List.of(TmsDocuments.characteristicRule("vast", "Jutter", "vast",
                 TmsWholePeriodWitnessTest.wholeComparison("greater", ownRead("bedrag", "Jutter"), number("5"),
                         TmsWholePeriodWitnessTest.whole(true, false), "zijn bedrag gedurende het gehele jaar groter dan 5"))));
-        JsonNode c = TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of("bedrag",
-                timeline(List.of(openTo("2024-01-01", "10"), segment("2024-01-01", "2025-01-01", "10")))), List.of(),
-                Map.of(), Map.of())), List.of(consistent()));
-        assertEquals("ComputeFault: fout in de regel \"vast\": a fold over the buckets of a grid walks the buckets of a"
-                + " period with an open bound, which has no end to reach (ch. 3.1)", TmsFaultWitnessTest.playBoth(ir, c));
+        JsonNode c = TmsTimelineDocuments.caseDocument(null, List.of(
+                        instance("J1", "Jutter", Map.of("bedrag", timeline(List.of(openTo("2024-01-01", "10"),
+                                segment("2024-01-01", "2025-01-01", "10")))), List.of(), Map.of(), Map.of()),
+                        instance("J2", "Jutter", Map.of("bedrag", timeline(List.of(openTo("2024-01-01", "10"),
+                                segment("2024-01-01", "2025-01-01", "3")))), List.of(), Map.of(), Map.of())),
+                List.of(TmsDocuments.expected("J1", "vast", true), TmsDocuments.expected("J2", "vast", false),
+                        consistent()));
+        assertEquals("gespeeld", TmsFaultWitnessTest.playBoth(ir, c));
     }
 
     @Test void a_segment_that_does_not_fit_the_decimals_of_the_target_faults_at_the_write_boundary() throws Exception {

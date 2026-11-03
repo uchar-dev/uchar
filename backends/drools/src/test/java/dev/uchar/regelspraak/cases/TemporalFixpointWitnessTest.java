@@ -27,9 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *       here directly — including the ANCHOR-free one, which the idempotency guard used to skip.</li>
  *   <li>RUNTIME-SEMANTICS ch. 7.8, the timeline arm — on a STANDING temporal target a fold with an EMPTY
  *       result decides nothing and the case-supplied input timeline stands WHOLE, while a fold that DOES
- *       decide displaces that input entirely. Both sides are asserted for both executable folds (the ch. 3.7
- *       pro-rata and the ch. 3.8 day count): a one-sided implementation (never write / always write) fails
- *       one of the two.</li>
+ *       decide displaces that input entirely. Both sides are asserted for the ch. 3.7 pro-rata part: a one-sided
+ *       implementation (never write / always write) fails one of the two. The ch. 3.8 day count over all time is
+ *       0 in every bucket without a true day, so it decides every day and displaces the input with or without a
+ *       true period; both are asserted.</li>
  * </ol>
  *
  * <p>DUAL-BRANCH since the drl-staande-waarden card (2026-09-18): every replay row below runs through BOTH
@@ -106,22 +107,24 @@ class TemporalFixpointWitnessTest {
 
     // ---------------- 2. the ch. 7.8 timeline arm, both sides ----------------
 
-    @Test void day_count_with_empty_opbrengst_leaves_the_input_time_sequence_standing() throws Exception {
-        // no borgplichtig period at all -> the ch. 3.8 day count yields the temporal leeg, which decides
-        // nothing on this standing target: the input timeline stands WHOLE.
+    @Test void day_count_without_a_true_day_displaces_the_input_time_sequence_with_0() throws Exception {
+        // no borgplichtig period at all -> the ch. 3.8 day count is 0 on all time, which decides every day on this
+        // standing target: the input timeline is displaced whole.
         play("anchor/jutterswet-dagentelling", dayCount("", """
                 { "kind": "attributeTimeline", "label": "J1", "attribute": "borgdagen", "timeline": [
-                    { "from": "2024-03-01", "to": "2024-04-01", "value": { "number": "99" } } ] }"""),
-                "an empty day count writes nothing and the input stands");
+                    { "value": { "number": "0" } } ] }"""),
+                "a day count without a true day writes 0 on all time and displaces the input");
     }
 
     @Test void day_count_with_filled_opbrengst_displaces_the_input_time_sequence() throws Exception {
-        // the other side of the same norm: a deciding fold displaces the input ENTIRELY (per target, never per
-        // bucket) — the March input segment is gone, replaced by the counted March bucket.
+        // a deciding fold displaces the input ENTIRELY (per target, never per bucket) — the March input segment is
+        // gone, replaced by the counted March bucket, with 0 before and after it.
         play("anchor/jutterswet-dagentelling", dayCount("""
                 "borgplichtig": [ { "from": "2024-03-01", "to": "2024-03-11" } ]""", """
                 { "kind": "attributeTimeline", "label": "J1", "attribute": "borgdagen", "timeline": [
-                    { "from": "2024-03-01", "to": "2024-04-01", "value": { "number": "10" } } ] }"""),
+                    { "to": "2024-03-01", "value": { "number": "0" } },
+                    { "from": "2024-03-01", "to": "2024-04-01", "value": { "number": "10" } },
+                    { "from": "2024-04-01", "value": { "number": "0" } } ] }"""),
                 "a deciding day count displaces the input timeline");
     }
 

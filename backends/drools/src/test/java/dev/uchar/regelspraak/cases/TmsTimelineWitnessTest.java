@@ -88,9 +88,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * truth value they would test false, and every clip would be empty. Every order of the three rules.
  *
  * <p><b>E, a target on a fixed start point</b>, the day count of ch. 3.2 verbatim: "het aantal dagen in het jaar dat hij
- * wachtplichtig is", wachtplichtig on [2024-09-28, 2024-10-03), into a target on the year grid {@code --10-01}: 3 on
- * [2023-10-01, 2024-10-01) and 2 on [2024-10-01, 2025-10-01); on the calendar grid 5 on [2024-01-01, 2025-01-01). Both
- * orders.
+ * wachtplichtig is", wachtplichtig on [2024-09-28, 2024-10-03), into a target on the year grid {@code --10-01}: 0 until
+ * 2023-10-01, 3 on [2023-10-01, 2024-10-01), 2 on [2024-10-01, 2025-10-01) and 0 from 2025-10-01; on the calendar grid 0
+ * until 2024-01-01, 5 on [2024-01-01, 2025-01-01) and 0 from 2025-01-01, the count over all time 0 in every bucket
+ * without a true day (ch. 3.8). Both orders.
  *
  * <p><b>F, the comparison clip with "gelijk aan" and "ongelijk aan"</b> (ch. 3.6, read per period by the comparison of
  * ch. 1.2, a gap in the compared timeline leeg): "het totaal van zijn vergoeding gedurende de tijd dat zijn controle
@@ -421,9 +422,11 @@ class TmsTimelineWitnessTest {
     static JsonNode caseE() throws Exception {
         return TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of(), List.of(),
                         Map.of("wachtplichtig", List.of(period("2024-09-28", "2024-10-03"))), Map.of())),
-                List.of(expectedTimeline("J1", "stormdagen", List.of(segment("2023-10-01", "2024-10-01", "3"),
-                                segment("2024-10-01", "2025-10-01", "2"))),
-                        expectedTimeline("J1", "kalenderdagen", List.of(segment("2024-01-01", "2025-01-01", "5"))),
+                List.of(expectedTimeline("J1", "stormdagen", List.of(TmsTimelineDocuments.openTo("2023-10-01", "0"),
+                                segment("2023-10-01", "2024-10-01", "3"), segment("2024-10-01", "2025-10-01", "2"),
+                                TmsTimelineDocuments.openFrom("2025-10-01", "0"))),
+                        expectedTimeline("J1", "kalenderdagen", List.of(TmsTimelineDocuments.openTo("2024-01-01", "0"),
+                                segment("2024-01-01", "2025-01-01", "5"), TmsTimelineDocuments.openFrom("2025-01-01", "0"))),
                         consistent()));
     }
 

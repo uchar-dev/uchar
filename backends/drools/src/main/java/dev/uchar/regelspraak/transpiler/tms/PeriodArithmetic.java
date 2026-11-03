@@ -153,6 +153,26 @@ public final class PeriodArithmetic {
     }
 
     /**
+     * The day count of ch. 3.8 over all time, from {@code counted}, the segments a runtime helper returns for it, one
+     * per bucket with a true day, in the order of their days: those buckets as they are, and 0 on every period of all
+     * time outside them, each run of buckets without a true day one segment, open where it reaches before the first
+     * counted bucket or past the last, and the one segment (−∞, +∞) where no bucket has a true day (maintainer decision
+     * 2026-11-03, spec/proposals/IMPLICIT-TIME.md 7a). The counted buckets stay one segment each, also where two
+     * adjacent ones count alike.
+     */
+    public static List<Period> dayCount(Object counted) {
+        List<Period> out = new ArrayList<>();
+        LocalDate at = Period.OPEN_FROM;
+        for (Period b : Period.list((List<?>) counted)) {
+            if (b.from().isAfter(at)) out.add(new Period(at, b.from(), BigDecimal.ZERO));
+            out.add(b);
+            at = b.to();
+        }
+        if (at.isBefore(Period.OPEN_TO)) out.add(new Period(at, Period.OPEN_TO, BigDecimal.ZERO));
+        return List.copyOf(out);
+    }
+
+    /**
      * The timeline a rule of period arithmetic writes into a target of {@code decimals} declared decimals, the
      * attribute {@code attribute} (ch. 3.1, 3.11): the filled segments of {@code timeline}, adjacent equal ones one
      * segment, each under the write boundary of ch. 2.4 point 1, a value that does not fit the {@link WriteBoundaryFault}

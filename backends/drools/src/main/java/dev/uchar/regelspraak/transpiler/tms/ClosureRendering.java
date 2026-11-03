@@ -341,6 +341,7 @@ final class ClosureRendering {
             case RS_DAY_COUNT_FROM -> x -> RegelSpraakRuntime.rsAantalDagenInVanaf((List<?>) x[0],
                     (String) x[1], (LocalDate) x[2], (Class<?>) x[3]);
             case PERIOD_LIST -> x -> Period.list((List<?>) x[0]);
+            case PERIOD_DAY_COUNT -> x -> PeriodArithmetic.dayCount(x[0]);
             case PERIOD_SCALAR -> x -> PeriodArithmetic.scalar(x[0]);
             case PERIOD_PLUS -> x -> PeriodArithmetic.plus(x[0], x[1]);
             case PERIOD_MINUS -> x -> PeriodArithmetic.minus(x[0], x[1]);

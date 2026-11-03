@@ -61,18 +61,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>B, the whole-period qualifier per bucket.</b> J1: wachtplichtig (for each day) on [2025-11-16, 2026-03-13),
  * wachtloon 15 on [2025-01-01, 2026-07-01). "De dagen … als het aantal dagen in de maand dat hij wachtplichtig is
- * gedurende de tijd dat hij niet gedurende de gehele maand wachtplichtig is": 15 in November 2025, 12 in March 2026;
+ * gedurende de tijd dat hij niet gedurende de gehele maand wachtplichtig is": 0 until 2025-11-01, 15 in November 2025,
+ * 12 in March 2026 and 0 from 2026-04-01, the count over all time 0 in every month without a true day (ch. 3.8);
  * "de premie … 50 gedurende de tijd dat hij gedurende de gehele maand wachtplichtig is": 50 on
  * [2025-12-01, 2026-03-01); "de rust … 7 gedurende de tijd dat hij gedurende de gehele maand niet wachtplichtig is", the
  * negation inside the qualifier per day: 7 until 2025-11-01 and from 2026-04-01; "de jaarpremie … 20 gedurende de tijd
  * dat zijn wachtloon gedurende het gehele jaar groter is dan 10": 20 on [2025-01-01, 2026-01-01). J2 has no timeline:
- * dagen, premie and jaarpremie empty, rust 7 on all time.
+ * premie and jaarpremie empty, dagen 0 and rust 7 on all time.
  *
  * <p><b>C, two writers per day.</b> "De wachtdagen … 30 gedurende de tijd dat hij gedurende de gehele maand wachtplichtig
- * is" and "… het aantal dagen in de maand dat hij wachtplichtig is gedurende de tijd dat hij niet gedurende de gehele
- * maand wachtplichtig is", with J1 as in B and an input of 4 in January 2025, a month neither decides: 4, 15, 30 on
- * [2025-12-01, 2026-03-01) and 12. Two writers that decide a day with one value, the day count under the qualifier and
- * the one without a condition: 15, 31, 31, 28 and 12, each month as the writer the document names first wrote it. Two
+ * is" and "… het aantal dagen in de maand dat hij wachtplichtig is gedurende de tijd dat hij aan alle volgende
+ * voorwaarden voldoet: hij is niet gedurende de gehele maand wachtplichtig, hij is niet gedurende de gehele maand niet
+ * wachtplichtig", the months that are partly wachtplichtig, with J1 as in B and an input of 4 in January 2025, a month
+ * neither decides: 4, 15, 30 on [2025-12-01, 2026-03-01) and 12. Two writers that decide a day with one value, the day
+ * count under the qualifier and the one without a condition: 0 until 2025-11-01, 15, 31, 31, 28, 12 and 0 from
+ * 2026-04-01, each month as the writer the document names first wrote it. Two
  * that differ on a day, the day count without a condition beside the 30: EF-016 on December 2025 with 30 and 31, the
  * rules and the values in the order of the document. And the two writers of a pro-rata part that a scalar gate each
  * admits on another Jutter: 306 and 31.
@@ -269,12 +272,13 @@ class TmsConditionPerPeriodWitnessTest {
                         instance("J1", "Jutter", Map.of("wachtloon", timeline(List.of(segment("2025-01-01", "2026-07-01",
                                 "15")))), List.of(), Map.of("wachtplichtig", WACHT), Map.of()),
                         instance("J2", "Jutter", Map.of(), List.of(), Map.of(), Map.of())),
-                List.of(expectedTimeline("J1", "dagen", List.of(segment("2025-11-01", "2025-12-01", "15"),
-                                segment("2026-03-01", "2026-04-01", "12"))),
+                List.of(expectedTimeline("J1", "dagen", List.of(openTo("2025-11-01", "0"),
+                                segment("2025-11-01", "2025-12-01", "15"), segment("2026-03-01", "2026-04-01", "12"),
+                                openFrom("2026-04-01", "0"))),
                         expectedTimeline("J1", "premie", List.of(segment("2025-12-01", "2026-03-01", "50"))),
                         expectedTimeline("J1", "rust", List.of(openTo("2025-11-01", "7"), openFrom("2026-04-01", "7"))),
                         expectedTimeline("J1", "jaarpremie", List.of(segment("2025-01-01", "2026-01-01", "20"))),
-                        expectedTimeline("J2", "dagen", List.of()), expectedTimeline("J2", "premie", List.of()),
+                        expectedTimeline("J2", "dagen", List.of(always("0"))), expectedTimeline("J2", "premie", List.of()),
                         expectedTimeline("J2", "rust", List.of(always("7"))), expectedTimeline("J2", "jaarpremie", List.of()),
                         consistent()));
     }
@@ -289,7 +293,9 @@ class TmsConditionPerPeriodWitnessTest {
     static final String VOLLE_MAAND = computingRule("volle maand", "GELIJKSTELLING", "Jutter", "wachtdagen", number("30"),
             wholePeriodCheck("wachtplichtig", false, "month", false));
     static final String GEDEELTELIJKE_MAAND = computingRule("gedeeltelijke maand", "BEREKENING", "Jutter", "wachtdagen",
-            dayCount(WACHTPLICHTIG, "month"), wholePeriodCheck("wachtplichtig", false, "month", true));
+            dayCount(WACHTPLICHTIG, "month"), compound("all", 0, List.of(
+                    wholePeriodCheck("wachtplichtig", false, "month", true),
+                    wholePeriodCheck("wachtplichtig", true, "month", true))));
     static final String TELLING_VOLLE_MAAND = computingRule("telling volle maand", "BEREKENING", "Jutter", "wachtdagen",
             dayCount(WACHTPLICHTIG, "month"), wholePeriodCheck("wachtplichtig", false, "month", false));
     static final String ELKE_MAAND = computingRule("elke maand", "BEREKENING", "Jutter", "wachtdagen",
@@ -313,9 +319,10 @@ class TmsConditionPerPeriodWitnessTest {
     static JsonNode caseEqualWriters() throws Exception {
         return TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of(), List.of(),
                         Map.of("wachtplichtig", WACHT), Map.of())),
-                List.of(expectedTimeline("J1", "wachtdagen", List.of(segment("2025-11-01", "2025-12-01", "15"),
-                        segment("2025-12-01", "2026-01-01", "31"), segment("2026-01-01", "2026-02-01", "31"),
-                        segment("2026-02-01", "2026-03-01", "28"), segment("2026-03-01", "2026-04-01", "12"))),
+                List.of(expectedTimeline("J1", "wachtdagen", List.of(openTo("2025-11-01", "0"),
+                        segment("2025-11-01", "2025-12-01", "15"), segment("2025-12-01", "2026-01-01", "31"),
+                        segment("2026-01-01", "2026-02-01", "31"), segment("2026-02-01", "2026-03-01", "28"),
+                        segment("2026-03-01", "2026-04-01", "12"), openFrom("2026-04-01", "0"))),
                         consistent()));
     }
 

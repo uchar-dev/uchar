@@ -44,9 +44,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * fixpoint.
  *
  * <p>The model: "Een Vondst is geregistreerd indien zijn code groter is dan 0"; "Het nummer van een Vondst moet
- * berekend worden als het aantal dagen in het jaar dat hij bewaard is, indien hij geregistreerd is", a day count onto
- * a target on the year grid that only this rule writes, so it stands where the count is empty or the rule does not
- * apply (ch. 7.8); and "De nummers van alle Vondsten moeten uniek zijn" (eenmalig nummer). By hand, with code 1
+ * berekend worden als het aantal dagen in het jaar dat hij bewaard is, gedurende de tijd dat hij aan alle volgende
+ * voorwaarden voldoet: hij is geregistreerd, hij is niet gedurende het gehele jaar niet bewaard", a day count onto a
+ * target on the year grid that only this rule writes. Its condition is read per period (RUNTIME-SEMANTICS ch. 3.10):
+ * the gate holds on all time or none, and the qualifier in the years with a true day (ch. 3.9, per bucket), so the
+ * count, 0 in every year without a true day over all time (ch. 3.8), is written in the years it counts, and the input
+ * stands where it is cut to nothing or the gate is closed (ch. 7.8); and "De nummers van alle Vondsten moeten uniek
+ * zijn" (eenmalig nummer). By hand, with code 1
  * unless said otherwise: V1, bewaard on [2024-01-01, 2024-01-11), gets nummer 10 in 2024; V2, on [2025-03-01,
  * 2025-03-11), 10 in 2025; V3, on [2024-01-01, 2024-01-06), 5 in 2024; V4, nummer 5 in 2024 and 7 in 2025 as input
  * and no true period, keeps its input; V5, nummer 3 in 2024 and 3 in 2025 as input, keeps it and claims 3 once; V6,
@@ -57,8 +61,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Both orders of the two rules; beside them the generated rules in a hundred sampled orders, where the channel at the
  * fixpoint is exactly those five, and in some order V5 was marked on the way, while V7 still held its input 3.
  *
- * <p><b>Measured</b> (2026-10-09, the document of {@link #main} in both orders): the verifier passes both, and the
- * reference interpreter's runner and the ASP runner pass the case in both, "PASS (13 expectations)". An expectation
+ * <p><b>Measured</b> (2026-11-03, the document of {@link #main} in both orders, with the condition read per period): the
+ * verifier passes both, and the reference interpreter's runner and the ASP runner pass the case in both, "PASS (13
+ * expectations)". An expectation
  * "inconsistent" asks only that the channel carries the fact, so beside the case three probes add one that V5, V7 or
  * V8 is marked: both runners answer MISMATCH on each, the channel carrying exactly "eenmalig nummer × V1; … × V2; …
  * × V3; … × V4; … × V6".
@@ -81,7 +86,8 @@ class TmsEverUniquenessWitnessTest {
     static final String REGISTRATIE = characteristicRule("registratie", "Vondst", "geregistreerd",
             comparison("greater", ownRead("code", "Vondst"), number("0")));
     static final String NUMBER = computingRule("nummer", "BEREKENING", "Vondst", "nummer",
-            dayCount(check("bewaard", false), "year"), check("geregistreerd", false));
+            dayCount(check("bewaard", false), "year"), TmsDocuments.compound("all", 0, List.of(check("geregistreerd", false),
+                    TmsConditionPerPeriodWitnessTest.wholePeriodCheck("bewaard", true, "year", true))));
     static final String EENMALIG = TmsUniquenessWitnessTest.uniqueness("eenmalig nummer",
             List.of(TmsUniquenessWitnessTest.source("Vondst", List.of("nummer"))), null,
             "De nummers van alle Vondsten moeten uniek zijn.");
