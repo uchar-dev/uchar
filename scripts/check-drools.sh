@@ -319,7 +319,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-kinderlet|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-kindermacht|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-kinderprocent|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
-  "jutterswet-loon-per-periode|EXCLUDE DROOLS-302|transpiler SKIP: regel 'aangesteld loon van een jutter' — the period arithmetic of ch. 3.4 under a condition read per period on the temporal target 'aangestelde loon', which neither branch carries: a condition that reads a timeline restricts the written timeline to the periods in which it holds (RUNTIME-SEMANTICS ch. 3.10, the clip generalised), built in ref and clingo since card conditions-per-period (step A, 2026-11-03); step B carries it, and until then the golden's pins are a ref = clingo pair"
   "jutterswet-muntketen|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Munt) has no bean field: the same many-to-many 'berging' as bootberging above — NOT the subtype landing it was written for, which the walk does carry (SourcePathChainWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
   "jutterswet-meldplichtspoor|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
   "jutterswet-meldtermijnen|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
@@ -332,8 +331,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-waarderingsinvoer|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
-  "jutterswet-wachtdagen-twee-schrijvers|EXCLUDE DROOLS-103|transpiler SKIP: regel 'wachtdagen in een volle maand' — two writers of the temporal target 'wachtdagen', which neither branch carries: each decides its own segments, read per day (RUNTIME-SEMANTICS ch. 5.7), under a whole-period qualifier read per bucket (ch. 3.9), built in ref and clingo since card conditions-per-period (step A, 2026-11-03); step B carries them, and until then the golden's pins are a ref = clingo pair"
-  "jutterswet-wachtmaanden|EXCLUDE DROOLS-105|transpiler SKIP: regel 'wachtpremie van een jutter' — a scalar as the value of the temporal target 'wachtpremie' under a whole-period qualifier read per bucket, which neither branch carries (RUNTIME-SEMANTICS ch. 3.9, 3.11), built in ref and clingo since card conditions-per-period (step A, 2026-11-03); step B carries it, and until then the golden's pins are a ref = clingo pair"
   "synth3-armlichaam|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
   "synth3-besluitschakel|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
   "synth3-keuringtal|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
@@ -1510,7 +1507,11 @@ EXPECTED_CHANNEL=(
 # time-dependent parameter maal a scalar per day and the total of a rate per year over a day grid by the calendar
 # (RUNTIME-SEMANTICS ch. 3.4, 3.6), and the golden jutterswet-rekenen-per-dag, maal, verminderd met, both divisions and
 # percentage van per day on a day grid and the total over it. They play on both with PLAYED 2 and 3.
-EXPECTED_PLAYED=322
+# 325 since the card conditions-per-period (step B, 2026-11-03): the goldens jutterswet-loon-per-periode, a condition read
+# per period on rules of a timeline target and a scalar as the whole value (RUNTIME-SEMANTICS ch. 3.10, 3.11),
+# jutterswet-wachtmaanden, the whole-period qualifier per bucket (ch. 3.9), and jutterswet-wachtdagen-twee-schrijvers,
+# two writers of one timeline target per day (ch. 5.7). They play on both with PLAYED 3, 3 and 3.
+EXPECTED_PLAYED=325
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
