@@ -493,11 +493,11 @@ RGS-198	enumeration label '{label}' is not in the declared domain
 RGS-199	period comparison '{comparison}' follows a last bullet 'het is de periode' of a compound subselection: the parser reads that bullet as a characteristic 'het is de periode' and its boundary as a window on the whole rule — a different document from what is written (§8.4.3). Write the window as the condition part of the rule ('… {comparison}' after the resultaatdeel: before that boundary the rule does not fire), or do not put the period bullet last in the subselection (then the parser reads it as a member of the filter)
 RGS-200	period comparison: window bound is {kind}, must be a date
 RGS-201	period comparison (the {side} bound '{bound}'): the {fromTo} bound of a time window is a millisecond-precision date: the window is a range of civil days and no clause reads an instant bound
-RGS-202	period comparison (the {side} bound '{bound}'): the {fromTo} bound of a time window is {what} — a bound is a date literal or an own scalar date attribute of the subject; the general date expression is an OPEN wire decision
-RGS-202.computed	a computed date expression
+RGS-202	period comparison (the {side} bound '{bound}'): the {fromTo} bound of a time window is {what} — a bound is a day-precise date expression over the subject, the parameters and literals
+RGS-202.computed	a computed date expression of a form that reads more than the subject, the parameters and literals
 RGS-202.navigated-read	a navigated read of '{attribute}'
 RGS-202.no-subject	the attribute '{attribute}' at a position with no subject to own it
-RGS-202.parameter-bound	the parameter '{parameter}'
+RGS-202.parameter-bound	the time-dependent parameter '{parameter}'
 RGS-202.time-dependent	the time-dependent attribute '{attribute}'
 RGS-203	numeral of a quantifier: counting quantifier with threshold {threshold} < 1
 RGS-204	numeral of a quantification must be a positive whole number (>= 1)

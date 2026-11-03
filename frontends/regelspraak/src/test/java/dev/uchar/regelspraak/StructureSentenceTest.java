@@ -674,23 +674,19 @@ class StructureSentenceTest {
             """.formatted(subject, window));
     }
 
-    private static final String BOUND_TAIL = " — a bound is a date literal or an own scalar date attribute of the "
-            + "subject; the general date expression is an OPEN wire decision";
+    private static final String BOUND_TAIL = " — a bound is a day-precise date expression over the subject, the "
+            + "parameters and literals";
 
-    @Test void a_window_bound_outside_the_two_forms() {
-        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de peilparameter'): the from bound of a time window is "
-                + "the parameter 'peilparameter'" + BOUND_TAIL), window("", "Jutter", "vanaf de peilparameter"));
-        assertEquals(List.of("periodevergelijking (de tot-grens 'de peilparameter'): the to bound of a time window is "
-                + "the parameter 'peilparameter'" + BOUND_TAIL),
-                window("", "Jutter", "van dd. 01-01-2024 tot de peilparameter"));
+    @Test void a_window_bound_that_reads_more_than_the_subject_the_parameters_and_literals() {
         assertEquals(List.of("periodevergelijking (de vanaf-grens 'de opendatum van het strandvak van de Jutter'): the "
                 + "from bound of a time window is a navigated read of 'opendatum'" + BOUND_TAIL),
                 window("", "Jutter", "vanaf de opendatum van het strandvak van de Jutter"));
         assertEquals(List.of("periodevergelijking (de vanaf-grens 'de opendatum van zijn strandvak'): the from bound of a "
                 + "time window is a navigated read of 'opendatum'" + BOUND_TAIL),
                 window("", "Jutter", "vanaf de opendatum van zijn strandvak"));
-        assertEquals(List.of("periodevergelijking (de vanaf-grens 'zijn peildatum plus 1 dg'): the from bound of a time "
-                + "window is a computed date expression" + BOUND_TAIL), window("", "Jutter", "vanaf zijn peildatum plus 1 dg"));
+        assertEquals(List.of("periodevergelijking (de vanaf-grens 'de opendatum van zijn strandvak plus 1 dg'): the from "
+                + "bound of a time window is a navigated read of 'opendatum'" + BOUND_TAIL),
+                window("", "Jutter", "vanaf de opendatum van zijn strandvak plus 1 dg"));
         assertEquals(List.of("periodevergelijking (de vanaf-grens 'zijn knipdatum'): the from bound of a time window is "
                 + "the time-dependent attribute 'knipdatum'" + BOUND_TAIL), window("", "Jutter", "vanaf zijn knipdatum"));
     }

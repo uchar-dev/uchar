@@ -108,6 +108,7 @@ final class RuleChecker {
         this.repetitions = repetitions;
         this.builder = new ExpressionBuilder(model);
         this.builder.setCompoundFilter(this::compoundElementFilter);   // §13.4.13.4 compound subselectie
+        this.builder.setElementary(this::buildElementary);             // a bullet of a day count's condition
     }
 
     /** The pieces of the names {@link #check} generated after more than one declaration, by element. */
@@ -5033,11 +5034,12 @@ final class RuleChecker {
         return new Condition.TimeWindow(van, until, p.TOT_EN_MET() != null, source(p));
     }
 
-    /** WF-111 (maintainer decision 2026-09-23), producer side: a window bound is a date literal or an own
-     *  scalar date attribute of the subject, both of day precision. §13.4.15.68 admits any date expression and
-     *  this method is where the frontend narrows it to the wire's two shapes; before it, every other bound
-     *  reached disk silently and the verifier refused the document. ERROR, so {@link Resolver#irMode} writes
-     *  nothing.
+    /** WF-111 (maintainer decision 2026-09-23, widened by IMPLICIT-TIME VB 6.1), producer side: a window bound is a
+     *  day-precise date expression over the subject, the parameters and literals — a literal, an own scalar attribute
+     *  of the subject, a scalar parameter, and the operators and builtins over those, such as "zijn vervaldatum plus
+     *  1 dg". §13.4.15.68 admits any date expression and this method is where the frontend narrows it to what reads
+     *  one value per subject; before it, every other bound reached disk silently and the verifier refused the
+     *  document. ERROR, so {@link Resolver#irMode} writes nothing.
      *
      *  <p>"Own" is compared by IDENTITY with the subject, not by the ⊑ the rule's text allows, and on purpose:
      *  this frontend writes an own read — an inherited attribute included — with the subject as its object type,
@@ -5052,33 +5054,50 @@ final class RuleChecker {
     private Typing.Coded periodBoundaryError(Expr limit, String side) {
         if (limit == null || limit instanceof Expr.Unresolved) return null;
         if (limit.type() != null && !limit.type().isUnknown() && !limit.type().isDate()) return null;
-        ObjectType subject = builder.subject();
         String fromTo = side.equals("vanaf") ? "from" : "to";
-        Typing.Coded moment = new Typing.Coded("RGS-201",
-                params("side", side, "bound", limit.source(), "fromTo", fromTo));
-        Msg what;
-        if (limit instanceof Expr.Literal) {
-            return limit.type() instanceof Datatype.DateTime ? moment : null;
-        } else if (limit instanceof Expr.AttributeReference a) {
+        if (limit.type() instanceof Datatype.DateTime)
+            return new Typing.Coded("RGS-201", params("side", side, "bound", limit.source(), "fromTo", fromTo));
+        Object what = boundMisfit(limit, side, builder.subject());
+        if (what instanceof Typing.Coded coded) return coded;
+        if (what == null) return null;
+        return new Typing.Coded("RGS-202",
+                params("side", side, "bound", limit.source(), "what", what, "fromTo", fromTo));
+    }
+
+    /** The first part of a window bound that reads more than one value of the subject, the parameters and
+     *  literals: the part of the RGS-202 sentence that names it, a refusal of its own for a read no relation reaches
+     *  ({@link #periodBoundaryWithoutReader}), or null where there is none (the verifier's walk, WF-111). */
+    private Object boundMisfit(Expr e, String side, ObjectType subject) {
+        if (e == null || e instanceof Expr.Literal || e instanceof Expr.Unresolved) return null;
+        if (e instanceof Expr.AttributeReference a) {
             if (a.navigationRole() != null || !a.navigationPath().isEmpty() || a.set()
                     || subject != null && a.objectType() != subject) {
                 if (dev.uchar.regelspraak.emit.IrEmitter.navigationBindings(model, subject, a).isEmpty())
                     return periodBoundaryWithoutReader(a, side, subject);
-                what = Msg.frontend("RGS-202.navigated-read", "attribute", a.attribute());
-            } else if (subject == null)
-                what = Msg.frontend("RGS-202.no-subject", "attribute", a.attribute());
-            else if (subject.granularityOf(a.attribute()) != null)
-                what = Msg.frontend("RGS-202.time-dependent", "attribute", a.attribute());
-            else if (a.type() instanceof Datatype.DateTime)
-                return moment;
-            else return null;
-        } else if (limit instanceof Expr.ParameterRef pr) {
-            what = Msg.frontend("RGS-202.parameter-bound", "parameter", pr.parameter().name());
-        } else {
-            what = Msg.frontend("RGS-202.computed");
+                return Msg.frontend("RGS-202.navigated-read", "attribute", a.attribute());
+            }
+            if (subject == null) return Msg.frontend("RGS-202.no-subject", "attribute", a.attribute());
+            if (subject.granularityOf(a.attribute()) != null)
+                return Msg.frontend("RGS-202.time-dependent", "attribute", a.attribute());
+            return null;
         }
-        return new Typing.Coded("RGS-202",
-                params("side", side, "bound", limit.source(), "what", what, "fromTo", fromTo));
+        if (e instanceof Expr.ParameterRef pr)
+            return pr.parameter() != null && pr.parameter().granularity() != null
+                    ? Msg.frontend("RGS-202.parameter-bound", "parameter", pr.parameter().name()) : null;
+        if (e instanceof Expr.Binary b) {
+            Object left = boundMisfit(b.left(), side, subject);
+            return left != null ? left : boundMisfit(b.right(), side, subject);
+        }
+        if (e instanceof Expr.FunctionCall f && f.elementObjectType() == null && f.filter() == null
+                && f.emptyFallback() == null && f.dimensionSelections() == null && f.granularity() == null) {
+            for (Expr x : f.arguments()) {
+                Object part = boundMisfit(x, side, subject);
+                if (part != null) return part;
+            }
+            return null;
+        }
+        if (e instanceof Expr.Rounding r) return boundMisfit(r.base(), side, subject);
+        return Msg.frontend("RGS-202.computed");
     }
 
     /** A bound that navigates, written or by naming another object type, where no path is derivable: the emitter

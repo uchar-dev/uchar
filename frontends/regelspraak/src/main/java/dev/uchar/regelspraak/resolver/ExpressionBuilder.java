@@ -85,6 +85,13 @@ final class ExpressionBuilder {
     private CompoundFilterResolver compoundFilter;
     void setCompoundFilter(CompoundFilterResolver r) { this.compoundFilter = r; }
 
+    /** One bullet of a compound condition, built by {@link RuleChecker}'s bullet machinery as in a rule condition; the
+     *  day count reads its day-kind tests through it ({@link #dayCountCompound}). Null until set. */
+    @FunctionalInterface
+    interface ElementaryResolver { Condition resolve(ElementaireVoorwaardeContext c); }
+    private ElementaryResolver elementary;
+    void setElementary(ElementaryResolver r) { this.elementary = r; }
+
     /**
      * A filter being built (grammar/DIVERGENCES.md, "The rule subject in a subselection — zelf"): the subject the fold
      * or quantifier is written from ({@code outer}), its element type, and the filter as written. A filter is read per
@@ -2037,7 +2044,46 @@ final class ExpressionBuilder {
                 return new Condition.Unresolved(marked, Msg.frontend("RGS-092.day-count-name-unbound",
                         "name", src(op.kaleNaam()), "subject", currentSubject.name));
         }
+        if (adf.toplevelSamengesteldeVoorwaarde() != null) {
+            Condition compound = dayCountCompound(adf.toplevelSamengesteldeVoorwaarde(), source(adf.toplevelSamengesteldeVoorwaarde()));
+            if (compound != null) return compound;
+        }
         return new Condition.Unresolved(marked, Msg.frontend("RGS-092.day-count-condition-form"));
+    }
+
+    /** IMPLICIT-TIME 7b: "het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt voldaan: - hij is
+     *  rentedragend - de dag is geen schrikkeldag". An ALLE compound of one check of an own single-period
+     *  time-dependent characteristic of the subject and day-kind tests of "de dag", which in the condition of a day
+     *  count is the counted day (WF-058, RUNTIME-SEMANTICS ch. 3.8). Null for every other compound, which the caller
+     *  leaves a marker. */
+    private Condition dayCountCompound(ToplevelSamengesteldeVoorwaardeContext sv, Source source) {
+        VoorwaardeKwantificatieContext q = sv.voorwaardeKwantificatie();
+        if (q == null || q.ALLE() == null || sv.samengesteldeVoorwaardeOnderdeel() == null || elementary == null) return null;
+        if (sv.voorwaardeSubject() != null && sv.voorwaardeSubject().onderwerp() != null
+                && !denotesSubject(sv.voorwaardeSubject().onderwerp())) return null;
+        List<Condition> parts = new ArrayList<>();
+        int characteristics = 0;
+        for (GenesteVoorwaardeContext g : sv.samengesteldeVoorwaardeOnderdeel().genesteVoorwaarde()) {
+            if (g.elementaireVoorwaarde() == null) return null;                 // a nested compound bullet -> marker
+            ElementaireVoorwaardeContext ev = g.elementaireVoorwaarde();
+            boolean membership = (ev.toplevelOperator() != null && ev.toplevelOperator().kaleNaam() != null)
+                    || (ev.nonToplevelOperator() != null && ev.nonToplevelOperator().kaleNaam() != null);
+            if (membership && denotesSubject(ev.expressie())) {
+                Condition.CharacteristicCheck k =
+                        temporalCharacteristicCheckFromOperator(ev.toplevelOperator(), ev.nonToplevelOperator(), source(ev));
+                if (k == null || k.negation()) return null;
+                parts.add(k);
+                characteristics++;
+                continue;
+            }
+            Condition c = elementary.resolve(ev);
+            if (!(c instanceof Condition.Predicate p) || p.kind() != Condition.PredicateKind.DAGSOORT || p.period() != null
+                    || !(p.operand() instanceof Expr.Constant d) || !"de dag".equals(d.name()))
+                return null;
+            parts.add(c);
+        }
+        if (characteristics != 1 || parts.size() < 2) return null;
+        return new Condition.Compound(Condition.Quantifier.ALLE, 0, parts, source);
     }
 
     /** Resolve an elementaire "is/heeft (geen/niet) (een/het) &lt;kenmerk&gt;" membership operator into a

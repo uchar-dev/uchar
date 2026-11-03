@@ -11,12 +11,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * WF-111 (maintainer decision 2026-09-23), producer side: a time window's bound is a date literal or an own
- * scalar date attribute of the subject, both of day precision. §13.4.15.68 lets a periodevergelijking take any
- * date expression, and the frontend built every one of them into a window — measured on the frontend before
- * this fence (1c71ecf3): a parameter, a navigated read, a datum-tijd attribute, a computed date, a
- * time-dependent attribute, a datum-tijd literal and an attribute of another object type all reached disk with
- * {@code diagnostics: []}, and the verifier refused each one (WF-111, and WF-053 for the supertype-named read).
+ * WF-111 (maintainer decision 2026-09-23, widened by IMPLICIT-TIME VB 6.1), producer side: a time window's bound is
+ * a day-precise date expression over the subject, the parameters and literals. §13.4.15.68 lets a periodevergelijking
+ * take any date expression; a bound that navigates, reads a timeline or is a datum-tijd is refused, here as in the
+ * verifier (WF-111, and WF-053 for the supertype-named read).
  *
  * <p><b>Own means: written on the subject.</b> This frontend writes an own read — an inherited attribute
  * included — with the SUBJECT as its object type ("zijn peildatum" in a Klipjutter rule is an
@@ -63,18 +61,17 @@ class PeriodBoundaryTest {
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
-            "Jutter     | vanaf de peilparameter                   | the from bound of a time window is the parameter",
             "Jutter     | vanaf de opendatum van het strandvak van de Jutter | a navigated read of 'opendatum'",
             "Jutter     | vanaf de opendatum van zijn strandvak    | a navigated read of 'opendatum'",
+            "Jutter     | vanaf de opendatum van zijn strandvak plus 1 dg | a navigated read of 'opendatum'",
             "Jutter     | vanaf zijn meldmoment                    | is a millisecond-precision date",
-            "Jutter     | vanaf zijn peildatum plus 1 dg           | a computed date expression",
             "Jutter     | vanaf zijn knipdatum                     | the time-dependent attribute 'knipdatum'",
+            "Jutter     | vanaf zijn knipdatum plus 1 dg           | the time-dependent attribute 'knipdatum'",
             "Jutter     | vanaf dd. 1-7-2026 08:30:00.000          | is a millisecond-precision date",
-            "Jutter     | van dd. 01-01-2024 tot de peilparameter  | the to bound of a time window is the parameter",
             "Jutter     | vanaf de klipdatum van de Klipjutter     | een subtype van het onderwerp 'Jutter'",
             "Klipjutter | vanaf de peildatum van de Jutter         | een supertype van het onderwerp 'Klipjutter'"
     })
-    void a_bound_outside_the_two_forms_is_refused(String subject, String window, String fragment) {
+    void a_bound_that_reads_more_than_the_subject_the_parameters_and_literals_is_refused(String subject, String window, String fragment) {
         RegelSpraakModel m = Resolver.resolve(MODEL + rule(subject, window));
         List<Diagnostic> faults = m.errors();
         assertEquals(1, faults.size(), () -> "verwachtte precies één fout voor '" + window + "', kreeg: " + m.diagnostics);
@@ -95,9 +92,13 @@ class PeriodBoundaryTest {
             "Jutter     | van dd. 01-01-2024 tot zijn peildatum",
             "Klipjutter | vanaf zijn peildatum",
             "Klipjutter | vanaf de peildatum van de Klipjutter",
-            "Klipjutter | vanaf zijn klipdatum"
+            "Klipjutter | vanaf zijn klipdatum",
+            "Jutter     | vanaf de peilparameter",
+            "Jutter     | van dd. 01-01-2024 tot de peilparameter",
+            "Jutter     | vanaf zijn peildatum plus 1 dg",
+            "Jutter     | van zijn peildatum plus 1 dg tot en met de peilparameter"
     })
-    void the_two_forms_stay_clean(String subject, String window) {
+    void a_day_precise_date_expression_over_the_subject_the_parameters_and_literals_stays_clean(String subject, String window) {
         RegelSpraakModel m = Resolver.resolve(MODEL + rule(subject, window));
         assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek voor '" + window + "': " + m.diagnostics);
     }

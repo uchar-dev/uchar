@@ -200,7 +200,7 @@ RGS-198	enumeration-label-not-in-domain	ERROR	label
 RGS-199	period-comparison-after-period-bullet	ERROR	comparison
 RGS-200	window-bound-not-a-date	ERROR	kind
 RGS-201	window-bound-millisecond-precision	ERROR	bound,fromTo,side
-RGS-202	window-bound-not-literal-or-own-attribute	ERROR	bound,fromTo,side,what
+RGS-202	window-bound-not-day-date-expression	ERROR	bound,fromTo,side,what
 RGS-203	quantifier-threshold-below-one	ERROR	threshold
 RGS-204	quantifier-threshold-not-whole	ERROR	-
 RGS-205	invalid-exact-digit-count	ERROR	lexeme

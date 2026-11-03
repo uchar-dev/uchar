@@ -790,6 +790,21 @@ public final class IrEmitter {
         return fixed;
     }
 
+    /** The type a Let writes: the type of its body (WF-076). A variable bound to a builtin whose type the spec fixes and
+     *  read as the whole body ("de getelde dagen" bound to a day count) takes that type, which the resolver leaves without
+     *  a claim; every other Let writes the resolver's type. */
+    private static Datatype letType(Expr.Let l) {
+        if (l.type() instanceof Datatype.Unknown && l.body() instanceof Expr.BinderRef b && b.name().equals(l.binder())) {
+            Datatype bound = switch (l.value()) {
+                case Expr.FunctionCall f -> functionType(f);
+                case Expr.Let inner -> letType(inner);
+                default -> l.type();
+            };
+            if (bound != null) return bound;
+        }
+        return l.type();
+    }
+
     private static final java.util.regex.Pattern RATIONAL = java.util.regex.Pattern.compile("-?\\d+(_\\d+)?/\\d+");
 
     /** The number lexeme the wire carries for a written number (IR-SPEC ch. 4.1), and the one normalisation of this
@@ -945,7 +960,7 @@ public final class IrEmitter {
             // value, body, source / node, name, type, source) — gate 2 round-trips these bytes.
             case Expr.Let l -> {
                 w.key("node").value("Let");
-                w.key("type"); datatype(l.type());
+                w.key("type"); datatype(letType(l));
                 w.key("binder").value(l.binder());
                 w.key("value"); expr(l.value());
                 w.key("body"); expr(l.body());

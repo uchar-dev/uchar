@@ -135,6 +135,68 @@ class DayCountConditionTest {
                 "hij gedurende de gehele maand borgplichtig is");
     }
 
+    private static final String DAY_KIND = """
+        Dagsoort de schrikkeldag (mv: schrikkeldagen);
+
+        Regel schrikkeldag
+            geldig altijd
+                Een dag is een schrikkeldag
+                indien er aan alle volgende voorwaarden wordt voldaan:
+                - de maand uit de dag gelijk is aan 2
+                - de dag uit de dag gelijk is aan 29.
+
+        """;
+
+    /** IMPLICIT-TIME 7b: a day-kind test of "de dag", the counted day, beside one own characteristic, is a member of
+     *  the count's filter (WF-058), with the bound day as its operand. */
+    @Test void a_day_kind_test_of_the_counted_day_is_a_member_of_the_filter() {
+        RegelSpraakModel m = Resolver.resolve(MODEL + DAY_KIND + """
+            Regel borgdagen van een jutter
+                geldig altijd
+                    De borgdagen van een Jutter moet berekend worden als het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt voldaan:
+                    - hij is borgplichtig
+                    - de dag is geen schrikkeldag.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), m.diagnostics::toString);
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(c.contains("\"kind\":\"dayCount\",\"arguments\":[],\"filter\":{\"node\":\"Compound\",\"quantifier\":\"all\","
+                + "\"threshold\":0,\"parts\":[{\"node\":\"CharacteristicCheck\",\"characteristic\":\"borgplichtig\","), c);
+        assertTrue(c.contains("{\"node\":\"Predicate\",\"kind\":\"dayKind\",\"operand\":{\"node\":\"BoundDay\","), c);
+        Report.assertAccountedFor(IrEmitter.emit(m));
+    }
+
+    /** The same count bound to a variable of the source ("Daarbij geldt:") is a Let whose type is the count's, which
+     *  the spec fixes (whole, non-negative); the emitter wrote no type for it and threw instead. */
+    @Test void a_variable_bound_to_a_compound_day_count_is_emitted() {
+        RegelSpraakModel m = Resolver.resolve(MODEL + DAY_KIND + """
+            Regel borgdagen van een jutter
+                geldig altijd
+                    De borgdagen van een Jutter moet berekend worden als de getelde dagen.
+                    Daarbij geldt:
+                        de getelde dagen is het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt voldaan:
+                        - hij is borgplichtig
+                        - de dag is geen schrikkeldag.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), m.diagnostics::toString);
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(c.contains("{\"node\":\"Let\",\"type\":{\"node\":\"Number\",\"whole\":true,\"decimals\":0,"
+                + "\"sign\":\"nonNegative\"},\"binder\":\"geteldedagen\""), c);
+    }
+
+    /** Two characteristics in the count's compound stay a marker: WF-058 admits one beside the day-kind tests. */
+    @Test void a_compound_of_a_characteristic_and_a_day_kind_test_needs_one_characteristic() {
+        RegelSpraakModel m = Resolver.resolve(MODEL + DAY_KIND + """
+            Regel borgdagen van een jutter
+                geldig altijd
+                    De borgdagen van een Jutter moet berekend worden als het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt voldaan:
+                    - hij is borgplichtig
+                    - hij is aangesteld
+                    - de dag is geen schrikkeldag.
+            """);
+        assertEquals(1, warnings(m).size(), m.diagnostics::toString);
+        assertEquals("RGS-092.day-count-condition-form", ((Msg) warnings(m).get(0).args().get("reason")).key());
+    }
+
     @Test void a_compound_condition_is_refused_by_its_form() {
         RegelSpraakModel m = Resolver.resolve(MODEL + """
             Regel borgdagen van een jutter
