@@ -888,12 +888,12 @@ let target_member env (target : expr option) =
   | _ -> None
 
 (* The value shapes of a rule on a temporal attribute target that ch. 3.4 and
-   ch. 3.5 produce over all time: plus or minus, and the sum over the members
-   of a set. The other operators of ch. 1.2 over timelines are not executed
-   (spec/proposals/IMPLICIT-TIME.md, point 1). *)
+   ch. 3.5 produce over all time: an operator of ch. 1.2 read per day (plus,
+   min, verminderd met, maal, both divisions, percentage van), and the sum over
+   the members of a set. *)
 let is_period_arithmetic (e : expr) =
   match e with
-  | Binary { op = Plus | Min; _ } -> true
+  | Binary { op = Plus | Min | Reduced_by | Times | Divided_by | Divided_by_abs | Percentage_of; _ } -> true
   | Function_call { kind = Sum_function; element_object_type = Some _; _ } -> true
   | _ -> false
 
@@ -3027,10 +3027,14 @@ let clip_window window result =
   | Some (lo, hi) -> if hi <= lo then [] else Timeline.clip result [ (lo, hi) ]
 
 (* ch. 3.4 and 3.5 as the value of a rule on a temporal attribute target: the
-   timeline of [e] over all time (ch. 3.1). Plus and minus cut and merge their
-   operands per period (the period-coalescing rule), the sum over the members
-   of a set sums their timelines per period (the contributor-skipping rule),
-   an own temporal attribute is read whole, and a scalar operand holds on every
+   timeline of [e] over all time (ch. 3.1). A binary operator cuts and merges
+   its operands and applies its scalar rule of ch. 1.2 per period, its own empty
+   rule included (the period-coalescing rule of plus and min, the left
+   propagation of verminderd met, the divisor rule of a division, whose §9.5
+   deposit [err] takes per period and the channel keeps once per rule ×
+   subject × code); the sum over the members of a set sums their timelines per
+   period (the contributor-skipping rule); an own temporal attribute and a
+   time-dependent parameter are read whole; and a scalar operand holds on every
    day: one segment with two open bounds, or none where it is leeg. Every other
    shape is refused by name, never read as a scalar at some instant. *)
 let rec period_timeline env w (self : World.instance) ~err ~target_unit (e : expr) : Timeline.t =
@@ -3046,10 +3050,23 @@ let rec period_timeline env w (self : World.instance) ~err ~target_unit (e : exp
             a i.label
   in
   match e with
-  | Binary { op = (Plus | Min) as op; left_side = Some l; right_side = Some r; _ } ->
+  | Binary
+      { op = (Plus | Min | Reduced_by | Times | Divided_by | Divided_by_abs | Percentage_of) as op;
+        left_side = Some l; right_side = Some r; _ } ->
       let a = period_timeline env w self ~err ~target_unit l in
       let b = period_timeline env w self ~err ~target_unit r in
-      if op = Plus then Timeline.plus a b else Timeline.min_ a b
+      let scalar =
+        match op with
+        | Plus -> Arith.add
+        | Min -> Arith.sub_min
+        | Reduced_by -> Arith.sub_reduced
+        | Times -> Arith.mul
+        | Divided_by -> Arith.div_ ~err
+        | Divided_by_abs -> Arith.div_abs ~err
+        | Percentage_of -> Arith.pct_of
+        | Power -> assert false
+      in
+      Timeline.cut_merge scalar a b
   | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
     when Ir_v0.Checks.attr_temporal (object_type env otn) a ->
       if not (own_read env self otn) then
@@ -3069,16 +3086,22 @@ let rec period_timeline env w (self : World.instance) ~err ~target_unit (e : exp
   | Parameter_ref { parameter = Some p; _ } -> (
       match Ir_v0.Checks.find_ci env.doc.parameters p with
       | Some { par_granularity = None; _ } -> scalar_everywhere env w self ~err e
-      | _ ->
-          Value.fault
-            "the time-dependent parameter %S as an operand of the period arithmetic of ch. 3.4/3.5 is \
-             not executed (no corpus case)"
-            p)
+      | Some _ -> (
+          (* a time-dependent parameter is a timeline operand like a temporal
+             attribute (ch. 3.4); its timeline is its binding, so an absent one
+             is an unbound parameter (ch. 5.7) *)
+          match SMap.find_opt (norm p) env.param_tls with
+          | Some tl -> tl
+          | None ->
+              Value.faultc ~params:[ ("parameter", p) ] "EF-014"
+                "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" p)
+      | None -> Value.fault "unknown parameter %S" p)
   | _ ->
       Value.fault
-        "this operand of the period arithmetic of ch. 3.4/3.5 is not executed: an operand is plus or \
-         minus, the sum of a temporal attribute over a set without a filter, an own temporal \
-         attribute, a literal, an own scalar attribute or a scalar parameter"
+        "this operand of the period arithmetic of ch. 3.4/3.5 is not executed: an operand is a binary \
+         operator of ch. 1.2 other than the power, the sum of a temporal attribute over a set without a \
+         filter, an own temporal attribute, a time-dependent parameter, a literal, an own scalar \
+         attribute or a scalar parameter"
 
 and scalar_everywhere env w self ~err e =
   match eval_expr env w self ~err e with

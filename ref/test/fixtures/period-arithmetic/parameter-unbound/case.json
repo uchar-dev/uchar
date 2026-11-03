@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-12",
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Afdracht",
+        "attributes": {
+          "afdrachtbedrag": {
+            "number": "10000"
+          },
+          "vervaldatum": {
+            "date": "2025-11-15"
+          },
+          "betaaldatum": {
+            "date": "2026-03-12"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "rentedragend": [
+            {
+              "from": "2025-11-16",
+              "to": "2026-03-13"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "consistent"
+    }
+  ]
+}

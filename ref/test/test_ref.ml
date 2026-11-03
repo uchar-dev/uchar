@@ -2776,6 +2776,7 @@ let () =
 let day s = match Value.date_of_iso s with Value.Date z -> z | _ -> assert false
 let seg van up_to v : Timeline.segment = { s_from = day van; s_to = day up_to; s_value = v }
 let seg_empty van up_to : Timeline.segment = { s_from = day van; s_to = day up_to; s_value = empty_value }
+let seg_open v : Timeline.segment = { s_from = Timeline.open_from; s_to = Timeline.open_to; s_value = v }
 
 (* a segment bound in an expected shape: a day, or "-inf" and "+inf" for the
    open bounds of ch. 3.1 *)
@@ -2843,6 +2844,41 @@ let () =
       ("2024-04-01", "+inf", Some "0");
     ]
 
+(* WV-3.4-per-dag (spec/proposals/IMPLICIT-TIME.md, point 1): every operator of
+   ch. 1.2 read per day over all time, each with its own empty rule; a division
+   by leeg deposits on its period and the value there is leeg *)
+let () =
+  let a = [ seg "2024-01-01" "2024-07-01" (n "100") ] in
+  let b = [ seg "2024-04-01" "2024-10-01" (n "30") ] in
+  tl_shape "WV-3.4-per-dag-maal" (Timeline.cut_merge Arith.mul a b)
+    [ ("-inf", "2024-04-01", Some "0"); ("2024-04-01", "2024-07-01", Some "3000"); ("2024-07-01", "+inf", Some "0") ];
+  tl_shape "WV-3.4-per-dag-verminderd-met" (Timeline.cut_merge Arith.sub_reduced a b)
+    [
+      ("-inf", "2024-01-01", None);
+      ("2024-01-01", "2024-04-01", Some "100");
+      ("2024-04-01", "2024-07-01", Some "70");
+      ("2024-07-01", "+inf", None);
+    ];
+  let deposits = ref [] in
+  let err (d : Value.deposit) = deposits := d.code :: !deposits in
+  tl_shape "WV-3.4-per-dag-gedeeld-door" (Timeline.cut_merge (Arith.div_ ~err) a b)
+    [
+      ("-inf", "2024-01-01", Some "0");
+      ("2024-01-01", "2024-04-01", None);
+      ("2024-04-01", "2024-07-01", Some "10/3");
+      ("2024-07-01", "+inf", Some "0");
+    ];
+  check "WV-3.4-per-dag-gedeeld-door-ef031" (!deposits = [ Some "EF-031" ]);
+  tl_shape "WV-3.4-per-dag-percentage-van" (Timeline.cut_merge Arith.pct_of [ seg_open (n "10") ] a)
+    [ ("-inf", "2024-01-01", Some "0"); ("2024-01-01", "2024-07-01", Some "10"); ("2024-07-01", "+inf", Some "0") ];
+  tl_shape "WV-3.4-per-dag-gedeeld-door-abs" (Timeline.cut_merge (Arith.div_abs ~err:(fun _ -> ())) a b)
+    [
+      ("-inf", "2024-01-01", Some "0");
+      ("2024-01-01", "2024-04-01", None);
+      ("2024-04-01", "2024-07-01", Some "3.33333");
+      ("2024-07-01", "+inf", Some "0");
+    ]
+
 (* WV-3.5: temporal summation — the contributor-skipping rule *)
 let () =
   let p1 = [ seg "2024-01-01" "2024-02-01" (n "50"); seg "2024-02-01" "2024-03-01" (n "60") ] in
@@ -2905,7 +2941,25 @@ let () =
      the characteristic holds every day of January and February, so each takes
      the whole base 120, and the total is 240 *)
   plays ~ident:"WV-3.6-total-over-pro-rata" ~ir:(read (dir ^ "total-over-pro-rata/ir.json"))
-    ~case_data:(read (dir ^ "total-over-pro-rata/case.json")) (fun _ -> ())
+    ~case_data:(read (dir ^ "total-over-pro-rata/case.json")) (fun _ -> ());
+  (* ch. 3.6, the calendar, end to end: the anchor jutterswet-verzuimrente-dagen
+     with its total in the unbounded form and without the rounding, case 1:
+     exactly 139 13/73 € *)
+  plays ~ident:"WV-3.6-kalender-onafgerond" ~ir:(read (dir ^ "calendar-total-unrounded/ir.json"))
+    ~case_data:(read (dir ^ "calendar-total-unrounded/case.json")) (fun _ -> ());
+  (* ch. 3.4, the quotient of the worked example per day, written into the
+     unbounded form: 10/3 on the second quarter of 2024 *)
+  plays ~ident:"WV-3.4-per-dag-quotient" ~ir:(read (dir ^ "quotient-not-whole/ir.json"))
+    ~case_data:(read (dir ^ "quotient-not-whole/case.json")) (fun _ -> ());
+  (* a time-dependent parameter as an operand is bound by its timeline: a case
+     without it leaves the parameter unbound (EF-014) *)
+  with_files ~ir:(read (dir ^ "parameter-unbound/ir.json")) ~case_data:(read (dir ^ "parameter-unbound/case.json"))
+    (fun findings _ evaluate ->
+      check "WV-3.4-tijdsafhankelijke-parameter-ongebonden: verifier-clean" (findings = []);
+      check "WV-3.4-tijdsafhankelijke-parameter-ongebonden"
+        (match evaluate () with
+        | exception Value.Fault { code = Some "EF-014"; params; _ } -> params = [ ("parameter", "verzuimrentevoet") ]
+        | _ -> false))
 
 (* WV-3.6: the temporal total *)
 let () =
@@ -2999,18 +3053,14 @@ let () =
       check "WV-3.6-g-kwartaalrooster"
         (Q.equal v (q "120") && u = eur)
   | other -> check ("WV-3.6-g-kwartaalrooster (got " ^ Value.to_string other ^ ")") false);
-  (* a denominator the declarations connect to nothing month-sized is
-     refused loudly, and the refusal NAMES BOTH units — the value's and
-     the grid's *)
+  (* a denominator of the day family over a grid of the month family: the
+     calendar integrates it, a month weighing its actual number of days, so
+     10 €/dg over 2024 (a leap year) is 366 × 10 = 3660 € (ch. 3.6, the
+     calendar) *)
   let eur_per_dg = over eur dg in
   (match Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit eur_per_dg "10")) with
-  | exception Value.Fault { text = m; _ } ->
-      check "WV-3.6-g-vreemde-noemer"
-        (m
-        = "the temporal total of a €/dg value cannot integrate over a mnd grid: the \
-           declarations connect no conversion between its denominator and the grid unit \
-           (ch. 3.6)")
-  | _ -> check "WV-3.6-g-vreemde-noemer" false);
+  | Value.Num (v, Value.Unit u) -> check "WV-3.6-g-vreemde-noemer" (Q.equal v (q "3660") && u = eur)
+  | other -> check ("WV-3.6-g-vreemde-noemer (got " ^ Value.to_string other ^ ")") false);
   (* a denominator that names no time unit at all is refused the same way *)
   expect_fault "WV-3.6-g-noemer-zonder-tijdseenheid" (fun () ->
       Timeline.grand_total ~grid_unit:(grid mnd) month (year_2024 (num_with_unit (over eur kg) "10")));
@@ -3045,6 +3095,47 @@ let () =
        [ seg "2024-01-01" "2024-02-01" (n "10");
          seg "2024-02-01" "2024-03-01" (num_with_unit eur "5") ])
     "15";
+  (* WV-3.6-kalender (spec/proposals/IMPLICIT-TIME.md, point 11): between the day
+     family and the month family the total integrates by the actual length of the
+     calendar unit a day lies in. Formulering B, geval 2: 500 €/jr on the 54 days
+     [2028-02-11, 2028-04-05) of the leap year 2028 is 500 × 54/366 = 73 47/61 €,
+     where jr = 365 dg would give 73 71/73 €; geval 1, 400 €/jr on 77 days and
+     500 €/jr on 40 days of 2025 and 2026, is 139 13/73 € *)
+  let day_grid = Ir_v0.Ast.Day in
+  let eur_per_jr = over eur jr in
+  let totals name tl value =
+    match Timeline.grand_total ~grid_unit:(grid dg) day_grid tl with
+    | Value.Num (v, Value.Unit u) -> check name (Q.equal v (q value) && u = eur)
+    | other -> check (name ^ " (got " ^ Value.to_string other ^ ")") false
+    | exception Value.Fault { text; _ } -> check (name ^ " (" ^ text ^ ")") false
+  in
+  totals "WV-3.6-kalender" [ seg "2028-02-11" "2028-04-05" (num_with_unit eur_per_jr "500") ] "4500/61";
+  totals "WV-3.6-kalender-geval-1"
+    [ seg "2025-11-16" "2026-02-01" (num_with_unit eur_per_jr "400");
+      seg "2026-02-01" "2026-03-13" (num_with_unit eur_per_jr "500") ]
+    "10160/73";
+  (* one segment across the turn of a year: each day weighs 1/len of its own year *)
+  totals "WV-3.6-kalender-jaargrens" [ seg "2027-12-31" "2028-01-02" (num_with_unit eur_per_jr "366") ] "731/365";
+  (* a month and a quarter as the denominator: a day weighs 1/len of its month
+     or quarter; 31 €/mnd over the 31 days of January is 31 €, 91 €/kw over the
+     91 days of the first quarter of 2024 is 91 € *)
+  totals "WV-3.6-kalender-maand" [ seg "2024-01-01" "2024-02-01" (num_with_unit (over eur mnd) "31") ] "31";
+  totals "WV-3.6-kalender-kwartaal" [ seg "2024-01-01" "2024-04-01" (num_with_unit (over eur kw) "91") ] "91";
+  (* a week denominator over a month grid: February 2024 has 29 days, 29/7 weeks *)
+  let wk = unit_ ~canonical_form:"dg" ~factor:(7, 1) "wk" in
+  (match
+     Timeline.grand_total ~grid_unit:(grid mnd) month [ seg "2024-02-01" "2024-03-01" (num_with_unit (over eur wk) "7") ]
+   with
+  | Value.Num (v, Value.Unit u) -> check "WV-3.6-kalender-week-over-maanden" (Q.equal v (q "29") && u = eur)
+  | other -> check ("WV-3.6-kalender-week-over-maanden (got " ^ Value.to_string other ^ ")") false);
+  (* a declared factor between the families (jr = 365 dg) would stand in for the
+     calendar; the total refuses it by name (WF-009 refuses the declaration) *)
+  let jr_365 = unit_ ~canonical_form:"dg" ~factor:(365, 1) "jr" in
+  expect_fault_msg "WV-3.6-kalender-gedeclareerde-factor"
+    (fun () ->
+      Timeline.grand_total ~grid_unit:(grid dg) day_grid
+        [ seg "2028-02-11" "2028-04-05" (num_with_unit (over eur jr_365) "500") ])
+    "a declared factor between the day family and the month family";
   (* ch. 2.6, rule 8: the integration multiplies by the grid unit, so the factor of
      its class rises one power and the others stay *)
   let totals_to name v value spelling =
@@ -8906,11 +8997,13 @@ let () =
                attribute_granularity =
                  [ ("tarief", Some Ir_v0.Ast.Day); ("ijkdag", Some Ir_v0.Ast.Month) ] } )) ] }
   in
-  refuses_text ~d:doc_day "caselader-tijdlijn-dagrooster" (case_with "" "")
-    "V1.tarief: the declared grid is day, which every day boundary sits on, yet this loader \
-     checks a timeline's grid through the calendar bucketing and v0 defines buckets for month \
-     and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as \
-     a defect of the case";
+  (* every day sits on the day grid: a timeline on it loads, its segments as written *)
+  (match load_in doc_day (case_with "" "") with
+  | `Loaded c ->
+      check "caselader-tijdlijn-dagrooster"
+        (World.timeline (World.get c.world "V1") "tarief" <> None)
+  | `Refused m -> check ("caselader-tijdlijn-dagrooster (refused: " ^ m ^ ")") false
+  | `Fault m -> check ("caselader-tijdlijn-dagrooster (fault: " ^ m ^ ")") false);
   let doc_grid g =
     { doc with
       object_types =

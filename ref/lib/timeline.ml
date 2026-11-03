@@ -587,36 +587,98 @@ let grid_unit (doc : Ir_v0.Ast.document) (g : Ir_v0.Ast.grain) :
             unit to integrate against (ch. 3.6)"
            (List.length ks) (time_unit_name because))
 
+(* --- the calendar (ch. 3.6): between the day family and the month family ---- *)
+
+(* the calendar month, quarter or year that holds day [d] (ch. 3.2 walls) *)
+let calendar_unit_bucket (tu : Ir_v0.Checks.time_unit) d =
+  match tu with
+  | Tu_month -> bucket Month d
+  | Tu_year -> bucket Year d
+  | Tu_quarter ->
+      let y, m, _ = civil_from_days d in
+      let van = days_from_civil ~y ~m:((((m - 1) / 3) * 3) + 1) ~d:1 in
+      (van, add_months van 3)
+  | tu -> fault "the calendar lays no %s of its own that a day lies in (ch. 3.6)" (time_unit_name tu)
+
+(* How many [tu] the days of [van, up_to) make by the calendar: a day is one dg
+   and a seventh of a wk, and 1/len of the calendar month, quarter or year it
+   lies in, len its actual length in days (28 to 31, 90 to 92, 365 or 366). *)
+let calendar_measure (tu : Ir_v0.Checks.time_unit) van up_to : Q.t =
+  if up_to <= van then Q.zero
+  else
+    match tu with
+    | Tu_day -> Q.of_int (up_to - van)
+    | Tu_week -> Q.make (Z.of_int (up_to - van)) (Z.of_int 7)
+    | Tu_month | Tu_quarter | Tu_year ->
+        let rec go acc d =
+          if d >= up_to then acc
+          else
+            let bs, bn = calendar_unit_bucket tu d in
+            let e = min bn up_to in
+            go (Q.add acc (Q.make (Z.of_int (e - d)) (Z.of_int (bn - bs)))) e
+        in
+        go Q.zero van
+    | tu -> fault "the calendar gives a %s no length in days (ch. 3.6)" (time_unit_name tu)
+
+(* the end of the whole grid units of [van, up_to): the days a total weighs *)
+let whole_units_end (g : Ir_v0.Ast.grain) van up_to =
+  let n = whole_units g van up_to in
+  match g with
+  | Day -> van + n
+  | Week -> van + (7 * n)
+  | Month | Quarter | Year -> add_months van (n * Ir_v0.Checks.step_months g)
+
+let calendar_denominator = Ir_v0.Checks.calendar_denominator
+
 (* what one segment contributes (ch. 3.6 "Units"; ch. 2.6, rule 8): a plain or
    unitless value is weighted by a bare count, but a value with a negative factor
    is INTEGRATED — the count is a duration stated in the GRID's own unit, so the
    negative factor of that class takes one power and the value the factor between
    them (€/mnd × mnd = €, the §4.20 Tabel 30 row-2 result the frontend types
    statically; €/m/mnd over months is €/m; €/jr over a per-month grid cancels by
-   the declared factor; €/dg^2 over days is €/dg). A value with no negative factor
-   of the class of the grid unit is refused loudly, naming BOTH units: no executor
-   may invent a factor nobody declared. *)
-let integrated_segment ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result option) units (v : Value.t) : Value.t
-    =
+   the declared factor; €/dg^2 over days is €/dg). Between the day family and the
+   month family the calendar integrates instead: the whole grid units of the
+   segment measured in the denominator's unit by the actual length of the
+   calendar unit each day lies in (€/jr over days, €/dg over months). A value
+   with neither is refused loudly, naming BOTH units: no executor may invent a
+   factor nobody declared, and a declared factor between the two families, which
+   would stand in for the calendar, is refused as well. *)
+let integrated_segment ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result option) ~(grain : Ir_v0.Ast.grain)
+    ~span:(van, up_to) (v : Value.t) : Value.t =
+  let units = whole_units grain van up_to in
   match v with
   | Num (q, Unit u) when Ir_v0.Units.negatives u <> [] -> (
-      match grid_unit with
-      | None ->
-          fault "the temporal total of a %s value reached the collapse without a grid unit (ch. 3.6)"
-            (Arith.show_unit (Unit u))
-      | Some (Error why) -> fault "the temporal total of a %s value: %s" (Arith.show_unit (Unit u)) why
-      | Some (Ok gu) -> (
+      let own =
+        match grid_unit with
+        | Some (Ok gu) -> Option.map (fun f -> (gu, f)) (Ir_v0.Units.negative_of_grid (List.hd gu) u)
+        | _ -> None
+      in
+      match (own, calendar_denominator grain u) with
+      | Some (gu, f), _ ->
           let g = List.hd gu in
-          match Ir_v0.Units.negative_of_grid g u with
-          | Some f ->
-              let powers =
-                if Ir_v0.Units.same_atom g f then []
-                else Ir_v0.Units.factor gu (Ir_v0.Units.of_declared f)
-              in
-              Num
-                ( Q.mul (Q.mul q (Q.of_int units)) (Arith.restatement powers),
-                  Arith.unit_of_option (Ir_v0.Units.risen u f) )
+          (match (Ir_v0.Checks.unit_calendar_family f, Ir_v0.Checks.unit_calendar_family g) with
+          | Some a, Some b when a <> b ->
+              fault
+                "the temporal total of a %s value over a %s grid restates %s into the grid unit by a \
+                 declared factor between the day family and the month family of the calendar, which is \
+                 ill-formed (WF-009): the calendar integrates across the two (ch. 3.6)"
+                (Arith.show_unit (Unit u)) (Arith.display_unit gu) (Ir_v0.Units.name f)
+          | _ -> ());
+          let powers = if Ir_v0.Units.same_atom g f then [] else Ir_v0.Units.factor gu (Ir_v0.Units.of_declared f) in
+          Num
+            ( Q.mul (Q.mul q (Q.of_int units)) (Arith.restatement powers),
+              Arith.unit_of_option (Ir_v0.Units.risen u f) )
+      | None, Some (f, tu) ->
+          Num
+            ( Q.mul q (calendar_measure tu van (whole_units_end grain van up_to)),
+              Arith.unit_of_option (Ir_v0.Units.risen u f) )
+      | None, None -> (
+          match grid_unit with
           | None ->
+              fault "the temporal total of a %s value reached the collapse without a grid unit (ch. 3.6)"
+                (Arith.show_unit (Unit u))
+          | Some (Error why) -> fault "the temporal total of a %s value: %s" (Arith.show_unit (Unit u)) why
+          | Some (Ok gu) ->
               fault
                 "the temporal total of a %s value cannot integrate over a %s grid: the declarations \
                  connect no conversion between its denominator and the grid unit (ch. 3.6)"
@@ -650,8 +712,6 @@ let grand_total ?grid_unit ?place (g : Ir_v0.Ast.grain) (tl : t) : Value.t =
             "the temporal total%s meets a segment with an open bound carrying %s: a value other than 0 \
              over unboundedly many units has no total (ch. 3.6)"
             where (Value.to_string v)
-      | v ->
-          let units = whole_units g s.s_from s.s_to in
-          Arith.add acc (integrated_segment ?grid_unit units v))
+      | v -> Arith.add acc (integrated_segment ?grid_unit ~grain:g ~span:(s.s_from, s.s_to) v))
     (Num (Q.zero, Unitless))
     (normalise tl)

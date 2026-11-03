@@ -304,10 +304,10 @@ let timeline_of_json ?(allow_empty = false) ~at ~(grid : Timeline.grid) (decl : 
     fail "%s: a timeline value carries at least one segment" at;
   (* The grid is checked through the calendar bucketing, and v0 defines
      buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2; bucketing by
-     day, week or quarter is OPEN in ch. 3.12). A timeline on another declared
-     grid is therefore refused at load as a v0 limit, not as a defect of the
-     case, and the sentence says so: a day grid holds every boundary and is
-     refused all the same. *)
+     week or quarter is OPEN in ch. 3.12). A timeline on the calendar's week
+     or quarter grid is therefore refused at load as a v0 limit, not as a
+     defect of the case, and the sentence says so. Every day sits on the day
+     grid, so a boundary needs no bucket there. *)
   let no_grid grid =
     fail
       "%s: the declared grid is %s, and v0 defines calendar buckets for month and year only \
@@ -341,13 +341,7 @@ let timeline_of_json ?(allow_empty = false) ~at ~(grid : Timeline.grid) (decl : 
     | _, (Month | Year) ->
         let van, _ = Timeline.bucket gran d in
         van = d
-    | _, Day ->
-        fail
-          "%s: the declared grid is day, which every day boundary sits on, yet this loader checks \
-           a timeline's grid through the calendar bucketing and v0 defines buckets for month and \
-           year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as \
-           a defect of the case"
-          at
+    | _, Day -> true
     | _, Week -> no_grid "week"
     | _, Quarter -> no_grid "quarter"
   in
