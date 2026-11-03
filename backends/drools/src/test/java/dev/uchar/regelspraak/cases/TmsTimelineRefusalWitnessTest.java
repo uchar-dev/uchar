@@ -51,11 +51,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * <li><b>An initialisation of a timeline target</b>: the reference interpreter and the ASP runner refuse it, "a
  * granularity-bucketed builtin call is executed only as the whole value of a rule on a temporal target (ch. 3.7,
  * 3.8)".
- * <li><b>A time window in the condition of a rule with a timeline target</b>, "… vanaf 1 januari 2025", which clips
- * the timeline (ch. 3.10), as golden jutterswet-pachtvenster has it, which the DRL-text branch refuses as well. The
- * reference interpreter and the ASP runner answer 59 in 2025.
- * <li><b>A characteristic on a timeline as the target</b>: both refuse it, "temporal characteristic "borgplichtig":
- * temporal writes are not implemented".
+ * <li><b>A characteristic on a timeline as the target of a rule without a period window</b>: both refuse it, "the
+ * time-dependent characteristic "borgplichtig" of "Jutter" is written within a period window (ch. 3.10, 3.11); without
+ * one it is not executed (no corpus case)".
  * <li><b>A rate whose denominator is not the unit of the grid</b>: 10 EUR/jr per month through 2024, in a document
  * that declares jr as twelve mnd, totals 10 EUR (ch. 3.6, the explicit rate operand), rounded towards zero to the 0
  * decimals of the target, since the restatement divides by twelve and the precision gate takes such a total only
@@ -128,29 +126,16 @@ class TmsTimelineRefusalWitnessTest {
                 List.of("transpiler SKIP: regel: jaardeel init — een initialisatie van het tijdsafhankelijke"
                         + " attribuut 'jaardeel' van Jutter: deze tak draagt deze vorm nog niet; geen"
                         + " golden met cases heeft er een")));
-        // a time window in the condition of a rule with a timeline target
-        out.add(new Row("periodevenster", TmsTimelineDocuments.ir(MODEL_JAARDEEL, List.of(
-                        jaardeel("jaardeel vanaf 2025", "BEREKENING", "borgplichtig", TmsDocuments.window(
-                                IrPath.literal("2025-01-01", TmsDocuments.DATE, "1 januari 2025"), "null", false))),
-                        List.of()),
-                TmsTimelineDocuments.caseDocument("2025-06-01", List.of(instance("J1", "Jutter", Map.of("jaartarief",
-                                timeline(List.of(segment("2024-01-01", "2025-01-01", "366"),
-                                        segment("2025-01-01", "2026-01-01", "365")))), List.of(),
-                                Map.of("borgplichtig", List.of(period("2024-03-01", "2025-03-01"))), Map.of())),
-                        List.of(expectedTimeline("J1", "jaardeel", List.of(segment("2025-01-01", "2026-01-01",
-                                "59"))))),
-                List.of("transpiler SKIP: regel: jaardeel vanaf 2025 — een periodevenster in de voorwaarde van een"
-                        + " regel met het tijdsafhankelijke doel 'jaardeel' van Jutter: daar knipt het venster de tijdlijn"
-                        + " (RUNTIME-SEMANTICS ch. 3.10), en deze tak draagt deze vorm nog niet")));
-        // a characteristic on a timeline as the target
+        // a characteristic on a timeline as the target, without a period window
         out.add(new Row("kenmerk-als-doel", TmsTimelineDocuments.ir(MODEL_JAARDEEL, List.of(
                         TmsDocuments.characteristicRule("borgplicht", "Jutter", "borgplichtig",
                                 comparison("greater", ownRead("score", "Jutter"), number("5")))), List.of()),
                 TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of("score", numberValue("10")),
                         List.of(), Map.of(), Map.of())), List.of(TmsDocuments.consistent())),
                 List.of("transpiler SKIP: regel: borgplicht — het tijdsafhankelijke kenmerk 'borgplichtig' van"
-                        + " Jutter als doel: deze tak draagt deze vorm nog niet; geen golden met cases"
-                        + " schrijft er een (RUNTIME-SEMANTICS ch. 3.11)")));
+                        + " Jutter als doel van een regel zonder periodevenster in zijn voorwaarde: een tijdsafhankelijk"
+                        + " kenmerk wordt binnen een venster geschreven, en zonder venster draagt deze tak de vorm niet,"
+                        + " zoals de referentie-interpreter (RUNTIME-SEMANTICS ch. 3.10, 3.11)")));
         // a rate whose denominator is not the unit of the grid: 10 EUR/jr over the twelve months of 2024
         out.add(new Row("vreemde-noemer", TmsTimelineDocuments.ir(MODEL_RATE, List.of(WACHTSOM_RATE_ROUNDED),
                         List.of()),

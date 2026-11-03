@@ -107,6 +107,15 @@ final class FormsPlan {
                         List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, "$waarden")))),
                 new Consequence.WritersConflict(O, 0, ElementKey.of("wachter", "uitkijkbonus", false), "uitkijkbonus",
                         documentRules, List.of("Wachter"), List.of("Wachter"), Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("vereniging van de schrijvers", null, null,
+                new ReadTable(List.of(new Read(0, ReadKind.VALUES, "waarden", "$waarden"),
+                        new Read(1, ReadKind.INPUT, "invoer", "$invoer"))),
+                List.of(new Subject(wachter, O, List.of(), List.of(), List.of(new Binding("$invoer", List.of(),
+                                new Binding.Field(wachter, "uitkijkbonus"), Binding.ReadForm.VALUE, null))),
+                        new Accumulation(values, List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null,
+                                "$waarden")))),
+                new Consequence.WritersUnion(O, 0, 1, ElementKey.of("wachter", "uitkijkbonus", false), documentRules,
+                        Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("parameterstand", null, null, new ReadTable(List.of()), List.of(),
                 new Consequence.InsertParameterState("drempel", "drempel", Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("rekendatumstand", null, null, new ReadTable(List.of()), List.of(),

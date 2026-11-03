@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * WF-112 positions NESTED inside a position WF-112 admits — a GEEN fold or a GEEN composite as a member of an
  * ALLE or DE composite, a GEEN composite in the filter of an aggregation that sits in an operand, a GEEN fold
- * in the toets of an ALLE fold — and the bound shape WF-111 refuses, in the toets and the filter of a fold.
+ * in the toets of an ALLE fold — and a bound WF-111 refuses, in the toets and the filter of a fold.
  * Both branches refuse every one of them by name, and name the position that is ill-formed rather than the
  * node around it.
  *
@@ -43,8 +43,8 @@ class WindowNestingWitnessTest {
 
     private static final String IN_NONE_FOLD = "periodevenster in de toets van een kwantorvouw onder GEEN over Strandwacht (WF-112)";
     private static final String IN_NONE_COMPOUND = "periodevenster in een GEEN-samenstelling (WF-112)";
-    private static final String BOUND_FORM = "een periodevenster met een grens die geen datumliteral en geen eigen"
-            + " scalair datumattribuut van het element is (WF-111)";
+    private static final String BOUND_FORM = "een periodevenster met een grens die geen dagprecieze datumexpressie over"
+            + " het element, de parameters en literals is (WF-111)";
 
     @TempDir Path tmp;
 
@@ -87,8 +87,9 @@ class WindowNestingWitnessTest {
                     (viaDrl ? "drl-tekst" : "exec-model") + " kadert de weigering niet als de buitenste vouw");
     }
 
-    /** WF-111 in a fold: a date PARAMETER as the bound, in the toets and in the filter. The refusal names the
-     *  bound, and the DRL-text frame no longer calls a fold over a non-§8.2 matrix a §8.2 fold. */
+    /** WF-111 in a fold: a time-dependent date PARAMETER as the bound, which reads more than one value per subject,
+     *  in the toets and in the filter. The refusal names the bound, and the DRL-text frame no longer calls a fold over a
+     *  non-§8.2 matrix a §8.2 fold. */
     @Test void a_parameter_bound_in_test_and_filter_of_a_fold_names_the_bound() throws Exception {
         Path test = withAsOfDate(document(fold("all", "Strandwacht", GUARD, null, PARAMETER_WINDOW)));
         BothBranches.refused(test, goldenCase(), BOUND_FORM, "de parametergrens in de toets");
@@ -189,11 +190,12 @@ class WindowNestingWitnessTest {
         return write(doc);
     }
 
-    /** {@code ir} with a date parameter {@code peildatum}. */
+    /** {@code ir} with a date parameter {@code peildatum} for each month, a bound WF-111 refuses. */
     private Path withAsOfDate(Path ir) throws Exception {
         ObjectNode doc = (ObjectNode) JSON.readTree(Files.readString(ir));
         IrPath.modelList(doc, "parameters").add(JSON.readTree(
-                "{ \"node\": \"Parameter\", \"name\": \"peildatum\", \"datatype\": " + DATE + " }"));
+                "{ \"node\": \"Parameter\", \"name\": \"peildatum\", \"datatype\": " + DATE
+                        + ", \"timeline\": { \"node\": \"TimelineFacet\", \"granularity\": \"month\", \"count\": 1 } }"));
         return write(doc);
     }
 

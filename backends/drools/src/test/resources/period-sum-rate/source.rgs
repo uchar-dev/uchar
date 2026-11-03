@@ -1,0 +1,25 @@
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
+Eenheidsysteem Tijd
+    de dag (mv: dagen) dg
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de loonsom Numeriek (geheel getal) met eenheid € voor elke dag;
+    het heffingstarief Numeriek (geheel getal) met eenheid 1/dg voor elke dag;
+    de vondstkorting Numeriek (geheel getal) met eenheid €/dg voor elke dag;
+    de deelheffing Numeriek (getal met 2 decimalen) met eenheid €/dg voor elke dag;
+    de vondstheffing Numeriek (geheel getal) met eenheid €/dg voor elke dag;
+    de nettovondstheffing Numeriek (geheel getal) met eenheid €/dg voor elke dag;
+
+Objecttype de Vondst (mv: Vondsten)
+    de waarde Numeriek (geheel getal) met eenheid €/dg voor elke dag;
+
+Feittype aanmelding
+    de aanmeldende jutter Jutter
+    de vondst (mv: vondsten) Vondst
+Eén aanmeldende jutter telt meerdere vondsten
+
+Regel vondstheffing van een jutter
+    geldig altijd
+        De vondstheffing van een Jutter moet berekend worden als (de som van de waarde van alle vondsten van de Jutter) maal 2.

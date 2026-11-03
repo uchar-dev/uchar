@@ -111,7 +111,7 @@ DROOLS-092.several	{count} cycles in the dependencies: {cycles}
 DROOLS-093	exec-model: {sentence} — no cycle may carry a negation, also not a cycle through a creation member of a recursive rule group (WF-046): the creation then acts on an absence that the cycle fills afterwards
 DROOLS-093.one	a negating dependency on a cycle: {negation}
 DROOLS-093.several	{count} negating dependencies on a cycle: {negations}
-DROOLS-094	a period window with a boundary that is neither a date literal nor an own scalar date attribute of the element (WF-111)
+DROOLS-094	a period window with a boundary that is no day-precise date expression over the element, the parameters and literals (WF-111)
 DROOLS-095	period window in a {quantifier}-compound (WF-112): the quantifier counts or negates the window verdict, while the window gates the rule (RUNTIME-SEMANTICS ch. 3.10), and for that reading nothing is specified
 DROOLS-096	period window in {site} of a quantifier fold under {quantifier} over {elementType} (WF-112): {reason}, while the window gates the rule (RUNTIME-SEMANTICS ch. 3.10), and for that reading nothing is specified
 DROOLS-096.chooses	the window chooses the members over which the quantifier counts or negates
@@ -125,7 +125,7 @@ DROOLS-098	a rule without a name (WF-107)
 DROOLS-099	a rule without a resolved target
 DROOLS-100	a rule on a navigated target
 DROOLS-101	a characteristic assignment with a value other than the constant true (WF-022)
-DROOLS-102	the time-dependent characteristic '{attribute}' of {declarant} as target: this branch does not yet carry this form; no golden with cases writes one (RUNTIME-SEMANTICS ch. 3.11)
+DROOLS-102	the time-dependent characteristic '{attribute}' of {declarant} as target of a rule without a period window in its condition: a time-dependent characteristic is written within a window, and without one this branch does not carry the form, as the reference interpreter does not (RUNTIME-SEMANTICS ch. 3.10, 3.11)
 DROOLS-103	a time-dependent target with a second writer ('{attribute}' of {declarant} is also written by {writers}): this branch does not yet carry this form; a target with more writers stays fenced (RUNTIME-SEMANTICS ch. 7.8), and no golden with cases has one
 DROOLS-104	a period window in the condition of a rule with the time-dependent target '{attribute}' of {declarant}: there the window cuts the timeline (RUNTIME-SEMANTICS ch. 3.10), and this branch does not yet carry this form
 DROOLS-105	a value of the time-dependent target '{attribute}' of {declarant} that is neither a time-proportional part, a day count nor the period arithmetic of an operator of ch. 1.2 other than the power or of a sum per period ('{snippet}'): this branch does not yet carry this form (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11); no golden with cases writes one
@@ -138,7 +138,7 @@ DROOLS-110	{description} over a base that is not an own time-dependent member: t
 DROOLS-111	{description} over the base '{attribute}', which is not a number (WF-091)
 DROOLS-112	{description} over the base '{attribute}' with the unit {unit}: the recalculation of a rate is fenced in the reference interpreter and in this branch (RUNTIME-SEMANTICS ch. 3.7); no golden
 DROOLS-113	{description} over the base '{attribute}' with the granularity {baseGranularity}, finer than the bucket {targetGranularity}: the base is not fixed over a bucket (RUNTIME-SEMANTICS ch. 3.7)
-DROOLS-114	{description} with a condition that is not a characteristic of the subject{condition}: this branch does not yet carry this form; the reference interpreter takes only an own time-dependent characteristic (RUNTIME-SEMANTICS ch. 3.7, 3.8)
+DROOLS-114	{description} with a condition that is not a characteristic of the subject{condition}: this branch does not yet carry this form; the reference interpreter takes only an own time-dependent characteristic, and in a day count an all composite of one and day-kind tests of the counted day (RUNTIME-SEMANTICS ch. 3.7, 3.8)
 DROOLS-114.condition	 ('{snippet}')
 DROOLS-114.no-condition	 (no condition)
 DROOLS-115	{description} with a characteristic with an owner or a whole-period test in the clip ('{snippet}', WF-097)
@@ -302,7 +302,7 @@ DROOLS-264	a condition that reads {count} values ('{snippet}'): the test of this
 DROOLS-265	the scope of a Uniqueness names no declared role ({factType}, {role})
 DROOLS-266	the scope of a Uniqueness over the created relation '{factType}': this branch does not carry this form yet
 DROOLS-267	the scope of a Uniqueness: {reason} (§13.3.9 storage direction)
-DROOLS-268	the time-dependent characteristic '{member}' of {objectType}, which writes a form: this branch does not carry this form yet (RUNTIME-SEMANTICS ch. 3.11)
+DROOLS-268	the time-dependent characteristic '{member}' of {objectType}, which a form writes, read over a path: this branch reads such a characteristic of the subject only (RUNTIME-SEMANTICS ch. 3.11)
 DROOLS-269	the time-dependent parameter '{parameter}': this branch does not carry this form yet; the goldens with cases that read one do so in a TemporalRead, which the loader refuses for all branches
 DROOLS-270	the parameter '{parameter}' of type {typeName}: this branch does not carry this form yet
 DROOLS-271	the time-dependent {category} '{member}' of {objectType} at a place that reads or writes one value: this branch reads a timeline only in a total, the clip of it, a time-proportional part, a day count and a uniqueness key, and writes it only with a time-proportional part or a day count (RUNTIME-SEMANTICS ch. 3.3, 3.6–3.8, 3.11, 5.9)
@@ -371,6 +371,7 @@ EF-016.object-labelled	{label}, a {type}
 EF-016.write	the rule "{rule}" writes {value}
 EF-019.condition	Unresolved condition reached in evaluation
 EF-019.expression	Unresolved reached in evaluation: this rule fails observably
+EF-023	the periods in which the time-dependent characteristic "{characteristic}" of "{label}" holds have an open bound: a characteristic holds in bounded periods only (ch. 3.11). Declined at evaluation
 EF-032.day	{function}: year {year}, month {month} and day {day} name no calendar day
 EF-032.time	{function}: hour {hour}, minute {minute}, second {second} and millisecond {millisecond} name no clock time
 EF-033	the links of the fact type "{factType}" form a cycle through {cycle}: the forms of an instance-ordered cycle evaluate per object along the chain this relation lays, and the chain must end (RUNTIME-SEMANTICS ch. 6.2)
@@ -398,6 +399,7 @@ PART.desc.period-condition	the condition read per period ('{snippet}')
 PART.desc.pro-rata-part	a pro rata part ('{snippet}')
 PART.desc.day-count	a day count ('{snippet}')
 PART.desc.unique-key	a uniqueness key '{key}' of {type} on a timeline
+PART.characteristic-periods-supplied	the case supplies true periods of the time-dependent characteristic "{characteristic}" of "{label}", which a rule writes: not executed (no corpus case)
 PART.allocation-role.pot	the pot
 PART.allocation-role.share	the share
 PART.allocation-role.remainder	the remainder

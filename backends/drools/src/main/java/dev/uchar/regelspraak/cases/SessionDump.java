@@ -10,6 +10,7 @@ import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
 import dev.uchar.regelspraak.transpiler.tms.InputFormFault;
 import dev.uchar.regelspraak.transpiler.tms.OpenSegmentFault;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicPeriodsFault;
 import dev.uchar.regelspraak.transpiler.tms.MemberTest;
 import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
 
@@ -360,7 +361,8 @@ final class SessionDump {
         String sentence(Throwable e) {
             Throwable named = e instanceof WritersConflict c ? c.named(this::inASentence)
                     : e instanceof InputFormFault i ? i.named(this::inASentence)
-                    : e instanceof OpenSegmentFault o ? o.named(this::inASentence) : e;
+                    : e instanceof OpenSegmentFault o ? o.named(this::inASentence)
+                    : e instanceof CharacteristicPeriodsFault k ? k.named(this::inASentence) : e;
             return sentence(named.getMessage());
         }
 

@@ -1227,6 +1227,9 @@ final class DrlRendering {
                 case Consequence.ConditionDeposit x -> insert(b, "    ", x.insertion(), route(Route.INCONSISTENCY) + "("
                         + str(x.form()) + ", " + x.subject() + ", " + depositCodesAgain(x.condition(), x.depositFlag(),
                                 x.slots(), "de voorwaarde van \"" + x.form() + "\"") + ")");
+                case Consequence.WritersUnion x -> insert(b, "    ", x.insertion(), route(Route.WRITERS_UNION)
+                        + "(" + x.subject() + ", " + key(x.attribute()) + ", " + variable(x.values()) + ", "
+                        + (x.input() < 0 ? "null" : variable(x.input())) + ", " + list(texts(x.documentOrder())) + ")");
                 case Consequence.WritersConflict x -> insert(b, "    ", x.insertion(), route(Route.WRITERS_CONFLICT)
                         + "(" + x.subject() + ", " + variable(x.values()) + ", " + str(x.attribute()) + ", "
                         + list(texts(x.documentOrder())) + ", " + list(texts(x.typeClasses())) + ", "

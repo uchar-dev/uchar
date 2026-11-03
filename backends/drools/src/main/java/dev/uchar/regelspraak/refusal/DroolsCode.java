@@ -125,7 +125,7 @@ public enum DroolsCode {
     CHARACTERISTIC_ASSIGNMENT_NOT_TRUE("DROOLS-101", Kind.CONTRACT, "characteristic-assignment-not-true", "", null),
     TIME_CHARACTERISTIC_TARGET("DROOLS-102", Kind.REFUSAL, "time-characteristic-target", "attribute,declarant", null),
     TIME_TARGET_SECOND_WRITER("DROOLS-103", Kind.REFUSAL, "time-target-second-writer", "attribute,declarant,writers", null),
-    PERIOD_WINDOW_TIME_TARGET("DROOLS-104", Kind.REFUSAL, "period-window-time-target", "attribute,declarant", "EF-023"),
+    PERIOD_WINDOW_TIME_TARGET("DROOLS-104", Kind.RETIRED, "period-window-time-target", "attribute,declarant", null),
     TIME_TARGET_UNSUPPORTED_VALUE("DROOLS-105", Kind.REFUSAL, "time-target-unsupported-value", "attribute,declarant,snippet", null),
     TIMELINE_VALUE_GRANULARITY_MISMATCH("DROOLS-106", Kind.REFUSAL, "timeline-value-granularity-mismatch", "description,sourceGranularity,attribute,targetGranularity,ruleReference", null),
     TIMELINE_VALUE_NOT_BUCKET("DROOLS-107", Kind.REFUSAL, "timeline-value-not-bucket", "description,targetGranularity", null),
@@ -289,7 +289,7 @@ public enum DroolsCode {
     UNIQUENESS_SCOPE_ROLE_UNDECLARED("DROOLS-265", Kind.CONTRACT, "uniqueness-scope-role-undeclared", "factType,role", null),
     UNIQUENESS_SCOPE_CREATED_RELATION("DROOLS-266", Kind.REFUSAL, "uniqueness-scope-created-relation", "factType", null),
     UNIQUENESS_SCOPE_NO_FIELD("DROOLS-267", Kind.LIMIT, "uniqueness-scope-no-field", "reason", null),
-    TIMELINE_CHARACTERISTIC_WRITTEN("DROOLS-268", Kind.REFUSAL, "timeline-characteristic-written", "member,objectType", "EF-023"),
+    TIMELINE_CHARACTERISTIC_WRITTEN("DROOLS-268", Kind.REFUSAL, "timeline-characteristic-written", "member,objectType", null),
     TEMPORAL_PARAMETER_GRANULARITY("DROOLS-269", Kind.REFUSAL, "temporal-parameter-granularity", "parameter", null),
     PARAMETER_DATATYPE_NOT_CARRIED("DROOLS-270", Kind.REFUSAL, "parameter-datatype-not-carried", "parameter,typeName", null),
     TIMED_MEMBER_SINGLE_PLACE("DROOLS-271", Kind.REFUSAL, "timed-member-single-place", "category,member,objectType", null),
@@ -332,7 +332,7 @@ public enum DroolsCode {
     PERIOD_ARITHMETIC_FINER_OPERAND("DROOLS-308", Kind.REFUSAL, "period-arithmetic-finer-operand", "attribute,operandGranularity,targetGranularity", null),
     PERIOD_CONDITION_FORM("DROOLS-309", Kind.REFUSAL, "period-condition-form", "attribute,declarant,snippet", null),
     PERIOD_CONDITION_GRID("DROOLS-310", Kind.REFUSAL, "period-condition-grid", "operand,operandGranularity,attribute,targetGranularity", null),
-    TIMELINE_WRITERS_READ("DROOLS-311", Kind.REFUSAL, "timeline-writers-read", "attribute,declarant", null);
+    TIMELINE_WRITERS_READ("DROOLS-311", Kind.RETIRED, "timeline-writers-read", "attribute,declarant", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

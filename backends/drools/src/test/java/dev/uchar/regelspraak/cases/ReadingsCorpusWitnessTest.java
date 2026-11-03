@@ -606,7 +606,10 @@ class ReadingsCorpusWitnessTest {
 
     private static boolean derived(Fixpoint fp, Object o, String characteristic) {
         return fp.characteristics().stream().anyMatch(k -> k.object() == o
-                && Namen.norm(k.characteristic()).equals(Namen.norm(characteristic)));
+                && Namen.norm(k.characteristic()).equals(Namen.norm(characteristic)))
+                // a time-dependent characteristic stands as the true periods its rule wrote, among the values
+                || fp.values().stream().anyMatch(w -> w.object() == o
+                && Namen.norm(w.attribute()).equals(Namen.norm(characteristic)));
     }
 
     /** Whether {@code o} carries {@code characteristic} in its input, on its bean. */

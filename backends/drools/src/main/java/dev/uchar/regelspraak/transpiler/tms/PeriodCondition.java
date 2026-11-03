@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 
 /**
  * A condition read per period on a rule with a timeline target (RUNTIME-SEMANTICS ch. 3.10, the clip generalised;
@@ -148,6 +149,66 @@ public final class PeriodCondition {
      *  where it does not (RUNTIME-SEMANTICS ch. 3.10). */
     public static List<Period> always(Object holds) {
         return (Boolean) holds ? List.of(new Period(Period.OPEN_FROM, Period.OPEN_TO, null)) : List.of();
+    }
+
+    /**
+     * The days of a period window read per period (RUNTIME-SEMANTICS ch. 3.10): from {@code from} up to {@code to}, or
+     * up to the day after {@code to} where the source wrote "tot en met" ({@code toInclusive}), a bound the window does
+     * not have ({@code hasFrom}, {@code hasTo}) open; a bound that is leeg puts no day in it, nor does a {@code to}
+     * before {@code from}. Both bounds are read before, {@code from} first (ch. 5.11).
+     */
+    public static List<Period> window(Object from, boolean hasFrom, Object to, boolean hasTo, boolean toInclusive) {
+        if (hasFrom && from == null || hasTo && to == null) return List.of();
+        LocalDate lo = hasFrom ? (LocalDate) from : Period.OPEN_FROM;
+        LocalDate hi = !hasTo ? Period.OPEN_TO : toInclusive ? ((LocalDate) to).plusDays(1) : (LocalDate) to;
+        return lo.isBefore(hi) ? List.of(new Period(lo, hi, null)) : List.of();
+    }
+
+    /**
+     * The days of {@code periods} on which the day-kind test {@code kind} of the counted day holds, complemented where
+     * the test is negated ({@code negated}): one step of the condition of a day count over a characteristic and day-kind
+     * tests (RUNTIME-SEMANTICS ch. 3.8; spec/proposals/IMPLICIT-TIME.md 7b), the runs of counted days in the order of
+     * their days. A period with an open bound has no last day to walk to, the fault in the reference interpreter's words.
+     */
+    public static List<Period> dayKind(Object periods, Predicate<LocalDate> kind, boolean negated) {
+        List<Period> out = new ArrayList<>();
+        for (Period p : periodsOf(periods)) {
+            if (p.open()) throw new ComputeFault(DAY_KIND_OPEN);
+            LocalDate start = null;
+            for (LocalDate d = p.from(); d.isBefore(p.to()); d = d.plusDays(1)) {
+                boolean counted = kind.test(d) != negated;
+                if (counted && start == null) start = d;
+                if (!counted && start != null) {
+                    out.add(new Period(start, d, null));
+                    start = null;
+                }
+            }
+            if (start != null) out.add(new Period(start, p.to(), null));
+        }
+        return List.copyOf(out);
+    }
+
+    /** A day-kind test of a day count over a period with an open bound, in the reference interpreter's words. */
+    static final String DAY_KIND_OPEN = "a day-kind test in a day count walks the buckets of a period with an open"
+            + " bound, which has no end to reach (ch. 3.1)";
+
+    /**
+     * The true periods a rule writes into the time-dependent characteristic {@code characteristic} of {@code object}
+     * (RUNTIME-SEMANTICS ch. 3.10, "A time-dependent characteristic within a window"; ch. 3.11): the periods
+     * {@code periods} in which its condition holds. Where one of them has an open bound the characteristic has no
+     * bucket to end in, the fault EF-023; where the case supplies true periods of the characteristic, {@code input} on
+     * the object's bean, the write is not executed, as in the reference interpreter. Both are a
+     * {@link CharacteristicPeriodsFault}, the open bound first.
+     */
+    public static List<Period> characteristicPeriods(Object periods, Object input, String characteristic,
+                                                     Object object) {
+        List<Period> out = periodsOf(periods);
+        for (Period p : out)
+            if (p.open()) throw new CharacteristicPeriodsFault(CharacteristicPeriodsFault.Kind.OPEN_BOUND,
+                    characteristic, object);
+        if (!segmentsOf(input).isEmpty())
+            throw new CharacteristicPeriodsFault(CharacteristicPeriodsFault.Kind.SUPPLIED, characteristic, object);
+        return out;
     }
 
     // ---------------- two writers of one timeline target ----------------

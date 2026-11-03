@@ -53,7 +53,8 @@ public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> ch
      * which empties the input (RUNTIME-SEMANTICS ch. 1.2g). An attribute without an entry keeps its input. Of a
      * dimensioned attribute the value is that of one cell (RUNTIME-SEMANTICS ch. 5.8c), whose labels {@code labels} are,
      * one per dimension in their declared spelling, the key of the cell in the map the bean field holds; null for every
-     * other attribute. A cell without an entry keeps its input.
+     * other attribute. A cell without an entry keeps its input. A time-dependent characteristic that a rule writes within
+     * a window (ch. 3.10, 3.11) stands here under its name as well, its true periods as segments without a value.
      */
     public record DerivedValue(Object object, String attribute, List<String> labels, Object value) {
         public DerivedValue {

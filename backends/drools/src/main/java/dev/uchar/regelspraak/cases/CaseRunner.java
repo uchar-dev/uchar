@@ -25,6 +25,7 @@ import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.ComputeFault;
 import dev.uchar.regelspraak.transpiler.tms.EvaluationFaults;
 import dev.uchar.regelspraak.transpiler.tms.OpenSegmentFault;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicPeriodsFault;
 import dev.uchar.regelspraak.transpiler.tms.Period;
 import dev.uchar.regelspraak.transpiler.tms.WriteBoundaryFault;
 import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
@@ -592,6 +593,8 @@ public final class CaseRunner {
             else if (c instanceof InputPrecisionFault d) kind = new FaultKind(d.code(), d.params());
             else if (c instanceof WriteBoundaryFault w) kind = new FaultKind(w.code(), w.params());
             else if (c instanceof OpenSegmentFault o) kind = new FaultKind(o.code(), o.params());
+            else if (c instanceof CharacteristicPeriodsFault k && k.code() != null)
+                kind = new FaultKind(k.code(), k.params());
             else if (c instanceof CaseInput.LinkCycleFault l) kind = new FaultKind(l.code(), l.params());
             else if (c instanceof CaseInput.CellFault f) kind = new FaultKind(f.code(), f.params());
             if (kind != null) {

@@ -117,6 +117,21 @@ public sealed interface Consequence {
      * {@code typeClasses}, the types of the document in its order. The fault is the first writer's, made by the route
      * {@link Route#WRITERS_CONFLICT}.
      */
+    /**
+     * The standing of the timeline target {@code attribute} that two or more rules write, each the days of its own
+     * segments (RUNTIME-SEMANTICS ch. 5.7, "Two writers per day"), on the object {@code subject} binds: the union of the
+     * timelines of the value facts the slot {@code values} holds, in the order of the document's rules
+     * {@code documentOrder}, with the target's input, in the slot {@code input}, on the days none of them decides; -1 for
+     * no input timeline, where the case gives the input as the asOfDate-bucket scalar. Made by the route
+     * {@link Route#WRITERS_UNION}.
+     */
+    record WritersUnion(String subject, int values, int input, ElementKey attribute, List<String> documentOrder,
+                        Insertion insertion) implements Consequence {
+        public WritersUnion {
+            documentOrder = List.copyOf(documentOrder);
+        }
+    }
+
     record WritersConflict(String subject, int values, ElementKey target, String attribute,
                               List<String> documentOrder, List<String> typeClasses, List<String> types,
                               Insertion insertion) implements Consequence {

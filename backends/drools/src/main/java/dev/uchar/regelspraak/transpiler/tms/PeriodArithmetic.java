@@ -152,6 +152,16 @@ public final class PeriodArithmetic {
         return List.copyOf(out);
     }
 
+    /** {@code timeline} rounded per segment (ch. 2.5) to {@code decimals} decimals by {@code mode}, a leeg segment leeg,
+     *  and adjacent segments that round to one value one segment (spec/proposals/IMPLICIT-TIME.md VB-C19): the rounding of
+     *  a value per day, which a segment holds on each of its days. */
+    public static List<?> rounded(Object timeline, Integer decimals, java.math.RoundingMode mode) {
+        List<Exact> out = new ArrayList<>();
+        for (Exact p : pieces(timeline))
+            out.add(new Exact(p.from(), p.to(), RegelSpraakRuntime.rsAfronding(p.value(), decimals, mode)));
+        return coalesced(out);
+    }
+
     /**
      * The day count of ch. 3.8 over all time, from {@code counted}, the segments a runtime helper returns for it, one
      * per bucket with a true day, in the order of their days: those buckets as they are, and 0 on every period of all

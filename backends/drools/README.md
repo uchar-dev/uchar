@@ -647,11 +647,15 @@ contributes nothing; and as a uniqueness key, which reads ever-uniqueness (ch. 5
 ever carries. It is written whole, by a pro-rata part (ch. 3.7) or a day count (ch. 3.8), on the calendar grid or
 from a fixed start point (ch. 3.2), or by the period arithmetic of ch. 3.4 and 3.5 over all time (below). The day count
 is over all time: the true days per bucket with a true day, one segment each, and 0 on every run of buckets without
-one, open before the first and after the last (`PeriodArithmetic.dayCount`). On a standing temporal target (ch. 7.8)
+one, open before the first and after the last (`PeriodArithmetic.dayCount`). Its condition is a check of an own
+characteristic on a timeline, or an `alle` composite of one and day-kind tests of the counted day, which count the true
+days the tests admit (`PeriodCondition.dayKind`); in a target with a unit it is days per unit of its bucket. A rule
+reads its producer through a variable whose body is its binder (`Let`). On a standing temporal target (ch. 7.8)
 an empty result, which a day count gives only where its rule's condition cuts it to nothing, writes nothing and leaves
 the input whole; elsewhere it writes the empty timeline (ch. 1.2g), which the write-back puts on the bean as an empty
 list, while a target never written stays null. A characteristic on a timeline is input only, read as its true
-periods; the case reader refuses one given in the flat list of characteristics, for every branch. Witnesses
+periods, unless a rule writes it within a window (below, "A characteristic within a window"); the case reader refuses
+one given in the flat list of characteristics, for every branch. Witnesses
 `PeriodTest`, `TmsTimelineWitnessTest`, `TmsTimelineFoldWitnessTest`, `TmsEverUniquenessWitnessTest`, and for the
 refusals below `TmsTimelineRefusalWitnessTest`.
 
@@ -660,8 +664,10 @@ open bound: in a `Period` an open `from` is `Period.OPEN_FROM` (`LocalDate.MIN`)
 (`LocalDate.MAX`), so that a clip, a complement and a comparison of bounds treat an open segment as any other; on a
 bean an open bound is null, as the case leaves `from` or `to` out, and the case reader reads it so in an input and in
 an expectation, the first segment alone beginning open and the last alone ending open. A rule on a temporal attribute
-whose value is an operator of the arithmetic table of ch. 1.2 other than the power, its operands such operators again,
-or the sum of a member's attribute on a timeline over the members of a set, writes the timeline of ch. 3.4 and 3.5,
+whose value is an operator of the arithmetic table of ch. 1.2 other than the power, its operands such operators again or
+a rounding of one, which rounds per segment and joins equal neighbours (`PeriodArithmetic.rounded`), or the sum of a
+member's attribute on a timeline over the members of a set, which is in its members' unit, writes the timeline of ch.
+3.4 and 3.5,
 computed by the pure functions of `PeriodArithmetic` over the values the rule binds: each operator per period of all
 time with the scalar operator of the runtime and its own leeg rule (plus, min, maal and percentage van a leeg operand
 0, verminderd met leeg where its left operand is, a division 0 over a leeg dividend and leeg over a leeg or zero
@@ -699,11 +705,14 @@ case reads a timeline on the calendar's day grid with any bounds. Witnesses `Tms
 
 **A condition read per period.** On a rule with a timeline target, a condition that reads a timeline — a check of a
 time-dependent characteristic of the subject, an attribute or a parameter on a timeline as an operand, a whole-period
-qualifier — gates nothing (RUNTIME-SEMANTICS ch. 3.10, the clip generalised): the rule writes the timeline its value
+qualifier — or holds a period window gates nothing (RUNTIME-SEMANTICS ch. 3.10, the clip generalised): the rule writes the timeline its value
 produces, a pro-rata part, a day count or the period arithmetic, restricted to the periods of all time in which the
 condition holds (`PeriodArithmetic.clipped`). Those periods are computed in the consequence by the pure functions of
 `PeriodCondition` over the values the rule binds, maximal, so a segment is cut only where the condition changes: a check
-its true periods, a negated one the periods outside them; a comparison of an own attribute on a timeline with a number
+its true periods, a negated one the periods outside them; a window its days, from its `from` up to its `to` or the day
+after it for "tot en met", an absent bound open and a leeg one no day, each bound a day-precise date expression over the
+subject, the parameters and literals (IR-SPEC WF-111), read per subject, `from` first (`PeriodCondition.window`); a
+comparison of an own attribute on a timeline with a number
 the periods on which the comparison of ch. 1.2 holds per day, a gap reading leeg; the whole-period qualifier the buckets
 of its calendar month or year in which its test holds on every day, and negated every other bucket of all time (ch.
 3.9, per bucket); a composite the periods in which its quantifier holds of its members, every member read; a node that
@@ -722,8 +731,23 @@ write-back puts their union on the bean, in the order of the document, a day an 
 later one's segment, with the target's input on the days none decides (`PeriodCondition.union`). Where two decide one
 day with different values, the rule of the writers' difference and the write-back fault with EF-016, naming the two of
 the first such day in the order of the document with their values there (`WritersConflict`). A read of such a target,
-whose standing would be that union, is refused by name (DROOLS-311). Witnesses `TmsConditionPerPeriodWitnessTest`,
-golden `jutterswet-wachtdagen-twee-schrijvers`, red case `jutterswet-wachtdagen-botsing`.
+reads that union through the target's one standing, which two rules of its own build from the writers' values and the
+input as the write-back does (`TmsTranspiler.writersUnionRules`, `ComputeHelpers.writersUnion`), with no input timeline
+where the case gives the input as the asOfDate-bucket scalar. Witnesses `TmsConditionPerPeriodWitnessTest`,
+goldens `jutterswet-wachtdagen-twee-schrijvers` and `anchor/jutterswet-verzuimrente-30-360`, red case
+`jutterswet-wachtdagen-botsing`.
+
+**A characteristic within a window.** A rule may write a time-dependent characteristic within a period window
+(RUNTIME-SEMANTICS ch. 3.10, 3.11): its condition, the window alone or a composite with the window among its members,
+is read per period, and the periods in which it holds are the characteristic's true periods, the `Value` of the
+characteristic, without values (`PeriodCondition.characteristicPeriods`); every reader of the characteristic's timeline
+reads it through its standing, as it reads an attribute on a timeline. Where those periods have an open bound the rule
+faults with EF-023, naming the characteristic and the object, and where the case supplies true periods of the
+characteristic it faults by name, as the reference interpreter does (`CharacteristicPeriodsFault`). The write-back puts
+the true periods on the bean, as segments without a value. In a build with readings the form holds, the window has its
+days and its bounds their values. Witnesses `TmsCharacteristicWindowWitnessTest`, goldens
+`time-window-timeline-characteristic` and `anchor/jutterswet-verzuimrente-30-360`, red case
+`time-window-timeline-characteristic-open`.
 
 **The two input conventions of a timeline.** The case gives an attribute on a timeline either as its full timeline or
 as the asOfDate-bucket scalar, one value for the period of the attribute's grid that holds the evaluation date, and
@@ -890,10 +914,10 @@ never as a silent fall:
   `TmsTimelineRefusalWitnessTest` for a dimensioned attribute on a timeline, by its cell and by its total, and
   `DimensionCellWitnessTest` for the unbounded form and for labels that name no cell;
 - of timelines, each with no golden with cases unless one is named: a writer of a timeline target other than a
-  computing rule beside another writer, which ch. 7.8 keeps fenced, an initialisation of one, and a read of a target of
-  two or more writers; a time window in the condition of a rule with a timeline target,
-  which clips the timeline (ch. 3.10; golden `jutterswet-pachtvenster`); a
-  characteristic on a timeline as a target; any value of a timeline target other than a pro-rata part, a day count or
+  computing rule beside another writer, which ch. 7.8 keeps fenced, and an initialisation of one; a characteristic on a
+  timeline as the target of a rule without a period window (DROOLS-102) or of two rules (DROOLS-103), and read over a
+  path where a rule writes it (DROOLS-268); a day count over another condition than one characteristic with day-kind
+  tests (DROOLS-114); any value of a timeline target other than a pro-rata part, a day count or
   the period arithmetic of ch. 3.4 and 3.5, among them a power, and of that arithmetic a
   die/dat subselection on the sum, an operand outside its forms or on a finer grid than the target's and a restatement
   between two units (witnesses `TmsPeriodArithmeticWitnessTest`, `TmsPerDayArithmeticWitnessTest`); a rate

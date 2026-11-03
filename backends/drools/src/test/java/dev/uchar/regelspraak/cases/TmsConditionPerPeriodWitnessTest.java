@@ -78,7 +78,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 2026-04-01, each month as the writer the document names first wrote it. Two
  * that differ on a day, the day count without a condition beside the 30: EF-016 on December 2025 with 30 and 31, the
  * rules and the values in the order of the document. And the two writers of a pro-rata part that a scalar gate each
- * admits on another Jutter: 306 and 31.
+ * admits on another Jutter: 306 and 31. A reader of the target of the first two, "het totaal van zijn wachtdagen", reads
+ * their union with the input: 4 + 15 + 3 × 30 + 12 = 121.
  *
  * <p><b>D, what the branch refuses by name</b>, each in one sentence on both branches.
  *
@@ -332,6 +333,30 @@ class TmsConditionPerPeriodWitnessTest {
                 MODEL_B, List.of(TELLING_VOLLE_MAAND, ELKE_MAAND), caseEqualWriters()));
     }
 
+    /** "Het totaal … als het totaal van zijn wachtdagen", beside the two writers of {@link #caseTwoWriters}. */
+    static final String READER = computingRule("totaal", "BEREKENING", "Jutter", "totaal",
+            ownTotal("wachtdagen", "Jutter", "null"), "null");
+    static final String MODEL_READER = TmsDocuments.model(List.of(objectType("Jutter", List.of(
+                    timeAttribute("wachtdagen", WHOLE, "month"), TmsDocuments.attribute("totaal", WHOLE)),
+            List.of(timeCharacteristic("wachtplichtig", "day")))), List.of());
+
+    static JsonNode caseReader() throws Exception {
+        return TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of("wachtdagen",
+                        timeline(List.of(segment("2025-01-01", "2025-02-01", "4")))), List.of(),
+                        Map.of("wachtplichtig", WACHT), Map.of())),
+                List.of(expectedTimeline("J1", "wachtdagen", List.of(segment("2025-01-01", "2025-02-01", "4"),
+                        segment("2025-11-01", "2025-12-01", "15"), segment("2025-12-01", "2026-03-01", "30"),
+                        segment("2026-03-01", "2026-04-01", "12"))), TmsDocuments.value("J1", "totaal", "121"),
+                        consistent()));
+    }
+
+    /** A reader of a timeline target of two writers reads its standing, their union with the input on the days none
+     *  decides: the total of 4, 15, 30 in each of three months and 12 is 121. */
+    @Test void a_reader_of_a_target_of_two_writers_reads_their_union_in_every_order_on_both_branches() throws Exception {
+        assertEquals(TmsPeriodArithmeticWitnessTest.gespeeld(6), TmsPeriodArithmeticWitnessTest.inEveryOrder(
+                MODEL_READER, List.of(VOLLE_MAAND, GEDEELTELIJKE_MAAND, READER), caseReader()));
+    }
+
     static JsonNode caseClash() throws Exception {
         return TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of(), List.of(),
                 Map.of("wachtplichtig", WACHT), Map.of())), List.of(consistent()));
@@ -410,15 +435,6 @@ class TmsConditionPerPeriodWitnessTest {
                         WACHTPLICHTIG))), b,
                 "regel: premie — 'hij wachtplichtig is' ligt op een raster van DAG, dat niet past in het MAAND-raster"
                         + " van het tijdsafhankelijke doel 'premie'", "DROOLS-310");
-        // a read of a timeline target of two writers
-        String reader = computingRule("totaal", "BEREKENING", "Jutter", "totaal", ownTotal("wachtdagen", "Jutter", "null"),
-                "null");
-        String withTotal = TmsDocuments.model(List.of(objectType("Jutter", List.of(
-                        timeAttribute("wachtdagen", WHOLE, "month"), TmsDocuments.attribute("totaal", WHOLE)),
-                List.of(timeCharacteristic("wachtplichtig", "day")))), List.of());
-        refused(document(withTotal, List.of(VOLLE_MAAND, GEDEELTELIJKE_MAAND, reader)), b,
-                "regel: totaal — een lezing van het tijdsafhankelijke doel 'wachtdagen' van Jutter, dat twee of meer"
-                        + " regels schrijven", "DROOLS-311");
     }
 
     // ---------------- E: the readings ----------------
@@ -581,6 +597,9 @@ class TmsConditionPerPeriodWitnessTest {
                 TmsTimelineDocuments.ir(MODEL_A, List.of(PREMIE_RIGHT), List.of()), caseRight());
         TmsTimelineWitnessTest.write(out.resolve("a-emmerscalair"),
                 TmsTimelineDocuments.ir(MODEL_A, List.of(PREMIE), List.of()), caseBucket());
+        TmsTimelineWitnessTest.write(out.resolve("c-lezer-twee-schrijvers"),
+                TmsTimelineDocuments.ir(MODEL_READER, List.of(VOLLE_MAAND, GEDEELTELIJKE_MAAND, READER), List.of()),
+                caseReader());
         TmsTimelineWitnessTest.write(out.resolve("c-jaardeel"),
                 TmsTimelineDocuments.ir(MODEL_JAARDEEL, List.of(JAARDEEL_BORG, JAARDEEL_WACHT), List.of()), caseJaardeel());
     }

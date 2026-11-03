@@ -168,12 +168,14 @@ public final class ComputeFault extends RuntimeException {
 
     /** Whether {@code t} is an evaluation fault this branch turns into a {@link Fault}: a division by a numeric zero, a
      *  fault of this class, an input in the other convention of an attribute on a timeline ({@link InputFormFault}), or
-     *  a value that does not fit the declared decimals of its target ({@link WriteBoundaryFault}), or a temporal total
-     *  over an open segment that is not 0 ({@link OpenSegmentFault}). Every other exception is a broken contract or a
-     *  bug and leaves the fire as it is. */
+     *  a value that does not fit the declared decimals of its target ({@link WriteBoundaryFault}), a temporal total
+     *  over an open segment that is not 0 ({@link OpenSegmentFault}), or the true periods of a time-dependent
+     *  characteristic a rule writes ({@link CharacteristicPeriodsFault}). Every other exception is a broken contract or
+     *  a bug and leaves the fire as it is. */
     static boolean isEvaluationFault(Throwable t) {
         return t instanceof Breuk.DelingDoorNul || t instanceof ComputeFault || t instanceof InputFormFault
-                || t instanceof WriteBoundaryFault || t instanceof OpenSegmentFault;
+                || t instanceof WriteBoundaryFault || t instanceof OpenSegmentFault
+                || t instanceof CharacteristicPeriodsFault;
     }
 
     /** The evaluation fault {@code fault} named after the rule {@code rule} it ran in. */
@@ -183,6 +185,7 @@ public final class ComputeFault extends RuntimeException {
         if (fault instanceof InputFormFault i) return i.inRule(rule);
         if (fault instanceof WriteBoundaryFault w) return w.inRule(rule);
         if (fault instanceof OpenSegmentFault o) return o.inRule(rule);
+        if (fault instanceof CharacteristicPeriodsFault k) return k.inRule(rule);
         throw new IllegalArgumentException("geen evaluatiefout: " + fault, fault);
     }
 }

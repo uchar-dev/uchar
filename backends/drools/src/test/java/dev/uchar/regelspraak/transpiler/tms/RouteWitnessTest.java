@@ -111,6 +111,7 @@ class RouteWitnessTest {
                 "FITTED: Object ComputeHelpers.fitted[Object, Integer, String]",
                 "CONTRACT_BREACH: Object ComputeHelpers.contractBreach[String]",
                 "WRITERS_CONFLICT: Fault ComputeHelpers.writersConflict[Object, Object, String, List, List, List]",
+                "WRITERS_UNION: State ComputeHelpers.writersUnion[Object, ElementKey, Object, Object, List]",
                 "LIST0: List ComputeHelpers.list0[]",
                 "LIST1: List ComputeHelpers.list1[Object]",
                 "LIST2: List ComputeHelpers.list2[Object, Object]",

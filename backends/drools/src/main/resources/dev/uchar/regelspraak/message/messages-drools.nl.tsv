@@ -111,7 +111,7 @@ DROOLS-092.several	{count} kringen in de afhankelijkheden: {cycles}
 DROOLS-093	exec-model: {sentence} — geen kring mag een ontkenning dragen, ook niet een kring door een creatielid van een recursieve regelgroep (WF-046): de creatie handelt dan op een afwezigheid die de kring daarna vult
 DROOLS-093.one	een ontkennende afhankelijkheid op een kring: {negation}
 DROOLS-093.several	{count} ontkennende afhankelijkheden op een kring: {negations}
-DROOLS-094	een periodevenster met een grens die geen datumliteral en geen eigen scalair datumattribuut van het element is (WF-111)
+DROOLS-094	een periodevenster met een grens die geen dagprecieze datumexpressie over het element, de parameters en literals is (WF-111)
 DROOLS-095	periodevenster in een {quantifier}-samenstelling (WF-112): de kwantor telt of ontkent het vensterverdict, terwijl het venster de regel poort (RUNTIME-SEMANTICS ch. 3.10), en voor die lezing is niets gespecificeerd
 DROOLS-096	periodevenster in {site} van een kwantorvouw onder {quantifier} over {elementType} (WF-112): {reason}, terwijl het venster de regel poort (RUNTIME-SEMANTICS ch. 3.10), en voor die lezing is niets gespecificeerd
 DROOLS-096.chooses	het venster kiest de leden waarover de kwantor telt of ontkent
@@ -125,7 +125,7 @@ DROOLS-098	een regel zonder naam (WF-107)
 DROOLS-099	een regel zonder opgelost doel
 DROOLS-100	een regel op een genavigeerd doel
 DROOLS-101	een kenmerktoekenning met een andere waarde dan de constante waar (WF-022)
-DROOLS-102	het tijdsafhankelijke kenmerk '{attribute}' van {declarant} als doel: deze tak draagt deze vorm nog niet; geen golden met cases schrijft er een (RUNTIME-SEMANTICS ch. 3.11)
+DROOLS-102	het tijdsafhankelijke kenmerk '{attribute}' van {declarant} als doel van een regel zonder periodevenster in zijn voorwaarde: een tijdsafhankelijk kenmerk wordt binnen een venster geschreven, en zonder venster draagt deze tak de vorm niet, zoals de referentie-interpreter (RUNTIME-SEMANTICS ch. 3.10, 3.11)
 DROOLS-103	een tijdsafhankelijk doel met een tweede schrijver ('{attribute}' van {declarant} wordt ook geschreven door {writers}): deze tak draagt deze vorm nog niet; een doel met meer schrijvers blijft omheind (RUNTIME-SEMANTICS ch. 7.8), en geen golden met cases heeft er een
 DROOLS-104	een periodevenster in de voorwaarde van een regel met het tijdsafhankelijke doel '{attribute}' van {declarant}: daar knipt het venster de tijdlijn (RUNTIME-SEMANTICS ch. 3.10), en deze tak draagt deze vorm nog niet
 DROOLS-105	een waarde van het tijdsafhankelijke doel '{attribute}' van {declarant} die geen tijdsevenredig deel, geen dagentelling en geen rekenen per periode met een operator van ch. 1.2 behalve de macht of met een som is ('{snippet}'): deze tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11); geen golden met cases schrijft er een
@@ -138,7 +138,7 @@ DROOLS-110	{description} over een basis die geen eigen tijdsafhankelijk attribuu
 DROOLS-111	{description} over de basis '{attribute}', die geen getal is (WF-091)
 DROOLS-112	{description} over de basis '{attribute}' met de eenheid {unit}: de herrekening van een tarief is omheind in de referentie-interpreter en deze tak (RUNTIME-SEMANTICS ch. 3.7); geen golden
 DROOLS-113	{description} over de basis '{attribute}' met de granulariteit {baseGranularity}, fijner dan de emmer {targetGranularity}: de basis staat niet vast over een emmer (RUNTIME-SEMANTICS ch. 3.7)
-DROOLS-114	{description} met een voorwaarde die geen kenmerk van het onderwerp is{condition}: deze tak draagt deze vorm nog niet; de referentie-interpreter neemt alleen een eigen tijdsafhankelijk kenmerk (RUNTIME-SEMANTICS ch. 3.7, 3.8)
+DROOLS-114	{description} met een voorwaarde die geen kenmerk van het onderwerp is{condition}: deze tak draagt deze vorm nog niet; de referentie-interpreter neemt alleen een eigen tijdsafhankelijk kenmerk, en in een dagentelling een samenstelling met alle van één zo'n kenmerk en dagsoorttoetsen van de getelde dag (RUNTIME-SEMANTICS ch. 3.7, 3.8)
 DROOLS-114.condition	 ('{snippet}')
 DROOLS-114.no-condition	 (geen voorwaarde)
 DROOLS-115	{description} met een kenmerk met een eigenaar of een geheleperiodetoets in de knip ('{snippet}', WF-097)
@@ -302,7 +302,7 @@ DROOLS-264	een voorwaarde die {count} waarden leest ('{snippet}'): de toets van 
 DROOLS-265	de scope van een Uniqueness noemt geen gedeclareerde rol ({factType}, {role})
 DROOLS-266	de scope van een Uniqueness over de gecreëerde relatie '{factType}': deze tak draagt deze vorm nog niet
 DROOLS-267	de scope van een Uniqueness: {reason} (§13.3.9 opslagrichting)
-DROOLS-268	het tijdsafhankelijke kenmerk '{member}' van {objectType}, dat een vorm schrijft: deze tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch. 3.11)
+DROOLS-268	het tijdsafhankelijke kenmerk '{member}' van {objectType}, dat een vorm schrijft, gelezen over een pad: deze tak leest zo'n kenmerk alleen van het onderwerp (RUNTIME-SEMANTICS ch. 3.11)
 DROOLS-269	de tijdsafhankelijke parameter '{parameter}': deze tak draagt deze vorm nog niet; de goldens met cases die er een lezen, doen dat in een TemporalRead, die de lader voor alle takken weigert
 DROOLS-270	de parameter '{parameter}' van type {typeName}: deze tak draagt deze vorm nog niet
 DROOLS-271	het tijdsafhankelijke {category} '{member}' van {objectType} op een plek die één waarde leest of schrijft: deze tak leest een tijdlijn alleen in een totaal, de knip ervan, een tijdsevenredig deel, een dagentelling en een uniciteitssleutel, en schrijft haar alleen met een tijdsevenredig deel of een dagentelling (RUNTIME-SEMANTICS ch. 3.3, 3.6–3.8, 3.11, 5.9)
@@ -371,6 +371,7 @@ EF-016.object-labelled	{label}, een {type}
 EF-016.write	de regel "{rule}" schrijft {value}
 EF-019.condition	Unresolved condition reached in evaluation
 EF-019.expression	Unresolved reached in evaluation: this rule fails observably
+EF-023	de perioden waarin het tijdsafhankelijke kenmerk "{characteristic}" van "{label}" geldt hebben een open grens: een kenmerk geldt alleen in begrensde perioden (ch. 3.11). Geweigerd bij de evaluatie
 EF-032.day	{function}: year {year}, month {month} and day {day} name no calendar day
 EF-032.time	{function}: hour {hour}, minute {minute}, second {second} and millisecond {millisecond} name no clock time
 EF-033	de schakels van het feittype "{factType}" vormen een kring door {cycle}: de vormen van een per object geordende kring rekenen per object langs de keten die deze relatie legt, en die keten moet eindigen (RUNTIME-SEMANTICS ch. 6.2)
@@ -398,6 +399,7 @@ PART.desc.period-condition	de voorwaarde per periode ('{snippet}')
 PART.desc.pro-rata-part	een tijdsevenredig deel ('{snippet}')
 PART.desc.day-count	een dagentelling ('{snippet}')
 PART.desc.unique-key	een uniciteitssleutel '{key}' van {type} op een tijdlijn
+PART.characteristic-periods-supplied	de case levert ware perioden van het tijdsafhankelijke kenmerk "{characteristic}" van "{label}", dat een regel schrijft: niet uitgevoerd (geen corpuscase)
 PART.allocation-role.pot	de pot
 PART.allocation-role.share	het aandeel
 PART.allocation-role.remainder	het restant

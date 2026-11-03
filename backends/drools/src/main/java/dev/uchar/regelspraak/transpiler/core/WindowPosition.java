@@ -14,8 +14,8 @@ import java.util.function.Predicate;
  * {@code spec/RUNTIME-SEMANTICS.md} ch. 3.10), as both Drools branches refuse them.
  *
  * <p>WF-112: a window never sits under GEEN or a counting quantifier — not as a member of a composite at any
- * depth, and not in the filter or toets of a quantifier fold. ALLE and DE carry it. WF-111: each bound is a date
- * literal or the subject's own scalar date attribute.
+ * depth, and not in the filter or toets of a quantifier fold. ALLE and DE carry it. WF-111: each bound is a
+ * day-precise date expression over the subject, the parameters and literals.
  *
  * <p>The verifier rejects such a document, but gate 12 and the replay API load {@code ir.json} directly, so a
  * document that never went through the verifier (an older wire, a hand-made one) reaches both branches as it is.
@@ -34,7 +34,7 @@ import java.util.function.Predicate;
 public final class WindowPosition {
     private WindowPosition() {}
 
-    /** The refusal for a window whose bound is neither shape WF-111 admits. */
+    /** The refusal for a window whose bound WF-111 does not admit. */
     public static final Reason BOUND_FORM = DroolsCode.WINDOW_BOUND_NOT_DATE.reason();
 
     /** The refusal for the first WF-112 position in {@code c}, or null when it has none. Null-safe. */
@@ -82,7 +82,7 @@ public final class WindowPosition {
     }
 
     /** Whether a window in {@code c} — as a condition, through composites and folds, not into operands — has a
-     *  bound neither WF-111 shape describes for {@code subject}: the shape both branches lower, shared through
+     *  bound WF-111 does not admit for {@code subject}: the bound both branches lower, shared through
      *  {@link #boundLowerable}. */
     public static boolean uncarriableBound(Condition c, ObjectType subject, Predicate<Expr.AttributeReference> navigated) {
         if (c instanceof Condition.TimeWindow per)
@@ -93,17 +93,31 @@ public final class WindowPosition {
         return false;
     }
 
-    /** WF-111's two bound shapes, as both branches lower them: a {@code Datum in dagen} literal, or the subject's own
-     *  scalar {@code Datum in dagen} attribute — a read without bindings (IR-SPEC ch. 4.1a) of the subject's type,
-     *  with no timeline and no dimension. The read's type is its declaration's (IR-SPEC ch. 2.10). A bound date
-     *  computed, navigated or held in a parameter is neither. */
+    /** WF-111's bound, as both branches lower it: a day-precise date, {@code Datum in dagen}, computed over the
+     *  subject, the parameters and literals ({@code spec/proposals/IMPLICIT-TIME.md} VB 6.1), as the verifier's
+     *  {@code Checks.window_bound_misfit} reads it. The read's type is its declaration's (IR-SPEC ch. 2.10). */
     public static boolean boundLowerable(Expr bound, ObjectType subject, Predicate<Expr.AttributeReference> navigated) {
-        if (!(EffectiveUnit.typeWithoutBinder(bound) instanceof Datatype.DateInDays)) return false;
-        if (bound instanceof Expr.Literal) return true;
-        return bound instanceof Expr.AttributeReference a && !navigated.test(a)
-                && a.objectType() != null && a.objectType() == subject
-                && subject.granularityOf(a.attribute()) == null
-                && subject.dimensionsOf(a.attribute()).isEmpty();
+        return EffectiveUnit.typeWithoutBinder(bound) instanceof Datatype.DateInDays
+                && boundPart(bound, subject, navigated);
+    }
+
+    /** Whether {@code e} is a part of a bound WF-111 admits: a literal; the subject's own attribute without a timeline
+     *  and without a dimension, a read without bindings (IR-SPEC ch. 4.1a) of the subject's type; a parameter without a
+     *  timeline; and an operator, a builtin over no set, filter, fallback, grid or cells, or a rounding, over such
+     *  parts. A navigated read, a timeline, a fold and every other node read more than one value per subject. */
+    private static boolean boundPart(Expr e, ObjectType subject, Predicate<Expr.AttributeReference> navigated) {
+        return switch (e) {
+            case Expr.Literal l -> true;
+            case Expr.AttributeReference a -> !navigated.test(a) && a.objectType() != null && a.objectType() == subject
+                    && subject.granularityOf(a.attribute()) == null && subject.dimensionsOf(a.attribute()).isEmpty();
+            case Expr.ParameterRef p -> p.parameter() != null && p.parameter().granularity() == null;
+            case Expr.Binary b -> boundPart(b.left(), subject, navigated) && boundPart(b.right(), subject, navigated);
+            case Expr.FunctionCall f -> f.elementObjectType() == null && f.filter() == null && f.emptyFallback() == null
+                    && f.granularity() == null && f.dimensionSelections() == null
+                    && f.arguments().stream().allMatch(x -> boundPart(x, subject, navigated));
+            case Expr.Rounding r -> boundPart(r.base(), subject, navigated);
+            default -> false;
+        };
     }
 
     /** GEEN complements the window's verdict and the three counting quantifiers count it; ALLE and DE only

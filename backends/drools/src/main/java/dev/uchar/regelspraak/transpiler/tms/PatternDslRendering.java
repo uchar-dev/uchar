@@ -184,6 +184,13 @@ final class PatternDslRendering {
                         insert(drools, x.insertion(), ComputeHelpers.inconsistency(x.form(), subject,
                                 depositCodesAgain(condition, x.depositFlag(), w, what))));
             }
+            case Consequence.WritersUnion x -> x.input() < 0
+                    ? new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.values())}, (drools, a) ->
+                            insert(drools, x.insertion(), ComputeHelpers.writersUnion(a[0], x.attribute(), a[1], null,
+                                    x.documentOrder())))
+                    : new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.values()),
+                            variable(x.input())}, (drools, a) -> insert(drools, x.insertion(),
+                            ComputeHelpers.writersUnion(a[0], x.attribute(), a[1], a[2], x.documentOrder())));
             case Consequence.WritersConflict x ->
                     new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.values())}, (drools, a) ->
                             insert(drools, x.insertion(), ComputeHelpers.writersConflict(a[0], a[1], x.attribute(),

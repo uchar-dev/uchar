@@ -144,6 +144,20 @@ public enum StaticFunction {
     /** The periods of a node of a condition read per period that reads no timeline: all time where its truth value
      *  holds, none where not (ch. 3.10). */
     PERIOD_ALWAYS(PeriodCondition.class, "always", false),
+    /** The days of a period window read per period (ch. 3.10) from its bounds, each with a {@code Boolean} constant that
+     *  says whether the window has it, and a {@code Boolean} constant for an inclusive end: a leeg bound no day. */
+    PERIOD_WINDOW(PeriodCondition.class, "window", false),
+    /** The days of the periods of a day count's characteristic on which a day-kind test of the counted day holds, the
+     *  kind a {@link Term.DayKind}, complemented where a {@code Boolean} constant says the test is negated (ch. 3.8); a
+     *  period with an open bound the fault. */
+    PERIOD_DAY_KIND(PeriodCondition.class, "dayKind", true),
+    /** A timeline rounded per segment to a number of decimals, an {@code Integer} constant, by a {@code RoundingMode}
+     *  constant (ch. 2.5), adjacent equal segments one. */
+    PERIOD_ROUNDED(PeriodArithmetic.class, "rounded", false),
+    /** The true periods a rule writes into a time-dependent characteristic (ch. 3.10, 3.11), from the periods of its
+     *  condition, the characteristic's input on the subject's bean, its name, a {@code String} constant, and the
+     *  subject: the fault of an open bound (EF-023) or of supplied true periods. */
+    PERIOD_CHARACTERISTIC(PeriodCondition.class, "characteristicPeriods", true),
     /** A division (ch. 1.4, 1.2): a leeg dividend 0, a leeg divisor leeg with the §6.5 deposit to the probe, a numeric
      *  zero leeg with the deposit of ch. 1.4 point 4 to the probe; the exact quotient. The function of a
      *  {@link Term.Division}. It does not fault (card zero-division-channel), and counts as one that can: the plans of every form with a division are built on that, and changing it is a card of its own. */

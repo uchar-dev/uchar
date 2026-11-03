@@ -1202,6 +1202,20 @@ public final class ComputeHelpers {
         return new Fault(subject, c.writers().get(0).writer(), c);
     }
 
+    /** The standing of the timeline target {@code attribute} of {@code subject} that two or more rules write (RUNTIME-
+     *  SEMANTICS ch. 5.7, "Two writers per day"): the union of the timelines of the {@link Value} facts {@code values},
+     *  in the order of the document's rules {@code documentOrder}, with the target's input timeline {@code input} on the
+     *  days none of them decides, none where it is null ({@link PeriodCondition#union}). */
+    public static State writersUnion(Object subject, ElementKey attribute, Object values, Object input,
+                                     List<?> documentOrder) {
+        List<Value> written = new ArrayList<>();
+        for (Object w : (List<?>) values) written.add((Value) w);
+        written.sort(WritersConflict.inDocumentOrder(documentOrder));
+        List<List<Period>> parts = new ArrayList<>();
+        for (Value w : written) parts.add(Period.list((List<?>) w.value()));
+        return new State(subject, attribute, PeriodCondition.union(parts, input == null ? null : Period.list((List<?>) input)));
+    }
+
     // A list of values in order, as a DRL text builds the list argument of a route: MVEL builds no array, and a route is
     // never overloaded, so the number of values is in the name. Unmodifiable, and it may hold null.
 

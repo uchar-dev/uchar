@@ -362,6 +362,10 @@ final class ClosureRendering {
             case PERIOD_MEMBER -> x -> PeriodCondition.member(x[0], x[1]);
             case PERIOD_COMPOSITE -> x -> PeriodCondition.composite(x[0], (Condition.Quantifier) x[1], (Integer) x[2]);
             case PERIOD_ALWAYS -> x -> PeriodCondition.always(x[0]);
+            case PERIOD_DAY_KIND -> x -> PeriodCondition.dayKind(x[0], (Predicate<LocalDate>) x[1], (Boolean) x[2]);
+            case PERIOD_ROUNDED -> x -> PeriodArithmetic.rounded(x[0], (Integer) x[1], (RoundingMode) x[2]);
+            case PERIOD_WINDOW -> x -> PeriodCondition.window(x[0], (Boolean) x[1], x[2], (Boolean) x[3], (Boolean) x[4]);
+            case PERIOD_CHARACTERISTIC -> x -> PeriodCondition.characteristicPeriods(x[0], x[1], (String) x[2], x[3]);
             case DIVIDED -> x -> ComputeHelpers.divided(x[0], x[1], x[2]);
             case DIVIDED_ABS -> x -> ComputeHelpers.dividedAbs(x[0], x[1], x[2]);
             case RADICAND -> x -> ComputeHelpers.radicand(x[0], x[1]);
