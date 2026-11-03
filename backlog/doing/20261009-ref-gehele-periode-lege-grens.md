@@ -40,21 +40,22 @@ May touch: `ref/`, `corpus/golden/<nieuwe golden>/`, kaartverplaatsing.
 
 ## Result:
 
-Gebouwd op main `95947ae0f` in de worktree `wt/ref-whole-period` (branch `card/ref-whole-period`), samen met
+Gebouwd op main `95947ae0f` en gerebased op main `27cfd3dfa` (de kaart `runtime-tijdconditie-leeg`) in de worktree
+`wt/ref-whole-period` (branch `card/ref-whole-period`), samen met
 `20261009-ref-gehele-periode-over-gemaakte-koppeling`. De kaart blijft in `doing/`; de hoofdsessie landt. Proefdocumenten,
 scripts en logs onder `/Users/yeb/Developer/uchar-dev/werk/ref-whole-period/` (`probe/`, `logs/`).
 
 ### Commits
 
-- `400dd77ce` beide kaarten naar `doing/`
-- `6fc4bb8cc` ref: een lege grens onder "gedurende het gehele" faalt elke dag (`ref/lib/eval.ml`; rijen
+- `e21fe8014` beide kaarten naar `doing/`
+- `6482588b7` ref: een lege grens onder "gedurende het gehele" faalt elke dag (`ref/lib/eval.ml`; rijen
   `WV-3.9-empty-bound-*` en `WV-3.9-filled-bound-*` in `ref/test/test_ref.ml`)
-- `54db2872b` clingo: een eigen attribuut als grens onder "gedurende het gehele" (`backends/clingo/lib/translate.ml`,
+- `002cbde69` clingo: een eigen attribuut als grens onder "gedurende het gehele" (`backends/clingo/lib/translate.ml`,
   `backends/clingo/test/test_clingo.ml`)
-- `aec7a5f32` goldens `jutterswet-gehele-jaar-lege-grens` en `jutterswet-gehele-jaar-gemaakte-koppeling`;
-  `EXPECTED_PLAYED` 316 → 318 (voorstel)
-- `5f593f85c` Javadoc "Measured" van `TmsWholePeriodWitnessTest` beschrijft ref en clingo nu
-- de commit met dit Result
+- `19ad8767f` goldens `jutterswet-gehele-jaar-lege-grens` en `jutterswet-gehele-jaar-gemaakte-koppeling`;
+  `EXPECTED_PLAYED` 317 → 319 (voorstel)
+- `6bb62879e` Javadoc "Measured" van `TmsWholePeriodWitnessTest` beschrijft ref en clingo nu
+- `02e9207d3` en de commits hierna: dit Result
 
 ### Wat er in ref veranderde
 
@@ -127,12 +128,13 @@ clingo (het emmerscalair als geen tijdlijn); de truth-maintenance-tak faalt daar
 
 ### Pins en tellingen
 
-- `EXPECTED_PLAYED` van gate 12: 316 → 318 (voorstel; de twee goldens van deze branch, met naam in het commentaar). Geen
-  vloer verlaagd.
+- `EXPECTED_PLAYED` van gate 12: 317 → 319 (voorstel; de twee goldens van deze branch, met naam in het commentaar,
+  na de 317 van `jutterswet-peilwacht`; de rebase loste het conflict op die regel zo op). Geen vloer verlaagd.
 - Clingo-suite, een rij omgedraaid door de verandering: "ch3.9 bound that the subject reads" (oud: het eigen attribuut
   `toeslag` als grens, verwacht de weigering "other than a literal or a scalar parameter") → "ch3.9 bound over a path"
   (nieuw: `keur` van de werf als grens, verwacht "other than a literal, a scalar parameter or a numeric attribute of the
-  subject's own"). Nieuw: "ch3.9 own bound coarser than the timeline" en 24 rijen ref + clingo. 2320 → 2369 checks.
+  subject's own"). Nieuw: "ch3.9 own bound coarser than the timeline" en 24 rijen ref + clingo. 2321 → 2370 checks (main
+  `27cfd3dfa`: 2321).
 - Ref-suite 2123 → 2150 voorbeelden.
 
 ### Voorgestelde tekst `spec/CONSTRUCTS.md`
@@ -164,25 +166,33 @@ since the card `20261009-ref-gehele-periode-lege-grens` (2026-11-03) A3 too, a l
 4. **De Javadoc van `TmsWholePeriodWitnessTest`** in `backends/drools` is bijgewerkt, omdat zij de stand van ref en
    clingo beschrijft; buiten de "may touch" van de kaart, alleen tekst.
 
-### Open vraag aan de eigenaar: een lege grens in ch. 3.6 en ch. 3.9
+### Vraag, bij de hoofdsessie: een lege grens in ch. 3.6 en ch. 3.9
 
 Ch. 3.6 leest de vergelijking van de knip "gedurende de tijd dat" per periode met ch. 1.2 (het voorbeeld "gedurende ≠
 1000": "leeg **satisfies** ≠ against a filled bound (the ch. 1.2 inequality asymmetry, applied per period)"), dus een
 lege grens maakt "ongelijk aan" waar op elke gevulde periode. Ch. 3.9 maakt dezelfde vergelijking tegen een lege grens
 op elke dag onwaar, en een leeg segment voldoet daar aan geen toets (besluit 2026-09-26). Eén document met beide vormen
-over dezelfde grens (`probe/clip`, verifier PASS; `wachtvergoeding per maand` 10 over 2025, `wachtgrens` leeg):
+over dezelfde grens (`probe/clip`, verifier PASS; `wachtvergoeding per maand` 10 over 2025, `wachtgrens` leeg;
+`logs/step22-after-rebase.log`):
 
 | uitvoerder | `ongelijksom` (knip, ≠) | `gelijksom` (knip, =) | `ongelijkpremie` (gehele jaar, ≠) |
 |---|---|---|---|
-| ref (nu) | 120 | 0 | leeg |
-| clingo | "TRANSLATION FAULT: equality in a per-segment clip comparison is not translated (no corpus case exercises it)" | idem | — |
-| Drools, beide branches | "EXCLUDE DROOLS-222: … with 'unequal to' in the clip …: this branch does not carry this form yet; the calculation helper rsTijdConditie reads an empty side, a gap in the compared timeline, or an empty boundary as no period, whereas RUNTIME-SEMANTICS ch. 3.6 and the reference interpreter apply the comparison of ch. 1.2 per period: two empty sides are equal, and exactly one empty side is unequal; no golden with cases has it" | | |
+| ref, clingo, beide Drools-branches, na de rebase op `27cfd3dfa` | 120 | 0 | leeg |
 
-Met een gevulde grens 20 geeft ref 120, 0 en 10. Een lezer van de spec ziet dus "zijn wachtvergoeding ongelijk aan
-zijn wachtgrens" met een lege grens in de ene vorm elke maand gelden en in de andere geen enkele dag. Vraag: houdt
-ch. 3.6 de lezing van ch. 1.2 per periode, ook voor een lege grens (en ch. 3.9 de zijne), of gaat een van beide mee met
-de ander? Niet beslist; ref volgt beide hoofdstukken zoals ze er staan. De Drools-runtimehulp `rsTijdConditie` leest
-al zoals ch. 3.9; de bouwer van `drools-clip-equality` werkt aan deze knip en heeft hetzelfde antwoord nodig.
+Met een gevulde grens 20: 120, 0 en 10, ook in alle vier. Op `95947ae0f`, vóór `runtime-tijdconditie-leeg`, weigerde
+clingo de knip ("TRANSLATION FAULT: equality in a per-segment clip comparison is not translated (no corpus case exercises
+it)") en Drools ook ("EXCLUDE DROOLS-222: … rsTijdConditie reads an empty side, a gap in the compared timeline, or an
+empty boundary as no period, whereas RUNTIME-SEMANTICS ch. 3.6 and the reference interpreter apply the comparison of
+ch. 1.2 per period …"). De uitvoerders volgen nu dus allebei de hoofdstukken zoals ze er staan, en een lezer ziet "zijn
+wachtvergoeding ongelijk aan zijn wachtgrens" met een lege grens in de ene vorm elke maand gelden en in de andere geen
+enkele dag. Het document van de bouwer van `drools-clip-equality` (`/Users/yeb/Developer/uchar-dev/werk/drools-clip-equality/scratch/vraag/`,
+verifier PASS; peilstand 7 over 2024, drempelstand leeg) meet hetzelfde (`logs/step23-vraag.log`): `case.json`, met
+`afwijktoeslag` leeg volgens ch. 3.9, gaf op `95947ae0f` in ref "MISMATCH: K2.afwijktoeslag = 1, expected leeg" en in clingo
+CLINGO-010, en is nu in ref en clingo PASS; `case-k2-een.json`, dat de lezing van ch. 1.2 pint (`afwijktoeslag` 1), faalt
+nu in ref, clingo en beide Drools-branches.
+
+Of ch. 3.6 en ch. 3.9 een lege dag of grens bewust tegengesteld lezen, legt de hoofdsessie neer bij het voorstel
+impliciete-tijd (bericht van 2026-11-03); deze branch volgt ch. 3.9 zoals het er staat en beslist het niet.
 
 ### Gates
 

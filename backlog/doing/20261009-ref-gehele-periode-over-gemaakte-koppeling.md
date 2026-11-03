@@ -45,7 +45,8 @@ kaartverplaatsing.
 
 ## Result:
 
-Gebouwd op main `95947ae0f` in de worktree `wt/ref-whole-period` (branch `card/ref-whole-period`), samen met
+Gebouwd op main `95947ae0f` en gerebased op main `27cfd3dfa` in de worktree `wt/ref-whole-period` (branch
+`card/ref-whole-period`), samen met
 `20261009-ref-gehele-periode-lege-grens`. De kaart blijft in `doing/`; de hoofdsessie landt. Proefdocumenten, scripts en
 logs onder `/Users/yeb/Developer/uchar-dev/werk/ref-whole-period/` (`probe/`, `logs/`).
 
@@ -109,7 +110,7 @@ Ref, clingo en beide Drools-branches: 4 keer `oracle: PASS`, 4 keer `clingo: PAS
 
 ### Pins
 
-`EXPECTED_PLAYED` 316 → 318 voor beide goldens van de branch (voorstel; zie de andere kaart). Geen andere pin of test.
+`EXPECTED_PLAYED` 317 → 319 voor beide goldens van de branch (voorstel; zie de andere kaart). Geen andere pin of test.
 
 ### Voorgestelde tekst `spec/CONSTRUCTS.md`
 
