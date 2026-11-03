@@ -846,33 +846,42 @@ public final class RegelSpraakRuntime {
         return uit;
     }
 
-    /** §7.1 EUR71 the TRUE-period timeline of a temporal-attribute comparison: keep each value Segment whose value
-     *  satisfies the toets (0..5 = KLEINER..ONGELIJK) against the scalar grens — the periods where the comparison
-     *  holds. A leeg (null) value or a null grens is onwaar (§5.1 ordering leegwaarde). The single implementation
-     *  (single-runtime principle); the caller then rsTijdKnips the value timeline by this result. */
-    public static List<Object> rsTijdConditie(List<?> reeks, int toets, Object grens, Class<?> segCls) {
+    /** §7.1 EUR71 the TRUE-period timeline of a temporal-attribute comparison: the periods where the toets
+     *  (0..5 = KLEINER..ONGELIJK) of the timeline reeks against the scalar grens holds, read per period as
+     *  RUNTIME-SEMANTICS ch. 3.6 and ch. 1.2 read it for a number. First each Segment of reeks whose value satisfies the
+     *  toets, with its value; then, where a leeg (null) value satisfies it, the parts of each Segment of {@code within}
+     *  that no Segment of reeks covers, each without a value: a gap in reeks reads leeg (ch. 3.1). An ordering holds on
+     *  no leeg side; "gelijk aan" holds on two leeg sides and on equal values; "ongelijk aan" holds on exactly one leeg
+     *  side and on different values (§5.6 Tabel 44). A null {@code within} gives the Segments of reeks alone, the part
+     *  of reeks in which the comparison holds. The single implementation (single-runtime principle); the caller then
+     *  rsTijdKnips the value timeline by this result. */
+    public static List<Object> rsTijdConditie(List<?> reeks, int toets, Object grens, List<?> within, Class<?> segCls) {
         List<Object> uit = new ArrayList<>();
-        if (reeks == null || grens == null) return uit;
-        for (Object o : reeks) {
+        if (reeks != null) for (Object o : reeks) {
             LocalDate van = segVan(o), tot = segTot(o);
             if (van == null || tot == null || !van.isBefore(tot)) continue;
             BigDecimal w = segWaarde(o);
-            if (w == null) {
-                if (toets == 5) uit.add(newSegment(segCls, van, tot, w));   // §5.6 Tabel 44: leeg ONGELIJK een gevulde grens = WAAR
-                continue;
-            }
-            int c = exactCompare(w, grens);
-            boolean ok;
-            if (toets == 0) ok = c < 0;
-            else if (toets == 1) ok = c <= 0;
-            else if (toets == 2) ok = c > 0;
-            else if (toets == 3) ok = c >= 0;
-            else if (toets == 4) ok = c == 0;
-            else if (toets == 5) ok = c != 0;
-            else ok = false;
-            if (ok) uit.add(newSegment(segCls, van, tot, w));
+            if (comparisonHolds(toets, w, grens)) uit.add(newSegment(segCls, van, tot, w));
         }
+        if (within != null && comparisonHolds(toets, null, grens))
+            for (Object gap : rsTijdKnipNiet(within, reeks, segCls))
+                uit.add(newSegment(segCls, segVan(gap), segTot(gap), null));
         return uit;
+    }
+
+    /** The numeric comparison toets (0..5 = KLEINER..ONGELIJK) of w against grens, either of them leeg (null), by the
+     *  rules of RUNTIME-SEMANTICS ch. 1.2 for a number. */
+    private static boolean comparisonHolds(int toets, BigDecimal w, Object grens) {
+        if (toets == 4) return w == null || grens == null ? w == null && grens == null : exactCompare(w, grens) == 0;
+        if (toets == 5) return w == null || grens == null ? (w == null) != (grens == null) : exactCompare(w, grens) != 0;
+        if (w == null || grens == null) return false;
+        int c = exactCompare(w, grens);
+        if (toets == 0) return c < 0;
+        if (toets == 1) return c <= 0;
+        if (toets == 2) return c > 0;
+        if (toets == 3) return c >= 0;
+        // fail fast: TimeCalculation.test names six codes, and a seventh would otherwise hold nowhere without a trace
+        throw new IllegalArgumentException("onbekende toets voor rsTijdConditie: " + toets);
     }
 
     /** §8.1.8.1/.2 negated-gedurende complement-clip: keep each value Segment's parts where the condition is FALSE

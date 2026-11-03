@@ -92,6 +92,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * [2023-10-01, 2024-10-01) and 2 on [2024-10-01, 2025-10-01); on the calendar grid 5 on [2024-01-01, 2025-01-01). Both
  * orders.
  *
+ * <p><b>F, the comparison clip with "gelijk aan" and "ongelijk aan"</b> (ch. 3.6, read per period by the comparison of
+ * ch. 1.2, a gap in the compared timeline leeg): "het totaal van zijn vergoeding gedurende de tijd dat zijn controle
+ * gelijk is aan zijn grens", the same "ongelijk is aan zijn grens", and the worked example of ch. 3.6 verbatim, "…
+ * ongelijk is aan 1000". Vergoeding 10 per month January–June 2024 and controle 5 in January alone: with the grens leeg
+ * (J1) "gelijk aan" holds February–June, two leeg sides, 5 × 10 = 50, and "ongelijk aan" January, 10; with the grens 5
+ * (J2) 10 and 50; "ongelijk aan 1000" holds on every month, 60. Vergoeding 100 and controle 1000 in January alone, the
+ * grens leeg (J3): 500, 100, and 500 as in ch. 3.6. Every order of the three rules, on both branches.
+ *
  * <p><b>B2, a comparison with a value a rule replaces later.</b> "De teller van een Jutter moet berekend worden als zijn
  * score" and the jaardeel "indien zijn teller kleiner is dan 5": J1 (score 10, teller 3 as input, jaardeel 4 in 2024 as
  * input) holds the condition only on the intermediate state where the teller is still its input; at the fixpoint the
@@ -105,7 +113,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * characteristic in a stratum above its writer (ch. 6.3), so it never sees the intermediate state. On C the ASP runner
  * refuses, "TRANSLATION FAULT: the case supplies input for computed target "jaardeel": ref (like v0) overwrites it,
  * which has no monotone encoding here (no corpus case)", and the reference interpreter passes: it writes the empty
- * timeline over the input.
+ * timeline over the input. F (2026-11-03, its six orders): the verifier, the reference interpreter's runner and the
+ * ASP runner pass all.
  *
  * <p><b>Red</b> on b9f77aa7, the code before the change: all seven tests, each on the refusal of the member, "Excluded:
  * tms-transpiler SKIP: regel: jaardeel — het tijdsafhankelijke attribuut 'jaardeel' van Jutter: tijdlijnen zijn buiten
@@ -430,6 +439,57 @@ class TmsTimelineWitnessTest {
         assertEquals(expected, outcomes);
     }
 
+    // ---------------- F: the comparison clip with "gelijk aan" and "ongelijk aan", ch. 3.6 ----------------
+
+    static final String MODEL_F = TmsDocuments.model(List.of(objectType("Jutter", List.of(
+            timeAttribute("vergoeding", WHOLE, "month"), timeAttribute("controle", WHOLE, "month"),
+            TmsDocuments.attribute("grens", WHOLE), TmsDocuments.attribute("gelijke wachtsom", WHOLE),
+            TmsDocuments.attribute("ongelijke wachtsom", WHOLE), TmsDocuments.attribute("afwijksom", WHOLE)),
+            List.of())), List.of());
+
+    static final String EQUAL_SUM = computingRule("gelijke wachtsom", "BEREKENING", "Jutter", "gelijke wachtsom",
+            ownTotal("vergoeding", "Jutter", comparison("equal", ownRead("controle", "Jutter"),
+                    ownRead("grens", "Jutter"))), "null");
+    static final String UNEQUAL_SUM = computingRule("ongelijke wachtsom", "BEREKENING", "Jutter", "ongelijke wachtsom",
+            ownTotal("vergoeding", "Jutter", comparison("notEqual", ownRead("controle", "Jutter"),
+                    ownRead("grens", "Jutter"))), "null");
+    static final String DEVIATION_SUM = computingRule("afwijksom", "BEREKENING", "Jutter", "afwijksom",
+            ownTotal("vergoeding", "Jutter", comparison("notEqual", ownRead("controle", "Jutter"), number("1000"))),
+            "null");
+
+    static JsonNode caseF() throws Exception {
+        String tenToJuly = timeline(List.of(segment("2024-01-01", "2024-07-01", "10")));
+        String fiveInJanuary = timeline(List.of(segment("2024-01-01", "2024-02-01", "5")));
+        return TmsTimelineDocuments.caseDocument(null, List.of(
+                        instance("J1", "Jutter", Map.of("vergoeding", tenToJuly, "controle", fiveInJanuary), List.of(),
+                                Map.of(), Map.of()),
+                        instance("J2", "Jutter", Map.of("vergoeding", tenToJuly, "controle", fiveInJanuary,
+                                "grens", numberValue("5")), List.of(), Map.of(), Map.of()),
+                        instance("J3", "Jutter", Map.of(
+                                "vergoeding", timeline(List.of(segment("2024-01-01", "2024-07-01", "100"))),
+                                "controle", timeline(List.of(segment("2024-01-01", "2024-02-01", "1000")))),
+                                List.of(), Map.of(), Map.of())),
+                List.of(value("J1", "gelijke wachtsom", "50"), value("J1", "ongelijke wachtsom", "10"),
+                        value("J1", "afwijksom", "60"),
+                        value("J2", "gelijke wachtsom", "10"), value("J2", "ongelijke wachtsom", "50"),
+                        value("J2", "afwijksom", "60"),
+                        value("J3", "gelijke wachtsom", "500"), value("J3", "ongelijke wachtsom", "100"),
+                        value("J3", "afwijksom", "500"), consistent()));
+    }
+
+    @Test void a_clip_by_equality_reads_a_gap_and_a_leeg_bound_by_ch_1_2_on_both_branches_in_every_order()
+            throws Exception {
+        JsonNode caseDocument = caseF();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
+        for (List<String> order : TmsDocuments.permutations(List.of(EQUAL_SUM, UNEQUAL_SUM, DEVIATION_SUM))) {
+            List<String> names = TmsDocuments.ruleNames(order);
+            Path ir = TmsTimelineDocuments.document(MODEL_F, order, List.of());
+            outcomes.add(names + " " + TmsFaultWitnessTest.playBoth(ir, caseDocument));
+            expected.add(names + " gespeeld");
+        }
+        assertEquals(expected, outcomes);
+    }
+
     // ---------------- the documents, for the other executors ----------------
 
     /** Writes every document of this class, in every order of its rules, with its case, under {@code args[0]}: a map
@@ -443,6 +503,7 @@ class TmsTimelineWitnessTest {
         parts.put("c-gedateerd", new Object[]{MODEL_C, List.of(YEAR_PART_DATED), caseC()});
         parts.put("d-knip", new Object[]{MODEL_D, List.of(GUARD, SILENT, TOP), caseD()});
         parts.put("e-vast-startpunt", new Object[]{MODEL_E, List.of(STORM_DAYS, CALENDAR_DAYS), caseE()});
+        parts.put("f-knip-gelijkheid", new Object[]{MODEL_F, List.of(EQUAL_SUM, UNEQUAL_SUM, DEVIATION_SUM), caseF()});
         for (Map.Entry<String, Object[]> d : parts.entrySet()) {
             @SuppressWarnings("unchecked") List<String> rules = (List<String>) d.getValue()[1];
             int n = 0;

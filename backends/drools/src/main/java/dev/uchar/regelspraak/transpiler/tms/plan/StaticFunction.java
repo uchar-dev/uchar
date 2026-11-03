@@ -67,7 +67,9 @@ public enum StaticFunction {
     /** A timeline clipped to the periods outside the true periods of a characteristic, within its segments. */
     RS_TIME_CLIP_NOT(RegelSpraakRuntime.class, "rsTijdKnipNiet", false),
     /** The true periods of a comparison of a timeline with a value, the comparison an {@code Integer} code of
-     *  {@code TimeCalculation.test}, the value a decimal or an exact rational, compared exactly. */
+     *  {@code TimeCalculation.test}, the value a decimal or an exact rational, compared exactly, a leeg side by ch. 1.2;
+     *  with them the gaps of the timeline within the segments of a second timeline, where a leeg side satisfies the
+     *  comparison (ch. 3.6). */
     RS_TIME_CONDITION(RegelSpraakRuntime.class, "rsTijdConditie", false),
     /** The pro-rata part of a base timeline per bucket of a grid over the true periods of a characteristic (ch. 3.7),
      *  exact, each segment under the write boundary of the target's decimals, an {@code Integer} constant, and its

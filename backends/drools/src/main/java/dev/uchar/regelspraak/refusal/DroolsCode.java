@@ -243,7 +243,7 @@ public enum DroolsCode {
     CLIP_UNSUPPORTED_CUT_FORM("DROOLS-219", Kind.REFUSAL, "clip-unsupported-cut-form", "description,snippet", null),
     CLIP_WHOLE_PERIOD_TEST("DROOLS-220", Kind.REFUSAL, "clip-whole-period-test", "description,snippet", null),
     CLIP_DATE_COMPARISON_UNSUPPORTED("DROOLS-221", Kind.REFUSAL, "clip-date-comparison-unsupported", "description,snippet", null),
-    CLIP_EQUALITY_EMPTY_SIDE("DROOLS-222", Kind.REFUSAL, "clip-equality-empty-side", "description,operator,snippet", null),
+    CLIP_EQUALITY_EMPTY_SIDE("DROOLS-222", Kind.RETIRED, "clip-equality-empty-side", "description,operator,snippet", null),
     CLIP_LEFT_NOT_TIMED("DROOLS-223", Kind.REFUSAL, "clip-left-not-timed", "description,snippet", null),
     CLIP_COMPARISON_NON_NUMERIC("DROOLS-224", Kind.REFUSAL, "clip-comparison-non-numeric", "description,snippet", null),
     CLIP_COMPARISON_TWO_UNITS("DROOLS-225", Kind.REFUSAL, "clip-comparison-two-units", "description,snippet", null),

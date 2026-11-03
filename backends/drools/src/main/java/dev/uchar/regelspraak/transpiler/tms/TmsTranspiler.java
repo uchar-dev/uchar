@@ -5508,11 +5508,13 @@ public final class TmsTranspiler {
      * an own characteristic on a timeline, which keeps the fragments of each segment within its true periods
      * ({@code rsTijdKnip}), or, negated, outside them within the segment ({@code rsTijdKnipNiet}); a flat {@code all}
      * of such checks, which clips by each in turn, the intersection of their true periods; and a comparison of an own
-     * attribute on a timeline with a value, whose true periods are the segments of that timeline whose value satisfies
-     * it ({@code rsTijdConditie}), where a leeg segment and a leeg bound satisfy no ordering. The fragments are kept
-     * apart, never coalesced, so a clip that splits one whole unit loses it. Every characteristic's true periods are
-     * bound off the bean ({@link Reads#timeline}), the compared timeline through its standing, read whole
-     * ({@link #comparisonClip}), and the bound like any value of the rule. {@code cut} names the attribute whose
+     * attribute on a timeline with a value, whose true periods are the periods where it holds, read per period by the
+     * comparison of ch. 1.2 ({@code rsTijdConditie}): the segments of that timeline whose value satisfies it, and its
+     * gaps within the segments of the clipped timeline where a leeg side does, so that an ordering holds on no leeg
+     * side, "gelijk aan" on two and "ongelijk aan" on exactly one (ch. 3.6, the worked example of 500,00). The
+     * fragments are kept apart, never coalesced, so a clip that splits one whole unit loses it. Every characteristic's
+     * true periods are bound off the bean ({@link Reads#timeline}), the compared timeline through its standing, read
+     * whole ({@link #comparisonClip}), and the bound like any value of the rule. {@code cut} names the attribute whose
      * timeline is clipped, and {@code timeline} computes that timeline, which the clip takes first; {@code base} computes
      * the whole timeline of {@code cut}, which a member of a composite clip reads its periods within.
      *
@@ -5520,17 +5522,13 @@ public final class TmsTranspiler {
      * not the timeline the clip leaves: the true periods of a characteristic, or, negated, the periods outside them
      * within the segments of {@code base}; for a composite the intersection of its members' periods, each member read
      * on its own, each a period without a value; for a comparison the segments of the compared timeline where it
-     * holds, with their values, cut where the segments of {@code base} are cut. The clip computes none of these, so the
-     * reading follows from terms it does compute ({@link #noteDerived}), and the rule's terms stay those of a build
-     * without readings.
+     * holds, with their values, cut where the segments of {@code base} are cut, and none for a gap, which holds no
+     * segment. The clip computes none of these, so the reading follows from terms it does compute
+     * ({@link #noteDerived}), and the rule's terms stay those of a build without readings.
      *
      * <p>Refused by name: any other clause, a compound other than {@code all}, a check navigated or with an owner or a
      * whole-period qualifier (WF-097), a comparison whose left side is not an own attribute on a timeline, a date
-     * ordering, units that differ between the two sides, and the comparisons "gelijk aan" and "ongelijk aan": the
-     * runtime's {@code rsTijdConditie} reads an empty side, a gap in the compared timeline or a leeg bound, as no
-     * period, where ch. 3.6 and the reference interpreter apply the comparison of ch. 1.2 per period, so that two leeg
-     * sides are equal and exactly one leeg side is unequal (ch. 3.6, the worked example of 500,00); no golden has
-     * either.
+     * ordering, and units that differ between the two sides.
      */
     private Term clip(Condition c, Reads reads, Object description, String cut, Term timeline, Term base) {
         if (c instanceof Condition.CharacteristicCheck k) return checkClip(k, reads, description, timeline, base, null);
@@ -5587,9 +5585,6 @@ public final class TmsTranspiler {
         Integer testCode = TimeCalculation.test(v.op());
         if (testCode == null)
             throw new Refusal(DroolsCode.CLIP_DATE_COMPARISON_UNSUPPORTED.reason("description", description, "snippet", snippet(v)));
-        // an ordering with a leeg side holds nowhere, in ch. 1.2 and in that helper alike; the equalities differ
-        if (v.op() == Condition.Operator.GELIJK || v.op() == Condition.Operator.ONGELIJK)
-            throw new Refusal(DroolsCode.CLIP_EQUALITY_EMPTY_SIDE.reason("description", description, "operator", DroolsCode.CLIP_EQUALITY_EMPTY_SIDE.part(v.op() == Condition.Operator.GELIJK ? "equal" : "unequal"), "snippet", snippet(v)));
         if (!(v.left() instanceof Expr.AttributeReference a) || a.attribute() == null || a.objectType() != reads.subject
                 || navigationBindings.containsKey(a))
             throw new Refusal(DroolsCode.CLIP_LEFT_NOT_TIMED.reason("description", description, "snippet", snippet(v)));
@@ -5607,11 +5602,15 @@ public final class TmsTranspiler {
                 + "\" per segment and needs its full timeline; ", subjectType,
                 " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", source(a.source()));
         note(a, whole);
+        // the true periods take the gaps of the compared timeline within the clipped one, where a leeg side satisfies
+        // the comparison (ch. 3.1: a gap reads leeg)
         Term periods = new Term.Call(StaticFunction.RS_TIME_CONDITION, List.of(whole, constant(testCode), bound,
-                constant(Period.class)), null);
-        // the segments of the compared timeline where the comparison holds, cut where the clipped timeline's segments
-        // are cut (ch. 3.6: the comparison is read per period of their common cuts)
-        noteDerived(v, List.of(periods, timeline), x -> cutAt(x.get(0), x.get(1)));
+                timeline, constant(Period.class)), null);
+        // the segments of the compared timeline where the comparison holds, without the gaps, which hold no segment,
+        // cut where the clipped timeline's segments are cut (ch. 3.6: the comparison is read per period of their
+        // common cuts; ch. 5.12)
+        noteDerived(v, List.of(whole, bound, timeline), x -> cutAt(RegelSpraakRuntime.rsTijdConditie(
+                (List<?>) x.get(0), testCode, x.get(1), null, Period.class), x.get(2)));
         return new Term.Call(StaticFunction.RS_TIME_CLIP, List.of(timeline, periods, constant(Period.class)),
                 source(v.source()));
     }

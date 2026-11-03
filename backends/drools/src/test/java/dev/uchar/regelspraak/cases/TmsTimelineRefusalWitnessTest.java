@@ -65,17 +65,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * (50 and 60, 10 and 10: 50, 70, 10): the reference interpreter refuses it, "temporal attribute "tariefsom" as a
  * target: temporal writes are not implemented", and the ASP runner, "a temporal target takes only the ch. 3.7 pro-rata
  * or ch. 3.8 day-count shape …".
- * <li><b>The comparison clip, "gelijk aan" and "ongelijk aan"</b> (ch. 3.6): "het totaal van zijn vergoeding gedurende
- * de tijd dat zijn controle gelijk is aan zijn grens", and the worked example of ch. 3.6 verbatim, "… gedurende de tijd
- * dat zijn controle ongelijk is aan 1000". The runtime's {@code rsTijdConditie} reads an empty side, a gap in the
- * compared timeline or a leeg bound, as no period, where ch. 3.6 applies the comparison of ch. 1.2 per period: two
- * leeg sides are equal, and exactly one leeg side is unequal. Vergoeding 10 per month January–June 2024, controle 5
- * in January alone: with the grens leeg, "gelijk aan" holds February–June, 5 × 10 = 50, where that helper gives 0;
- * with the grens 5 both give 10. Vergoeding 100 January–June 2024, controle 1000 in January alone: "ongelijk aan 1000"
- * holds February–June, 5 × 100 = 500, where that helper gives 0. The reference interpreter passes both cases; the ASP
- * runner refuses both, "equality in a per-segment clip comparison is not translated (no corpus case exercises it)",
- * so no golden has either; the exec-model and the DRL-text branch answer "FAIL case.json: attribuut wachtsom: verwacht
- * 50, werkelijk 0" and "… verwacht 500, werkelijk 0".
  * <li><b>A rate whose denominator is not the unit of the grid</b>: 10 EUR/jr per month through 2024, in a document
  * that declares jr as twelve mnd, totals 10 EUR (ch. 3.6, the explicit rate operand); the reference interpreter
  * answers 10, the ASP runner refuses the factor 12, and the DRL-text branch, which weighs the helper's whole months
@@ -115,9 +104,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * truth-maintenance-tak", "… — een Aggregation total over de eigen tijdlijn in een waarde ('het totaal van zijn
  * vergoeding'): tijdlijnen zijn buiten de proef …", "… startpuntbepaling: boekjaar — een StartPointDetermination:
  * tijdlijnen zijn buiten de proef …", "… — de tijdsafhankelijke parameter 'penningbedrag': tijdlijnen zijn buiten de
- * proef …". <b>Red</b> on 24c8688b, before "gelijk aan" was refused: "knip-gelijk: gebouwd", and the earlier sentence of
- * "ongelijk aan", "… de rekenhulp rsTijdConditie leest een gat in de vergeleken tijdlijn als geen periode, …".
- * <b>Red</b> on 2e09716a, before the grid's unit was asked: "kale-noemer: gebouwd, twee-rastereenheden: gebouwd".
+ * proef …". <b>Red</b> on 2e09716a, before the grid's unit was asked: "kale-noemer: gebouwd, twee-rastereenheden: gebouwd".
  * <b>Red</b> on 58614e85, before the two refusals of a dimensioned attribute named their form: "… — het
  * tijdsafhankelijke attribuut 'omzet' van Jutter: tijdlijnen zijn buiten de proef van de truth-maintenance-tak" and
  * "… — het gedimensioneerde attribuut 'omzet' van Jutter: buiten de proef van de truth-maintenance-tak".
@@ -135,22 +122,7 @@ class TmsTimelineRefusalWitnessTest {
                     timeAttribute("jaardeel", WHOLE, "year")),
             List.of(timeCharacteristic("borgplichtig", "month"), timeCharacteristic("wachtplichtig", "month")))), List.of());
 
-    static final String MODEL_CLIP = TmsDocuments.model(List.of(objectType("Jutter", List.of(
-            timeAttribute("vergoeding", WHOLE, "month"), timeAttribute("controle", WHOLE, "month"),
-            TmsDocuments.attribute("grens", WHOLE), TmsDocuments.attribute("wachtsom", WHOLE)), List.of())),
-            List.of());
-
     static final String RATE_2024 = timeline(List.of(segment("2024-01-01", "2025-01-01", "366")));
-
-    /** The sentence of a comparison clip with {@code op} ("gelijk aan", "ongelijk aan") spelled {@code snippet}. */
-    static String clipSentence(String rule, String op, String snippet) {
-        return "transpiler SKIP: regel: " + rule + " — een totaal over de eigen tijdlijn ('het totaal van zijn"
-                + " vergoeding') met '" + op + "' in de knip ('" + snippet + "'): deze tak draagt deze"
-                + " vorm nog niet; de rekenhulp rsTijdConditie leest een lege kant, een gat in de vergeleken tijdlijn of"
-                + " een lege grens, als geen periode, waar RUNTIME-SEMANTICS ch. 3.6 en de referentie-interpreter de"
-                + " vergelijking van ch. 1.2 per periode toepassen: twee lege kanten zijn gelijk, en precies één lege"
-                + " kant is ongelijk; geen golden met cases heeft het";
-    }
 
     /** "Het jaardeel van een Jutter moet berekend worden als het tijdsevenredig deel per jaar van zijn jaartarief
      *  gedurende de tijd dat hij {@code kenmerk} is", as rule {@code name} of kind {@code category}. */
@@ -237,28 +209,6 @@ class TmsTimelineRefusalWitnessTest {
                         + " van Jutter die geen tijdsevenredig deel en geen dagentelling is ('de som van de tarieven van"
                         + " zijn vondsten'): deze tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch."
                         + " 3.4, 3.5, 3.11); geen golden met cases schrijft er een")));
-        // the comparison clip, "gelijk aan" and "ongelijk aan"
-        String tenToJuly = timeline(List.of(segment("2024-01-01", "2024-07-01", "10")));
-        String fiveInJanuary = timeline(List.of(segment("2024-01-01", "2024-02-01", "5")));
-        out.add(new Row("knip-gelijk", TmsTimelineDocuments.ir(MODEL_CLIP, List.of(computingRule("gelijke wachtsom",
-                        "BEREKENING", "Jutter", "wachtsom", ownTotal("vergoeding", "Jutter", comparison("equal",
-                                ownRead("controle", "Jutter"), ownRead("grens", "Jutter"))), "null")), List.of()),
-                TmsTimelineDocuments.caseDocument(null, List.of(
-                                instance("J1", "Jutter", Map.of("vergoeding", tenToJuly, "controle", fiveInJanuary),
-                                        List.of(), Map.of(), Map.of()),
-                                instance("J2", "Jutter", Map.of("vergoeding", tenToJuly, "controle", fiveInJanuary,
-                                        "grens", numberValue("5")), List.of(), Map.of(), Map.of())),
-                        List.of(value("J1", "wachtsom", "50"), value("J2", "wachtsom", "10"))),
-                List.of(clipSentence("gelijke wachtsom", "gelijk aan", "equal"))));
-        out.add(new Row("knip-ongelijk", TmsTimelineDocuments.ir(MODEL_CLIP, List.of(computingRule("ongelijke wachtsom",
-                        "BEREKENING", "Jutter", "wachtsom", ownTotal("vergoeding", "Jutter", comparison("notEqual",
-                                ownRead("controle", "Jutter"), number("1000"))), "null")), List.of()),
-                TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of(
-                                "vergoeding", timeline(List.of(segment("2024-01-01", "2024-07-01", "100"))),
-                                "controle", timeline(List.of(segment("2024-01-01", "2024-02-01", "1000")))),
-                                List.of(), Map.of(), Map.of())),
-                        List.of(value("J1", "wachtsom", "500"))),
-                List.of(clipSentence("ongelijke wachtsom", "ongelijk aan", "notEqual"))));
         // a rate whose denominator is not the unit of the grid: 10 EUR/jr over the twelve months of 2024
         out.add(new Row("vreemde-noemer", TmsTimelineDocuments.ir(MODEL_RATE, List.of(WACHTSOM_RATE), List.of()),
                 rateCase("10"),

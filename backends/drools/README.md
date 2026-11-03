@@ -640,7 +640,8 @@ constructor the runtime's helpers ask of a segment class, so `rsTijdsevenredig`,
 `rsTijdKnip`, `rsTijdConditie` and `rsOoitWaarden` compute on it unchanged. A timeline is bound in the left-hand side
 like any read, an attribute through its standing, derived or input, and read whole: by the temporal total of the
 subject's own timeline, with the clip of ch. 3.6 by a characteristic, negated or not, by an `alle` of characteristics
-or by an ordering of an own timeline against a value; by a sum or a total per member of a set (ch. 3.6, the
+or by a comparison of an own timeline against a value, read per period by the comparison of ch. 1.2, a gap in the
+compared timeline leeg; by a sum or a total per member of a set (ch. 3.6, the
 per-element fold), where each member's timeline collapses over time in its contribution rule and a member without one
 contributes nothing; and as a uniqueness key, which reads ever-uniqueness (ch. 5.9): one key per value the timeline
 ever carries. It is written whole, only by a pro-rata part (ch. 3.7) or a day count (ch. 3.8), on the calendar grid or
@@ -819,8 +820,7 @@ never as a silent fall:
   7.8 keeps fenced, and an initialisation of one; a time window in the condition of a rule with a timeline target,
   which clips the timeline (ch. 3.10; golden `jutterswet-pachtvenster`); a
   characteristic on a timeline as a target; any value of a timeline target other than a pro-rata part or a day count,
-  among them a sum of timelines over a set (ch. 3.5); the comparisons "gelijk aan" and "ongelijk aan" in a clip, where
-  `rsTijdConditie` reads an empty side as no period and ch. 3.6 applies the comparison of ch. 1.2 per period; a rate
+  among them a sum of timelines over a set (ch. 3.5); a rate
   over a grid whose unit the document does not declare, or declares in two different canonical chains, which the
   reference interpreter refuses to integrate, in its words; a rate whose denominator is not the unit of the grid, which
   `rsTijdTotaal` would weigh unit-blind; a sum or a total per member over a timeline in a fold over a created relation,
