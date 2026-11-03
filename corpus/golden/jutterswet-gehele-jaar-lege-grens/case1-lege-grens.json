@@ -32,17 +32,17 @@
       "attribute": "gelijkpremie"
     },
     {
-      "kind": "attributeEmpty",
-      "label": "J1",
-      "attribute": "ongelijkpremie"
-    },
-    {
       "kind": "attributeValue",
       "label": "J1",
-      "attribute": "afwijkpremie",
+      "attribute": "ongelijkpremie",
       "value": {
-        "number": "30"
+        "number": "10"
       }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "afwijkpremie"
     },
     {
       "kind": "consistent"
