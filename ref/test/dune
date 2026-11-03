@@ -60,5 +60,14 @@
   (glob_files fixtures/conditions-per-period/afdracht-botsing/*.json)
   (glob_files fixtures/conditions-per-period/afdracht-fijner/*.json)
   (glob_files fixtures/conditions-per-period/twee-schrijvers-gelijk/*.json)
-  (glob_files fixtures/conditions-per-period/totaal-onder-voorwaarde/*.json))
+  (glob_files fixtures/conditions-per-period/totaal-onder-voorwaarde/*.json)
+  ; a percentage of a value with a unit, and a sum per period of a rate as an operand
+  (glob_files fixtures/period-units/percentage-per-period/*.json)
+  (glob_files fixtures/period-units/percentage-scalar/*.json)
+  (glob_files fixtures/period-units/sum-of-rate/*.json)
+  (glob_files fixtures/period-units/rounded-sum-factor/*.json)
+  ; a form that reads a timeline whole, given the asOfDate-bucket scalar
+  (glob_files fixtures/bucket-scalar/condition/*.json)
+  (glob_files fixtures/bucket-scalar/arithmetic/*.json)
+  (glob_files fixtures/bucket-scalar/sum/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

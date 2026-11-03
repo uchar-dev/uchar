@@ -1,0 +1,70 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-02-01",
+                "value": {
+                  "number": "10.5"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "afgeronde vondstheffing",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-02-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -477,8 +477,9 @@ let min_ = cut_merge Arith.sub_min
 (* --- ch. 3.5: temporal summation (the contributor-skipping rule) -------- *)
 
 (* [target_unit]: each contributor is restated to the target's unit
-   before the fold (exact factors, ch. 2.6). All-leeg periods the fallback
-   does not fill are emitted as explicit leeg segments. Outside every
+   before the fold (exact factors, ch. 2.6), and so is the fallback, which
+   stands in for the sum: a unitless one adopts that unit. All-leeg periods the
+   fallback does not fill are emitted as explicit leeg segments. Outside every
    contributor all of them are leeg, so the fallback fills all time there,
    with zero contributors as well; without it that time stays leeg and no
    segment is emitted for it (ch. 3.5). *)
@@ -502,7 +503,7 @@ let summed ?fallback ?(target_unit = Value.Unitless) (tls : t list) : t =
           in
           let v =
             match filled with
-            | [] -> ( match fallback with Some f -> f | None -> Empty)
+            | [] -> ( match fallback with Some f -> restate f | None -> Empty)
             | first :: rest -> List.fold_left Arith.add first rest
           in
           { s_from = c1; s_to = c2; s_value = v })
@@ -763,24 +764,30 @@ let integrated_segment ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result opt
    fold by the caller (it needs the document); its absence only bites a
    rate-valued segment. An open segment holds unboundedly many units: with
    the value 0 it contributes 0, with any other value the total has none
-   (EF-036); [place] is the (label, attribute) the fault names. *)
-let grand_total ?grid_unit ?place (g : Ir_v0.Ast.grain) (tl : t) : Value.t =
-  List.fold_left
-    (fun acc s ->
-      match s.s_value with
-      | Empty -> acc
-      | Num (q, _) when is_open s && Q.equal q Q.zero -> acc
-      | v when is_open s ->
-          let params, where =
-            match place with
-            | Some (label, attribute) ->
-                ([ ("attribute", attribute); ("label", label) ], Printf.sprintf " of %S on %S" attribute label)
-            | None -> ([], "")
-          in
-          faultc ~params "EF-036"
-            "the temporal total%s meets a segment with an open bound carrying %s: a value other than 0 \
-             over unboundedly many units has no total (ch. 3.6)"
-            where (Value.to_string v)
-      | v -> Arith.add acc (integrated_segment ?grid_unit ~grain:g ~span:(s.s_from, s.s_to) v))
-    (Num (Q.zero, Unitless))
-    (normalise tl)
+   (EF-036); [place] is the (label, attribute) the fault names. Where no
+   segment contributes, the total is 0 in [zero_unit ()], the unit the total
+   carries by its declarations (ch. 2.10): the 0 stands in for the value. *)
+let grand_total ?grid_unit ?place ?(zero_unit = fun () -> Unitless) (g : Ir_v0.Ast.grain) (tl : t) : Value.t =
+  let total =
+    List.fold_left
+      (fun acc s ->
+        match s.s_value with
+        | Empty -> acc
+        | Num (q, _) when is_open s && Q.equal q Q.zero -> acc
+        | v when is_open s ->
+            let params, where =
+              match place with
+              | Some (label, attribute) ->
+                  ([ ("attribute", attribute); ("label", label) ], Printf.sprintf " of %S on %S" attribute label)
+              | None -> ([], "")
+            in
+            faultc ~params "EF-036"
+              "the temporal total%s meets a segment with an open bound carrying %s: a value other than 0 \
+               over unboundedly many units has no total (ch. 3.6)"
+              where (Value.to_string v)
+        | v ->
+            let part = integrated_segment ?grid_unit ~grain:g ~span:(s.s_from, s.s_to) v in
+            Some (match acc with None -> part | Some a -> Arith.add a part))
+      None (normalise tl)
+  in
+  match total with Some v -> v | None -> Num (Q.zero, zero_unit ())

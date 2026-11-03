@@ -522,14 +522,19 @@ let compare_op ?static_numeric ?(static_date = false) (op : Ir_v0.Ast.compare_op
 (* empty contributors are skipped, never counted as 0 *)
 let filled vs = List.filter (fun v -> v <> Empty) vs
 
-let agg_sum ~fallback vs =
+(* [unit] gives the unit the aggregation carries by its declarations, its first
+   operand's (ch. 2.10, §4.6), read only where no contributor is filled: the 0
+   of a total and a unitless fallback of a som stand in for the value of the
+   aggregation, so they carry its unit, as a unitless side adopts the other *)
+let agg_sum ?(unit = fun () -> Unitless) ~fallback vs =
   match filled vs with
-  | [] -> ( match fallback with Some f -> f | None -> Empty)
+  | [] -> (
+      match fallback with Some (Num (q, Unitless)) -> Num (q, unit ()) | Some f -> f | None -> Empty)
   | first :: rest -> List.fold_left add first rest
 
-let agg_total vs =
+let agg_total ?(unit = fun () -> Unitless) vs =
   match filled vs with
-  | [] -> Num (Q.zero, Unitless) (* 0 unconditionally, §4.20 *)
+  | [] -> Num (Q.zero, unit ()) (* 0 unconditionally, §4.20 *)
   | first :: rest -> List.fold_left add first rest
 
 let agg_count vs = Num (Q.of_int (List.length vs), Unitless)

@@ -1,0 +1,344 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "afgeronde vondstheffing",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "day",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 1,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "day",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "aanmelding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "aanmeldende jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
+          }
+        ]
+      },
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "afgeronde vondstheffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afgeronde vondstheffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De afgeronde vondstheffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "Rounding",
+                "base": {
+                  "node": "Aggregation",
+                  "kind": "sum",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "waarde",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "de waarde van alle vondsten van de Jutter"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "aanmelding",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 1,
+                    "sign": "unspecified",
+                    "unit": [
+                      {
+                        "node": "Unit",
+                        "abbreviation": "EUR",
+                        "system": "Munt",
+                        "canonical": "EUR",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        }
+                      },
+                      {
+                        "node": "Unit",
+                        "abbreviation": "dg",
+                        "system": "Tijd",
+                        "canonical": "dg",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        },
+                        "exponent": -1
+                      }
+                    ]
+                  },
+                  "source": {
+                    "snippet": "de som van de waarde van alle vondsten van de Jutter"
+                  }
+                },
+                "mode": "floor",
+                "decimals": 0,
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    },
+                    {
+                      "node": "Unit",
+                      "abbreviation": "dg",
+                      "system": "Tijd",
+                      "canonical": "dg",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      },
+                      "exponent": -1
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "(de som van de waarde van alle vondsten van de Jutter) naar beneden afgerond op 0 decimalen"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "((de som van de waarde van alle vondsten van de Jutter) naar beneden afgerond op 0 decimalen) maal 2"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

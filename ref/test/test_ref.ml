@@ -2986,6 +2986,68 @@ let () =
       in
       derives "let" (Ir_v0.Ast.Let { typ = lie; binder = "x"; value = loonsom; body; source_name = None }) "EUR/dg"
 
+(* ch. 2.10: the 0 of a fold where no member contributes stands in for the
+   value of the fold, so it carries the unit the fold carries by its
+   declarations: the 0 of a total over no filled member, of a temporal total
+   without a contributing segment, and a unitless fallback of a som, scalar and
+   per period (the corpus witness: corpus/golden/jutterswet-rekenen-per-dag,
+   cases 5 to 7). Below an operator a sum per period restates its contributors
+   into its own attribute's unit, also under a rounding, and a percentage of a
+   value with a unit carries that unit (ch. 2.6, rule 7; ch. 3.4, 3.5) *)
+let () =
+  let eur_dg = over eur dg in
+  let unit_is name v value (u : Ir_v0.Ast.measure_unit) =
+    match v with
+    | Value.Num (got, Value.Unit su) -> check name (Q.equal got (q value) && su = u)
+    | other -> check (name ^ " (got " ^ Value.to_string other ^ ")") false
+  in
+  let declared u () = Value.Unit u in
+  unit_is "ch2.10-total-over-no-member" (Arith.agg_total ~unit:(declared eur_dg) []) "0" eur_dg;
+  unit_is "ch2.10-total-over-leeg-members" (Arith.agg_total ~unit:(declared eur_dg) [ empty_value; empty_value ]) "0"
+    eur_dg;
+  unit_is "ch2.10-som-fallback-adopts" (Arith.agg_sum ~unit:(declared eur_dg) ~fallback:(Some (n "0")) []) "0" eur_dg;
+  unit_is "ch2.10-som-fallback-keeps-its-unit"
+    (Arith.agg_sum ~unit:(declared eur_dg) ~fallback:(Some (num_with_unit cent "5")) []) "5" cent;
+  unit_is "ch2.10-total-of-no-segment" (Timeline.grand_total ~zero_unit:(declared eur) Ir_v0.Ast.Day []) "0" eur;
+  unit_is "ch2.10-total-of-an-open-zero"
+    (Timeline.grand_total ~zero_unit:(declared eur) Ir_v0.Ast.Day [ seg_open (num_with_unit eur_dg "0") ])
+    "0" eur;
+  (let asked = ref false in
+   unit_is "ch2.10-total-of-a-segment"
+     (Timeline.grand_total
+        ~zero_unit:(fun () ->
+          asked := true;
+          Value.Unitless)
+        Ir_v0.Ast.Day
+        [ seg "2024-01-01" "2024-01-11" (num_with_unit eur "3") ])
+     "30" eur;
+   check "ch2.10-total-of-a-segment-reads-no-zero-unit" (not !asked));
+  (match Timeline.summed ~fallback:(n "0") ~target_unit:(Value.Unit eur) [] with
+  | [ { s_value; _ } ] -> unit_is "ch2.10-sum-per-period-fallback-adopts" s_value "0" eur
+  | tl -> check (Printf.sprintf "ch2.10-sum-per-period-fallback-adopts (%d segments)" (List.length tl)) false);
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/period-units/" in
+  List.iter
+    (fun fixture ->
+      plays ~ident:("ch3.4-unit-" ^ fixture) ~ir:(read (dir ^ fixture ^ "/ir.json"))
+        ~case_data:(read (dir ^ fixture ^ "/case.json")) (fun _ -> ()))
+    [ "percentage-per-period"; "percentage-scalar"; "sum-of-rate"; "rounded-sum-factor" ];
+  (* ch. 8.4: a form that reads a time-dependent attribute whole needs its full
+     timeline, and a case that gives the asOfDate-bucket scalar faults, in the
+     sentence the ASP backend speaks too *)
+  let dir = "ref/test/fixtures/bucket-scalar/" in
+  let bucket = "whole; the case supplies only the asOfDate-bucket scalar, which carries no period" in
+  List.iter
+    (fun (fixture, reads) ->
+      let ident = "ch8.4-bucket-scalar-" ^ fixture in
+      with_files ~ir:(read (dir ^ fixture ^ "/ir.json")) ~case_data:(read (dir ^ fixture ^ "/case.json"))
+        (fun findings _ evaluate ->
+          check (ident ^ ": verifier-clean") (findings = []);
+          expect_fault_msg ident (fun () -> evaluate ()) (reads ^ " " ^ bucket)))
+    [ ("condition", {|a condition per period reads the time-dependent attribute "strandloon" of "J1"|});
+      ("arithmetic", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "strandloon" of "J1"|});
+      ("sum", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "opbrengst" of "V1"|}) ]
+
 (* WV-3.5: temporal summation — the contributor-skipping rule *)
 let () =
   let p1 = [ seg "2024-01-01" "2024-02-01" (n "50"); seg "2024-02-01" "2024-03-01" (n "60") ] in

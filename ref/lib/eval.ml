@@ -1151,27 +1151,46 @@ let rec declared_unit ?(binders = SMap.empty) env (e : expr) : Value.unit_ =
       declared_unit ~binders:(SMap.add (norm binder) (unit_of value) binders) env body
   | Rounding { base_expr = Some b; _ } | Clamp { base_expr = Some b; _ } -> unit_of b
   | Function_call
-      { kind = (Sum_function | Total) as kind;
-        call_arguments = (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } as arg) :: _;
-        source_role; source_path; _ }
-    when (kind = Total || source_role <> None || source_path <> None)
-         && Ir_v0.Checks.attr_temporal (object_type env ot) a -> (
-      match unit_of arg with
-      | Value.Unit u when Ir_v0.Units.negatives u <> [] -> (
-          let grid =
-            match Timeline.grid_unit env.doc (attr_granularity (object_type env ot) a) with
-            | Ok (g :: _) -> Some g
-            | _ -> None
-          in
-          match Ir_v0.Units.integrated ?grid u with
-          | Some left -> Arith.unit_of_option left
-          | None ->
-              Value.fault "the temporal total of a %s value over the grid of %S leaves no unit (ch. 3.6)"
-                (Arith.show_unit (Value.Unit u)) a)
-      | plain -> plain)
-  | Function_call { kind = Sum_function | Total | Minimum | Maximum | First | Last; call_arguments = x :: _; _ } ->
-      unit_of x
+      { kind = (Sum_function | Total | Minimum | Maximum | First | Last) as kind;
+        call_arguments = _ :: _ as call_arguments; element_object_type; source_role; source_path; _ } ->
+      aggregation_unit ~binders env ~kind ~call_arguments ~element_object_type ~source_role ~source_path
   | _ -> unit_of_datatype (static_type env e)
+
+(* the unit of a value aggregation of [kind] over [call_arguments] by its
+   declarations: its first operand's (§4.6), integrated where a total or a sum
+   folds a temporal attribute over time (the subject's own total, the
+   per-element fold of §7.1). A fold over a set reads the attribute on its
+   element type, as its evaluation does. *)
+and aggregation_unit ?(binders = SMap.empty) env ~kind ~call_arguments ~element_object_type ~source_role
+    ~source_path =
+  let ranged = source_role <> None || source_path <> None in
+  match (kind, call_arguments) with
+  | (Sum_function | Total), (Attribute_reference { attribute_ref = Some a; object_type = operand_type; _ } as arg) :: _
+    when kind = Total || ranged -> (
+      match if ranged then element_object_type else operand_type with
+      | Some ot when Ir_v0.Checks.attr_temporal (object_type env ot) a ->
+          temporal_total_unit env ~ot ~attr:a (declared_unit ~binders env arg)
+      | _ -> declared_unit ~binders env arg)
+  | _, x :: _ -> declared_unit ~binders env x
+  | _, [] -> Value.Unitless
+
+(* the unit a temporal total of the attribute [attr] of [ot] leaves where its
+   value carries [u]: the factor of the attribute's grid rises (ch. 2.6, rule 8),
+   and a unit without a negative factor stays *)
+and temporal_total_unit env ~ot ~attr (u : Value.unit_) =
+  match u with
+  | Value.Unit u when Ir_v0.Units.negatives u <> [] -> (
+      let grid =
+        match Timeline.grid_unit env.doc (attr_granularity (object_type env ot) attr) with
+        | Ok (g :: _) -> Some g
+        | _ -> None
+      in
+      match Ir_v0.Units.integrated ?grid u with
+      | Some left -> Arith.unit_of_option left
+      | None ->
+          Value.fault "the temporal total of a %s value over the grid of %S leaves no unit (ch. 3.6)"
+            (Arith.show_unit (Value.Unit u)) attr)
+  | plain -> plain
 
 (* the ch. 1.2d empty-equality asymmetry routes on the declared operand
    kind — two empty runtime values cannot reveal it (Arith.compare_op) *)
@@ -1930,6 +1949,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
       let ot_decl = object_type env aot in
       let gran = attr_granularity ot_decl a in
       let grid = Timeline.grid_unit env.doc gran in
+      let zero_unit () = temporal_total_unit env ~ot:aot ~attr:a (declared_unit env base) in
       (match filter with
       | Some c -> (
           (* ch. 3.6, the gedurende clip: intersect the value timeline
@@ -2040,7 +2060,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
           in
           clip_member_qualifications c;
           let true_periods = true_periods_of_cond c in
-          Timeline.grand_total ~grid_unit:grid ~place:(self.label, a) gran (Timeline.clip tl true_periods))
+          Timeline.grand_total ~grid_unit:grid ~place:(self.label, a) ~zero_unit gran (Timeline.clip tl true_periods))
       | None when period_arithmetic_target env.doc ~otype:aot ~attr:a -> (
           (* ch. 3.6 over the timeline a rule of ch. 3.4/3.5 writes: it divides all
              time and is totalled whole, so no asOfDate bucket enters. Before that
@@ -2049,7 +2069,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
           read_whole base tl;
           match tl with
           | None -> Value.Empty
-          | Some tl -> Timeline.grand_total ~grid_unit:grid ~place:(self.label, a) gran tl)
+          | Some tl -> Timeline.grand_total ~grid_unit:grid ~place:(self.label, a) ~zero_unit gran tl)
       | None -> (
       if World.timeline self a <> None then
         Value.fault
@@ -2074,7 +2094,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
               let van, up_to = Timeline.grid_bucket (Timeline.attr_grid env.doc ot_decl a) day in
               let bucket = [ { Timeline.s_from = van; s_to = up_to; s_value = v } ] in
               read_whole base (Some bucket);
-              Timeline.grand_total ~grid_unit:grid gran bucket))))
+              Timeline.grand_total ~grid_unit:grid ~zero_unit gran bucket))))
   | _ ->
   (* non-temporal aggregation *)
   (* contributors: an instance fold over a role (element_object_type set),
@@ -2207,7 +2227,11 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
             (contributing_values members @@ map_in_order
                (fun (i : World.instance) ->
                  match World.timeline i name with
-                 | Some tl -> Timeline.grand_total ~grid_unit:grid ~place:(i.label, name) gran tl
+                 | Some tl ->
+                     let zero_unit () =
+                       temporal_total_unit env ~ot:el ~attr:name (unit_of_datatype (attr_decl env ~otype:el ~attr:name))
+                     in
+                     Timeline.grand_total ~grid_unit:grid ~place:(i.label, name) ~zero_unit gran tl
                  | None ->
                      if World.attr i name = Value.Empty then Value.Empty
                      else
@@ -2369,6 +2393,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
     | `Values vs -> vs
     | `Instances _ -> Value.fault "value aggregation over instances: only a count folds them"
   in
+  let unit () = aggregation_unit env ~kind ~call_arguments ~element_object_type ~source_role ~source_path in
   match kind with
   | Count -> (
       (* a count, never empty (ch. 1.2e) *)
@@ -2410,8 +2435,8 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
          that ever evaluates one. *)
       let vs = values () in
       let fallback = Option.map (eval_expr env world self ~err) empty_fallback in
-      Arith.agg_sum ~fallback vs
-  | Total -> Arith.agg_total (values ())
+      Arith.agg_sum ~unit ~fallback vs
+  | Total -> Arith.agg_total ~unit (values ())
   | Minimum -> Arith.agg_min (values ())
   | Maximum -> Arith.agg_max (values ())
   | First -> Arith.agg_first (values ())
@@ -3389,7 +3414,11 @@ let write_produced env w (self : World.instance) ~form ~ot ~attr result =
    time-dependent parameter are read whole; and a scalar operand holds on every
    day: one segment with two open bounds, or none where it is leeg. Every other
    shape is refused by name, never read as a scalar at some instant. A timeline
-   it reads lies on a grid that fits the target's (WF-126). Every node but
+   it reads lies on a grid that fits the target's (WF-126). [target_unit] is
+   the unit a sum restates its contributors into (ch. 3.5): the target's at the
+   root, and below an operator the unit the sum's declarations give it
+   ([period_unit]), since an operand computes in its own unit and only the
+   value of the rule is restated to the target's (ch. 3.4). Every node but
    [root], the value of the rule, records the timeline it reads or computes,
    or its value where it is a scalar (ch. 5.12); the caller records the
    root's, the timeline the rule writes. *)
@@ -3414,10 +3443,10 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
   | Binary
       { op = (Plus | Min | Reduced_by | Times | Divided_by | Divided_by_abs | Percentage_of) as op;
         left_side = Some l; right_side = Some r; _ } ->
-      let a = period_timeline env w self ~err ~target ~attr ~target_unit l in
-      let b = period_timeline env w self ~err ~target ~attr ~target_unit r in
       (* a period where an operand is leeg coalesces it into its declared unit *)
       let units = (period_unit env l, period_unit env r) in
+      let a = period_timeline env w self ~err ~target ~attr ~target_unit:(fst units) l in
+      let b = period_timeline env w self ~err ~target ~attr ~target_unit:(snd units) r in
       let scalar =
         match op with
         | Plus -> Arith.add ~units
@@ -3482,11 +3511,12 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
          attribute or a scalar parameter"
 
 (* the unit an operand of the period arithmetic carries by its declarations: a sum
-   over a set is a sum per period here, so it takes its attribute's (§4.6), and
-   every other operand what [declared_unit] derives *)
+   over a set is a sum per period here, so it takes its attribute's (§4.6), also
+   under a rounding, and every other operand what [declared_unit] derives *)
 and period_unit env e =
   match e with
   | Binary { op; left_side = Some l; right_side = Some r; _ } -> operator_unit op (period_unit env l) (period_unit env r)
+  | Rounding { base_expr = Some b; _ } -> period_unit env b
   | Function_call { kind = Sum_function; call_arguments = [ x ]; _ } -> declared_unit env x
   | _ -> declared_unit env e
 
