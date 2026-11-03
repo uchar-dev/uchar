@@ -110,7 +110,7 @@ spec bug.
     arm's atoms.)
 
   Each tagged entry, here and under Recorded limitations ([V1], [V2],
-  [V3], [V4], [V5], [V6], [V7]),
+  [V3], [V4], [V5], [V6], [V7], [V8]),
   has a frame in the suite, named `README [tag]`, that pins it and
   goes red when the entry no longer holds.
 - Exact arithmetic by declared-decimals integer scaling: a value of an
@@ -465,7 +465,7 @@ Recorded limitations:
   or per week over a grid of months) weighs a day by 1/len of its calendar
   unit, so its value has a denominator such as 365 or 366 that no decimal
   scale holds. The backend lays the weights over the least common multiple
-  D of the lengths the span meets, carries the total at the scale of its
+  D of their denominators, carries the total at the scale of its
   value times D, and translates it only as the base of a rounding, which
   divides D away; anywhere else it refuses the total by name, where ref
   holds the exact value: the anchor `jutterswet-verzuimrente-dagen` with
@@ -479,6 +479,17 @@ Recorded limitations:
   month beside the day count of every month, over a November that is whole
   (30 days), is 30 on November in ref (suite fixture
   `twee-schrijvers-gelijk`).
+- [V8] The temporal total counts a part of a unit of its grid by its
+  days, over the days of the period of the grid that holds it
+  (RUNTIME-SEMANTICS ch. 3.6), so where the case's bounds split a unit the
+  weights of the spans have a denominator. The backend lays them over D,
+  the least common multiple of those denominators, and divides D away
+  again: under a rounding as in [V6], and elsewhere exactly, where D
+  divides the total; a total D does not divide is refused at solving by
+  the named witness `viol("… counts a part of a unit of its grid by its
+  days …", _)`, where ref holds the exact value: 120 per year clipped to
+  five days of 2024 is 100/61 in the unbounded form in ref (suite fixture
+  `partial-unit/unrounded`).
 - Negative or empty allocation operands make the generated program
   UNSATISFIABLE — clingo then fails exactly where `ref/` faults
   (ch. 4.4), instead of silently diverging by the truncation/floor

@@ -2596,49 +2596,57 @@ let grid_strip_ok ctx ~what ~gran u =
         what
         (Uchar_ref.Arith.display_unit (Option.get u))
 
-(* ch. 3.6, the calendar, as data. A day weighs 1/len of the calendar unit [tu]
-   it lies in, so the weights of the whole grid units of the spans between
-   [endpoints] share the denominator D, the least common multiple of the lengths
-   the days of [lo, hi) meet (1 for dg, 7 for wk): the wu fact of a span carries D
-   times its measure in [tu], a whole number, and the total the scale of its value
-   times D. Returns D and the weight of all of [lo, hi), which bounds the sum of
-   the weights of disjoint spans inside it. *)
-let calendar_weights ctx ~p ~(gran : grain) ~(tu : Ir_v0.Checks.time_unit) (endpoints : int list) =
+(* ch. 3.6, the length of a span as data. [measure] gives the length of a span:
+   in grid units, where a part of a period of the grid counts its days over the
+   period's (point 12a), or in the calendar unit of a denominator, where a day
+   weighs 1/len of the calendar unit it lies in. The wu fact of each span between
+   [endpoints] carries D times that length, D the least common multiple of the
+   denominators the lengths have (1 where every span is a whole number of units),
+   and the total carries the scale of its value times D. Returns D and the weight
+   of all of [lo, hi), which bounds the sum of the weights of disjoint spans inside
+   it, so a guard on the value of max_int31 / that weight keeps every product and
+   their sum inside the integer range. *)
+let span_weights ctx ~p ~(measure : int -> int -> Q.t) (endpoints : int list) =
   match endpoints with
   | [] ->
       emit ctx "#defined %s_wu/3." p;
       (1, 0)
   | lo :: _ ->
       let hi = List.fold_left max lo endpoints in
-      let rec lengths acc d =
-        if d >= hi then acc
-        else
-          let bs, bn = Uchar_ref.Timeline.calendar_unit_bucket tu d in
-          lengths (if List.mem (bn - bs) acc then acc else (bn - bs) :: acc) bn
+      let spans =
+        List.concat_map
+          (fun v -> List.filter_map (fun t -> if v < t then Some (v, t, measure v t) else None) endpoints)
+          endpoints
       in
-      let lens =
-        match tu with
-        | Tu_day -> [ 1 ]
-        | Tu_week -> [ 7 ]
-        | _ -> lengths [] (fst (Uchar_ref.Timeline.calendar_unit_bucket tu lo))
-      in
-      let rec gcd_ a b = if b = 0 then a else gcd_ b (a mod b) in
-      let d = List.fold_left (fun acc l -> acc * l / gcd_ acc l) 1 lens in
-      let weight van up_to =
-        let w =
-          Q.mul (Q.of_int d)
-            (Uchar_ref.Timeline.calendar_measure tu van (Uchar_ref.Timeline.whole_units_end gran van up_to))
-        in
-        if not (Z.equal (Q.den w) Z.one) then
-          fault "a calendar weight over a span is no whole number at the denominator %d (ch. 3.6)" d;
-        if Z.gt (Q.num w) (Z.of_int 46340) then
-          fault "a calendar weight of %s exceeds the guarded product range" (Z.to_string (Q.num w));
+      let d = List.fold_left (fun acc (_, _, m) -> Z.lcm acc (Q.den m)) Z.one spans in
+      let weight m =
+        let w = Q.mul (Q.of_bigint d) m in
+        if Z.gt (Q.num w) (Z.of_int max_int31) then
+          fault "a span weight of %s at the denominator %s exceeds the integer range" (Z.to_string (Q.num w))
+            (Z.to_string d);
         Z.to_int (Q.num w)
       in
-      List.iter
-        (fun v -> List.iter (fun t -> if v < t then emit ctx "%s_wu(%d,%d,%d)." p v t (weight v t)) endpoints)
-        endpoints;
-      (d, weight lo hi)
+      let span_weight = weight (measure lo hi) in
+      List.iter (fun (v, t, m) -> emit ctx "%s_wu(%d,%d,%d)." p v t (weight m)) spans;
+      (Z.to_int d, span_weight)
+
+(* the total of a span sum [q] at the scale [scale] times [d], where [d] > 1:
+   only a rounding divides a denominator that is no power of ten away, so outside
+   one the total holds where [d] divides it, and a total it does not divide is
+   refused at solving by name, where ref holds the exact value (README [V8]).
+   Returns the atoms and the term of the total at [scale]. *)
+let exact_span_total ctx ~subject ~subject_ot ~what ~p ~q ~d =
+  let e = fresh ctx "E" in
+  emit ctx "viol(%s,%s) :- %s, %s_total(%s,%s), %s \\ %d != 0."
+    (quote
+       (Printf.sprintf
+          "%s counts a part of a unit of its grid by its days (ch. 3.6), and its value has no exact form at the \
+           scale of its attribute in this encoding (README [V8])"
+          what))
+    subject
+    (String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard))
+    p subject q q d;
+  ([ Printf.sprintf "%s_total(%s,%s)" p subject q; Printf.sprintf "%s = %s / %d" e q d ], e)
 
 (* harmonise two scaled terms for comparison. Self-fenced: every caller
    already fences its own operands where it reads them (the range guards
@@ -5227,8 +5235,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              must bring its OWN horizon. The asOfDate-bucket SCALAR states
              no period at all, so a member carrying one is refused BY NAME
              — never silently bucketed at the session date. An ABSENT
-             member contributes nothing (leeg): its join simply finds no
-             tl fact, which is ref's Empty contributor dropping out. The
+             member's timeline totals 0: its join finds no tl fact and adds
+             nothing to the #sum, and the presence guard of a som counts it
+             as a member. The
              SUBJECT's own fold keeps the opposite convention (the
              asOfDate bucket carries that total) and the asymmetry is
              deliberate — there the session date IS the horizon.
@@ -5440,20 +5449,24 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
              single endpoint SPAN, never a sum of per-member segments;
              both were checked against this requirement and are sound as
              written. *)
-          let total_units =
-            List.fold_left
-              (fun acc (van, up_to) -> acc + Uchar_ref.Timeline.whole_units gran van up_to)
-              0 spans
+          (* a member's case timeline sits on its grid (the loader), so each of
+             its segments is a whole number of grid units *)
+          let grid = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx el) a in
+          let units (van, up_to) =
+            let m = Uchar_ref.Timeline.grid_measure grid van up_to in
+            if not (Z.equal (Q.den m) Z.one) then
+              fault "the per-element temporal fold of %S meets a member segment that holds a part of a unit of its grid"
+                a;
+            Z.to_int (Q.num m)
           in
+          let total_units = List.fold_left (fun acc span -> acc + units span) 0 spans in
           if total_units > 46340 then
             fault
               "the per-element temporal fold of %S covers %d whole units across the case's \
                member timelines, beyond the guarded sum range"
               a total_units;
           List.iter
-            (fun (van, up_to) ->
-              emit ctx "%s_wu(%d,%d,%d)." p van up_to
-                (Uchar_ref.Timeline.whole_units gran van up_to))
+            (fun (van, up_to) -> emit ctx "%s_wu(%d,%d,%d)." p van up_to (units (van, up_to)))
             (List.sort_uniq compare spans);
           let n = fresh ctx "N" and vv = fresh ctx "V" and tt = fresh ctx "T" in
           let body =
@@ -5477,7 +5490,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          carries it, so an empty set leaves the whole term underivable (ref's
          Empty) instead of deriving #sum's 0. With a 0 fallback — and for
          every totaal — the bare #sum (native 0 on the empty set) is exactly
-         right, so no guard is added. *)
+         right, so no guard is added. Over a temporal attribute every member
+         contributes, its timeline's total over time, which is 0 where the
+         timeline is absent (ch. 3.6) *)
+      let presence_body = if temporal then join @ fatoms else contrib_body in
       let guard =
         if has_fallback then []
         else begin
@@ -5485,9 +5501,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let p = Printf.sprintf "somp%d" ctx.fresh in
           let key, opening =
             helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot)
-              contrib_body
+              presence_body
           in
-          emit ctx "%s(%s) :- %s." p key (String.concat ", " (opening @ contrib_body));
+          emit ctx "%s(%s) :- %s." p key (String.concat ", " (opening @ presence_body));
           [ Printf.sprintf "%s(%s)" p key ]
         end
       in
@@ -5734,15 +5750,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Function_call { kind = Total; call_arguments = [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ]; filter = Some c; source_role = None; source_path = None; _ }
     when norm aot = norm subject_ot && attr_temporal ctx ~otype:aot ~attr:a ->
       (* ch. 3.6, the gedurende clip: intersect the value timeline (tl/5)
-         with the condition's true-periods, then total whole units per
-         clipped segment. The intersection is pure integer max/min (four
-         explicit cases — old grounders lack assignment aggregates); the
-         CALENDAR (whole units per clipped span) enters as data: wu
-         facts computed by the shared Timeline module over the finite
-         cut set of the case's timeline endpoints, so the logic stays in
-         ASP and the calendar cannot drift from ref/. A fully
-         clipped-away or absent timeline sums to 0 — the #sum over the
-         empty set, exactly the mirrored v0 nuance. *)
+         with the condition's true-periods, then total each clipped segment
+         over its length in grid units, a part of a unit by its days. The
+         intersection is pure integer max/min (four explicit cases — old
+         grounders lack assignment aggregates); the CALENDAR (the length of
+         each clipped span) enters as data: wu facts computed by the shared
+         Timeline module over the finite cut set of the case's timeline
+         endpoints, so the logic stays in ASP and the calendar cannot drift
+         from ref/. A fully clipped-away or absent timeline sums to 0 — the
+         #sum over the empty set. *)
       refuse_date_timeline_total ctx ~what:"the gedurende-clipped total over the timeline"
         ~otype:aot ~attr:a;
       (* the clip needs full timelines where the attribute is carried at
@@ -6007,7 +6023,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           ("V1 >= V2", "V1", "T1 > T2", "T2");
           ("V1 < V2", "V2", "T1 <= T2", "T1");
           ("V1 < V2", "V2", "T1 > T2", "T2") ];
-      (* the calendar as data: whole units per candidate clipped span *)
+      (* the calendar as data: the length of every candidate clipped span *)
       let endpoints =
         Eval.SMap.fold
           (fun _ (i : Uchar_ref.World.instance) acc ->
@@ -6070,13 +6086,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       in
       (* the clip total's #sum accumulates W×N terms; its segments are
          disjoint slices of one timeline, so ΣN over any subject is at
-         most the whole units of the FULL endpoint span — bounding that
-         span at 46340 keeps |ΣW×N| ≤ 46340² < 2^31 under the |W|
-         segment guard below (the wrap fence, compile-time). Under the
-         calendar the weights of disjoint spans sum to at most the weight of
-         the span they lie in, so the guard on W takes that weight. A clipped
-         fragment lies inside a true period of the condition, so for an own
-         characteristic the weights are laid over the span of its periods. *)
+         most the weight of the FULL endpoint span. Where every span is a
+         whole number of units, bounding that span at 46340 keeps |ΣW×N| ≤
+         46340² < 2^31 under the |W| segment guard below (the wrap fence,
+         compile-time). Where a span holds a part of a unit, or the calendar
+         weighs it, the weights carry a denominator D and the guard on W takes
+         the weight of the full span. A clipped fragment lies inside a true
+         period of the condition, so for an own characteristic the calendar
+         weights are laid over the span of its periods. *)
       let w_bound, denominator =
         match calendar with
         | Some tu ->
@@ -6097,30 +6114,17 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                       List.filter (fun d -> lo <= d && d <= hi) endpoints)
               | _ -> endpoints
             in
-            let d, span_weight = calendar_weights ctx ~p ~gran ~tu inside in
+            let d, span_weight = span_weights ctx ~p ~measure:(Uchar_ref.Timeline.calendar_measure tu) inside in
             (max_int31 / max 1 span_weight, d)
         | None ->
-            (match endpoints with
-            | [] -> ()
-            | lo :: _ ->
-                let hi = List.fold_left max lo endpoints in
-                let n = Uchar_ref.Timeline.whole_units gran lo hi in
-                if n > 46340 then
-                  fault "the clipped endpoint span covers %d whole units, beyond the guarded sum range"
-                    n);
-            List.iter
-              (fun v ->
-                List.iter
-                  (fun t ->
-                    if v < t then begin
-                      let n = Uchar_ref.Timeline.whole_units gran v t in
-                      if n > 46340 then
-                        fault "a clipped span of %d whole units exceeds the guarded product range" n;
-                      emit ctx "%s_wu(%d,%d,%d)." p v t n
-                    end)
-                  endpoints)
-              endpoints;
-            (46340, 1)
+            let grid = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx aot) a in
+            let d, span_weight = span_weights ctx ~p ~measure:(Uchar_ref.Timeline.grid_measure grid) endpoints in
+            if d > 1 then (max_int31 / max 1 span_weight, d)
+            else begin
+              if span_weight > 46340 then
+                fault "the clipped endpoint span covers %d whole units, beyond the guarded sum range" span_weight;
+              (46340, 1)
+            end
       in
       let q = fresh ctx "Q" in
       (* W×N inside the #sum is an emitted multiplication: guard the
@@ -6147,9 +6151,14 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         ~bounds:("V", "T") ~value:"W" ~attr:a;
       emit ctx "%s_total(S,%s) :- isa(S,%s), %s = #sum { W*N,V,T : %s_seg(S,V,T,W), %s_wu(V,T,N) }."
         p q (str subject_ot) q p p;
-      ( [ Printf.sprintf "%s_total(%s,%s)" p subject q ],
-        q,
-        pow10 (attr_decimals ctx ~otype:aot ~attr:a) * denominator )
+      let scale = pow10 (attr_decimals ctx ~otype:aot ~attr:a) in
+      if denominator > 1 && not calendar_ok then
+        let atoms, e =
+          exact_span_total ctx ~subject ~subject_ot ~what:(Printf.sprintf "the gedurende-clipped total of %s" a) ~p ~q
+            ~d:denominator
+        in
+        (atoms, e, scale)
+      else ([ Printf.sprintf "%s_total(%s,%s)" p subject q ], q, scale * denominator)
   | Function_call
       { kind = Total;
         call_arguments = [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ];
@@ -6161,7 +6170,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          written. Its finite bounds are bounds of case timelines, or walls of
          the grids of the timelines it reads, which the producers of ch. 3.7
          and 3.8 and a whole-period qualifier per bucket cut at: the
-         whole-unit facts lie between those, the case's endpoints and the walls
+         length facts lie between those, the case's endpoints and the walls
          of the target's grid over [calendar_span]; a finite segment between
          other bounds joins none of them and is fenced by name. An open segment
          joins none either, and [open_total_guard] names it where its value is
@@ -6188,7 +6197,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 walk bn (bs :: bn :: acc)
             in
             walk lo []
-        (* a day grid has a wall on every day, and its whole units are the days
+        (* a day grid has a wall on every day, and its length is the days
            between the case's endpoints *)
         | _ -> []
       in
@@ -6201,23 +6210,24 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           (Eval.SMap.fold (fun _ tl acc -> bounds_of tl acc) ctx.case.param_tls walls)
         |> finite_bounds |> List.sort_uniq compare
       in
-      (match endpoints with
-      | [] -> emit ctx "#defined %s_wu/3." p
-      | lo :: _ ->
-          let hi = List.fold_left max lo endpoints in
-          if Uchar_ref.Timeline.whole_units gran lo hi > 46340 then
+      let grid = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx aot) a in
+      let denominator, span_weight =
+        span_weights ctx ~p ~measure:(Uchar_ref.Timeline.grid_measure grid) endpoints
+      in
+      (* as in the clip: a whole-unit span bounded at 46340, a span with a part
+         of a unit by the guard on W over the weight of the full span *)
+      let w_bound =
+        if denominator > 1 then max_int31 / max 1 span_weight
+        else begin
+          if span_weight > 46340 then
             fault "the endpoint span of the total of %S covers more whole units than the guarded sum range" a;
-          List.iter
-            (fun v ->
-              List.iter
-                (fun t ->
-                  if v < t then emit ctx "%s_wu(%d,%d,%d)." p v t (Uchar_ref.Timeline.whole_units gran v t))
-                endpoints)
-            endpoints);
+          46340
+        end
+      in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let seg = Printf.sprintf "tl(%s,%s,V,T,W)" subject (str a) in
-      emit ctx "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, %s, |W| > 46340."
-        subject (String.concat ", " (base :: ctx.rule_guard)) seg;
+      emit ctx "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, %s, |W| > %d."
+        subject (String.concat ", " (base :: ctx.rule_guard)) seg w_bound;
       emit ctx "%s_wud(V,T) :- %s_wu(V,T,_)." p p;
       emit ctx
         "viol(\"the temporal total of %s meets a segment whose bounds are neither bounds of the case nor walls of \
@@ -6228,12 +6238,18 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let q = fresh ctx "Q" in
       emit ctx "%s_total(S,%s) :- isa(S,%s), %s = #sum { W*N,V,T : tl(S,%s,V,T,W), %s_wu(V,T,N) }." p q
         (str subject_ot) q (str a) p;
-      ([ Printf.sprintf "%s_total(%s,%s)" p subject q ], q, pow10 (attr_decimals ctx ~otype:aot ~attr:a))
+      let scale = pow10 (attr_decimals ctx ~otype:aot ~attr:a) in
+      if denominator > 1 && not calendar_ok then
+        let atoms, e =
+          exact_span_total ctx ~subject ~subject_ot ~what:(Printf.sprintf "the temporal total of %s" a) ~p ~q
+            ~d:denominator
+        in
+        (atoms, e, scale)
+      else ([ Printf.sprintf "%s_total(%s,%s)" p subject q ], q, scale * denominator)
   | Function_call { kind = Total; call_arguments = [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ]; source_role = None; source_path = None; _ }
     when norm aot = norm subject_ot && attr_temporal ctx ~otype:aot ~attr:a ->
       (* ch. 3.6 over the asOfDate bucket: value × whole-units (= 1 for
-         the one period of the member's grid); an absent timeline stays
-         underivable = leeg.
+         the one period of the member's grid); an absent timeline totals 0.
          The pattern is the gedurende sister arm's above minus its filter,
          and ref's own temporal-total arm narrowing for narrowing, because
          the body emits val(<SUBJECT>,…): a form that reaches here without
@@ -6253,9 +6269,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         ~gran:(attr_granularity ctx ~otype:aot ~attr:a)
         (attr_unit ctx ~otype:aot ~attr:a);
       let f = as_of_bucket_units ctx ~otype:aot ~attr:a in
-      let v = fresh ctx "T" in
+      (* an absent timeline is leeg on every day and totals 0: the #sum over a
+         member without a value *)
+      let p = fresh ctx "ab" and v = fresh ctx "T" in
+      emit ctx "%s_total(S,%s) :- isa(S,%s), %s = #sum { V : val(S,%s,V) }." p v (str subject_ot) v (str a);
       let term = if f = 1 then v else Printf.sprintf "(%s*%d)" v f in
-      ( [ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ],
+      ( [ Printf.sprintf "%s_total(%s,%s)" p subject v ],
         term,
         pow10 (attr_decimals ctx ~otype:aot ~attr:a) )
   | Function_call

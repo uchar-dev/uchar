@@ -17250,6 +17250,46 @@ let () =
     ~needle:"by a declared factor between the day family and the month family of the calendar"
 
 
+(* RUNTIME-SEMANTICS ch. 3.6: the total counts a part of a unit of its grid by its
+   days, on ref's documents (ref/test/fixtures/partial-unit): the clip and the
+   subject's own total of a timeline a rule writes under a condition per period
+   over half of April, which this encoding lays over a denominator and divides
+   away exactly; a total that denominator does not divide, refused by name where
+   ref holds the exact value (README [V8]); and a de som van over a set whose
+   members bring no timeline, which totals 0 per member *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let dir = "ref/test/fixtures/partial-unit/" in
+  List.iter
+    (fun case ->
+      let ir = read (dir ^ "exact/ir.json") and case_text = read (dir ^ "exact/" ^ case) in
+      ref_matches ~name:("a part of a unit: " ^ case) ~ir ~case_text;
+      clingo_matches ~name:("a part of a unit: " ^ case) ~ir ~case_text)
+    [ "case1-anderhalve-maand.json"; "case2-gesplitste-maand.json" ];
+  pinned_loud ~entry:"V8" ~name:"a part of a unit: unrounded" ~ir:(read (dir ^ "unrounded/ir.json"))
+    ~case_text:(read (dir ^ "unrounded/case.json"))
+    ~needle:"counts a part of a unit of its grid by its days";
+  let absent_members =
+    {|{ "format": "uchar-case-v0", "asOfDate": "2026-03-15",
+  "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": {},
+      "roles": { "vondsten": [ "V1" ] }, "characteristics": [] },
+    { "label": "J2", "objectType": "Jutter", "attributes": {}, "roles": {},
+      "characteristics": [] },
+    { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {},
+      "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [
+    { "kind": "attributeValue", "label": "J1", "attribute": "bewaarlast",
+      "value": { "number": "0" } },
+    { "kind": "attributeEmpty", "label": "J2", "attribute": "bewaarlast" },
+    { "kind": "consistent" } ] }
+|}
+  in
+  let ir = set_fold_doc ~kind:"sum" ~operand_ot:"Vondst" ~rate_unit:(eur mnd_unit) ~objective_unit:(eur "null") in
+  ref_matches ~name:"§7.1 per-element som over a member without a timeline" ~ir ~case_text:absent_members;
+  clingo_matches ~name:"§7.1 per-element som over a member without a timeline" ~ir ~case_text:absent_members
+
 (* RUNTIME-SEMANTICS ch. 3.10, 3.9, 5.7: a condition per period on a rule of a
    timeline target, the qualifier per bucket and two writers per day, on ref's
    documents (ref/test/fixtures/conditions-per-period): the proposal's worked
