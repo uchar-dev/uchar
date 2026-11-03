@@ -5132,7 +5132,10 @@ parameters, the clause that defines it and its witnesses.
   2026-11-02), `count` (EF-008), `from` and `reach` (EF-009), `creation`,
   `stratum` and `depth` (EF-015), `rules`, `values`, `attribute`, `label`
   and `objectType` (EF-016), the parts of EF-032 (since 2026-10-22, as ref
-  and the ASP backend), and `factType` and `cycle` (EF-033), and no other.
+  and the ASP backend), `factType` and `cycle` (EF-033), and `attribute`
+  and `label` (EF-036, and EF-037 since 2026-11-03, where it names `label`
+  only for the object whose input it is: an attribute read over a path names
+  `attribute` alone), and no other.
   Gate 8 holds each executor's emitted keys to this column: a key outside the
   column of its code fails with the code, the executor and the key.
 - **Witnesses.** A code enters the table together with its witness: a red
@@ -5197,6 +5200,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-034 | the labels of a cell of the case input name no cell of its attribute | case input | `label`, `attribute`, `labels` | ch. 5.8c | `corpus/red/jutterswet-cel-onbekend-label` |
 | EF-035 | the case input names one cell of an attribute twice | case input | `label`, `attribute`, `labels` | ch. 5.8c | `corpus/red/jutterswet-cel-dubbel` |
 | EF-036 | a temporal total meets a segment with an open bound whose value is not 0 | fault | `attribute`, `label` | ch. 3.6 | `corpus/red/jutterswet-totaal-open-segment` |
+| EF-037 | a form that reads the full timeline of a time-dependent attribute finds the asOfDate-bucket scalar | fault | `attribute`, `label` | ch. 8.4; ch. 3.3; ch. 3.4; ch. 3.5; ch. 3.6; ch. 3.7; ch. 3.9; ch. 3.10 | `corpus/red/jutterswet-emmerscalair-per-periode`, `corpus/red/jutterswet-emmerscalair-knip`, `corpus/red/jutterswet-emmerscalair-gehele-jaar` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified
@@ -6624,7 +6628,9 @@ A node that the evaluation reads as a timeline, instead of evaluating it to
 a value, has that timeline as its value, leeg where it is absent: the
 operand of a whole-period test (ch. 3.9) and the base of a temporal total
 (ch. 3.6) or of a time-proportional part (ch. 3.7); an asOfDate-bucket
-scalar (ch. 8.4) is the timeline of its one period. A condition that the
+scalar (ch. 8.4), which only the subject's own total without a clip reads,
+is the timeline of its one period, and every other such node faults on it
+(EF-037). A condition that the
 evaluation reads over a timeline has the part of that timeline in which it
 holds: the clip of a temporal total (ch. 3.6) and the filter of a
 time-proportional part or a day count (ch. 3.7, 3.8) — the periods of a
@@ -7954,7 +7960,17 @@ temporal total; the full timeline serves reads. An executor that needs
 the one and finds the other faults — never guesses (the ch. 4.3a
 rule) — and both executors implement the session-start check
 identically (`ref/` at evaluation entry; the ASP backend at
-translation time, before emitting a program).
+translation time, before emitting a program). Every form that reads the
+timeline of an attribute whole is such a reader, and the
+asOfDate-bucket scalar is the fault EF-037 (ch. 5.7b), naming the
+attribute and the object whose input it is: a point read (ch. 3.3), the
+period arithmetic over an own attribute and over the members of a sum
+(ch. 3.4, 3.5), the value and the compared timeline of a gedurende clip
+and a member of a per-element total (ch. 3.6), the base of a pro-rata
+part (ch. 3.7), the whole-period qualifier, also over a path (ch. 3.9),
+and a condition per period (ch. 3.10). An absent attribute is no
+such input: those forms read it as the empty timeline, and the point
+read faults on it without the code.
 
 A **characteristic** has the same two conventions and the same
 apartness (maintainer decision 2026-09-09): the flat `characteristics`

@@ -1,0 +1,7 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het wachtloon Numeriek (geheel getal) voor elke maand;
+    de jaarpremie Numeriek (geheel getal);
+
+Regel jaarpremie van een jutter
+    geldig altijd
+        De jaarpremie van een Jutter moet berekend worden als 20 indien zijn wachtloon gedurende het gehele jaar groter is dan 5.

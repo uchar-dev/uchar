@@ -1,0 +1,7 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het strandloon Numeriek (geheel getal) voor elke maand;
+    de premie Numeriek (geheel getal) voor elke maand;
+
+Regel premie van een jutter
+    geldig altijd
+        De premie van een Jutter moet gesteld worden op 25 gedurende de tijd dat zijn strandloon groter is dan 120.

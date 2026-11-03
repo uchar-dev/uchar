@@ -1,0 +1,8 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de vergoeding Numeriek (geheel getal) voor elke maand;
+    de controle Numeriek (geheel getal) voor elke maand;
+    de wachtsom Numeriek (geheel getal);
+
+Regel wachtsom van een jutter
+    geldig altijd
+        De wachtsom van een Jutter moet berekend worden als het totaal van zijn vergoeding gedurende de tijd dat zijn controle groter is dan 5.
