@@ -323,20 +323,27 @@ en logs buiten de repo onder `/Users/yeb/Developer/uchar-dev/werk/implicit-time/
 
 ### Commits
 
-- `9b79f1150` kaart naar doing, met de noot over de regelnummers
-- `7e877f9da` spec: voorstel IMPLICIT-TIME
-- `d45b97f51` de meting noemt de zin van DROOLS-271 volledig
-- `ebd171802` besluitpunt 4b (de lege dag onder de kwalificator), meting herhaald op `27cfd3dfa`
-- en de commit van dit Result
+Na de laatste rebase op `b3feb3882`:
+
+- `0ee02e7df` kaart naar doing, met de noot over de regelnummers
+- `7473880b1` spec: voorstel IMPLICIT-TIME
+- `7cbaa0a19` de meting noemt de zin van DROOLS-271 volledig
+- `ea12aa3a7` besluitpunt 4b (de lege dag onder de kwalificator), meting herhaald op `27cfd3dfa`
+- `322aa68ad` het Result
+- `1fb8d16e5` het voorstel gemeten op `b3feb3882`
+- en de commit die dit Result bijwerkt
 
 ### De main van de meting
 
-`27cfd3dfa` (`git log --oneline -8 main` vóór de meting: `27cfd3dfa` … `b552c9ea4`, de landing van
-`runtime-tijdconditie-leeg`; `logs/main-before-measurement-2.log`). De branch is erop gerebased (`git rebase main` in de
-worktree), opnieuw gebouwd (ocaml-build en drools-jar "rebuilt", frontend gecompileerd) en de meting herhaald. Een
-eerdere run op `95947ae0f` gaf per document dezelfde regel (`diff` van de twee samenvattingen leeg). De regelnummers van
-uchar in het voorstel zijn op `27cfd3dfa` nagemeten (`scripts/line_numbers.py`); RUNTIME-SEMANTICS veranderde niet, in
-`translate.ml` en de Drools-README verschoof elk citaat één tot 45 regels en is bijgewerkt.
+`b3feb3882` (`git log --oneline -8 main` vóór de meting: `b3feb3882` … `27cfd3dfa`, de landing van de twee
+frontendkaarten over tijd; `logs/main-before-measurement-3.log`). Main bewoog twee keer tijdens de kaart; elke keer is
+de branch gerebased (`git rebase main` in de worktree), opnieuw gebouwd en de meting herhaald: op `95947ae0f`, op
+`27cfd3dfa` (de landing van `runtime-tijdconditie-leeg`) en op `b3feb3882`. De drie runs geven per document dezelfde
+regel, behalve `forms/p07a` op `b3feb3882`: de frontend schrijft de samengestelde voorwaarde nu als `Unresolved` met een
+waarschuwing, ref geeft REF-010 in plaats van REF-011 en Drools noemt de voorwaarde. De regelnummers van uchar in het
+voorstel zijn op `b3feb3882` nagemeten (`scripts/line_numbers.py`, gelijk aan `27cfd3dfa`); tussen `95947ae0f` en
+`27cfd3dfa` verschoven de citaten in `translate.ml` en de Drools-README één tot 45 regels en zijn bijgewerkt;
+RUNTIME-SEMANTICS veranderde niet.
 
 ### Meetcommando's
 
@@ -350,11 +357,11 @@ $werk/scripts/build.sh 3          # eval $(opam env); . scripts/lib/ocaml-build.
 python3 -I $werk/scripts/write_cases.py $werk/meting       # a/, b/: de ankercasus in beide formuleringen, geval 1 en 2
 python3 -I $werk/scripts/write_forms.py $werk/meting       # forms/: één document per vorm, met een case
 python3 -I $werk/scripts/write_variants.py $werk/meting    # a-/b-attribuutgrens, a-/b-invoer
-python3 -I $werk/scripts/measure.py <worktree> $werk/meting meting-27cfd3dfa
+python3 -I $werk/scripts/measure.py <worktree> $werk/meting meting-b3feb3882
 ```
 
-`measure.py` draait per document (logs in `<document>/meting-27cfd3dfa/`, samenvatting in
-`meting/summary-meting-27cfd3dfa.txt`):
+`measure.py` draait per document (logs in `<document>/meting-b3feb3882/`, samenvatting in
+`meting/summary-meting-b3feb3882.txt`; de eerdere runs `meting/` en `meting-27cfd3dfa/` ernaast):
 
 ```
 make -C frontends/regelspraak ir FILE=<dir>/source.rgs OUT=<dir>/ir.json
@@ -406,8 +413,9 @@ nagekeken paragrafen en de voorlopige besluiten (VB 1.1–8.1) staan per punt in
 1. De frontend crasht (`IllegalStateException` in `IrEmitter.unknownType`, `IrEmitter.java:761`) op een variabele die
    een dagentelling met een samengestelde voorwaarde bevat (`meting/a-attribuutgrens`, teruggebracht in
    `meting/zoek-crash/3-…`).
-2. De frontend laat een samengestelde voorwaarde van een dagentelling stil weg (`forms/p07a`): een `dayCount` zonder
-   `filter`, geen diagnose. De klasse van `20261012-dagentelling-onbekende-voorwaarde`.
+2. *Opgelost op `b3feb3882`:* tot die commit liet de frontend een samengestelde voorwaarde van een dagentelling stil
+   weg (`forms/p07a`: een `dayCount` zonder `filter`, geen diagnose); sinds de kaart
+   `20261012-dagentelling-onbekende-voorwaarde` is het een waarschuwing en een `Unresolved`-filter.
 3. clingo weigert een tijdsafhankelijk kenmerk in de voorwaarde van een regel met een tijdsafhankelijk doel niet en
    schrijft een lege tijdlijn, waar ref met ch. 3.3 weigert (`forms/p03b`): een stille afwijking, een bug van clingo.
 4. De granulariteitsregel van ch. 3.4 heeft geen WF-controle: frontend en verifier laten een operand per dag in een
@@ -517,8 +525,8 @@ Acceptance:
   maandrente, het totaal): per maand 16 2/3, 33 1/3, 33 1/3, 41 2/3, 16 2/3 en 25, 41 2/3, 5 5/9, totaal 141 2/3 € en
   72 2/9 €. Op main: frontend Z1 en Z2, en op `a-invoer` verifier Z3, ref Z4, clingo Z8 (IMPLICIT-TIME §5).
 - (b) De frontend schrijft "van zijn vervaldatum plus 1 dg tot en met zijn betaaldatum" (RGS-202 verruimd), crasht niet
-  op een variabele met een samengestelde dagentelling (bevinding 1) en laat een voorwaarde van een dagentelling nooit
-  stil weg (bevinding 2; samen met `20261012-dagentelling-onbekende-voorwaarde`).
+  op een variabele met een samengestelde dagentelling (bevinding 1) en schrijft de samengestelde voorwaarde van 7b als
+  filter in plaats van als `Unresolved` (Z17 van §5).
 - (c) Verifier (voorstel): WF-111 verruimd (VB 6.1), WF-058 verruimd (7b, 7c), een nieuwe WF-regel voor het raster van
   operand en voorwaarde (VB 8.1, bevinding 4); een negatief per arm.
 - (d) RS ch. 3.3, 3.8, 3.9, 3.10, 3.11, 3.12 en 5.7 (voorstel); de verwachtingen van de goldens met een dagentelling naar
@@ -601,5 +609,5 @@ Out of scope: de conventie (11, in 1b).
 
 ### Gate 1
 
-`scripts/check-self-contained.sh`: `check-self-contained: PASS` (op `ebd171802`, en na dit Result opnieuw). Geen
+`scripts/check-self-contained.sh`: `check-self-contained: PASS` (op `1fb8d16e5`, en na deze bijwerking opnieuw). Geen
 `make gates`: de kaart verandert alleen `spec/proposals/IMPLICIT-TIME.md` en de kaart.
