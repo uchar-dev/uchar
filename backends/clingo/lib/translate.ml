@@ -588,6 +588,24 @@ let refuse_attr_timeline ctx ~otype ~attr =
           attr)
     ctx.case.world.instances
 
+(* A form that reads the timeline of [attr] whole — the period arithmetic and a
+   condition per period (ch. 3.4, 3.5, 3.10) — needs the full timeline, and an
+   instance of [otype] whose case gives the asOfDate-bucket scalar faults (ch.
+   8.4), in ref's sentence [reads] … of the label …; an absent attribute is the
+   empty timeline. Eager, over every instance of the type, where ref faults on
+   the instance it evaluates. *)
+let refuse_bucket_scalar ctx ~otype ~attr ~reads =
+  Eval.SMap.iter
+    (fun _ (i : Uchar_ref.World.instance) ->
+      if
+        isa ctx i.otype otype
+        && Uchar_ref.World.timeline i attr = None
+        && Uchar_ref.World.attr i attr <> Value.Empty
+      then
+        fault "%s %S of %S whole; the case supplies only the asOfDate-bucket scalar, which carries no period" reads
+          attr i.label)
+    ctx.case.world.instances
+
 (* the variables of an ASP text: the identifiers that start with a capital,
    outside string literals, an aggregate's local ones included *)
 let asp_variables (s : string) =
@@ -1059,8 +1077,12 @@ let attr_temporal_decl ctx ~otype ~attr =
    from the node's own static annotation: a composite annotated
    eenheid:null still carries its operands' units at runtime, and
    reading the annotation let a unit-carrying comparison of two plus
-   composites slip the fence (a hunted silent split). *)
-let rec eff_unit ctx (e : expr) : measure_unit option =
+   composites slip the fence (a hunted silent split). [per_period]: the
+   expression is the value of the period arithmetic of ch. 3.4/3.5, where a sum
+   over a set is a sum per period and keeps its attribute's unit (§4.6), not the
+   integration of the §7.1 per-element fold. *)
+let rec eff_unit ?(per_period = false) ctx (e : expr) : measure_unit option =
+  let eff_unit ctx e = eff_unit ~per_period ctx e in
   match e with
   | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } ->
       attr_unit ctx ~otype:ot ~attr:a
@@ -1086,6 +1108,10 @@ let rec eff_unit ctx (e : expr) : measure_unit option =
   | Binary { op = Divided_by | Divided_by_abs; left_side; right_side; _ } ->
       (* ch. 2.6, rule 3; the admission is [quotient_units_ok] *)
       fst (Ir_v0.Units.divide (Option.bind left_side (eff_unit ctx)) (Option.bind right_side (eff_unit ctx)))
+  | Binary { op = Percentage_of; right_side; _ } ->
+      (* ch. 2.6, rule 7: the right operand's unit; the left one is unit-free or
+         pure-% ([pct_left_ok]), and its ÷100 sits in the scale *)
+      Option.bind right_side (eff_unit ctx)
   | Binary _ -> None
   | Rounding { base_expr; _ } | Clamp { base_expr; _ } -> Option.bind base_expr (eff_unit ctx)
   | Temporal_read { base_expr; _ } -> eff_unit ctx base_expr
@@ -1094,7 +1120,7 @@ let rec eff_unit ctx (e : expr) : measure_unit option =
         call_arguments = (Attribute_reference { attribute_ref = Some a; object_type; _ } as arg) :: _;
         element_object_type; source_role; source_path; _ }
     when (let ranged = source_role <> None || source_path <> None in
-          (kind = Total || ranged)
+          (kind = Total || (ranged && not per_period))
           &&
           match fold_operand_otype ~element_object_type ~ranged object_type with
           | Some ot -> attr_temporal_decl ctx ~otype:ot ~attr:a
@@ -2984,10 +3010,10 @@ let const_div_reduce ~sl ~sr ~out_scale ~c =
 (* multiplicative operands must be effectively unit-free: ref's unit
    algebra (rate cancellation, convertible-unit division) applies exact
    conversion factors this integer encoding does not carry *)
-let unit_free_ok ctx e =
+let unit_free_ok ?per_period ctx e =
   match e with
   | Some e ->
-      if eff_unit ctx e <> None then
+      if eff_unit ?per_period ctx e <> None then
         fault
           "a unit-carrying multiplicative operand is not translated (ref's unit \
            algebra applies conversion factors this integer encoding does not carry)"
@@ -2999,8 +3025,8 @@ let unit_free_ok ctx e =
    with k = 1 where the product only changes the unit. A factor that is no whole
    number would need a division here and faults by name. None where an operand
    carries no unit. *)
-let product_factor ctx (l : expr) (r : expr) : int option =
-  match (eff_unit ctx l, eff_unit ctx r) with
+let product_factor ?per_period ctx (l : expr) (r : expr) : int option =
+  match (eff_unit ?per_period ctx l, eff_unit ?per_period ctx r) with
   | (Some a as ul), (Some b as ur) ->
       let k = Uchar_ref.Arith.restatement (snd (Ir_v0.Units.times ul ur)) in
       if not (Z.equal (Q.den k) Z.one) then
@@ -3059,7 +3085,8 @@ let comparison_factors ctx (l : expr) (r : expr) : int * int =
    as proven unit-free only when its datatype is explicitly a number without a
    unit — an unresolved or non-numeric declaration is NOT proven
    (its unit is unknown, possibly a composite the frontend could not name). *)
-let rec provably_unitless ctx (e : expr) : bool =
+let rec provably_unitless ?per_period ctx (e : expr) : bool =
+  let provably_unitless ctx e = provably_unitless ?per_period ctx e in
   match e with
   | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (
       match Ir_v0.Checks.find_ci (object_type ctx ot).attributes a with
@@ -3073,7 +3100,7 @@ let rec provably_unitless ctx (e : expr) : bool =
       | _ -> false)
   | Literal { typ = Some (Number { measure_unit = None; _ }); _ } -> true
   | Binary { op = Times; left_side = Some l; right_side = Some r; _ }
-    when product_factor ctx l r <> None && eff_unit ctx e = None ->
+    when product_factor ?per_period ctx l r <> None && eff_unit ?per_period ctx e = None ->
       (* no unit is left of the two *)
       true
   | Binary { op = Plus | Min | Reduced_by | Times; left_side = Some l; right_side = Some r; _ } ->
@@ -3124,10 +3151,10 @@ let rec provably_pure_pct ctx (e : expr) : bool =
    Any other unit on the left, and any unit reasoning that cannot PROVE
    pure-%, keeps faulting loudly through unit_free_ok. The right operand rule
    is unchanged. *)
-let pct_left_ok ctx (e : expr option) =
+let pct_left_ok ?per_period ctx (e : expr option) =
   match e with
   | Some ex when provably_pure_pct ctx ex -> ()
-  | _ -> unit_free_ok ctx e
+  | _ -> unit_free_ok ?per_period ctx e
 
 (* the admitted product (ch. 2.6; ASP-TRANSLATION S6). Two unit-carrying operands
    compose their units, and [product_factor] says what the value takes: nothing,
@@ -3138,9 +3165,9 @@ let pct_left_ok ctx (e : expr option) =
    never merely eff_unit-blind — a unit hidden behind an unanalysable node (a Let,
    a field access, a division) would otherwise become a silent unit×unit product
    with no downstream unit to fence it. *)
-let mul_units_ok ctx ~what (l : expr option) (r : expr option) =
-  let ul = Option.bind l (eff_unit ctx) and ur = Option.bind r (eff_unit ctx) in
-  let proven_free = function Some e -> provably_unitless ctx e | None -> true in
+let mul_units_ok ?per_period ctx ~what (l : expr option) (r : expr option) =
+  let ul = Option.bind l (eff_unit ?per_period ctx) and ur = Option.bind r (eff_unit ?per_period ctx) in
+  let proven_free = function Some e -> provably_unitless ?per_period ctx e | None -> true in
   let hidden () =
     fault
       "a multiplicative operand under %s carries no statically resolvable unit, so the factor-free \
@@ -3157,18 +3184,18 @@ let mul_units_ok ctx ~what (l : expr option) (r : expr option) =
    factor. Two unit-carrying operands whose quotient asks for one keep the fence
    (dg ÷ wk would multiply the divisor by 7; ASP-TRANSLATION S19). An operand
    admitted as the unitless side must be provably so, as at [mul_units_ok]. *)
-let quotient_units_ok ctx left_side right_side =
-  let ul = eff_unit ctx left_side and ur = eff_unit ctx right_side in
+let quotient_units_ok ?per_period ctx left_side right_side =
+  let ul = eff_unit ?per_period ctx left_side and ur = eff_unit ?per_period ctx right_side in
   let admitted =
     match (ul, ur) with
-    | None, Some _ -> provably_unitless ctx left_side
-    | Some _, None -> provably_unitless ctx right_side
+    | None, Some _ -> provably_unitless ?per_period ctx left_side
+    | Some _, None -> provably_unitless ?per_period ctx right_side
     | Some _, Some _ -> Q.equal (Uchar_ref.Arith.restatement (snd (Ir_v0.Units.divide ul ur))) Q.one
     | None, None -> false
   in
   if not admitted then begin
-    unit_free_ok ctx (Some left_side);
-    unit_free_ok ctx (Some right_side)
+    unit_free_ok ?per_period ctx (Some left_side);
+    unit_free_ok ?per_period ctx (Some right_side)
   end
 
 (* the viol/2 range fence on emitted arithmetic: fires when an operand
@@ -6637,14 +6664,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          unit, value unchanged) and a two-unit product with a whole factor.
          Percentage-van admits a pure-% left operand (its ÷100 is
          already the scale fold — PRIORITIZED-DEFAULTS-EVOLUTIE §8.3), else
-         unit-free; its right operand keeps every unit refused (the ch. 2.6
-         right-unit adoption has no eff_unit witness and no corpus case
-         yet). *)
+         unit-free; its right operand may carry any unit, which the result
+         carries unchanged (ch. 2.6, rule 7; [eff_unit]), so the value takes no
+         factor. *)
       (match op with
       | Times -> mul_units_ok ctx ~what:"a product" left_side right_side
-      | _ ->
-          pct_left_ok ctx left_side;
-          unit_free_ok ctx right_side);
+      | _ -> pct_left_ok ctx left_side);
       let bl, tl, sl =
         coalesce0 ctx ~subject ~subject_ot
           (expr_term ctx ~subject ~subject_ot (req "Binary.left" left_side))
@@ -10758,6 +10783,7 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
           | _ -> ());
           units_identical_ok ~what:"a comparison in a condition per period" (attr_unit ctx ~otype:ot ~attr:b)
             (eff_unit ctx bound_e);
+          refuse_bucket_scalar ctx ~otype:ot ~attr:b ~reads:"a condition per period reads the time-dependent attribute";
           cuts_of_tl b;
           let gb, gt, gs = expr_term ctx ~subject:"S" ~subject_ot:ot bound_e in
           let gs = numeric_scale ~what:"a comparison in a condition per period" gs in
@@ -11166,6 +11192,9 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
   let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
   let target_unit = attr_unit ctx ~otype:ot ~attr:a in
   let what = Printf.sprintf "the period arithmetic of %S" a in
+  (* the unit of an operand by its declarations, a sum over a set a sum per period *)
+  let period_unit e = eff_unit ~per_period:true ctx e in
+  let period_reads = "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute" in
   let p = fresh ctx "pa" in
   let times v k = if k = 1 then v else Printf.sprintf "%s*%d" v k in
   let at_x = Printf.sprintf "%s_per(%s,X,_)" p subject in
@@ -11179,7 +11208,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
   let rec node (e : expr) : string * bool * int =
     match e with
     | Binary { op = (Plus | Min | Reduced_by) as op; left_side = Some l; right_side = Some r; _ } ->
-        units_identical_ok ~what:(what ^ ", an additive join") (eff_unit ctx l) (eff_unit ctx r);
+        units_identical_ok ~what:(what ^ ", an additive join") (period_unit l) (period_unit r);
         let ((_, ltotal, sl) as ln) = node l and ((_, _, sr) as rn) = node r in
         (* plus and min coalesce a leeg operand to 0; verminderd met only its right *)
         let ql = if op = Reduced_by then (let q, _, _ = ln in q) else filled ln in
@@ -11194,11 +11223,9 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
         (q, op <> Reduced_by || ltotal, m)
     | Binary { op = (Times | Percentage_of) as op; left_side = Some l; right_side = Some r; _ } ->
         (match op with
-        | Times -> mul_units_ok ctx ~what (Some l) (Some r)
-        | _ ->
-            pct_left_ok ctx (Some l);
-            unit_free_ok ctx (Some r));
-        let k = match op with Times -> Option.value (product_factor ctx l r) ~default:1 | _ -> 1 in
+        | Times -> mul_units_ok ~per_period:true ctx ~what (Some l) (Some r)
+        | _ -> pct_left_ok ~per_period:true ctx (Some l));
+        let k = match op with Times -> Option.value (product_factor ~per_period:true ctx l r) ~default:1 | _ -> 1 in
         let ((_, _, sl) as ln) = node l and ((_, _, sr) as rn) = node r in
         let ql = filled ln and qr = filled rn in
         let scale = sl * sr * (if op = Percentage_of then 100 else 1) in
@@ -11209,7 +11236,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
         emit ctx "%s(%s,X,V) :- %s, V = VL*%s." q subject (String.concat ", " body) (times "VR" k);
         (q, true, scale)
     | Binary { op = (Divided_by | Divided_by_abs) as op; left_side = Some l; right_side = Some r; _ } ->
-        quotient_units_ok ctx l r;
+        quotient_units_ok ~per_period:true ctx l r;
         let ql, _, sl = node l and qr0, _, sr = node r in
         (* the quotient at the scale of the write, the abs variant at five
            decimals truncated toward zero (ch. 2.2) *)
@@ -11258,6 +11285,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
             ot otn;
         Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
           ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx otn) b) ~target ~attr:a;
+        refuse_bucket_scalar ctx ~otype:ot ~attr:b ~reads:period_reads;
         read_cuts [ base ] ~holder:subject ~attr:b;
         let q = fresh ctx (p ^ "_r") in
         emit ctx "%s(%s,X,V) :- %s, tl(%s,%s,F,T,V), F <= X, X < T." q subject at_x subject (str b);
@@ -11270,6 +11298,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
       when (source_role <> None || source_path <> None) && attr_temporal ctx ~otype:el ~attr:x ->
         Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" x)
           ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx el) x) ~target ~attr:a;
+        refuse_bucket_scalar ctx ~otype:el ~attr:x ~reads:period_reads;
         let sx = pow10 (attr_decimals ctx ~otype:el ~attr:x) in
         let env =
           { Eval.doc = ctx.doc; params = ctx.case.params; param_tls = ctx.case.param_tls;
@@ -11322,7 +11351,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
         in
         (match b with
         | Binary { op = Divided_by; left_side = Some l; right_side = Some r; _ } ->
-            quotient_units_ok ctx l r;
+            quotient_units_ok ~per_period:true ctx l r;
             let ql, _, sl = node l and qr0, _, sr = node r in
             let g = gcd (sr * out) sl in
             let knum = sr * out / g and kden = sl / g in
@@ -11409,7 +11438,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
   emit ctx "%s_per(%s,X,Y) :- %s_cut(%s,X), %s_cut(%s,Y), X < Y, #count { Z : %s_cut(%s,Z), X < Z, Z < Y } = 0%s."
     p subject p subject p subject p subject
     (String.concat "" (List.map (fun c -> ", " ^ c) cond));
-  units_identical_ok ~what target_unit (eff_unit ctx value);
+  units_identical_ok ~what target_unit (period_unit value);
   let root0, _, root_scale = node value in
   (* the value restated once to the target's scale: a value with more decimals
      than the target fits only where the surplus is 0, the write boundary of

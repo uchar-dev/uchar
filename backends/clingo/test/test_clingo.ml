@@ -17321,6 +17321,32 @@ let () =
              (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
        | _, _ -> check (name ^ ": clingo refuses (it found a model)") false))
 
+(* RUNTIME-SEMANTICS ch. 2.6 rule 7, ch. 3.4, 3.5 and 8.4 on ref's documents
+   (ref/test/fixtures/period-units, bucket-scalar): a percentage of a value with
+   a unit carries that unit, scalar and per period, also as the left factor of a
+   product; a sum per period of a rate keeps the rate as an operand of maal and
+   verminderd met, and under a rounding; and a form that reads a time-dependent
+   attribute whole — a condition per period, the period arithmetic, a sum per
+   period of its members — faults where the case gives the asOfDate-bucket
+   scalar, in ref's sentence *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let pair d = (read (d ^ "/ir.json"), read (d ^ "/case.json")) in
+  List.iter
+    (fun f ->
+      let ir, case_text = pair ("ref/test/fixtures/period-units/" ^ f) in
+      ref_matches ~name:("period units: " ^ f) ~ir ~case_text;
+      clingo_matches ~name:("period units: " ^ f) ~ir ~case_text)
+    [ "percentage-per-period"; "percentage-scalar"; "sum-of-rate"; "rounded-sum-factor" ];
+  let bucket = "whole; the case supplies only the asOfDate-bucket scalar, which carries no period" in
+  List.iter
+    (fun (f, reads) ->
+      let ir, case_text = pair ("ref/test/fixtures/bucket-scalar/" ^ f) in
+      faults_with ~name:("bucket scalar: " ^ f) ~ir ~case_text ~needle:(reads ^ " " ^ bucket))
+    [ ("condition", {|a condition per period reads the time-dependent attribute "strandloon" of "J1"|});
+      ("arithmetic", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "strandloon" of "J1"|});
+      ("sum", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "opbrengst" of "V1"|}) ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
