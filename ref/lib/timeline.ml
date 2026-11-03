@@ -540,6 +540,43 @@ let complement (true_periods : (int * int) list) ~(span : (int * int) list) : (i
       List.rev (walk sv [] inside))
     span
 
+(* --- the periods of a condition over all time (ch. 3.10's clip generalised) -- *)
+
+(* sorted, with overlapping and touching periods joined: the maximal periods,
+   so a clip by them cuts a segment only where the condition changes *)
+let merge_periods (ps : (int * int) list) : (int * int) list =
+  List.fold_left
+    (fun acc (v, t) ->
+      match acc with
+      | (pv, pt) :: rest when v <= pt -> (pv, max pt t) :: rest
+      | _ -> (v, t) :: acc)
+    []
+    (List.sort compare (List.filter (fun (v, t) -> t > v) ps))
+  |> List.rev
+
+let all_time = [ (open_from, open_to) ]
+let complement_all ps = complement (merge_periods ps) ~span:all_time
+
+(* the maximal periods of all time on whose start [pred] holds for the value
+   [tl] reads there: per day, since [tl] is constant between two cuts and a
+   gap reads leeg (ch. 3.1) *)
+let periods_where (tl : t) (pred : Value.t -> bool) : (int * int) list =
+  let cs = with_open_ends (cuts [ tl ]) in
+  let rec pairs = function c1 :: (c2 :: _ as rest) -> (c1, c2) :: pairs rest | _ -> [] in
+  merge_periods (List.filter (fun (c1, _) -> pred (read tl c1)) (pairs cs))
+
+(* the whole-period qualifier per bucket (ch. 3.9 on a timeline target): the
+   buckets of the calendar grid [g] every day of which lies in [ps]. A period
+   keeps the buckets between its first wall and its last one; an open bound
+   keeps its side open, since every bucket beyond the last cut lies in it *)
+let whole_buckets (g : Ir_v0.Ast.grain) (ps : (int * int) list) : (int * int) list =
+  List.filter_map
+    (fun (v, t) ->
+      let lo = if v = open_from then v else let bs, bn = bucket g v in if bs = v then v else bn in
+      let hi = if t = open_to then t else fst (bucket g t) in
+      if hi > lo then Some (lo, hi) else None)
+    (merge_periods ps)
+
 let granularity_time_unit = Ir_v0.Checks.granularity_time_unit
 
 let time_unit_name : Ir_v0.Checks.time_unit -> string = function

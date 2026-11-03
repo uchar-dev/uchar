@@ -2920,8 +2920,10 @@ let () =
   | _ -> check "WV-3.5-d-720" false)
 
 (* WV-3.1-open: an open segment holds every day past its bound, so a fold over
-   the buckets it touches has no end; the fold is refused by name, and a rule
-   whose value is period arithmetic refuses a condition (ch. 3.11) *)
+   the buckets it touches has no end; the fold is refused by name (ch. 3.11).
+   A condition without a timeline on a rule whose value is period arithmetic
+   gates it (ch. 3.3): leeftijd 20 > 18, so the rule writes 5 plus the
+   strandloon over all time *)
 let () =
   let five = [ { Timeline.s_from = Timeline.open_from; s_to = Timeline.open_to; s_value = n "5" } ] in
   expect_fault_msg "WV-3.1-open-bucket-walk"
@@ -2935,8 +2937,9 @@ let () =
         (fun findings _ evaluate ->
           check ("WV-3.11-" ^ fixture ^ ": verifier-clean") (findings = []);
           expect_fault_msg ("WV-3.11-" ^ fixture) evaluate frag))
-    [ ("open-whole-period", "walks the buckets of a period with an open bound");
-      ("condition", "by the period arithmetic of ch. 3.4/3.5 under a condition") ];
+    [ ("open-whole-period", "walks the buckets of a period with an open bound") ];
+  plays ~ident:"WV-3.11-condition" ~ir:(read (dir ^ "condition/ir.json")) ~case_data:(read (dir ^ "condition/case.json"))
+    (fun _ -> ());
   (* ch. 3.6: the own total of a period-arithmetic target over a pro-rata part:
      the characteristic holds every day of January and February, so each takes
      the whole base 120, and the total is 240 *)
@@ -12218,6 +12221,115 @@ let () =
           if got <> expected then List.iter (Printf.printf "  got: %s\n") got
       | exception Case.Error { text; _ } -> check ("WV-5.12-celdoel (case refused: " ^ text ^ ")") false
       | exception Value.Fault { text; _ } -> check ("WV-5.12-celdoel (fault: " ^ text ^ ")") false)
+
+(* --- a condition per period (RUNTIME-SEMANTICS ch. 3.10, 3.9, 5.7; the
+   worked examples of spec/proposals/IMPLICIT-TIME.md points 3, 4, 5 and 8 on
+   the documents of ref/test/fixtures/conditions-per-period) ---------------- *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/conditions-per-period/" in
+  (* WV-3.9-per-emmer: rentedragend on [2025-11-16, 2026-03-13); "gedurende de
+     gehele maand rentedragend" per bucket holds in December 2025, January and
+     February 2026 and in no other month, and its negation in every other
+     month *)
+  let whole = Timeline.whole_buckets Ir_v0.Ast.Month [ (day "2025-11-16", day "2026-03-13") ] in
+  check "WV-3.9-per-emmer" (whole = [ (day "2025-12-01", day "2026-03-01") ]);
+  check "WV-3.9-per-emmer-negatie"
+    (Timeline.complement_all whole
+    = [ (Timeline.open_from, day "2025-12-01"); (day "2026-03-01", Timeline.open_to) ]);
+  (* an open bound keeps its side: every month before 2026-01-15 lies in it *)
+  check "WV-3.9-per-emmer-open"
+    (Timeline.whole_buckets Ir_v0.Ast.Month [ (Timeline.open_from, day "2026-01-15") ]
+    = [ (Timeline.open_from, day "2026-01-01") ]);
+  (* WV-3.10-voorwaarde-per-periode: the dagrente is the verzuimrentevoet maal
+     the afdrachtbedrag gedurende de tijd dat hij rentedragend is, 400 on
+     [2025-11-16, 2026-02-01) and 500 on [2026-02-01, 2026-03-13); the
+     minimumdagen is the day count of rentedragend gedurende de tijd dat hij
+     verzuimd is, 31 in December and 31 in January. WV-3.9-per-emmer, the
+     toetsdagen: the same count gedurende de tijd dat hij niet gedurende de
+     gehele maand rentedragend is, 15 in November and 12 in March (with the
+     day count as it is, which writes no 0 in a month without a true day).
+     WV-5.7-per-dag: the rentedagen of two writers, 30 in a whole month and the
+     day count in another: 15, 30 on [2025-12-01, 2026-03-01), 12 *)
+  plays ~ident:"WV-3.10-voorwaarde-per-periode" ~ir:(read (dir ^ "afdracht/ir.json"))
+    ~case_data:(read (dir ^ "afdracht/case.json")) (fun _ -> ());
+  (* WV-5.7-per-dag, the writer of the count without its condition: both decide
+     December 2025, with 30 and 31 *)
+  with_files ~ir:(read (dir ^ "afdracht-botsing/ir.json")) ~case_data:(read (dir ^ "afdracht-botsing/case.json"))
+    (fun findings _ evaluate ->
+      check "WV-5.7-per-dag-botsing: verifier-clean" (findings = []);
+      check "WV-5.7-per-dag-botsing"
+        (match evaluate () with
+        | exception Value.Fault { code = Some "EF-016"; params; text } ->
+            params
+            = [ ("rules", "rentedagen in een gehele maand, rentedagen in elke maand"); ("values", "30, 31");
+                ("attribute", "rentedagen"); ("label", "A1"); ("objectType", "Afdracht") ]
+            && substring text "on 2025-12-01"
+        | _ -> false));
+  (* WV-3.4-fijner-geweigerd: a dagrentevoet for every day in a maandrente for
+     every month is ill-formed (WF-126), and refused at evaluation *)
+  with_files ~ir:(read (dir ^ "afdracht-fijner/ir.json")) ~case_data:(read (dir ^ "afdracht-fijner/case.json"))
+    (fun findings _ evaluate ->
+      check "WV-3.4-fijner-geweigerd: WF-126 refuses it"
+        (List.exists (fun (x : Ir_v0.Checks.violation) -> x.wf = "WF-126") findings);
+      expect_fault_msg "WV-3.4-fijner-geweigerd" evaluate "does not fit the month grid of the timeline target")
+
+(* WV-5.7-per-dag-invoer: two writers of one timeline target, each deciding its
+   own segments, over an input timeline 7 on 2024. The input stands on the days
+   no writer decides; a day both decide with one value lies in the segment of
+   the writer the document names first; a writer that no longer decides gives
+   its days back *)
+let () =
+  let i =
+    { World.label = "J1"; otype = "Jutter"; attrs = World.SMap.empty; chars = []; left_side = World.SMap.empty;
+      tls = World.SMap.singleton "a" [ { Timeline.s_from = day "2024-01-01"; s_to = day "2025-01-01"; s_value = n "7" } ];
+      ctls = World.SMap.empty }
+  in
+  let w = World.add_instance World.empty i in
+  let seg f t v = { Timeline.s_from = day f; s_to = day t; s_value = n v } in
+  let decl = Some (Ir_v0.Ast.Number { whole_part = true; decimal_places = 0; sign_char = None; measure_unit = None }) in
+  let w, _ = World.write_timeline_part w ~form:"second" ~rank:1 ~label:"J1" ~attr:"a" ~decl [ seg "2024-03-01" "2024-05-01" "1" ] in
+  let w, _ = World.write_timeline_part w ~form:"first" ~rank:0 ~label:"J1" ~attr:"a" ~decl [ seg "2024-03-01" "2024-04-01" "1" ] in
+  let tl w = Option.value (World.timeline (World.get w "J1") "a") ~default:[] in
+  check "WV-5.7-per-dag-invoer"
+    (tl w
+    = [ seg "2024-01-01" "2024-03-01" "7"; seg "2024-03-01" "2024-04-01" "1"; seg "2024-04-01" "2024-05-01" "1";
+        seg "2024-05-01" "2025-01-01" "7" ]);
+  let w, _ = World.release_timeline_part w ~form:"first" ~label:"J1" ~attr:"a" in
+  check "WV-5.7-per-dag-invoer-een-schrijver"
+    (tl w = [ seg "2024-01-01" "2024-03-01" "7"; seg "2024-03-01" "2024-05-01" "1"; seg "2024-05-01" "2025-01-01" "7" ]);
+  let w, _ = World.release_timeline_part w ~form:"second" ~label:"J1" ~attr:"a" in
+  check "WV-5.7-per-dag-invoer-geen-schrijver" (tl w = [ seg "2024-01-01" "2025-01-01" "7" ])
+
+(* WV-5.12-voorwaarde-per-periode: a condition read per period has, at each of
+   its nodes, the part of all time in which it holds, and the value of the rule
+   is the timeline it writes, cut to it; the nodes under the value read the
+   timelines they read or compute, a scalar its value. A whole-period qualifier
+   per bucket has the buckets in which it holds *)
+let () =
+  let dir = "ref/test/fixtures/conditions-per-period/afdracht/" in
+  let got = readings_of (corpus_file (dir ^ "ir.json")) (corpus_file (dir ^ "case.json")) in
+  let line form cell = Printf.sprintf "/rules/rules/%d/versions/0 \"A1\" %s" form cell in
+  let expected =
+    List.sort compare
+      [ line 0 "0 CharacteristicCheck [[2025-11-16 2026-03-13 empty]]";
+        line 0 "1 Binary [[2025-11-16 2026-02-01 400], [2026-02-01 2026-03-13 500]] \"EUR/jr\"";
+        line 0 "2 ParameterReference [[- 2026-02-01 0.04], [2026-02-01 - 0.05]] \"1/jr\"";
+        line 0 "3 AttributeReference 10000 \"EUR\""; line 0 "HOLDS";
+        line 1 "0 CharacteristicCheck [[2025-12-01 2026-02-01 empty]]";
+        line 1 "1 BuiltinCall [[2025-12-01 2026-01-01 31], [2026-01-01 2026-02-01 31]]";
+        line 1 "2 CharacteristicCheck [[2025-11-16 2026-03-13 empty]]"; line 1 "HOLDS";
+        line 2 "0 CharacteristicCheck [[- 2025-12-01 empty], [2026-03-01 - empty]]";
+        line 2 "1 BuiltinCall [[2025-11-01 2025-12-01 15], [2026-03-01 2026-04-01 12]]";
+        line 2 "2 CharacteristicCheck [[2025-11-16 2026-03-13 empty]]"; line 2 "HOLDS";
+        line 3 "0 CharacteristicCheck [[2025-12-01 2026-03-01 empty]]";
+        line 3 "1 Literal [[2025-12-01 2026-03-01 30]]"; line 3 "HOLDS";
+        line 4 "0 CharacteristicCheck [[- 2025-12-01 empty], [2026-03-01 - empty]]";
+        line 4 "1 BuiltinCall [[2025-11-01 2025-12-01 15], [2026-03-01 2026-04-01 12]]";
+        line 4 "2 CharacteristicCheck [[2025-11-16 2026-03-13 empty]]"; line 4 "HOLDS" ]
+  in
+  check "WV-5.12-voorwaarde-per-periode" (got = expected);
+  if got <> expected then List.iter (Printf.printf "  got: %s\n") got
 
 let () =
   if !failures > 0 then begin

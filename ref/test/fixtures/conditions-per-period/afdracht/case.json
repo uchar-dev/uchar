@@ -1,0 +1,147 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Afdracht",
+        "attributes": {
+          "afdrachtbedrag": {
+            "number": "10000"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "rentedragend": [
+            {
+              "from": "2025-11-16",
+              "to": "2026-03-13"
+            }
+          ],
+          "verzuimd": [
+            {
+              "from": "2025-12-01",
+              "to": "2026-02-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {
+      "verzuimrentevoet": {
+        "timeline": [
+          {
+            "to": "2026-02-01",
+            "value": {
+              "number": "0.04"
+            }
+          },
+          {
+            "from": "2026-02-01",
+            "value": {
+              "number": "0.05"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "A1",
+      "attribute": "dagrente",
+      "timeline": [
+        {
+          "from": "2025-11-16",
+          "to": "2026-02-01",
+          "value": {
+            "number": "400"
+          }
+        },
+        {
+          "from": "2026-02-01",
+          "to": "2026-03-13",
+          "value": {
+            "number": "500"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "A1",
+      "attribute": "minimumdagen",
+      "timeline": [
+        {
+          "from": "2025-12-01",
+          "to": "2026-01-01",
+          "value": {
+            "number": "31"
+          }
+        },
+        {
+          "from": "2026-01-01",
+          "to": "2026-02-01",
+          "value": {
+            "number": "31"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "A1",
+      "attribute": "toetsdagen",
+      "timeline": [
+        {
+          "from": "2025-11-01",
+          "to": "2025-12-01",
+          "value": {
+            "number": "15"
+          }
+        },
+        {
+          "from": "2026-03-01",
+          "to": "2026-04-01",
+          "value": {
+            "number": "12"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "A1",
+      "attribute": "rentedagen",
+      "timeline": [
+        {
+          "from": "2025-11-01",
+          "to": "2025-12-01",
+          "value": {
+            "number": "15"
+          }
+        },
+        {
+          "from": "2025-12-01",
+          "to": "2026-03-01",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2026-03-01",
+          "to": "2026-04-01",
+          "value": {
+            "number": "12"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

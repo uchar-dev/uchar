@@ -1,0 +1,38 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Afdracht",
+        "attributes": {
+          "afdrachtbedrag": {
+            "number": "10000"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "rentedragend": [
+            {
+              "from": "2025-11-16",
+              "to": "2026-03-13"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-016",
+    "params": {
+      "rules": "rentedagen in een gehele maand, rentedagen in elke maand",
+      "values": "30, 31",
+      "attribute": "rentedagen",
+      "label": "A1",
+      "objectType": "Afdracht"
+    }
+  }
+}

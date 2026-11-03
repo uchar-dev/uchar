@@ -87,11 +87,17 @@ type t = {
          that minted it and its creation depth in that stratum, recorded at
          the making (RUNTIME-SEMANTICS ch. 5.5, the creation budget). An
          input instance has no entry; its depth is 0 in every stratum *)
+  parts : (Timeline.t option * (int * string * Timeline.t) list) Key.t;
+      (* by (label, norm attribute), for a timeline target of two or more
+         writers: what it held before any of them wrote, and per writer the
+         segments it decides. Its timeline is their union, and on a day no
+         writer decides, what it held before (RUNTIME-SEMANTICS ch. 5.7 per
+         day) *)
 }
 
 let empty =
   { instances = SMap.empty; order = []; channel = []; outcomes = []; evaluating = []; owners = Key.empty;
-    holders = Key.empty; mints = SMap.empty }
+    holders = Key.empty; mints = SMap.empty; parts = Key.empty }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
@@ -282,6 +288,70 @@ let release w ~form ~label ~attr:name =
       | Held_timeline None ->
           if timeline i name = None then (w, false)
           else (update w { i with tls = SMap.remove (norm name) i.tls }, true))
+  | _ -> (w, false)
+
+(* --- a timeline target of two or more writers (RUNTIME-SEMANTICS ch. 5.7 per day) --- *)
+
+(* the segments each writer of (label, attribute) decides, but [form]'s, as
+   (rank, form, segments): [rank] is the writer's place in the document *)
+let timeline_parts_but w ~form ~label ~attr:name =
+  match Key.find_opt (label, norm name) w.parts with
+  | Some (_, parts) -> List.filter (fun (_, f, _) -> not (String.equal f form)) parts
+  | None -> []
+
+(* The timeline of the target from its parts: every writer's segments as it
+   wrote them, in the order of the document, a day that an earlier writer
+   decides left out of a later one's; and on the days none of them covers, what
+   the target held before any of them wrote. The caller has checked that no
+   two parts decide a day with different values, so the order of the document
+   only says whose segment a shared day lies in. Without parts the target gets
+   back what it held before. *)
+let store_parts w ~label ~attr:name ~before parts =
+  let key = (label, norm name) in
+  let parts = List.sort (fun (a, _, _) (b, _, _) -> compare a b) parts in
+  let spans tl = List.map (fun (s : Timeline.segment) -> (s.s_from, s.s_to)) tl in
+  let _, own =
+    List.fold_left
+      (fun (covered, acc) (_, _, tl) ->
+        let free = Timeline.complement_all covered in
+        (covered @ spans tl, acc @ Timeline.clip tl free))
+      ([], []) parts
+  in
+  let covered = List.concat_map (fun (_, _, tl) -> spans tl) parts in
+  match parts with
+  | [] -> (
+      let w = { w with parts = Key.remove key w.parts } in
+      match before with
+      | Some tl -> write_timeline w ~label ~attr:name tl
+      | None ->
+          let i = get w label in
+          if timeline i name = None then (w, false)
+          else (update w { i with tls = SMap.remove (norm name) i.tls }, true))
+  | _ ->
+      let gaps = Timeline.complement_all covered in
+      let kept = Timeline.clip (Option.value before ~default:[]) gaps in
+      let tl =
+        List.sort (fun (a : Timeline.segment) (b : Timeline.segment) -> compare a.s_from b.s_from) (own @ kept)
+      in
+      write_timeline { w with parts = Key.add key (before, parts) w.parts } ~label ~attr:name tl
+
+(* [form], the writer at [rank] in the document, decides the segments [tl] of
+   the target (none: it decides no day); the write boundary holds per segment,
+   as for [write_timeline_by] *)
+let write_timeline_part w ~form ~rank ~label ~attr:name ~decl (tl : Timeline.t) =
+  List.iter (fun (sg : Timeline.segment) -> ignore (collapse ~at:(label ^ "." ^ name) decl sg.s_value)) tl;
+  let key = (label, norm name) in
+  let before =
+    match Key.find_opt key w.parts with Some (b, _) -> b | None -> timeline (get w label) name
+  in
+  let others = timeline_parts_but w ~form ~label ~attr:name in
+  store_parts w ~label ~attr:name ~before (if tl = [] then others else (rank, form, tl) :: others)
+
+(* [form] does not decide on [label]: its segments leave the target *)
+let release_timeline_part w ~form ~label ~attr:name =
+  match Key.find_opt (label, norm name) w.parts with
+  | Some (before, parts) when List.exists (fun (_, f, _) -> String.equal f form) parts ->
+      store_parts w ~label ~attr:name ~before (List.filter (fun (_, f, _) -> not (String.equal f form)) parts)
   | _ -> (w, false)
 
 (* the characteristic set, held by no attribution: the case input's or a

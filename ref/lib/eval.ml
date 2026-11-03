@@ -317,6 +317,48 @@ let rec contains_time_window (c : condition_expr) =
   | Rule_status_check _ | Identity_check _ | Condition_unresolved _ ->
       false
 
+(* Whether a condition on a rule of the timeline target of type [ot] is read
+   per period (RUNTIME-SEMANTICS ch. 3.10, the clip generalised;
+   spec/proposals/IMPLICIT-TIME.md point 3): it reads a timeline — a
+   time-dependent characteristic or attribute as an operand, a time-dependent
+   parameter, or a whole-period qualifier, which on such a rule is a truth per
+   bucket (point 4). A condition that reads none holds on every day or on none,
+   and stays the gate of ch. 3.3. The question is asked of the syntax and the
+   declarations alone, so the ASP backend asks it through this function too. *)
+let rec reads_timeline (doc : document) ~(ot : string) (c : condition_expr) =
+  let decl name =
+    match Ir_v0.Checks.effective_ot doc name with Some d -> d | None -> Value.fault "unknown object type %S" name
+  in
+  let temporal_operand (e : expr option) =
+    match e with
+    | Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ }) ->
+        Ir_v0.Checks.attr_temporal (decl otn) a
+    | Some (Parameter_ref { parameter = Some p; _ }) -> (
+        match Ir_v0.Checks.find_ci doc.parameters p with Some { par_granularity = Some _; _ } -> true | _ -> false)
+    | _ -> false
+  in
+  match c with
+  | Characteristic_check { characteristic = Some k; time_period; navigation_binding = None; _ } ->
+      time_period <> None || characteristic_temporal (decl ot) k
+  | Characteristic_check { time_period; _ } -> time_period <> None
+  | Comparison { left_side; right_side; time_period; _ } ->
+      time_period <> None || temporal_operand left_side || temporal_operand right_side
+  | Predicate { operand; time_period; _ } -> time_period <> None || temporal_operand operand
+  | Compound { components; _ } -> List.exists (reads_timeline doc ~ot) components
+  | Quantifier_fold { kv_filter; kv_test; _ } ->
+      let rec qualified (c : condition_expr) =
+        match c with
+        | Characteristic_check { time_period = Some _; _ } | Comparison { time_period = Some _; _ }
+        | Predicate { time_period = Some _; _ } ->
+            true
+        | Compound { components; _ } -> List.exists qualified components
+        | Quantifier_fold { kv_filter; kv_test; _ } ->
+            List.exists qualified (Option.to_list kv_filter @ Option.to_list kv_test)
+        | _ -> false
+      in
+      List.exists qualified (Option.to_list kv_filter @ Option.to_list kv_test)
+  | Time_window _ | Role_membership _ | Rule_status_check _ | Identity_check _ | Condition_unresolved _ -> false
+
 
 (* ch. 3.10's v0 mirror note carries TWO bounds on the window and this is the
    second: v0's backends "refuse the condition under counting quantifiers".
@@ -889,12 +931,15 @@ let target_member env (target : expr option) =
 
 (* The value shapes of a rule on a temporal attribute target that ch. 3.4 and
    ch. 3.5 produce over all time: an operator of ch. 1.2 read per day (plus,
-   min, verminderd met, maal, both divisions, percentage van), and the sum over
-   the members of a set. *)
+   min, verminderd met, maal, both divisions, percentage van), the sum over the
+   members of a set, and an operand of those standing alone — a scalar, which
+   holds on every day, a time-dependent attribute or parameter, read whole
+   (ch. 3.1, 3.11). *)
 let is_period_arithmetic (e : expr) =
   match e with
   | Binary { op = Plus | Min | Reduced_by | Times | Divided_by | Divided_by_abs | Percentage_of; _ } -> true
   | Function_call { kind = Sum_function; element_object_type = Some _; _ } -> true
+  | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } | Parameter_ref _ -> true
   | _ -> false
 
 (* Whether a rule writes [attr] of [otype] as ch. 3.4/3.5 period arithmetic.
@@ -3016,15 +3061,249 @@ let over_subjects ?(exact = false) ?(except = []) ?read ?(only = fun _ -> true) 
    must equal the node's. An absent base timeline or a condition
    without true periods writes the EMPTY timeline (v0: a null base
    yields the empty list — the target exists, with no segments). *)
-(* ch. 3.10's clip, applied to a producer's result before anything else
-   looks at it: [window] is the subject's window as [lo, hi) in day
-   numbers, an open bound at the integer's end. The restriction cuts
-   segments and keeps their values — Timeline.clip does exactly that — and
-   an empty window (hi <= lo) leaves nothing. *)
-let clip_window window result =
-  match window with
-  | None -> result
-  | Some (lo, hi) -> if hi <= lo then [] else Timeline.clip result [ (lo, hi) ]
+(* --- a condition per period (RUNTIME-SEMANTICS ch. 3.10, the clip generalised) --- *)
+
+(* WF-126, fail-fast behind the verifier: a timeline that a rule of a timeline
+   target reads per period lies on a grid that fits the target's, so the target
+   can carry each cut it makes. [what] names the operand. *)
+let refuse_finer ~what ~(operand : Timeline.grid) ~(target : Timeline.grid) ~attr =
+  let key (g : Timeline.grid) =
+    ( g.g_gran,
+      match g.g_start with
+      | Timeline.Calendar -> None
+      | Fixed_date z -> Some (Value.iso_of_date z)
+      | Fixed_day_month z -> Some ("--" ^ String.sub (Value.iso_of_date z) 5 5)
+      | Variable -> Some "variable" )
+  in
+  if not (Ir_v0.Checks.grid_fits ~operand:(key operand) ~target:(key target)) then
+    Value.fault
+      "%s lies on the %s grid, which does not fit the %s grid of the timeline target %S: the target cannot \
+       carry its cuts (WF-126)"
+      what
+      (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity operand.g_gran)
+      (Ir_v0.Spelling.encode Ir_v0.Spelling.granularity target.g_gran)
+      attr
+
+(* The periods of all time in which a condition read per period holds, as
+   maximal periods ([reads_timeline] says which condition is read so):
+   - a check of a time-dependent characteristic of the subject holds in its
+     true periods, a negated one outside them, over all time (ch. 3.1);
+   - a comparison of a time-dependent attribute of the subject with a scalar
+     bound holds on every day it holds by ch. 1.2, a gap day reading leeg;
+   - a whole-period qualifier holds in every bucket of its grid on all days of
+     which its test holds, and its negation in every other bucket (per bucket,
+     spec/proposals/IMPLICIT-TIME.md point 4);
+   - a composite holds on every day on which its quantifier holds of the
+     members that hold that day; every member is read, since a short circuit
+     (ch. 5.10) orders the members of one verdict and here each day has its
+     own;
+   - a node that reads no timeline holds on every day or on none, and is
+     evaluated once.
+   Each node records the part of all time in which it holds (ch. 5.12), a
+   comparison its compared timeline's segments there with their values and the
+   gaps where a leeg side satisfies it. Any other condition that reads a
+   timeline is refused by name. *)
+let rec cond_periods env w (self : World.instance) ~err ~(target : Timeline.grid) ~attr (c : condition_expr) :
+    (int * int) list =
+  let ot_decl = object_type env self.otype in
+  let record periods =
+    held_over c (as_periods periods);
+    periods
+  in
+  let per_bucket (gp : entire_period) inner =
+    let g : Ir_v0.Ast.grain = if gp.gp_granularity then Year else Month in
+    refuse_finer ~what:"the whole-period qualifier" ~operand:(Timeline.calendar_grid g) ~target ~attr;
+    let b = Timeline.whole_buckets g inner in
+    if gp.gp_negated then Timeline.complement_all b else b
+  in
+  if not (reads_timeline env.doc ~ot:self.otype c) then
+    record (if eval_cond_node env w self ~err c then Timeline.all_time else [])
+  else
+    match c with
+    | Characteristic_check { characteristic = Some k; navigation_binding = None; negation; holder; time_period; _ } ->
+        (match owner_hosts env.doc ~otype:self.otype ~subj:env.subj ~characteristic:(Some k) holder with
+        | Narrowing e -> narrowing_refused ~characteristic:(Some k) e "a condition per period"
+        | Hosted -> ());
+        if not (characteristic_temporal ot_decl k) then
+          Value.fault "wholePeriod qualifier on a non-time-dependent operand";
+        let periods = Option.value (SMap.find_opt (norm k) self.World.ctls) ~default:[] in
+        let inner = if negation then Timeline.complement_all periods else Timeline.merge_periods periods in
+        record
+          (match time_period with
+          | Some gp -> per_bucket gp inner
+          | None ->
+              (match Ir_v0.Checks.find_ci ot_decl.characteristic_granularity k with
+              | Some (Some g) ->
+                  refuse_finer ~what:(Printf.sprintf "the characteristic %S" k) ~operand:(Timeline.calendar_grid g)
+                    ~target ~attr
+              | _ -> ());
+              inner)
+    | Comparison { op; left_side; right_side; time_period; _ } -> (
+        let le = req "Comparison.left" left_side and re = req "Comparison.right" right_side in
+        let temporal_side (e : expr) =
+          match e with
+          | Attribute_reference
+              { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
+            when own_read env self otn && Ir_v0.Checks.attr_temporal (object_type env otn) a ->
+              Some a
+          | _ -> None
+        in
+        let tested_attr, tested_left =
+          match (temporal_side le, temporal_side re) with
+          | Some a, None -> (a, true)
+          | None, Some a -> (a, false)
+          | _ ->
+              Value.fault
+                "a comparison in a condition per period compares one time-dependent attribute of the subject \
+                 with a scalar bound; this one does not"
+        in
+        let tested_e, bound_e, op = if tested_left then (le, re, op) else (re, le, reversed op) in
+        let read_tested () =
+          let tl = World.timeline self tested_attr in
+          if tl = None && World.attr self tested_attr <> Value.Empty then
+            Value.fault
+              "a condition per period reads the time-dependent attribute %S of %S whole; the case supplies only \
+               the asOfDate-bucket scalar, which carries no period"
+              tested_attr self.label;
+          read_whole tested_e tl;
+          Option.value tl ~default:[]
+        in
+        (* the operands in the order the comparison names them (ch. 5.11) *)
+        let tested, bound =
+          if tested_left then
+            let t = read_tested () in
+            (t, eval_expr env w self ~err bound_e)
+          else
+            let b = eval_expr env w self ~err bound_e in
+            (read_tested (), b)
+        in
+        let holds v =
+          Arith.compare_op ?static_numeric:(static_numeric env le re) ~static_date:(static_date env le re) op v bound
+        in
+        let inner = Timeline.periods_where tested holds in
+        match time_period with
+        | Some gp -> record (per_bucket gp inner)
+        | None ->
+            refuse_finer
+              ~what:(Printf.sprintf "the attribute %S" tested_attr)
+              ~operand:(Timeline.attr_grid env.doc ot_decl tested_attr) ~target ~attr;
+            let filled = List.filter (fun (s : Timeline.segment) -> s.s_value <> Value.Empty) tested in
+            let gaps =
+              Timeline.intersect_periods
+                (Timeline.complement_all (List.map (fun (s : Timeline.segment) -> (s.s_from, s.s_to)) filled))
+                inner
+            in
+            held_over c
+              (List.sort
+                 (fun (a : Timeline.segment) (b : Timeline.segment) -> compare a.s_from b.s_from)
+                 (Timeline.clip filled inner
+                 @ List.map (fun (v, t) -> { Timeline.s_from = v; s_to = t; s_value = Value.Empty }) gaps));
+            inner)
+    | Compound { quantifier_kind; cutoff; components; _ } ->
+        if List.exists contains_time_window components then
+          Value.fault
+            "a period condition inside a composite on the temporal target %S: ch. 3.10 specifies the clip for \
+             the window as the rule's whole condition and says nothing about what the other members do to a \
+             timeline. Declined at evaluation"
+            attr;
+        let parts = List.map (cond_periods env w self ~err ~target ~attr) components in
+        let n = List.length parts in
+        let cs =
+          List.sort_uniq compare
+            (Timeline.open_from :: Timeline.open_to
+            :: List.concat_map (List.concat_map (fun (v, t) -> [ v; t ])) parts)
+        in
+        let rec pairs = function c1 :: (c2 :: _ as rest) -> (c1, c2) :: pairs rest | _ -> [] in
+        let holds_at d ps = List.exists (fun (v, t) -> v <= d && d < t) ps in
+        let verdict hits =
+          match quantifier_kind with
+          | The | All -> hits = n
+          | None_of -> hits = 0
+          | At_least -> hits >= cutoff
+          | At_most -> hits <= cutoff
+          | Exactly -> hits = cutoff
+        in
+        record
+          (Timeline.merge_periods
+             (List.filter (fun (c1, _) -> verdict (List.length (List.filter (holds_at c1) parts))) (pairs cs)))
+    | _ ->
+        Value.fault
+          "this condition on the timeline target %S reads a timeline in a shape that is not read per period: \
+           a condition per period is a check of a time-dependent characteristic of the subject, a comparison \
+           of a time-dependent attribute of the subject with a scalar bound, either under a whole-period \
+           qualifier, or a composite of such conditions"
+          attr
+
+(* ch. 3.10's clip, generalised: a producer's result restricted to the periods
+   in which its condition holds, before anything else looks at it. The
+   restriction cuts segments and keeps their values (Timeline.clip); no period
+   leaves nothing. *)
+let clip_periods periods result = match periods with None -> result | Some ps -> Timeline.clip result ps
+
+(* The rules that compute the timeline target (ot, attr), in the order of the
+   document. With two or more, each writer decides its own segments, and the
+   target is their union per day (ch. 5.7). *)
+let timeline_writers env ~ot ~attr =
+  List.filter
+    (fun (r : resolved_rule) ->
+      (match r.rr_presentation with Some (Equation | Calculation) -> true | _ -> false)
+      &&
+      match r.objective with
+      | Some (Attribute_reference { attribute_ref = Some a; object_type = Some o; _ }) ->
+          norm a = norm attr && Ir_v0.Checks.populations_overlap env.doc o ot
+      | _ -> false)
+    env.doc.resolved_rules
+
+(* The write of a producer's timeline [result] on (self, attr) by [form]. On a
+   target of one writer the timeline replaces what the target held, the ch. 7.8
+   arm on a standing target. On a target of two or more, [result] is the part
+   [form] decides; two writers that decide one day with different values have
+   no fixpoint (ch. 5.1), and the fault names them in the order of the
+   document with their values on the first such day (IMPLICIT-TIME VB 5.2). *)
+let write_produced env w (self : World.instance) ~form ~ot ~attr result =
+  let decl = attr_decl env ~otype:ot ~attr in
+  match timeline_writers env ~ot ~attr with
+  | _ :: _ :: _ as writers ->
+      let rank_of f =
+        Option.value ~default:max_int (List.find_index (fun (r : resolved_rule) -> r.rr_pointer = f) writers)
+      in
+      let name_of f =
+        match List.find_opt (fun (r : resolved_rule) -> r.rr_pointer = f) writers with Some r -> rule_name r | None -> f
+      in
+      let clashes =
+        List.concat_map
+          (fun (_, f', tl') ->
+            List.concat_map
+              (fun (s : Timeline.segment) ->
+                List.filter_map
+                  (fun (s' : Timeline.segment) ->
+                    if s.s_from < s'.s_to && s'.s_from < s.s_to && not (Arith.equal s.s_value s'.s_value) then
+                      Some (max s.s_from s'.s_from, f', s.s_value, s'.s_value)
+                    else None)
+                  tl')
+              result)
+          (World.timeline_parts_but w ~form ~label:self.label ~attr)
+      in
+      (match List.sort (fun (a, _, _, _) (b, _, _, _) -> compare a b) clashes with
+      | (day, f', v, v') :: _ ->
+          let pair =
+            List.sort (fun (a, _, _) (b, _, _) -> compare a b) [ (rank_of form, name_of form, v); (rank_of f', name_of f', v') ]
+          in
+          let day = if day = Timeline.open_from then "every day before the first bound" else Value.iso_of_date day in
+          Value.faultc
+            ~params:
+              [ ("rules", String.concat ", " (List.map (fun (_, n, _) -> n) pair));
+                ("values", String.concat ", " (List.map (fun (_, _, v) -> Value.to_string v) pair));
+                ("attribute", attr); ("label", self.label); ("objectType", self.otype) ]
+            "EF-016" "two writers of one target disagree on %s: %s to the attribute %s of %s, a %s" day
+            (String.concat " and "
+               (List.map (fun (_, n, v) -> Printf.sprintf "rule \"%s\" writes %s" n (Value.to_string v)) pair))
+            attr self.label self.otype
+      | [] -> World.write_timeline_part w ~form ~rank:(rank_of form) ~label:self.label ~attr ~decl result)
+  | _ ->
+      if result = [] && List.mem (norm ot, norm attr) (Ir_v0.Desugar.standing_temporal_targets env.doc) then
+        World.release w ~form ~label:self.label ~attr
+      else World.write_timeline_by w ~form ~label:self.label ~attr ~decl result
 
 (* ch. 3.4 and 3.5 as the value of a rule on a temporal attribute target: the
    timeline of [e] over all time (ch. 3.1). A binary operator cuts and merges
@@ -3036,8 +3315,13 @@ let clip_window window result =
    period (the contributor-skipping rule); an own temporal attribute and a
    time-dependent parameter are read whole; and a scalar operand holds on every
    day: one segment with two open bounds, or none where it is leeg. Every other
-   shape is refused by name, never read as a scalar at some instant. *)
-let rec period_timeline env w (self : World.instance) ~err ~target_unit (e : expr) : Timeline.t =
+   shape is refused by name, never read as a scalar at some instant. A timeline
+   it reads lies on a grid that fits the target's (WF-126). Every node but
+   [root], the value of the rule, records the timeline it reads or computes,
+   or its value where it is a scalar (ch. 5.12); the caller records the
+   root's, the timeline the rule writes. *)
+let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.grid) ~attr ~target_unit ?(root = false)
+    (e : expr) : Timeline.t =
   let whole (i : World.instance) a =
     match World.timeline i a with
     | Some tl -> tl
@@ -3049,12 +3333,16 @@ let rec period_timeline env w (self : World.instance) ~err ~target_unit (e : exp
              case supplies only the asOfDate-bucket scalar, which carries no period"
             a i.label
   in
+  let seen tl =
+    if not root then read_whole e (Some tl);
+    tl
+  in
   match e with
   | Binary
       { op = (Plus | Min | Reduced_by | Times | Divided_by | Divided_by_abs | Percentage_of) as op;
         left_side = Some l; right_side = Some r; _ } ->
-      let a = period_timeline env w self ~err ~target_unit l in
-      let b = period_timeline env w self ~err ~target_unit r in
+      let a = period_timeline env w self ~err ~target ~attr ~target_unit l in
+      let b = period_timeline env w self ~err ~target ~attr ~target_unit r in
       let scalar =
         match op with
         | Plus -> Arith.add
@@ -3066,32 +3354,38 @@ let rec period_timeline env w (self : World.instance) ~err ~target_unit (e : exp
         | Percentage_of -> Arith.pct_of
         | Power -> assert false
       in
-      Timeline.cut_merge scalar a b
+      seen (Timeline.cut_merge scalar a b)
   | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
     when Ir_v0.Checks.attr_temporal (object_type env otn) a ->
       if not (own_read env self otn) then
         Value.fault "a read of %S on %S without navigation bindings is the subject's own read, but the subject is %S"
           a otn self.otype;
-      whole self a
+      refuse_finer ~what:(Printf.sprintf "the attribute %S" a) ~operand:(Timeline.attr_grid env.doc (object_type env otn) a)
+        ~target ~attr;
+      seen (whole self a)
   | Function_call
       { kind = Sum_function;
         call_arguments = [ Attribute_reference { attribute_ref = Some x; navigation_bindings = None; anchor = None; _ } ];
         element_object_type = Some el; empty_fallback; filter = None; grain = None; dimension_selections = None;
         source_role; source_path; anchor = None; _ }
     when (source_role <> None || source_path <> None) && Ir_v0.Checks.attr_temporal (object_type env el) x ->
+      refuse_finer ~what:(Printf.sprintf "the attribute %S" x) ~operand:(Timeline.attr_grid env.doc (object_type env el) x)
+        ~target ~attr;
       let members = fold_members ?binding:source_role ?path:source_path env w self ~element:el in
       let fallback = Option.map (eval_expr env w self ~err) empty_fallback in
-      Timeline.summed ?fallback ~target_unit (List.map (fun i -> whole i x) members)
-  | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } -> scalar_everywhere env w self ~err e
+      seen (Timeline.summed ?fallback ~target_unit (List.map (fun i -> whole i x) members))
+  | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } ->
+      scalar_everywhere env w self ~err ~root e
   | Parameter_ref { parameter = Some p; _ } -> (
       match Ir_v0.Checks.find_ci env.doc.parameters p with
-      | Some { par_granularity = None; _ } -> scalar_everywhere env w self ~err e
-      | Some _ -> (
+      | Some { par_granularity = None; _ } -> scalar_everywhere env w self ~err ~root e
+      | Some decl -> (
           (* a time-dependent parameter is a timeline operand like a temporal
              attribute (ch. 3.4); its timeline is its binding, so an absent one
              is an unbound parameter (ch. 5.7) *)
+          refuse_finer ~what:(Printf.sprintf "the parameter %S" p) ~operand:(Timeline.param_grid decl) ~target ~attr;
           match SMap.find_opt (norm p) env.param_tls with
-          | Some tl -> tl
+          | Some tl -> seen tl
           | None ->
               Value.faultc ~params:[ ("parameter", p) ] "EF-014"
                 "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" p)
@@ -3103,26 +3397,28 @@ let rec period_timeline env w (self : World.instance) ~err ~target_unit (e : exp
          filter, an own temporal attribute, a time-dependent parameter, a literal, an own scalar \
          attribute or a scalar parameter"
 
-and scalar_everywhere env w self ~err e =
-  match eval_expr env w self ~err e with
+(* the root's value is the rule's, which its caller records *)
+and scalar_everywhere env w self ~err ~root e =
+  match if root then eval_expr_node env w self ~err e else eval_expr env w self ~err e with
   | Value.Empty -> []
   | v -> [ { Timeline.s_from = Timeline.open_from; s_to = Timeline.open_to; s_value = v } ]
 
-(* the write of [period_timeline] (ch. 3.11): a period where the value is leeg
-   is a gap, so the written timeline holds filled segments only; the ch. 7.8
-   timeline arm as for the pro-rata below *)
-let run_period_arithmetic env w (self : World.instance) ~err ~form ~ot ~attr value_node =
+(* the write of [period_timeline] (ch. 3.11), restricted to the periods of its
+   condition: a period where the value is leeg is a gap, so the written
+   timeline holds filled segments only *)
+let run_period_arithmetic ?periods env w (self : World.instance) ~err ~form ~ot ~attr value_node =
   let decl = attr_decl env ~otype:ot ~attr in
+  let target = Timeline.attr_grid env.doc (object_type env ot) attr in
   let result =
-    List.filter
-      (fun (s : Timeline.segment) -> s.s_value <> Value.Empty)
-      (period_timeline env w self ~err ~target_unit:(unit_of_datatype decl) value_node)
+    clip_periods periods
+      (List.filter
+         (fun (s : Timeline.segment) -> s.s_value <> Value.Empty)
+         (period_timeline env w self ~err ~target ~attr ~target_unit:(unit_of_datatype decl) ~root:true value_node))
   in
-  if result = [] && List.mem (norm ot, norm attr) (Ir_v0.Desugar.standing_temporal_targets env.doc)
-  then World.release w ~form ~label:self.label ~attr
-  else World.write_timeline_by w ~form ~label:self.label ~attr ~decl result
+  read_whole value_node (Some result);
+  write_produced env w self ~form ~ot ~attr result
 
-let run_pro_rata ?window env w (self : World.instance) ~form ~ot ~attr value_node =
+let run_pro_rata ?periods env w (self : World.instance) ~form ~ot ~attr value_node =
   let ot_decl = object_type env ot in
   match value_node with
   | Function_call
@@ -3180,18 +3476,13 @@ let run_pro_rata ?window env w (self : World.instance) ~form ~ot ~attr value_nod
       | _ -> ());
       held_over c (as_periods true_periods);
       let base_expr = Option.value (World.timeline self b) ~default:[] in
-      let result = clip_window window (Timeline.pro_rata g base_expr true_periods) in
+      let result = clip_periods periods (Timeline.pro_rata g base_expr true_periods) in
       read_whole value_node (Some result);
       (* ch. 7.8, the timeline arm: on a standing temporal target the
          fold decides only when its result is gevuld — an empty result
          (the temporal leeg) writes nothing and a case-supplied input
          timeline stands whole *)
-      if
-        result = []
-        && List.mem (norm ot, norm attr)
-             (Ir_v0.Desugar.standing_temporal_targets env.doc)
-      then World.release w ~form ~label:self.label ~attr
-      else World.write_timeline_by w ~form ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr) result
+      write_produced env w self ~form ~ot ~attr result
   | Function_call
       { kind = Day_count; call_arguments = [];
         filter = Some c; grain = Some g; empty_fallback = None; dimension_selections = None; _ }
@@ -3224,17 +3515,12 @@ let run_pro_rata ?window env w (self : World.instance) ~form ~ot ~attr value_nod
          (ch. 3.2) *)
       held_over c (as_periods true_periods);
       let result =
-        clip_window window
+        clip_periods periods
           (Timeline.count_days_in_grid (Timeline.attr_grid env.doc ot_decl attr) true_periods)
       in
       read_whole value_node (Some result);
       (* the ch. 7.8 timeline arm, as for pro-rata *)
-      if
-        result = []
-        && List.mem (norm ot, norm attr)
-             (Ir_v0.Desugar.standing_temporal_targets env.doc)
-      then World.release w ~form ~label:self.label ~attr
-      else World.write_timeline_by w ~form ~label:self.label ~attr ~decl:(attr_decl env ~otype:ot ~attr) result
+      write_produced env w self ~form ~ot ~attr result
   | _ ->
       Value.faultc "REF-011"
         "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count shape (a \
@@ -3387,18 +3673,20 @@ let run_rule ?only env world (r : resolved_rule) =
             if temporal_target then
               match r.value_node with
               | Some (Function_call { kind = Time_proportional_part | Day_count; _ }) -> ()
-              | Some v when is_period_arithmetic v ->
-                  (* a condition on this rule would restrict the timeline per period
-                     (spec/proposals/IMPLICIT-TIME.md, point 3), which is not executed *)
-                  if r.rr_condition <> None then
-                    Value.fault
-                      "rule %S writes the temporal attribute %S by the period arithmetic of ch. 3.4/3.5 \
-                       under a condition: a condition per period is not executed"
-                      (rule_name r) attr
+              | Some v when is_period_arithmetic v -> ()
               | _ ->
                   Value.fault
                     "temporal attribute %S as a target: temporal writes are not implemented"
                     attr);
+        (* a condition that reads a timeline is read per period on a timeline
+           target: the rule writes where it holds (ch. 3.10's clip generalised,
+           spec/proposals/IMPLICIT-TIME.md points 3 and 4); one that reads none
+           holds on every day or on none and gates the rule as before *)
+        let per_period =
+          temporal_target && clip = None
+          && Option.fold ~none:false ~some:(reads_timeline env.doc ~ot) r.rr_condition
+        in
+        let several = temporal_target && List.length (timeline_writers env ~ot ~attr) >= 2 in
         (* SUBTYPING §4.1 rules 1 and 4: where inheritance brings a defaults
            stack to this target, this rule is that stack's BASE and is
            written by the group, not here. The exclusion is per CONCRETE
@@ -3416,6 +3704,7 @@ let run_rule ?only env world (r : resolved_rule) =
             let release () =
               match r.rr_presentation with
               | Some Characteristic_attribution -> World.release_char w ~form ~label:self.label ~char:attr
+              | _ when several -> World.release_timeline_part w ~form ~label:self.label ~attr
               | _ -> World.release w ~form ~label:self.label ~attr:member
             in
             (* an initialisation whose guard blocks it does not decide, so neither
@@ -3429,6 +3718,7 @@ let run_rule ?only env world (r : resolved_rule) =
               &&
               match (clip, r.rr_condition) with
               | Some _, _ -> true
+              | None, Some _ when per_period -> true
               | None, Some c -> eval_cond env w self ~err c
               | None, None -> true
             in
@@ -3438,12 +3728,20 @@ let run_rule ?only env world (r : resolved_rule) =
               (* the value is the constant waar, checked before any subject
                  was taken ([characteristic_value_constant_true]) *)
               | Some Characteristic_attribution -> World.set_char_by w ~form ~label:self.label ~char:attr
-              | Some (Equation | Calculation)
-                when temporal_target && Option.fold ~none:false ~some:is_period_arithmetic r.value_node ->
-                  run_period_arithmetic env w self ~err ~form ~ot ~attr (req "RuleVersion.value" r.value_node)
               | Some (Equation | Calculation) when temporal_target ->
-                  let window = Option.map (window_of w self ~err) clip in
-                  run_pro_rata ?window env w self ~form ~ot ~attr (req "RuleVersion.value" r.value_node)
+                  let periods =
+                    match (clip, r.rr_condition) with
+                    | Some window, _ ->
+                        let lo, hi = window_of w self ~err window in
+                        Some (if hi <= lo then [] else [ (lo, hi) ])
+                    | None, Some c when per_period ->
+                        let target = Timeline.attr_grid env.doc (object_type env ot) attr in
+                        Some (cond_periods env w self ~err ~target ~attr c)
+                    | _ -> None
+                  in
+                  let value = req "RuleVersion.value" r.value_node in
+                  if is_period_arithmetic value then run_period_arithmetic ?periods env w self ~err ~form ~ot ~attr value
+                  else run_pro_rata ?periods env w self ~form ~ot ~attr value
               | Some (Equation | Calculation) ->
                   let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
                   (* ch. 7.8: on a standing target — and on a ch. 7.7

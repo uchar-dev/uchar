@@ -51,5 +51,9 @@
   ; the refusals around period arithmetic over all time, and a total over it
   (glob_files fixtures/period-arithmetic/open-whole-period/*.json)
   (glob_files fixtures/period-arithmetic/condition/*.json)
-  (glob_files fixtures/period-arithmetic/total-over-pro-rata/*.json))
+  (glob_files fixtures/period-arithmetic/total-over-pro-rata/*.json)
+  ; the worked examples of a condition per period and of two writers per day
+  (glob_files fixtures/conditions-per-period/afdracht/*.json)
+  (glob_files fixtures/conditions-per-period/afdracht-botsing/*.json)
+  (glob_files fixtures/conditions-per-period/afdracht-fijner/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

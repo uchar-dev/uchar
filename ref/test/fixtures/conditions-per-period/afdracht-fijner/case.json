@@ -1,0 +1,42 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Afdracht",
+        "attributes": {
+          "afdrachtbedrag": {
+            "number": "10000"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "dagrentevoet": {
+        "timeline": [
+          {
+            "to": "2026-02-01",
+            "value": {
+              "number": "0.04"
+            }
+          },
+          {
+            "from": "2026-02-01",
+            "value": {
+              "number": "0.05"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "consistent"
+    }
+  ]
+}
