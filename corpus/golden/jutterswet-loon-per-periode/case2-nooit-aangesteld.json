@@ -1,0 +1,111 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "strandloon": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-03-01",
+                "value": {
+                  "number": "120"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "wachtplichtig": [
+            {
+              "from": "2024-01-10",
+              "to": "2024-01-20"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "aangestelde loon",
+      "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "vrije loon",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "120"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "erkende loon",
+      "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "hoge loon",
+      "timeline": [
+        {
+          "from": "2024-01-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "120"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "aangestelde hoge loon",
+      "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "aanstellingspremie",
+      "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "wachtdagen",
+      "timeline": []
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

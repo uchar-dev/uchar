@@ -1,0 +1,284 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "wachtloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toeslagdagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtpremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "jaarpremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "wachtplichtig",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "day",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "toeslagdagen van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "toeslagdagen",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De toeslagdagen van een Jutter"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "dayCount",
+              "arguments": [],
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "wachtplichtig",
+                "negated": false,
+                "source": {
+                  "snippet": "het aantal dagen in de maand dat hij wachtplichtig is"
+                }
+              },
+              "granularity": "month",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal dagen in de maand dat hij wachtplichtig is"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "wachtplichtig",
+              "negated": false,
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "month",
+                "negated": true
+              },
+              "source": {
+                "snippet": "hij niet gedurende de gehele maand wachtplichtig is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wachtpremie van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachtpremie",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De wachtpremie van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "50"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "50"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "wachtplichtig",
+              "negated": false,
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "month",
+                "negated": false
+              },
+              "source": {
+                "snippet": "hij gedurende de gehele maand wachtplichtig is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "jaarpremie van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "jaarpremie",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De jaarpremie van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "20"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "20"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "wachtloon",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn wachtloon"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "10"
+                }
+              },
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "year",
+                "negated": false
+              },
+              "source": {
+                "snippet": "zijn wachtloon gedurende het gehele jaar groter is dan 10"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

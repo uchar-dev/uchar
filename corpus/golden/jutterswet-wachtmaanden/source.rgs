@@ -1,0 +1,18 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is wachtplichtig kenmerk (bijvoeglijk) voor elke dag;
+    het wachtloon Numeriek (geheel getal) voor elke maand;
+    de toeslagdagen Numeriek (niet-negatief geheel getal) voor elke maand;
+    de wachtpremie Numeriek (geheel getal) voor elke maand;
+    de jaarpremie Numeriek (geheel getal) voor elke maand;
+
+Regel toeslagdagen van een jutter
+    geldig altijd
+        De toeslagdagen van een Jutter moet berekend worden als (het aantal dagen in de maand dat hij wachtplichtig is) gedurende de tijd dat hij niet gedurende de gehele maand wachtplichtig is.
+
+Regel wachtpremie van een jutter
+    geldig altijd
+        De wachtpremie van een Jutter moet gesteld worden op 50 gedurende de tijd dat hij gedurende de gehele maand wachtplichtig is.
+
+Regel jaarpremie van een jutter
+    geldig altijd
+        De jaarpremie van een Jutter moet gesteld worden op 20 gedurende de tijd dat zijn wachtloon gedurende het gehele jaar groter is dan 10.

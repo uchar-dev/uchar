@@ -1,0 +1,33 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "wachtplichtig": [
+            {
+              "from": "2025-11-16",
+              "to": "2026-03-13"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-016",
+    "params": {
+      "rules": "wachtdagen in een volle maand, wachtdagen in elke maand",
+      "attribute": "wachtdagen",
+      "label": "J1",
+      "objectType": "Jutter"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is aangesteld kenmerk (bijvoeglijk) voor elke maand;
+    is wachtplichtig kenmerk (bijvoeglijk) voor elke dag;
+    is erkend kenmerk (bijvoeglijk);
+    het strandloon Numeriek (geheel getal) voor elke maand;
+    de stormtoeslag Numeriek (geheel getal) voor elke maand;
+    het aangestelde loon Numeriek (geheel getal) voor elke maand;
+    het vrije loon Numeriek (geheel getal) voor elke maand;
+    het erkende loon Numeriek (geheel getal) voor elke maand;
+    het hoge loon Numeriek (geheel getal) voor elke maand;
+    het aangestelde hoge loon Numeriek (geheel getal) voor elke maand;
+    de aanstellingspremie Numeriek (geheel getal) voor elke maand;
+    de wachtdagen Numeriek (niet-negatief geheel getal) voor elke maand;
+
+Regel aangesteld loon van een jutter
+    geldig altijd
+        Het aangestelde loon van een Jutter moet berekend worden als zijn strandloon plus zijn stormtoeslag gedurende de tijd dat hij aangesteld is.
+
+Regel vrij loon van een jutter
+    geldig altijd
+        Het vrije loon van een Jutter moet berekend worden als zijn strandloon plus zijn stormtoeslag gedurende de tijd dat hij niet aangesteld is.
+
+Regel erkend loon van een jutter
+    geldig altijd
+        Het erkende loon van een Jutter moet berekend worden als zijn strandloon plus zijn stormtoeslag indien hij erkend is.
+
+Regel hoog loon van een jutter
+    geldig altijd
+        Het hoge loon van een Jutter moet berekend worden als zijn strandloon plus zijn stormtoeslag indien zijn strandloon groter is dan 100.
+
+Regel aangesteld hoog loon van een jutter
+    geldig altijd
+        Het aangestelde hoge loon van een Jutter moet berekend worden als zijn strandloon plus zijn stormtoeslag
+        indien hij aan alle volgende voorwaarden voldoet:
+            - hij is aangesteld
+            - zijn strandloon is groter dan 100.
+
+Regel aanstellingspremie van een jutter
+    geldig altijd
+        De aanstellingspremie van een Jutter moet gesteld worden op 25 gedurende de tijd dat hij aangesteld is.
+
+Regel wachtdagen van een jutter
+    geldig altijd
+        De wachtdagen van een Jutter moet berekend worden als (het aantal dagen in de maand dat hij wachtplichtig is) gedurende de tijd dat hij aangesteld is.

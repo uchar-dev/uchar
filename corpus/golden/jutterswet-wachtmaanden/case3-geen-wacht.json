@@ -1,0 +1,59 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "wachtloon": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "30"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "toeslagdagen",
+      "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "wachtpremie",
+      "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "jaarpremie",
+      "timeline": [
+        {
+          "from": "2024-01-01",
+          "to": "2025-01-01",
+          "value": {
+            "number": "20"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "wachtplichtig": [
+            {
+              "from": "2025-11-16",
+              "to": "2026-03-13"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "wachtdagen",
+      "timeline": [
+        {
+          "from": "2025-11-01",
+          "to": "2025-12-01",
+          "value": {
+            "number": "15"
+          }
+        },
+        {
+          "from": "2025-12-01",
+          "to": "2026-03-01",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2026-03-01",
+          "to": "2026-04-01",
+          "value": {
+            "number": "12"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,0 +1,645 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "strandloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "stormtoeslag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aangestelde loon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vrije loon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "erkende loon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "hoge loon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aangestelde hoge loon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aanstellingspremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtdagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "aangesteld",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Characteristic",
+            "name": "wachtplichtig",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "day",
+              "count": 1
+            }
+          },
+          {
+            "node": "Characteristic",
+            "name": "erkend",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "aangesteld loon van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aangestelde loon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aangestelde loon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "strandloon",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn strandloon"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "stormtoeslag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn stormtoeslag"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn strandloon plus zijn stormtoeslag"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "aangesteld",
+              "negated": false,
+              "source": {
+                "snippet": "hij aangesteld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vrij loon van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vrije loon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het vrije loon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "strandloon",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn strandloon"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "stormtoeslag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn stormtoeslag"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn strandloon plus zijn stormtoeslag"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "aangesteld",
+              "negated": true,
+              "source": {
+                "snippet": "hij niet aangesteld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "erkend loon van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "erkende loon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het erkende loon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "strandloon",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn strandloon"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "stormtoeslag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn stormtoeslag"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn strandloon plus zijn stormtoeslag"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "erkend",
+              "negated": false,
+              "source": {
+                "snippet": "hij erkend is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "hoog loon van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "hoge loon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het hoge loon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "strandloon",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn strandloon"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "stormtoeslag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn stormtoeslag"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn strandloon plus zijn stormtoeslag"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "strandloon",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn strandloon"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "100"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "100"
+                }
+              },
+              "source": {
+                "snippet": "zijn strandloon groter is dan 100"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aangesteld hoog loon van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aangestelde hoge loon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aangestelde hoge loon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "strandloon",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn strandloon"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "stormtoeslag",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn stormtoeslag"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn strandloon plus zijn stormtoeslag"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "aangesteld",
+                  "negated": false,
+                  "source": {
+                    "snippet": "hij is aangesteld"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "strandloon",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn strandloon"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "100"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "100"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn strandloon is groter dan 100"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - hij is aangesteld - zijn strandloon is groter dan 100"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aanstellingspremie van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aanstellingspremie",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De aanstellingspremie van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "25"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "25"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "aangesteld",
+              "negated": false,
+              "source": {
+                "snippet": "hij aangesteld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wachtdagen van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachtdagen",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De wachtdagen van een Jutter"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "dayCount",
+              "arguments": [],
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "wachtplichtig",
+                "negated": false,
+                "source": {
+                  "snippet": "het aantal dagen in de maand dat hij wachtplichtig is"
+                }
+              },
+              "granularity": "month",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal dagen in de maand dat hij wachtplichtig is"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "aangesteld",
+              "negated": false,
+              "source": {
+                "snippet": "hij aangesteld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
