@@ -47,5 +47,9 @@
   fixtures/written-allocation/vrijgavescore-first/ir.json
   fixtures/written-allocation/tussenscore-first/ir.json
   fixtures/written-allocation/case1-voorwaarde-vervalt.json
-  fixtures/written-allocation/case2-voorwaarde-blijft.json)
+  fixtures/written-allocation/case2-voorwaarde-blijft.json
+  ; the refusals around period arithmetic over all time, and a total over it
+  (glob_files fixtures/period-arithmetic/open-whole-period/*.json)
+  (glob_files fixtures/period-arithmetic/condition/*.json)
+  (glob_files fixtures/period-arithmetic/total-over-pro-rata/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

@@ -1,0 +1,46 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "jaartarief": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-01-01",
+                "value": {
+                  "number": "120"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "wachtplichtig": [
+            {
+              "from": "2024-01-01",
+              "to": "2024-03-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "jaarloon",
+      "value": {
+        "number": "240"
+      }
+    }
+  ]
+}

@@ -17159,6 +17159,23 @@ let () =
       "rule \"najaarsmerk\" attributes a characteristic to the cell \"vondstgewicht[najaar]\": a cell is a cell of an \
        attribute, written by a computation or an initialisation (WF-022)"
 
+(* RUNTIME-SEMANTICS ch. 3.1, 3.6, 3.11: the refusals around period arithmetic
+   over all time, on the documents of ref's own witnesses (ref/test/fixtures).
+   A whole-period fold over a timeline with an open bound would answer for the
+   case's span alone, a condition would restrict the timeline per period, and a
+   total over a timeline that reads a pro-rata part would lay its whole-unit
+   facts between bounds that are no case data. *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let dir = "ref/test/fixtures/period-arithmetic/" in
+  List.iter
+    (fun (fixture, needle) ->
+      faults_with ~name:("period arithmetic: " ^ fixture) ~ir:(read (dir ^ fixture ^ "/ir.json"))
+        ~case_text:(read (dir ^ fixture ^ "/case.json")) ~needle)
+    [ ("open-whole-period", "whose timeline may carry an open bound, is not translated");
+      ("condition", "by the period arithmetic of ch. 3.4/3.5 under a condition");
+      ("total-over-pro-rata", "its bounds are not case data, so the whole-unit facts cannot be laid") ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

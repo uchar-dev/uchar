@@ -2883,6 +2883,30 @@ let () =
       check "WV-3.5-d-720" (Q.equal v (q "720") && Ir_v0.Units.denominator u = Some jr)
   | _ -> check "WV-3.5-d-720" false)
 
+(* WV-3.1-open: an open segment holds every day past its bound, so a fold over
+   the buckets it touches has no end; the fold is refused by name, and a rule
+   whose value is period arithmetic refuses a condition (ch. 3.11) *)
+let () =
+  let five = [ { Timeline.s_from = Timeline.open_from; s_to = Timeline.open_to; s_value = n "5" } ] in
+  expect_fault_msg "WV-3.1-open-bucket-walk"
+    (fun () -> Timeline.whole_period_value Ir_v0.Ast.Year ~tl:five (fun _ -> true))
+    "walks the buckets of a period with an open bound";
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/period-arithmetic/" in
+  List.iter
+    (fun (fixture, frag) ->
+      with_files ~ir:(read (dir ^ fixture ^ "/ir.json")) ~case_data:(read (dir ^ fixture ^ "/case.json"))
+        (fun findings _ evaluate ->
+          check ("WV-3.11-" ^ fixture ^ ": verifier-clean") (findings = []);
+          expect_fault_msg ("WV-3.11-" ^ fixture) evaluate frag))
+    [ ("open-whole-period", "walks the buckets of a period with an open bound");
+      ("condition", "by the period arithmetic of ch. 3.4/3.5 under a condition") ];
+  (* ch. 3.6: the own total of a period-arithmetic target over a pro-rata part:
+     the characteristic holds every day of January and February, so each takes
+     the whole base 120, and the total is 240 *)
+  plays ~ident:"WV-3.6-total-over-pro-rata" ~ir:(read (dir ^ "total-over-pro-rata/ir.json"))
+    ~case_data:(read (dir ^ "total-over-pro-rata/case.json")) (fun _ -> ())
+
 (* WV-3.6: the temporal total *)
 let () =
   let month = Ir_v0.Ast.Month in
