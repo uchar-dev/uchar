@@ -443,7 +443,11 @@ gedeeld door 4 has bound 2, gedeeld door 3 ∞; 21% van a whole opbrengst has bo
 bound 5; the maximale waarde of a taxatie of 2 decimals and a whole opbrengst has
 bound 2; a taxatie of 2 decimals maal 100 has bound 0; "2 jr plus zijn basisduur"
 over a whole basisduur in mnd, with `jr = 12 mnd`, has bound 0 in mnd (in jr it
-would be ∞, b/12).
+would be ∞, b/12); the anchor's total of a dagrente in `€/jr` over a day grid
+during the time it is rentedragend has bound ∞, the calendar weighing a day by
+1/365 or 1/366, and is admitted into its target of 2 decimals through its
+rounding (`corpus/negative/wf023-precision-calendar-total` is the same total
+without it).
 
 **The annotation.** The decimals a producer writes in the `type` of a composite
 node are the v0 claim, not the bound: maxDec for plus, min and verminderd met,
