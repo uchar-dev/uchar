@@ -1428,7 +1428,30 @@ pair term instead (`jutterswet-hoogwaterpaar`).
 
 A timeline is data, not state: `tl/5` segments (instance, attribute,
 from, to, scaled value) and `ktl/4` condition segments, with civil
-day numbers as endpoints. Three readers and two producers translate.
+day numbers as endpoints. Four readers and three producers translate.
+
+**The open bound** (RUNTIME-SEMANTICS ch. 3.1). A segment's open `van` is
+the term `#inf` and its open `tot` the term `#sup`, in `tl/5`,
+`inputtl/5` and `param_tl/4` alike: `tl(S,a,#inf,T,R)`,
+`tl(S,a,F,#sup,R)`. clingo orders `#inf` below and `#sup` above every
+integer, so the containment test `F <= D, D < T` of every reader holds
+for every day of an open segment without a rule of its own. Arithmetic on
+them is undefined, and gringo drops the ground rule without a word, so the
+encoding never subtracts or multiplies a bound that may be open: the
+calendar facts (`_wu`, `_b`) are laid between the case's finite
+endpoints only, an open segment joins none of them, and every total that
+can meet one carries the guard
+
+    viol("the temporal total of \"a\" meets a segment with an open bound carrying a value other than 0",S) :-
+        …, tl(S,"a",V,T,W), W != 0, V = #inf.
+
+with its twin on `T = #sup` (EF-036; RS ch. 3.6): a segment of 0 drops
+out of the `#sum` and adds the 0 it carries, any other value is the
+fault. A fold over the buckets of a timeline that may carry an open bound
+(the whole-period qualifier, ch. 3.9) is refused by name at translation
+time, since the bucket facts cover the case's span only. A model's
+`tl/5` atom with `#inf` or `#sup` reads back as the open bound of the
+expected segment.
 
 **Point read** (ch. 3.3): `tl(S,a,F,T,R), F <= D, D < T` — and for a
 granular parameter `param_tl("p",F,T,R)` likewise. A gap or an empty
@@ -1470,11 +1493,42 @@ An empty fold derives no effectiveness and the input timeline stands
 **whole**, never mixed per bucket (the maintainer-ratified
 whole-timeline reading, RS ch. 7.8).
 
+**Period arithmetic** (plus, min and the sum per period, ch. 3.4/3.5, as
+the value of a rule on a temporal attribute target): one cut set per
+subject for the whole value, `paN_cut(S,X)` — every bound of every
+timeline the value reads (the subject's own, and those of the set
+members a sum reaches over its range) and `#inf`, `#sup` — and its
+periods, the pairs of consecutive cuts,
+
+    paN_per(S,X,Y) :- paN_cut(S,X), paN_cut(S,Y), X < Y,
+                      #count { Z : paN_cut(S,Z), X < Z, Z < Y } = 0.
+
+Each operand is a predicate over (S, X, V), its value at the start X of a
+period where it is filled: an own temporal attribute
+`tl(S,b,F,T,W), F <= X, X < T`; a scalar operand the term `expr_term`
+gives it, on every period; the sum over the members `#sum { W,M : … }`
+under an existence atom, and its fallback where no member is filled.
+Plus and min coalesce a leeg operand to 0 (`…_z`, `not …_d`) and combine
+per period, under the range fence of S6. The head writes the maximal
+runs: a cut between two periods of one value joins them (`paN_join`),
+and `tl(S,a,X,Y,V)` spans a run from a start that is no join to the first
+end after it. A period whose value is leeg derives no `paN_val`, so it is
+a gap. The cut set is at least as fine as each of ref's nested
+cut-merges, so the value of every day is ref's, and the maximal runs are
+ref's coalesced segments. On a standing target the arm of ch. 7.8 above
+applies with `paN_eff`. The subject's own total of such a target is a
+`#sum { W*N,V,T : tl(S,a,V,T,W), ptN_wu(V,T,N) }` over the case's finite
+endpoints with the open-bound guard above; where the timeline reads a
+timeline that another producer derives (a pro-rata part or a day count),
+its bounds are no case data and the total is refused by name.
+
 Witnesses: point reads and vintages by `jutterswet-aanmeldquotum`,
 `jutterswet-penningvintage`; pro-rata by `jutterswet-borgdeel`,
 `jutterswet-bakenmeester`, `synth2-prorata-breed`; day count by
 `jutterswet-dagentelling` (the RS ch. 3.8 worked example verbatim);
-the WF-049/056/058 negatiefs pin the shapes.
+period arithmetic and open bounds by `jutterswet-maandloon` and the red
+case `jutterswet-totaal-open-segment`; the WF-049/056/058 negatiefs pin
+the shapes.
 
 ### S10. Defeasibility and standing
 

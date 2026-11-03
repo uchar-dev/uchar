@@ -990,17 +990,26 @@ ch. 3.12.
 
 ### 3.1 The timeline value
 
-A timeline value is a finite set of **segments**. Each segment is a
-half-open day interval `[van, tot)` — `van` inclusive, `tot` exclusive —
-carrying one constant value of the member's element type, or carrying
-**leeg**. Days covered by no segment (**gaps**, including all days before
-the first and after the last segment) also read as leeg. The normative
-reading function:
+A timeline value divides **all time** (maintainer decision 2026-11-03,
+`spec/proposals/IMPLICIT-TIME.md` point 2): it is a finite set of
+**segments**, and every day reads one value. Each segment is a half-open
+day interval `[van, tot)` — `van` inclusive, `tot` exclusive — carrying
+one constant value of the member's element type, or carrying **leeg**. A
+segment may have an **open bound**: an open `van` (written −∞) begins
+before every day, an open `tot` (written +∞) runs past every day; only the
+first segment can have an open `van` and only the last an open `tot`, and
+one segment may have both. Days covered by no segment (**gaps**, including
+all days before the first and after the last segment) also read as leeg: a
+gap is a leeg segment. The normative reading function:
 
 ```
 read(tl, d) = the value of the segment with van ≤ d < tot,  if one exists
             = leeg,                                          otherwise
 ```
+
+where −∞ ≤ d and d < +∞ hold for every day d. A scalar value read as a
+timeline is the one segment (−∞, +∞) carrying it, and the empty timeline
+where it is leeg: a scalar holds on every day (§5.1.1, §5.1.4.1).
 
 - A **boolean timeline** (a time-dependent characteristic) is represented
   by its true-periods only: the segments are the periods where the
@@ -1024,10 +1033,18 @@ read(tl, d) = the value of the segment with van ≤ d < tot,  if one exists
   this chapter may distinguish the two representations. (The
   change-detection rule below is the one representation-sensitive
   comparison — it compares segment lists, not read-functions; that is
-  what makes it a data-plane rule, not a semantics.) *v0 mirror note
+  what makes it a data-plane rule, not a semantics.) A timeline that a
+  rule writes by ch. 3.4 or 3.5 holds its filled segments only — a leeg
+  period is written as a gap — and so does the case format
+  (`uchar-case-v0`, where a segment carries a value and omits `from` or
+  `to` for an open bound). *v0 mirror note
   (residual):* v0's
   temporal total distinguishes an absent timeline (leeg result) from a
   present-but-segmentless one (0) — see ch. 3.6.
+- An open bound is a bound of the value, not of any grid: it sits on no
+  wall, and a fold that walks the buckets or the whole units of a period
+  (ch. 3.7, 3.8, 3.9) has no end to reach in one, and such a walk is
+  refused by name; the temporal total of ch. 3.6 has a rule of its own.
 - Segment-wise equality — same `van`, same `tot`, equal-or-both-leeg
   value (numeric equality for numeric members; ch. 9.3 structural
   equality for constructor-valued members) — is the change-detection
@@ -1218,21 +1235,27 @@ operand stays OPEN with the case format.
 
 ### 3.4 Cut-merge arithmetic — the period-coalescing rule (§5.1.4)
 
-Binary arithmetic over two timelines `a ⊕ b` is defined per period over
-the **cut set** (knip): the sorted union of both operands' segment
-boundaries.
+Binary arithmetic over two timelines `a ⊕ b` (⊕ is plus or min) is
+defined per period of **all time** over the **cut set** (knip): the
+sorted union of both operands' segment boundaries and the two open
+bounds.
 
 ```
-cuts(a, b)  =  sort ( { van, tot of every segment of a and of b } )
+cuts(a, b)  =  sort ( { −∞, +∞ } ∪ { van, tot of every segment of a and of b } )
 (a ⊕ b) on [c_i, c_i+1)  =  coalesce(read(a, c_i)) ⊕ coalesce(read(b, c_i))
                             where coalesce(leeg) = 0
 ```
 
-- The result exists only between the first and last cut — outside the
-  union's span it is a gap. *Inside* the span, a period where both
-  operands are leeg yields **0**, not leeg: that is the
-  **period-coalescing rule**, ch. 1.2's §5.1.4 row, and the exact
+- The result divides all time (ch. 3.1; maintainer decision 2026-11-03,
+  `spec/proposals/IMPLICIT-TIME.md` point 2, following §5.1.4.1). A
+  period where both operands are leeg yields **0**, not leeg — between
+  two segments and before the first cut and after the last one alike, so
+  the result's first and last segments are open: that is the
+  **period-coalescing rule**, ch. 1.2's §5.1.4 row per day, and the exact
   counterpart of the ch. 3.5 rule.
+- A **scalar operand** holds on every day: it is the timeline (−∞, +∞)
+  of ch. 3.1 and adds no cut (§5.1.1). A leeg scalar is the empty
+  timeline, which coalesces to 0 on every day.
 - Adjacent result segments with equal values are coalesced into one.
 - Units follow ch. 2.6: the computation runs in the left operand's unit
   (each right operand restated by its exact factor), and the result is
@@ -1242,32 +1265,40 @@ cuts(a, b)  =  sort ( { van, tot of every segment of a and of b } )
   the cut set itself — event-driven, not re-bucketed onto the target's
   calendar grid.
 
-Worked example — `a` = 100 on [2024-01-01, 2024-07-01), `b` = 30 on
-[2024-04-01, 2024-10-01), `a + b`:
+Worked examples (absolute; `ref/` tests verbatim) — `a` = 100 on
+[2024-01-01, 2024-07-01), `b` = 30 on [2024-04-01, 2024-10-01), `a + b`
+(`WV-3.4-a`) and `a − b` (`WV-3.4-a-min`):
 
-| period | a | b | result |
-|---|---|---|---|
-| [2024-01-01, 2024-04-01) | 100 | leeg→0 | 100 |
-| [2024-04-01, 2024-07-01) | 100 | 30 | 130 |
-| [2024-07-01, 2024-10-01) | leeg→0 | 30 | 30 |
+| period | a | b | a + b | a − b |
+|---|---|---|---|---|
+| (−∞, 2024-01-01) | leeg→0 | leeg→0 | 0 | 0 |
+| [2024-01-01, 2024-04-01) | 100 | leeg→0 | 100 | 100 |
+| [2024-04-01, 2024-07-01) | 100 | 30 | 130 | 70 |
+| [2024-07-01, 2024-10-01) | leeg→0 | 30 | 30 | −30 |
+| [2024-10-01, +∞) | leeg→0 | leeg→0 | 0 | 0 |
 
-Worked example (interior gap coalesces to 0) — `a` = 1 on [jan, feb),
-`b` = 2 on [mrt, apr), `a + b`: [jan, feb) = 1, **[feb, mrt) = 0**
-(both leeg, coalesced to 0 + 0), [mrt, apr) = 2. Before jan and from apr
-on: gap (leeg).
+Worked example (interior gap coalesces to 0, `WV-3.4-b`) — `a` = 1 on
+[jan, feb), `b` = 2 on [mrt, apr), `a + b`: (−∞, jan) = 0, [jan, feb) =
+1, **[feb, mrt) = 0** (both leeg, coalesced to 0 + 0), [mrt, apr) = 2,
+[apr, +∞) = 0.
+
+Worked example (a scalar beside a timeline, `WV-3.4-domein`) — `a` as
+above, `5 + a`: (−∞, 2024-01-01) = 5, [2024-01-01, 2024-07-01) = 105,
+[2024-07-01, +∞) = 5.
+
+The corpus witness of all three, written by rules through the RegelSpraak
+frontend and replayed by `ref` and the ASP backend, is
+`corpus/golden/jutterswet-maandloon`.
 
 *v0 mirror note (scope):* only **plus and min** exist as timeline
 arithmetic in v0. Verminderd-met, maal, division, and percentage-van over
 two timelines are refused (marker/skip) — so verminderd-met's
 left-propagation rule (ch. 1.2) has **no per-period counterpart** in v0;
 the period-coalescing rule knows only the plus/min coalescing behaviour.
-A scalar operand mixed into timeline arithmetic (broadcast) is also
-refused. Both are OPEN in ch. 3.12; the natural liftings (per-period
-application of the ch. 1.2 scalar rules; broadcast as an
-everywhere-constant timeline) are candidates, not specified behaviour —
-broadcast in particular needs a time domain for the constant (an
-unbounded segment), the same obstacle as the unconditional temporal
-characteristic (ch. 3.11).
+That is OPEN in ch. 3.12; the per-period application of the ch. 1.2
+scalar rules is the candidate (`spec/proposals/IMPLICIT-TIME.md`
+point 1), not specified behaviour. A scalar operand under plus and min is
+specified above: its time domain is all time.
 
 ### 3.4a The die/dat subselection on instance folds
 
@@ -1924,14 +1955,17 @@ skipped, never counted as 0 — the timeline instance of the ch. 1.2
 aggregation discipline, and the named opposite of ch. 3.4's
 period-coalescing rule. Further clauses:
 
-- **Zero contributors** (an empty to-many set) yield the **empty
-  timeline** — even under the fallback clause: with no contributor there
-  is no cut set to bound any period, so there is nothing to substitute 0
-  on. (Empty *set* ≠ all-empty *values*; the fallback speaks only about
-  the latter.)
+- **All time** (ch. 3.1). Before the first and after the last boundary of
+  the contributors every contributor is leeg, so the sum is leeg there,
+  and the fallback clause fills it with 0: the result's first and last
+  segments are then open. With **zero contributors** (an empty to-many
+  set) every day is all-leeg too: the result is the **empty timeline**
+  without the fallback clause and the one segment (−∞, +∞) = 0 with it,
+  the per-day reading of ch. 1.2's som row.
 - All-leeg periods that the fallback does not fill are emitted as
   explicit leeg segments (the one producer that does, ch. 3.1); adjacent
-  equal segments — equal-leeg included — coalesce.
+  equal segments — equal-leeg included — coalesce. A rule that writes the
+  sum writes those periods as gaps (ch. 3.1).
 - Each contributor is restated to the target's unit **before** the fold
   (exact factors, ch. 2.6).
 - The operand is a Number — WF-091 (`IR-SPEC.md` ch. 4.1): a contributor
@@ -1946,9 +1980,15 @@ p1 = {jan: 50, feb: 60}, p2 = {feb: 10, mrt: 10}, per month:
 | feb | 60 | 10 | 70 |
 | mrt | leeg (skipped) | 10 | 10 |
 
-With p1 = {jan: 40}, p2 = {mrt: 20}: jan = 40, **feb = leeg**, mrt = 20;
-the same with the fallback clause: jan = 40, **feb = 0**, mrt = 20. With
-no contributors at all: the empty timeline, fallback or not. Cross-unit:
+With p1 = {jan: 40}, p2 = {mrt: 20}: jan = 40, **feb = leeg**, mrt = 20,
+and leeg before jan and from apr on (`WV-3.5-b`); the same with the
+fallback clause: (−∞, jan) = 0, jan = 40, **feb = 0**, mrt = 20,
+[apr, +∞) = 0 (`WV-3.5-b-fallback`). With no contributors at all: the
+empty timeline (`WV-3.5-c-empty-set`), and with the fallback clause
+(−∞, +∞) = 0 (`WV-3.5-c-empty-set-fallback`). The sum over the members
+of a set, written by a rule, is witnessed by
+`corpus/golden/jutterswet-maandloon` (the first two examples, with and
+without the fallback clause, and the empty set). Cross-unit:
 contributors in €/mnd summed into a €/jr target, jan p1 = 50, p2 = 10 →
 each contributor restated before the fold: 50×12 + 10×12 = **720**.
 
@@ -2041,6 +2081,22 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   in the family of ch. 1.2's totaal row — the collapse is a total, not a
   som). A segment shorter than one whole unit contributes 0 by the
   whole-units count.
+- A segment with an **open bound** (ch. 3.1) holds unboundedly many
+  units. With the value 0 it contributes 0; with any other value the
+  total has no value and the session faults (**EF-036**, ch. 5.7b; the
+  parameters are the totalled `attribute` and the `label` of the object
+  whose timeline it is), whichever route reaches it: the subject's own
+  total, the gedurende clip (whose fragment of an open segment keeps its
+  open bound) and the §7.1 per-element fold. This is the warning of §7.1
+  that a total without a bounding condition can have unboundedly many
+  values, made a fault (`spec/proposals/IMPLICIT-TIME.md` VB 2.4).
+- The **subject's own total of a timeline a rule writes by ch. 3.4 or
+  3.5** totals that written timeline whole: such a timeline divides all
+  time, so no asOfDate bucket enters, and before the rule has written it
+  — where it is absent — it totals 0, the per-day reading of an absent
+  timeline as leeg on every day (`spec/proposals/IMPLICIT-TIME.md`
+  point 12c). The convention of a case-supplied timeline below is
+  unchanged.
 - An existing but **segmentless** timeline totals to **0** (the identity
   of a sum over nothing); an **absent** timeline (the member itself leeg)
   totals to **leeg**. *v0 mirror note:* this gap-vs-absent distinction is
@@ -2139,6 +2195,13 @@ Worked examples (absolute, `ref/` tests verbatim; per-month timeline):
   11,00 → totaal = 12×10 + 6×11 = **186,00**.
 - degenerate segments (zero-length or reversed) are skipped: only a
   6-month segment of 10 remains → **60,00**, never a negative count.
+- open segments (`WV-3.6-open-zero`, `WV-3.6-open-nonzero`): the total of
+  `a + b` of ch. 3.4's first example — 0 on (−∞, 2024-01-01), 100, 130,
+  30, 0 on [2024-10-01, +∞) — is 3×100 + 3×130 + 3×30 = **780**; the
+  total of `5 + a` (5 on both open segments) faults with EF-036. In the
+  corpus: `jutterswet-maandloon` totals its `maandloon` (780 in case 1,
+  3 in case 2, 0 in case 3, whose one segment (−∞, +∞) carries 0), and
+  `corpus/red/jutterswet-totaal-open-segment` totals `5 + a`.
 - gedurende "> 1000" over value timeline {3 mnd: 1200, 2 mnd: 800}:
   clipped to the 1200-months → 1200×3 = **3600,00** (not 5200).
 - value timeline 10 on [2023-01-01, 2024-01-01) and 11 on
@@ -3496,15 +3559,27 @@ previous timeline; whether that is a change is decided by segment-wise
 equality (ch. 3.1), which is what makes rewriting to a fixpoint
 idempotent (ch. 5).
 
-- A **scalar value into a temporal target** is refused in v0 (no
-  broadcast — ch. 3.4's OPEN); a **temporal value in a scalar slot** is
-  refused except through the specified collapses (ch. 3.3). Neither
-  boundary is ever crossed by silent coercion.
+- **Period arithmetic as the value** (ch. 3.4, 3.5): plus or min, whose
+  operands are plus or min again, the sum of a temporal attribute over the
+  members of a set (without a die/dat subselection), an own temporal
+  attribute, or a scalar operand (a literal, an own scalar attribute, a
+  scalar parameter), writes the timeline of the value over all time,
+  open segments included, with its leeg periods as gaps (ch. 3.1). A
+  time-dependent parameter as an operand, a die/dat subselection on the
+  sum and a condition on such a rule are refused by name: the condition
+  would restrict the timeline per period (`spec/proposals/IMPLICIT-TIME.md`
+  point 3), which is not specified here. Executed by `ref` and the ASP
+  backend; witness `corpus/golden/jutterswet-maandloon`.
+- A **scalar value as the whole value of a temporal target** is refused
+  (ch. 3.4 gives a scalar a time domain as an operand only); a **temporal
+  value in a scalar slot** is refused except through the specified
+  collapses (ch. 3.3). Neither boundary is ever crossed by silent
+  coercion.
 - **Temporal characteristic, refused cases (v0):** the manifest family
   "temporal kenmerktoekenning with indeterminate write-producer" —
-  (a) an *unconditional* temporal characteristic: "always true" has no
-  finite segment list (the time-domain obstacle, as in ch. 3.4's
-  broadcast — genuinely under-determined, **OPEN**); (b) a non-`altijd`
+  (a) an *unconditional* temporal characteristic: "always true" is the
+  one segment (−∞, +∞) since the time domain of ch. 3.1, but no executor
+  writes a temporal characteristic, so the form stays **OPEN**; (b) a non-`altijd`
   validity window: the ch. 3.10 axis question, OPEN with it; (c) a
   condition whose true-periods v0 cannot bound — a negated or navigated
   characteristic, or a compound containing one; the v0-lowered set is
@@ -3557,7 +3632,9 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Fixed start point off the calendar grid (§13.3.6.3–.7) | **landed (v1 addition)**: `fixedStart` on a timeline and on its facets (`IR-SPEC.md` ch. 2.8, WF-115), the grid in ch. 3.2; read by a case input, the asOfDate bucket and the day count; the pro-rata over a fixed-start grid fenced; the calendar start point is written without one |
 | Point-in-time read (the "op dat tijdstip" node) | **landed (v1 extension)**: `read(tl, d)` is `IR-SPEC.md` ch. 4.3a (`TemporalRead`, WF-049; ch. 3.3, row 11), anchor-witnessed and replayed by both executors |
 | Timeline arithmetic beyond `plus`/`minus` (plus/min): `reducedBy` (verminderd-met), `times` (maal), `dividedBy` and `dividedByAbs` (division), `percentageOf` (percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |
-| Scalar broadcast into timeline arithmetic / unconditional temporal characteristic | refused (mirrored); OPEN — both need a time domain for unbounded segments |
+| Plus, min and the sum per period (ch. 3.4, 3.5) as the value of a rule on a temporal attribute target | **specified and executed** over all time (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 2): `ref` and the ASP backend, witness `corpus/golden/jutterswet-maandloon` (ch. 3.11); both Drools branches refuse it by name (DROOLS-105). A condition on such a rule, a time-dependent parameter as an operand and a die/dat subselection on the sum are refused by name in both OCaml executors |
+| Open segments (ch. 3.1) | **specified**: a timeline divides all time, a segment may have an open bound, the case format omits `from` or `to` for one (`uchar-case-v0`); the total of ch. 3.6 counts an open segment of 0 as 0 and faults on any other value (EF-036, red case `jutterswet-totaal-open-segment`); a fold over the buckets of an open period (ch. 3.7–3.9) is refused by name. A characteristic's true-periods (`characteristicTimelines`) carry no open bound |
+| Scalar operand of timeline arithmetic / unconditional temporal characteristic | the scalar operand of plus and min is **specified and executed**, ch. 3.4 (one segment (−∞, +∞)); the unconditional temporal characteristic has the time domain since then and stays OPEN, because no executor writes a temporal characteristic (ch. 3.11) |
 | `minimum`/`maximum`/`first`/`last` (min/max/eerste/laatste) over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
 | §8.4.3 period condition on a **scalar** target | **specified and executed, ch. 3.10** — all four executors since 2026-09-20, witness `corpus/golden/jutterswet-premievenster` (six clauses; as a rule's whole condition and as an `all`/`the` composite member) |
 | §8.4.3 period condition under `none` or a counting quantifier | **ill-formed (WF-112, maintainer decision 2026-09-23)**: the window gates the rule, and no reading is specified for its complemented or counted verdict (the time-free session is where the two readings part). Covers a quantifier fold's `filter` and `test` too. Negatief `wf112-time-window-counting-quantifier`; the executors' refusals remain as fail-fast checks, both Drools branches' by name since card `drools-venster-vouwtoets` |
@@ -3578,7 +3655,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | **`duration` (tijdsduur) in a day kind over datum-tijd operands** | **refused by name** in both OCaml executors, no corpus case (maintainer decision 2026-09-19, split from the row above): counting whole days of a kind between two INSTANTS needs a rule for the part-day at each end, and none is fixed. OPEN — it is the partial-day/boundary-instant question, not the day-kind question. The Drools backend counts over the bare date parts, a reading this spec has not adopted |
 | The day-kind **predicate as a rule condition** (§8.1.5, "… is een werkdag") | refused by name in both OCaml executors (ch. 5.4's framing: a day kind is consulted as a stratum-0 classifier, never as a derived read inside the rule fixpoint). It IS evaluated inside a day-kind condition, where the nested reference is the §9.8 composition — that arm is executed, **on the bound day only** |
 | The §9.8 composition **on a date other than the bound day** | **refused by name in all three executors** since 2026-09-19 (red case `day-kind-reference-other-day`); the narrow route, taken because ref and the Drools compiler answered it while the ASP backend refused. OPEN — the carrying reading needs a source for what the test MEANS inside a definition about an arbitrary day |
-| Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual |
+| Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual. The subject's own total of a timeline that a rule of ch. 3.4/3.5 writes totals an absent timeline 0 (ch. 3.6) |
 | Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
 | Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |
 
@@ -4718,6 +4795,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-033 | the links of the switch relation of an instance-ordered cycle form a cycle | case input | `factType`, `cycle` | ch. 6.2; IR-SPEC ch. 5.3 | `corpus/red/instance-order-link-cycle` |
 | EF-034 | the labels of a cell of the case input name no cell of its attribute | case input | `label`, `attribute`, `labels` | ch. 5.8c | `corpus/red/jutterswet-cel-onbekend-label` |
 | EF-035 | the case input names one cell of an attribute twice | case input | `label`, `attribute`, `labels` | ch. 5.8c | `corpus/red/jutterswet-cel-dubbel` |
+| EF-036 | a temporal total meets a segment with an open bound whose value is not 0 | fault | `attribute`, `label` | ch. 3.6 | `corpus/red/jutterswet-totaal-open-segment` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified

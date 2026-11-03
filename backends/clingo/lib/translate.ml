@@ -11189,8 +11189,8 @@ let translate_rule ctx (r : resolved_rule) =
               | _ ->
                   faultc "CLINGO-024"
                     "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count \
-                     shape (a gedurende condition over an own temporal characteristic); no \
-                     corpus case for more")
+                     shape (a gedurende condition over an own temporal characteristic) or the \
+                     period arithmetic of ch. 3.4/3.5; no corpus case for more")
           | Some (Calculation | Equation) ->
               let standing =
                 List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc)
