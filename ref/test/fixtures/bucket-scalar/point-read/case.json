@@ -1,0 +1,40 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2025-06-15",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "aanmelddatum": {
+            "date": "2025-06-01"
+          },
+          "jaarquotum": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "penningbedrag": {
+        "timeline": [
+          {
+            "from": "2025-01-01",
+            "to": "2026-01-01",
+            "value": {
+              "number": "4"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "consistent"
+    }
+  ]
+}

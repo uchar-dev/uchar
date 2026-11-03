@@ -154,6 +154,11 @@ let read_whole e tl = match !observer with None -> () | Some o -> o.timeline e t
 let held_over c tl = match !observer with None -> () | Some o -> o.periods c tl
 let object_reached node target = match !observer with None -> () | Some o -> o.reached node target
 
+(* EF-037 (ch. 5.7b, ch. 8.4): a form that reads the timeline of [attr] of [i]
+   whole finds the asOfDate-bucket scalar, which carries no period *)
+let bucket_scalar ~attr (i : World.instance) fmt =
+  Value.faultc ~params:[ ("attribute", attr); ("label", i.label) ] "EF-037" fmt
+
 (* a set of half-open day intervals as the timeline that marks them, each
    period without a value *)
 let as_periods (ps : (int * int) list) : Timeline.t =
@@ -993,6 +998,18 @@ let member_attribute env ~otype member =
    loader's words as well. Any other operand is what WF-043 rejects, and it
    is refused here in the verifier's sentence, so a hand-built node never
    folds an empty timeline to a pass. *)
+(* the timeline of [attr] of [i] that the whole-period fold of ch. 3.9 reads
+   whole: an absent attribute is no timeline, and the asOfDate-bucket scalar
+   faults (ch. 8.4) *)
+let qualifier_timeline (i : World.instance) attr =
+  let tl = World.timeline i attr in
+  if tl = None && World.attr i attr <> Value.Empty then
+    bucket_scalar ~attr i
+      "the whole-period qualifier over %S needs the full timeline; %S supplies only the asOfDate-bucket scalar \
+       (ch. 3.9, ch. 8.4)"
+      attr i.label;
+  tl
+
 let whole_period_operand env world (self : World.instance) (e : expr) : Timeline.t =
   (* the observer keeps [e], the node of the wire; an anchored operand is
      read on the form subject (ch. 3.4a) *)
@@ -1008,7 +1025,7 @@ let whole_period_operand env world (self : World.instance) (e : expr) : Timeline
                 "a read of %S on %S without navigation bindings is the subject's own read, but the \
                  subject is %S"
                 a otn self.otype;
-            World.timeline self a
+            qualifier_timeline self a
         | Some bindings -> (
             match nav_target env world self ~bindings ~endpoint:otn with
             | None ->
@@ -1016,7 +1033,7 @@ let whole_period_operand env world (self : World.instance) (e : expr) : Timeline
                 None
             | Some target ->
                 object_reached (Navigated_read e) (Some target.label);
-                World.timeline target a)
+                qualifier_timeline target a)
       in
       read_whole e tl;
       Option.value tl ~default:[]
@@ -1523,7 +1540,9 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
               (match World.timeline self a with
               | Some tl -> Timeline.read tl d
               | None ->
-                  Value.fault
+                  (* the asOfDate-bucket scalar is EF-037; an absent attribute is not *)
+                  let fault = if World.attr self a = Value.Empty then Value.fault else bucket_scalar ~attr:a self in
+                  fault
                     "the temporal read of %S needs the full timeline; the case supplies none \
                      (the asOfDate-bucket scalar cannot serve a point read)"
                     a)
@@ -1966,7 +1985,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
             | None ->
                 if World.attr self a = Value.Empty then []
                 else
-                  Value.fault
+                  bucket_scalar ~attr:a self
                     "the gedurende clip of %S needs the full timeline; the case supplies only \
                      the asOfDate-bucket scalar"
                     a
@@ -1993,11 +2012,20 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
               when own_read env self botn
                    && Ir_v0.Checks.attr_temporal ot_decl b ->
                 (* the compared timeline is evaluated PER SEGMENT against
-                   the scalar bound (piecewise-constant, never per day) *)
-                read_whole left (World.timeline self b);
+                   the scalar bound (piecewise-constant, never per day), so it
+                   is read whole and the asOfDate-bucket scalar faults (ch. 8.4) *)
                 let tested =
-                  match World.timeline self b with Some t -> t | None -> []
+                  match World.timeline self b with
+                  | Some t -> t
+                  | None ->
+                      if World.attr self b <> Value.Empty then
+                        bucket_scalar ~attr:b self
+                          "the gedurende clip of %S compares %S per segment and needs its full timeline; %S \
+                           supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)"
+                          a b self.label;
+                      []
                 in
+                read_whole left (World.timeline self b);
                 let bound = eval_expr env world self ~err boundary in
                 let periods =
                   Timeline.true_periods_of tested ~span (fun v -> Arith.compare_op op v bound)
@@ -2235,7 +2263,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                  | None ->
                      if World.attr i name = Value.Empty then Timeline.grand_total ~grid_unit:grid ~zero_unit periods []
                      else
-                       Value.fault
+                       bucket_scalar ~attr:name i
                          "the per-element temporal total of %S over %S: the case supplies an \
                           asOfDate-bucket scalar, which carries no period of its own; a set fold \
                           needs each member's own timeline (ch. 3.6/§7.1, ch. 8.4)"
@@ -2644,8 +2672,9 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
                attribute of %S and a scalar bound"
               self.otype
       in
-      read_whole tested_e (World.timeline owner attr);
-      let tested = Option.value (World.timeline owner attr) ~default:[] in
+      let tl = qualifier_timeline owner attr in
+      read_whole tested_e tl;
+      let tested = Option.value tl ~default:[] in
       let boundary = eval_expr env world self ~err bound_e in
       let g : Ir_v0.Ast.grain = if gp.gp_granularity then Year else Month in
       (* ch. 3.9: each day asks the comparison of ch. 1.2, a leeg bound and a
@@ -3264,7 +3293,7 @@ let rec cond_periods env w (self : World.instance) ~err ~(target : Timeline.grid
         let read_tested () =
           let tl = World.timeline self tested_attr in
           if tl = None && World.attr self tested_attr <> Value.Empty then
-            Value.fault
+            bucket_scalar ~attr:tested_attr self
               "a condition per period reads the time-dependent attribute %S of %S whole; the case supplies only \
                the asOfDate-bucket scalar, which carries no period"
               tested_attr self.label;
@@ -3430,7 +3459,7 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
     | None ->
         if World.attr i a = Value.Empty then []
         else
-          Value.fault
+          bucket_scalar ~attr:a i
             "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute %S of %S whole; the \
              case supplies only the asOfDate-bucket scalar, which carries no period"
             a i.label
@@ -3652,7 +3681,7 @@ let run_pro_rata ?periods env w (self : World.instance) ~err ~form ~ot ~attr val
       (* ch. 8.4: the base is read whole, so a case that gives it as the
          asOfDate-bucket scalar faults; an absent base is the empty timeline *)
       if World.timeline self b = None && World.attr self b <> Value.Empty then
-        Value.fault
+        bucket_scalar ~attr:b self
           "the pro-rata base %S needs the full timeline; %S supplies only the asOfDate-bucket scalar (ch. 3.7, \
            ch. 8.4)"
           b self.label;

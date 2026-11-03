@@ -569,6 +569,11 @@ let require_attr_timeline ctx ~otype ~attr =
         isa ctx i.otype otype
         && Uchar_ref.World.timeline i attr = None
       then
+        (* the asOfDate-bucket scalar is EF-037 (ch. 5.7b); an absent attribute is not *)
+        let fault =
+          if Uchar_ref.World.attr i attr = Value.Empty then fault
+          else faultc ~params:[ ("attribute", attr); ("label", i.label) ] "EF-037"
+        in
         fault
           "the temporal read of %S needs the full timeline; the case supplies none for %S \
            (the asOfDate-bucket scalar cannot serve a point read)"
@@ -589,11 +594,13 @@ let refuse_attr_timeline ctx ~otype ~attr =
     ctx.case.world.instances
 
 (* A form that reads the timeline of [attr] whole — the period arithmetic, a
-   condition per period and the base of a pro-rata part (ch. 3.4, 3.5, 3.7,
-   3.10) — needs the full timeline, and an instance of [otype] whose case gives
-   the asOfDate-bucket scalar faults (ch. 8.4), in ref's sentence for the label
-   of that instance; an absent attribute is the empty timeline. Eager, over
-   every instance of the type, where ref faults on the instance it evaluates. *)
+   condition per period, the base of a pro-rata part, the compared timeline of a
+   gedurende clip and the timeline of a whole-period qualifier (ch. 3.4, 3.5,
+   3.6, 3.7, 3.9, 3.10) — needs the full timeline, and an instance of [otype]
+   whose case gives the asOfDate-bucket scalar faults (ch. 8.4, EF-037), in
+   [sentence] for the label of that instance; an absent attribute is the empty
+   timeline. Eager, over every instance of the type, where ref faults on the
+   instance it evaluates. *)
 let refuse_bucket_scalar ctx ~otype ~attr ~(sentence : string -> string) =
   Eval.SMap.iter
     (fun _ (i : Uchar_ref.World.instance) ->
@@ -601,8 +608,15 @@ let refuse_bucket_scalar ctx ~otype ~attr ~(sentence : string -> string) =
         isa ctx i.otype otype
         && Uchar_ref.World.timeline i attr = None
         && Uchar_ref.World.attr i attr <> Value.Empty
-      then fault "%s" (sentence i.label))
+      then faultc ~params:[ ("attribute", attr); ("label", i.label) ] "EF-037" "%s" (sentence i.label))
     ctx.case.world.instances
+
+(* ref's sentence for the whole-period qualifier over [attr], whose timeline [label] gives as the asOfDate-bucket scalar *)
+let qualifier_sentence attr label =
+  Printf.sprintf
+    "the whole-period qualifier over %S needs the full timeline; %S supplies only the asOfDate-bucket scalar (ch. 3.9, \
+     ch. 8.4)"
+    attr label
 
 (* ref's sentence for a form that [reads] the timeline of [attr] of [label] whole *)
 let read_whole_sentence ~reads ~attr label =
@@ -4440,6 +4454,7 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
                    subjectType is the subject type '%s' — '%s' names another type, which only a \
                    navigation reaches"
                   subject_ot ot;
+              refuse_bucket_scalar ctx ~otype:subject_ot ~attr:a ~sentence:(qualifier_sentence a);
               []
           | Some rbs ->
               let env =
@@ -4447,6 +4462,9 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
                   as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
               in
               let roles = List.map (Eval.bound_role env) rbs in
+              (* the timeline at the end of the path is read whole: an instance of its type with the
+                 asOfDate-bucket scalar faults, the instance named *)
+              refuse_bucket_scalar ctx ~otype:ot ~attr:a ~sentence:(qualifier_sentence a);
               List.iter
                 (fun (r : role_ref) ->
                   if r.role_many then
@@ -5397,7 +5415,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           List.iter
             (fun (i : Uchar_ref.World.instance) ->
               if contributes i then
-                fault
+                faultc ~params:[ ("attribute", a); ("label", i.label) ] "EF-037"
                   "the per-element temporal fold of %S over %S: the case supplies an \
                    asOfDate-bucket scalar, which carries no period of its own; a set fold needs \
                    each member's own timeline (ch. 3.6/§7.1, ch. 8.4)"
@@ -5764,17 +5782,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the clip needs full timelines where the attribute is carried at
          all — an ABSENT attribute clips to the empty sum (0, the v0
          nuance), but a bucket scalar would read silently wrong *)
-      Eval.SMap.iter
-        (fun _ (i : Uchar_ref.World.instance) ->
-          if
-            isa ctx i.otype aot
-            && Uchar_ref.World.timeline i a = None
-            && Uchar_ref.World.attr i a <> Value.Empty
-          then
-            fault
-              "the gedurende clip of %S needs the full timeline; %S supplies only the                asOfDate-bucket scalar"
-              a i.label)
-        ctx.case.world.instances;
+      refuse_bucket_scalar ctx ~otype:aot ~attr:a ~sentence:(fun label ->
+          Printf.sprintf "the gedurende clip of %S needs the full timeline; %S supplies only the asOfDate-bucket scalar"
+            a label);
       let gran = attr_granularity ctx ~otype:aot ~attr:a in
       let calendar =
         grid_strip ctx ~what:(Printf.sprintf "the gedurende-clipped total of %S" a) ~gran (attr_unit ctx ~otype:aot ~attr:a)
@@ -5894,6 +5904,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ });
               right_side = Some boundary; time_period = None; _ }
           when norm botn = norm aot && attr_temporal ctx ~otype:botn ~attr:b ->
+            (* the compared timeline is read whole, per segment (ch. 3.6) *)
+            refuse_bucket_scalar ctx ~otype:aot ~attr:b ~sentence:(fun label ->
+                Printf.sprintf
+                  "the gedurende clip of %S compares %S per segment and needs its full timeline; %S supplies only \
+                   the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)"
+                  a b label);
             units_identical_ok ~what:"a clip comparison"
               (attr_unit ctx ~otype:botn ~attr:b)
               (eff_unit ctx boundary);
@@ -7749,6 +7765,7 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
            its operands"
           subject_ot
   in
+  refuse_bucket_scalar ctx ~otype:subject_ot ~attr:a ~sentence:(qualifier_sentence a);
   units_identical_ok ~what:"a whole-period comparison"
     (Option.bind left_side (eff_unit ctx))
     (Option.bind right_side (eff_unit ctx));

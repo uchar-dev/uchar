@@ -3033,23 +3033,52 @@ let () =
         ~case_data:(read (dir ^ fixture ^ "/case.json")) (fun _ -> ()))
     [ "percentage-per-period"; "percentage-scalar"; "sum-of-rate"; "rounded-sum-factor" ];
   (* ch. 8.4: a form that reads a time-dependent attribute whole needs its full
-     timeline, and a case that gives the asOfDate-bucket scalar faults, in the
-     sentence the ASP backend and the Drools backend speak too *)
+     timeline, and a case that gives the asOfDate-bucket scalar faults with
+     EF-037 (ch. 5.7b), naming the attribute and the instance whose input it is,
+     in the sentence the ASP backend and the Drools backend speak too *)
   let dir = "ref/test/fixtures/bucket-scalar/" in
   let bucket = " whole; the case supplies only the asOfDate-bucket scalar, which carries no period" in
+  let qualifier a l =
+    Printf.sprintf
+      {|the whole-period qualifier over "%s" needs the full timeline; "%s" supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)|}
+      a l
+  in
   List.iter
-    (fun (fixture, sentence) ->
+    (fun (fixture, (attribute, label), sentence) ->
       let ident = "ch8.4-bucket-scalar-" ^ fixture in
       with_files ~ir:(read (dir ^ fixture ^ "/ir.json")) ~case_data:(read (dir ^ fixture ^ "/case.json"))
         (fun findings _ evaluate ->
           check (ident ^ ": verifier-clean") (findings = []);
-          expect_fault_msg ident (fun () -> evaluate ()) sentence))
-    [ ("condition", {|a condition per period reads the time-dependent attribute "strandloon" of "J1"|} ^ bucket);
-      ("arithmetic", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "strandloon" of "J1"|} ^ bucket);
-      ("sum", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "opbrengst" of "V1"|} ^ bucket);
-      ( "pro-rata",
+          match evaluate () with
+          | exception Value.Fault { code; params; text } ->
+              check (ident ^ " (got: " ^ text ^ ")")
+                (code = Some "EF-037"
+                && params = [ ("attribute", attribute); ("label", label) ]
+                && substring text sentence)
+          | _ -> check (ident ^ " (no fault at all)") false))
+    [ ( "condition", ("strandloon", "J1"),
+        {|a condition per period reads the time-dependent attribute "strandloon" of "J1"|} ^ bucket );
+      ( "arithmetic", ("strandloon", "J1"),
+        {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "strandloon" of "J1"|} ^ bucket );
+      ( "sum", ("opbrengst", "V1"),
+        {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "opbrengst" of "V1"|} ^ bucket );
+      ( "pro-rata", ("onderhoudstarief", "B1"),
         {|the pro-rata base "onderhoudstarief" needs the full timeline; "B1" supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)|}
-      ) ]
+      );
+      ( "point-read", ("jaarquotum", "J1"),
+        {|the temporal read of "jaarquotum" needs the full timeline; the case supplies none (the asOfDate-bucket scalar cannot serve a point read)|}
+      );
+      ( "clip-value", ("vergoeding", "J1"),
+        {|the gedurende clip of "vergoeding" needs the full timeline; the case supplies only the asOfDate-bucket scalar|} );
+      ( "clip-compared", ("controle", "J1"),
+        {|the gedurende clip of "vergoeding" compares "controle" per segment and needs its full timeline; "J1" supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)|}
+      );
+      ( "per-element", ("opbrengst", "V1"),
+        {|the per-element temporal total of "opbrengst" over "V1": the case supplies an asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own timeline (ch. 3.6/§7.1, ch. 8.4)|}
+      );
+      ("qualifier-comparison", ("wachtloon", "J1"), qualifier "wachtloon" "J1");
+      ("qualifier-own", ("bemanning", "S1"), qualifier "bemanning" "S1");
+      ("qualifier-path", ("havengeld", "W1"), qualifier "havengeld" "W1") ]
 
 (* WV-3.5: temporal summation — the contributor-skipping rule *)
 let () =

@@ -17376,8 +17376,10 @@ let () =
    product; a sum per period of a rate keeps the rate as an operand of maal and
    verminderd met, and under a rounding; and a form that reads a time-dependent
    attribute whole — a condition per period, the period arithmetic, a sum per
-   period of its members, the base of a pro-rata part — faults where the case
-   gives the asOfDate-bucket scalar, in ref's sentence *)
+   period of its members, the base of a pro-rata part, a point read, the value
+   and the compared timeline of a gedurende clip, a per-element total, the
+   whole-period qualifier — faults where the case gives the asOfDate-bucket
+   scalar, in ref's sentence *)
 let () =
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let pair d = (read (d ^ "/ir.json"), read (d ^ "/case.json")) in
@@ -17387,17 +17389,53 @@ let () =
       ref_matches ~name:("period units: " ^ f) ~ir ~case_text;
       clingo_matches ~name:("period units: " ^ f) ~ir ~case_text)
     [ "percentage-per-period"; "percentage-scalar"; "sum-of-rate"; "rounded-sum-factor" ];
+  (* the fault is EF-037 (ch. 5.7b), with the attribute and the instance whose
+     input it is *)
   let bucket = " whole; the case supplies only the asOfDate-bucket scalar, which carries no period" in
+  let qualifier a l =
+    Printf.sprintf
+      {|the whole-period qualifier over "%s" needs the full timeline; "%s" supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)|}
+      a l
+  in
   List.iter
-    (fun (f, needle) ->
+    (fun (f, (attribute, label), needle) ->
       let ir, case_text = pair ("ref/test/fixtures/bucket-scalar/" ^ f) in
-      faults_with ~name:("bucket scalar: " ^ f) ~ir ~case_text ~needle)
-    [ ("condition", {|a condition per period reads the time-dependent attribute "strandloon" of "J1"|} ^ bucket);
-      ("arithmetic", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "strandloon" of "J1"|} ^ bucket);
-      ("sum", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "opbrengst" of "V1"|} ^ bucket);
-      ( "pro-rata",
+      let irf = write_temp ".ir.json" ir and casef = write_temp ".case.json" case_text in
+      let doc = Ir_v0.Loader.load_file irf in
+      let case = Uchar_ref.Case.load_file doc casef in
+      Sys.remove irf;
+      Sys.remove casef;
+      let name = "bucket scalar: " ^ f in
+      match translate doc case with
+      | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
+      | exception Uchar_ref.Value.Fault { code; params; text } ->
+          check (name ^ " faults with EF-037 (" ^ text ^ ")")
+            (code = Some "EF-037"
+            && params = [ ("attribute", attribute); ("label", label) ]
+            && Uchar_ref.Case.contains ~needle text))
+    [ ( "condition", ("strandloon", "J1"),
+        {|a condition per period reads the time-dependent attribute "strandloon" of "J1"|} ^ bucket );
+      ( "arithmetic", ("strandloon", "J1"),
+        {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "strandloon" of "J1"|} ^ bucket );
+      ( "sum", ("opbrengst", "V1"),
+        {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "opbrengst" of "V1"|} ^ bucket );
+      ( "pro-rata", ("onderhoudstarief", "B1"),
         {|the pro-rata base "onderhoudstarief" needs the full timeline; "B1" supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)|}
-      ) ]
+      );
+      ( "point-read", ("jaarquotum", "J1"),
+        {|the temporal read of "jaarquotum" needs the full timeline; the case supplies none for "J1" (the asOfDate-bucket scalar cannot serve a point read)|}
+      );
+      ( "clip-value", ("vergoeding", "J1"),
+        {|the gedurende clip of "vergoeding" needs the full timeline; "J1" supplies only the asOfDate-bucket scalar|} );
+      ( "clip-compared", ("controle", "J1"),
+        {|the gedurende clip of "vergoeding" compares "controle" per segment and needs its full timeline; "J1" supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)|}
+      );
+      ( "per-element", ("opbrengst", "V1"),
+        {|the per-element temporal fold of "opbrengst" over "V1": the case supplies an asOfDate-bucket scalar, which carries no period of its own; a set fold needs each member's own timeline (ch. 3.6/§7.1, ch. 8.4)|}
+      );
+      ("qualifier-comparison", ("wachtloon", "J1"), qualifier "wachtloon" "J1");
+      ("qualifier-own", ("bemanning", "S1"), qualifier "bemanning" "S1");
+      ("qualifier-path", ("havengeld", "W1"), qualifier "havengeld" "W1") ]
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
