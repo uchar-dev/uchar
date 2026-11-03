@@ -226,8 +226,9 @@ public final class CaseEmitter {
         w.beginArray();
         for (Segment s : timeline) {
             w.beginObject();
-            w.key("from").value(s.van().toString());
-            w.key("to").value(s.until().toString());
+            // an open bound is written as no bound (the case format, ch. 3.1)
+            if (s.van() != null) w.key("from").value(s.van().toString());
+            if (s.until() != null) w.key("to").value(s.until().toString());
             w.key("value");
             value(w, s.value());
             w.endObject();

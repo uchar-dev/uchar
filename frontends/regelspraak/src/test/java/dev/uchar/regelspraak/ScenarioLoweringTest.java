@@ -204,6 +204,25 @@ class ScenarioLoweringTest {
                 .contains("      \"kind\": \"inconsistent\",\n      \"rule\": \"geen wrakgoed\",\n      \"label\": \"J\"\n"));
     }
 
+    /** A segment open at its start or at its end, and one over all time: the case format writes an open bound as no
+     *  bound (RUNTIME-SEMANTICS ch. 3.1). A segment after one open at its end, or before one open at its start,
+     *  overlaps it. */
+    @Test void an_expected_segment_may_be_open() {
+        String head = "Situatie o:\neen Jutter J\nde parameter de vondstdrempel is 3\n"
+                + "Scenario o\nmet peildatum 01-06-2025\ngebaseerd op de situatie o\nMet als verwacht resultaat:\n";
+        String open = CaseEmitter.emit(only(resolve(head + "- de borgdagen van J is 0 tot 01-01-2024\n"
+                + "- de borgdagen van J is 4 van 01-01-2024 tot 01-02-2024\n- de borgdagen van J is 0 vanaf 01-02-2024\n")));
+        assertTrue(open.contains("\"timeline\": [\n        {\n          \"to\": \"2024-01-01\",\n          \"value\": {\n"
+                + "            \"number\": \"0\"\n          }\n        },\n        {\n          \"from\": \"2024-01-01\",\n"
+                + "          \"to\": \"2024-02-01\","), open);
+        assertTrue(open.contains("{\n          \"from\": \"2024-02-01\",\n          \"value\": {\n            \"number\": \"0\"\n"), open);
+        String always = CaseEmitter.emit(only(resolve(head + "- de borgdagen van J is altijd 0\n")));
+        assertTrue(always.contains("\"timeline\": [\n        {\n          \"value\": {\n            \"number\": \"0\"\n"), always);
+        ScenarioBundle after = resolve(head + "- de borgdagen van J is 0 vanaf 01-02-2024\n"
+                + "- de borgdagen van J is 4 van 01-03-2024 tot 01-04-2024\n");
+        assertTrue(after.model().errors().stream().anyMatch(e -> e.code().equals("RGS-263")), () -> after.model().errors().toString());
+    }
+
     @Test void the_file_name() {
         assertEquals("een-wrak-twee-jutters", CaseEmitter.slug("Één wrak, twee  jutters!"));
         assertEquals("y-wint", CaseEmitter.slug("y wint"));

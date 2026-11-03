@@ -1105,6 +1105,39 @@ public final class ScenarioResolver {
         return false;
     }
 
+    /** Whether the expected period {@code p} may follow the segments {@code tl} of one timeline, as {@link #follows}
+     *  says for two periods. An open bound is no date: a period open at its start follows none, and none follows a
+     *  period open at its end. */
+    private boolean followsExpected(List<Segment> tl, TimeWindow p, int line) {
+        if (tl.isEmpty()) return true;
+        LocalDate previousTo = tl.get(tl.size() - 1).until();
+        if (previousTo != null && p.van() != null && !p.van().isBefore(previousTo)) return true;
+        error(line,
+                "RGS-263", params("from", bound(p.van()), "until", bound(p.until()), "previousUntil", bound(previousTo)));
+        return false;
+    }
+
+    /** A bound as a message names it: the date, or the open bound of all time. */
+    private static Object bound(LocalDate d) { return d == null ? "∞" : d; }
+
+    /** The period of an expected segment: a period with both bounds, or one with an open start or end. */
+    private TimeWindow readExpectedPeriod(VerwachtePeriodeContext p) {
+        if (p.periode() != null) return readPeriod(p.periode());
+        if (p.DATE() == null) return null;   // the syntax error names it already
+        int line = p.getStart().getLine();
+        String text = p.DATE().getText().replaceAll("\\s+", " ").trim();
+        if (ExpressionBuilder.sourceDateTime(text) != null) {
+            error(line, "RGS-260", params("bound", text));
+            return null;
+        }
+        LocalDate d = ExpressionBuilder.sourceDate(text);
+        if (d == null) {
+            error(line, "RGS-261", params("bound", text));
+            return null;
+        }
+        return p.TOT() != null ? new TimeWindow(null, d) : new TimeWindow(d, null);
+    }
+
     /** Whether both bounds of {@code p} sit on the grid of attribute {@code attr} of {@code ot}: its granularity,
      *  count and fixed start point, as its facet declares them. */
     private boolean onGrid(TimeWindow p, ObjectType ot, String attr, Object what, int line) {
@@ -1122,8 +1155,8 @@ public final class ScenarioResolver {
                              int line) {
         if (variable) return true;
         boolean goed = true;
-        for (LocalDate limit : List.of(p.van(), p.until()))
-            if (Boolean.FALSE.equals(dev.uchar.regelspraak.core.FixedStartPoint.opWand(g, count, fixed, limit))) {
+        for (LocalDate limit : new LocalDate[]{ p.van(), p.until() })
+            if (limit != null && Boolean.FALSE.equals(dev.uchar.regelspraak.core.FixedStartPoint.opWand(g, count, fixed, limit))) {
                 error(line,
                         "RGS-264", params("limit", limit, "what", what, "grid", gridName(g, count), "fixedStart", (fixed == null ? "" : Msg.frontend("PART.fixed-start-point", "start", fixed))));
                 goed = false;
@@ -1260,7 +1293,7 @@ public final class ScenarioResolver {
                 Named named = expectedMember(label, written, situation, line);
                 if (named == null) continue;
                 String attr = named.attribute();
-                if (named.labels() != null && a.periode() != null) {
+                if (named.labels() != null && a.verwachtePeriode() != null) {
                     error(line, "RGS-369", params("written", written, "attribute", attr));
                     continue;
                 }
@@ -1271,13 +1304,13 @@ public final class ScenarioResolver {
                         result.add(new Expectation(ExpectationKind.CELL_VALUE, label, attr, named.labels(), null, w, null, null, line));
                     continue;
                 }
-                if (a.periode() == null) {
+                if (a.verwachtePeriode() == null) {
                     if (w != null)
                         result.add(new Expectation(ExpectationKind.ATTRIBUTE_VALUE, label, attr, null, null, w, null, null, line));
                     continue;
                 }
                 if (!temporalAttribute(label, attr, situation, line)) continue;
-                TimeWindow p = readPeriod(a.periode());
+                TimeWindow p = readExpectedPeriod(a.verwachtePeriode());
                 if (p == null || w == null
                         || !onGrid(p, situation.instance(label).objectType(), attr, Msg.frontend("PART.what.expectation", "name", attr), line))
                     continue;
@@ -1295,7 +1328,36 @@ public final class ScenarioResolver {
                     result.add(t);
                 }
                 List<Segment> tl = t.timeline();
-                if (follows(tl.isEmpty() ? null : tl.get(tl.size() - 1).until(), p, line)) tl.add(new Segment(p.van(), p.until(), w));
+                if (followsExpected(tl, p, line)) tl.add(new Segment(p.van(), p.until(), w));
+            } else if (v instanceof VerwachtTijdlijnAltijdContext a) {
+                // one segment over all time: the timeline is this value on every day (RUNTIME-SEMANTICS ch. 3.1)
+                String label = a.UPPER_ID().getText();
+                String written = withoutArticle(src(a.verwachtingNaam()));
+                Named named = expectedMember(label, written, situation, line);
+                if (named == null) continue;
+                String attr = named.attribute();
+                if (named.labels() != null) {
+                    error(line, "RGS-369", params("written", written, "attribute", attr));
+                    continue;
+                }
+                if (!temporalAttribute(label, attr, situation, line)) continue;
+                Datatype dt = situation.instance(label).objectType().attribute(attr);
+                ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, Msg.frontend("PART.what.expectation", "name", attr));
+                if (w == null) continue;
+                String key = label + "|" + norm(attr);
+                if (Boolean.TRUE.equals(alwaysEmpty.get(key))) {
+                    error(line, "RGS-269", params("attribute", attr, "label", label));
+                    continue;
+                }
+                Expectation t = timelines.get(key);
+                if (t == null) {
+                    t = new Expectation(ExpectationKind.ATTRIBUTE_TIMELINE, label, attr, null, null, null, new ArrayList<>(),
+                            null, line);
+                    timelines.put(key, t);
+                    result.add(t);
+                }
+                TimeWindow always = new TimeWindow(null, null);
+                if (followsExpected(t.timeline(), always, line)) t.timeline().add(new Segment(null, null, w));
             } else if (v instanceof VerwachtKenmerkContext k) {
                 Expectation r = expectCharacteristic(k.UPPER_ID().getText(), withoutArticle(src(k.kaleNaam())), false,
                         situation, line);

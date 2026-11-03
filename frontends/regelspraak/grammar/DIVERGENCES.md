@@ -3225,6 +3225,9 @@ ends at the first header keyword. The expectations, one bullet each:
 | `- de\|het <attribuut> van <LABEL> is <waarde>` | `attributeValue` |
 | `- de\|het <attribuut> van <LABEL> is leeg` | `attributeEmpty` |
 | `- de\|het <attribuut> van <LABEL> is <waarde> van <datum> tot <datum>` | one segment of an `attributeTimeline` |
+| `- de\|het <attribuut> van <LABEL> is <waarde> tot <datum>` | one segment of an `attributeTimeline`, open at its start (no `from`) |
+| `- de\|het <attribuut> van <LABEL> is <waarde> vanaf <datum>` | one segment of an `attributeTimeline`, open at its end (no `to`) |
+| `- de\|het <attribuut> van <LABEL> is altijd <waarde>` | `attributeTimeline` with one segment over all time |
 | `- de\|het <attribuut> van <LABEL> is altijd leeg` | `attributeTimeline` with no segment |
 | `- de\|het <cel> van <LABEL> is <waarde>` | `cellValue` |
 | `- de\|het <cel> van <LABEL> is leeg` | `cellEmpty` |

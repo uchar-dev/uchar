@@ -214,6 +214,9 @@ toewijzing
 // characteristic holds. Bare DATE tokens only: a name word may be a NUMBER, so a
 // datumWaarde's NUMBER arm would let a kaleNaam's 'van'-segment compete for 'van 2024'.
 periode : VAN DATE TOT DATE ;
+// The period of an expected segment: a period, or one open at its start ('tot <d>') or at its end ('vanaf <d>'), the
+// open bounds of a timeline over all time (RUNTIME-SEMANTICS ch. 3.1). An input period carries both bounds.
+verwachtePeriode : periode | TOT DATE | VANAF DATE ;
 // The attribute/role name in a bulleted toewijzing. It must STOP before the trailing
 // ' is <UPPER_ID>' / ' is <waarde>' / ' zijn <UPPER_ID>' — kaleNaam already excludes
 // the UPPER_ID of a following LABEL, and IS/ZIJN are not name words, so the name loop
@@ -249,7 +252,8 @@ situatieWaarde
 verwachting
     : bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID IS LEEG                 DOT? # verwachtAttribuutLeeg     // … is leeg (listed first: LEEG is not a situatieWaarde)
     | bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID IS ALTIJD LEEG          DOT? # verwachtTijdlijnLeeg      // … is altijd leeg: the whole timeline is empty
-    | bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID IS situatieWaarde periode? DOT? # verwachtAttribuutWaarde // de/het <attr> van <LABEL> is <waarde> [van <d> tot <d>]
+    | bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID IS ALTIJD situatieWaarde DOT? # verwachtTijdlijnAltijd  // … is altijd <waarde>: one segment over all time
+    | bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID IS situatieWaarde verwachtePeriode? DOT? # verwachtAttribuutWaarde // de/het <attr> van <LABEL> is <waarde> [van <d> tot <d> | tot <d> | vanaf <d>]
     | bullet UPPER_ID IS      lidwoord? kaleNaam                     DOT? # verwachtKenmerk           // <LABEL> is [lidw]|geen <kenmerk>
     | bullet UPPER_ID HEEFT   lidwoord? kaleNaam                     DOT? # verwachtKenmerkHeeft      // <LABEL> heeft [lidw]|geen <kenmerk>
     | bullet DE_GEGEVENS_ZIJN INCONSISTENT inconsistentieSleutel?    DOT? # verwachtInconsistent      // de gegevens zijn inconsistent [volgens "<regel>" [voor <LABEL>]]
