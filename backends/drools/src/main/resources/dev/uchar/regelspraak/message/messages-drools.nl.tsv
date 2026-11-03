@@ -343,6 +343,9 @@ DROOLS-305	een die/dat-subselectie op de som per periode ('{snippet}') wordt nie
 DROOLS-306	het rekenen per periode van ch. 3.4/3.5 herrekent de operand '{snippet}' van {unit} naar {targetUnit}: deze tak rekent een tijdlijn in één eenheid en draagt de herrekening niet
 DROOLS-307	het rekenen per periode van ch. 3.4/3.5 over '{snippet}', een waarde van de onbegrensde vorm of een die niet eindigt: een segment van deze tak houdt een decimaal
 DROOLS-308	de operand '{attribute}' van het rekenen per periode van ch. 3.4/3.5 ligt op een raster van {operandGranularity}, fijner dan het {targetGranularity}-raster van het doel: de granulariteit van elke operand is grover dan of gelijk aan die van het doel (RUNTIME-SEMANTICS ch. 3.4)
+DROOLS-309	een voorwaarde per periode op het tijdsafhankelijke doel '{attribute}' van {declarant} in een vorm die deze tak niet per periode leest ('{snippet}'): een voorwaarde per periode is een toets van een tijdsafhankelijk kenmerk van het onderwerp, een vergelijking van een tijdsafhankelijk attribuut van het onderwerp met een getal, elk van beide onder een gehele-periodekwalificator, een samenstelling van zulke voorwaarden, of een voorwaarde die geen tijdlijn leest (RUNTIME-SEMANTICS ch. 3.10)
+DROOLS-310	'{operand}' ligt op een raster van {operandGranularity}, dat niet past in het {targetGranularity}-raster van het tijdsafhankelijke doel '{attribute}': het doel kan de knips van een voorwaarde per periode niet dragen (IR-SPEC WF-126)
+DROOLS-311	een lezing van het tijdsafhankelijke doel '{attribute}' van {declarant}, dat twee of meer regels schrijven, elk de dagen van zijn eigen segmenten (RUNTIME-SEMANTICS ch. 5.7): zijn stand zou de vereniging van hun segmenten per dag zijn, die deze tak niet bouwt; geen golden met cases leest er een
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)
@@ -391,6 +394,7 @@ PART.member-kind.attribute	attribuut
 PART.member-kind.characteristic-kind	kenmerk
 PART.desc.time-dependent-target	een tijdsafhankelijk doel
 PART.desc.period-arithmetic	het rekenen per periode ('{snippet}')
+PART.desc.period-condition	de voorwaarde per periode ('{snippet}')
 PART.desc.pro-rata-part	een tijdsevenredig deel ('{snippet}')
 PART.desc.day-count	een dagentelling ('{snippet}')
 PART.desc.unique-key	een uniciteitssleutel '{key}' van {type} op een tijdlijn

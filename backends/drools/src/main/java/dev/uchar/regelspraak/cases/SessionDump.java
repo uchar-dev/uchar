@@ -562,6 +562,10 @@ final class SessionDump {
         if (v instanceof Period p)
             return "[" + (p.from().equals(Period.OPEN_FROM) ? "-" : p.from().toString()) + " "
                     + (p.to().equals(Period.OPEN_TO) ? "-" : p.to().toString()) + " " + canonical(p.value()) + "]";
+        // a segment of the timeline an operator of the period arithmetic computes, its value exact (ch. 3.4)
+        if (v instanceof dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic.Exact p)
+            return "[" + (p.from().equals(Period.OPEN_FROM) ? "-" : p.from().toString()) + " "
+                    + (p.to().equals(Period.OPEN_TO) ? "-" : p.to().toString()) + " " + canonical(p.value()) + "]";
         if (v instanceof List<?> l) {
             List<String> r = new ArrayList<>();
             for (Object x : l) r.add(canonical(x));

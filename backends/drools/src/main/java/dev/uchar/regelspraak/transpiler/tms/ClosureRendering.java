@@ -353,6 +353,14 @@ final class ClosureRendering {
             case PERIOD_SUM -> x -> PeriodArithmetic.sum(x[0], x[1]);
             case PERIOD_WRITTEN -> x -> PeriodArithmetic.written(x[0], (Integer) x[1], (String) x[2]);
             case PERIOD_TOTAL -> x -> PeriodArithmetic.total(x[0], (String) x[1], (String) x[2], (String) x[3], x[4]);
+            case PERIOD_CLIPPED -> x -> PeriodArithmetic.clipped(x[0], x[1]);
+            case PERIOD_TRUE_PERIODS -> x -> PeriodCondition.truePeriods(x[0]);
+            case PERIOD_OUTSIDE -> x -> PeriodCondition.outside(x[0]);
+            case PERIOD_WHERE -> x -> PeriodCondition.where(x[0], x[1], (String) x[2], (Boolean) x[3]);
+            case PERIOD_WHOLE_BUCKETS -> x -> PeriodCondition.wholeBuckets(x[0], (String) x[1], (Boolean) x[2]);
+            case PERIOD_MEMBER -> x -> PeriodCondition.member(x[0], x[1]);
+            case PERIOD_COMPOSITE -> x -> PeriodCondition.composite(x[0], (Condition.Quantifier) x[1], (Integer) x[2]);
+            case PERIOD_ALWAYS -> x -> PeriodCondition.always(x[0]);
             case DIVIDED -> x -> ComputeHelpers.divided(x[0], x[1], x[2]);
             case DIVIDED_ABS -> x -> ComputeHelpers.dividedAbs(x[0], x[1], x[2]);
             case RADICAND -> x -> ComputeHelpers.radicand(x[0], x[1]);

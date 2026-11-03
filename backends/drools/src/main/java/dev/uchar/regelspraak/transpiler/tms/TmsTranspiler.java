@@ -1400,7 +1400,11 @@ public final class TmsTranspiler {
                 written.sort(WritersConflict.inDocumentOrder(documentOrder)
                         .thenComparing(w -> String.valueOf(w.value())));
                 Value earliest = written.get(0);
-                if (written.stream().anyMatch(w -> !equalValue(earliest.value(), w.value()))) {
+                // the writers of a timeline target of two or more decide the days of their own segments, and differ
+                // only on a day both decide (RUNTIME-SEMANTICS ch. 5.7, "Two writers per day")
+                boolean perDay = timelineWriters(earliest.attribute());
+                if (perDay ? PeriodCondition.clash(written) != null
+                        : written.stream().anyMatch(w -> !equalValue(earliest.value(), w.value()))) {
                     WritersConflict c = conflict(earliest.subject(), earliest.attribute(), written);
                     faults.add(new Fault(earliest.subject(), c.writers().get(0).writer(),
                             label == null ? c : c.named(label)));
@@ -1409,10 +1413,12 @@ public final class TmsTranspiler {
                 Member member = memberOf(earliest, earliest.attribute());
                 // a number goes onto the bean as a decimal, which a value of the unbounded form that does not terminate
                 // is not exactly (RUNTIME-SEMANTICS ch. 2.4); a timeline as the bean model's segments, which carry no
-                // value equality
+                // value equality; the timeline of two or more writers their union, with the target's input on the days
+                // none of them decides
                 @SuppressWarnings("unchecked")
                 Object v = member.time() == null ? ComputeHelpers.collapse(earliest.value())
-                        : Period.beans((List<Period>) earliest.value(), segmentClass());
+                        : Period.beans(perDay ? union(session, member, earliest.subject(), written)
+                                : (List<Period>) earliest.value(), segmentClass());
                 values.add(new Fixpoint.DerivedValue(earliest.subject(), member.name(), member.cell(), v));
                 // a cell is an entry of the map its attribute holds (RUNTIME-SEMANTICS ch. 5.8c)
                 if (member.cell() != null) {
@@ -1559,6 +1565,20 @@ public final class TmsTranspiler {
                 if (Namen.norm(e.getKey()).equals(Namen.norm(name)))
                     return e.getValue() != null && e.getValue().unbounded() && !t.attributeGranularity.containsKey(e.getKey());
         return false;
+    }
+
+    /** The timeline of the target {@code member} of {@code subject} that two or more rules write, each the days of its
+     *  own segments ({@link #timelineWriters}): the union of their timelines {@code written}, in the order of the
+     *  document, with the target's input on the days none of them decides ({@link PeriodCondition#union}, RUNTIME-SEMANTICS
+     *  ch. 5.7). The input is the bean's, which holds the case input while the session fires, and none where the case
+     *  gives it as the asOfDate-bucket scalar, which carries no period. */
+    private static List<Period> union(KieSession session, Member member, Object subject, List<Value> written) {
+        List<List<Period>> parts = new ArrayList<>();
+        for (Value w : written) parts.add(Period.list((List<?>) w.value()));
+        boolean bucket = !session.getObjects(o -> o instanceof BucketInput b && b.subject() == subject
+                && b.attribute().equals(member.key())).isEmpty();
+        Object input = bucket ? null : Accessors.leesEigenschap(subject, Namen.property(member.name()));
+        return PeriodCondition.union(parts, input == null ? null : Period.list((List<?>) input));
     }
 
     /** The fault of RUNTIME-SEMANTICS ch. 5.7 for the {@code waarden} that writers put on attribute {@code key} of
@@ -1910,39 +1930,266 @@ public final class TmsTranspiler {
      * as well (ch. 1.2g). The versions of one rule are one writer; a version that applies writes as such a rule does,
      * and two that stand with different timelines are the fault of ch. 5.7 ({@link #differenceRule}).
      *
-     * <p>Refused by name, each with no golden that has cases: any other writer of the target, a rule, an
-     * initialisation, a defaults group or an allocation, since ch. 7.8 keeps a target with more writers fenced and
-     * the reference interpreter answers it in pass order; and any other value, among them a power over timelines, which
-     * the reference interpreter refuses as well (RUNTIME-SEMANTICS ch. 3.4). Refused by name as well: a time window in the
-     * condition, which on a temporal target clips the timeline instead of gating the rule on the evaluation date
-     * (ch. 3.10), golden {@code jutterswet-pachtvenster} has it; and any condition on a rule of period arithmetic, which
-     * would restrict the timeline per period (spec/proposals/IMPLICIT-TIME.md, point 3), as the reference interpreter
-     * and the ASP backend refuse it.
+     * <p>A condition that reads a timeline is read per period: the rule writes the timeline its value produces,
+     * restricted to the periods of all time in which the condition holds ({@link #periodCondition}, ch. 3.10, the clip
+     * generalised); a condition that reads none gates the rule as on a scalar target. Two or more computing rules of one
+     * target each decide the days of their own segments, and the target is their union per day
+     * ({@link #timelineWriters}, ch. 5.7, "Two writers per day").
+     *
+     * <p>Refused by name, each with no golden that has cases: a writer of the target other than a computing rule beside
+     * another writer, an initialisation, a defaults group or an allocation, since ch. 7.8 keeps such a target fenced;
+     * and any other value,
+     * among them a power over timelines, which the reference interpreter refuses as well (RUNTIME-SEMANTICS ch. 3.4).
+     * Refused by name as well: a time window in the condition, which on a temporal target clips the timeline by its own
+     * bounds (ch. 3.10), golden {@code jutterswet-pachtvenster} has it.
      */
     private List<RulePlan> timelineRule(ResolvedRule r, Expr.AttributeReference target) {
         Member member = timeMember(target.objectType(), target.attribute(), false, Msg.drools("PART.desc.time-dependent-target"));
-        List<String> others = otherWriters(r, target.objectType(), member.key());
+        // other computing rules decide their own days (ch. 5.7, "Two writers per day"); any other writer stays fenced
+        List<String> others = new ArrayList<>(otherWriters(r, target.objectType(), member.key()));
+        for (ResolvedRule x : computeRules.getOrDefault(member.key(), List.of()))
+            if (related(writtenReference(x.target()).objectType(), target.objectType()))
+                others.remove(ProducerConsumer.baseName(x.name()));
         if (!others.isEmpty())
             throw new Refusal(DroolsCode.TIME_TARGET_SECOND_WRITER.reason("attribute", member.name(), "declarant", member.declarant().name, "writers", String.join(", ", others.stream().map(x -> "\"" + x + "\"").toList())));
         if (Condition.containsTimeWindow(r.condition()))
             throw new Refusal(DroolsCode.PERIOD_WINDOW_TIME_TARGET.reason("attribute", member.name(), "declarant", member.declarant().name));
-        if (isPeriodArithmetic(r.value())) {
-            if (r.condition() != null)
-                throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_CONDITION.reason("rule", r.name(), "attribute", member.name(), "declarant", member.declarant().name));
-        } else if (!(r.value() instanceof Expr.FunctionCall f && (f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL
+        if (!isPeriodArithmetic(r.value()) && !(r.value() instanceof Expr.FunctionCall f && (f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL
                 || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN)))
             throw new Refusal(DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.reason("attribute", member.name(), "declarant", member.declarant().name, "snippet", r.value() == null ? DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.part("without-value")
                     : snippet(r.value().source())));
         return writeRule(r, target.objectType(), member, null, Set.of(), !standingTargets.standingTemporal(target));
     }
 
+    // ---------------- a condition read per period ----------------
+
+    /**
+     * Whether the condition {@code c} of a rule on a timeline target of {@code subject} reads a timeline, and is so read
+     * per period (RUNTIME-SEMANTICS ch. 3.10, the clip generalised; spec/proposals/IMPLICIT-TIME.md VB-C1): a check of a
+     * time-dependent characteristic of the subject, an attribute or a parameter on a timeline as an operand of a
+     * comparison or a test, or a whole-period qualifier, in the condition or a member of it. A condition that reads none
+     * holds on every day or on none, and gates the rule. The question is asked of the syntax and the declarations alone,
+     * as the reference interpreter asks it ({@code Eval.reads_timeline}).
+     */
+    private boolean readsTimeline(Condition c, ObjectType subject) {
+        return switch (c) {
+            case Condition.CharacteristicCheck k -> k.period() != null || k.navigation() == null
+                    && !navigationBindings.containsKey(k) && temporal(subject, k.characteristic(), true);
+            case Condition.Comparison v -> v.period() != null || temporalOperand(v.left()) || temporalOperand(v.right());
+            case Condition.Predicate p -> p.period() != null || temporalOperand(p.operand());
+            case Condition.Compound s -> s.components().stream().anyMatch(x -> readsTimeline(x, subject));
+            case Condition.QuantifierFold q -> qualified(q.filter()) || qualified(q.test());
+            default -> false;
+        };
+    }
+
+    /** Whether {@code e} reads an attribute on a timeline, of any object, or a time-dependent parameter. */
+    private static boolean temporalOperand(Expr e) {
+        return e instanceof Expr.AttributeReference a && temporal(a.objectType(), a.attribute(), false)
+                || e instanceof Expr.ParameterRef p && p.parameter() != null && p.parameter().granularity() != null;
+    }
+
+    /** Whether {@code c}, null for none, holds a whole-period qualifier, also in a member or a fold below it. */
+    private static boolean qualified(Condition c) {
+        return switch (c) {
+            case null -> false;
+            case Condition.CharacteristicCheck k -> k.period() != null;
+            case Condition.Comparison v -> v.period() != null;
+            case Condition.Predicate p -> p.period() != null;
+            case Condition.Compound s -> s.components().stream().anyMatch(TmsTranspiler::qualified);
+            case Condition.QuantifierFold q -> qualified(q.filter()) || qualified(q.test());
+            default -> false;
+        };
+    }
+
+    /**
+     * The condition {@code c} of a rule on the timeline target {@code target}, read per period (RUNTIME-SEMANTICS
+     * ch. 3.10, the clip generalised), as a term whose value is the periods of all time in which it holds, maximal
+     * ({@link PeriodCondition}): a check of the subject's own characteristic on a timeline its true periods, a negated one
+     * the periods outside them; a comparison of the subject's own attribute on a timeline with a number the periods on
+     * which the comparison of ch. 1.2 holds per day; a whole-period qualifier on either the buckets of its grid in which
+     * the test holds on every day, or, negated, every other bucket (ch. 3.9, per bucket); a composite the periods in
+     * which its quantifier holds of its members, every member read; and a node that reads no timeline all time or none,
+     * by its truth value. Every timeline it reads lies on a grid that fits the target's ({@link #requireFits}, WF-126).
+     *
+     * <p>In a build with readings each node has the part of all time in which it holds, a comparison its timeline's
+     * filled segments there with their values and the gaps where a leeg side satisfies it
+     * ({@link PeriodCondition#comparisonReading}); the timeline a comparison tests has the timeline it reads, and the
+     * bound its value (ch. 5.12).
+     *
+     * <p>Refused by name ({@link DroolsCode#PERIOD_CONDITION_FORM}), as the reference interpreter refuses them: a
+     * navigated or hosted check, a check of a characteristic that holds one value under a qualifier, a comparison of two
+     * timelines or of none of the subject's own, a comparison of dates or of values that are no number, a leeg or gevuld
+     * test, and a quantifier fold.
+     */
+    private Term periodCondition(Condition c, Member target, Reads reads) {
+        if (!readsTimeline(c, reads.subject)) {
+            Term t = new Term.Call(StaticFunction.PERIOD_ALWAYS, List.of(conditionTerm(c, reads)), source(c.source()));
+            note(c, t);
+            return t;
+        }
+        Msg description = Msg.drools("PART.desc.period-condition", "snippet", snippet(c));
+        return switch (c) {
+            case Condition.CharacteristicCheck k -> periodCheck(k, target, reads, description);
+            case Condition.Comparison v -> periodComparison(v, target, reads, description);
+            case Condition.Compound s -> {
+                Term members = constant(null);
+                for (Condition part : s.components())
+                    members = new Term.Call(StaticFunction.PERIOD_MEMBER, List.of(members, periodCondition(part, target,
+                            reads)), null);
+                Term t = new Term.Call(StaticFunction.PERIOD_COMPOSITE, List.of(members, constant(s.quantifier()),
+                        constant(s.threshold())), source(s.source()));
+                note(s, t);
+                yield t;
+            }
+            default -> throw periodConditionForm(c, target);
+        };
+    }
+
+    /** A check of the subject's own characteristic on a timeline, read per period ({@link #periodCondition}). */
+    private Term periodCheck(Condition.CharacteristicCheck k, Member target, Reads reads, Msg description) {
+        if (Host.narrows(k, reads.subject) || !Host.hostOp(k, reads.subject) || k.navigation() != null
+                || navigationBindings.containsKey(k) || !temporal(reads.subject, k.characteristic(), true))
+            throw periodConditionForm(k, target);
+        Member m = timeMember(reads.subject, k.characteristic(), true, description);
+        Term periods = new Term.SlotValue(reads.timeline(m), null);
+        Term inner = new Term.Call(k.negation() ? StaticFunction.PERIOD_OUTSIDE : StaticFunction.PERIOD_TRUE_PERIODS,
+                List.of(periods), k.period() == null ? source(k.source()) : null);
+        Term t;
+        if (k.period() != null) {
+            requireFits(k, qualifierGrid(k.period()), null, target);
+            t = wholeBuckets(inner, k.period(), source(k.source()));
+        } else {
+            requireFits(k, m.time(), m.declarant().characteristicFixedStartPoint.get(m.name()), target);
+            t = inner;
+        }
+        note(k, t);
+        return t;
+    }
+
+    /** A comparison of the subject's own attribute on a timeline with a number, read per period
+     *  ({@link #periodCondition}): the timeline and the bound read in the order the comparison names them, the bound
+     *  restated into the timeline's unit (ch. 2.6), the operator reversed where the timeline stands on the right. */
+    private Term periodComparison(Condition.Comparison v, Member target, Reads reads, Msg description) {
+        boolean left = ownTimeline(v.left(), reads), right = ownTimeline(v.right(), reads);
+        if (left == right) throw periodConditionForm(v, target);
+        Expr.AttributeReference tested = (Expr.AttributeReference) (left ? v.left() : v.right());
+        Expr boundExpr = left ? v.right() : v.left();
+        Condition.Operator op = left ? v.op() : Operators.reverse(v.op());
+        if (isDateOperator(op)) throw periodConditionForm(v, target);
+        Member member = timeMember(reads.subject, tested.attribute(), false, description);
+        if (!member.datatype().isNumberLike() || !eff.typeOf(boundExpr).isNumberLike())
+            throw periodConditionForm(v, target);
+        int timeline = reads.timeline(member);
+        int subjectType = reads.member();
+        reads.markFail();
+        Term whole = complete(timeline, "a condition per period reads the time-dependent attribute \"" + member.name()
+                + "\" of ", subjectType, " whole; the case supplies only the asOfDate-bucket scalar, which carries no"
+                + " period", source(tested.source()));
+        note(tested, whole);
+        Term bound = restated(value(boundExpr, reads), eff.unitOf(boundExpr), eff.unitOf(tested),
+                "een voorwaarde per periode");
+        Term inner = new Term.Call(StaticFunction.PERIOD_WHERE, List.of(left ? whole : bound, left ? bound : whole,
+                constant(Operators.symbol(op)), constant(left)), v.period() == null ? source(v.source()) : null);
+        if (v.period() != null) {
+            requireFits(v, qualifierGrid(v.period()), null, target);
+            Term t = wholeBuckets(inner, v.period(), source(v.source()));
+            note(v, t);
+            return t;
+        }
+        requireFits(v, member.time(), member.declarant().fixedStartPointOf(member.name()), target);
+        noteDerived(v, List.of(whole, inner), x -> PeriodCondition.comparisonReading(x.get(0), x.get(1)));
+        return inner;
+    }
+
+    /** The whole-period qualifier {@code q} per bucket of its grid over the periods {@code inner} in which its test
+     *  holds (RUNTIME-SEMANTICS ch. 3.9, "Per bucket on a timeline target"). */
+    private static Term wholeBuckets(Term inner, Condition.WholePeriod q, String source) {
+        return new Term.Call(StaticFunction.PERIOD_WHOLE_BUCKETS, List.of(inner, constant(q.year() ? "JAAR" : "MAAND"),
+                constant(q.negated())), source);
+    }
+
+    /** The grid of the whole-period qualifier {@code q}, the calendar month or year it names. */
+    private static RegelSpraakModel.Granularity qualifierGrid(Condition.WholePeriod q) {
+        return q.year() ? RegelSpraakModel.Granularity.JAAR : RegelSpraakModel.Granularity.MAAND;
+    }
+
+    /**
+     * Refuses the timeline that {@code node} of a condition read per period reads, on the grid {@code grid} with the
+     * fixed start point {@code fixed} (null on the calendar), where that grid does not fit the grid of the timeline
+     * target {@code target}: every grid fits the day grid; on the calendar a month, quarter or year grid fits a target of
+     * that family whose unit divides its own; two other grids fit where they are the same grid (IR-SPEC WF-126, as the
+     * verifier's {@code Checks.grid_fits} and the reference interpreter's fail-fast read it).
+     */
+    private void requireFits(Condition node, RegelSpraakModel.Granularity grid, String fixed, Member target) {
+        RegelSpraakModel.Granularity tg = target.time();
+        String tfixed = target.declarant().fixedStartPointOf(target.name());
+        boolean fits = tg == RegelSpraakModel.Granularity.DAG || grid == tg && Objects.equals(fixed, tfixed)
+                || fixed == null && tfixed == null && months(grid) > 0 && months(tg) > 0 && months(grid) % months(tg) == 0;
+        if (!fits)
+            throw new Refusal(DroolsCode.PERIOD_CONDITION_GRID.reason("operand", snippet(node), "operandGranularity", grid,
+                    "attribute", target.name(), "targetGranularity", tg));
+    }
+
+    /** The months in one unit of the calendar grid {@code g}, 0 for a grid of the day family. */
+    private static int months(RegelSpraakModel.Granularity g) {
+        return switch (g) {
+            case MAAND -> 1;
+            case KWARTAAL -> 3;
+            case JAAR -> 12;
+            case DAG, WEEK -> 0;
+        };
+    }
+
+    /** The refusal of {@code node}, a form of a condition on the timeline target {@code target} that this branch does
+     *  not read per period ({@link #periodCondition}). */
+    private Refusal periodConditionForm(Condition node, Member target) {
+        return new Refusal(DroolsCode.PERIOD_CONDITION_FORM.reason("attribute", target.name(), "declarant",
+                target.declarant().name, "snippet", snippet(node)));
+    }
+
     /** Whether {@code e}, the value of a rule on a temporal attribute, is the period arithmetic of RUNTIME-SEMANTICS
-     *  ch. 3.4 and 3.5: an operator of the arithmetic table of ch. 1.2 other than the power, or the sum over the members
-     *  of a set; the reference interpreter and the ASP backend ask the same of the value
-     *  ({@code Eval.is_period_arithmetic}). */
-    private static boolean isPeriodArithmetic(Expr e) {
+     *  ch. 3.4 and 3.5: an operator of the arithmetic table of ch. 1.2 other than the power, the sum over the members
+     *  of a set, or an operand of those standing alone, a literal, a read of the subject without a path or a parameter,
+     *  which a scalar holds on every day and a timeline whole (ch. 3.1, 3.11); the reference interpreter and the ASP
+     *  backend ask the same of the value ({@code Eval.is_period_arithmetic}). */
+    private boolean isPeriodArithmetic(Expr e) {
         return e instanceof Expr.Binary b && b.op() != Expr.BinOp.TOT_DE_MACHT
-                || e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM && f.elementObjectType() != null;
+                || e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM && f.elementObjectType() != null
+                || e instanceof Expr.Literal || e instanceof Expr.ParameterRef
+                || e instanceof Expr.AttributeReference a && !navigationBindings.containsKey(a) && !anchored.contains(a);
+    }
+
+    /** Whether two or more computing rules write the timeline target {@code key} on one object, read per concrete type as
+     *  WF-079 reads it: each then decides the days of its own segments (RUNTIME-SEMANTICS ch. 5.7, "Two writers per
+     *  day"), the target is the union of their segments with its input on the days none decides
+     *  ({@link #readFixpoint}), and a read of it is refused by name ({@link Reads#timeline}). */
+    private boolean timelineWriters(ElementKey key) {
+        List<ResolvedRule> rules = computeRules.getOrDefault(key, List.of());
+        for (int i = 0; i < rules.size(); i++)
+            for (int j = i + 1; j < rules.size(); j++) {
+                Expr.AttributeReference a = writtenReference(rules.get(i).target()),
+                        b = writtenReference(rules.get(j).target());
+                // the versions of one rule are one writer
+                if (!ProducerConsumer.baseName(rules.get(i).name()).equals(ProducerConsumer.baseName(rules.get(j).name()))
+                        && related(a.objectType(), b.objectType()) && temporal(a.objectType(), a.attribute(), false))
+                    return true;
+            }
+        return false;
+    }
+
+    /** Whether the member {@code name} that {@code holder}'s chain declares lies on a timeline; false where the chain
+     *  declares none of that name, which the positions that read or write it refuse by name. */
+    private static boolean temporal(ObjectType holder, String name, boolean characteristic) {
+        if (holder == null || name == null) return false;
+        for (ObjectType t : holder.chain())
+            if (characteristic) {
+                for (String k : t.characteristics)
+                    if (Namen.norm(k).equals(Namen.norm(name))) return t.characteristicGranularity.get(k) != null;
+            } else
+                for (String x : t.attributes.keySet())
+                    if (Namen.norm(x).equals(Namen.norm(name))) return t.attributeGranularity.get(x) != null;
+        return false;
     }
 
     /** Whether a rule writes {@code member} by period arithmetic ({@link #isPeriodArithmetic}): such a timeline divides
@@ -1962,17 +2209,23 @@ public final class TmsTranspiler {
      * the target's decimals (ch. 2.4 point 1), or, in a target of the unbounded form, a value that terminates
      * ({@link PeriodArithmetic#written}).
      *
-     * <p>In a build with readings the nodes of the value read unreached, as the reference interpreter's trace reads
-     * them: its reading evaluates the value of a temporal target through the producer of ch. 3.7, so none of these
-     * nodes is observed there ({@link #unreached}).
+     * <p>Where the rule's condition is read per period, {@code periods} is the term of its periods
+     * ({@link #periodCondition}), and the timeline is restricted to them before it is written (ch. 3.10, the clip
+     * generalised); null for a rule whose condition gates it or that has none.
+     *
+     * <p>In a build with readings each node of the value has the timeline it reads or computes, a scalar its value, as
+     * the reference interpreter's trace reads them for a rule with a condition; the root has the timeline the rule
+     * writes. Without a condition its trace reads the value through the producer of ch. 3.7, so none of these nodes is
+     * observed there, and they read unreached ({@link #unreached}).
      *
      * <p>Refused by name: a target that is no number, and as a limit of this branch a value whose unit needs a
      * restatement into the target's ({@link #periodUnit}).
      */
-    private Term periodArithmetic(Expr value, Member target, ObjectType subject, Reads reads) {
+    private Term periodArithmetic(Expr value, Member target, ObjectType subject, Reads reads, Term periods) {
         if (!target.datatype().isNumberLike())
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(value.source())));
         Term timeline = periodOperand(value, target, subject, reads);
+        if (periods != null) timeline = new Term.Call(StaticFunction.PERIOD_CLIPPED, List.of(periods, timeline), null);
         periodUnit(periodUnitOf(value), unitCarrier(value), target.datatype().unitOf());
         return new Term.Call(StaticFunction.PERIOD_WRITTEN, List.of(timeline, constant(ceiling(target.datatype())),
                 constant(target.spelled())), source(value.source()));
@@ -1996,7 +2249,7 @@ public final class TmsTranspiler {
         if (e instanceof Expr.Binary b && b.op() != Expr.BinOp.TOT_DE_MACHT) {
             Term left = periodOperand(b.left(), target, subject, reads), right = periodOperand(b.right(), target, subject, reads);
             periodUnits(b);
-            return switch (b.op()) {
+            Term t = switch (b.op()) {
                 case PLUS -> new Term.Call(StaticFunction.PERIOD_PLUS, List.of(left, right), source);
                 case MIN -> new Term.Call(StaticFunction.PERIOD_MINUS, List.of(left, right), source);
                 case VERMINDERD_MET -> new Term.Call(StaticFunction.PERIOD_REDUCED, List.of(left, right), source);
@@ -2009,11 +2262,19 @@ public final class TmsTranspiler {
                 }
                 case TOT_DE_MACHT -> throw new IllegalStateException("een macht is geen rekenen per periode");
             };
+            note(b, t);
+            return t;
         }
-        if (e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM && f.elementObjectType() != null)
-            return periodSum(f, target, reads);
-        if (e instanceof Expr.ParameterRef p && p.parameter() != null && p.parameter().granularity() != null)
-            return parameterOperand(p, target, reads);
+        if (e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM && f.elementObjectType() != null) {
+            Term t = periodSum(f, target, reads);
+            note(f, t);
+            return t;
+        }
+        if (e instanceof Expr.ParameterRef p && p.parameter() != null && p.parameter().granularity() != null) {
+            Term t = parameterOperand(p, target, reads);
+            note(p, t);
+            return t;
+        }
         if (e instanceof Expr.AttributeReference a && a.attribute() != null && a.objectType() != null) {
             if (navigationBindings.containsKey(a) || !subject.chain().contains(a.objectType()))
                 throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(a.source())));
@@ -2024,9 +2285,12 @@ public final class TmsTranspiler {
             int timeline = reads.timeline(operand);
             int subjectType = reads.member();
             reads.markFail();
-            return complete(timeline, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \""
+            Term whole = complete(timeline, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \""
                     + operand.name() + "\" of ", subjectType, "; the case supplies only the asOfDate-bucket scalar, which"
                     + " carries no period", source);
+            // read whole, an absent timeline is the empty one, as the reference interpreter's trace reads it
+            noteDerived(a, List.of(whole), x -> x.get(0) == null ? List.of() : x.get(0));
+            return whole;
         }
         if (e instanceof Expr.Literal || e instanceof Expr.ParameterRef) return scalarOperand(e, reads);
         throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(e.source())));
@@ -2193,7 +2457,10 @@ public final class TmsTranspiler {
         Set<Object> perMember = Collections.newSetFromMap(new IdentityHashMap<>());
         perMember(value, perMember);
         for (Object n : positions.subtree(value))
-            if (!perMember.contains(n)) noted.put(n, new Term.Const(null, null, null));
+            if (!perMember.contains(n)) {
+                noted.put(n, new Term.Const(null, null, null));
+                notedDerived.remove(n);
+            }
     }
 
     /** Adds the nodes of the members of every sum in the period arithmetic {@code e} to {@code out}. */
@@ -2215,7 +2482,9 @@ public final class TmsTranspiler {
      * leeg there or absent giving no segment, each segment under the write boundary of the target's decimals
      * ({@link ComputeHelpers#proRata}, ch. 2.4); and the runtime's {@code rsAantalDagenIn} the true days per touched
      * bucket, a whole number every target holds, on the calendar or from the anchor of the target's fixed start point
-     * ({@code rsAantalDagenInVanaf}, ch. 3.2). Neither coalesces adjacent equal buckets (ch. 3.7). The
+     * ({@code rsAantalDagenInVanaf}, ch. 3.2). Neither coalesces adjacent equal buckets (ch. 3.7). Where the rule's
+     * condition is read per period, {@code held} is the term of its periods, and the result is restricted to them
+     * ({@link #periodCondition}, ch. 3.10). The
      * pro-rata part reads its base whole, bucket by bucket, so a base the case gives as the asOfDate-bucket scalar
      * faults ({@link InputFormFault}, ch. 8.4), wherever the rule's evaluation reaches the value; the reference
      * interpreter and the ASP backend read such a base as no timeline today and write nothing.
@@ -2227,7 +2496,7 @@ public final class TmsTranspiler {
      * point ({@link Timelines#proRataFixedGrid}). Refused by name as a limit of this branch: a pro-rata part into a
      * target of the unbounded form, whose segment would hold a part that does not terminate.
      */
-    private Term timelineValue(Expr.FunctionCall f, Member target, ObjectType subject, Reads reads) {
+    private Term timelineValue(Expr.FunctionCall f, Member target, ObjectType subject, Reads reads, Term held) {
         boolean part = f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL;
         Msg description = Msg.drools(part ? "PART.desc.pro-rata-part" : "PART.desc.day-count", "snippet", snippet(f.source()));
         if (f.granularity() != target.time())
@@ -2252,7 +2521,7 @@ public final class TmsTranspiler {
                             constant(Period.class)), null)
                     : new Term.Call(StaticFunction.RS_DAY_COUNT_FROM, List.of(periods, constant(gran),
                             constant(anchor), constant(Period.class)), null);
-            return new Term.Call(StaticFunction.PERIOD_LIST, List.of(days), source(f.source()));
+            return clipped(held, new Term.Call(StaticFunction.PERIOD_LIST, List.of(days), source(f.source())));
         }
         if (f.arguments().size() != 1 || !(f.arguments().get(0) instanceof Expr.AttributeReference b)
                 || b.attribute() == null || b.objectType() != subject || navigationBindings.containsKey(b))
@@ -2282,7 +2551,13 @@ public final class TmsTranspiler {
                     target.name(), "objectType", target.declarant().name));
         Term proportional = new Term.Call(StaticFunction.PRO_RATA, List.of(periods, whole, constant(gran),
                 constant(ceiling(target.datatype())), constant(target.spelled())), null);
-        return new Term.Call(StaticFunction.PERIOD_LIST, List.of(proportional), source(f.source()));
+        return clipped(held, new Term.Call(StaticFunction.PERIOD_LIST, List.of(proportional), source(f.source())));
+    }
+
+    /** {@code timeline} restricted to {@code periods}, the term of the periods of a condition read per period
+     *  ({@link #periodCondition}); {@code timeline} itself where the rule's condition is none or a gate. */
+    private static Term clipped(Term periods, Term timeline) {
+        return periods == null ? timeline : new Term.Call(StaticFunction.PERIOD_CLIPPED, List.of(periods, timeline), null);
     }
 
     /**
@@ -2471,20 +2746,26 @@ public final class TmsTranspiler {
         Reads reads = fresh.get();
         Set<Integer> read = reads.follow();
         beginReading();
-        Term testTerm = r.condition() == null ? null : conditionTerm(r.condition(), reads);
+        // a condition that reads a timeline is no gate on a timeline target: it is read per period with the value, in
+        // the consequence, and its faults and deposits are the value's (RUNTIME-SEMANTICS ch. 3.10)
+        boolean perPeriod = member.time() != null && r.condition() != null && readsTimeline(r.condition(), subject);
+        Term testTerm = r.condition() == null || perPeriod ? null : conditionTerm(r.condition(), reads);
         boolean canFail = reads.canFail();
         reads.stop();
         Set<Integer> use = reads.follow();
+        Term periods = perPeriod ? periodCondition(r.condition(), member, reads) : null;
         // the write boundary: the value restated into the target's declared unit (RUNTIME-SEMANTICS ch. 2.4, 2.6), and
         // where the declaration bounds the decimals, the fault of a value that does not fit them (ch. 2.4 point 1); a
         // timeline is written as its producer computes it, as in the reference interpreter (ch. 3.7)
         boolean periodArithmetic = member.time() != null && isPeriodArithmetic(r.value());
-        Term value = periodArithmetic ? periodArithmetic(r.value(), member, subject, reads)
-                : member.time() != null ? timelineValue((Expr.FunctionCall) r.value(), member, subject, reads)
+        Term value = periodArithmetic ? periodArithmetic(r.value(), member, subject, reads, periods)
+                : member.time() != null ? timelineValue((Expr.FunctionCall) r.value(), member, subject, reads, periods)
                 : fitted(restated(value(r.value(), reads), eff.unitOf(r.value()), member.datatype().unitOf(),
                         "een §4 schrijfgrens naar het doel"), member, null);
         if (member.time() != null) note(r.value(), value);
-        if (periodArithmetic) unreached(r.value());
+        // the reference interpreter's trace reads the value of period arithmetic without a condition through the
+        // producer of ch. 3.7, which observes none of its nodes
+        if (periodArithmetic && r.condition() == null) unreached(r.value());
         Noted noted = endReading();
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
@@ -2509,9 +2790,10 @@ public final class TmsTranspiler {
             // not at its turn (RUNTIME-SEMANTICS ch. 5.4)
             List<LhsItem> readingItems = reads.readingPlan(List.of(), false);
             readingItems.addAll(blockadeItems);
-            readingRule(ruleName, positions.versionOf(r), reads, readingItems, testTerm, value, r.condition(), r.value(),
-                    noted, r.validity(), blockade != null);
+            readingRule(ruleName, positions.versionOf(r), reads, readingItems, null, testTerm, periods, value,
+                    r.condition(), r.value(), noted, r.validity(), blockade != null);
         }
+        if (perPeriod) return out;
         if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, r.condition(), blockade));
         RulePlan deposit = depositRule(name, ruleName, fresh, r.condition(), blockade);
         if (deposit != null) out.add(deposit);
@@ -4179,7 +4461,7 @@ public final class TmsTranspiler {
         if (noted != null && !(unconditional && b.characteristic))
             readingRule(ruleName, pointerOf(d), reads, reads.readingPlan(control, false),
                     control.isEmpty() ? null : reads.readingPlan(List.of(), false), unconditional ? null : testTerm,
-                    value, unconditional ? null : d.condition(), b.characteristic ? null : d.consequence(), noted,
+                    null, value, unconditional ? null : d.condition(), b.characteristic ? null : d.consequence(), noted,
                     k.validity(), !control.isEmpty() || d.initialisation());
         if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, d.condition(), l -> guard.get()));
         RulePlan deposit = depositRule(b.targetForm, ruleName, fresh, d.condition(), l -> {
@@ -4282,13 +4564,14 @@ public final class TmsTranspiler {
      * the name of the form's own rule, which it reads ({@link #originOf}), the form's pointer, its validity, whether the
      * form has a guard of its turn (control facts of a defaults stack, the guard of an initialisation, the 1:1 guard of
      * an object creation), the planned condition and value of the form's own rule, the very terms its test and its
-     * consequence evaluate, the condition null for a form without one, and the nodes of the reading in their order, a
+     * consequence evaluate, the condition null for a form without one and for one whose condition is read per period,
+     * whose term of periods the value reads ({@code periods}, null for every other form), and the nodes of the reading in their order, a
      * node evaluated per member of a fold left out; and for a default whose turn the control facts of its stack guard,
      * its speculative reading rule, the same left-hand side without those control facts ({@link Reading.Kind}), null
      * for every other form.
      */
     private record ReadingRule(RulePlan plan, RulePlan speculative, String ownRule, String pointer, Validity validity,
-                               boolean guarded, Term condition, Term value, List<Site> sites) {
+                               boolean guarded, Term condition, Term periods, Term value, List<Site> sites) {
 
         /** The subject pattern of the reading rule. */
         Subject subject() {
@@ -4327,24 +4610,26 @@ public final class TmsTranspiler {
     private void readingRule(String ruleName, String pointer, Reads reads, List<LhsItem> items, Term condition,
                              Term value, Condition irCondition, Expr irValue, Noted noted, Validity validity,
                              boolean guarded) {
-        readingRule(ruleName, pointer, reads, items, null, condition, value, irCondition, irValue, noted, validity,
+        readingRule(ruleName, pointer, reads, items, null, condition, null, value, irCondition, irValue, noted, validity,
                 guarded);
     }
 
     /** As {@link #readingRule(String, String, Reads, List, Term, Term, Condition, Expr, Noted, Validity, boolean)},
      *  with beside it, where {@code speculativeItems} is not null, the speculative reading rule of a default
      *  ({@link Reading.Kind#SPECULATIVE}): the left-hand side of the reading rule with {@code speculativeItems}, those
-     *  items without the control facts of the default's stack, after the subject pattern. */
+     *  items without the control facts of the default's stack, after the subject pattern; and where {@code periods} is
+     *  not null, the term of the periods of a condition read per period ({@link #periodCondition}), which the form's
+     *  value reads and which gates nothing, in place of {@code condition}. */
     private void readingRule(String ruleName, String pointer, Reads reads, List<LhsItem> items,
-                             List<LhsItem> speculativeItems, Term condition, Term value, Condition irCondition,
-                             Expr irValue, Noted noted, Validity validity, boolean guarded) {
+                             List<LhsItem> speculativeItems, Term condition, Term periods, Term value,
+                             Condition irCondition, Expr irValue, Noted noted, Validity validity, boolean guarded) {
         if (pointer == null)
             throw new IllegalStateException("de vorm van de regel " + ruleName + " staat niet in het document dat de lader"
                     + " las: een lezing noemt haar vorm naar haar plaats");
         RulePlan plan = as(RuleOrigin.Role.READING, reads.readingRulePlan(ruleName + ": lezing", pointer, items, false));
         RulePlan speculative = speculativeItems == null ? null : as(RuleOrigin.Role.READING,
                 reads.readingRulePlan(ruleName + ": lezing buiten de beurt", pointer, speculativeItems, true));
-        if ((condition == null) != (irCondition == null))
+        if ((condition == null && periods == null) != (irCondition == null) || condition != null && periods != null)
             throw new IllegalStateException("de leesregel van " + pointer + " heeft een voorwaarde zonder haar knopen, of"
                     + " knopen zonder haar voorwaarde");
         List<Object> nodes = new ArrayList<>(irCondition == null ? List.of() : positions.subtree(irCondition));
@@ -4379,7 +4664,7 @@ public final class TmsTranspiler {
             sites.add(new Site(i, at.kind(), t, noted.units().get(n), fold == null ? null : fold.get(reads.subject),
                     n instanceof Condition.QuantifierFold q ? q : null, derived, object == null ? -1 : object));
         }
-        readingRules.add(new ReadingRule(plan, speculative, ruleName, pointer, validity, guarded, condition, value,
+        readingRules.add(new ReadingRule(plan, speculative, ruleName, pointer, validity, guarded, condition, periods, value,
                 sites));
     }
 
@@ -4529,8 +4814,17 @@ public final class TmsTranspiler {
             if (l.kind() == ReadKind.DEPOSIT_FLAG) w[l.slot()] = ComputeHelpers.depositFlag();
         RecordingRendering rec = new RecordingRendering();
         ConditionReading.Status status;
+        // a condition read per period gates nothing, so the form holds, and a fault of it fails the reading before the
+        // value is read (RUNTIME-SEMANTICS ch. 3.10, 5.12)
+        if (r.periods() != null) try {
+            rec.value(r.periods(), w);
+            status = ConditionReading.Status.HOLDS;
+        } catch (RuntimeException e) {
+            if (!ComputeHelpers.isEvaluationFault(e)) throw e;
+            status = ConditionReading.Status.FAULTS;
+        }
         // a form without a condition whose reading rule stood is at its turn, and holds there
-        if (r.condition() == null) status = ConditionReading.Status.HOLDS;
+        else if (r.condition() == null) status = ConditionReading.Status.HOLDS;
         else try {
             status = rec.test(r.condition(), w) ? ConditionReading.Status.HOLDS : ConditionReading.Status.FAILS;
         } catch (RuntimeException e) {
@@ -4689,6 +4983,8 @@ public final class TmsTranspiler {
     private void note(Object node, Term t) {
         if (noted == null || memberwise > 0) return;
         noted.put(node, t);
+        // the last note of a node is its reading: the root of a value standing alone reads the timeline it writes
+        notedDerived.remove(node);
         if (node instanceof Expr e) notedUnits.put(node, eff.unitOf(e));
     }
 
@@ -7885,6 +8181,7 @@ public final class TmsTranspiler {
             String key = "tijdlijn " + member.key();
             int known = existing(key);
             if (known >= 0) return known;
+            refuseWritersRead(member);
             String w = "$tijdlijn_" + slots.size();
             ElementKey lk = member.key();
             if (member.characteristic()) {
@@ -7897,6 +8194,16 @@ public final class TmsTranspiler {
                 derived.put(lk, member);
             }
             return allocateSlot(ReadKind.TIJDLIJN, key, w);
+        }
+
+        /** Refuses a read of {@code member} where it is a timeline target of two or more computing rules
+         *  ({@link TmsTranspiler#timelineWriters}): each of them stands as a {@link Value} of its own, and the target's
+         *  standing, the union of their segments per day with its input on the other days (RUNTIME-SEMANTICS ch. 5.7),
+         *  is built only at the write-back. */
+        private void refuseWritersRead(Member member) {
+            if (timelineAttribute(member) && timelineWriters(member.key()))
+                throw new Refusal(DroolsCode.TIMELINE_WRITERS_READ.reason("attribute", member.name(), "declarant",
+                        member.declarant().name));
         }
 
         /** A member of the object {@code path} reaches from this rule's subject, null where a link on the path is absent.
@@ -7919,6 +8226,7 @@ public final class TmsTranspiler {
             ElementKey lk = member.key();
             if (member.time() != null && member.characteristic() && writers.containsKey(lk))
                 throw new Refusal(DroolsCode.TIMELINE_CHARACTERISTIC_WRITTEN.reason("member", member.name(), "objectType", member.declarant().name));
+            refuseWritersRead(member);
             // a derived member, an attribute on a timeline, or any member at the end of a path whose links a form
             // creates: through the path's standing, whose rules bind every link and the member in their left-hand sides
             if (writers.containsKey(lk) || timelineAttribute(member) || path.created()) {

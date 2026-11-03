@@ -653,6 +653,12 @@ public final class ComputeHelpers {
      *  ({@link #equalValue}). */
     public static boolean differ(Object values) {
         List<?> l = (List<?>) values;
+        // writers of a timeline differ only on a day both decide (RUNTIME-SEMANTICS ch. 5.7, "Two writers per day")
+        if (!l.isEmpty() && ((Value) l.get(0)).value() instanceof List<?>) {
+            List<Value> timelines = new ArrayList<>();
+            for (Object x : l) timelines.add((Value) x);
+            return PeriodCondition.clash(timelines) != null;
+        }
         for (Object x : l)
             if (!equalValue(((Value) l.get(0)).value(), ((Value) x).value())) return true;
         return false;

@@ -354,12 +354,6 @@ class TmsPeriodArithmeticWitnessTest {
     @Test void every_form_outside_the_period_arithmetic_it_carries_is_refused_by_name_on_both_branches() throws Exception {
         JsonNode c = TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter",
                 Map.of("strandloon", STRANDLOON), List.of(), Map.of(), Map.of())), List.of(consistent()));
-        // a condition on the rule, which would restrict the timeline per period
-        BothBranches.refused(document(MODEL_A, List.of(computingRule("maandloon", "BEREKENING", "Jutter", "maandloon",
-                        binary("plus", ownRead("strandloon", "Jutter"), ownRead("stormtoeslag", "Jutter")),
-                        check("actief", false)))), c,
-                "regel: maandloon — de regel \"maandloon\" schrijft het tijdsafhankelijke attribuut 'maandloon' van Jutter"
-                        + " met het rekenen per periode van ch. 3.4/3.5 onder een voorwaarde", "DROOLS-302");
         // a power below plus
         BothBranches.refused(document(MODEL_A, List.of(computingRule("maandloon", "BEREKENING", "Jutter", "maandloon",
                         binary("plus", ownRead("strandloon", "Jutter"), binary("power", ownRead("stormtoeslag", "Jutter"),

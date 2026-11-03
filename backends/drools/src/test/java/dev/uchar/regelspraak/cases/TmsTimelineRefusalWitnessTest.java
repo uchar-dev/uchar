@@ -48,11 +48,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * confirms where it answers.
  *
  * <ul>
- * <li><b>A second writer of a timeline target</b>: "Het jaardeel … gedurende de tijd dat hij borgplichtig is, indien zijn
- * score groter is dan 5" and the same "… wachtplichtig …, indien zijn score kleiner is dan 6"; ch. 7.8 keeps a target
- * with more writers fenced. Each rule is refused for the other. The reference interpreter answers 306 and 31; the ASP
- * runner refuses, "two computing rules write the temporal target "jaardeel", and a divergence between their timelines
- * is not translated (no corpus case)".
  * <li><b>An initialisation of a timeline target</b>: the reference interpreter and the ASP runner refuse it, "a
  * granularity-bucketed builtin call is executed only as the whole value of a rule on a temporal target (ch. 3.7,
  * 3.8)".
@@ -90,7 +85,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * and a read or a write of a dimensioned attribute outside a cell, so the branch's refusals of those forms
  * (DROOLS-278 and DROOLS-275) are reached only by a document the verifier refuses.
  *
- * <p><b>Measured</b> 2026-11-03 on the documents of {@link #main}: the verifier passes all eleven. The suite does not
+ * <p><b>Measured</b> 2026-11-03 on the documents of {@link #main}: the verifier passes all ten. The suite does not
  * run the verifier, which is a program outside the jar. <b>Red</b> on b9f77aa7, the code before timelines were
  * carried: every row on the refusal of the timeline as outside the trial, "… — het tijdsafhankelijke attribuut
  * 'jaardeel' van Jutter: tijdlijnen zijn buiten de proef van de truth-maintenance-tak", "… — een Aggregation total
@@ -123,25 +118,6 @@ class TmsTimelineRefusalWitnessTest {
 
     static List<Row> rows() throws Exception {
         List<Row> out = new ArrayList<>();
-        // a second writer of a timeline target; each under its own condition, since two unconditional writers of one
-        // target are ill-formed (WF-079)
-        Map<String, List<String>> both = Map.of("borgplichtig", List.of(period("2024-03-01", "2025-01-01")),
-                "wachtplichtig", List.of(period("2024-01-01", "2024-02-01")));
-        out.add(new Row("tweede-schrijver", TmsTimelineDocuments.ir(MODEL_JAARDEEL, List.of(
-                        jaardeel("jaardeel borg", "BEREKENING", "borgplichtig",
-                                comparison("greater", ownRead("score", "Jutter"), number("5"))),
-                        jaardeel("jaardeel wacht", "BEREKENING", "wachtplichtig",
-                                comparison("less", ownRead("score", "Jutter"), number("6")))), List.of()),
-                TmsTimelineDocuments.caseDocument(null, List.of(
-                                instance("J1", "Jutter", Map.of("score", numberValue("10"), "jaartarief", RATE_2024),
-                                        List.of(), both, Map.of()),
-                                instance("J2", "Jutter", Map.of("score", numberValue("3"), "jaartarief", RATE_2024),
-                                        List.of(), both, Map.of())),
-                        List.of(expectedTimeline("J1", "jaardeel", List.of(segment("2024-01-01", "2025-01-01", "306"))),
-                                expectedTimeline("J2", "jaardeel", List.of(segment("2024-01-01", "2025-01-01",
-                                        "31"))))),
-                List.of(secondWriter("jaardeel borg", "jaardeel wacht"),
-                        secondWriter("jaardeel wacht", "jaardeel borg"))));
         // an initialisation of a timeline target
         out.add(new Row("initialisatie", TmsTimelineDocuments.ir(MODEL_JAARDEEL, List.of(
                         jaardeel("jaardeel init", "INITIALISATIE", "borgplichtig", "null")), List.of()),
@@ -258,13 +234,6 @@ class TmsTimelineRefusalWitnessTest {
                         + " tak draagt deze vorm nog niet; de goldens met cases die er een lezen, doen"
                         + " dat in een TemporalRead, die de lader voor alle takken weigert")));
         return out;
-    }
-
-    static String secondWriter(String rule, String other) {
-        return "transpiler SKIP: regel: " + rule + " — een tijdsafhankelijk doel met een tweede schrijver"
-                + " ('jaardeel' van Jutter wordt ook geschreven door \"" + other + "\"): deze tak draagt"
-                + " deze vorm nog niet; een doel met meer schrijvers blijft omheind (RUNTIME-SEMANTICS ch. 7.8), en geen"
-                + " golden met cases heeft er een";
     }
 
     // ---------------- the units of the row of a foreign denominator ----------------

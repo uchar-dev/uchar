@@ -668,7 +668,7 @@ once); the sum per period, a leeg member skipped, an all-leeg period leeg or the
 over no member; an own attribute on a timeline read whole through its standing; a time-dependent parameter read whole
 off its global, the `List<Period>` the case runner sets from the parameter's timeline (open bounds included), and the
 fault of an unbound parameter (EF-014) where the case gives none; a literal, an own scalar attribute or a scalar
-parameter on the one segment (−∞, +∞). The values between two operators are exact, a decimal or a `Breuk`. The rule
+parameter on the one segment (−∞, +∞). Each of these operands also stands alone as the whole value. The values between two operators are exact, a decimal or a `Breuk`. The rule
 writes the filled segments, adjacent equal ones one segment, a leeg period a gap, each under the write boundary of the
 target's decimals; in a target of the unbounded form a segment whose value does not terminate faults by name
 (`ComputeFault`), a limit of this branch, whose segment holds a decimal. Units are computed without a restatement:
@@ -678,7 +678,9 @@ absent one 0, and so do the clip and the per-element fold over a set: an open se
 value faults with EF-036 (`OpenSegmentFault`, the attribute and the label of the object whose timeline it is). The
 whole-period qualifier over an open segment faults, since its fold has no end to walk to (ch. 3.1). An operand that
 the case gives as the asOfDate-bucket scalar faults in the reference interpreter's words. In a build with readings the
-nodes of such a value read unreached, as the reference interpreter's trace reads them. Witnesses
+nodes of such a value read unreached on a rule without a condition, as the reference interpreter's trace reads them;
+on a rule with a condition each node reads the timeline it reads or computes, a scalar its value, and the root the
+timeline the rule writes. Witnesses
 `TmsPeriodArithmeticWitnessTest`, `TmsPerDayArithmeticWitnessTest`, `PeriodArithmeticTest`, goldens
 `jutterswet-maandloon`, `jutterswet-rekenen-per-dag` and `anchor/jutterswet-verzuimrente-dagen`, red case
 `jutterswet-totaal-open-segment`.
@@ -690,6 +692,34 @@ calendar month, quarter or year that holds it (`PeriodArithmetic.weighed`), an e
 route of the subject's own total, the asOfDate bucket, the whole timeline a period arithmetic writes and the clip. A
 case reads a timeline on the calendar's day grid with any bounds. Witnesses `TmsPerDayArithmeticWitnessTest`,
 `PeriodArithmeticTest`, `GridSentenceWitnessTest`, anchor `jutterswet-verzuimrente-dagen`.
+
+**A condition read per period.** On a rule with a timeline target, a condition that reads a timeline — a check of a
+time-dependent characteristic of the subject, an attribute or a parameter on a timeline as an operand, a whole-period
+qualifier — gates nothing (RUNTIME-SEMANTICS ch. 3.10, the clip generalised): the rule writes the timeline its value
+produces, a pro-rata part, a day count or the period arithmetic, restricted to the periods of all time in which the
+condition holds (`PeriodArithmetic.clipped`). Those periods are computed in the consequence by the pure functions of
+`PeriodCondition` over the values the rule binds, maximal, so a segment is cut only where the condition changes: a check
+its true periods, a negated one the periods outside them; a comparison of an own attribute on a timeline with a number
+the periods on which the comparison of ch. 1.2 holds per day, a gap reading leeg; the whole-period qualifier the buckets
+of its calendar month or year in which its test holds on every day, and negated every other bucket of all time (ch.
+3.9, per bucket); a composite the periods in which its quantifier holds of its members, every member read; a node that
+reads no timeline all time or none. A condition that reads none gates the rule as on a scalar target. A fault of the
+condition is the value's. In a build with readings the form holds, each node has the part of all time in which it
+holds, a comparison its timeline's filled segments there with their values and the gaps where a leeg side satisfies it,
+as the reference interpreter's trace reads them. Refused by name (DROOLS-309): a navigated or hosted check, a qualifier
+on a characteristic that holds one value, a comparison of two timelines, of dates or of values that are no number, a
+leeg or gevuld test and a quantifier fold in such a condition; and a timeline it reads on a grid that does not fit the
+target's (DROOLS-310, IR-SPEC WF-126). Witnesses `TmsConditionPerPeriodWitnessTest`, goldens `jutterswet-loon-per-periode`
+and `jutterswet-wachtmaanden`.
+
+**Two writers per day.** Two or more computing rules of one timeline target each decide the days of their own segments
+(RUNTIME-SEMANTICS ch. 5.7, "Two writers per day"): each inserts its timeline as a `Value` of its own, and the
+write-back puts their union on the bean, in the order of the document, a day an earlier writer decides left out of a
+later one's segment, with the target's input on the days none decides (`PeriodCondition.union`). Where two decide one
+day with different values, the rule of the writers' difference and the write-back fault with EF-016, naming the two of
+the first such day in the order of the document with their values there (`WritersConflict`). A read of such a target,
+whose standing would be that union, is refused by name (DROOLS-311). Witnesses `TmsConditionPerPeriodWitnessTest`,
+golden `jutterswet-wachtdagen-twee-schrijvers`, red case `jutterswet-wachtdagen-botsing`.
 
 **The two input conventions of a timeline.** The case gives an attribute on a timeline either as its full timeline or
 as the asOfDate-bucket scalar, one value for the period of the attribute's grid that holds the evaluation date, and
@@ -855,11 +885,12 @@ never as a silent fall:
   dimensions, which WF-040 refuses. Witness
   `TmsTimelineRefusalWitnessTest` for a dimensioned attribute on a timeline, by its cell and by its total, and
   `DimensionCellWitnessTest` for the unbounded form and for labels that name no cell;
-- of timelines, each with no golden with cases unless one is named: a second writer of a timeline target, which ch.
-  7.8 keeps fenced, and an initialisation of one; a time window in the condition of a rule with a timeline target,
+- of timelines, each with no golden with cases unless one is named: a writer of a timeline target other than a
+  computing rule beside another writer, which ch. 7.8 keeps fenced, an initialisation of one, and a read of a target of
+  two or more writers; a time window in the condition of a rule with a timeline target,
   which clips the timeline (ch. 3.10; golden `jutterswet-pachtvenster`); a
   characteristic on a timeline as a target; any value of a timeline target other than a pro-rata part, a day count or
-  the period arithmetic of ch. 3.4 and 3.5, among them a power, and of that arithmetic a condition on the rule, a
+  the period arithmetic of ch. 3.4 and 3.5, among them a power, and of that arithmetic a
   die/dat subselection on the sum, an operand outside its forms or on a finer grid than the target's and a restatement
   between two units (witnesses `TmsPeriodArithmeticWitnessTest`, `TmsPerDayArithmeticWitnessTest`); a rate
   over a grid whose unit the document does not declare, or declares in two different canonical chains, which the
@@ -878,7 +909,7 @@ never as a silent fall:
   components on a timeline, and a pro-rata part over a base with a unit or finer than the bucket, or onto or from a
   fixed start point. Witness `TmsTimelineRefusalWitnessTest`;
 - of the whole-period qualifier, with no golden with cases: the negation inside the qualifier of a characteristic
-  check ("gedurende het gehele jaar niet …", ch. 3.12); and what the
+  check ("gedurende het gehele jaar niet …", ch. 3.12) on a scalar target, where the qualifier folds; and what the
   reference interpreter does not fold either: a comparison over a timeline read over a path, between two timelines or
   with none, and a date ordering (ch. 3.9, 3.12);
 - of day kinds: the dayKind predicate as a condition, which the reference interpreter and the ASP backend refuse

@@ -323,13 +323,16 @@ public enum DroolsCode {
     DIMENSION_LABELS_NAME_NO_CELL("DROOLS-299", Kind.CONTRACT, "dimension-labels-name-no-cell", "description,attribute,labels,dimensions,snippet", null),
     POWER_EXPONENT_PAST_BOUND("DROOLS-300", Kind.LIMIT, "power-exponent-past-bound", "exponent,bound,snippet", null),
     PRO_RATA_UNBOUNDED_TARGET("DROOLS-301", Kind.LIMIT, "pro-rata-unbounded-target", "description,attribute,objectType", null),
-    PERIOD_ARITHMETIC_CONDITION("DROOLS-302", Kind.REFUSAL, "period-arithmetic-condition", "rule,attribute,declarant", null),
+    PERIOD_ARITHMETIC_CONDITION("DROOLS-302", Kind.RETIRED, "period-arithmetic-condition", "rule,attribute,declarant", null),
     PERIOD_ARITHMETIC_OPERAND("DROOLS-303", Kind.REFUSAL, "period-arithmetic-operand", "snippet", null),
     PERIOD_ARITHMETIC_TIME_PARAMETER("DROOLS-304", Kind.RETIRED, "period-arithmetic-time-parameter", "parameter", null),
     PERIOD_SUM_SUBSELECTION("DROOLS-305", Kind.REFUSAL, "period-sum-subselection", "snippet", null),
     PERIOD_ARITHMETIC_RESTATEMENT("DROOLS-306", Kind.LIMIT, "period-arithmetic-restatement", "snippet,unit,targetUnit", null),
     PERIOD_ARITHMETIC_INEXACT("DROOLS-307", Kind.RETIRED, "period-arithmetic-inexact", "snippet", null),
-    PERIOD_ARITHMETIC_FINER_OPERAND("DROOLS-308", Kind.REFUSAL, "period-arithmetic-finer-operand", "attribute,operandGranularity,targetGranularity", null);
+    PERIOD_ARITHMETIC_FINER_OPERAND("DROOLS-308", Kind.REFUSAL, "period-arithmetic-finer-operand", "attribute,operandGranularity,targetGranularity", null),
+    PERIOD_CONDITION_FORM("DROOLS-309", Kind.REFUSAL, "period-condition-form", "attribute,declarant,snippet", null),
+    PERIOD_CONDITION_GRID("DROOLS-310", Kind.REFUSAL, "period-condition-grid", "operand,operandGranularity,attribute,targetGranularity", null),
+    TIMELINE_WRITERS_READ("DROOLS-311", Kind.REFUSAL, "timeline-writers-read", "attribute,declarant", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

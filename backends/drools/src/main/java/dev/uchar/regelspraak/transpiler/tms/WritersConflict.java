@@ -13,6 +13,9 @@ import java.util.function.Function;
  * writers of one target"). A writer that fired with a leeg value wrote leeg (ch. 1.2g); a standing writer that computed
  * leeg wrote nothing and is not among them (ch. 7.8).
  *
+ * <p>Writers of a timeline each decide the days of their own segments, and two disagree only on a day both decide
+ * (ch. 5.7, "Two writers per day"): the conflict then names the two of the first such day, with their values there.
+ *
  * <p>The sentence names the writers in the order of the document, each with its value, the attribute as declared and
  * the object, as the reference interpreter names them, so the fragment a red case pins for Drools matches it. The
  * object is named by its case label where the write-back is given one ({@link #named}), "een aangemaakte" type where
@@ -49,7 +52,16 @@ public final class WritersConflict extends IllegalStateException {
         List<Value> ordered = new ArrayList<>(values);
         ordered.sort(inDocumentOrder(documentOrder));
         List<WriteAct> acts = new ArrayList<>();
-        for (Value w : ordered) acts.add(new WriteAct(w.writer(), w.value()));
+        if (ordered.get(0).value() instanceof List<?>) {
+            // writers of a timeline differ on a day both decide: the two of the first such day, with their values there
+            // (RUNTIME-SEMANTICS ch. 5.7, "Two writers per day")
+            PeriodCondition.Clash c = PeriodCondition.clash(ordered);
+            if (c == null)
+                throw new IllegalStateException("de tijdlijnen van " + ordered.size() + " schrijvers van " + attribute
+                        + " verschillen op geen dag die twee van hen beslissen, en het conflict noemt ze");
+            acts.add(new WriteAct(ordered.get(c.first()).writer(), c.firstValue()));
+            acts.add(new WriteAct(ordered.get(c.second()).writer(), c.secondValue()));
+        } else for (Value w : ordered) acts.add(new WriteAct(w.writer(), w.value()));
         String javaClass = subject.getClass().getSimpleName();
         int t = typeClasses.indexOf(javaClass);
         return new WritersConflict(subject, attribute, t < 0 ? javaClass : (String) types.get(t), acts);

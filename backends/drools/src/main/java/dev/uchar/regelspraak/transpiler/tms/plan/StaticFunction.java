@@ -4,6 +4,7 @@ import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
 import dev.uchar.regelspraak.transpiler.tms.Period;
 import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.PeriodCondition;
 
 /**
  * A static function a {@link Term} calls, by its class and its name: a helper of the runtime, which the other branch
@@ -116,6 +117,30 @@ public enum StaticFunction {
      *  it is null, the attribute a {@code String} constant and the object whose timeline it is: an open segment of 0
      *  adds 0, one of another value the fault (EF-036). */
     PERIOD_TOTAL(PeriodArithmetic.class, "total", true),
+    /** A timeline restricted to the periods in which its rule's condition holds, the periods first (ch. 3.10, the clip
+     *  generalised): one fragment per overlap of a segment and a period. */
+    PERIOD_CLIPPED(PeriodArithmetic.class, "clipped", false),
+    /** The periods of a condition read per period (ch. 3.10) in which a check of the subject's own characteristic on a
+     *  timeline holds: its true periods, maximal. */
+    PERIOD_TRUE_PERIODS(PeriodCondition.class, "truePeriods", false),
+    /** The periods of all time outside the true periods of a characteristic: a negated check read per period. */
+    PERIOD_OUTSIDE(PeriodCondition.class, "outside", false),
+    /** The periods of all time on which a comparison of a timeline with a bound holds per day (ch. 1.2), the two in the
+     *  order the comparison names them, the operator a {@code String} constant as {@code Operators.symbol} spells it with
+     *  the timeline on its left, and a {@code Boolean} constant that says whether the timeline comes first. */
+    PERIOD_WHERE(PeriodCondition.class, "where", false),
+    /** The whole-period qualifier per bucket of its grid, a {@code String} constant ("MAAND" or "JAAR"), over the periods
+     *  in which its test holds, complemented over all time where a {@code Boolean} constant says it is negated (ch. 3.9 on
+     *  a timeline target). */
+    PERIOD_WHOLE_BUCKETS(PeriodCondition.class, "wholeBuckets", false),
+    /** One step of the collection of the periods of a composite's members, from leeg before the first. */
+    PERIOD_MEMBER(PeriodCondition.class, "member", false),
+    /** The periods in which a composite read per period holds, from its members' periods, under a
+     *  {@code Condition.Quantifier} constant with an {@code Integer} threshold, every member read (ch. 3.10). */
+    PERIOD_COMPOSITE(PeriodCondition.class, "composite", false),
+    /** The periods of a node of a condition read per period that reads no timeline: all time where its truth value
+     *  holds, none where not (ch. 3.10). */
+    PERIOD_ALWAYS(PeriodCondition.class, "always", false),
     /** A division (ch. 1.4, 1.2): a leeg dividend 0, a leeg divisor leeg with the §6.5 deposit to the probe, a numeric
      *  zero leeg with the deposit of ch. 1.4 point 4 to the probe; the exact quotient. The function of a
      *  {@link Term.Division}. It does not fault (card zero-division-channel), and counts as one that can: the plans of every form with a division are built on that, and changing it is a card of its own. */

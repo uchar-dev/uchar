@@ -37,8 +37,9 @@ public final class PeriodArithmetic {
     private PeriodArithmetic() {}
 
     /** One segment of a timeline on its way to a written one: from day {@code from} up to {@code to}, its value exact
-     *  (a decimal or a {@link Breuk}) or leeg (null). */
-    private record Exact(LocalDate from, LocalDate to, Object value) {}
+     *  (a decimal or a {@link Breuk}) or leeg (null). Public so that a reading can name the timeline an operator
+     *  computes (RUNTIME-SEMANTICS ch. 5.12). */
+    public record Exact(LocalDate from, LocalDate to, Object value) {}
 
     /** A scalar operand as a timeline (ch. 3.1): the one segment {@code (−∞, +∞)} that carries {@code value}, and the
      *  empty timeline where it is leeg. */
@@ -126,6 +127,29 @@ public final class PeriodArithmetic {
             previous = c;
         }
         return coalesced(out);
+    }
+
+    /**
+     * The timeline {@code timeline} restricted to the periods {@code periods} in which its rule's condition holds
+     * (RUNTIME-SEMANTICS ch. 3.10, the clip generalised; {@link PeriodCondition}): one fragment per overlap of a segment
+     * and a period, with the segment's value, segment by segment, none for an absent timeline. A segment of working
+     * memory stays a {@link Period}, one an operator returned stays exact. The periods come first, since the condition
+     * is read before the value.
+     */
+    public static List<?> clipped(Object periods, Object timeline) {
+        List<Object> out = new ArrayList<>();
+        if (timeline == null) return out;
+        for (Object o : (List<?>) timeline) {
+            LocalDate from = o instanceof Exact e ? e.from() : ((Period) o).from();
+            LocalDate to = o instanceof Exact e ? e.to() : ((Period) o).to();
+            for (Object c : (List<?>) periods) {
+                Period p = (Period) c;
+                LocalDate f = from.isAfter(p.from()) ? from : p.from(), t = to.isBefore(p.to()) ? to : p.to();
+                if (!f.isBefore(t)) continue;
+                out.add(o instanceof Exact e ? new Exact(f, t, e.value()) : new Period(f, t, ((Period) o).value()));
+            }
+        }
+        return List.copyOf(out);
     }
 
     /**
