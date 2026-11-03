@@ -1,0 +1,8 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
+    de jaarvergoeding Numeriek (geheel getal) voor elk jaar;
+    de jaarsom Numeriek (getal);
+
+Regel jaarsom van een jutter
+    geldig altijd
+        De jaarsom van een Jutter moet gesteld worden op (het totaal van zijn jaarvergoeding gedurende de tijd dat hij wachtplichtig is).

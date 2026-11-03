@@ -160,8 +160,8 @@ faults with file/position context — never a silent fallback.
   the temporal total with clipping — tested against the ch. 3 worked
   examples verbatim. Evaluation crosses the timeline/scalar boundary
   only through the mirrored collapse: the temporal total folds the
-  `asOfDate` bucket's value the case carries (ch. 3.6, leeg for an
-  absent timeline). A temporal attribute, temporal characteristic or
+  `asOfDate` bucket's value the case carries (ch. 3.6, 0 for an absent
+  timeline), and counts a part of a unit of the grid by its days. A temporal attribute, temporal characteristic or
   granular parameter in any other scalar position is refused (ch. 3.3 —
   the §8.2 marker family). A temporal write target is refused too
   (ch. 3.11) except in the two shapes that produce buckets: the ch. 3.7

@@ -690,32 +690,47 @@ let calendar_measure (tu : Ir_v0.Checks.time_unit) van up_to : Q.t =
         go Q.zero van
     | tu -> fault "the calendar gives a %s no length in days (ch. 3.6)" (time_unit_name tu)
 
-(* the end of the whole grid units of [van, up_to): the days a total weighs *)
-let whole_units_end (g : Ir_v0.Ast.grain) van up_to =
-  let n = whole_units g van up_to in
-  match g with
-  | Day -> van + n
-  | Week -> van + (7 * n)
-  | Month | Quarter | Year -> add_months van (n * Ir_v0.Checks.step_months g)
+(* How many units of grid [gr] the days of [van, up_to) make (ch. 3.6): a day
+   counts 1/len of the period of the grid that holds it, len that period's
+   length in days, so a whole period counts 1 and a part of one its share of
+   the days. On the calendar that period is the calendar unit; a fixed start
+   point lays periods of its own. A grid this interpreter lays no period of (a
+   multi-period grid, a variable start) is refused by [grid_bucket]. *)
+let grid_measure (gr : grid) van up_to : Q.t =
+  if up_to <= van then Q.zero
+  else
+    match gr with
+    | { g_start = Calendar; g_count = 1; g_gran } -> calendar_measure (granularity_time_unit g_gran) van up_to
+    | _ ->
+        let rec go acc d =
+          if d >= up_to then acc
+          else
+            let bs, bn = grid_bucket gr d in
+            let e = min bn up_to in
+            go (Q.add acc (Q.make (Z.of_int (e - d)) (Z.of_int (bn - bs)))) e
+        in
+        go Q.zero van
 
 let calendar_denominator = Ir_v0.Checks.calendar_denominator
 
 (* what one segment contributes (ch. 3.6 "Units"; ch. 2.6, rule 8): a plain or
-   unitless value is weighted by a bare count, but a value with a negative factor
-   is INTEGRATED — the count is a duration stated in the GRID's own unit, so the
-   negative factor of that class takes one power and the value the factor between
-   them (€/mnd × mnd = €, the §4.20 Tabel 30 row-2 result the frontend types
-   statically; €/m/mnd over months is €/m; €/jr over a per-month grid cancels by
-   the declared factor; €/dg^2 over days is €/dg). Between the day family and the
-   month family the calendar integrates instead: the whole grid units of the
-   segment measured in the denominator's unit by the actual length of the
-   calendar unit each day lies in (€/jr over days, €/dg over months). A value
-   with neither is refused loudly, naming BOTH units: no executor may invent a
-   factor nobody declared, and a declared factor between the two families, which
-   would stand in for the calendar, is refused as well. *)
-let integrated_segment ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result option) ~(grain : Ir_v0.Ast.grain)
+   unitless value is read per unit of the grid and weighted by the segment's
+   length in grid units, but a value with a negative factor is INTEGRATED — the
+   length is a duration stated in the GRID's own unit, so the negative factor of
+   that class takes one power and the value the factor between them (€/mnd × mnd
+   = €, the §4.20 Tabel 30 row-2 result the frontend types statically; €/m/mnd
+   over months is €/m; €/jr over a per-month grid cancels by the declared factor;
+   €/dg^2 over days is €/dg). Between the day family and the month family the
+   calendar integrates instead: the segment measured in the denominator's unit
+   by the actual length of the calendar unit each day lies in (€/jr over days,
+   €/dg over months). Either length counts a part of a unit by its days (point
+   12a). A value with neither is refused loudly, naming BOTH units: no executor
+   may invent a factor nobody declared, and a declared factor between the two
+   families, which would stand in for the calendar, is refused as well. *)
+let integrated_segment ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result option) ~(grid : grid)
     ~span:(van, up_to) (v : Value.t) : Value.t =
-  let units = whole_units grain van up_to in
+  let grain = grid.g_gran in
+  let units = grid_measure grid van up_to in
   match v with
   | Num (q, Unit u) when Ir_v0.Units.negatives u <> [] -> (
       let own =
@@ -736,12 +751,10 @@ let integrated_segment ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result opt
           | _ -> ());
           let powers = if Ir_v0.Units.same_atom g f then [] else Ir_v0.Units.factor gu (Ir_v0.Units.of_declared f) in
           Num
-            ( Q.mul (Q.mul q (Q.of_int units)) (Arith.restatement powers),
+            ( Q.mul (Q.mul q units) (Arith.restatement powers),
               Arith.unit_of_option (Ir_v0.Units.risen u f) )
       | None, Some (f, tu) ->
-          Num
-            ( Q.mul q (calendar_measure tu van (whole_units_end grain van up_to)),
-              Arith.unit_of_option (Ir_v0.Units.risen u f) )
+          Num (Q.mul q (calendar_measure tu van up_to), Arith.unit_of_option (Ir_v0.Units.risen u f))
       | None, None -> (
           match grid_unit with
           | None ->
@@ -756,18 +769,19 @@ let integrated_segment ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result opt
                 (Arith.display_unit gu)))
   (* a value unit without a negative factor keeps the plain rule, and so does a
      unitless value *)
-  | _ -> Arith.mul v (Num (Q.of_int units, Unitless))
+  | _ -> Arith.mul v (Num (units, Unitless))
 
-(* totaal(tl) = Σ value(s) × duration(van, tot) (a segment: [integrated_segment]); a leeg segment
-   contributes 0; a segmentless timeline totals to 0 (the absent-timeline
-   leeg case is the caller's, ch. 3.6). [grid_unit] is resolved once per
-   fold by the caller (it needs the document); its absence only bites a
-   rate-valued segment. An open segment holds unboundedly many units: with
-   the value 0 it contributes 0, with any other value the total has none
-   (EF-036); [place] is the (label, attribute) the fault names. Where no
-   segment contributes, the total is 0 in [zero_unit ()], the unit the total
-   carries by its declarations (ch. 2.10): the 0 stands in for the value. *)
-let grand_total ?grid_unit ?place ?(zero_unit = fun () -> Unitless) (g : Ir_v0.Ast.grain) (tl : t) : Value.t =
+(* totaal(tl) = Σ value(s) × duration(van, tot) over grid [gr] (a segment:
+   [integrated_segment]); a leeg segment contributes 0; a segmentless timeline
+   totals to 0, and so does an absent one, which the caller stands in for with
+   []. [grid_unit] is resolved once per fold by the caller (it needs the
+   document); its absence only bites a rate-valued segment. An open segment
+   holds unboundedly many units: with the value 0 it contributes 0, with any
+   other value the total has none (EF-036); [place] is the (label, attribute)
+   the fault names. Where no segment contributes, the total is 0 in
+   [zero_unit ()], the unit the total carries by its declarations (ch. 2.10):
+   the 0 stands in for the value. *)
+let grand_total ?grid_unit ?place ?(zero_unit = fun () -> Unitless) (gr : grid) (tl : t) : Value.t =
   let total =
     List.fold_left
       (fun acc s ->
@@ -786,7 +800,7 @@ let grand_total ?grid_unit ?place ?(zero_unit = fun () -> Unitless) (g : Ir_v0.A
                over unboundedly many units has no total (ch. 3.6)"
               where (Value.to_string v)
         | v ->
-            let part = integrated_segment ?grid_unit ~grain:g ~span:(s.s_from, s.s_to) v in
+            let part = integrated_segment ?grid_unit ~grid:gr ~span:(s.s_from, s.s_to) v in
             Some (match acc with None -> part | Some a -> Arith.add a part))
       None (normalise tl)
   in

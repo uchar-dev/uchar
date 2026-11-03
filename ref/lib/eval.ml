@@ -1940,7 +1940,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
       (* ch. 3.6, the temporal total — the one v0-mirrored bridge from a
          timeline to a scalar. The case carries the asOfDate bucket's
          value (corpus/golden/README.md); the collapse folds that
-         one-bucket timeline: value × whole-units of its own grid.
+         one-bucket timeline: value × the one period of its own grid.
          The absent range is load-bearing (D8 (iv)): a fold that carries
          one reads a SET, the §7.1 per-element fold, and on a
          self-relation (element type = subject type) the two shapes are
@@ -1949,15 +1949,15 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
       let ot_decl = object_type env aot in
       let gran = attr_granularity ot_decl a in
       let grid = Timeline.grid_unit env.doc gran in
+      let periods = Timeline.attr_grid env.doc ot_decl a in
       let zero_unit () = temporal_total_unit env ~ot:aot ~attr:a (declared_unit env base) in
       (match filter with
       | Some c -> (
           (* ch. 3.6, the gedurende clip: intersect the value timeline
-             with the condition's true-periods, then total whole units
-             per clipped segment (floor, never pro-rata). A gap in the
-             condition is clipped away; a fully clipped-away — or
-             absent — value timeline totals 0, never leeg (the clip's
-             presence turns absence into 0, the mirrored v0 nuance).
+             with the condition's true-periods, then total each clipped
+             segment over its length in grid units, a part of a unit by its
+             days (point 12a). A gap in the condition is clipped away; a
+             fully clipped-away — or absent — value timeline totals 0.
              The clip needs the FULL value timeline: a case that
              carries only the asOfDate-bucket scalar cannot serve it. *)
           let tl =
@@ -2060,16 +2060,14 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
           in
           clip_member_qualifications c;
           let true_periods = true_periods_of_cond c in
-          Timeline.grand_total ~grid_unit:grid ~place:(self.label, a) ~zero_unit gran (Timeline.clip tl true_periods))
+          Timeline.grand_total ~grid_unit:grid ~place:(self.label, a) ~zero_unit periods (Timeline.clip tl true_periods))
       | None when period_arithmetic_target env.doc ~otype:aot ~attr:a -> (
           (* ch. 3.6 over the timeline a rule of ch. 3.4/3.5 writes: it divides all
              time and is totalled whole, so no asOfDate bucket enters. Before that
-             rule has written it is absent and totals to leeg. *)
+             rule has written it is absent, leeg on every day, and totals 0. *)
           let tl = World.timeline self a in
           read_whole base tl;
-          match tl with
-          | None -> Value.Empty
-          | Some tl -> Timeline.grand_total ~grid_unit:grid ~place:(self.label, a) ~zero_unit gran tl)
+          Timeline.grand_total ~grid_unit:grid ~place:(self.label, a) ~zero_unit periods (Option.value tl ~default:[]))
       | None -> (
       if World.timeline self a <> None then
         Value.fault
@@ -2085,16 +2083,17 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
       | Some d -> (
           match World.attr self a with
           | Value.Empty ->
+              (* an absent timeline is leeg on every day and totals 0 (ch. 3.6) *)
               read_whole base None;
-              Value.Empty (* absent timeline totals to leeg (ch. 3.6) *)
+              Timeline.grand_total ~grid_unit:grid ~zero_unit periods []
           | v ->
               let day = match Value.date_of_iso d with Value.Date z -> z | _ -> assert false in
               (* the period of the member's own grid that holds the evaluation
                  date: the calendar bucket, or the fixed start point's (ch. 3.2) *)
-              let van, up_to = Timeline.grid_bucket (Timeline.attr_grid env.doc ot_decl a) day in
+              let van, up_to = Timeline.grid_bucket periods day in
               let bucket = [ { Timeline.s_from = van; s_to = up_to; s_value = v } ] in
               read_whole base (Some bucket);
-              Timeline.grand_total ~grid_unit:grid ~zero_unit gran bucket))))
+              Timeline.grand_total ~grid_unit:grid ~zero_unit periods bucket))))
   | _ ->
   (* non-temporal aggregation *)
   (* contributors: an instance fold over a role (element_object_type set),
@@ -2210,6 +2209,10 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                 name);
           let gran = attr_granularity el_decl name in
           let grid = Timeline.grid_unit env.doc gran in
+          let periods = Timeline.attr_grid env.doc el_decl name in
+          let zero_unit () =
+            temporal_total_unit env ~ot:el ~attr:name (unit_of_datatype (attr_decl env ~otype:el ~attr:name))
+          in
           (* the convention of the per-element fold (ch. 3.6/§8.4): every
              member must bring its OWN horizon, because the integration
              runs per member and there is no single bucket to borrow. The
@@ -2218,8 +2221,9 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
              SCALAR states no period at all, so a member carrying one is
              the exact "needs the one, finds the other" case of ch. 8.4 —
              refused, naming the member, never silently bucketed at the
-             session date. An ABSENT member contributes nothing (leeg), and
-             timelines mix freely with any other horizon-carrying form.
+             session date. An ABSENT member's timeline is leeg on every day
+             and totals 0 like any other (point 12c), and timelines mix
+             freely with any other horizon-carrying form.
              The SUBJECT's own fold above keeps the opposite convention —
              the asOfDate bucket carries that total — and the asymmetry is
              deliberate: there the session date IS the horizon. *)
@@ -2227,13 +2231,9 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
             (contributing_values members @@ map_in_order
                (fun (i : World.instance) ->
                  match World.timeline i name with
-                 | Some tl ->
-                     let zero_unit () =
-                       temporal_total_unit env ~ot:el ~attr:name (unit_of_datatype (attr_decl env ~otype:el ~attr:name))
-                     in
-                     Timeline.grand_total ~grid_unit:grid ~place:(i.label, name) ~zero_unit gran tl
+                 | Some tl -> Timeline.grand_total ~grid_unit:grid ~place:(i.label, name) ~zero_unit periods tl
                  | None ->
-                     if World.attr i name = Value.Empty then Value.Empty
+                     if World.attr i name = Value.Empty then Timeline.grand_total ~grid_unit:grid ~zero_unit periods []
                      else
                        Value.fault
                          "the per-element temporal total of %S over %S: the case supplies an \

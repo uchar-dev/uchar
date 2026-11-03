@@ -3008,9 +3008,9 @@ let () =
   unit_is "ch2.10-som-fallback-adopts" (Arith.agg_sum ~unit:(declared eur_dg) ~fallback:(Some (n "0")) []) "0" eur_dg;
   unit_is "ch2.10-som-fallback-keeps-its-unit"
     (Arith.agg_sum ~unit:(declared eur_dg) ~fallback:(Some (num_with_unit cent "5")) []) "5" cent;
-  unit_is "ch2.10-total-of-no-segment" (Timeline.grand_total ~zero_unit:(declared eur) Ir_v0.Ast.Day []) "0" eur;
+  unit_is "ch2.10-total-of-no-segment" (Timeline.grand_total ~zero_unit:(declared eur) (Timeline.calendar_grid Day) []) "0" eur;
   unit_is "ch2.10-total-of-an-open-zero"
-    (Timeline.grand_total ~zero_unit:(declared eur) Ir_v0.Ast.Day [ seg_open (num_with_unit eur_dg "0") ])
+    (Timeline.grand_total ~zero_unit:(declared eur) (Timeline.calendar_grid Day) [ seg_open (num_with_unit eur_dg "0") ])
     "0" eur;
   (let asked = ref false in
    unit_is "ch2.10-total-of-a-segment"
@@ -3018,7 +3018,7 @@ let () =
         ~zero_unit:(fun () ->
           asked := true;
           Value.Unitless)
-        Ir_v0.Ast.Day
+        (Timeline.calendar_grid Day)
         [ seg "2024-01-01" "2024-01-11" (num_with_unit eur "3") ])
      "30" eur;
    check "ch2.10-total-of-a-segment-reads-no-zero-unit" (not !asked));
@@ -3156,7 +3156,7 @@ let () =
 
 (* WV-3.6: the temporal total *)
 let () =
-  let month = Ir_v0.Ast.Month in
+  let month = Timeline.calendar_grid Month in
   let tl =
     [ seg "2023-01-01" "2024-01-01" (n "10.00"); seg "2024-01-01" "2024-07-01" (n "11.00") ]
   in
@@ -3241,7 +3241,7 @@ let () =
     "10";
   (* a COARSER grid: 10 €/mnd over 2024 on a per-quarter grid is 4 quarters
      × 3 months × 10 = 120 €, exactly the per-month reading *)
-  (match Timeline.grand_total ~grid_unit:(grid kw) Quarter (year_2024 (num_with_unit eur_per_mnd "10")) with
+  (match Timeline.grand_total ~grid_unit:(grid kw) (Timeline.calendar_grid Quarter) (year_2024 (num_with_unit eur_per_mnd "10")) with
   | Value.Num (v, Value.Unit u) ->
       check "WV-3.6-g-kwartaalrooster"
         (Q.equal v (q "120") && u = eur)
@@ -3294,7 +3294,7 @@ let () =
      [2028-02-11, 2028-04-05) of the leap year 2028 is 500 × 54/366 = 73 47/61 €,
      where jr = 365 dg would give 73 71/73 €; geval 1, 400 €/jr on 77 days and
      500 €/jr on 40 days of 2025 and 2026, is 139 13/73 € *)
-  let day_grid = Ir_v0.Ast.Day in
+  let day_grid = Timeline.calendar_grid Day in
   let eur_per_jr = over eur jr in
   let totals name tl value =
     match Timeline.grand_total ~grid_unit:(grid dg) day_grid tl with
@@ -3518,12 +3518,13 @@ let () =
      bucket member alone — timelines stay admissible beside it *)
   let w_menging = world_of (jutter [ "v1"; "v9" ]) [ v1; bucket_member "v9" ] in
   expect_fault "WV-3.6-h-menging" (fun () -> run w_menging Total);
-  (* an ABSENT member contributes nothing: all-absent totals 0 (the §4.20
-     unconditional 0), while de som van keeps its leeg rule outside *)
+  (* an ABSENT member's timeline totals 0 (point 12c), so all-absent members
+     total 0 under both folds; de som van keeps its leeg rule outside for the
+     empty set alone *)
   let w_absent = world_of (jutter [ "v3"; "v4" ]) [ v3; inst "v4" "Vondst" [] ] in
   expect_num "WV-3.6-h-afwezig-totaal" (run w_absent Total) "0";
-  expect_empty "WV-3.6-h-afwezig-som" (run w_absent Sum_function);
-  (* the empty set: the same two answers *)
+  expect_num "WV-3.6-h-afwezig-som" (run w_absent Sum_function) "0";
+  (* the empty set: totaal 0, de som van leeg *)
   let w_empty = world_of (jutter []) [] in
   expect_num "WV-3.6-h-lege-set-totaal" (run w_empty Total) "0";
   expect_empty "WV-3.6-h-lege-set-som" (run w_empty Sum_function);
@@ -3531,19 +3532,66 @@ let () =
      type leaves this fold untouched: 150 stays *)
   expect_num "WV-3.6-h-eigen-granulariteit" (run w Total) "150"
 
-(* verification-round regression: a true-period boundary that merely
-   splits a bucket must not make the total undercount — clip coalesces
-   adjacent equal fragments *)
+(* a true-period boundary that splits a bucket loses nothing: the clip totals
+   each raw fragment by its days (point 12a), so the two fragments of January
+   count 14/31 and 17/31 of the month, and a plain operand reads per month
+   (point 12b) *)
 let () =
-  (* the clip floors whole units PER RAW FRAGMENT (the pinned runtime's
-     rsTijdKnip × rsTijdTotaal, mirrored by the ASP encoding): a
-     condition boundary that splits a bucket genuinely loses the partial
-     units on both sides — two adjacent half-month fragments each floor
-     to 0 whole months. The earlier coalescing expectation (100)
-     contradicted the runtime and was corrected with the clip card. *)
   let vals = [ seg "2024-01-01" "2024-02-01" (n "100") ] in
   let tp = [ (day "2024-01-01", day "2024-01-15"); (day "2024-01-15", day "2024-02-01") ] in
-  expect_num "verify-clip-per-fragment-floor" (Timeline.grand_total Month (Timeline.clip vals tp)) "0"
+  expect_num "verify-clip-per-fragment-naar-rato"
+    (Timeline.grand_total (Timeline.calendar_grid Month) (Timeline.clip vals tp))
+    "100"
+
+(* WV-3.6-naar-rato (spec/proposals/IMPLICIT-TIME.md, point 12a): the total counts
+   a part of a unit of the grid by its actual length, the days of the part over
+   the days of the period of the grid that holds it, per clipped fragment *)
+let () =
+  let totals name ~grid_unit g tl value =
+    match Timeline.grand_total ~grid_unit:(Ok grid_unit) (Timeline.calendar_grid g) tl with
+    | Value.Num (v, Value.Unit u) when Q.equal v (q value) && u = eur -> check name true
+    | other -> check (name ^ " (got " ^ Value.to_string other ^ ")") false
+    | exception Value.Fault { text; _ } -> check (name ^ " (" ^ text ^ ")") false
+  in
+  (* (1) ALEF's own case: 400 €/jr until 2021-05-15 and 500 €/jr after, clipped to
+     [2021-04-01, 2021-07-21): 44 × 400/365 + 67 × 500/365 = 140 € *)
+  totals "WV-3.6-naar-rato-alef" ~grid_unit:jr Year
+    (Timeline.clip
+       [ seg "2021-01-01" "2021-05-15" (num_with_unit eur_per_jr "400");
+         seg "2021-05-15" "2022-01-01" (num_with_unit eur_per_jr "500") ]
+       [ (day "2021-04-01", day "2021-07-21") ])
+    "140";
+  (* (2) 120 €/jr on 2024 clipped to five days of the leap year: 120 × 5/366 *)
+  totals "WV-3.6-naar-rato-jaar" ~grid_unit:jr Year
+    (Timeline.clip [ seg "2024-01-01" "2025-01-01" (num_with_unit eur_per_jr "120") ]
+       [ (day "2024-09-28", day "2024-10-03") ])
+    "100/61";
+  (* (3) 100 €/mnd in January 2024, clipped in two fragments that split the month:
+     100 × 14/31 + 100 × 17/31 = 100 € *)
+  totals "WV-3.6-naar-rato-maand" ~grid_unit:mnd Month
+    (Timeline.clip [ seg "2024-01-01" "2024-02-01" (num_with_unit (over eur mnd) "100") ]
+       [ (day "2024-01-01", day "2024-01-15"); (day "2024-01-15", day "2024-02-01") ])
+    "100";
+  (* on a fixed start point the part is measured on the grid's own period: the
+     storm year from 1 October, whose year before 2024-10-01 holds the leap day *)
+  let storm_year = Timeline.grid_of ~gran:Year ~count:1 ~fixed:(Some "--10-01") ~variable:false in
+  expect_num "WV-3.6-naar-rato-vast-startpunt"
+    (Timeline.grand_total storm_year
+       (Timeline.clip [ seg "2023-10-01" "2025-10-01" (n "100") ] [ (day "2024-09-28", day "2024-10-03") ]))
+    "6090/4453";
+  (* end to end (ref/test/fixtures/partial-unit, shared with the ASP backend's
+     suite): the clip and the subject's own total of a timeline a rule writes
+     under a condition per period count half of April by its days, 30 × (15/30 +
+     1) = 45 and 30 × 15/30 + 30 × 15/30 = 30; and 120 per year over five days of
+     2024 is 100/61 in the unbounded form *)
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/partial-unit/" in
+  List.iter
+    (fun (ident, sub, case) ->
+      plays ~ident ~ir:(read (dir ^ sub ^ "/ir.json")) ~case_data:(read (dir ^ sub ^ "/" ^ case)) (fun _ -> ()))
+    [ ("WV-3.6-naar-rato-anderhalve-maand", "exact", "case1-anderhalve-maand.json");
+      ("WV-3.6-naar-rato-gesplitste-maand", "exact", "case2-gesplitste-maand.json");
+      ("WV-3.6-naar-rato-onafgerond", "unrounded", "case.json") ]
 
 (* WV-3.2: anchored month walls clamp from the anchor, never from the
    previous wall *)
@@ -3639,7 +3687,7 @@ let () =
   let grand_total gran fixed value_node =
     let gr = Timeline.grid_of ~gran ~count:1 ~fixed ~variable:false in
     let van, up_to = Timeline.grid_bucket gr as_of_date in
-    ((van, up_to), Timeline.grand_total gran [ { Timeline.s_from = van; s_to = up_to; s_value = n value_node } ])
+    ((van, up_to), Timeline.grand_total gr [ { Timeline.s_from = van; s_to = up_to; s_value = n value_node } ])
   in
   let (wv, wt), w = grand_total Week (Some "2024-09-30") "7" in
   check "WV-3.2-vast-peildatum-week" (wv = day "2025-02-10" && wt = day "2025-02-17");
