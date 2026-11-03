@@ -686,3 +686,6 @@ RGS-369	the cell '{written}' of the dimensioned attribute '{attribute}' is given
 RGS-370	the value has no finite precision bound (RUNTIME-SEMANTICS ch. 2.3) and its target declares {targetDecimals} decimals: it is written through an explicit rounding, or into the unbounded form
 RGS-371	the share has no finite precision bound (its pot is of the unbounded form) and its target declares {targetDecimals} decimals: the allocation is written through an explicit rounding
 RGS-372	the value can carry {valueDecimals} decimals, more than the {targetDecimals} its target declares (RUNTIME-SEMANTICS ch. 2.3): it is written through an explicit rounding
+RGS-373	unit system '{unitSystem}': the unit '{unit}' of {unitFamily} is declared as a multiple of '{canonical}' of {canonicalFamily}: between the two families of the calendar no factor is fixed, since a month or a year has no fixed number of days, and the temporal total integrates across them by the actual length of the calendar unit (RUNTIME-SEMANTICS ch. 3.6)
+RGS-373.day-family	the day family (dag, week)
+RGS-373.month-family	the month family (maand, kwartaal, jaar)

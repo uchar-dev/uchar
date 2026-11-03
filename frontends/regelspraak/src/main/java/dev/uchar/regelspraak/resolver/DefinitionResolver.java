@@ -861,6 +861,43 @@ public final class DefinitionResolver {
                             "factor", "{\"num\":" + f.num() + ",\"den\":" + f.den() + "}"),
                     rules.getOrDefault(entry.getKey(), 0)));
         }
+        // WF-009, the calendar (RUNTIME-SEMANTICS ch. 3.6): a month or a year has no fixed number of days, so a unit of the
+        // one family declared as a multiple of a unit of the other states a factor nobody can fix, and the temporal total
+        // integrates across the families by the actual length of the calendar unit. The unit is compared with the end of
+        // its chain of declarations, as the verifier compares the units the wire lists (the calendar-family-factor arm of
+        // its WF-009, spec/verifier/lib/checks.ml).
+        for (String primary : raw.keySet()) {
+            var family = dev.uchar.regelspraak.core.TimeCalculation.calendarFamily(primary);
+            String end = family == null ? null : chainEnd(primary, resolvedUnits, raw.keySet());
+            var endFamily = end == null ? null : dev.uchar.regelspraak.core.TimeCalculation.calendarFamily(end);
+            if (endFamily == null || endFamily == family) continue;
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "RGS-373", params("unit", primary, "unitFamily", familyPart(family), "canonical", end,
+                            "canonicalFamily", familyPart(endFamily), "unitSystem", system.name),
+                    rules.getOrDefault(primary, 0)));
+        }
+    }
+
+    /** The declared unit at the end of the chain of conversions that starts at {@code primary}, read as the wire lists
+     *  the units: each unit's canonical, looked up among the declared abbreviations under the name identity; null where
+     *  the chain reaches a unit the system does not declare or comes back to one it passed. */
+    private static String chainEnd(String primary, java.util.Map<String, Unit> resolved, java.util.Set<String> declared) {
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        seen.add(dev.uchar.regelspraak.emit.IrEmitter.norm(primary));
+        String at = primary;
+        while (true) {
+            String canonical = resolved.get(at).canonical();
+            if (canonical == null || canonical.equals(at)) return at;
+            String c = dev.uchar.regelspraak.emit.IrEmitter.norm(canonical);
+            if (!seen.add(c)) return null;
+            at = declared.stream().filter(d -> dev.uchar.regelspraak.emit.IrEmitter.norm(d).equals(c)).findFirst().orElse(null);
+            if (at == null) return null;
+        }
+    }
+
+    private static Msg familyPart(dev.uchar.regelspraak.core.TimeCalculation.CalendarFamily family) {
+        return Msg.frontend(family == dev.uchar.regelspraak.core.TimeCalculation.CalendarFamily.DAY
+                ? "RGS-373.day-family" : "RGS-373.month-family");
     }
 
     /** Whether one of {@code abbreviations} — the abbreviations one unit declaration writes — was written before by an

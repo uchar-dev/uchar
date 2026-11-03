@@ -83,6 +83,37 @@ public final class TimeCalculation {
         return classes.size() == 1 ? classes.iterator().next() : null;
     }
 
+    /** The two families of the calendar (RUNTIME-SEMANTICS ch. 3.6): the units that count in days and the units that
+     *  count in months. Within a family a factor is exact (a week is seven days, a year twelve months); between the two
+     *  none is, since a month or a year has no fixed number of days. The verifier keeps the same table
+     *  ({@code calendar_family} in {@code spec/verifier/lib/checks.ml}). */
+    public enum CalendarFamily { DAY, MONTH }
+
+    /** The family of the time unit {@code spelling} names by the calendar table; null for a sub-day unit, which no
+     *  decision puts in a family, and for a spelling outside the table. */
+    public static CalendarFamily calendarFamily(String spelling) {
+        String unit = spellingChronoUnit(spelling);
+        return unit == null ? null : chronoFamily(unit);
+    }
+
+    /** The family of the unit the grid of {@code g} counts in. */
+    public static CalendarFamily calendarFamily(RegelSpraakModel.Granularity g) {
+        return chronoFamily(gridChronoUnit(g));
+    }
+
+    private static CalendarFamily chronoFamily(String chronoUnit) {
+        return switch (chronoUnit) {
+            case "DAYS", "WEEKS" -> CalendarFamily.DAY;
+            case "MONTHS", "KWARTAAL", "YEARS" -> CalendarFamily.MONTH;
+            default -> null;
+        };
+    }
+
+    /** Whether {@code spelling} names the day by the calendar table. */
+    public static boolean isDay(String spelling) {
+        return "DAYS".equals(spellingChronoUnit(spelling));
+    }
+
     /** Whether {@code spelling} stands in the NORMATIVE calendar table (uchar's RUNTIME-SEMANTICS ch. 3.8,
      *  thirty spellings over nine units). That table is what decides which of the two readings a duration
      *  unit has — "a spelling outside the table is a declared day kind" — so the day-kind registration guard

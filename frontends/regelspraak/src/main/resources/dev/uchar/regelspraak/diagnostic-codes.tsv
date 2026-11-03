@@ -361,3 +361,4 @@ RGS-369	scenario-cell-period	ERROR	attribute,written
 RGS-370	assignment-precision-unbounded	ERROR	targetDecimals
 RGS-371	allocation-share-precision-unbounded	ERROR	targetDecimals
 RGS-372	assignment-precision-exceeds	ERROR	targetDecimals,valueDecimals
+RGS-373	calendar-family-factor	ERROR	canonical,canonicalFamily,unit,unitFamily,unitSystem
