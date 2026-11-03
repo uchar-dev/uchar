@@ -196,4 +196,34 @@ impliciete-tijd (bericht van 2026-11-03); deze branch volgt ch. 3.9 zoals het er
 
 ### Gates
 
-Zie onder; de samenvatting van `make gates` staat in de laatste commit.
+`make gates` op `d19b72012` (gerebased op `27cfd3dfa`; daarna verandert alleen de kaart), `out/gates/20261103-095725/`:
+
+```
+start 2026-11-03 09:57:25 d19b72012 card/ref-whole-period
+ocaml rc=0 0s ocaml-build: fresh (stamp newer than 229 source files)
+frontend rc=0 0s frontend: rebuilt (0s)
+jar rc=0 0s drools-jar: fresh (jar newer than 547 source files)
+01-self-contained rc=0 2s
+02-ir-schema rc=0 131s
+04-case-schema rc=0 7s
+03-verifier rc=0 41s
+05-oracle rc=0 23s
+06-clingo rc=0 333s
+07-noop rc=0 15s
+08-red rc=0 148s
+09-catala rc=0 5s
+10-regelspraak rc=0 254s
+11-toka-parity rc=0 241s
+12-drools rc=0 385s
+13-reftype rc=0 343s
+14-flogic rc=0 2s
+15-graph rc=0 50s
+16-scenario rc=0 41s
+17-readings rc=0 272s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-03 10:03:50 385s red=0
+```
+
+Gate 5: ref-suite 2150 voorbeelden, 1028 cases; gate 6: clingo-suite 2370 checks, 1028 cases; gate 12: played 319 op
+beide branches, JUnit 1774 tests; gate 17: 319 goldens en 898 case files vergeleken, deviations 0. Main `b3feb3882`
+(de twee frontendkaarten over tijd) is na deze run geland; volgens de hoofdsessie neemt zij die rebase bij de landing.

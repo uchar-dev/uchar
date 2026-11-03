@@ -135,4 +135,5 @@ Geen.
 
 ### Gates
 
-Zie de andere kaart; één `make gates` voor de branch.
+`make gates` op `d19b72012`, alle 17 groen, `red=0`, 385 s (`out/gates/20261103-095725/`); de samenvatting staat in
+`20261009-ref-gehele-periode-lege-grens`.
