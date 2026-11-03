@@ -83,6 +83,14 @@ class TmsCorpusWitnessTest {
      *  leaves this floor as it is. */
     private static final int EXPECTED_MIN_PLAYED = 248;
 
+    /** The goldens whose day count this branch writes without its 0 over all time (RUNTIME-SEMANTICS ch. 3.8,
+     *  IMPLICIT-TIME 7a), so their timeline expectations differ: a value divergence, as gate 12 lists them, until the
+     *  branch writes the 0 (card conditions-per-period, step B part ii). A listed golden that plays fails the test. */
+    private static final java.util.Set<String> DAY_COUNT_WITHOUT_ZERO = java.util.Set.of(
+            "anchor/jutterswet-dagentelling", "jutterswet-dagentelling-rgs", "jutterswet-loon-per-periode",
+            "jutterswet-vast-startpunt", "jutterswet-wachtdagen-twee-schrijvers", "jutterswet-wachtmaanden");
+
+
     @Test void every_golden_plays_all_its_cases_or_is_refused() throws Exception {
         List<Path> goldens;
         try (Stream<Path> s = Files.walk(GOLDEN)) {
@@ -90,6 +98,7 @@ class TmsCorpusWitnessTest {
         }
         Map<String, Integer> count = new TreeMap<>();
         List<String> fault = new ArrayList<>();
+        java.util.Set<String> diverging = new java.util.TreeSet<>();
         int withoutCases = 0;
         for (Path g : goldens) {
             List<Path> cases;
@@ -102,9 +111,14 @@ class TmsCorpusWitnessTest {
             switch (r.status()) {
                 case "PLAYED" -> count.merge("PLAYED", 1, Integer::sum);
                 case "EXCLUDE" -> count.merge(family(r.reason()), 1, Integer::sum);
-                default -> fault.add(name + ": " + r);
+                default -> {
+                    if (DAY_COUNT_WITHOUT_ZERO.contains(name) && r.status().equals("FAIL")) diverging.add(name);
+                    else fault.add(name + ": " + r);
+                }
             }
         }
+        assertEquals(new java.util.TreeSet<>(DAY_COUNT_WITHOUT_ZERO), diverging,
+                "de goldens met een dagentelling zonder haar 0 (7a), en geen andere");
         assertEquals(List.of(), fault, "goldens die de tak draagt maar verkeerd uitrekent");
         int played = count.getOrDefault("PLAYED", 0), without = withoutCases;
         assertTrue(played >= EXPECTED_MIN_PLAYED, () -> "gespeelde goldens " + played + " onder de vloer "

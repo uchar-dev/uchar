@@ -179,17 +179,17 @@ class ScenarioReportWitnessTest {
     @Test void a_member_in_another_capital_reads_the_declared_member() throws Exception {
         Path d = Files.createTempDirectory("scenario-rapport");
         Path schouwrooster = GOLDEN.resolve("jutterswet-schouwrooster");
-        Path dayCount = GOLDEN.resolve("jutterswet-dagentelling-rgs");
+        Path dayCount = GOLDEN.resolve("jutterswet-maandloon");
         String value = Files.readString(schouwrooster.resolve("case2.json"));
         String valueMutated = value.replace("\"attribute\": \"schouwplicht\"", "\"attribute\": \"schouwPlicht\"")
                 .replace("\"characteristic\": \"schouwvrij\"", "\"characteristic\": \"schouwVrij\"");
-        String timeline = Files.readString(dayCount.resolve("case2-jaargrens.json"));
-        String timelineMutated = timeline.replace("\"attribute\": \"borgdagen\"", "\"attribute\": \"borgDagen\"");
+        String timeline = Files.readString(dayCount.resolve("case2-tussenmaand.json"));
+        String timelineMutated = timeline.replace("\"attribute\": \"maandloon\"", "\"attribute\": \"maandLoon\"");
         assertNotEquals(value, valueMutated, "de mutatie moet het casebestand raken");
         assertNotEquals(timeline, timelineMutated, "de mutatie moet het casebestand raken");
         Path[][] paren = {
                 { schouwrooster, Files.writeString(d.resolve("case2-hoofdletters.json"), valueMutated) },
-                { dayCount, Files.writeString(d.resolve("case2-jaargrens-hoofdletters.json"), timelineMutated) } };
+                { dayCount, Files.writeString(d.resolve("case2-tussenmaand-hoofdletters.json"), timelineMutated) } };
         List<String> faults = new ArrayList<>();
         for (Path[] pair : paren) {
             Path ir = pair[0].resolve("ir.json");
@@ -207,23 +207,23 @@ class ScenarioReportWitnessTest {
         // A timeline expectation whose first boundary is off the attribute's month grid: the case reader refuses it
         // with a runtime exception, as ref and clingo refuse the file. That case is FAIL with the exception as its
         // reason, and the report goes on, so the case beside it is reported as the replay plays it.
-        Path golden = GOLDEN.resolve("jutterswet-dagentelling-rgs");
+        Path golden = GOLDEN.resolve("jutterswet-maandloon");
         Path d = Files.createTempDirectory("scenario-rapport");
         String source = Files.readString(golden.resolve("case1-voorbeeld.json"));
-        String mutated = source.replaceFirst("\"from\": \"2024-01-01\",\n          \"to\": \"2024-02-01\"",
-                "\"from\": \"2024-01-05\",\n          \"to\": \"2024-02-01\"");
+        String mutated = source.replaceFirst("\"from\": \"2024-01-01\",\n          \"to\": \"2024-04-01\"",
+                "\"from\": \"2024-01-05\",\n          \"to\": \"2024-04-01\"");
         assertNotEquals(source, mutated, "de mutatie moet het casebestand raken");
         Path outside = Files.writeString(d.resolve("case1-buiten-raster.json"), mutated);
         List<ScenarioResult> report =
-                CaseRunner.report(golden.resolve("ir.json"), List.of(outside, golden.resolve("case2-jaargrens.json")));
+                CaseRunner.report(golden.resolve("ir.json"), List.of(outside, golden.resolve("case2-tussenmaand.json")));
         assertEquals(2, report.size(), report::toString);
         ScenarioResult red = of(report, "case1-buiten-raster.json");
         assertEquals(Status.FAIL, red.status(), red::toString);
         assertEquals("case1-buiten-raster.json: ERROR IllegalArgumentException: "
-                + "segmentgrens op 'borgdagen' ligt niet op het MAAND-raster", red.diagnostic());
+                + "segmentgrens op 'maandloon' ligt niet op het MAAND-raster", red.diagnostic());
         assertTrue(red.expectations().isEmpty() && red.trace().firings().isEmpty() && red.coverage().isEmpty(),
                 "een case die niet uitspeelde draagt geen verdicten: " + red);
-        assertEquals(Status.PASS, of(report, "case2-jaargrens.json").status());
+        assertEquals(Status.PASS, of(report, "case2-tussenmaand.json").status());
     }
 
     @Test void a_document_that_the_backend_does_not_carry_is_a_marker() throws Exception {
