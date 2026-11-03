@@ -3614,7 +3614,14 @@ let () =
     (Arith.whole_units_between Tu_month (day "2024-01-31") (day "2024-02-29") = 0);
   check "WV-3.2-weging-kwartaal-klem" (wu Quarter "2024-11-30" "2025-02-28" = 1);
   check "WV-3.2-weging-jaar-klem" (wu Year "2024-02-29" "2025-02-28" = 1);
-  check "WV-3.2-weging-dag-te-kort" (wu Month "2024-01-31" "2024-02-28" = 0)
+  check "WV-3.2-weging-dag-te-kort" (wu Month "2024-01-31" "2024-02-28" = 0);
+  (* measured on the grid (ch. 3.6, a part of a unit by its days): one period of
+     the --01-31 month grid, and on the calendar's month grid 1/31 + 28/29 *)
+  let measure gr = Timeline.grid_measure gr (day "2024-01-31") (day "2024-02-29") in
+  check "WV-3.2-weging-maat-vast"
+    (Q.equal (measure (Timeline.grid_of ~gran:Month ~count:1 ~fixed:(Some "--01-31") ~variable:false)) Q.one);
+  check "WV-3.2-weging-maat-kalender"
+    (Q.equal (measure (Timeline.calendar_grid Month)) (Q.add (q "1/31") (q "28/29")))
 
 (* WV-3.2-vast: the grid a fixed start point lays (RUNTIME-SEMANTICS ch. 3.2,
    "Fixed starting points"), the chapter's worked examples verbatim. A wall

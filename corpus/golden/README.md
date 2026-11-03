@@ -67,8 +67,8 @@ over that scalar total, and a negated reading ("aanmeldplichtig indien
 niet penninggerechtigd") — the corpus's first negative dependency edge,
 witnessing WF-046's accept path (ch. 6). Its case observes the collapse
 itself (totaal 14 and 3), the absent-timeline rule (a jutter without
-the temporal attribute totals to leeg, so the ordering comparison is
-false), and the non-transient negation outcomes. Case convention for
+the temporal attribute totals 0, below the drempel, so the ordering
+comparison is false), and the non-transient negation outcomes. Case convention for
 temporal data: a `uchar-case-v0` value for a timeline-valued attribute
 is the value of the `asOfDate` bucket, as in this golden, or the full
 timeline — the later temporal goldens (`jutterswet-getijdenwacht`,

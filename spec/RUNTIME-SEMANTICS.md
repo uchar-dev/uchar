@@ -1056,10 +1056,9 @@ where it is leeg: a scalar holds on every day (§5.1.1, §5.1.4.1).
   rule writes by ch. 3.4 or 3.5 holds its filled segments only — a leeg
   period is written as a gap — and so does the case format
   (`uchar-case-v0`, where a segment carries a value and omits `from` or
-  `to` for an open bound). *v0 mirror note
-  (residual):* v0's
-  temporal total distinguishes an absent timeline (leeg result) from a
-  present-but-segmentless one (0) — see ch. 3.6.
+  `to` for an open bound). *v0 mirror note:* v0's temporal total
+  gives an absent timeline leeg and a present-but-segmentless one 0;
+  here both total 0 (ch. 3.6, a tracked deviation).
 - An open bound is a bound of the value, not of any grid: it sits on no
   wall, and a fold that walks the buckets or the whole units of a period
   (ch. 3.7, 3.8) has no end to reach in one, and such a walk is refused by
@@ -1079,15 +1078,23 @@ where it is leeg: a scalar holds on every day (§5.1.1, §5.1.4.1).
 The five granularities (`day`, `week`, `month`, `quarter`, `year`) serve
 two distinct jobs, with different v0 support:
 
-1. **Weighting** (the temporal total, ch. 3.6) counts *whole* granularity
-   units between two dates: days, weeks, months, quarters = whole months
-   ÷ 3, years. All five granularities weight. A span [van, tot) holds k
-   whole months for the greatest k with van + k months ≤ tot, the month
-   step clamping to the last valid day of the target month (ch. 3.8), and
-   k ÷ 12 whole years; a week is seven days. A period between clamped
-   walls is therefore one whole unit. This is the date-plus-unit step,
-   not the packed-month rule by which ch. 3.8 counts a duration, and the
-   two differ exactly where the end is a clamped day.
+1. **Weighting** (the temporal total, ch. 3.6) measures a span in units
+   of the grid: a day counts 1/len of the period of the grid that holds
+   it, len that period's length in days, so a period of the grid counts
+   one unit and a part of one its share of the days (maintainer decision
+   2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 12a). On the
+   calendar that period is the day, month, quarter or year of the
+   calendar, and a week counts seven days wherever it starts; a fixed
+   start point (below) lays the periods of its own grid. All five
+   granularities weight. A period between clamped walls is therefore one
+   unit. The whole units from the start of a span count the same periods
+   where the span starts on a wall: [van, tot) holds k whole months for
+   the greatest k with van + k months ≤ tot, the month step clamping to
+   the last valid day of the target month (ch. 3.8), k ÷ 3 whole quarters
+   and k ÷ 12 whole years; a week is seven days. This is the
+   date-plus-unit step, not the packed-month rule by which ch. 3.8 counts
+   a duration, and the two differ exactly where the end is a clamped
+   day.
 2. **Bucketing** (producers that emit one segment per calendar period:
    ch. 3.7, 3.8, 3.9) uses calendar-aligned walls: a month bucket runs
    from the first of the month to the first of the next; a year bucket
@@ -1098,7 +1105,7 @@ two distinct jobs, with different v0 support:
    defined (ch. 3.12): a member declared on the calendar's day, week or
    quarter grid has no bucket, and every reader of one refuses it. A case
    timeline on the day grid needs none: every day sits on that grid, so its
-   segment boundaries are checked against nothing, and its total weighs whole
+   segment boundaries are checked against nothing, and its total weighs its
    days (ch. 3.6). A fixed
    start point (below) lays periods of its own on a week, month, quarter or
    year grid, and they are read where a bucket is read.
@@ -1108,7 +1115,10 @@ Worked examples of the weighting (absolute; `ref/` tests verbatim):
 31-01-2024 to 29-02-2024 is **0** whole months (ch. 3.8, "Clamp, not
 inverse"); [2024-11-30, 2025-02-28) holds **1** whole quarter;
 [2024-02-29, 2025-02-28) holds **1** whole year; [2024-01-31, 2024-02-28)
-holds **0** whole months.
+holds **0** whole months. Measured on the grid, the same
+[2024-01-31, 2024-02-29) is **1** period of the `--01-31` month grid, and
+on the calendar's month grid the last day of January and 28 days of
+February, **1/31 + 28/29** of a month.
 
 Bucket lengths are actual calendar lengths, leap-aware: February 2024 has
 29 days, 2025 has 365. There is no 360-day convention anywhere.
@@ -2099,11 +2109,14 @@ refusal; it may not inherit the ambiguity.
 temporal total clips the value timeline BEFORE the total: intersect
 each value segment with the condition's true-periods (half-open
 interval intersection; the condition's own values are ignored), then
-total whole units of the value's granularity per RAW clipped
-fragment — floor, never pro-rata, never coalesced: a per-year value
-clipped to a partial year contributes 0, and two adjacent condition
-periods that split one whole unit lose BOTH halves (the pinned
-runtime's per-fragment floor, witnessed by the split-floor case). The condition's true-periods come from an own temporal
+total each RAW clipped fragment over its length in units of the grid
+(below), never coalesced: a part of a unit counts by its days, so a
+per-year value clipped to five days of 2024 contributes 5/366 of it,
+and two adjacent condition periods that split one unit count its two
+parts, together the whole unit (`jutterswet-getijdenwacht` J4: 10). The
+pinned runtime floored whole units per fragment and gave both parts 0;
+counting the part by its days is a tracked deviation
+(`spec/proposals/IMPLICIT-TIME.md` point 12a). The condition's true-periods come from an own temporal
 characteristic (its case-supplied periods; a gap means the
 characteristic does not hold and clips away; negation takes the
 complement within the value segments) or from a per-segment comparison
@@ -2122,9 +2135,8 @@ is lazy and the ASP translation eager, so a violation behind a false
 rule condition is refused there and never reached here. That split is
 inherited from WF-055, and the verifier bounds it by rejecting the
 document either way. A fully clipped-away — or
-absent — value timeline totals 0, never leeg: the clip's presence
-turns absence into 0 (the mirrored v0 nuance; the unfiltered total of
-an absent timeline stays leeg). The operand is a Number — WF-091
+absent — value timeline totals 0, never leeg, as the unfiltered total
+does (below). The operand is a Number — WF-091
 (`IR-SPEC.md` ch. 4.1) — so this 0 always lands in a numeric slot. Worked
 example (the `jutterswet-getijdenwacht` emitter golden, verbatim in gates
 5–6):
@@ -2164,16 +2176,25 @@ WF-055 does not admit it until an executor carries it with an anchor.
 "Het totaal van" a timeline over time collapses it to one scalar:
 
 ```
-totaal(tl) = Σ over segments s of tl:  value(s) × whole-units(van_s, tot_s)
+totaal(tl) = Σ over segments s of tl:  value(s) × length(van_s, tot_s)
 ```
 
-where `whole-units` counts whole declared-granularity units between the
-segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
+where `length` measures the segment in units of the timeline's grid
+(ch. 3.2 job 1: all five granularities): a day counts 1/len of the
+period of the grid that holds it, len that period's length in days, so a
+whole period counts 1 and a part of one its share of the days
+(maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point
+12a; ALEF's `partialLength`, the days of a part over the days of the
+unit that holds it). On the calendar the period is the calendar day,
+month, quarter or year, and a week counts seven days wherever it
+starts; a fixed start point lays the periods of its own grid, so a part
+of a storm year from 1 October counts its days over that storm year's
+365 or 366. The length is additive: two fragments that split a period
+count the period. Clauses:
 
 - A leeg-valued segment contributes 0 (a dedicated rule of this collapse,
   in the family of ch. 1.2's totaal row — the collapse is a total, not a
-  som). A segment shorter than one whole unit contributes 0 by the
-  whole-units count.
+  som). A segment shorter than one unit contributes its share.
 - A segment with an **open bound** (ch. 3.1) holds unboundedly many
   units. With the value 0 it contributes 0; with any other value the
   total has no value and the session faults (**EF-036**, ch. 5.7b; the
@@ -2185,32 +2206,37 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   values, made a fault (`spec/proposals/IMPLICIT-TIME.md` VB 2.4).
 - The **subject's own total of a timeline a rule writes by ch. 3.4 or
   3.5** totals that written timeline whole: such a timeline divides all
-  time, so no asOfDate bucket enters, and before the rule has written it
-  — where it is absent — it totals 0, the per-day reading of an absent
-  timeline as leeg on every day (`spec/proposals/IMPLICIT-TIME.md`
-  point 12c). The convention of a case-supplied timeline below is
-  unchanged.
+  time, so no asOfDate bucket enters. The convention of a case-supplied
+  timeline below is unchanged.
 - An existing but **segmentless** timeline totals to **0** (the identity
   of a sum over nothing), in the unit the total carries by its declarations
-  (ch. 2.10); an **absent** timeline (the member itself leeg)
-  totals to **leeg**. *v0 mirror note:* this gap-vs-absent distinction is
-  the ch. 3.1 residual, mirrored as found; whether v1 keeps it stays open
-  with the ch. 3.12 timeline decisions — the ch. 1.4 freeze covers the
-  scalar discipline, not this temporal residual.
+  (ch. 2.10), and so does an **absent** timeline (the member itself
+  leeg): it is leeg on every day (ch. 3.1), and the total counts a leeg
+  value as 0 and is 0 where every value is leeg (spec typ. §4.20;
+  `spec/proposals/IMPLICIT-TIME.md` point 12c). This holds on every
+  route: the clip, the timeline a rule writes, the asOfDate bucket, and
+  each member of the per-element fold below. *v0 mirror note:* the
+  pinned runtime totals an absent timeline leeg; here it is 0, a tracked
+  deviation.
 - **Period selection ("gedurende …")** is clipping, not re-bucketing: the
   value timeline is intersected with the selecting condition's
   true-periods (a boolean timeline: a characteristic's true-periods, its
   complement under negation, or the true-periods of a comparison over a
   timeline), and the clipped timeline is then totalled.
 - **Units, the plain operand.** The rate obligation of WF-038 is satisfied
-  *structurally* here: the timeline's granularity is the "per time unit",
-  so a plain `€`-valued per-month timeline totals to `€` by value ×
-  month-count. An explicit rate unit (`€/mnd`) is what the *non-temporal*
-  totaal operand requires; the temporal collapse must not be misread as
-  requiring it.
+  *structurally* here: a plain value reads per unit of the grid, so a
+  plain `€`-valued per-month timeline totals to `€` by value × its length
+  in months, a part of a month by its days (maintainer decision
+  2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 12b). The
+  specification and ALEF ask the operand of the total for a unit per time
+  unit (§7.1, typ. §4.20); keeping the plain operand is a tracked
+  deviation, and with the length above it gives the number ALEF gives for
+  a denominator equal to the grid unit. An explicit rate unit (`€/mnd`)
+  is what the *non-temporal* totaal operand requires; the temporal
+  collapse must not be misread as requiring it.
 - **Units, the explicit rate operand.** When the timeline's value *does*
   carry a rate unit, the collapse is an **integration**, and the
-  whole-unit count is not a bare number but a **duration stated in the
+  length is not a bare number but a **duration stated in the
   grid's own unit**: `value × duration` cancels the negative factor of the
   grid's class by one power (ch. 2.6, rule 8) — `€/mnd` over a per-month
   timeline totals to `€`, `€/m/mnd` to `€/m`. This is the one collapse that changes the unit,
@@ -2251,19 +2277,18 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   `wk = 7 dg`). Between the two no factor is: a month or a year has no fixed
   number of days (§7.3.1). Where the value's denominator is a unit the table
   names of the other family than the grid's, the collapse integrates by the
-  **actual length of the calendar unit**: the whole grid units of a segment
-  are measured in the denominator's unit, a day counting 1 dg and 1/7 wk,
-  and 1/len of the calendar month, quarter or year it lies in, len its
-  actual length in days (28 to 31, 90 to 92, 365 or 366). The negative factor
+  **actual length of the calendar unit**: the segment is measured in the
+  denominator's unit, a day counting 1 dg and 1/7 wk, and 1/len of the
+  calendar month, quarter or year it lies in, len its actual length in
+  days (28 to 31, 90 to 92, 365 or 366). The negative factor
   rises as above, so `€/jr` over a day grid totals to `€`. A declared factor
   between the two families (`jr = 365 dg`, `mnd = 30 dg`) would stand in for
   the calendar and is ill-formed (WF-009, `IR-SPEC.md` ch. 2.5); an executor
   that meets one in this integration refuses it by name. A unit outside the
   table (`bm`) belongs to neither family and keeps its declared factor.
   This is ALEF's integration (`partialLength`, the days of a part over the
-  days of the calendar unit that holds it) for every whole grid unit; a
-  segment shorter than one grid unit still contributes 0 (above; the part
-  of a unit is card `20261103-total-over-partial-unit`).
+  days of the calendar unit that holds it), a part of a grid unit
+  included.
   *Executor note (2026-09-04):* the number the collapse produces is not
   always the bare whole-unit count. Where the denominator is the grid
   unit itself the two coincide, but a convertible foreign denominator
@@ -2275,19 +2300,28 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   multiple D of the lengths the case's span meets, and carries the total at
   the scale of its value times D, which only a rounding of the total divides
   away (`ASP-TRANSLATION.md` S9); elsewhere it refuses that total by name.
+  A part of a grid unit gives the weights of the spans a denominator as
+  well: the ASP backend lays them over the least common multiple D of
+  their denominators and divides D away, under a rounding as above, and
+  elsewhere exactly where D divides the total, refusing at solving by name
+  a total D does not divide (`backends/clingo/README.md` [V8]).
   Both Drools branches integrate by the calendar on every route of the
   subject's own total (the asOfDate bucket, a timeline the period
   arithmetic writes, the clip) and refuse it by name in the per-element fold
-  over a set (DROOLS-228).
+  over a set (DROOLS-228). They still count whole grid units per fragment
+  and total an absent timeline leeg, so the five goldens whose totals the
+  part of a unit and the absent total changed stand in the value-divergence
+  list of gate 12 (card `20261103-total-over-partial-unit`, step B).
 - **The per-element fold over a set (§7.1).** `het totaal van <temporal
   attribute> van alle <set>` folds **twice**: each set member's own
   timeline collapses over time first — by the rule above, at that
   attribute's own granularity — and only the resulting scalars fold over
-  the set. The outer fold is the ordinary ch. 1.2e aggregation: for
-  `het totaal van` a member without a timeline contributes nothing and an
-  empty set totals **0** in the unit the total carries by its declarations
-  (ch. 2.10); `de som van` over the same shape folds
-  identically inside and keeps the som's leeg rule outside. Every other
+  the set. The outer fold is the ordinary ch. 1.2e aggregation: a member
+  without a timeline contributes **0**, the total of its absent timeline
+  (above), and for `het totaal van` an empty set totals **0** in the unit
+  the total carries by its declarations (ch. 2.10); `de som van` over the
+  same shape folds identically inside and keeps the som's leeg rule
+  outside, for the empty set. Every other
   aggregation over a temporal set member — min, max, eerste, laatste,
   aantal — is **refused**: there is no defined moment of the timeline for
   it to rank or count, and silently reading the segment list instead of a
@@ -2311,8 +2345,8 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
     the one self-describing form (it states each segment's bounds); a
     member carrying the horizonless bucket scalar is refused loudly,
     naming that member — the exact "needs the one, finds the other" case
-    of ch. 8.4. An **absent** member still contributes nothing (leeg),
-    and horizon-carrying members mix freely.
+    of ch. 8.4. An **absent** member contributes 0, and horizon-carrying
+    members mix freely.
 
 Worked examples (absolute, `ref/` tests verbatim; per-month timeline):
 
@@ -2335,6 +2369,22 @@ Worked examples (absolute, `ref/` tests verbatim; per-month timeline):
   2023) + 1×11 (jan 2024) = **71,00**; the negated form (complement,
   within the value timeline's span) → 6×10 (jan–jun 2023) + 5×11
   (feb–jun 2024) = **115,00**.
+- a part of a unit (`WV-3.6-naar-rato`, `spec/proposals/IMPLICIT-TIME.md`
+  point 12a; with the floor per fragment each gave **0**): ALEF's own
+  case, `400 €/jr` until 2021-05-15 and `500 €/jr` after, on a year grid,
+  clipped to [2021-04-01, 2021-07-21) → 44 × 400/365 + 67 × 500/365 =
+  **140 €**; `120 €/jr` on 2024 clipped to [2024-09-28, 2024-10-03) →
+  120 × 5/366 = **100/61 €**; `100 €/mnd` in January 2024 clipped in
+  [2024-01-01, 2024-01-15) and [2024-01-15, 2024-02-01) → 100 × 14/31 +
+  100 × 17/31 = **100 €**, and the same with a plain 100 → **100**
+  (point 12b). On the storm-year grid from 1 October, 100 on
+  [2023-10-01, 2025-10-01) clipped to [2024-09-28, 2024-10-03) →
+  100 × 3/366 + 100 × 2/365 = **6090/4453** (the storm year before
+  2024-10-01 holds 29 February; `corpus/golden/jutterswet-vast-startpunt`
+  case 1 rounds it to 1,37). End to end (suite fixtures `partial-unit`):
+  30 per month over April to June clipped to [2024-04-16, 2024-06-01) →
+  30 × (15/30 + 1) = **45**, and the total of a timeline a rule writes,
+  30 indien hij wachtplichtig is, over the same period → **45**.
 - gedurende "≠ 1000" where the tested timeline has leeg periods: leeg
   **satisfies** ≠ against a filled bound (the ch. 1.2 inequality
   asymmetry, applied per period): value 100 on [2024-01-01, 2024-07-01);
@@ -2372,9 +2422,10 @@ Worked examples (absolute, `ref/` tests verbatim; per-month timeline):
 - the §7.1 per-element fold, three set members with per-month `€/mnd`
   **timelines**: `10` over [2024-01-01, 2025-01-01) → 120 €, `5` over
   [2024-01-01, 2024-07-01) → 30 €, and a member without a timeline →
-  contributes nothing. Total **150 €**. Replace any one member's timeline
+  0 €. Total **150 €**. Replace any one member's timeline
   by the asOfDate-bucket scalar and the fold is **refused**, naming that
-  member; all members absent → **0** (and `de som van` → leeg).
+  member; all members absent → **0**, under `de som van` too; an empty
+  set → **0** (and `de som van` → leeg).
 
 *v0 mirror note:* the totaal of a multi-period timeline is refused with
 the grid (ch. 3.2), never mis-weighted as single-period.
@@ -3953,6 +4004,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Two or more writers of one timeline target (ch. 5.7, per day) | **specified (delta) and executed** (`spec/proposals/IMPLICIT-TIME.md` point 5): `ref` and the ASP backend, witness `corpus/golden/jutterswet-wachtdagen-twee-schrijvers`, red case `corpus/red/jutterswet-wachtdagen-botsing` (EF-016), and both Drools branches, a read of such a target included. Two writers that decide one day with one value hold together; the ASP backend refuses that day by name ([V7]). A case input on such a target is refused by name in the ASP backend, and `ref` keeps it on the days no writer decides |
 | A timeline read per period on a finer grid than the target's | **ill-formed (WF-126**, maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 8): negatives `wf126-value-grid`, `wf126-condition-grid`, `wf126-whole-period-grid`; the RegelSpraak frontend refuses it (RGS-374), `ref` and the ASP backend fail fast in the verifier's terms |
 | The temporal total across the day and the month family of time units (ch. 3.6) | **specified (delta) and executed**: the calendar (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 11), the actual length of the month, quarter or year; a declared factor between the two families is ill-formed (WF-009, negative `wf009-calendar-family-factor`). `ref` in every route of the total; the ASP backend under a rounding of the gedurende-clipped total, refusing it by name elsewhere; both Drools branches on every route of the subject's own total, refusing it by name in the per-element fold (DROOLS-228). Witness `corpus/golden/anchor/jutterswet-verzuimrente-dagen` |
+| The temporal total over a part of a unit of its grid, a plain operand, an absent timeline (ch. 3.6) | **specified (delta) and executed** (maintainer decisions 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 12): a part of a unit counts by its days over the days of the period of the grid that holds it, per clipped fragment (12a, where the pinned runtime floors whole units per fragment); a plain operand reads per unit of the grid (12b, where §7.1 asks a unit per time unit); an absent timeline totals 0 on every route (12c, spec typ. §4.20). `ref` on every route; the ASP backend over a denominator it divides away, under a rounding or exactly where it divides the total, refusing at solving by name a total it does not divide (`backends/clingo/README.md` [V8]). Witnesses `corpus/golden/jutterswet-getijdenwacht` (J4), `corpus/golden/jutterswet-vast-startpunt` (case 1 under a rounding, cases 4 and 6) and the absent totals of `jutterswet-kadetarief`, `jutterswet-penningjaar` and `jutterswet-tempototaal`; suite fixtures `partial-unit`. Both Drools branches count whole units per fragment and total an absent timeline leeg (value divergences in gate 12, card `20261103-total-over-partial-unit` step B). OPEN: the precision bound of ch. 2.3 gives the total its operand's decimals, where a part of a unit can give any rational; WF-023 and the frontend follow the table, and the write faults with EF-006 where the value does not fit |
 | Open segments (ch. 3.1) | **specified**: a timeline divides all time, a segment may have an open bound, the case format omits `from` or `to` for one (`uchar-case-v0`); the total of ch. 3.6 counts an open segment of 0 as 0 and faults on any other value (EF-036, red case `jutterswet-totaal-open-segment`); a fold that walks the buckets of an open period (ch. 3.7, 3.8) is refused by name, and the whole-period qualifier answers on the bucket beside an open segment's finite bound (ch. 3.1, 3.9; since 2026-11-03, when the day count of ch. 3.8 became 0 over all time and the qualifier over it met open segments, `jutterswet-vast-startpunt`). A characteristic's true-periods (`characteristicTimelines`, and those a rule writes) carry no open bound |
 | Scalar operand of timeline arithmetic / unconditional temporal characteristic | the scalar operand of every operator is **specified and executed**, ch. 3.4 (one segment (−∞, +∞)), and since 2026-11-03 a scalar as the whole value of a timeline target as well (ch. 3.11); the unconditional temporal characteristic has the time domain since then and stays OPEN: a temporal characteristic is written within a window since 2026-11-03 (ch. 3.10, 3.11), and "always true" would hold on an open period |
 | `minimum`/`maximum`/`first`/`last` (min/max/eerste/laatste) over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
@@ -3976,7 +4028,6 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | **`duration` (tijdsduur) in a day kind over datum-tijd operands** | **refused by name** in both OCaml executors, no corpus case (maintainer decision 2026-09-19, split from the row above): counting whole days of a kind between two INSTANTS needs a rule for the part-day at each end, and none is fixed. OPEN — it is the partial-day/boundary-instant question, not the day-kind question. The Drools backend counts over the bare date parts, a reading this spec has not adopted |
 | The day-kind **predicate as a rule condition** (§8.1.5, "… is een werkdag") | refused by name in both OCaml executors (ch. 5.4's framing: a day kind is consulted as a stratum-0 classifier, never as a derived read inside the rule fixpoint). It IS evaluated inside a day-kind condition, where the nested reference is the §9.8 composition — that arm is executed, **on the bound day only** |
 | The §9.8 composition **on a date other than the bound day** | **refused by name in all three executors** since 2026-09-19 (red case `day-kind-reference-other-day`); the narrow route, taken because ref and the Drools compiler answered it while the ASP backend refused. OPEN — the carrying reading needs a source for what the test MEANS inside a definition about an arbitrary day |
-| Gap-vs-absent timeline observability (temporal total: 0 vs leeg) | mirrored residual; stays OPEN here — the ch. 1.4 freeze covers the scalar discipline, not this temporal residual. The subject's own total of a timeline that a rule of ch. 3.4/3.5 writes totals an absent timeline 0 (ch. 3.6) |
 | Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
 | Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |
 
