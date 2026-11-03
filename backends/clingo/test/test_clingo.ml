@@ -17174,7 +17174,34 @@ let () =
         ~case_text:(read (dir ^ fixture ^ "/case.json")) ~needle)
     [ ("open-whole-period", "whose timeline may carry an open bound, is not translated");
       ("condition", "by the period arithmetic of ch. 3.4/3.5 under a condition");
-      ("total-over-pro-rata", "its bounds are not case data, so the whole-unit facts cannot be laid") ]
+      ("total-over-pro-rata", "its bounds are not case data, so the whole-unit facts cannot be laid");
+      ("parameter-unbound", "parameter \"verzuimrentevoet\" is unbound in this case") ];
+  pinned_loud ~entry:"V6" ~name:"period arithmetic: calendar-total-unrounded"
+    ~ir:(read (dir ^ "calendar-total-unrounded/ir.json")) ~case_text:(read (dir ^ "calendar-total-unrounded/case.json"))
+    ~needle:"it is translated only as the base of a rounding";
+  (* the quotient of the worked example per day, 10/3, written into the unbounded
+     form, which this encoding holds as a whole number (ASP-TRANSLATION S2): ref
+     plays it, clingo refuses with that form's witness *)
+  (let ir = read (dir ^ "quotient-not-whole/ir.json") and case_text = read (dir ^ "quotient-not-whole/case.json") in
+   let name = "period arithmetic: quotient-not-whole" in
+   ref_matches ~name ~ir ~case_text;
+   let doc, case = load_pair ~ir ~case_text in
+   let needle = "this encoding holds the unbounded form as a whole number" in
+   match translate doc case with
+   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (translation fault: " ^ m ^ ")") false
+   | program -> (
+       match Solve.run_clingo program with
+       | _, Unix.WEXITED 20 ->
+           let ws = Solve.diagnostic program in
+           check (name ^ ": clingo refuses (" ^ String.concat "; " ws ^ ")")
+             (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
+       | _, _ -> check (name ^ ": clingo refuses (it found a model)") false));
+  (* ch. 3.6, the calendar: a declared factor between the day family and the
+     month family would stand in for it, and is refused by name (WF-009) *)
+  faults_with ~name:"period arithmetic: calendar-family factor"
+    ~ir:(read "corpus/negative/wf009-calendar-family-factor/ir.json")
+    ~case_text:(read "corpus/golden/anchor/jutterswet-verzuimrente-dagen/case2-schrikkeljaar.json")
+    ~needle:"by a declared factor between the day family and the month family of the calendar"
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

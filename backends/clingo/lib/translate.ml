@@ -255,6 +255,11 @@ let nested_non_exact_division =
 let pro_rata_misfit =
   "non-exact pro-rata part (an explicit rounding is mandated before precision is lost)"
 
+(* the viol/2 reason of a period of ch. 3.4/3.5 whose value does not fit the
+   target scale of its segment (EF-006, RUNTIME-SEMANTICS ch. 2.4) *)
+let period_arithmetic_misfit =
+  "non-exact period arithmetic value (an explicit rounding is mandated before precision is lost)"
+
 (* the viol/2 reason of an unrounded allocation share that does not fit its
    target scale (EF-006); the subject is the recipient *)
 let allocation_share_misfit =
@@ -518,6 +523,11 @@ type ctx = {
      that reads the form subject or, inside an anchored node, a member carries
      it ([with_reach]), so that the guard binds every variable it names *)
   mutable member_reach : string list Lazy.t;
+  (* set by a rounding whose base is a temporal total, for that total alone: the
+     calendar of ch. 3.6 weighs a day by 1/len of its calendar unit, so such a
+     total carries a scale that is no power of ten, and only a rounding divides
+     it away ([calendar_weights]) *)
+  mutable calendar_rounding : bool;
 }
 
 (* S ⊑ T, for the OCaml-side scans over case instances. The ASP side does
@@ -812,6 +822,7 @@ let viol_code witness =
      label, which is no parameter of EF-006 *)
   else if opens (allocation_share_misfit ^ "\"") then Some ("EF-006", [])
   else if opens (pro_rata_misfit ^ "\"") then Some ("EF-006", [])
+  else if opens (period_arithmetic_misfit ^ "\"") then Some ("EF-006", [])
   else if opens (nested_non_exact_division ^ "\"") then Some ("CLINGO-031", [])
   else if opens "result of " && holds " does not fit its declared decimals\"" then
     Some ("EF-006", found "place" (between "result of " " does not fit its declared decimals"))
@@ -2497,32 +2508,106 @@ let as_of_bucket_units ctx ~otype ~attr =
    convertible denominator would need a fraction, and a denominator the
    declarations connect to nothing grid-sized is refused by ref too. Each
    is refused here by name, never rounded and never silently dropped.
-   [what] names the fold site. *)
-let grid_strip_ok ctx ~what ~(gran : grain) (u : measure_unit option) =
+   [what] names the fold site. Between the day family and the month family the
+   calendar integrates instead (ch. 3.6), and [grid_strip] returns the calendar
+   unit of the denominator; [grid_strip_ok] is the form for a fold site that
+   does not carry the calendar, and refuses it by name. *)
+let grid_strip ctx ~what ~(gran : grain) (u : measure_unit option) : Ir_v0.Checks.time_unit option =
   match u with
   | Some rate when Ir_v0.Units.negatives rate <> [] -> (
-      match Uchar_ref.Timeline.grid_unit ctx.doc gran with
-      | Error why -> fault "the noemer strip of %s: %s" what why
-      | Ok gu -> (
-          match Ir_v0.Units.negative_of_grid (List.hd gu) rate with
-          | None ->
+      let grid = Uchar_ref.Timeline.grid_unit ctx.doc gran in
+      let own =
+        match grid with
+        | Ok gu -> Option.map (fun f -> (gu, f)) (Ir_v0.Units.negative_of_grid (List.hd gu) rate)
+        | Error _ -> None
+      in
+      match (own, Uchar_ref.Timeline.calendar_denominator gran rate) with
+      | Some (gu, f), _ ->
+          (match (Ir_v0.Checks.unit_calendar_family f, Ir_v0.Checks.unit_calendar_family (List.hd gu)) with
+          | Some x, Some y when x <> y ->
+              fault
+                "the noemer strip of %s restates %s into the %s grid by a declared factor between the \
+                 day family and the month family of the calendar, which is ill-formed (WF-009): the \
+                 calendar integrates across the two (ch. 3.6); ref refuses the shape too"
+                what (Ir_v0.Units.name f)
+                (Uchar_ref.Arith.display_unit gu)
+          | _ -> ());
+          if not (Q.equal (Uchar_ref.Arith.conv_factor gu (Ir_v0.Units.of_declared f)) Q.one) then
+            fault
+              "the noemer strip of %s restates a %s value into a %s grid by a declared factor \
+               other than 1, which this integer encoding does not carry (ref applies the exact \
+               factor); only a denominator identical to the grid unit cancels here"
+              what
+              (Uchar_ref.Arith.display_unit rate)
+              (Uchar_ref.Arith.display_unit gu);
+          None
+      | None, Some (_, tu) -> Some tu
+      | None, None -> (
+          match grid with
+          | Error why -> fault "the noemer strip of %s: %s" what why
+          | Ok gu ->
               fault
                 "the noemer strip of %s cannot integrate a %s value over a %s grid: the \
                  declarations connect no conversion between its denominator and the grid unit \
                  (ch. 3.6); ref refuses the shape too"
                 what
                 (Uchar_ref.Arith.display_unit rate)
-                (Uchar_ref.Arith.display_unit gu)
-          | Some f ->
-              if not (Q.equal (Uchar_ref.Arith.conv_factor gu (Ir_v0.Units.of_declared f)) Q.one) then
-                fault
-                  "the noemer strip of %s restates a %s value into a %s grid by a declared factor \
-                   other than 1, which this integer encoding does not carry (ref applies the exact \
-                   factor); only a denominator identical to the grid unit cancels here"
-                  what
-                  (Uchar_ref.Arith.display_unit rate)
-                  (Uchar_ref.Arith.display_unit gu)))
-  | _ -> ()
+                (Uchar_ref.Arith.display_unit gu)))
+  | _ -> None
+
+let grid_strip_ok ctx ~what ~gran u =
+  match grid_strip ctx ~what ~gran u with
+  | None -> ()
+  | Some _ ->
+      fault
+        "the noemer strip of %s integrates a %s value by the calendar (ch. 3.6), which this fold site \
+         does not translate (no corpus case)"
+        what
+        (Uchar_ref.Arith.display_unit (Option.get u))
+
+(* ch. 3.6, the calendar, as data. A day weighs 1/len of the calendar unit [tu]
+   it lies in, so the weights of the whole grid units of the spans between
+   [endpoints] share the denominator D, the least common multiple of the lengths
+   the days of [lo, hi) meet (1 for dg, 7 for wk): the wu fact of a span carries D
+   times its measure in [tu], a whole number, and the total the scale of its value
+   times D. Returns D and the weight of all of [lo, hi), which bounds the sum of
+   the weights of disjoint spans inside it. *)
+let calendar_weights ctx ~p ~(gran : grain) ~(tu : Ir_v0.Checks.time_unit) (endpoints : int list) =
+  match endpoints with
+  | [] ->
+      emit ctx "#defined %s_wu/3." p;
+      (1, 0)
+  | lo :: _ ->
+      let hi = List.fold_left max lo endpoints in
+      let rec lengths acc d =
+        if d >= hi then acc
+        else
+          let bs, bn = Uchar_ref.Timeline.calendar_unit_bucket tu d in
+          lengths (if List.mem (bn - bs) acc then acc else (bn - bs) :: acc) bn
+      in
+      let lens =
+        match tu with
+        | Tu_day -> [ 1 ]
+        | Tu_week -> [ 7 ]
+        | _ -> lengths [] (fst (Uchar_ref.Timeline.calendar_unit_bucket tu lo))
+      in
+      let rec gcd_ a b = if b = 0 then a else gcd_ b (a mod b) in
+      let d = List.fold_left (fun acc l -> acc * l / gcd_ acc l) 1 lens in
+      let weight van up_to =
+        let w =
+          Q.mul (Q.of_int d)
+            (Uchar_ref.Timeline.calendar_measure tu van (Uchar_ref.Timeline.whole_units_end gran van up_to))
+        in
+        if not (Z.equal (Q.den w) Z.one) then
+          fault "a calendar weight over a span is no whole number at the denominator %d (ch. 3.6)" d;
+        if Z.gt (Q.num w) (Z.of_int 46340) then
+          fault "a calendar weight of %s exceeds the guarded product range" (Z.to_string (Q.num w));
+        Z.to_int (Q.num w)
+      in
+      List.iter
+        (fun v -> List.iter (fun t -> if v < t then emit ctx "%s_wu(%d,%d,%d)." p v t (weight v t)) endpoints)
+        endpoints;
+      (d, weight lo hi)
 
 (* harmonise two scaled terms for comparison. Self-fenced: every caller
    already fences its own operands where it reads them (the range guards
@@ -4556,6 +4641,9 @@ let rec period_bounds_not_case ctx ~seen ~otype ~attr : (string * string) option
       None ctx.doc.resolved_rules
 
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
+  (* the rounding's mark is for its base alone, the node translated first here *)
+  let calendar_ok = ctx.calendar_rounding in
+  ctx.calendar_rounding <- false;
   match cell_source_fold ctx e with
   | Some fold -> expr_term ctx ~subject ~subject_ot fold
   | None ->
@@ -5638,9 +5726,27 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               a i.label)
         ctx.case.world.instances;
       let gran = attr_granularity ctx ~otype:aot ~attr:a in
-      grid_strip_ok ctx
-        ~what:(Printf.sprintf "the gedurende-clipped total of %S" a)
-        ~gran (attr_unit ctx ~otype:aot ~attr:a);
+      let calendar =
+        grid_strip ctx ~what:(Printf.sprintf "the gedurende-clipped total of %S" a) ~gran (attr_unit ctx ~otype:aot ~attr:a)
+      in
+      if calendar <> None && not calendar_ok then
+        fault
+          "the gedurende-clipped total of %S integrates its rate by the calendar (ch. 3.6): a day weighs 1/len of \
+           its calendar unit, so the total has a denominator that no decimal scale of this encoding holds, and \
+           it is translated only as the base of a rounding"
+          a;
+      (* the timeline a rule of ch. 3.4/3.5 writes has the bounds of the timelines
+         its value reads: those of the case, unless one of them is derived *)
+      let period_arithmetic = Eval.period_arithmetic_target ctx.doc ~otype:aot ~attr:a in
+      (if period_arithmetic then
+         match period_bounds_not_case ctx ~seen:[] ~otype:aot ~attr:a with
+         | Some (b, who) ->
+             fault
+               "the gedurende-clipped total of %S reads, through period arithmetic, the timeline of %S, which \
+                %s derives: its bounds are not case data, so the whole-unit facts cannot be laid (no corpus \
+                case)"
+               a b who
+         | None -> ());
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "cl%d" ctx.fresh in
       (* the condition's period atoms, as a function of the variable
@@ -5884,7 +5990,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               (fun _ periods acc ->
                 List.concat_map (fun (v, t) -> [ v; t ]) periods @ acc)
               i.ctls tl_pts)
-          ctx.case.world.instances []
+          ctx.case.world.instances
+          (if period_arithmetic then
+             Eval.SMap.fold
+               (fun _ (tl : Uchar_ref.Timeline.t) acc ->
+                 List.concat_map (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_from; s.s_to ]) tl @ acc)
+               ctx.case.param_tls []
+           else [])
         |> finite_bounds |> List.sort_uniq compare
       in
       (* a DERIVED timeline (a pro-rata target) carries the fold's
@@ -5926,27 +6038,56 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          disjoint slices of one timeline, so ΣN over any subject is at
          most the whole units of the FULL endpoint span — bounding that
          span at 46340 keeps |ΣW×N| ≤ 46340² < 2^31 under the |W|
-         segment guard below (the wrap fence, compile-time) *)
-      (match endpoints with
-      | [] -> ()
-      | lo :: _ ->
-          let hi = List.fold_left max lo endpoints in
-          let n = Uchar_ref.Timeline.whole_units gran lo hi in
-          if n > 46340 then
-            fault "the clipped endpoint span covers %d whole units, beyond the guarded sum range"
-              n);
-      List.iter
-        (fun v ->
-          List.iter
-            (fun t ->
-              if v < t then begin
-                let n = Uchar_ref.Timeline.whole_units gran v t in
+         segment guard below (the wrap fence, compile-time). Under the
+         calendar the weights of disjoint spans sum to at most the weight of
+         the span they lie in, so the guard on W takes that weight. A clipped
+         fragment lies inside a true period of the condition, so for an own
+         characteristic the weights are laid over the span of its periods. *)
+      let w_bound, denominator =
+        match calendar with
+        | Some tu ->
+            let inside =
+              match c with
+              | Characteristic_check { characteristic = Some k; navigation_binding = None; negation = false; _ } -> (
+                  let periods =
+                    Eval.SMap.fold
+                      (fun _ (i : Uchar_ref.World.instance) acc ->
+                        match Eval.SMap.find_opt (norm k) i.ctls with Some ps -> ps @ acc | None -> acc)
+                      ctx.case.world.instances []
+                  in
+                  match periods with
+                  | [] -> []
+                  | (v0, t0) :: rest ->
+                      let lo = List.fold_left (fun m (v, _) -> min m v) v0 rest
+                      and hi = List.fold_left (fun m (_, t) -> max m t) t0 rest in
+                      List.filter (fun d -> lo <= d && d <= hi) endpoints)
+              | _ -> endpoints
+            in
+            let d, span_weight = calendar_weights ctx ~p ~gran ~tu inside in
+            (max_int31 / max 1 span_weight, d)
+        | None ->
+            (match endpoints with
+            | [] -> ()
+            | lo :: _ ->
+                let hi = List.fold_left max lo endpoints in
+                let n = Uchar_ref.Timeline.whole_units gran lo hi in
                 if n > 46340 then
-                  fault "a clipped span of %d whole units exceeds the guarded product range" n;
-                emit ctx "%s_wu(%d,%d,%d)." p v t n
-              end)
-            endpoints)
-        endpoints;
+                  fault "the clipped endpoint span covers %d whole units, beyond the guarded sum range"
+                    n);
+            List.iter
+              (fun v ->
+                List.iter
+                  (fun t ->
+                    if v < t then begin
+                      let n = Uchar_ref.Timeline.whole_units gran v t in
+                      if n > 46340 then
+                        fault "a clipped span of %d whole units exceeds the guarded product range" n;
+                      emit ctx "%s_wu(%d,%d,%d)." p v t n
+                    end)
+                  endpoints)
+              endpoints;
+            (46340, 1)
+      in
       let q = fresh ctx "Q" in
       (* W×N inside the #sum is an emitted multiplication: guard the
          segment value like every other product operand (the wu factor
@@ -5960,11 +6101,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          corpus/golden/jutterswet-klipwacht. *)
       emit ctx
         "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, \
-         %s_seg(%s,V,T,W), |W| > 46340."
+         %s_seg(%s,V,T,W), |W| > %d."
         subject
         (String.concat ", "
            (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard))
-        p subject;
+        p subject w_bound;
       open_total_guard ctx ~witness:subject
         ~body:
           ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard)
@@ -5974,7 +6115,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         p q (str subject_ot) q p p;
       ( [ Printf.sprintf "%s_total(%s,%s)" p subject q ],
         q,
-        pow10 (attr_decimals ctx ~otype:aot ~attr:a) )
+        pow10 (attr_decimals ctx ~otype:aot ~attr:a) * denominator )
   | Function_call
       { kind = Total;
         call_arguments = [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ];
@@ -5999,14 +6140,16 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             a b who
       | None -> ());
       let p = fresh ctx "pt" in
+      (* the bounds of the case timelines the value can read: the instances' and
+         the parameters' *)
+      let bounds_of (tl : Uchar_ref.Timeline.t) acc =
+        List.concat_map (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_from; s.s_to ]) tl @ acc
+      in
       let endpoints =
         Eval.SMap.fold
-          (fun _ (i : Uchar_ref.World.instance) acc ->
-            Eval.SMap.fold
-              (fun _ (tl : Uchar_ref.Timeline.t) acc ->
-                List.concat_map (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_from; s.s_to ]) tl @ acc)
-              i.tls acc)
-          ctx.case.world.instances []
+          (fun _ (i : Uchar_ref.World.instance) acc -> Eval.SMap.fold (fun _ tl acc -> bounds_of tl acc) i.tls acc)
+          ctx.case.world.instances
+          (Eval.SMap.fold (fun _ tl acc -> bounds_of tl acc) ctx.case.param_tls [])
         |> finite_bounds |> List.sort_uniq compare
       in
       (match endpoints with
@@ -6551,14 +6694,42 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          terms, with a viol/2 witness fencing the untranslated negative
          range (richting-nul alone matches gringo's native truncation on
          both signs). *)
+      (* a temporal total that the calendar integrates (ch. 3.6) carries a scale
+         that is no power of ten, which this rounding alone divides away *)
+      (match base_expr with Some (Function_call { kind = Total; _ }) -> ctx.calendar_rounding <- true | _ -> ());
       let b, t, s = expr_term ctx ~subject ~subject_ot (req "Rounding.base" base_expr) in
+      ctx.calendar_rounding <- false;
       (* [numeric_ok basis] read the operand's static type; the alignment tests below take
          [s] as a modulus, so an unscaled base divides by zero here too *)
       let s = numeric_scale ~what:"a rounding base" s in
       let target = pow10 decimal_places in
       let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
       let gbody = (base :: ctx.rule_guard) @ b in
-      if target >= s then
+      let rec decimal_scale x = x = 1 || (x mod 10 = 0 && decimal_scale (x / 10)) in
+      if not (decimal_scale s) then begin
+        (* the calendar's scale: the value is t/s exactly, and the rounding takes
+           t·target/s to a whole number by the mode's integer formula *)
+        let g = gcd target s in
+        let kn = target / g and kd = s / g in
+        range_guard ctx ~subject ~body:gbody [ (t, 536870912 / kn) ];
+        let numt = if kn = 1 then Printf.sprintf "(%s)" t else Printf.sprintf "((%s)*%d)" t kn in
+        let rounded =
+          match mode_kind with
+          | Toward_zero | Floor -> Printf.sprintf "(%s/%d)" numt kd
+          | Ceiling | Away_from_zero -> Printf.sprintf "((%s+%d)/%d)" numt (kd - 1) kd
+          | Half_away_from_zero -> Printf.sprintf "((2*%s+%d)/%d)" numt kd (2 * kd)
+        in
+        (match mode_kind with
+        | Toward_zero -> ()
+        | _ ->
+            List.iter
+              (fun conds ->
+                emit ctx "viol(\"negative operand under rounding is not translated\",%s) :- %s."
+                  subject (String.concat ", " (gbody @ conds)))
+              (sign_conds ctx ~neg:true t));
+        (b, rounded, target)
+      end
+      else if target >= s then
         if target mod s = 0 then begin
           if target > s then range_guard ctx ~subject ~body:gbody [ (t, max_int31 / (target / s)) ];
           (b, (if target = s then t else Printf.sprintf "(%s*%d)" t (target / s)), target)
@@ -10696,34 +10867,89 @@ let translate_period_arithmetic ctx ~subject ~ot ~a (value : expr) =
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
   let target_unit = attr_unit ctx ~otype:ot ~attr:a in
+  let what = Printf.sprintf "the period arithmetic of %S" a in
   let p = fresh ctx "pa" in
-  (* an operand on the target's scale: an operand with more decimals than the
-     target would need a division, which this encoding does not carry *)
-  let factor ~what s =
-    if s > target_scale || target_scale mod s <> 0 then
-      fault "the period arithmetic of %S reads %s with more decimals than the target: not translated" a what;
-    target_scale / s
-  in
   let times v k = if k = 1 then v else Printf.sprintf "%s*%d" v k in
+  let at_x = Printf.sprintf "%s_per(%s,X,_)" p subject in
   let read_cuts body ~holder ~attr =
     emit ctx "%s_cut(%s,X) :- %s, tl(%s,%s,X,_,_)." p subject (String.concat ", " body) holder (str attr);
     emit ctx "%s_cut(%s,X) :- %s, tl(%s,%s,_,X,_)." p subject (String.concat ", " body) holder (str attr)
   in
   (* the value of [e] at the start X of a period, where it is not leeg: a
-     predicate over (S, X, V), and whether it is defined on every period *)
-  let rec node (e : expr) : string * bool =
+     predicate over (S, X, V) with V at the scale of the node, whether it is
+     defined on every period, and that scale *)
+  let rec node (e : expr) : string * bool * int =
     match e with
-    | Binary { op = (Plus | Min) as op; left_side = Some l; right_side = Some r; _ } ->
-        let l = filled (node l) and r = filled (node r) in
+    | Binary { op = (Plus | Min | Reduced_by) as op; left_side = Some l; right_side = Some r; _ } ->
+        units_identical_ok ~what:(what ^ ", an additive join") (eff_unit ctx l) (eff_unit ctx r);
+        let ((_, ltotal, sl) as ln) = node l and ((_, _, sr) as rn) = node r in
+        (* plus and min coalesce a leeg operand to 0; verminderd met only its right *)
+        let ql = if op = Reduced_by then (let q, _, _ = ln in q) else filled ln in
+        let qr = filled rn in
+        let m = max sl sr in
         let q = fresh ctx (p ^ "_n") in
-        let body =
-          [ Printf.sprintf "%s_per(%s,X,_)" p subject; Printf.sprintf "%s(%s,X,VL)" l subject;
-            Printf.sprintf "%s(%s,X,VR)" r subject ]
-        in
-        range_guard ctx ~subject ~body:(base :: body) [ ("VL", 1073741823); ("VR", 1073741823) ];
-        emit ctx "%s(%s,X,V) :- %s, V = VL%sVR." q subject (String.concat ", " body)
-          (if op = Plus then "+" else "-");
-        (q, true)
+        let body = [ at_x; Printf.sprintf "%s(%s,X,VL)" ql subject; Printf.sprintf "%s(%s,X,VR)" qr subject ] in
+        range_guard ctx ~subject ~body:(base :: body) [ ("VL", 1073741823 / (m / sl)); ("VR", 1073741823 / (m / sr)) ];
+        emit ctx "%s(%s,X,V) :- %s, V = %s%s%s." q subject (String.concat ", " body) (times "VL" (m / sl))
+          (match op with Plus -> "+" | _ -> "-")
+          (times "VR" (m / sr));
+        (q, op <> Reduced_by || ltotal, m)
+    | Binary { op = (Times | Percentage_of) as op; left_side = Some l; right_side = Some r; _ } ->
+        (match op with
+        | Times -> mul_units_ok ctx ~what (Some l) (Some r)
+        | _ ->
+            pct_left_ok ctx (Some l);
+            unit_free_ok ctx (Some r));
+        let k = match op with Times -> Option.value (product_factor ctx l r) ~default:1 | _ -> 1 in
+        let ((_, _, sl) as ln) = node l and ((_, _, sr) as rn) = node r in
+        let ql = filled ln and qr = filled rn in
+        let scale = sl * sr * (if op = Percentage_of then 100 else 1) in
+        if scale > 1_000_000_000 then fault "%s: a product at the scale %d exceeds clingo's integer range" what scale;
+        let q = fresh ctx (p ^ "_m") in
+        let body = [ at_x; Printf.sprintf "%s(%s,X,VL)" ql subject; Printf.sprintf "%s(%s,X,VR)" qr subject ] in
+        range_guard ctx ~subject ~body:(base :: body) [ ("VL", 46340); ("VR", 46340 / k) ];
+        emit ctx "%s(%s,X,V) :- %s, V = VL*%s." q subject (String.concat ", " body) (times "VR" k);
+        (q, true, scale)
+    | Binary { op = (Divided_by | Divided_by_abs) as op; left_side = Some l; right_side = Some r; _ } ->
+        quotient_units_ok ctx l r;
+        let ql, _, sl = node l and qr0, _, sr = node r in
+        (* the quotient at the scale of the write, the abs variant at five
+           decimals truncated toward zero (ch. 2.2) *)
+        let out = match op with Divided_by_abs -> pow10 5 | _ -> max (max sl sr) target_scale in
+        let g = gcd (sr * out) sl in
+        let knum = sr * out / g and kden = sl / g in
+        let numt = times "VL" knum and dent = times "VR" kden in
+        let q = fresh ctx (p ^ "_q") in
+        let ldef = defined ql and rdef = defined qr0 in
+        let dividend = Printf.sprintf "%s(%s,X,VL)" ql subject in
+        let divisor = Printf.sprintf "%s(%s,X,VR)" qr0 subject in
+        (* the dividend is tested first and coalesces: leeg ÷ anything is 0 *)
+        emit ctx "%s(%s,X,0) :- %s, not %s(%s,X)." q subject at_x ldef subject;
+        (* a filled dividend over a leeg or 0 divisor is leeg on its period, and
+           the rule × subject takes one §9.5 fact per code (ch. 1.2, 5.6) *)
+        deposit ctx ~code:"EF-031" ~rule:(str ctx.rule_name) ~subject
+          (String.concat ", " [ base; at_x; dividend; Printf.sprintf "not %s(%s,X)" rdef subject ]);
+        deposit ctx ~code:"EF-005" ~rule:(str ctx.rule_name) ~subject
+          (String.concat ", " [ base; at_x; dividend; divisor; "VR == 0" ]);
+        let body = [ at_x; dividend; divisor; "VR != 0" ] in
+        range_guard ctx ~subject ~body:(base :: body) [ ("VL", 536870912 / knum); ("VR", 536870912 / kden) ];
+        (match op with
+        | Divided_by_abs -> emit ctx "%s(%s,X,V) :- %s, V = (%s)/(%s)." q subject (String.concat ", " body) numt dent
+        | _ ->
+            emit ctx "%s(%s,X,V) :- %s, (%s) \\ (%s) == 0, V = (%s)/(%s)." q subject (String.concat ", " body) numt
+              dent numt dent;
+            (* the quotient as the whole value is the write, where the unbounded
+               form held as a whole number names its own limit *)
+            let reason =
+              if e != value then nested_non_exact_division
+              else if unbounded_datatype (attr_datatype ctx ~otype:ot ~attr:a) then
+                "a division into a number declared without decimals is not whole, and this encoding holds \
+                 the unbounded form as a whole number"
+              else non_exact_division_bounded
+            in
+            emit ctx "viol(\"%s\",%s) :- %s, (%s) \\ (%s) != 0." reason subject
+              (String.concat ", " (base :: body)) numt dent);
+        (q, false, out)
     | Attribute_reference
         { attribute_ref = Some b; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
       when attr_temporal ctx ~otype:otn ~attr:b ->
@@ -10732,23 +10958,17 @@ let translate_period_arithmetic ctx ~subject ~ot ~a (value : expr) =
             "an attribute reference without a path is the subject's own read, so its subjectType is the \
              subject type '%s' — '%s' names another type, which only a navigation reaches"
             ot otn;
-        units_identical_ok ~what:(Printf.sprintf "the period arithmetic of %S" a) target_unit
-          (attr_unit ctx ~otype:otn ~attr:b);
-        let k = factor ~what:(Printf.sprintf "%S" b) (pow10 (attr_decimals ctx ~otype:otn ~attr:b)) in
         read_cuts [ base ] ~holder:subject ~attr:b;
         let q = fresh ctx (p ^ "_r") in
-        emit ctx "%s(%s,X,V) :- %s_per(%s,X,_), tl(%s,%s,F,T,W), F <= X, X < T, V = %s." q subject p subject
-          subject (str b) (times "W" k);
-        (q, false)
+        emit ctx "%s(%s,X,V) :- %s, tl(%s,%s,F,T,V), F <= X, X < T." q subject at_x subject (str b);
+        (q, false, pow10 (attr_decimals ctx ~otype:otn ~attr:b))
     | Function_call
         { kind = Sum_function;
           call_arguments = [ Attribute_reference { attribute_ref = Some x; navigation_bindings = None; anchor = None; _ } ];
           element_object_type = Some el; empty_fallback; filter = None; grain = None; dimension_selections = None;
           source_role; source_path; anchor = None; _ }
       when (source_role <> None || source_path <> None) && attr_temporal ctx ~otype:el ~attr:x ->
-        units_identical_ok ~what:(Printf.sprintf "the period arithmetic of %S" a) target_unit
-          (attr_unit ctx ~otype:el ~attr:x);
-        let k = factor ~what:(Printf.sprintf "%S" x) (pow10 (attr_decimals ctx ~otype:el ~attr:x)) in
+        let sx = pow10 (attr_decimals ctx ~otype:el ~attr:x) in
         let env =
           { Eval.doc = ctx.doc; params = ctx.case.params; param_tls = ctx.case.param_tls;
             as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
@@ -10758,56 +10978,66 @@ let translate_period_arithmetic ctx ~subject ~ot ~a (value : expr) =
         read_cuts join ~holder:m ~attr:x;
         let q = fresh ctx (p ^ "_s") in
         let reads = Printf.sprintf "tl(%s,%s,F,T,W), F <= X, X < T" m (str x) in
-        let at_x = Printf.sprintf "%s_per(%s,X,_)" p subject in
-        range_guard ctx ~subject ~body:(at_x :: join @ [ reads ]) [ ("W", 46340 / k) ];
+        range_guard ctx ~subject ~body:(at_x :: join @ [ reads ]) [ ("W", 46340) ];
         emit ctx
           "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, 46340 < \
            #count { %s : %s }."
           subject at_x m (String.concat ", " (join @ [ reads ]));
         emit ctx "%s_any(%s,X) :- %s." q subject (String.concat ", " (at_x :: join @ [ reads ]));
-        emit ctx "%s(%s,X,V) :- %s_any(%s,X), V = #sum { %s,%s : %s }." q subject q subject (times "W" k) m
+        emit ctx "%s(%s,X,V) :- %s_any(%s,X), V = #sum { W,%s : %s }." q subject q subject m
           (String.concat ", " (join @ [ reads ]));
         (match empty_fallback with
         | None -> ()
         | Some f ->
+            units_identical_ok ~what:(what ^ ", a sum fallback") (attr_unit ctx ~otype:el ~attr:x) (eff_unit ctx f);
             let fb, ft, fs = expr_term ctx ~subject ~subject_ot:ot f in
-            let kf = factor ~what:"the fallback" (numeric_scale ~what:"a sum fallback" fs) in
+            let fs = numeric_scale ~what:"a sum fallback" fs in
+            if fs > sx || sx mod fs <> 0 then fault "%s reads a fallback with more decimals than the sum: not translated" what;
             emit ctx "%s(%s,X,V) :- %s, not %s_any(%s,X), %s V = %s." q subject at_x q subject
               (String.concat "" (List.map (fun b -> b ^ ", ") (base :: fb)))
-              (times ("(" ^ ft ^ ")") kf));
-        (q, false)
+              (times ("(" ^ ft ^ ")") (sx / fs)));
+        (q, false, sx)
     | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } -> scalar e
     | Parameter_ref { parameter = Some n; _ } -> (
         match Ir_v0.Checks.find_ci ctx.doc.parameters n with
         | Some { par_granularity = None; _ } -> scalar e
-        | _ ->
-            fault
-              "the time-dependent parameter %S as an operand of the period arithmetic of ch. 3.4/3.5 is \
-               not translated (no corpus case)"
-              n)
+        | Some { par_datatype; _ } ->
+            (* a time-dependent parameter is a timeline operand; its timeline is its
+               binding, so an absent one is an unbound parameter (ch. 5.7) *)
+            if not (Eval.SMap.mem (norm n) ctx.case.param_tls) then
+              faultc ~params:[ ("parameter", n) ] "EF-014" "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" n;
+            emit ctx "%s_cut(%s,X) :- %s, param_tl(%s,X,_,_)." p subject base (str n);
+            emit ctx "%s_cut(%s,X) :- %s, param_tl(%s,_,X,_)." p subject base (str n);
+            let q = fresh ctx (p ^ "_p") in
+            emit ctx "%s(%s,X,V) :- %s, param_tl(%s,F,T,V), F <= X, X < T." q subject at_x (str n);
+            (q, false, pow10 (decimals_of_datatype par_datatype))
+        | None -> fault "unknown parameter %S" n)
     | _ ->
         fault
-          "this operand of the period arithmetic of ch. 3.4/3.5 is not translated: an operand is plus \
-           or minus, the sum of a temporal attribute over a set without a filter, an own temporal \
-           attribute, a literal, an own scalar attribute or a scalar parameter"
+          "this operand of the period arithmetic of ch. 3.4/3.5 is not translated: an operand is a binary \
+           operator of ch. 1.2 other than the power, the sum of a temporal attribute over a set without a \
+           filter, an own temporal attribute, a time-dependent parameter, a literal, an own scalar \
+           attribute or a scalar parameter"
   (* a scalar holds on every day: its value on every period, where it is filled *)
   and scalar e =
-    units_identical_ok ~what:(Printf.sprintf "the period arithmetic of %S" a) target_unit (eff_unit ctx e);
     let bindings, term, s = expr_term ctx ~subject ~subject_ot:ot e in
-    let k = factor ~what:"a scalar operand" (numeric_scale ~what:"the period arithmetic" s) in
+    let s = numeric_scale ~what:"the period arithmetic" s in
     let q = fresh ctx (p ^ "_c") in
-    let body = base :: Printf.sprintf "%s_per(%s,X,_)" p subject :: bindings in
-    range_guard ctx ~subject ~body [ (term, 1073741823 / k) ];
-    emit ctx "%s(%s,X,V) :- %s, V = %s." q subject (String.concat ", " body) (times ("(" ^ term ^ ")") k);
-    (q, false)
-  (* the coalescing of plus and minus: a leeg operand counts 0 on its period *)
-  and filled (q, total) =
+    let body = base :: at_x :: bindings in
+    emit ctx "%s(%s,X,V) :- %s, V = %s." q subject (String.concat ", " body) term;
+    (q, false, s)
+  (* the predicate that holds on the periods where [q] has a value *)
+  and defined q =
+    let d = q ^ "_d" in
+    emit ctx "%s(%s,X) :- %s(%s,X,_)." d subject q subject;
+    d
+  (* the coalescing of ch. 1.2: a leeg operand counts 0 on its period *)
+  and filled (q, total, _) =
     if total then q
     else begin
       let z = q ^ "_z" in
       emit ctx "%s(%s,X,V) :- %s(%s,X,V)." z subject q subject;
-      emit ctx "%s_d(%s,X) :- %s(%s,X,_)." q subject q subject;
-      emit ctx "%s(%s,X,0) :- %s_per(%s,X,_), not %s_d(%s,X)." z subject p subject q subject;
+      emit ctx "%s(%s,X,0) :- %s, not %s(%s,X)." z subject at_x (defined q) subject;
       z
     end
   in
@@ -10815,7 +11045,33 @@ let translate_period_arithmetic ctx ~subject ~ot ~a (value : expr) =
   emit ctx "%s_cut(%s,#sup) :- %s." p subject base;
   emit ctx "%s_per(%s,X,Y) :- %s_cut(%s,X), %s_cut(%s,Y), X < Y, #count { Z : %s_cut(%s,Z), X < Z, Z < Y } = 0."
     p subject p subject p subject p subject;
-  let root, _ = node value in
+  units_identical_ok ~what target_unit (eff_unit ctx value);
+  let root0, _, root_scale = node value in
+  (* the value restated once to the target's scale: a value with more decimals
+     than the target fits only where the surplus is 0, the write boundary of
+     ch. 2.4 on its segment (EF-006) *)
+  let root =
+    if root_scale <= target_scale then begin
+      let k = target_scale / root_scale in
+      if k = 1 then root0
+      else begin
+        let q = fresh ctx (p ^ "_t") in
+        let body = [ at_x; Printf.sprintf "%s(%s,X,W)" root0 subject ] in
+        range_guard ctx ~subject ~body:(base :: body) [ ("W", max_int31 / k) ];
+        emit ctx "%s(%s,X,V) :- %s, V = W*%d." q subject (String.concat ", " body) k;
+        q
+      end
+    end
+    else begin
+      let k = root_scale / target_scale in
+      let q = fresh ctx (p ^ "_t") in
+      let body = [ at_x; Printf.sprintf "%s(%s,X,W)" root0 subject ] in
+      emit ctx "%s(%s,X,V) :- %s, W \\ %d == 0, V = W/%d." q subject (String.concat ", " body) k k;
+      emit ctx "viol(\"%s\",%s) :- %s, W \\ %d != 0." period_arithmetic_misfit subject
+        (String.concat ", " (base :: body)) k;
+      q
+    end
+  in
   emit ctx "%s_val(%s,X,Y,V) :- %s_per(%s,X,Y), %s(%s,X,V)." p subject p subject root subject;
   (* the maximal runs: a cut between two periods of one value joins them *)
   emit ctx "%s_join(%s,Y) :- %s_val(%s,X,Y,V), %s_val(%s,Y,Z,V)." p subject p subject p subject;
@@ -13310,7 +13566,7 @@ let translate (doc : document) (case : Case.t) : string =
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
       before_arm = []; pre_scope = []; pre_reach = []; pre_let = [];
       pre_asks = []; signs = []; sign_helpers = []; oc_strata;
-      form_subject = None; anchored = []; member_reach = lazy [] }
+      form_subject = None; anchored = []; member_reach = lazy []; calendar_rounding = false }
   in
   (* ch. 8.4: the shared session-start Parameterset coverage check —
      data-plane validation (like the shared case loader), run before a

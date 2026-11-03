@@ -110,7 +110,7 @@ spec bug.
     arm's atoms.)
 
   Each tagged entry, here and under Recorded limitations ([V1], [V2],
-  [V3], [V4], [V5]),
+  [V3], [V4], [V5], [V6]),
   has a frame in the suite, named `README [tag]`, that pins it and
   goes red when the entry no longer holds.
 - Exact arithmetic by declared-decimals integer scaling: a value of an
@@ -460,6 +460,17 @@ Recorded limitations:
   with W1 not gekeurd and W2 stepping from 2027-03-01 over keurdagen of
   2026 only, beside a creation of a Keurrapport for each Ploeg, refuses
   with the reach fence where ref answers.
+- [V6] The temporal total that the calendar integrates (RUNTIME-SEMANTICS
+  ch. 3.6: a rate per year, quarter or month over a grid of days or weeks,
+  or per week over a grid of months) weighs a day by 1/len of its calendar
+  unit, so its value has a denominator such as 365 or 366 that no decimal
+  scale holds. The backend lays the weights over the least common multiple
+  D of the lengths the span meets, carries the total at the scale of its
+  value times D, and translates it only as the base of a rounding, which
+  divides D away; anywhere else it refuses the total by name, where ref
+  holds the exact value: the anchor `jutterswet-verzuimrente-dagen` with
+  its verzuimrente in the unbounded form and without the rounding is
+  139 13/73 € in ref (suite fixture `calendar-total-unrounded`).
 - Negative or empty allocation operands make the generated program
   UNSATISFIABLE — clingo then fails exactly where `ref/` faults
   (ch. 4.4), instead of silently diverging by the truncation/floor
