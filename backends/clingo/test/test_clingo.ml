@@ -17196,6 +17196,10 @@ let () =
            check (name ^ ": clingo refuses (" ^ String.concat "; " ws ^ ")")
              (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
        | _, _ -> check (name ^ ": clingo refuses (it found a model)") false));
+  (* the anchor's product with the parameter on the right: each node of the
+     period arithmetic keeps its scale, so the product's scale holds both *)
+  clingo_matches ~name:"period arithmetic: product-right-scale" ~ir:(read (dir ^ "product-right-scale/ir.json"))
+    ~case_text:(read (dir ^ "product-right-scale/case.json"));
   (* the write boundary per segment: a period whose value has more decimals than
      the target does not fit (EF-006), a document WF-023 refuses before it runs *)
   (let ir = read (dir ^ "period-arithmetic-misfit/ir.json")
