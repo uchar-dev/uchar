@@ -82,8 +82,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * <p><b>D, what the branch refuses by name</b> and <b>E, the faults</b> of these forms and the case reader's hold on a
  * time-dependent parameter, each in the same sentence on both branches.
  *
- * <p><b>Measured</b> 2026-11-03 on the documents of {@link #main}, A, B, C and the bucket route: the reference
- * interpreter's runner and the ASP runner give the expectations here.
+ * <p><b>Measured</b> 2026-11-03 on the five documents of {@link #main}: the verifier passes all five and the reference
+ * interpreter's runner gives the expectations here on all five; the ASP runner gives them on A and refuses the other
+ * four by name, as limits of its encoding (a unit-carrying multiplicative operand; a quotient that is not whole in the
+ * unbounded form; the calendar on the route of the bucket scalar; a calendar weight past its guarded range).
  */
 class TmsPerDayArithmeticWitnessTest {
 
@@ -287,6 +289,28 @@ class TmsPerDayArithmeticWitnessTest {
                 MODEL_BUCKET, List.of(MAANDTOTAAL, WEEKTOTAAL), bucketCase()));
     }
 
+    static final String MODEL_SHARE = TmsDocuments.modelWith(List.of(objectType("Jutter", List.of(
+                    TmsDocuments.attribute("aandeel", numberType(true, 0, TmsDocuments.PERCENT)),
+                    timeAttribute("vangst", numberType(true, 0, EUR), "day"),
+                    timeAttribute("vangstheffing", EUROS, "day")), List.of())),
+            List.of(), List.of(), List.of(unitSystem("Munt", List.of(EUR))));
+    static final String VANGSTHEFFING = computingRule("vangstheffing", "BEREKENING", "Jutter", "vangstheffing",
+            binary("percentageOf", ownRead("aandeel", "Jutter"), ownRead("vangst", "Jutter"), numberType(false, 0, EUR)),
+            "null");
+
+    static JsonNode shareCase() throws Exception {
+        return TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of("aandeel", numberValue("10"),
+                        "vangst", timeline(List.of(segment("2024-01-10", "2024-02-01", "200")))), List.of(), Map.of(), Map.of())),
+                List.of(expectedTimeline("J1", "vangstheffing", List.of(openTo("2024-01-10", "0"),
+                        segment("2024-01-10", "2024-02-01", "20"), openFrom("2024-02-01", "0"))), consistent()));
+    }
+
+    /** "De vangstheffing (€) … als zijn aandeel (%) van zijn vangst (€)": a percentage takes the unit of its right operand
+     *  (RUNTIME-SEMANTICS ch. 2.6), 10% of 200 € on [2024-01-10, 2024-02-01) and of a leeg vangst 0 elsewhere. */
+    @Test void a_percentage_per_day_takes_the_unit_of_its_right_operand() throws Exception {
+        BothBranches.green(document(MODEL_SHARE, List.of(VANGSTHEFFING)), shareCase(), "10% van 200 €, 20 €");
+    }
+
     // ---------------- D: what the branch refuses by name ----------------
 
     @Test void every_form_outside_what_the_branch_carries_is_refused_by_name_on_both_branches() throws Exception {
@@ -414,6 +438,8 @@ class TmsPerDayArithmeticWitnessTest {
         Path out = Path.of(args[0]);
         TmsTimelineWitnessTest.write(out.resolve("a-maal-verminderd-percentage"),
                 TmsTimelineDocuments.ir(MODEL_A, List.of(PRODUCT, NETTO, HEFFING, JAARPRODUCT), List.of()), caseA());
+        TmsTimelineWitnessTest.write(out.resolve("a-percentage-eenheid"),
+                TmsTimelineDocuments.ir(MODEL_SHARE, List.of(VANGSTHEFFING), List.of()), shareCase());
         TmsTimelineWitnessTest.write(out.resolve("b-delingen"),
                 TmsTimelineDocuments.ir(MODEL_B, List.of(DELER, VERHOUDING, NOEMER, AFGEKAPT), List.of()), caseB());
         TmsTimelineWitnessTest.write(out.resolve("c-parameter-kalender"),
