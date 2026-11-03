@@ -2778,6 +2778,32 @@ literal `{"boolean": true}` since L4.)
   object-creation member and the defaults consequence carry no value
   typing in v0 at all. **Delta (promotion)** for those two positions and
   for the keuzetype clause.
+- **WF-126** The grid of a timeline read per period (`RUNTIME-SEMANTICS.md`
+  ch. 3.4, 3.10; RegelSpraak typeringen §3; maintainer decision
+  2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 8). Every timeline
+  that the value or the condition of a computing rule version on a
+  timeline attribute target reads per period MUST lie on a grid that fits
+  the target's grid, so the target can carry each cut it makes: every wall
+  of the operand's grid is a wall of the target's. Every grid fits the day
+  grid; on the calendar a month, quarter or year grid fits a target grid
+  of that family whose unit divides its own (a year fits a month or a
+  quarter, a quarter a month); any other pair fits where it is one grid,
+  of one granularity and one start (ch. 2.8). The timelines read per
+  period: in the value, an own time-dependent attribute, the member
+  attribute of a sum over a set and a time-dependent parameter
+  (`WF-126.value-grid`); in the condition, a check of an own
+  time-dependent characteristic, a compared own time-dependent attribute,
+  and a whole-period qualifier, whose grid is the calendar month or year
+  it names (`WF-126.condition-grid`). Exempt, each by a rule of its own:
+  the time-proportional part and the day count (WF-056, WF-058) and the
+  operand of a whole-period qualifier, which the qualifier reads per
+  bucket. The parameters name the `operand`, its `operandGrid`, the
+  `target` and its `targetGrid`. *Motivation:* a rate for every day in a
+  rent for every month changes value inside a month, and no executor turns
+  a finer operand into a coarser target; v0 enforced the granularity
+  sentence of ch. 3.4 nowhere (measured: a parameter for every day in a
+  monthly target passed the frontend and the verifier, and the executors
+  refused it at case load only). **Delta (addition).**
 - **WF-079** A (type, attribute) target that carries no defaults MUST NOT
   be written by two **unconditional** computing versions of **different
   forms** whose validities overlap. A computing version is one tagged
@@ -10211,6 +10237,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-123 | *Retired at L6 (history):* the numerator `"1"` of a reciprocal. The factor list has no such numerator, so the rule lost its object and its five witnesses left the corpus with a reason (`corpus/negative/README.md`). |
 | WF-124 | one unit, one list (ch. 2.5, point 5): (a) at least one factor, (b) an `exponent` is never 0 and never 1, (c) one factor per `abbreviation` and `system`, (d) the factors in the canonical order, (e) a declaration carries no `exponent`. Check: gate 3, in the walk of WF-092. Golden: `jutterswet-vondsttempo`. Negative: `wf124-empty-unit` (a), `wf124-exponent-zero` (b), `wf124-exponent-one-written` (b), `wf124-duplicate-factor` (c), `wf124-factors-unsorted` (d), `wf124-declared-exponent` (e). |
 | WF-125 | a dimensioned attribute has a value per cell and none of its own (ch. 2.7; card `dimensions-executed`, 2026-11-02): (a) a reference to it stands only as the attribute of a cell read or as the argument of a dimension fold, (b) a write position names one cell — a rule target, an object creation's member, (c) no form that names a member whole names it — an allocation, a uniqueness key, a defaults group, a start-point determination, (d) no timeline beside its dimensions | gate 3 | `jutterswet-seizoenvondst`, `jutterswet-seizoenvouw` (reads through a cell and a fold), `jutterswet-seizoenkopie` (writes through a cell) | `wf125-bare-read` (a), `wf125-whole-target` (b, a rule target), `wf125-member-without-labels` (b, a member), `wf125-defaults-target` (c), `wf125-dimension-and-timeline` (d) |
+| WF-126 | the grid of a timeline read per period fits the grid of the rule's timeline target (ch. 3.1; card `conditions-per-period`, 2026-11-03): (a) a timeline the value reads — an own time-dependent attribute, the member attribute of a sum over a set, a time-dependent parameter; (b) one the condition reads — a check of an own time-dependent characteristic, a compared own time-dependent attribute, a whole-period qualifier on the grid it names; the time-proportional part, the day count and the operand of a qualifier exempt | gate 3 | `jutterswet-loon-per-periode`, `jutterswet-wachtmaanden` (a month and a year qualifier on monthly targets), `jutterswet-rekenen-per-dag` and `anchor/jutterswet-verzuimrente-dagen` (operands on a day target) | `wf126-value-grid` (a), `wf126-condition-grid` (b, a characteristic), `wf126-whole-period-grid` (b, a qualifier) |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

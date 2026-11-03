@@ -3687,6 +3687,11 @@ let run_rule ?only env world (r : resolved_rule) =
           && Option.fold ~none:false ~some:(reads_timeline env.doc ~ot) r.rr_condition
         in
         let several = temporal_target && List.length (timeline_writers env ~ot ~attr) >= 2 in
+        (match (clip, r.value_node) with
+        | Some _, Some v when temporal_target && is_period_arithmetic v ->
+            Value.fault "a period window as the condition of the period arithmetic of %S is not executed (no corpus case)"
+              attr
+        | _ -> ());
         (* SUBTYPING §4.1 rules 1 and 4: where inheritance brings a defaults
            stack to this target, this rule is that stack's BASE and is
            written by the group, not here. The exclusion is per CONCRETE

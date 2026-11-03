@@ -1247,6 +1247,16 @@ index reads to leeg (ch. 1.2 propagation). The anchor witness is
 surface follows spec-first via a pin bump; a temporal *characteristic*
 operand stays OPEN with the case format.
 
+**A condition on a rule with a timeline target is no scalar context
+either** (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md`
+point 3; RegelSpraak §10.3). There a condition that reads a timeline — a
+time-dependent characteristic or attribute as an operand, or a
+whole-period qualifier — is read per period, and the rule writes in the
+periods in which it holds (ch. 3.10, the clip generalised). The refusal
+above stays for every other position: on a scalar target a time-dependent
+characteristic or attribute in the condition is refused, and the
+whole-period qualifier folds (ch. 3.9).
+
 ### 3.4 Cut-merge arithmetic — the period-coalescing rule (§5.1.4)
 
 Binary arithmetic over two timelines `a ⊕ b` is defined per period of
@@ -1298,10 +1308,12 @@ divisor under a filled dividend makes the period leeg and deposits on the
   product and a quotient carry the unit their rule gives, and the result is
   restated **once** to the target's unit. The precision gate of ch. 2.4
   bounds the value of every segment (IMPLICIT-TIME VB 1.4).
-- Granularity: every operand's declared granularity must be
-  coarser-or-equal to the target's; the result's segment boundaries are
-  the cut set itself — event-driven, not re-bucketed onto the target's
-  calendar grid.
+- Granularity: every operand's grid must fit the target's — every wall of
+  the operand's grid a wall of the target's (`IR-SPEC.md` WF-126;
+  `spec/proposals/IMPLICIT-TIME.md` point 8, `WV-3.4-fijner-geweigerd`: a
+  dagrentevoet for every day in a maandrente for every month is
+  ill-formed); the result's segment boundaries are the cut set itself —
+  event-driven, not re-bucketed onto the target's calendar grid.
 
 Worked examples (absolute; `ref/` tests verbatim) — `a` = 100 on
 [2024-01-01, 2024-07-01), `b` = 30 on [2024-04-01, 2024-10-01), `a + b`
@@ -2974,7 +2986,9 @@ range (jaar 200000000 → +200000000-03-01T00:00).
 ### 3.9 The whole-period qualifier (§8.2)
 
 "gedurende de gehele maand / het gehele jaar" turns a per-instant
-condition into a per-bucket one and folds it to a single boolean:
+condition into a per-bucket one. In a condition of a rule with a timeline
+target it is a truth per bucket (below, "Per bucket on a timeline
+target"); everywhere else it folds to a single boolean:
 
 ```
 geheel(tl, grid, toets) = for EVERY bucket B touched by tl:
@@ -3266,6 +3280,38 @@ leeg on [2025-07-01, 2026-01-01) reads as row c. Those two rows are
 pinned in `ref/`'s suite and on the Drools runtime's fold, not in the ASP
 suite, whose encoding writes leeg as absence and has no second
 representation to tell apart.
+
+**Per bucket on a timeline target** (maintainer decision 2026-11-03,
+`spec/proposals/IMPLICIT-TIME.md` point 4). In the condition of a rule
+with a timeline target, which is read per period (ch. 3.10), the qualifier
+is a truth per bucket of its own grid, the calendar month or year it names:
+it holds in every bucket B every day of which satisfies the test, the days
+of ch. 1.2 above included, and its negation ("niet gedurende …") in every
+other bucket of all time — also in a bucket in which no day satisfies the
+test. The notion of a touched bucket does not enter: each bucket of all
+time is judged, and outside the periods of the tested timeline every
+bucket reads the same. The inner negation is per day, as above. A
+whole-period qualifier MUST lie on a grid that fits the target's
+(`IR-SPEC.md` WF-126): "gedurende de gehele maand" on a target for every
+year is ill-formed. On a scalar target the fold above stays (golden
+`synth-gehelejaarkenmerk`, `jutterswet-ploegpremie`).
+
+Worked example `WV-3.9-per-emmer` (absolute; `ref/` tests verbatim, the
+fixture `ref/test/fixtures/conditions-per-period/afdracht`, shared by the
+ASP backend's suite). `rentedragend` holds on [2025-11-16, 2026-03-13).
+"Gedurende de gehele maand rentedragend" per bucket holds on
+[2025-12-01, 2026-03-01) — December 2025, January and February 2026 — and
+its negation on (−∞, 2025-12-01) and [2026-03-01, +∞). The rule "de
+toetsdagen moet berekend worden als (het aantal dagen in de maand dat hij
+rentedragend is) gedurende de tijd dat hij niet gedurende de gehele maand
+rentedragend is" writes **15** on [2025-11-01, 2025-12-01) and **12** on
+[2026-03-01, 2026-04-01): the day count writes no segment in a month
+without a true day (ch. 3.8). The fold would have read the qualifier once,
+false for this timeline, and written all five months 15, 31, 31, 28 and 12.
+The corpus witness, written by rules through the RegelSpraak frontend and
+replayed by `ref` and the ASP backend, is `corpus/golden/jutterswet-wachtmaanden`
+(a month qualifier on a characteristic for every day, both polarities, and
+a year qualifier on a comparison).
 
 ### 3.9a The quantifier fold — a condition over a linked set
 
@@ -3619,9 +3665,77 @@ format pins every expected timeline to the grid (ch. 3.12, OPEN):
   is then the temporal leeg, and on a standing temporal target it writes
   nothing (ch. 7.8), as for any producer.
 
+**Any condition that reads a timeline — the clip generalised**
+(maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 3;
+RegelSpraak §10.3, §8.4.1). On a rule with a timeline attribute target, a
+condition that reads a timeline restricts the produced timeline to the
+periods of all time in which it holds, as the window does:
+
+```
+written(tl, c) = tl restricted to periods(c)
+```
+
+The window is the case of a condition whose periods are [from, to). The
+periods of a condition, read per day:
+
+- a check of a time-dependent characteristic of the subject holds in its
+  true periods, a negated check outside them, over all time (ch. 3.1);
+- a comparison of a time-dependent attribute of the subject with a scalar
+  bound holds on every day on which the comparison of ch. 1.2 holds; a gap
+  day reads leeg, so "ongelijk aan" holds on it against a filled bound;
+- a whole-period qualifier holds in its buckets (ch. 3.9, per bucket);
+- a composite holds on every day on which its quantifier holds of the
+  members that hold that day. Every member is read: the short circuit of
+  ch. 5.10 orders the members of one verdict, and here each day has its
+  own;
+- a node that reads no timeline holds on every day or on none.
+
+The periods are maximal: two adjacent periods in which the condition holds
+are one, so the restriction cuts a segment only where the condition
+changes. A condition that reads no timeline holds on every day or on none,
+and it gates the rule as on a scalar target (ch. 3.3): where it fails the
+rule does not decide, and the difference between an absent and a
+segmentless timeline (ch. 3.6) stays where it was. Every timeline the
+condition reads lies on a grid that fits the target's (`IR-SPEC.md`
+WF-126). A form not in this list that reads a timeline — a navigated or
+hosted check, a comparison of two timelines, a leeg or gevuld test, a
+quantifier fold — is refused by name in both OCaml executors.
+`RegelSpraak` writes the condition as "gedurende de tijd dat …" or as
+"indien …"; the reading follows the target, not the word
+(IMPLICIT-TIME VB 3.1).
+
+Worked example `WV-3.10-voorwaarde-per-periode` (absolute; `ref/` tests
+verbatim, the fixture `ref/test/fixtures/conditions-per-period/afdracht`,
+shared by the ASP backend's suite). An Afdracht of 10 000 € is
+`rentedragend` (a characteristic for every day) on [2025-11-16, 2026-03-13)
+and `verzuimd` (for every month) on [2025-12-01, 2026-02-01); the
+verzuimrentevoet is 0,04 /jr on (−∞, 2026-02-01) and 0,05 /jr on
+[2026-02-01, +∞).
+
+- "De minimumdagen (voor elke maand) moet berekend worden als (het aantal
+  dagen in de maand dat hij rentedragend is) gedurende de tijd dat hij
+  verzuimd is": **31** on [2025-12-01, 2026-01-01) and **31** on
+  [2026-01-01, 2026-02-01); in every other month the rule writes nothing.
+- "De dagrente (€/jr, voor elke dag) moet berekend worden als de
+  verzuimrentevoet maal zijn afdrachtbedrag gedurende de tijd dat hij
+  rentedragend is": **400** on [2025-11-16, 2026-02-01) and **500** on
+  [2026-02-01, 2026-03-13), nothing outside them.
+
+The corpus witness, written by rules through the RegelSpraak frontend and
+replayed by `ref` and the ASP backend, is
+`corpus/golden/jutterswet-loon-per-periode`: a characteristic, its
+negation, a comparison per day, a composite, a scalar as the whole value
+(ch. 3.11), a day count, and the gate of a condition without a timeline.
+
 **Executed since 2026-09-23** by `ref` and the ASP backend on the attribute
 targets whose producers they carry (the ch. 3.7 pro-rata part and the
-ch. 3.8 day count). Both Drools branches refuse the clip by name, so the
+ch. 3.8 day count), and since 2026-11-03 for every condition that reads a
+timeline, on those producers and on the period arithmetic of ch. 3.4 and
+3.5 (card `conditions-per-period`). Both Drools branches refuse the
+generalised clip by name (DROOLS-103, DROOLS-105), so its goldens sit in
+their channel lists. The window as the whole condition of the period
+arithmetic of ch. 3.4 stays refused by name in both OCaml executors (no
+corpus case). Both Drools branches refuse the clip by name, so the
 golden sits in their channel lists. Two positions stay refused by name in
 both OCaml executors, each at the rule and before the window is read,
 because the case distinction is on the target and a condition cannot see
@@ -3669,20 +3783,27 @@ idempotent (ch. 5).
   time-dependent parameter, or a scalar operand (a literal, an own scalar
   attribute, a scalar parameter), writes the timeline of the value over all
   time, open segments included, with its leeg periods as gaps (ch. 3.1). A
-  die/dat subselection on the sum and a condition on such a rule are refused
-  by name: the condition would restrict the timeline per period
-  (`spec/proposals/IMPLICIT-TIME.md` point 3), which is not specified here.
-  Executed by `ref` and the ASP backend, plus, min and the sum per period
-  also by both branches of the Drools backend; witnesses
+  die/dat subselection on the sum is refused by name. A condition on such a
+  rule restricts the timeline to its periods where it reads a timeline, and
+  gates the rule where it reads none (ch. 3.10). Executed by `ref` and the
+  ASP backend, plus, min and the sum per period without a condition also by
+  both branches of the Drools backend; witnesses
   `corpus/golden/jutterswet-maandloon` (plus, min, the sum),
   `corpus/golden/jutterswet-rekenen-per-dag` (the other five operators) and
   `corpus/golden/anchor/jutterswet-verzuimrente-dagen` (a time-dependent
   parameter).
-- A **scalar value as the whole value of a temporal target** is refused
-  (ch. 3.4 gives a scalar a time domain as an operand only); a **temporal
-  value in a scalar slot** is refused except through the specified
-  collapses (ch. 3.3). Neither boundary is ever crossed by silent
-  coercion.
+- An operand of the period arithmetic standing alone is a whole value as
+  well: a **scalar** holds on every day, the one segment (−∞, +∞) of
+  ch. 3.1, an own time-dependent attribute or a time-dependent parameter
+  is read whole, and the rule's condition cuts it (ch. 3.10). "De
+  aanstellingspremie moet gesteld worden op 25 gedurende de tijd dat hij
+  aangesteld is" writes 25 on the periods in which he is aangesteld
+  (`corpus/golden/jutterswet-loon-per-periode`). A **temporal value in a
+  scalar slot** is refused except through the specified collapses
+  (ch. 3.3); that boundary is never crossed by silent coercion.
+- **Two or more writers** of one timeline target each decide the days of
+  their own segments, and the target is their union per day (ch. 5.7,
+  "Two writers per day").
 - **Temporal characteristic, refused cases (v0):** the manifest family
   "temporal kenmerktoekenning with indeterminate write-producer" —
   (a) an *unconditional* temporal characteristic: "always true" is the
@@ -3740,14 +3861,17 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Fixed start point off the calendar grid (§13.3.6.3–.7) | **landed (v1 addition)**: `fixedStart` on a timeline and on its facets (`IR-SPEC.md` ch. 2.8, WF-115), the grid in ch. 3.2; read by a case input, the asOfDate bucket and the day count; the pro-rata over a fixed-start grid fenced; the calendar start point is written without one |
 | Point-in-time read (the "op dat tijdstip" node) | **landed (v1 extension)**: `read(tl, d)` is `IR-SPEC.md` ch. 4.3a (`TemporalRead`, WF-049; ch. 3.3, row 11), anchor-witnessed and replayed by both executors |
 | Timeline arithmetic beyond `plus`/`minus` (plus/min): `reducedBy` (verminderd-met), `times` (maal), `dividedBy` and `dividedByAbs` (division), `percentageOf` (percentage) | **specified (delta) and executed**, ch. 3.4: each operator read per day with its ch. 1.2 empty rule (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 1), a division's deposit once per rule × subject × code. `ref` and the ASP backend, witness `corpus/golden/jutterswet-rekenen-per-dag`; both Drools branches refuse it by name (DROOLS-105). The power stays refused |
-| Plus, min and the sum per period (ch. 3.4, 3.5) as the value of a rule on a temporal attribute target | **specified and executed** over all time (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 2): `ref` and the ASP backend, witness `corpus/golden/jutterswet-maandloon` (ch. 3.11), and both Drools branches. A time-dependent parameter as an operand is executed since the same day (IMPLICIT-TIME VB 2.3; witness `corpus/golden/anchor/jutterswet-verzuimrente-dagen`). A condition on such a rule and a die/dat subselection on the sum are refused by name in every executor |
+| Plus, min and the sum per period (ch. 3.4, 3.5) as the value of a rule on a temporal attribute target | **specified and executed** over all time (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 2): `ref` and the ASP backend, witness `corpus/golden/jutterswet-maandloon` (ch. 3.11), and both Drools branches. A time-dependent parameter as an operand is executed since the same day (IMPLICIT-TIME VB 2.3; witness `corpus/golden/anchor/jutterswet-verzuimrente-dagen`). A condition on such a rule is executed by `ref` and the ASP backend since the same day (the row below), and refused by name in both Drools branches; a die/dat subselection on the sum is refused by name in every executor |
+| A condition on a rule with a timeline target that reads a timeline (ch. 3.10, the clip generalised), the whole-period qualifier in it per bucket (ch. 3.9) | **specified (delta) and executed** (maintainer decisions 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` points 3 and 4): `ref` and the ASP backend on every producer of ch. 3.4–3.8, witnesses `corpus/golden/jutterswet-loon-per-periode` and `corpus/golden/jutterswet-wachtmaanden`; both Drools branches refuse it by name (DROOLS-103, DROOLS-105). A condition that reads no timeline gates the rule. Refused by name in both OCaml executors: a navigated or hosted check, a comparison of two timelines, a leeg or gevuld test and a quantifier fold in such a condition, a window as a member of it or as the condition of the period arithmetic. The total of a timeline written under such a condition is executed by `ref` and refused by name in the ASP backend (`backends/clingo/README.md` [V8]) |
+| Two or more writers of one timeline target (ch. 5.7, per day) | **specified (delta) and executed** (`spec/proposals/IMPLICIT-TIME.md` point 5): `ref` and the ASP backend, witness `corpus/golden/jutterswet-wachtdagen-twee-schrijvers`, red case `corpus/red/jutterswet-wachtdagen-botsing` (EF-016); both Drools branches refuse it by name (DROOLS-103). Two writers that decide one day with one value hold together; the ASP backend refuses that day by name ([V7]). A case input on such a target is refused by name in the ASP backend, and `ref` keeps it on the days no writer decides |
+| A timeline read per period on a finer grid than the target's | **ill-formed (WF-126**, maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 8): negatives `wf126-value-grid`, `wf126-condition-grid`, `wf126-whole-period-grid`; the RegelSpraak frontend refuses it (RGS-374), `ref` and the ASP backend fail fast in the verifier's terms |
 | The temporal total across the day and the month family of time units (ch. 3.6) | **specified (delta) and executed**: the calendar (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 11), the actual length of the month, quarter or year; a declared factor between the two families is ill-formed (WF-009, negative `wf009-calendar-family-factor`). `ref` in every route of the total; the ASP backend under a rounding of the gedurende-clipped total, refusing it by name elsewhere; both Drools branches refuse it by name (DROOLS-228). Witness `corpus/golden/anchor/jutterswet-verzuimrente-dagen` |
 | Open segments (ch. 3.1) | **specified**: a timeline divides all time, a segment may have an open bound, the case format omits `from` or `to` for one (`uchar-case-v0`); the total of ch. 3.6 counts an open segment of 0 as 0 and faults on any other value (EF-036, red case `jutterswet-totaal-open-segment`); a fold over the buckets of an open period (ch. 3.7–3.9) is refused by name. A characteristic's true-periods (`characteristicTimelines`) carry no open bound |
-| Scalar operand of timeline arithmetic / unconditional temporal characteristic | the scalar operand of plus and min is **specified and executed**, ch. 3.4 (one segment (−∞, +∞)); the unconditional temporal characteristic has the time domain since then and stays OPEN, because no executor writes a temporal characteristic (ch. 3.11) |
+| Scalar operand of timeline arithmetic / unconditional temporal characteristic | the scalar operand of every operator is **specified and executed**, ch. 3.4 (one segment (−∞, +∞)), and since 2026-11-03 a scalar as the whole value of a timeline target as well (ch. 3.11); the unconditional temporal characteristic has the time domain since then and stays OPEN, because no executor writes a temporal characteristic (ch. 3.11) |
 | `minimum`/`maximum`/`first`/`last` (min/max/eerste/laatste) over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
 | §8.4.3 period condition on a **scalar** target | **specified and executed, ch. 3.10** — all four executors since 2026-09-20, witness `corpus/golden/jutterswet-premievenster` (six clauses; as a rule's whole condition and as an `all`/`the` composite member) |
 | §8.4.3 period condition under `none` or a counting quantifier | **ill-formed (WF-112, maintainer decision 2026-09-23)**: the window gates the rule, and no reading is specified for its complemented or counted verdict (the time-free session is where the two readings part). Covers a quantifier fold's `filter` and `test` too. Negatief `wf112-time-window-counting-quantifier`; the executors' refusals remain as fail-fast checks, both Drools branches' by name since card `drools-venster-vouwtoets` |
-| §8.4.3 period condition on a temporal target | **specified (delta) and executed: the clip, ch. 3.10** — `ref` and the ASP backend since 2026-09-23, on attribute targets with the ch. 3.7/3.8 producers. Corpus-pinned by `corpus/golden/jutterswet-pachtvenster` wherever the case lies on the grid (the evaluation date ignored — unset and outside every window alike —, a leeg or empty window writing the empty timeline); the SEGMENT-CUTTING clause is suite-pinned only, in both OCaml executors. Both Drools branches refuse it by name. Still refused by name in both OCaml executors: the window as a composite MEMBER on a temporal target (OPEN), and a temporal CHARACTERISTIC target (red case `time-window-timeline-characteristic`), because no temporal characteristic is written (ch. 3.11) |
+| §8.4.3 period condition on a temporal target | **specified (delta) and executed: the clip, ch. 3.10** — `ref` and the ASP backend since 2026-09-23, on attribute targets with the ch. 3.7/3.8 producers, and generalised to every condition that reads a timeline since 2026-11-03 (the row on a condition on a timeline target). Corpus-pinned by `corpus/golden/jutterswet-pachtvenster` wherever the case lies on the grid (the evaluation date ignored — unset and outside every window alike —, a leeg or empty window writing the empty timeline); the SEGMENT-CUTTING clause is suite-pinned only, in both OCaml executors. Both Drools branches refuse it by name. Still refused by name in both OCaml executors: the window as a composite MEMBER on a temporal target (OPEN), and a temporal CHARACTERISTIC target (red case `time-window-timeline-characteristic`), because no temporal characteristic is written (ch. 3.11) |
 | A corpus carrier for a clipped (off-grid) bucket | **OPEN** — a corpus carrier for a cut bucket needs the case schema (`uchar-case-v0`, `timelineValue`) to release EXPECTED timelines from the declared grid; until then the clause lives in the executors' suites. The alternative, a WF rule demanding on-grid bounds for a clip, is not taken |
 | A time window inside the `filter` of an `all` quantifier fold, in a time-free session | **OPEN, no WF-112 widening** (maintainer decision 2026-09-23): `ref`, the ASP backend and the Drools DRL-text branch answer consistently — the window never matches, the member is filtered out, the fold is vacuously true — so there is no unnamed complement reading and no ground for refusal. Since 2026-09-23 (card `drools-venster-vouwtoets`) the Drools exec-model branch carries it too, so all four executors answer it alike; `corpus/golden/jutterswet-wachtvenster` pins the vacuous reading in all four (`bevoegd` in `case3-tijdvrij`) |
 | A period-condition bound other than a literal or an own scalar attribute | **ill-formed (WF-111, maintainer decision 2026-09-23)**; negative `wf111-period-boundary-parameter-date`. The general date expression (a parameter, a navigated read, arithmetic) is an **OPEN wire decision**: no corpus document asks for it, and a bound not tied to the subject gives the ASP encoding no fault atom to attach to. A v1 card that takes it on moves WF-111 and gives ch. 5.11's `from`-before-`to` order its first witness |
@@ -4615,6 +4739,35 @@ order the reference interpreter answered the first, second and fifth case
 with the value a writer had written on the input meldingsgetal (1, 1, 4),
 the ASP backend refused every case with an input spoedpremie, and both
 Drools branches answered as above in both orders.
+
+**Two writers per day** (`spec/proposals/IMPLICIT-TIME.md` point 5; the
+specification is silent, and the reading follows ALEF). On a timeline
+target of two or more writers the paragraphs above hold per day: a writer
+decides the days of the segments it writes — its value restricted to the
+periods of its condition (ch. 3.10) — and a day on which its timeline reads
+leeg it does not decide (IMPLICIT-TIME VB 5.1). The target is the union of
+the writers' segments: on a day one writer decides, its value; on a day
+none decides, what the target held before any of them wrote, its input or
+leeg; on a day two decide with different values, no fact base satisfies
+both equations and the session faults with EF-016, once per attribute and
+object, naming the writers in the order of the document and their values
+on the first such day (VB 5.2). Two that decide a day with one value hold
+together; each writer's segments stand as it wrote them, and a shared day
+lies in the segment of the writer the document names first. On a target of
+one writer the timeline it writes replaces what the target held, as
+before. Worked example `WV-5.7-per-dag` (absolute; `ref/` tests verbatim,
+the fixtures `ref/test/fixtures/conditions-per-period/afdracht` and
+`afdracht-botsing`, shared by the ASP backend's suite): `rentedragend` on
+[2025-11-16, 2026-03-13); writer 1 sets the rentedagen to 30 gedurende de
+tijd dat hij gedurende de gehele maand rentedragend is, writer 2 counts the
+days gedurende de tijd dat hij niet gedurende de gehele maand rentedragend
+is. Together: **15** on [2025-11-01, 2025-12-01), **30** on
+[2025-12-01, 2026-03-01) (writer 1's one segment) and **12** on
+[2026-03-01, 2026-04-01). Without writer 2's condition both decide December
+2025, with 30 and 31: EF-016 on A1.rentedagen, the rules "rentedagen in een
+gehele maand, rentedagen in elke maand", the values 30 and 31. The corpus
+witnesses are `corpus/golden/jutterswet-wachtdagen-twee-schrijvers` and
+`corpus/red/jutterswet-wachtdagen-botsing`.
 
 **Faults and deposits are read at the fixpoint.** An evaluation fault
 (ch. 1.4) and a §9.5 deposit are outcomes of one form's evaluation on one
@@ -6337,8 +6490,18 @@ evaluation reads over a timeline has the part of that timeline in which it
 holds: the clip of a temporal total (ch. 3.6) and the filter of a
 time-proportional part or a day count (ch. 3.7, 3.8) — the periods of a
 characteristic, the segments of a compared timeline — and a period window
-that cuts a timeline target (ch. 3.10), the window itself. The value of a
-rule on a timeline target is the timeline it writes. Of the clip of a
+that cuts a timeline target (ch. 3.10), the window itself. A condition read
+per period on a rule of a timeline target (ch. 3.10, the clip generalised)
+holds, so the form holds, and each of its nodes has the part of all time in
+which it holds: a check, a qualifier per bucket, a composite and a node
+that reads no timeline its periods, each a period without a value, a
+comparison the segments of its compared timeline there, with their values,
+and the gaps where a leeg side satisfies it; its operands have the
+timelines and values they read (`ref/` test
+`WV-5.12-voorwaarde-per-periode`). The value of a
+rule on a timeline target is the timeline it writes; under period
+arithmetic with a condition, each node below the value's root has the
+timeline it reads or computes, or its value where it is a scalar. Of the clip of a
 temporal total, a check of a characteristic has its true periods, a negated
 check the periods outside them within each segment of the totalled
 timeline, and a composite the intersection of its members' periods, each

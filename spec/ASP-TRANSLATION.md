@@ -1542,6 +1542,32 @@ data and the total is refused by name. The gedurende-clipped total of such
 a target lays its whole-unit facts over the same endpoints and refuses the
 same derived bounds.
 
+**A condition per period** (RUNTIME-SEMANTICS ch. 3.10, the clip
+generalised; ch. 3.9 per bucket). On a rule of a timeline attribute target
+a condition that reads a timeline is translated the way the period
+arithmetic is: one cut set per subject, `pcN_cut(S,X)` — `#inf`, `#sup`,
+every bound of every `ktl/4` and `tl/5` the condition reads, and the walls
+of the bucket facts `…_w_b(B,N,D)` of each whole-period qualifier in it —
+its periods `pcN_per(S,X,Y)`, and per node a predicate over (S, X) that
+holds where the node holds on the period starting at X: a characteristic
+`ktl(S,k,F,T), F <= X, X < T`, its negation by negation as failure, a
+comparison its tested value at X against the bound's term with the ch. 1.2
+leeg rows (a gap is no `tl/5` atom, a leeg bound binds none of its atoms),
+a composite `H = #count { i : member_i(S,X) }` against its quantifier, a
+node that reads no timeline its `cond_atoms` on every period. A qualifier
+fails in a bucket that holds a period on which its test fails, holds on
+the periods of every other bucket, and outside the buckets laid over the
+case's span, where every timeline is constant, holds where its test does.
+The true periods `pcN(S,F,T)` are the maximal runs of the periods on which
+the root holds, and each producer writes its segments cut by them, four
+cases of a max and a min per segment as for the window. A condition that
+reads no timeline joins the `paN_per` body as the gate. Two or more
+writers of one timeline target each write `wtl(S,a,F,T,V,i)` beside
+`tl/5` under their index in the document; an overlap of two with different
+values is the EF-016 witness of the scalar co-writers (`two writers of one target
+disagree: …`), and one with one value is refused by name
+(`backends/clingo/README.md` [V7]).
+
 **The calendar** (ch. 3.6): a rate whose denominator is a calendar unit of
 the other family than the grid's (`€/jr` over days, `€/dg` over months)
 weighs a day by 1/len of the calendar month, quarter or year it lies in,
