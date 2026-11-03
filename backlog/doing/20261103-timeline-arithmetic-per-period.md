@@ -295,3 +295,228 @@ Groen op `64fb6bdb5`: 17 gates en de drie bouwstappen rc=0, `after-run` rc=0, 34
 ongewijzigd; gate 10 frontendsuite 1472 tests, 181 rgs-goldens byte-gelijk (was 179); gate 12 PASS met beide nieuwe
 goldens als `EXCLUDE DROOLS-105`, `EXPECTED_PLAYED` 319; gate 17 vergelijkt 319 goldens, 0 afwijkingen. De kaart
 blijft in `doing/` voor stap B.
+
+## Result: stap B (bouwer, 2026-11-03)
+
+Branch `card/timeline-arithmetic-per-period`, gerebased op main `b8fed38a0` (de frontend-fixronde en stap A deel i van
+`conditions-per-period`; zonder conflict). Niet gemerged, niet gepusht. Beschermd in deze stap, dus **voorstel**:
+`scripts/check-drools.sh`.
+
+### Commits
+
+- `455db41ae` drools: rekenen per dag, de tijdsafhankelijke parameter en de kalender
+- `a1196cf58` gate 12: het verzuimrente-anker en rekenen-per-dag spelen (voorstel)
+- `910db8fca` tests: de case-lezer houdt een tijdsafhankelijke parameter aan zijn tijdlijn
+- `809b52eb2` tests: een percentage per dag neemt de eenheid van zijn rechteroperand
+- `dd137f4fb` drools: de kalenderfamilies uit de gedeelde tabel (`TimeCalculation.calendarFamily`, die main na de start
+  kreeg)
+- het commit van dit Result
+
+### Rood eerst (op `dd515ad1e`, letterlijk; `werk/timeline-arithmetic-per-period-drools/logs/01-red-first.log`, `16-red-witness.log`)
+
+- `anchor/jutterswet-verzuimrente-dagen`, beide takken: `EXCLUDE DROOLS-105: transpiler SKIP: regel: dagrente — a value
+  of the time-dependent target 'dagrente' of Afdracht that is neither a time-proportional part, a day count nor the
+  period arithmetic of plus, min or a sum per period ('de verzuimrentevoet maal zijn afdrachtbedrag'): this branch does
+  not yet carry this form (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11); no golden with cases writes one`
+- `jutterswet-rekenen-per-dag`, beide takken: dezelfde zin met `regel: loonproduct van een jutter`, `'loonproduct' of
+  Jutter` en `('zijn strandloon maal zijn stormtoeslag')`.
+- De nieuwe getuige `TmsPerDayArithmeticWitnessTest` op `dd515ad1e`, met alleen dat bestand erbij: alle 8 tests die hij
+  toen had rood, de vormen op DROOLS-105 (`('times')`, `('reducedBy')`, `('dividedBy')`), de emmerroute op
+  `… the temporal total of a EUR/dg value: the document declares no mnd unit, so this timeline's grid has no unit to
+  integrate against (ch. 3.6)` (DROOLS-227). De twee rijen die later kwamen (de case-lezer van de parameter, het
+  percentage) zijn niet op `dd515ad1e` gedraaid; mutaties M19–M21 tonen ze rood. `PeriodArithmeticTest` is niet op
+  `dd515ad1e` gedraaid; hij roept functies aan die daar niet bestaan (`reduced`, `times`, `parameter`, `weighed`), dus
+  compileert daar niet (gevolgtrekking, niet gemeten).
+
+### Na de bouw
+
+- Beide goldens `PLAYED 2` en `PLAYED 3` op beide takken; hun lezingen zijn op beide takken per regel gelijk aan de
+  trace van ref (5 casebestanden; vóór en na de rebase gemeten, `logs/05-*`, `26-*`).
+- De drie goldens van `conditions-per-period` op main blijven op beide takken geweigerd met hun gepinde code:
+  `jutterswet-loon-per-periode` DROOLS-302, `jutterswet-wachtdagen-twee-schrijvers` DROOLS-103, `jutterswet-wachtmaanden`
+  DROOLS-105 (gemeten na de rebase).
+
+### Wat er veranderde
+
+- **Case-lezer** (`CaseRunner`): een tijdlijn op het dagraster van de kalender wordt gelezen, elke dag ligt erop
+  (`onGrid`; week en kwartaal blijven DROOLS-037, de emmerscalair op een dagraster blijft DROOLS-035, zoals ref met Z15).
+  Een tijdsafhankelijke parameter krijgt zijn tijdlijn, gelezen als die van een attribuut op het raster van de
+  parameter (open grenzen inbegrepen, `inputFits` per segment), als `List<Period>` op zijn global; een scalair op zo'n
+  parameter en een tijdlijn op een scalaire zijn een gebrekkige case, in de woorden van de lader van ref
+  (`IllegalArgumentException`).
+- **Lowering met truth maintenance** (`TmsTranspiler`, één analyse, beide weergaven): `isPeriodArithmetic` neemt elke
+  binaire operator behalve de macht; `periodOperand` schrijft per operator een functie van `PeriodArithmetic`, een
+  deling als `Term.Division` met de sonde van de regel (`reads.depositFlag()`), zodat de `Value`-consequentie één
+  §9.5-feit per regel × onderwerp met de codes als verzameling deponeert. `parameterOperand` leest een
+  tijdsafhankelijke parameter via `Reads.parameterTimeline` (een global van type `List`, de `ParameterState` zoals bij
+  een scalaire). Eenheden per knoop, uit de declaraties (`periodUnitOf`, `periodUnits`, `unitCarrier`). Een doel van
+  de onbegrensde vorm wordt toegelaten. `calendar` vervangt het eenheidsdeel van `integrable`: het eigen totaal geeft
+  de kalendereenheid mee op alle drie de routes (de emmer via `OWN_TOTAL`, de hele tijdlijn en de klip via
+  `PERIOD_TOTAL`); `integrable` (de vouw per lid) weigert een tarief dat de kalender integreert bij naam (DROOLS-228).
+- **Runtime, zuivere functies** (`PeriodArithmetic`): de waarden tussen operatoren zijn exact (een interne
+  `Exact`-record, decimaal of `Breuk`); `reduced`, `times`, `percentageOf`, `divided`, `dividedAbs` (per periode de
+  scalaire operator van de runtime, de delingen via `ComputeHelpers.divided`/`dividedAbs` met de sonde), `parameter`
+  (EF-014 zonder tijdlijn), `written` (een segment van de onbegrensde vorm dat niet eindigt: `ComputeFault` bij naam),
+  `total` met de kalender, `weighed` en `measure` (de kalender: per dag 1/len van zijn maand, kwartaal of jaar, over
+  de hele rastereenheden, die `rsTijdTotaal` telt). `ComputeHelpers.ownTotal` weegt de emmer met de kalender.
+  `ComputeFault` herkent de EF-014-zin (code en `parameter`). `StaticFunction`: `PERIOD_REDUCED`, `PERIOD_TIMES`,
+  `PERIOD_PERCENTAGE_OF`, `PERIOD_DIVIDED`, `PERIOD_DIVIDED_ABS`, `PERIOD_PARAMETER`; `PERIOD_TOTAL` en `OWN_TOTAL`
+  kregen het argument van de kalender.
+- **Catalogi** (nl, en): de zinnen van DROOLS-105 en DROOLS-303 noemen de operatoren van ch. 1.2 behalve de macht en
+  (303) de tijdsafhankelijke parameter.
+- **README** van de backend: de alinea over rekenen per periode, een nieuwe alinea "The calendar", de weigeringen.
+
+### Codes en pins, oud en nieuw
+
+- `RETIRED`: DROOLS-030 (`granular-parameter-timeline`), DROOLS-036 (`day-grid-calendar-bucketing`), DROOLS-304
+  (`period-arithmetic-time-parameter`), DROOLS-307 (`period-arithmetic-inexact`). Register: 308 codes, 18 retired (was
+  14). Geen nieuwe code. DROOLS-105 blijft (de macht, een scalair als hele waarde, elke andere vorm), DROOLS-228 blijft
+  (een gedeclareerde factor naar de rastereenheid, ook tussen de families; de kalender in de vouw per lid),
+  DROOLS-303, -306 en -308 blijven.
+- Gate 12 (voorstel): `EXPECTED_CHANNEL` − `anchor/jutterswet-verzuimrente-dagen|EXCLUDE DROOLS-105|…` en
+  − `jutterswet-rekenen-per-dag|EXCLUDE DROOLS-105|…`; `EXPECTED_PLAYED` 320 → 322 met een regel in het
+  commentaarblok (op main ook 320; de drie goldens van `conditions-per-period` blijven gepind). Kanaalvloer 52 → 50.
+  Gate 8: ongewijzigd. Geen floor gewijzigd; de JUnit-telling 1787 → 1804 (floor 1573).
+- Tests die de kaart omdraait, oud → nieuw:
+  - `GridSentenceWitnessTest.a_timeline_on_the_week_and_the_day_of_the_calendar`: de dagrij weigerde met de zin van
+    DROOLS-036 → gesplitst: `a_timeline_on_the_week_of_the_calendar` (weigert als voorheen) en
+    `a_timeline_on_the_day_of_the_calendar_is_read` (een invoer en een verwachting op dagen, beide takken spelen).
+  - `CaseInputWitnessTest.parameterValue` (de consument zet de parameters zelf): een parametertijdlijn gaf
+    `Excluded(DROOLS-030)` → wordt de `List<Period>` die de case-lezer zet; het anker speelt nu via de ingangen.
+  - `TmsPeriodArithmeticWitnessTest.every_form_outside_the_period_arithmetic_it_carries_is_refused_by_name_on_both_branches`:
+    rij "another operator below plus" (`times`, DROOLS-303) → een macht onder plus (DROOLS-303, `('power')`); rij
+    DROOLS-304 weg (speelt: `TmsPerDayArithmeticWitnessTest` C); rij DROOLS-307 weg (speelt: B; het segment dat niet
+    eindigt: E); rij "another operator as the whole value" (`times`, DROOLS-105) → een macht (DROOLS-105, met de nieuwe
+    zin).
+- Nieuw: `TmsPerDayArithmeticWitnessTest` (10 tests): A maal, verminderd met, percentage van en het totaal over een
+  dagraster (24 volgorden × 2 takken); B beide delingen met EF-031 en EF-005 in één feit en een doel van de onbegrensde
+  vorm (24 × 2); C een tijdsafhankelijke parameter en de kalender, geknipt en ongeknipt (24 × 2); de kalender op de
+  emmerroute, €/dg en €/wk over februari 2024 (2 × 2); het percentage met de eenheid van rechts; D de weigeringen 303,
+  105, 306, 228 (vouw per lid) en 228 (`jr = 365 dg`); E EF-014, het segment dat niet eindigt, EF-006 per segment; de
+  case-lezer van de parameter (scalair op een tijdsafhankelijke, tijdlijn op een scalaire, EF-004). `PeriodArithmeticTest`
+  (6 tests): `WV-3.4-per-dag`, de exacte waarden tussen operatoren, de sonde één keer per code, EF-014, en de kalender
+  (`WV-3.6-g-vreemde-noemer` 3660, week-over-maanden 29, maand 31, kwartaal 91, jaargrens 731/365, anker 4500/61 en
+  10160/73, een segment korter dan een eenheid 0).
+- Gemeten (`logs/22-witness-ref-clingo.log`, documenten uit `TmsPerDayArithmeticWitnessTest.main`): de verifier laat
+  alle vijf door, ref geeft op alle vijf de verwachtingen van de getuige; clingo op A ook, en weigert de andere vier bij
+  naam (een eenheiddragende vermenigvuldigende operand; een quotiënt dat niet geheel is in de onbegrensde vorm; de
+  kalender op de emmerroute; een kalendergewicht van 298981 voorbij het bewaakte bereik).
+
+### Mutaties (niet gecommit; `logs/24-mutations.log`, `28-mutations.log`, `29-mut-readings.log`)
+
+| # | mutatie | uitkomst |
+|---|---|---|
+| M1 | verminderd met coalesceert links (`rsMin`) | rood: `PeriodArithmeticTest`, getuige A, B, C |
+| M2 | deling zonder sonde | rood: B en twee rijen van `PeriodArithmeticTest` |
+| M3 | ABS-deling zonder afkapping | rood: B, `PeriodArithmeticTest` |
+| M4 | percentage van met omgedraaide operanden | groen: een gelijkwaardige mutant (l/100 × r = r/100 × l); vervangen door M4b |
+| M4b | percentage van zonder deling door 100 (`rsMaal`) | rood: A, het percentage, `PeriodArithmeticTest` |
+| M5 | waarden tussen operatoren op 16 cijfers | rood: exacte waarden, het segment dat niet eindigt |
+| M6 | ongebonden parameter leest leeg | rood: EF-014 (getuige en eenheidstest) |
+| M7 | parametertijdlijn niet op de global | rood: C |
+| M8 | totaal zonder kalender | rood: C, kalendertests |
+| M9 | elk jaar 365 dagen | rood: C (A1 in 2028), kalendertests |
+| M10 | kalender nooit gekozen | rood: C, emmerroute |
+| M11 | gedeclareerde factor tussen de families niet geweigerd | rood: D |
+| M12 | vouw per lid neemt de kalender | rood: D |
+| M13 | emmerroute zonder kalender | rood: emmerroute |
+| M14 | segment dat niet eindigt zonder fout | rood: E, exacte waarden |
+| M15 | dagraster via de kalenderemmer | rood: `GridSentenceWitnessTest`, 5 rijen van de getuige |
+| M16 | factor van een product niet geweigerd | rood: D (306) |
+| M17 | herrekening genoemd bij de wortel | rood: `TmsPeriodArithmeticWitnessTest` E (306 noemt `'plus'`) |
+| M18 | macht als rekenen per periode | rood: D van beide getuigen |
+| M19 | parametervorm in de case niet gehouden | rood: de case-lezer van de parameter |
+| M20 | parametertijdlijn zonder invoergrens | rood: idem (EF-004) |
+| M21 | percentage neemt de eenheid links | rood: het percentage (`UnitConflict`) |
+| M22 | week in de maandfamilie (eigen tabel, vóór de rebase) | rood: emmerroute |
+| M22b | noemer per week niet door de kalender (na de rebase) | rood: emmerroute |
+| G1 | maal en gedeeld door niet als onbereikt genoteerd | `--readings` op `jutterswet-rekenen-per-dag`: `ERROR IllegalStateException: de lezing van /rules/rules/0/versions/0: de analyse noteerde geen term voor knoop 1 (…)` (gate 17 rood) |
+
+### Voorgestelde CONSTRUCTS-tekst (rij 11, in de zin van stap A)
+
+"the Drools backend refuses both (DROOLS-105) until step B" →
+
+> since step B (2026-11-03) both branches of the Drools backend carry them too (`PeriodArithmetic`: the values between
+> two operators exact, a time-dependent parameter's timeline on its global as a `List<Period>`, the calendar on every
+> route of the subject's own total and refused by name in the per-element fold over a set, DROOLS-228)
+
+### Voorgestelde tekst elders (beschermd of buiten mijn may-touch, voor de hoofdsessie)
+
+- `CLAUDE.md`, gate 12, na de zin over `timeline-arithmetic-by-rule`: "Since the card `timeline-arithmetic-per-period`
+  (step B, 2026-11-03) the lowering reads every operator of ch. 1.2 but the power per day over timelines, a
+  time-dependent parameter as a timeline operand (the case runner sets its timeline as a `List<Period>` on its
+  global), and the temporal total by the calendar between the day and the month family; the case reader reads a
+  timeline on the day grid." In de lijst van `RETIRED`: "since the card `timeline-arithmetic-per-period` (2026-11-03)
+  DROOLS-030, DROOLS-036, DROOLS-304 and DROOLS-307".
+- RS ch. 3.6, laatste zin van de executor note: "The Drools backend refuses the calendar integration by name
+  (DROOLS-228)." → "Both Drools branches integrate by the calendar on every route of the subject's own total (the
+  asOfDate bucket, a timeline the period arithmetic writes, the clip) and refuse it by name in the per-element fold
+  over a set (DROOLS-228)."
+- RS ch. 3.11, opsommingspunt van het rekenen per periode: "Executed by `ref` and the ASP backend, plus, min and the
+  sum per period without a condition also by both branches of the Drools backend" → "Executed by `ref` and the ASP
+  backend, and without a condition by both branches of the Drools backend".
+- RS ch. 3.12, rij "Timeline arithmetic beyond plus/minus": "both Drools branches refuse it by name (DROOLS-105)" →
+  "and both Drools branches". Rij "The temporal total across the day and the month family": "both Drools branches
+  refuse it by name (DROOLS-228)" → "both Drools branches on every route of the subject's own total, refusing it by
+  name in the per-element fold (DROOLS-228)".
+- RS ch. 2.4, de alinea over de onbegrensde vorm in Drools, na "a time-proportional part into a timeline of that form
+  (ch. 3.7)": "; a segment of the period arithmetic of ch. 3.4 into such a timeline whose value does not terminate
+  faults by name".
+- `corpus/golden/anchor/jutterswet-verzuimrente-dagen/NOTE.md` (beschermd) en `corpus/golden/jutterswet-rekenen-per-dag/NOTE.md`,
+  "Executors": "The Drools backend refuses … (DROOLS-105; gate 12's channel list) …" → "`ref`, the ASP backend and both
+  branches of the Drools backend play both cases" (resp. "the three cases").
+
+### Voorlopige besluiten
+
+- VB-C1 — De waarden tussen twee operatoren zijn exact (een interne record met een decimaal of een `Breuk`); alleen de
+  geschreven tijdlijn houdt decimalen, de segmentklasse `Period`. Zo geeft `(a gedeeld door 3) maal 3` in Drools wat
+  ref geeft.
+- VB-C2 — Een tijdlijndoel van de onbegrensde vorm wordt toegelaten; een segment dat niet eindigt faalt bij naam
+  (`ComputeFault` zonder EF-code), een grens van deze tak, zoals clingo een niet-gehele waarde in zo'n doel bij naam
+  weigert (VB-B11 van stap A). DROOLS-307 is daarmee zonder plek.
+- VB-C3 — Eenheden zonder herrekening, per knoop uit de declaraties (nooit de annotatie, ch. 2.10): de operanden van
+  een additieve operator in één eenheid, geen factor tussen de operanden van een product of quotiënt, het resultaat
+  in de eenheid van het doel; anders DROOLS-306, met de operand wiens eenheid het resultaat draagt in de zin. Een
+  percentage neemt de eenheid van zijn rechteroperand (ch. 2.6, ref `pct_of`).
+- VB-C4 — Een tijdsafhankelijke parameter: de case-lezer zet zijn tijdlijn als `List<Period>` op zijn global, gelezen op
+  het raster van de parameter; een parameter die de case niet bindt, faalt bij het lezen als operand met EF-014 en de
+  zin van ref. De scalaire lezing van zo'n parameter blijft DROOLS-269. Een scalaire parameter die de case niet bindt,
+  leest nog leeg (de bestaande `NOFAULT`-regel van gate 8, buiten deze kaart).
+- VB-C5 — De kalender op alle drie de routes van het eigen totaal; in de vouw per lid bij naam geweigerd (DROOLS-228,
+  geen golden). Zoals ref eerst de gedeclareerde factor naar de rastereenheid zoekt: een noemer van de klasse van de
+  rastereenheid blijft DROOLS-228, ook tussen de families (WF-009); de kalender vraagt geen gedeclareerde
+  rastereenheid, DROOLS-227 alleen waar ook de kalender niet integreert.
+- VB-C6 — De dagrastercontrole van de case-lezer: elke dag ligt erop; week en kwartaal en de emmerscalair op een
+  dagraster blijven geweigerd zoals in ref.
+
+### Open punten
+
+1. **ref geeft een gecoalesceerde lege operand van maal geen eenheid** (`Arith.coalesce0` → `Unitless`): per periode
+   krijgt het product van een eenheiddragende parameter en een tijdlijn met een gat in dat gat de eenheid van één
+   operand, en het schrijven of het totaal faalt. Gemeten op een eerste versie van getuige C (dagrente = de rentevoet
+   maal een `bedrag` in € als tijdlijn met gaten): ref `EVALUATION FAULT: incompatible units: EUR/jr vs 1/jr`
+   (`logs/10-witness-ref-clingo.log`); Drools rekent de statische eenheid en geeft 73,77 en 13,66. Getuige C gebruikt
+   daarom een scalair afdrachtbedrag, zoals het anker. Een kaart voor ref (en clingo nagaan); of de scalaire maal met
+   een lege operand hetzelfde doet, is niet gemeten.
+2. De distributie (`regelspraak-toolchain`) zet de globals van parameters zelf: een tijdsafhankelijke parameter is nu
+   een `List<Period>` (open grens `Period.OPEN_FROM`/`OPEN_TO`). Bij de pin-bump nalopen.
+3. De kalender in de vouw per lid over een verzameling: ref draagt hem, Drools weigert (DROOLS-228); geen golden.
+4. De tekstvoorstellen hierboven zijn niet aangebracht.
+
+### `make gates`
+
+Groen op `dd137f4fb` (gerebased op `b8fed38a0`): 17 gates en de drie bouwstappen rc=0, `after-run` rc=0, 370 s
+(`out/gates/20261103-140648/`):
+
+```
+01-self-contained rc=0 2s     02-ir-schema rc=0 202s   04-case-schema rc=0 7s   03-verifier rc=0 38s
+05-oracle rc=0 24s            06-clingo rc=0 300s      07-noop rc=0 13s         08-red rc=0 141s
+09-catala rc=0 6s             10-regelspraak rc=0 250s 11-toka-parity rc=0 255s 12-drools rc=0 365s
+13-reftype rc=0 301s          14-flogic rc=0 2s        15-graph rc=0 47s        16-scenario rc=0 39s
+17-readings rc=0 246s         after-run rc=0 1s        end 2026-11-03 14:12:58 370s red=0
+```
+
+Gemeten: gate 12 `played matches the pinned 322`, de DRL-tekst-tak 322, kanaalvloer 50 met naam, JUnit 1804 tests
+(nul skips, floor 1573); gate 8 Drools-been 44 fault-gepind, 19 niet-gedragen, 17 EXCLUDE met code (`check-red.sh` in
+deze stap niet aangeraakt); gate 17 322 goldens en 911 cases op beide takken vergeleken, 0 afwijkingen; `check-drools-codes` 308 codes, 18
+retired. De kaart blijft in `doing/`.
