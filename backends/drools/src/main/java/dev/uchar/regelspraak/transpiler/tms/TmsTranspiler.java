@@ -6033,7 +6033,7 @@ public final class TmsTranspiler {
         Unit gu = withoutGridUnit == null ? TimeCalculation.gridUnit(member.time(), model) : null;
         boolean declaredFactor = gu != null && e.negativeFactors().stream()
                 .anyMatch(f -> f.quantityClass().equals(gu.factors().get(0).quantityClass()));
-        String calendar = declaredFactor ? null : calendarDenominator(e, grid);
+        String calendar = declaredFactor ? null : calendarDenominator(e, member.time());
         if (calendar != null) return calendar;
         if (withoutGridUnit != null)
             throw new Refusal(DroolsCode.TEMPORAL_TOTAL_RATE_UNIT.reason("description", description, "member", member.name(), "unit", e.rendering(), "reason", withoutGridUnit));
@@ -6041,34 +6041,24 @@ public final class TmsTranspiler {
     }
 
     /** The time unit, as a granularity's name, of the first negative factor of {@code e} that the calendar table spells
-     *  as a unit of the other family than the grid unit {@code grid} ({@link TimeCalculation#gridChronoUnit}): dag and
-     *  week count in days, maand, kwartaal and jaar in months (RUNTIME-SEMANTICS ch. 3.6). Null where it has none; a
-     *  unit below the day and one outside the table belong to no family. */
-    private static String calendarDenominator(Unit e, String grid) {
+     *  as a unit of the other family than the grid of {@code g} ({@link TimeCalculation#calendarFamily}): dag and week
+     *  count in days, maand, kwartaal and jaar in months (RUNTIME-SEMANTICS ch. 3.6). Null where it has none; a unit below
+     *  the day and one outside the table belong to no family. */
+    private static String calendarDenominator(Unit e, RegelSpraakModel.Granularity g) {
         for (Unit.Factor f : e.negativeFactors()) {
-            String unit = TimeCalculation.chronoUnit(new Unit(f.abbreviation(), f.system(), f.canonical(), f.factorToCanonical()));
-            String family = calendarFamily(unit);
-            if (family != null && !family.equals(calendarFamily(grid))) return switch (unit) {
-                case "DAYS" -> "DAG";
-                case "WEEKS" -> "WEEK";
-                case "MONTHS" -> "MAAND";
-                case "KWARTAAL" -> "KWARTAAL";
-                case "YEARS" -> "JAAR";
-                default -> throw new IllegalStateException("geen kalendereenheid: " + unit);
-            };
+            TimeCalculation.CalendarFamily family = TimeCalculation.calendarFamily(f.abbreviation());
+            if (family != null && family != TimeCalculation.calendarFamily(g))
+                return switch (TimeCalculation.chronoUnit(new Unit(f.abbreviation(), f.system(), f.canonical(),
+                        f.factorToCanonical()))) {
+                    case "DAYS" -> "DAG";
+                    case "WEEKS" -> "WEEK";
+                    case "MONTHS" -> "MAAND";
+                    case "KWARTAAL" -> "KWARTAAL";
+                    case "YEARS" -> "JAAR";
+                    default -> throw new IllegalStateException("geen kalendereenheid: " + f.abbreviation());
+                };
         }
         return null;
-    }
-
-    /** The family of the calendar of a time unit as {@link TimeCalculation#chronoUnit} names it: "dag" for the units that
-     *  count in days, "maand" for those that count in months, null for any other. */
-    private static String calendarFamily(String unit) {
-        if (unit == null) return null;
-        return switch (unit) {
-            case "DAYS", "WEEKS" -> "dag";
-            case "MONTHS", "KWARTAAL", "YEARS" -> "maand";
-            default -> null;
-        };
     }
 
     /**
