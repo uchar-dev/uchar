@@ -42,7 +42,7 @@ import java.util.Objects;
  *   <li>a duration function ({@code TIJDSDUUR} / {@code ABSOLUTE_TIJDSDUUR}): the node type's unit is the
  *       OPERATOR's parameter ("de tijdsduur van A tot B in jaren", WF-038), not a derived result;</li>
  *   <li>ch. 2.10's FOURTH class, which says something weaker: every POSITION whose result unit v0 does not
- *       DERIVE (a power, a percentage-of, a root, an absolute value, the date/time extractors)
+ *       DERIVE (a power, a root, an absolute value, the date/time extractors)
  *       keeps the annotation because there is nothing to put in its place — not because the annotation is the
  *       source. A position, not a node kind: {@code TOT_DE_MACHT} and {@code PLUS} are both {@code Binary}
  *       and only one of them derives, which is why the {@code switch}es below dispatch on the OP and the
@@ -230,8 +230,8 @@ public final class EffectiveUnit {
         if (e instanceof Expr.Clamp bg) return unit(bg.base(), environment, depth + 1);
         if (e instanceof Expr.Binary b) {
             // §4 / ch. 2.6: an additive result carries the left unit and a unitless side adopts the other; a product
-            // and a quotient are the algebra of the frontend's model, which has one author for both.
-            // Every other operator (power, percentage-of) has no v0 join rule here — annotation.
+            // and a quotient are the algebra of the frontend's model, which has one author for both; a percentage-of
+            // carries its right operand's unit (rule 7). A power has no v0 join rule here — annotation.
             return switch (b.op()) {
                 case PLUS, MIN, VERMINDERD_MET -> {
                     Unit l = unit(b.left(), environment, depth + 1);
@@ -240,6 +240,7 @@ public final class EffectiveUnit {
                 case MAAL -> Unit.times(unit(b.left(), environment, depth + 1), unit(b.right(), environment, depth + 1));
                 case GEDEELD_DOOR, GEDEELD_DOOR_ABS -> Unit.divide(unit(b.left(), environment, depth + 1),
                                                                    unit(b.right(), environment, depth + 1));
+                case PERCENTAGE_VAN -> unit(b.right(), environment, depth + 1);
                 default -> annotation;
             };
         }

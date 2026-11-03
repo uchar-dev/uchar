@@ -165,6 +165,17 @@ class EffectiveUnitWitnessTest {
                 lyingRef(ot, "prijs"), one, num(TON), source())), "€ gedeeld door een getal is €");
     }
 
+    @Test void a_percentage_of_carries_the_unit_of_its_right_operand() {
+        // ch. 2.6 rule 7: "10% van de prijs" is in €, whatever its annotation claims (here tonnes)
+        ObjectType ot = vracht();
+        Expr.Literal ten = new Expr.Literal("10", new Datatype.Percentage(false, 0, null),
+                source());
+        assertEquals(EUR, bare().unitOf(new Expr.Binary(Expr.BinOp.PERCENTAGE_VAN, ten, lyingRef(ot, "prijs"), num(TON),
+                source())), "een percentage van € is €");
+        assertEquals(EUR_PER_JR, bare().unitOf(new Expr.Binary(Expr.BinOp.PERCENTAGE_VAN, ten, lyingRef(ot, "tarief"),
+                num(TON), source())), "een percentage van €/jr is €/jr");
+    }
+
     @Test void a_reciprocal_falls_away_against_its_unit_and_makes_a_rate_of_another() {
         ObjectType ot = vracht();
         ot.attributes.put("tempo", num(Unit.divide(null, JR)));
