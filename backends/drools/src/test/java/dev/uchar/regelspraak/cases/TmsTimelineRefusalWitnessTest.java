@@ -66,18 +66,19 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * target: temporal writes are not implemented", and the ASP runner, "a temporal target takes only the ch. 3.7 pro-rata
  * or ch. 3.8 day-count shape …".
  * <li><b>A rate whose denominator is not the unit of the grid</b>: 10 EUR/jr per month through 2024, in a document
- * that declares jr as twelve mnd, totals 10 EUR (ch. 3.6, the explicit rate operand); the reference interpreter
- * answers 10, the ASP runner refuses the factor 12, and the DRL-text branch, which weighs the helper's whole months
- * unit-blind, answers "verwacht 10, werkelijk 120", the divergence the executor note of ch. 3.6 records.
+ * that declares jr as twelve mnd, totals 10 EUR (ch. 3.6, the explicit rate operand), rounded towards zero to the 0
+ * decimals of the target, since the restatement divides by twelve and the precision gate takes such a total only
+ * through a rounding (WF-023); the reference interpreter answers 10, the ASP runner refuses the factor 12, and the
+ * DRL-text branch refuses it in the same words as the exec-model branch.
  * <li><b>A rate over a grid whose unit the document does not declare as one unit</b>: the same 10 EUR/mnd through 2024
  * in a document whose only unit system is Munt, the denominator written by its abbreviation alone, and in one where the
  * systems Tijd and Kalender both declare an mnd, the one canonical, the other thirty dg. The reference interpreter
  * refuses both, "the temporal total of a EUR/mnd value: the document declares no mnd unit, so this timeline's grid has
  * no unit to integrate against (ch. 3.6)" and "… the document declares 2 different mnd units, so this timeline's grid
  * has no single unit to integrate against (ch. 3.6)", the ASP runner with the same reason after a head of its own,
- * and the DRL-text branch plays 120. The case holds 120, the total where the system Tijd alone declares mnd: the
- * control {@link #a_rate_over_a_declared_grid_unit_plays}, which the reference interpreter and the ASP
- * runner answer as well.
+ * and the DRL-text branch in the same words as the exec-model branch. The case holds 120, the total where the system
+ * Tijd alone declares mnd: the control {@link #a_rate_over_a_declared_grid_unit_plays}, which the reference
+ * interpreter and the ASP runner answer as well.
  * <li><b>The total without a clip over a timeline a rule derives</b>: the reference interpreter refuses it, "the
  * temporal total of "maanddeel" over a case-supplied full timeline is not exercised by any corpus case; the
  * asOfDate-bucket convention carries the total", and the ASP runner leaves the total leeg.
@@ -87,27 +88,20 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * ({@code TmsStartPointWitnessTest}).
  * <li><b>A parameter on a timeline</b>, read as one value: the reference interpreter refuses it, "parameter
  * "penningbedrag" is granular; reading a vintage in a rule is ch. 8 scope", and so does the ASP runner.
- * <li><b>A dimensioned attribute on a timeline</b>, read by a dimension cell, "zijn omzet in k2", and by the total of
- * its timeline, "het totaal van zijn omzet". The branch reads a dimensioned attribute only per cell, in a dimension
- * cell or a fold over a dimension selection, and refuses one that lies on a timeline there; every other read or write
- * of a dimensioned attribute, the total among them, it refuses as read or written outside those two. No golden has a
- * dimensioned attribute on a timeline, and no case reader carries dimensioned input, so the case gives no omzet and
- * both reads end leeg. The reference interpreter declines the cell, "expression kind not implemented in this card",
- * and the ASP runner, "expression kind not translated (no corpus case exercises it)"; both answer the total leeg at
- * the evaluation date 2024-06-01. The exec-model branch plays both; the DRL-text branch plays the cell, and the
- * Drools compiler rejects its text of the total.
  * </ul>
  *
- * <p><b>Measured</b> 2026-10-09 on the documents of {@link #main}: the verifier passes all fifteen. <b>Red</b> on
- * b9f77aa7, the code before timelines were carried: every row on the refusal of the timeline as outside the trial,
- * "… — het tijdsafhankelijke attribuut 'jaardeel' van Jutter: tijdlijnen zijn buiten de proef van de
- * truth-maintenance-tak", "… — een Aggregation total over de eigen tijdlijn in een waarde ('het totaal van zijn
- * vergoeding'): tijdlijnen zijn buiten de proef …", "… startpuntbepaling: boekjaar — een StartPointDetermination:
- * tijdlijnen zijn buiten de proef …", "… — de tijdsafhankelijke parameter 'penningbedrag': tijdlijnen zijn buiten de
- * proef …". <b>Red</b> on 2e09716a, before the grid's unit was asked: "kale-noemer: gebouwd, twee-rastereenheden: gebouwd".
- * <b>Red</b> on 58614e85, before the two refusals of a dimensioned attribute named their form: "… — het
- * tijdsafhankelijke attribuut 'omzet' van Jutter: tijdlijnen zijn buiten de proef van de truth-maintenance-tak" and
- * "… — het gedimensioneerde attribuut 'omzet' van Jutter: buiten de proef van de truth-maintenance-tak".
+ * <p>A dimensioned attribute on a timeline has no row: WF-125 refuses a dimension beside a timeline on one attribute
+ * and a read or a write of a dimensioned attribute outside a cell, so the branch's refusals of those forms
+ * (DROOLS-278 and DROOLS-275) are reached only by a document the verifier refuses.
+ *
+ * <p><b>Measured</b> 2026-11-03 on the documents of {@link #main}: the verifier passes all twelve. The suite does not
+ * run the verifier, which is a program outside the jar. <b>Red</b> on b9f77aa7, the code before timelines were
+ * carried: every row on the refusal of the timeline as outside the trial, "… — het tijdsafhankelijke attribuut
+ * 'jaardeel' van Jutter: tijdlijnen zijn buiten de proef van de truth-maintenance-tak", "… — een Aggregation total
+ * over de eigen tijdlijn in een waarde ('het totaal van zijn vergoeding'): tijdlijnen zijn buiten de proef …",
+ * "… startpuntbepaling: boekjaar — een StartPointDetermination: tijdlijnen zijn buiten de proef …", "… — de
+ * tijdsafhankelijke parameter 'penningbedrag': tijdlijnen zijn buiten de proef …". <b>Red</b> on 2e09716a, before
+ * the grid's unit was asked: "kale-noemer: gebouwd, twee-rastereenheden: gebouwd".
  */
 class TmsTimelineRefusalWitnessTest {
 
@@ -210,7 +204,8 @@ class TmsTimelineRefusalWitnessTest {
                         + " zijn vondsten'): deze tak draagt deze vorm nog niet (RUNTIME-SEMANTICS ch."
                         + " 3.4, 3.5, 3.11); geen golden met cases schrijft er een")));
         // a rate whose denominator is not the unit of the grid: 10 EUR/jr over the twelve months of 2024
-        out.add(new Row("vreemde-noemer", TmsTimelineDocuments.ir(MODEL_RATE, List.of(WACHTSOM_RATE), List.of()),
+        out.add(new Row("vreemde-noemer", TmsTimelineDocuments.ir(MODEL_RATE, List.of(WACHTSOM_RATE_ROUNDED),
+                        List.of()),
                 rateCase("10"),
                 List.of("transpiler SKIP: regel: wachtsom — een totaal over de eigen tijdlijn ('het totaal van zijn"
                         + " vergoeding') over 'vergoeding' met het tarief EUR/jr op een raster van MAAND: de noemer"
@@ -290,25 +285,6 @@ class TmsTimelineRefusalWitnessTest {
                 List.of("transpiler SKIP: regel: opbrengst — de tijdsafhankelijke parameter 'penningbedrag': deze"
                         + " tak draagt deze vorm nog niet; de goldens met cases die er een lezen, doen"
                         + " dat in een TemporalRead, die de lader voor alle takken weigert")));
-        // a dimensioned attribute on a timeline, read by a dimension cell and by the total of its timeline; the case
-        // gives no omzet, since no case reader carries dimensioned input
-        out.add(new Row("dimensiecel-op-tijdlijn", TmsTimelineDocuments.ir(MODEL_DIMENSION, List.of(computingRule(
-                        "tweede kwartaal", "BEREKENING", "Jutter", "tweede kwartaal", "{\"node\":\"DimensionCellRead\","
-                                + "\"attribute\":" + ownRead("omzet", "Jutter") + ",\"labels\":[\"k2\"],\"source\":"
-                                + "{\"snippet\":\"zijn omzet in k2\"}}", "null")), List.of()),
-                TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of(), List.of(), Map.of(),
-                        Map.of())), List.of(value("J1", "tweede kwartaal", null))),
-                List.of("transpiler SKIP: regel: tweede kwartaal — het gedimensioneerde attribuut 'omzet' van"
-                        + " Jutter op een tijdlijn: deze tak draagt deze vorm nog niet; geen golden met"
-                        + " cases heeft er een")));
-        out.add(new Row("totaal-over-dimensies", TmsTimelineDocuments.ir(MODEL_DIMENSION, List.of(computingRule(
-                        "omzetsom", "BEREKENING", "Jutter", "omzetsom", ownTotal("omzet", "Jutter", "null"), "null")),
-                        List.of()),
-                TmsTimelineDocuments.caseDocument("2024-06-01", List.of(instance("J1", "Jutter", Map.of(), List.of(),
-                        Map.of(), Map.of())), List.of(value("J1", "omzetsom", null))),
-                List.of("transpiler SKIP: regel: omzetsom — het gedimensioneerde attribuut 'omzet' van Jutter,"
-                        + " gelezen of geschreven buiten een DimensionCellRead of een vouw over een dimensieselectie:"
-                        + " deze tak draagt deze vorm nog niet; geen golden met cases heeft het")));
         return out;
     }
 
@@ -354,13 +330,22 @@ class TmsTimelineRefusalWitnessTest {
                 List.of(timeCharacteristic("wachtplichtig", "month")))), List.of(), List.of(), systems);
     }
 
+    /** "het totaal van zijn vergoeding gedurende de tijd dat hij wachtplichtig is", in EUR. */
+    static final String TOTAL_RATE = "{\"node\":\"Aggregation\",\"kind\":\"total\",\"arguments\":["
+            + ownRead("vergoeding", "Jutter") + "],\"elementType\":\"Jutter\",\"filter\":"
+            + check("wachtplichtig", false) + ",\"type\":" + TmsDocuments.numberType(true, 0, EUR)
+            + ",\"source\":{\"snippet\":\"het totaal van zijn vergoeding\"}}";
+
     /** "De wachtsom van een Jutter moet berekend worden als het totaal van zijn vergoeding gedurende de tijd dat hij
      *  wachtplichtig is", in EUR. */
-    static final String WACHTSOM_RATE = computingRule("wachtsom", "BEREKENING", "Jutter", "wachtsom",
-            "{\"node\":\"Aggregation\",\"kind\":\"total\",\"arguments\":[" + ownRead("vergoeding", "Jutter")
-                    + "],\"elementType\":\"Jutter\",\"filter\":" + check("wachtplichtig", false) + ",\"type\":"
-                    + TmsDocuments.numberType(true, 0, EUR) + ",\"source\":{\"snippet\":\"het totaal van zijn"
-                    + " vergoeding\"}}", "null");
+    static final String WACHTSOM_RATE = computingRule("wachtsom", "BEREKENING", "Jutter", "wachtsom", TOTAL_RATE,
+            "null");
+
+    /** The same total "afgerond op 0 decimalen" towards zero: the restatement of EUR/jr into the month grid's unit
+     *  divides by twelve, so the total without a rounding has no finite precision bound, and a target of 0 decimals
+     *  takes it only through a rounding (WF-023, RUNTIME-SEMANTICS ch. 2.3). */
+    static final String WACHTSOM_RATE_ROUNDED = computingRule("wachtsom", "BEREKENING", "Jutter", "wachtsom",
+            TmsDocuments.rounding(TOTAL_RATE, "towardZero", 0, TmsDocuments.numberType(true, 0, EUR)), "null");
 
     /** J1 with a vergoeding of 10 through 2024 and wachtplichtig through 2024, its wachtsom expected {@code expected}. */
     static JsonNode rateCase(String expected) throws Exception {
@@ -388,18 +373,6 @@ class TmsTimelineRefusalWitnessTest {
             // the model builder declares no named timeline; this row needs the one its member lies on
             .replace("\"timelines\":[]", "\"timelines\":[{\"node\":\"Timeline\",\"name\":\"boekjaar\","
                     + "\"variableStart\":true,\"granularity\":\"year\",\"count\":1}]");
-
-    // ---------------- the model of the rows of a dimensioned attribute on a timeline ----------------
-
-    /** A Jutter with an omzet per kwartaal on a month grid, and the two targets that read it. */
-    static final String MODEL_DIMENSION = TmsDocuments.model(List.of(objectType("Jutter", List.of(
-                    "{\"node\":\"Attribute\",\"name\":\"omzet\",\"datatype\":" + WHOLE + ",\"dimensions\":"
-                            + "[\"kwartaal\"],\"timeline\":" + TmsTimelineDocuments.facet("month", null) + "}",
-                    TmsDocuments.attribute("tweede kwartaal", WHOLE), TmsDocuments.attribute("omzetsom", WHOLE)),
-            List.of())), List.of())
-            // the model builder declares no dimension; these rows need the one the omzet lies on
-            .replace("\"dimensions\":[]", "\"dimensions\":[{\"node\":\"Dimension\",\"name\":\"kwartaal\",\"plural\":"
-                    + "\"kwartalen\",\"preposition\":\"in\",\"labels\":[\"k1\",\"k2\",\"k3\",\"k4\"]}]");
 
     /** The control of the rows of the grid's unit: the same rate over a document whose system Tijd declares mnd, the
      *  month grid's unit, builds, and its total integrates twelve months of 10 EUR/mnd to 120 EUR, as the reference
