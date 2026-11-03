@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * A of the anchor case (RUNTIME-SEMANTICS ch. 3.8, 3.10, 3.11; spec/proposals/IMPLICIT-TIME.md points 6 and 7), on both
  * branches of the lowering with truth maintenance and in every order of the rules of each document. The documents are
  * the suite fixtures that the reference interpreter and the ASP backend share
- * ({@code ref/test/fixtures/conditions-per-period}), the goldens that carry the forms, and one document of this
- * backend's own resources; their expectations are the fixtures' and the goldens', computed by hand.
+ * ({@code ref/test/fixtures/conditions-per-period}, {@code ref/test/fixtures/period-units/sum-of-rate}) and the goldens
+ * that carry the forms; their expectations are the fixtures' and the goldens', computed by hand.
  *
  * <ul>
  * <li>{@code kenmerk-venster}: "Een Afdracht is rentedragend van zijn vervaldatum plus 1 dg tot en met zijn
@@ -38,8 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the rentedagen whose union the maandrente reads, the day count behind a variable with its day-kind test and its unit,
  * the rounding of the period arithmetic per segment and the total of a timeline whose bounds rules derive: 141,67 € and
  * 72,22 €.
- * <li>{@code period-sum-rate}: the sum per period of a rate in €/dg over the members of a set, maal 2, in a target in
- * €/dg: 20, 30 and 10 €/dg per period, the sum in its members' unit (ch. 3.5).
+ * <li>{@code sum-of-rate}: the sum per period of a rate in €/dg over the members of a set, maal 2 and verminderd met an
+ * own rate, in a target in €/dg: 0 until 2024-01-01, 20, 30 and 10 €/dg per period and 0 from 2024-03-01 for the
+ * first, 9, 14 and 4 for the second, the sum in its members' unit (ch. 3.5).
  * </ul>
  *
  * <p>The window of {@code corpus/red/time-window-timeline-characteristic-open} is open at its end, so the periods of
@@ -57,7 +58,7 @@ class TmsCharacteristicWindowWitnessTest {
     private static final Path FIXTURES = Path.of("..", "..", "ref", "test", "fixtures", "conditions-per-period");
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
     private static final Path RED = Path.of("..", "..", "corpus", "red");
-    private static final Path SUM_RATE = Path.of("src", "test", "resources", "period-sum-rate");
+    private static final Path SUM_RATE = Path.of("..", "..", "ref", "test", "fixtures", "period-units", "sum-of-rate");
 
     @TempDir Path tmp;
 
