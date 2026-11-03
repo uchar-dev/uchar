@@ -1493,23 +1493,40 @@ An empty fold derives no effectiveness and the input timeline stands
 **whole**, never mixed per bucket (the maintainer-ratified
 whole-timeline reading, RS ch. 7.8).
 
-**Period arithmetic** (plus, min and the sum per period, ch. 3.4/3.5, as
-the value of a rule on a temporal attribute target): one cut set per
-subject for the whole value, `paN_cut(S,X)` — every bound of every
-timeline the value reads (the subject's own, and those of the set
-members a sum reaches over its range) and `#inf`, `#sup` — and its
+**Period arithmetic** (an operator of ch. 1.2 other than the power, read
+per day, and the sum per period, ch. 3.4/3.5, as the value of a rule on a
+temporal attribute target): one cut set per subject for the whole value,
+`paN_cut(S,X)` — every bound of every timeline the value reads (the
+subject's own, those of the set members a sum reaches over its range, and
+a time-dependent parameter's `param_tl/4`) and `#inf`, `#sup` — and its
 periods, the pairs of consecutive cuts,
 
     paN_per(S,X,Y) :- paN_cut(S,X), paN_cut(S,Y), X < Y,
                       #count { Z : paN_cut(S,Z), X < Z, Z < Y } = 0.
 
 Each operand is a predicate over (S, X, V), its value at the start X of a
-period where it is filled: an own temporal attribute
-`tl(S,b,F,T,W), F <= X, X < T`; a scalar operand the term `expr_term`
-gives it, on every period; the sum over the members `#sum { W,M : … }`
-under an existence atom, and its fallback where no member is filled.
-Plus and min coalesce a leeg operand to 0 (`…_z`, `not …_d`) and combine
-per period, under the range fence of S6. The head writes the maximal
+period where it is filled, at the scale of the operand: an own temporal
+attribute `tl(S,b,F,T,W), F <= X, X < T`; a time-dependent parameter
+`param_tl(p,F,T,W), F <= X, X < T` (a case without its timeline is
+EF-014, as for an unbound parameter); a scalar operand the term
+`expr_term` gives it, on every period; the sum over the members
+`#sum { W,M : … }` under an existence atom, and its fallback where no
+member is filled. Every node keeps its own scale, as `expr_term` does
+(S6): plus, min and verminderd met harmonise their operands to the larger
+scale, maal multiplies the scales (with the unit factor of
+`product_factor`), percentage van multiplies them and 100, and a quotient
+lands at the larger of its operands' scales and the target's, the abs
+variant at 10^5 truncated toward zero. Each operator applies its ch. 1.2
+empty rule per period: plus, min, maal and percentage van coalesce a leeg
+operand to 0 (`…_z`, `not …_d`), verminderd met only its right; a division
+writes 0 where the dividend is leeg, and where it is filled over a leeg
+divisor or a divisor 0 derives no value and deposits on the channel of S13
+with EF-031 or EF-005, keyed on the rule and the subject, so a deposit in
+many periods is one fact; a quotient that is not whole at its scale is the
+named witness of the unbounded form (S2) or of a nested division
+(CLINGO-031). The root restates once to the target's scale, a surplus that
+does not divide away being the EF-006 witness `non-exact period arithmetic
+value …`. Every combination stands under the range fence of S6. The head writes the maximal
 runs: a cut between two periods of one value joins them (`paN_join`),
 and `tl(S,a,X,Y,V)` spans a run from a start that is no join to the first
 end after it. A period whose value is leeg derives no `paN_val`, so it is
@@ -1518,17 +1535,45 @@ cut-merges, so the value of every day is ref's, and the maximal runs are
 ref's coalesced segments. On a standing target the arm of ch. 7.8 above
 applies with `paN_eff`. The subject's own total of such a target is a
 `#sum { W*N,V,T : tl(S,a,V,T,W), ptN_wu(V,T,N) }` over the case's finite
-endpoints with the open-bound guard above; where the timeline reads a
-timeline that another producer derives (a pro-rata part or a day count),
-its bounds are no case data and the total is refused by name.
+endpoints — of the instances' and the parameters' timelines — with the
+open-bound guard above; where the timeline reads a timeline that another
+producer derives (a pro-rata part or a day count), its bounds are no case
+data and the total is refused by name. The gedurende-clipped total of such
+a target lays its whole-unit facts over the same endpoints and refuses the
+same derived bounds.
+
+**The calendar** (ch. 3.6): a rate whose denominator is a calendar unit of
+the other family than the grid's (`€/jr` over days, `€/dg` over months)
+weighs a day by 1/len of the calendar month, quarter or year it lies in,
+1 for a day and 1/7 for a week. The weights of the spans between the
+endpoints share the denominator D, the least common multiple of the
+lengths the span meets (365 within one common year, 133590 across a common
+and a leap year, 1 for `dg`, 7 for `wk`): the fact `clN_wu(V,T,N)` carries
+D times the span's measure in the denominator's unit, a whole number, and
+the total `#sum { W*N,… }` is at the scale of its value times D. For an own
+characteristic as the clip's condition, whose true periods hold every
+clipped fragment, the facts are laid over the span of those periods only,
+which keeps D and the weights small. The range fence on W is
+2^31 − 1 over the weight of that span, which bounds the sum of the weights
+of disjoint fragments. No decimal scale holds a value with such a
+denominator, so the translator carries this total only as the base of a
+rounding, marked for that base alone (`calendar_rounding`); the rounding
+takes `t·10^d/(scale·D)` to a whole number by the mode's integer formula,
+the negative range fenced as in S6. A calendar total elsewhere is refused
+by name (`backends/clingo/README.md` [V6]), and so is a declared factor
+between the two families met in the integration (WF-009). Witness: the
+anchor `jutterswet-verzuimrente-dagen`, D = 365 in case 1 and 366 in
+case 2.
 
 Witnesses: point reads and vintages by `jutterswet-aanmeldquotum`,
 `jutterswet-penningvintage`; pro-rata by `jutterswet-borgdeel`,
 `jutterswet-bakenmeester`, `synth2-prorata-breed`; day count by
 `jutterswet-dagentelling` (the RS ch. 3.8 worked example verbatim);
 period arithmetic and open bounds by `jutterswet-maandloon` and the red
-case `jutterswet-totaal-open-segment`; the WF-049/056/058 negatiefs pin
-the shapes.
+case `jutterswet-totaal-open-segment`; the other operators per day by
+`jutterswet-rekenen-per-dag`; a time-dependent parameter as an operand and
+the calendar by `anchor/jutterswet-verzuimrente-dagen`; the
+WF-049/056/058 negatiefs pin the shapes.
 
 ### S10. Defeasibility and standing
 

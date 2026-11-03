@@ -238,9 +238,10 @@ enforces. That gap is a recorded flank, not a claim of agreement — the
 precision half above is where the two DO agree.
 
 **Timelines** carry *two different* empty rules, mirrored as found: the
-per-period arithmetic of §5.1.4 coalesces an empty period to 0, while the
-temporal sum of §5.8.2 skips empty operands and yields an empty period only
-when *all* operands are empty there (fallback clause applicable). Worked
+per-period arithmetic of §5.1.4 applies the rule of each operator in the
+table above per day — plus and min coalesce an empty period to 0 (ch. 3.4) —
+while the temporal sum of §5.8.2 skips empty operands and yields an empty
+period only when *all* operands are empty there (fallback clause applicable). Worked
 example — in a period where A = leeg and B = 4: §5.1.4 A + B = 4; §5.8.2
 som(A, B) = 4; in a period where both are leeg: §5.1.4 gives 0, §5.8.2
 gives leeg (or the fallback). The two rules coexist in v0; ch. 3 names
@@ -429,7 +430,7 @@ This is the rule for a literal operand and for a unit conversion.
 | percentage van | left + 2 + right (the left operand is divided by 100); with a literal left operand L, the factor rule over the right operand with L/100; with a literal right operand R, the factor rule over left + 2 with R |
 | tot de macht, wortel, tijdsevenredig deel | ∞ (the language demands a rounding after a power and a root) |
 | minimum, maximum, eerste, laatste, som, een begrenzing, the branches of a conditional | the highest of the operands (a fallback and a bound included), restated into one unit as for plus |
-| totaal over a timeline | its operand, restated where the period of the rate is not the grid's own unit (ch. 2.6, rule 8) |
+| totaal over a timeline | its operand, restated where the period of the rate is not the grid's own unit (ch. 2.6, rule 8); ∞ where the calendar integrates (ch. 3.6) — a rate per month, quarter or year over a grid of days or weeks, or per week over a grid of months, quarters or years — and the operand's own where a rate per day lies over such a grid, which weighs it by whole days |
 | aantal, tijdsduur, a date part | 0 |
 | absolute waarde | its operand |
 | afgerond op n | n |
@@ -492,11 +493,14 @@ an explicit rounding. At assignment:
    consequence and an allocation, whose share it bounds by the rounding of
    the allocation or else by the declaration of its pot: the division by
    the recipients is not typed (as in ALEF), so a share that does not fit
-   stays the evaluation fault of point 1. A target with a timeline stands
-   outside the gate: no executor carries a rounding around the pro-rata
-   write of ch. 3.7, the one computed write such a target takes (ch. 2.8). A
-   value whose bound nothing declares (an `Unresolved`, an unbound variable)
-   defers, as WF-023 does. Examples (the frontend gives the same verdicts on
+   stays the evaluation fault of point 1. A rule on a target with a timeline
+   stands in the gate: the value of each segment is the value of the
+   expression on its period (ch. 3.4), so the bound holds per segment (a
+   quotient by a timeline into a whole timeline is refused,
+   `corpus/negative/wf023-precision-timeline-target`). The pro-rata write of
+   ch. 3.7 stands outside it: no executor carries a rounding around that
+   write (ch. 2.8). A value whose bound nothing declares (an `Unresolved`, an
+   unbound variable) defers, as WF-023 does. Examples (the frontend gives the same verdicts on
    the same sources, RGS-372 and RGS-370, and RGS-340 and RGS-371 for an
    allocation): "zijn opbrengst gedeeld door zijn aantal deelnemers" into a
    whole aandeel is refused (∞ > 0) and admitted with "rekenkundig afgerond
@@ -658,8 +662,11 @@ is bare; half a conversion pair is WF-092 and a fault in an executor. The
    of its class, into which the grid unit restates. `€/mnd` over months is `€`,
    `€/dg^2` over days is `€/dg`, `€/m/mnd` over months is `€/m`, `€/mnd/jr` over months
    is `€/jr`, `€/jr/m` over months with `jr = 12 mnd` is `€/m` at 1/12 of the value per
-   month. A value with no negative factor of that class is a fault that names both
-   units, in every executor. A reader that claims the unit of a fold without a grid in
+   month. Between the day family and the month family of the calendar the factor of
+   the denominator rises too, and the value takes the measure the calendar gives the
+   period in that unit (ch. 3.6, the calendar): `€/jr` over days is `€`, a day weighing
+   1/365 or 1/366. A value with neither is a fault that names both units, in every
+   executor. A reader that claims the unit of a fold without a grid in
    hand takes the one negative factor, and a unit with more than one stands unchanged.
    Worked examples, absolute, `jutterswet-kadetarief`: 12 `€/m/mnd` over three months
    is 36 `€/m`.
@@ -1073,7 +1080,10 @@ two distinct jobs, with different v0 support:
    grammatically restricted to "de maand"/"het jaar", and v0 implements
    exactly that. Calendar bucketing by day, week, or quarter is not
    defined (ch. 3.12): a member declared on the calendar's day, week or
-   quarter grid has no bucket, and every reader of one refuses it. A fixed
+   quarter grid has no bucket, and every reader of one refuses it. A case
+   timeline on the day grid needs none: every day sits on that grid, so its
+   segment boundaries are checked against nothing, and its total weighs whole
+   days (ch. 3.6). A fixed
    start point (below) lays periods of its own on a week, month, quarter or
    year grid, and they are read where a bucket is read.
 
@@ -1235,31 +1245,55 @@ operand stays OPEN with the case format.
 
 ### 3.4 Cut-merge arithmetic — the period-coalescing rule (§5.1.4)
 
-Binary arithmetic over two timelines `a ⊕ b` (⊕ is plus or min) is
-defined per period of **all time** over the **cut set** (knip): the
-sorted union of both operands' segment boundaries and the two open
-bounds.
+Binary arithmetic over two timelines `a ⊕ b` is defined per period of
+**all time** over the **cut set** (knip): the sorted union of both
+operands' segment boundaries and the two open bounds. ⊕ is an operator of
+the arithmetic table of ch. 1.2 other than the power — plus, min,
+verminderd met, maal, gedeeld door in both variants, percentage van — and
+it is read **per day** with its own empty rule of that table (§5.1.1,
+§5.1.4; `spec/proposals/IMPLICIT-TIME.md` point 1, maintainer decision
+2026-11-03):
 
 ```
 cuts(a, b)  =  sort ( { −∞, +∞ } ∪ { van, tot of every segment of a and of b } )
-(a ⊕ b) on [c_i, c_i+1)  =  coalesce(read(a, c_i)) ⊕ coalesce(read(b, c_i))
-                            where coalesce(leeg) = 0
+(a ⊕ b) on [c_i, c_i+1)  =  read(a, c_i) ⊕ read(b, c_i)      ⊕ with its ch. 1.2 empty rule
 ```
 
+For plus and min the empty rule coalesces both operands, `coalesce(leeg) =
+0`; verminderd met propagates a leeg left operand and coalesces its right;
+maal and percentage van coalesce both; a division coalesces a leeg
+dividend to 0 before it reads the divisor, and a leeg or numeric-zero
+divisor under a filled dividend makes the period leeg and deposits on the
+§9.5 channel (EF-031, EF-005; ch. 1.2, 2.2, 5.6).
+
 - The result divides all time (ch. 3.1; maintainer decision 2026-11-03,
-  `spec/proposals/IMPLICIT-TIME.md` point 2, following §5.1.4.1). A
-  period where both operands are leeg yields **0**, not leeg — between
-  two segments and before the first cut and after the last one alike, so
-  the result's first and last segments are open: that is the
+  `spec/proposals/IMPLICIT-TIME.md` point 2, following §5.1.4.1). Under
+  plus and min a period where both operands are leeg yields **0**, not
+  leeg — between two segments and before the first cut and after the last
+  one alike, so the result's first and last segments are open: that is the
   **period-coalescing rule**, ch. 1.2's §5.1.4 row per day, and the exact
-  counterpart of the ch. 3.5 rule.
+  counterpart of the ch. 3.5 rule. Under the other operators a period
+  reads what their rule gives two leeg operands: 0 for maal, percentage
+  van and a division (a leeg dividend), leeg for verminderd met.
 - A **scalar operand** holds on every day: it is the timeline (−∞, +∞)
   of ch. 3.1 and adds no cut (§5.1.1). A leeg scalar is the empty
-  timeline, which coalesces to 0 on every day.
+  timeline, which reads leeg on every day.
+- A **time-dependent parameter** is a timeline operand like a temporal
+  attribute (§3.8, §5.1.1; IMPLICIT-TIME VB 2.3): its timeline, the one
+  the Parameterset supplies, is read whole, and its boundaries are cuts. Its
+  timeline is its binding, so a session that supplies none faults as for an
+  unbound parameter (EF-014, ch. 5.7). The vintage read of ch. 8.3 is a
+  different reading of the same parameter and keeps its own rules.
+- A deposit of a division counts once: however many periods divide by a
+  leeg or numeric-zero divisor, the rule × subject that evaluates the
+  value carries one §9.5 fact, with each code once among its codes
+  (ch. 5.6). The period is no parameter of the fact (IMPLICIT-TIME VB 1.3).
 - Adjacent result segments with equal values are coalesced into one.
-- Units follow ch. 2.6: the computation runs in the left operand's unit
-  (each right operand restated by its exact factor), and the result is
-  restated **once** to the target's unit.
+- Units follow ch. 2.6 per period: an additive operator computes in the
+  left operand's unit (each right operand restated by its exact factor), a
+  product and a quotient carry the unit their rule gives, and the result is
+  restated **once** to the target's unit. The precision gate of ch. 2.4
+  bounds the value of every segment (IMPLICIT-TIME VB 1.4).
 - Granularity: every operand's declared granularity must be
   coarser-or-equal to the target's; the result's segment boundaries are
   the cut set itself — event-driven, not re-bucketed onto the target's
@@ -1290,15 +1324,38 @@ The corpus witness of all three, written by rules through the RegelSpraak
 frontend and replayed by `ref` and the ASP backend, is
 `corpus/golden/jutterswet-maandloon`.
 
+Worked example (every operator per day, `WV-3.4-per-dag`) — `a` and `b` of
+the first example, both without a unit:
+
+| period | a maal b | a verminderd met b | a gedeeld door b | 10% van a |
+|---|---|---|---|---|
+| (−∞, 2024-01-01) | 0 | leeg | 0 | 0 |
+| [2024-01-01, 2024-04-01) | 0 | 100 | leeg, and one §9.5 fact EF-031 | 10 |
+| [2024-04-01, 2024-07-01) | 3000 | 70 | 10/3 | 10 |
+| [2024-07-01, 2024-10-01) | 0 | leeg | 0 | 0 |
+| [2024-10-01, +∞) | 0 | leeg | 0 | 0 |
+
+After equal neighbours coalesce, `a maal b` is 0 on (−∞, 2024-04-01), 3000
+on [2024-04-01, 2024-07-01) and 0 on [2024-07-01, +∞); `a gedeeld door
+(ABS) b` is `a gedeeld door b` with 3,33333 on the second quarter. The
+corpus witness of the five operators, written by rules on a day grid and
+replayed by `ref` and the ASP backend, is
+`corpus/golden/jutterswet-rekenen-per-dag` (with b = 25, so that every
+quotient is whole: the ASP backend holds the unbounded form as a whole
+number, ch. 2.4); a time-dependent parameter as an operand,
+`corpus/golden/anchor/jutterswet-verzuimrente-dagen`: the verzuimrentevoet
+(0,04 /jr until 2026-02-01, 0,05 /jr from then, both bounds open) maal an
+afdrachtbedrag of 10 000 € is 400 €/jr on (−∞, 2026-02-01) and 500 €/jr on
+[2026-02-01, +∞).
+
 *v0 mirror note (scope):* only **plus and min** exist as timeline
 arithmetic in v0. Verminderd-met, maal, division, and percentage-van over
-two timelines are refused (marker/skip) — so verminderd-met's
-left-propagation rule (ch. 1.2) has **no per-period counterpart** in v0;
-the period-coalescing rule knows only the plus/min coalescing behaviour.
-That is OPEN in ch. 3.12; the per-period application of the ch. 1.2
-scalar rules is the candidate (`spec/proposals/IMPLICIT-TIME.md`
-point 1), not specified behaviour. A scalar operand under plus and min is
-specified above: its time domain is all time.
+two timelines are refused (marker/skip). **Delta (tracked, `CONSTRUCTS.md`
+row 11):** v1 reads every operator of ch. 1.2 but the power per day, as the
+specification states it for every expression (§5.1.1, §5.1.4) and as ALEF
+computes it (`spec/proposals/IMPLICIT-TIME.md` point 1). A scalar operand
+and a time-dependent parameter are specified above: their time domain is
+all time.
 
 ### 3.4a The die/dat subselection on instance folds
 
@@ -2134,7 +2191,8 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   spelling at all (`€/bm` with `bm` canonically a month) cancels by its
   declared factor, the spelling table never entering. Three things are
   refused **loudly**, never guessed: a unit none of whose negative factors the
-  declarations connect to a grid-sized unit (`€/kg`, `€/kg/m`; the refusal NAMES
+  declarations connect to a grid-sized unit and none of which the calendar
+  integrates (below; `€/kg`, `€/kg/m`; the refusal NAMES
   both the value's unit and the grid's), a document that declares **no** unit for this grid,
   and a document that declares **several** grid units with different
   canonical chains. A value unit **without** a denominator keeps the
@@ -2148,13 +2206,39 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   cannot reach a mixed-unit timeline — the loader attaches the
   declaration's one unit to every segment — so this rule governs
   computed timelines alone.
+- **The calendar** (maintainer decision 2026-11-03,
+  `spec/proposals/IMPLICIT-TIME.md` point 11). The time units fall into two
+  families by the spelling table of ch. 3.8: the **day family**, dag and
+  week, and the **month family**, maand, kwartaal and jaar. Within a family
+  a factor is exact and the declared one governs, as above (`jr = 12 mnd`,
+  `wk = 7 dg`). Between the two no factor is: a month or a year has no fixed
+  number of days (§7.3.1). Where the value's denominator is a unit the table
+  names of the other family than the grid's, the collapse integrates by the
+  **actual length of the calendar unit**: the whole grid units of a segment
+  are measured in the denominator's unit, a day counting 1 dg and 1/7 wk,
+  and 1/len of the calendar month, quarter or year it lies in, len its
+  actual length in days (28 to 31, 90 to 92, 365 or 366). The negative factor
+  rises as above, so `€/jr` over a day grid totals to `€`. A declared factor
+  between the two families (`jr = 365 dg`, `mnd = 30 dg`) would stand in for
+  the calendar and is ill-formed (WF-009, `IR-SPEC.md` ch. 2.5); an executor
+  that meets one in this integration refuses it by name. A unit outside the
+  table (`bm`) belongs to neither family and keeps its declared factor.
+  This is ALEF's integration (`partialLength`, the days of a part over the
+  days of the calendar unit that holds it) for every whole grid unit; a
+  segment shorter than one grid unit still contributes 0 (above; the part
+  of a unit is card `20261103-total-over-partial-unit`).
   *Executor note (2026-09-04):* the number the collapse produces is not
   always the bare whole-unit count. Where the denominator is the grid
   unit itself the two coincide, but a convertible foreign denominator
   scales by the declared factor. The Drools backend weights unit-blind,
   so it carries a negative factor that is the grid's own unit and refuses
   every other by name (`€/jr` on a per-month timeline), and the ASP backend
-  refuses a factor other than 1 by name as well.
+  refuses a factor other than 1 by name as well. Under the calendar the ASP
+  backend lays the weights of the whole units over the least common
+  multiple D of the lengths the case's span meets, and carries the total at
+  the scale of its value times D, which only a rounding of the total divides
+  away (`ASP-TRANSLATION.md` S9); elsewhere it refuses that total by name.
+  The Drools backend refuses the calendar integration by name (DROOLS-228).
 - **The per-element fold over a set (§7.1).** `het totaal van <temporal
   attribute> van alle <set>` folds **twice**: each set member's own
   timeline collapses over time first — by the rule above, at that
@@ -2225,11 +2309,25 @@ Worked examples (absolute, `ref/` tests verbatim; per-month timeline):
 - the same `10 €/mnd` value on a per-**quarter** grid across 2024 → 4
   quarters × 3 months × 10 = **120 €**: a coarser grid gives the same
   number, because the conversion is exact.
-- `10 €/dg` on a per-month grid, in a document that declares no
-  conversion between `dg` and `mnd` → **refused**, naming both units
-  (`€/dg` against the `mnd` grid). Where the document *does* declare
-  `mnd = 30 dg`, the same timeline integrates to 12 × 30 × 10 =
-  **3600 €** — the declared factor governs, not the calendar.
+- `10 €/dg` on a per-month grid across 2024 → the calendar: the twelve
+  months hold 366 days, so **3660 €** (`WV-3.6-g-vreemde-noemer`). A
+  document that declares `mnd = 30 dg` is ill-formed (WF-009); with that
+  factor the same timeline would have integrated to 12 × 30 × 10 = 3600 €.
+- `7 €/wk` over February 2024 on a per-month grid → 29 days, 29/7 weeks →
+  **29 €** (`WV-3.6-kalender-week-over-maanden`); `31 €/mnd` over the 31
+  days of January on a day grid → **31 €**, `91 €/kw` over the 91 days of
+  the first quarter of 2024 → **91 €**.
+- the calendar across a turn of the year: `366 €/jr` on a day grid over
+  [2027-12-31, 2028-01-02) → 366/365 + 366/366 = **731/365 €**
+  (`WV-3.6-kalender-jaargrens`).
+- formulation B of the anchor casus (`WV-3.6-kalender`, the anchor
+  `corpus/golden/anchor/jutterswet-verzuimrente-dagen`): `500 €/jr` on the
+  54 days [2028-02-11, 2028-04-05) of the leap year 2028 → 500 × 54/366 =
+  **73 47/61 €** (with `jr = 365 dg` it would be 73 71/73 €); `400 €/jr` on
+  77 days and `500 €/jr` on 40 days of 2025 and 2026 → 400 × 77/365 +
+  500 × 40/365 = **139 13/73 €** (`WV-3.6-kalender-geval-1`). The anchor
+  rounds both to the cent, 139,18 € and 73,77 €; the suite fixture
+  `calendar-total-unrounded` plays the first exactly.
 - the §7.1 per-element fold, three set members with per-month `€/mnd`
   **timelines**: `10` over [2024-01-01, 2025-01-01) → 120 €, `5` over
   [2024-01-01, 2024-07-01) → 30 €, and a member without a timeline →
@@ -3559,17 +3657,22 @@ previous timeline; whether that is a change is decided by segment-wise
 equality (ch. 3.1), which is what makes rewriting to a fixpoint
 idempotent (ch. 5).
 
-- **Period arithmetic as the value** (ch. 3.4, 3.5): plus or min, whose
-  operands are plus or min again, the sum of a temporal attribute over the
-  members of a set (without a die/dat subselection), an own temporal
-  attribute, or a scalar operand (a literal, an own scalar attribute, a
-  scalar parameter), writes the timeline of the value over all time,
-  open segments included, with its leeg periods as gaps (ch. 3.1). A
-  time-dependent parameter as an operand, a die/dat subselection on the
-  sum and a condition on such a rule are refused by name: the condition
-  would restrict the timeline per period (`spec/proposals/IMPLICIT-TIME.md`
-  point 3), which is not specified here. Executed by `ref` and the ASP
-  backend; witness `corpus/golden/jutterswet-maandloon`.
+- **Period arithmetic as the value** (ch. 3.4, 3.5): an operator of
+  ch. 1.2 other than the power (plus, min, verminderd met, maal, gedeeld
+  door in both variants, percentage van), whose operands are such an
+  operator again, the sum of a temporal attribute over the members of a set
+  (without a die/dat subselection), an own temporal attribute, a
+  time-dependent parameter, or a scalar operand (a literal, an own scalar
+  attribute, a scalar parameter), writes the timeline of the value over all
+  time, open segments included, with its leeg periods as gaps (ch. 3.1). A
+  die/dat subselection on the sum and a condition on such a rule are refused
+  by name: the condition would restrict the timeline per period
+  (`spec/proposals/IMPLICIT-TIME.md` point 3), which is not specified here.
+  Executed by `ref` and the ASP backend; witnesses
+  `corpus/golden/jutterswet-maandloon` (plus, min, the sum),
+  `corpus/golden/jutterswet-rekenen-per-dag` (the other five operators) and
+  `corpus/golden/anchor/jutterswet-verzuimrente-dagen` (a time-dependent
+  parameter).
 - A **scalar value as the whole value of a temporal target** is refused
   (ch. 3.4 gives a scalar a time domain as an operand only); a **temporal
   value in a scalar slot** is refused except through the specified
@@ -3628,11 +3731,12 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Subject | Status |
 |---|---|
 | Multi-period grids (`count` ≥ 2): all reads and writes | refused (mirrored); OPEN — specify producers or restrict `count` = 1. A parameter's facet is restricted to `count` = 1 since L3 (`IR-SPEC.md` ch. 2.10, WF-005), because no executor evaluates a parameter's count |
-| Calendar bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision. A fixed start point lays week and quarter periods of its own (ch. 3.2), and the case loader and the asOfDate bucket read them in all three executors |
+| Calendar bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision. A fixed start point lays week and quarter periods of its own (ch. 3.2), and the case loader and the asOfDate bucket read them in all three executors. A case timeline on the day grid needs no bucket: since 2026-11-03 (card `timeline-arithmetic-per-period`) the case loaders of `ref` and the ASP backend read it, every day sitting on the grid |
 | Fixed start point off the calendar grid (§13.3.6.3–.7) | **landed (v1 addition)**: `fixedStart` on a timeline and on its facets (`IR-SPEC.md` ch. 2.8, WF-115), the grid in ch. 3.2; read by a case input, the asOfDate bucket and the day count; the pro-rata over a fixed-start grid fenced; the calendar start point is written without one |
 | Point-in-time read (the "op dat tijdstip" node) | **landed (v1 extension)**: `read(tl, d)` is `IR-SPEC.md` ch. 4.3a (`TemporalRead`, WF-049; ch. 3.3, row 11), anchor-witnessed and replayed by both executors |
-| Timeline arithmetic beyond `plus`/`minus` (plus/min): `reducedBy` (verminderd-met), `times` (maal), `dividedBy` and `dividedByAbs` (division), `percentageOf` (percentage) | refused (mirrored); OPEN — per-period lifting of ch. 1.2 rules is the candidate |
-| Plus, min and the sum per period (ch. 3.4, 3.5) as the value of a rule on a temporal attribute target | **specified and executed** over all time (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 2): `ref` and the ASP backend, witness `corpus/golden/jutterswet-maandloon` (ch. 3.11); both Drools branches refuse it by name (DROOLS-105). A condition on such a rule, a time-dependent parameter as an operand and a die/dat subselection on the sum are refused by name in both OCaml executors |
+| Timeline arithmetic beyond `plus`/`minus` (plus/min): `reducedBy` (verminderd-met), `times` (maal), `dividedBy` and `dividedByAbs` (division), `percentageOf` (percentage) | **specified (delta) and executed**, ch. 3.4: each operator read per day with its ch. 1.2 empty rule (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 1), a division's deposit once per rule × subject × code. `ref` and the ASP backend, witness `corpus/golden/jutterswet-rekenen-per-dag`; both Drools branches refuse it by name (DROOLS-105). The power stays refused |
+| Plus, min and the sum per period (ch. 3.4, 3.5) as the value of a rule on a temporal attribute target | **specified and executed** over all time (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 2): `ref` and the ASP backend, witness `corpus/golden/jutterswet-maandloon` (ch. 3.11); both Drools branches refuse it by name (DROOLS-105). A time-dependent parameter as an operand is executed since the same day (IMPLICIT-TIME VB 2.3; witness `corpus/golden/anchor/jutterswet-verzuimrente-dagen`). A condition on such a rule and a die/dat subselection on the sum are refused by name in both OCaml executors |
+| The temporal total across the day and the month family of time units (ch. 3.6) | **specified (delta) and executed**: the calendar (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 11), the actual length of the month, quarter or year; a declared factor between the two families is ill-formed (WF-009, negative `wf009-calendar-family-factor`). `ref` in every route of the total; the ASP backend under a rounding of the gedurende-clipped total, refusing it by name elsewhere; both Drools branches refuse it by name (DROOLS-228). Witness `corpus/golden/anchor/jutterswet-verzuimrente-dagen` |
 | Open segments (ch. 3.1) | **specified**: a timeline divides all time, a segment may have an open bound, the case format omits `from` or `to` for one (`uchar-case-v0`); the total of ch. 3.6 counts an open segment of 0 as 0 and faults on any other value (EF-036, red case `jutterswet-totaal-open-segment`); a fold over the buckets of an open period (ch. 3.7–3.9) is refused by name. A characteristic's true-periods (`characteristicTimelines`) carry no open bound |
 | Scalar operand of timeline arithmetic / unconditional temporal characteristic | the scalar operand of plus and min is **specified and executed**, ch. 3.4 (one segment (−∞, +∞)); the unconditional temporal characteristic has the time domain since then and stays OPEN, because no executor writes a temporal characteristic (ch. 3.11) |
 | `minimum`/`maximum`/`first`/`last` (min/max/eerste/laatste) over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
@@ -7498,6 +7602,18 @@ ch. 3.1 totality (a gap reads to leeg; an empty index reads to leeg);
 everything fail-fast about vintages lives one layer down, in the data
 plane (ch. 8.4), where it is checked **before any rule fires**. This is
 the decided division of labour of ch. 3.3.
+
+A time-dependent parameter is also a **timeline operand** of the period
+arithmetic of ch. 3.4, read whole like a temporal attribute
+(`spec/proposals/IMPLICIT-TIME.md` VB 2.3). That reading is no vintage
+read: it indexes no date, so the session-start coverage check of ch. 8.4
+covers the vintage reads alone, and a session that supplies no timeline
+for such an operand faults as for an unbound parameter (EF-014). Worked
+example (the anchor `corpus/golden/anchor/jutterswet-verzuimrente-dagen`):
+the verzuimrentevoet, 0,04 /jr on (−∞, 2026-02-01) and 0,05 /jr on
+[2026-02-01, +∞), maal an afdrachtbedrag of 10 000 € is 400 €/jr and
+500 €/jr on the same two periods; the evaluation date (2026-03-12) selects
+nothing.
 
 ### 8.4 The Parameterset and the session-start coverage check
 
