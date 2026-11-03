@@ -278,14 +278,14 @@ let entire_period_characteristic (g : Ir_v0.Ast.grain) ~(negation : bool)
    would make a timeline of 30 across the whole of 2026, tested "> 40",
    touch no bucket and pass vacuously, which is the opposite of the answer.
 
-   A gap day is covered by no segment, so it lands in neither fold and the
-   bucket falls short of its calendar length: a partially covered bucket
-   fails, exactly as the chapter says. A timeline with no segments at all
-   touches no bucket and passes vacuously. An explicit leeg segment is a
-   gap as well (ch. 3.1, 3.9): it is dropped before either fold, so it
-   touches no bucket and none of its days satisfies [pred] — not even an
-   inequality, which ch. 1.2d makes true against leeg, because a gap day
-   is not a comparison of a value (decided 2026-09-26).
+   A gap day is covered by no segment, so it lands in neither fold; it reads
+   leeg (ch. 3.1), and it satisfies [pred] exactly where [pred Empty] holds —
+   "≠" against a filled bound, "=" against a leeg number, never an ordering —
+   so those days are added to the bucket's satisfying days, and a bucket
+   whose gap days do not satisfy falls short of its calendar length. A
+   timeline with no segments at all touches no bucket and passes vacuously.
+   An explicit leeg segment is a gap as well (ch. 3.1, 3.9): it is dropped
+   before either fold, so it touches no bucket and its days are gap days.
 
    The QUALIFIER's own negation ("niet gedurende …") is not here: it
    complements the folded result, which the caller does. *)
@@ -302,6 +302,7 @@ let whole_period_value (g : Ir_v0.Ast.grain) ~(tl : t) (pred : Value.t -> bool) 
     count_days_in g
       (List.filter_map (fun s -> if pred s.s_value then Some (interval s) else None) segs)
   in
+  let gap_satisfies = pred Empty in
   List.for_all
     (fun (b : segment) ->
       let satisfied =
@@ -309,7 +310,8 @@ let whole_period_value (g : Ir_v0.Ast.grain) ~(tl : t) (pred : Value.t -> bool) 
         | Some x -> day_count x
         | None -> 0
       in
-      satisfied >= b.s_to - b.s_from)
+      let gap_days = if gap_satisfies then b.s_to - b.s_from - day_count b else 0 in
+      satisfied + gap_days >= b.s_to - b.s_from)
     touched
 
 (* ch. 3.9, the LEEG and GEVULD tests over a value timeline:

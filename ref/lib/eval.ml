@@ -2476,16 +2476,13 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
       let tested = Option.value (World.timeline owner attr) ~default:[] in
       let boundary = eval_expr env world self ~err bound_e in
       let g : Ir_v0.Ast.grain = if gp.gp_granularity then Year else Month in
-      (* ch. 3.9: "A leeg comparison bound makes the test false, never a
-         fault". The test is the one each day asks, so a leeg bound satisfies
-         no day for any comparison — the inequality included, which ch. 1.2
-         would make true for a filled day against leeg — and a timeline
-         without segments still passes, touching no bucket *)
+      (* ch. 3.9: each day asks the comparison of ch. 1.2, a leeg bound and a
+         leeg day included, as the clip of ch. 3.6 does; the fold reads the
+         same predicate for a gap day as for a leeg value *)
       let verdict =
         Timeline.whole_period_value g ~tl:tested (fun v ->
-            boundary <> Value.Empty
-            && Arith.compare_op ?static_numeric:(static_numeric env le re)
-                 ~static_date:(static_date env le re) op v boundary)
+            Arith.compare_op ?static_numeric:(static_numeric env le re)
+              ~static_date:(static_date env le re) op v boundary)
       in
       (* ch. 3.9: "Negation complements the folded result" *)
       if gp.gp_negated then not verdict else verdict

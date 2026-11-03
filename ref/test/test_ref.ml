@@ -8183,30 +8183,34 @@ let () =
   check "WV-3.9-vgl-maand-d" (ev ~year:false (half_year "50"));
   check "WV-3.9-vgl-maand-deelmaand"
     (not (ev ~year:false [ seg "2026-01-15" "2026-03-01" (n "50") ]));
-  (* a leeg segment inside the period is a day that does not satisfy the
-     test — false, never a fault (ch. 3.9) *)
+  (* a leeg segment inside the period reads leeg on its days, and a leeg side
+     satisfies no ordering — false, never a fault (ch. 3.9) *)
   check "WV-3.9-vgl-leeg-segment-faalt"
     (not (ev [ seg "2026-01-01" "2026-07-01" (n "50"); seg "2026-07-01" "2027-01-01" empty_value ]));
+  (* a gap day reads leeg (ch. 3.1) and the comparison reads it with ch. 1.2,
+     as the clip of ch. 3.6 does: "≠ 40" holds on it, "= 50" does not *)
+  check "WV-3.9-vgl-gat-ongelijk" (ev ~op:Not_equal (half_year "50"));
+  check "WV-3.9-vgl-gat-gelijk" (not (ev ~op:Equal ~boundary:"50" (half_year "50")));
+  check "WV-3.9-vgl-gat-ongelijk-op-de-grens" (not (ev ~op:Not_equal ~boundary:"50" (half_year "50")));
+  check "WV-3.9-vgl-gat-ongelijk-niet" (not (ev ~op:Not_equal ~not_flag:true (half_year "50")));
   (* an EXPLICIT leeg segment reads as a gap (ch. 3.1) for a comparison too,
-     as for the leeg and gevuld tests: it touches no bucket, and a day under
-     it satisfies no test, the inequality included (ch. 3.9, decided
-     2026-09-26). Between two filled years it leaves only those years
-     touched; after a half year of 50 it leaves the second half unsatisfied
-     for "≠ 40" as a gap does; alone it touches nothing. *)
+     as for the leeg and gevuld tests: it touches no bucket, and its days read
+     leeg as a gap's do. Between two filled years it leaves only those years
+     touched; after a half year of 50 its days satisfy "≠ 40" as gap days do,
+     so the year holds 365 of 365; alone it touches nothing. *)
   let between = [ seg "2025-01-01" "2026-01-01" (n "50"); seg "2026-01-01" "2027-01-01" empty_value;
                  seg "2027-01-01" "2028-01-01" (n "50") ] in
   check "WV-3.9-vgl-leeg-segment-raakt-geen-emmer" (ev between);
   check "WV-3.9-vgl-leeg-segment-raakt-geen-emmer-ongelijk" (ev ~op:Not_equal between);
   check "WV-3.9-vgl-leeg-segment-ongelijk-is-een-gat"
-    (not (ev ~op:Not_equal [ seg "2026-01-01" "2026-07-01" (n "50"); seg "2026-07-01" "2027-01-01" empty_value ]));
+    (ev ~op:Not_equal [ seg "2026-01-01" "2026-07-01" (n "50"); seg "2026-07-01" "2027-01-01" empty_value ]);
   check "WV-3.9-vgl-leeg-segment-alleen" (ev [ seg "2026-01-01" "2027-01-01" empty_value ]);
-  (* "A leeg comparison bound makes the test false, never a fault" (ch. 3.9):
-     the test is the one each day asks, so no day satisfies it for any
-     comparison, the inequality included, which ch. 1.2 makes true for a
-     filled value against leeg. A touched bucket then fails and the
-     qualifier's negation holds; a timeline without segments touches no
-     bucket and passes whatever the bound. The bound is the subject's own
-     scalar attribute, left out of the instance. *)
+  (* a leeg bound is a leeg side on every day, read with ch. 1.2 (ch. 3.9):
+     no ordering holds, "=" holds on a gap day only and "≠" on a filled day
+     only. A touched bucket holds a filled day, so "=" fails it; "≠" passes
+     it where the timeline covers it whole. A timeline without segments
+     touches no bucket and passes whatever the bound. The bound is the
+     subject's own scalar attribute, left out of the instance. *)
   let bound_doc =
     let name, o = kv_berger in
     { empty_doc with object_types = [ (name, { o with attributes = o.attributes @ [ ("grens", Some num0) ] }) ] }
@@ -8223,17 +8227,48 @@ let () =
            time_period = Some { gp_granularity = true; gp_negated = not_flag }; source_name = None })
   in
   List.iter
-    (fun (ident, (op : Ir_v0.Ast.compare_op)) ->
-      check ("WV-3.9-empty-bound-" ^ ident ^ "-whole-year") (not (ev_bound ~bound:None op (whole_year "50")));
-      check ("WV-3.9-empty-bound-" ^ ident ^ "-half-year") (not (ev_bound ~bound:None op (half_year "50")));
-      check ("WV-3.9-empty-bound-" ^ ident ^ "-negated") (ev_bound ~not_flag:true ~bound:None op (whole_year "50"));
+    (fun (ident, (op : Ir_v0.Ast.compare_op), whole, half) ->
+      check ("WV-3.9-empty-bound-" ^ ident ^ "-whole-year") (ev_bound ~bound:None op (whole_year "50") = whole);
+      check ("WV-3.9-empty-bound-" ^ ident ^ "-half-year") (ev_bound ~bound:None op (half_year "50") = half);
+      check ("WV-3.9-empty-bound-" ^ ident ^ "-negated")
+        (ev_bound ~not_flag:true ~bound:None op (whole_year "50") = not whole);
       check ("WV-3.9-empty-bound-" ^ ident ^ "-no-segments") (ev_bound ~bound:None op []))
-    [ ("less", Less); ("less-or-equal", Less_or_equal); ("greater", Greater);
-      ("greater-or-equal", Greater_or_equal); ("equal", Equal); ("not-equal", Not_equal) ];
-  (* the same document with the bound filled answers by value *)
+    [ ("less", Less, false, false); ("less-or-equal", Less_or_equal, false, false);
+      ("greater", Greater, false, false); ("greater-or-equal", Greater_or_equal, false, false);
+      ("equal", Equal, false, false); ("not-equal", Not_equal, true, false) ];
+  (* the same document with the bound filled answers by value, and a gap day
+     satisfies "≠" against it *)
   check "WV-3.9-filled-bound-not-equal" (ev_bound ~bound:(Some "40") Not_equal (whole_year "50"));
   check "WV-3.9-filled-bound-not-equal-on-the-bound" (not (ev_bound ~bound:(Some "50") Not_equal (whole_year "50")));
   check "WV-3.9-filled-bound-equal" (ev_bound ~bound:(Some "50") Equal (whole_year "50"));
+  check "WV-3.9-filled-bound-not-equal-half-year" (ev_bound ~bound:(Some "40") Not_equal (half_year "50"));
+  check "WV-3.9-filled-bound-equal-half-year" (not (ev_bound ~bound:(Some "50") Equal (half_year "50")));
+  (* WV-3.9-lege-dag, the chapter's worked example verbatim: a month-granular
+     peilstand, a scalar drempelstand, "gedurende het gehele jaar" over 2024
+     (366 days). K1: 7 in January, drempelstand 5 — 31 days 7 ≠ 5 and 335 gap
+     days leeg ≠ 5. K2: 7 through 2024, drempelstand leeg — 366 days
+     7 ≠ leeg. "Gelijk aan" holds on no day of K1 and on no day of K2. *)
+  let peil_doc =
+    let base = ot "Jutter" [ ("peilstand", Some num0); ("drempelstand", Some num0) ] [] in
+    { empty_doc with
+      object_types = [ (fst base, { (snd base) with attribute_granularity = [ ("peilstand", Some Month) ] }) ] }
+  in
+  let ev_peil ~drempelstand op tl =
+    let i =
+      { (inst "K" "Jutter" (match drempelstand with Some d -> [ ("drempelstand", n d) ] | None -> [])) with
+        World.tls = World.SMap.add "peilstand" tl World.SMap.empty }
+    in
+    let w = World.add_instance World.empty i in
+    Eval.eval_cond (env_of peil_doc) w (World.get w "K") ~err:no_err
+      (Comparison
+         { op; left_side = Some (aref "peilstand" "Jutter"); right_side = Some (aref "drempelstand" "Jutter");
+           time_period = Some { gp_granularity = true; gp_negated = false }; source_name = None })
+  in
+  let k1 = [ seg "2024-01-01" "2024-02-01" (n "7") ] and k2 = [ seg "2024-01-01" "2025-01-01" (n "7") ] in
+  check "WV-3.9-lege-dag-k1-ongelijk" (ev_peil ~drempelstand:(Some "5") Not_equal k1);
+  check "WV-3.9-lege-dag-k1-gelijk" (not (ev_peil ~drempelstand:(Some "5") Equal k1));
+  check "WV-3.9-lege-dag-k2-ongelijk" (ev_peil ~drempelstand:None Not_equal k2);
+  check "WV-3.9-lege-dag-k2-gelijk" (not (ev_peil ~drempelstand:None Equal k2));
   (* a non-time-dependent operand keeps WF-043's refusal *)
   expect_fault_msg "WV-3.9-vgl-niet-tijdsafhankelijk"
     (fun () ->
