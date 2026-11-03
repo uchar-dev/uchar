@@ -1307,7 +1307,9 @@ divisor under a filled dividend makes the period leeg and deposits on the
 - Adjacent result segments with equal values are coalesced into one.
 - Units follow ch. 2.6 per period: an additive operator computes in the
   left operand's unit (each right operand restated by its exact factor), a
-  product and a quotient carry the unit their rule gives, and the result is
+  product and a quotient carry the unit their rule gives, in a period where
+  an operand is leeg as well: the empty rule decides the value of that
+  operand there, its declarations its unit (ch. 2.10), and the result is
   restated **once** to the target's unit. The precision gate of ch. 2.4
   bounds the value of every segment (IMPLICIT-TIME VB 1.4).
 - Granularity: every operand's grid must fit the target's — every wall of
@@ -1360,7 +1362,8 @@ corpus witness of the five operators, written by rules on a day grid and
 replayed by `ref` and the ASP backend, is
 `corpus/golden/jutterswet-rekenen-per-dag` (with b = 25, so that every
 quotient is whole: the ASP backend holds the unbounded form as a whole
-number, ch. 2.4); a time-dependent parameter as an operand,
+number, ch. 2.4; its case 4 gives four operands with a unit a gap each); a
+time-dependent parameter as an operand,
 `corpus/golden/anchor/jutterswet-verzuimrente-dagen`: the verzuimrentevoet
 (0,04 /jr until 2026-02-01, 0,05 /jr from then, both bounds open) maal an
 afdrachtbedrag of 10 000 € is 400 €/jr on (−∞, 2026-02-01) and 500 €/jr on
