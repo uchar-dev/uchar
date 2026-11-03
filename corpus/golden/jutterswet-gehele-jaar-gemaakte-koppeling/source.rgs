@@ -1,0 +1,38 @@
+Objecttype de Strandpost (mv: Strandposten)
+    de diepte Numeriek (geheel getal);
+    is bemand kenmerk (bijvoeglijk) voor elke maand;
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de dienstjaren Numeriek (geheel getal);
+    de wachtvergoeding Numeriek (geheel getal);
+    de wachtkorting Numeriek (geheel getal);
+    het dieptegeld Numeriek (geheel getal);
+
+Feittype aanmelding
+    de aanmeldpost Strandpost
+    de aangemelde jutter (mv: aangemelde jutters) Jutter
+Eén aanmeldpost heeft meerdere aangemelde jutters
+
+Feittype standplaats
+    de standpost Strandpost
+    de standjutter (mv: standjutters) Jutter
+Eén standpost heeft meerdere standjutters
+
+Regel standplaats van een jutter
+    geldig altijd
+        Een standjutter van een Strandpost is een aangemelde jutter van de Strandpost.
+
+Regel wachtvergoeding van een jutter
+    geldig altijd
+        De wachtvergoeding van een Jutter moet berekend worden als zijn dienstjaren
+        indien de standpost van de Jutter gedurende het gehele jaar bemand is.
+
+Regel wachtkorting van een jutter
+    geldig altijd
+        De wachtkorting van een Jutter moet berekend worden als zijn dienstjaren
+        indien de standpost van de Jutter niet gedurende het gehele jaar bemand is.
+
+Regel dieptegeld van een jutter
+    geldig altijd
+        Het dieptegeld van een Jutter moet berekend worden als zijn dienstjaren
+        indien de diepte van de standpost van de Jutter ongelijk is aan 5.

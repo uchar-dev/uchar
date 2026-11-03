@@ -1496,7 +1496,11 @@ EXPECTED_CHANNEL=(
 # "ongelijk aan" read per period by the comparison of ch. 1.2 (RUNTIME-SEMANTICS ch. 3.6): a gap in the compared timeline
 # and a leeg bound read leeg, written in RegelSpraak with hand-computed cases. rsTijdConditie takes the gaps within the
 # clipped timeline (DROOLS-222 retired). It plays on both with PLAYED 3.
-EXPECTED_PLAYED=317
+# 319 since the card ref-whole-period (2026-11-03): the goldens jutterswet-gehele-jaar-lege-grens, "gelijk aan" and
+# "ongelijk aan" under "gedurende het gehele jaar" against a leeg attribute bound, which fails every day (RUNTIME-SEMANTICS
+# ch. 3.9), and jutterswet-gehele-jaar-gemaakte-koppeling, the qualifier over a link a fact creation makes. They play on
+# both with PLAYED 4 and 4.
+EXPECTED_PLAYED=319
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

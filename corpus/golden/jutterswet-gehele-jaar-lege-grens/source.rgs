@@ -1,0 +1,21 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de wachtdagen Numeriek (geheel getal) voor elke maand;
+    de wachtgrens Numeriek (geheel getal);
+    de gelijkpremie Numeriek (geheel getal);
+    de ongelijkpremie Numeriek (geheel getal);
+    de afwijkpremie Numeriek (geheel getal);
+
+Regel gelijkpremie van een jutter
+    geldig altijd
+        De gelijkpremie van een Jutter moet berekend worden als 20
+        indien zijn wachtdagen gedurende het gehele jaar gelijk is aan zijn wachtgrens.
+
+Regel ongelijkpremie van een jutter
+    geldig altijd
+        De ongelijkpremie van een Jutter moet berekend worden als 10
+        indien zijn wachtdagen gedurende het gehele jaar ongelijk is aan zijn wachtgrens.
+
+Regel afwijkpremie van een jutter
+    geldig altijd
+        De afwijkpremie van een Jutter moet berekend worden als 30
+        indien zijn wachtdagen niet gedurende het gehele jaar ongelijk is aan zijn wachtgrens.

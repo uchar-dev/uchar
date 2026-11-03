@@ -1,0 +1,330 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandpost",
+        "animate": false,
+        "plural": "Strandposten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "diepte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "bemand",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "dienstjaren",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtvergoeding",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtkorting",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "dieptegeld",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "aanmelding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "aanmeldpost",
+            "objectType": "Strandpost",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "aangemelde jutter",
+            "objectType": "Jutter",
+            "plural": "aangemelde jutters",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "standplaats",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "standpost",
+            "objectType": "Strandpost",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "standjutter",
+            "objectType": "Jutter",
+            "plural": "standjutters",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "wachtvergoeding van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachtvergoeding",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De wachtvergoeding van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "dienstjaren",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "zijn dienstjaren"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "bemand",
+              "negated": false,
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "year",
+                "negated": false
+              },
+              "source": {
+                "snippet": "de standpost van de Jutter gedurende het gehele jaar bemand is"
+              },
+              "navigation": {
+                "node": "RoleBinding",
+                "factType": "standplaats",
+                "role": "standpost"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "wachtkorting van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachtkorting",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De wachtkorting van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "dienstjaren",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "zijn dienstjaren"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "bemand",
+              "negated": false,
+              "wholePeriod": {
+                "node": "WholePeriod",
+                "granularity": "year",
+                "negated": true
+              },
+              "source": {
+                "snippet": "de standpost van de Jutter niet gedurende het gehele jaar bemand is"
+              },
+              "navigation": {
+                "node": "RoleBinding",
+                "factType": "standplaats",
+                "role": "standpost"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "dieptegeld van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "dieptegeld",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het dieptegeld van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "dienstjaren",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "zijn dienstjaren"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "notEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "diepte",
+                "subjectType": "Strandpost",
+                "source": {
+                  "snippet": "de diepte van de standpost van de Jutter"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "standplaats",
+                    "role": "standpost"
+                  }
+                ]
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5"
+                }
+              },
+              "source": {
+                "snippet": "de diepte van de standpost van de Jutter ongelijk is aan 5"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [
+      {
+        "node": "FactCreation",
+        "name": "standplaats van een jutter",
+        "versions": [
+          {
+            "factType": "standplaats",
+            "anchorRole": "standpost",
+            "targetRole": "standjutter",
+            "anchor": "Strandpost",
+            "path": [
+              {
+                "node": "RoleBinding",
+                "factType": "aanmelding",
+                "role": "aangemelde jutter"
+              }
+            ],
+            "validity": {
+              "node": "Validity"
+            }
+          }
+        ]
+      }
+    ],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

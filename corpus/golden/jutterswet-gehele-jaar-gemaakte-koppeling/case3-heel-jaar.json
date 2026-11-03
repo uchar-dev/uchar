@@ -1,0 +1,66 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-15",
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Strandpost",
+        "attributes": {
+          "diepte": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "bemand": [
+            {
+              "from": "2026-01-01",
+              "to": "2027-01-01"
+            }
+          ]
+        }
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "dienstjaren": {
+            "number": "8"
+          }
+        },
+        "roles": {
+          "aanmeldpost": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "wachtvergoeding",
+      "value": {
+        "number": "8"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "wachtkorting"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "dieptegeld"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
