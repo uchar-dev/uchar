@@ -594,9 +594,10 @@ division: `eff_unit` derives the unit of rules 2 and 3, and `Units.times` and
   (a rational whose `num` equals its `den`), no denominator. A hidden or unknown unit is NOT proven pure-% and stays a
   loud fault; any other unit on the left (e.g. `km`), and any `%`-spelling
   whose factor is not 1, keeps faulting with the unit-carrying multiplicative
-  message. The **right** operand rule is unchanged — every unit-carrying right
-  operand stays refused (its ch. 2.6 right-unit adoption has no `eff_unit`
-  witness and no corpus case yet). Anchors `jutterswet-vindersloon` and
+  message. The **right** operand may carry any unit: the result carries it unchanged
+  (ch. 2.6, rule 7), `eff_unit` derives it, and the value takes no factor
+  (`ref/test/fixtures/period-units/percentage-*`, in the backend's suite); in
+  a closed body it stays refused. Anchors `jutterswet-vindersloon` and
   `synth2-afrondingscombinaties` pin the admitted shape (a `20%` literal times
   a unitless attribute), the frontend-faithful spelling
   `jutterswet-vondsttarief` witnesses.
@@ -1532,7 +1533,13 @@ member is filled. Every node keeps its own scale, as `expr_term` does
 scale, maal multiplies the scales (with the unit factor of
 `product_factor`), percentage van multiplies them and 100, and a quotient
 lands at the larger of its operands' scales and the target's, the abs
-variant at 10^5 truncated toward zero. Each operator applies its ch. 1.2
+variant at 10^5 truncated toward zero. The unit of an operand is that of its
+declarations per period: a sum over the members keeps its attribute's unit
+(§4.6), not the integration of the §7.1 fold (`eff_unit ~per_period`). A form
+that reads a timeline whole — an own temporal attribute, the members of a
+sum, the tested attribute of a condition per period, the base of a pro-rata
+part — faults at translation where the case gives the asOfDate-bucket scalar
+(RUNTIME-SEMANTICS ch. 8.4), over every instance of the type. Each operator applies its ch. 1.2
 empty rule per period: plus, min, maal and percentage van coalesce a leeg
 operand to 0 (`…_z`, `not …_d`), verminderd met only its right; a division
 writes 0 where the dividend is leeg, and where it is filled over a leeg

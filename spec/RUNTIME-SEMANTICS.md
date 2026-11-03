@@ -872,7 +872,10 @@ unit, the soort and the precision it computes with:
    second fell back to the binder reference's own annotation; since L2 a
    `BinderRef` carries none, and an unbound one is ill-formed,
    `IR-SPEC.md` WF-064); a value aggregation carries its first
-   operand's (§4.6 *Eenheid1*); a rounding and a clamp carry their basis's.
+   operand's (§4.6 *Eenheid1*), also where no member contributes: the 0 of a
+   total and a unitless fallback of a som carry it, and so does the 0 of a
+   temporal total without a contributing segment; a percentage-of carries its
+   right operand's (ch. 2.6, rule 7); a rounding and a clamp carry their basis's.
    Where v0 states no join rule at all, the **fourth class** below applies.
 
 **Three positions where the annotation IS the source**, and a consumer
@@ -898,7 +901,7 @@ carried.
 
 **A fourth class, and it says something weaker.** A *position* whose result
 unit v0 does not *derive* at all — a power
-(`power`), a percentage-of (`percentageOf`), an absolute value, a
+(`power`), an absolute value, a
 root, the date/time extractors — keeps its own annotation, because clause 2
 has nothing to put in its place. That is not the annotation being the
 source; it is v0 having no rule, and the two consumers answer it
@@ -907,7 +910,10 @@ returns `None` at those positions and its fences (`unit_free_ok`,
 `units_identical_ok`) then *fault* rather than compute with a unit it could
 not derive, whereas the Drools backend has no such fence and computes with
 the annotation — the behaviour it had before this clause, deliberately
-unchanged. **Zero** unit-bearing annotations in the
+unchanged. The Drools backend also reads the annotation of a scalar
+percentage-of (measured 2026-11-03: a twisted annotation writes 6000000 for
+60), so gate 13 keeps that position in this class until the backend derives
+it too. **Zero** unit-bearing annotations in the
 corpus sit at such a position, so the class is empty today and the
 difference between the two answers is unobservable. The clamp that reports
 the first witness is step 6 of `scripts/check-reftype-derivation.sh`. Note
@@ -1366,7 +1372,9 @@ corpus witness of the five operators, written by rules on a day grid and
 replayed by `ref` and the ASP backend, is
 `corpus/golden/jutterswet-rekenen-per-dag` (with b = 25, so that every
 quotient is whole: the ASP backend holds the unbounded form as a whole
-number, ch. 2.4; its case 4 gives four operands with a unit a gap each); a
+number, ch. 2.4; its case 4 gives four operands with a unit a gap each; its cases 5 to 7 fold
+over a set as an operand, the 0 of a fold without a contributor in the unit
+of the fold); a
 time-dependent parameter as an operand,
 `corpus/golden/anchor/jutterswet-verzuimrente-dagen`: the verzuimrentevoet
 (0,04 /jr until 2026-02-01, 0,05 /jr from then, both bounds open) maal an
@@ -2048,8 +2056,11 @@ period-coalescing rule. Further clauses:
   explicit leeg segments (the one producer that does, ch. 3.1); adjacent
   equal segments — equal-leeg included — coalesce. A rule that writes the
   sum writes those periods as gaps (ch. 3.1).
-- Each contributor is restated to the target's unit **before** the fold
-  (exact factors, ch. 2.6).
+- Each contributor is restated **before** the fold (exact factors,
+  ch. 2.6): into the target's unit where the sum is the value of the rule,
+  into its attribute's unit where it is an operand of an operator, since
+  only the value of the rule is restated to the target's (ch. 3.4). A
+  unitless fallback adopts that unit.
 - The operand is a Number — WF-091 (`IR-SPEC.md` ch. 4.1): a contributor
   declared as any other type makes the document ill-formed.
 
@@ -2180,7 +2191,8 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   point 12c). The convention of a case-supplied timeline below is
   unchanged.
 - An existing but **segmentless** timeline totals to **0** (the identity
-  of a sum over nothing); an **absent** timeline (the member itself leeg)
+  of a sum over nothing), in the unit the total carries by its declarations
+  (ch. 2.10); an **absent** timeline (the member itself leeg)
   totals to **leeg**. *v0 mirror note:* this gap-vs-absent distinction is
   the ch. 3.1 residual, mirrored as found; whether v1 keeps it stays open
   with the ch. 3.12 timeline decisions — the ch. 1.4 freeze covers the
@@ -2273,7 +2285,8 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   attribute's own granularity — and only the resulting scalars fold over
   the set. The outer fold is the ordinary ch. 1.2e aggregation: for
   `het totaal van` a member without a timeline contributes nothing and an
-  empty set totals **0**; `de som van` over the same shape folds
+  empty set totals **0** in the unit the total carries by its declarations
+  (ch. 2.10); `de som van` over the same shape folds
   identically inside and keeps the som's leeg rule outside. Every other
   aggregation over a temporal set member — min, max, eerste, laatste,
   aantal — is **refused**: there is no defined moment of the timeline for
