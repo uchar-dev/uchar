@@ -40,23 +40,31 @@ de ASP-codering). Dat zijn **technische vragen**; ik beslis ze hier als **voorlo
 | # | Besluitpunt | Markering | Soort | Aanbeveling in één regel |
 |---|---|---|---|---|
 | 1 | Rekenen per periode (maal, gedeeld door, percentage van, verminderd met) | spec spreekt (§5.1.1, §5.1.4) | besloten; technisch VB 1.1–1.4 | Per dag lezen met de leeg-regels van ch. 1.2; eenheden per segment; de §9.5-melding per regel × onderwerp. |
-| 2 | Het tijddomein (een scalair, een tijdsafhankelijke parameter als operand) | tegenspraak (spec §5.1.1, §5.1.4.1 en ALEF tegen RS ch. 3.4) | **normvraag** | Alle tijd: een tijdlijn deelt de hele tijd in, leeg buiten haar perioden; een scalair geldt altijd. |
+| 2 | Het tijddomein (een scalair, een tijdsafhankelijke parameter als operand) | tegenspraak (spec §5.1.1, §5.1.4.1 en ALEF tegen RS ch. 3.4) | **normvraag; besloten door de eigenaar: de aanbeveling** | Alle tijd: een tijdlijn deelt de hele tijd in, leeg buiten haar perioden; een scalair geldt altijd. |
 | 3 | Een voorwaarde op een regel met een tijdsafhankelijk doel | spec spreekt (§10.3, §8.4.1) | besloten; technisch VB 3.1–3.3 | Per periode: de regel schrijft alleen waar de voorwaarde geldt; dat veralgemeent de knip van ch. 3.10. |
-| 4 | De gehele-periodekwalificator op zo'n regel | tegenspraak (RS ch. 3.9 vouwt; ALEF per emmer) | **normvraag** | Per emmer op een tijdsafhankelijk doel; de vouw blijft voor een scalair doel. Geen golden verandert. |
-| 4b | De lege dag in een vergelijking onder de kwalificator | tegenspraak (spec §8.2 met typ. §5.3, §5.6, en ALEF, tegen RS ch. 3.9) | **normvraag** | Ch. 1.2 per dag, zoals de knip van ch. 3.6: een gatdag voldoet aan "ongelijk aan", een lege grens maakt de toets niet onwaar. Geen golden verandert. |
+| 4 | De gehele-periodekwalificator op zo'n regel | tegenspraak (RS ch. 3.9 vouwt; ALEF per emmer) | **normvraag; besloten door de eigenaar: de aanbeveling** | Per emmer op een tijdsafhankelijk doel; de vouw blijft voor een scalair doel. Geen golden verandert. |
+| 4b | De lege dag in een vergelijking onder de kwalificator | tegenspraak (spec §8.2 met typ. §5.3, §5.6, en ALEF, tegen RS ch. 3.9) | **normvraag; besloten door de eigenaar: de aanbeveling** | Ch. 1.2 per dag, zoals de knip van ch. 3.6: een gatdag voldoet aan "ongelijk aan", een lege grens maakt de toets niet onwaar. Geen golden verandert. |
 | 5 | Twee schrijvers van één tijdlijndoel | spec zwijgt (ALEF) | besloten; technisch VB 5.1–5.2 | Per dag: fout alleen op een dag waar beide schrijven en verschillen; RS ch. 5.7 per dag gelezen. |
 | 6 | Van datum tot datum; een datumexpressie als grens | spec spreekt (§10.3, §8.4.3, §9.2) | besloten; technisch VB 6.1–6.2 | Een tijdsafhankelijk kenmerk binnen een venster schrijven; WF-111 verruimen tot elke dagprecieze datumexpressie. |
-| 7 | De dagentelling: 0 of niets, een dagsoorttoets, de eenheid | tegenspraak voor 7a (typ. §4.21 en ALEF tegen RS ch. 3.8 en het anker `jutterswet-dagentelling`) | **normvraag (7a)**; 7b besloten (spec zwijgt), 7c besloten (spec spreekt) | 7a: 0 in een emmer zonder ware dag; 7b: een dagsoorttoets op de getelde dag toelaten; 7c: de telling draagt dagen per rastereenheid. |
+| 7 | De dagentelling: 0 of niets, een dagsoorttoets, de eenheid | tegenspraak voor 7a (typ. §4.21 en ALEF tegen RS ch. 3.8 en het anker `jutterswet-dagentelling`) | **normvraag (7a); besloten door de eigenaar: de aanbeveling**; 7b besloten (spec zwijgt), 7c besloten (spec spreekt) | 7a: 0 in een emmer zonder ware dag; 7b: een dagsoorttoets op de getelde dag toelaten; 7c: de telling draagt dagen per rastereenheid. |
 | 8 | Een fijnere operand in een grover doel | spec spreekt (typ. §3, §5.1.1, §10.3) | besloten; technisch VB 8.1 | Statisch weigeren, met een nieuwe WF-regel; 8b (een fijnere basis van het tijdsevenredig deel) volgt ALEF, zonder bouwkaart. |
 | 9 | Minimum, maximum, eerste en laatste over tijdlijnen | spec spreekt (§5.1.1, §5.1.4) | besloten; geen bouwkaart | Per periode over de operanden; een vorm "over de tijd van één tijdlijn" heeft geen bron en komt er niet. |
 | 10 | Verschuiven en eenmalig | spec zwijgt (ALEF) | besloten; geen bouwkaart | ALEF's afronding van grenzen op het raster vastleggen; bouwen pas als een brontaal van uchar de vorm schrijft. |
-| 11 | De dagtelconventie bij integratie | tegenspraak (ALEF tegen RS ch. 3.6) | **normvraag** | De kalender: tussen een dageenheid en een maandeenheid de werkelijke lengte, geen gedeclareerde factor. |
-| 12 | Het totaal over een gedeeltelijke eenheid | tegenspraak (ALEF tegen RS ch. 3.6 en golden `jutterswet-vast-startpunt`) | **normvraag (12a, 12b)**; 12c besloten (spec spreekt) | 12a: naar rato van de werkelijke lengte; 12b: de gewone operand houden als "per rastereenheid"; 12c: een afwezige tijdlijn telt 0. |
+| 11 | De dagtelconventie bij integratie | tegenspraak (ALEF tegen RS ch. 3.6) | **normvraag; besloten door de eigenaar: de aanbeveling** | De kalender: tussen een dageenheid en een maandeenheid de werkelijke lengte, geen gedeclareerde factor. |
+| 12 | Het totaal over een gedeeltelijke eenheid | tegenspraak (ALEF tegen RS ch. 3.6 en golden `jutterswet-vast-startpunt`) | **normvraag (12a, 12b); besloten door de eigenaar: de aanbeveling**; 12c besloten (spec spreekt) | 12a: naar rato van de werkelijke lengte; 12b: de gewone operand houden als "per rastereenheid"; 12c: een afwezige tijdlijn telt 0. |
 | 13 | Tijdsafhankelijke feittypen | spec zwijgt (ALEF) | besloten; geen bouwkaart | Vastleggen als later. |
 
 De normvragen voor de eigenaar zijn dus 2, 4, 4b, 7a, 11, 12a en 12b. Bij 2, 4b, 7a en 12a staat de
 specificatie (2, 4b, 7a) of haar stilte (12a) aan de kant van ALEF, en is het de gelande tekst van
 uchar die afwijkt.
+
+**Besluiten van de eigenaar (2026-11-03).** Alle zeven normvragen zijn beslist volgens de aanbeveling:
+2 alle tijd; 4 per emmer op een tijdsafhankelijk doel, de vouw blijft voor een scalair doel; 4b ch. 1.2
+per dag ook onder de kwalificator; 7a 0 in een emmer zonder ware dag; 11 de kalender tussen dag- en
+maandeenheden, een factor tussen de twee families ill-formed; 12a naar rato van de werkelijke lengte,
+als gevolgde afwijking; 12b de gewone operand houden, gelezen als "per rastereenheid", als gevolgde
+afwijking. Waar hieronder "normvraag" en "aanbeveling" staat, is de aanbeveling het besluit; de
+voorlopige besluiten die van een keuze afhingen, gelden voor de gekozen lezing.
 
 ## 2. Het principe: de lezing per dag
 

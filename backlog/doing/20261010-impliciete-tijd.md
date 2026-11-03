@@ -408,6 +408,14 @@ specificatie of de gelande semantiek van uchar ALEF tegenspreekt.
 Besloten zonder normvraag: 1, 3, 6, 7c, 8, 9, 12c (spec spreekt) en 5, 7b, 8b, 10, 13 (spec zwijgt, ALEF); de
 nagekeken paragrafen en de voorlopige besluiten (VB 1.1–8.1) staan per punt in het voorstel.
 
+**Besluiten van de eigenaar (2026-11-03, één vraag per bericht, door de hoofdsessie voorgelegd).** Alle zeven volgens
+de aanbeveling: 2 alle tijd; 4 per emmer op een tijdsafhankelijk doel; 4b ch. 1.2 per dag onder de kwalificator; 7a 0;
+11 de kalender; 12a naar rato, gevolgde afwijking; 12b de gewone operand als "per rastereenheid", gevolgde afwijking.
+Vooraf (dezelfde dag): ook voor tijd volgt uchar ALEF waar de RegelSpraak-specificatie zwijgt. 4b gaat met de kaart
+`20261009-ref-gehele-periode-lege-grens`; de andere met de bouwkaarten `20261103-timeline-arithmetic-by-rule` (1a),
+`20261103-timeline-arithmetic-per-period` (1b), `20261103-conditions-per-period` (1c) en
+`20261103-total-over-partial-unit` (12), elk met haar Drools-stap; de bevindingen 1, 3, 4 en 5 hieronder staan in 1c.
+
 ### Bevindingen buiten de besluitpunten (niet gerepareerd; de hoofdsessie legt ze vast)
 
 1. De frontend crasht (`IllegalStateException` in `IrEmitter.unknownType`, `IrEmitter.java:761`) op een variabele die
