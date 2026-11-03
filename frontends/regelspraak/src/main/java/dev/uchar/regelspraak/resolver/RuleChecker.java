@@ -4802,16 +4802,24 @@ final class RuleChecker {
         checkSign(targetType, peeledValue, line);   // §3.3.1 Teken-beperking, static over a literal value
         if (targetType.isUnknown() || valueType.isUnknown()) return; // not enough resolved to judge
         Typing.Coded error = Typing.assignment(targetType, valueType, ExpressionBuilder.unitlessNumberLiteral(valueExpr));
-        if (error == null) error = Typing.precisionGate(targetType, timelineTarget(targetExpr), valueExpr, model);
+        if (error == null)
+            error = Typing.precisionGate(targetType, timelineTarget(targetExpr) && proRata(valueExpr), valueExpr, model);
         if (error != null)
             model.diagnostics.add(error.frame("category", "category", category.name().toLowerCase()).at(Severity.ERROR, line));
     }
 
-    /** Whether a rule target is an attribute with a timeline, which the precision gate leaves alone
+    /** Whether a rule target is an attribute with a timeline, whose pro-rata write stands outside the precision gate
      *  ({@link Typing#precisionGate}); a cell has none (a dimension and a timeline are not combined). */
     private static boolean timelineTarget(Expr target) {
         return target instanceof Expr.AttributeReference a && a.objectType() != null
                 && a.objectType().granularityOf(a.attribute()) != null;
+    }
+
+    /** Whether a rule's value is the pro-rata write of RUNTIME-SEMANTICS ch. 3.7, read off the value's own node as the
+     *  verifier reads it ({@code wf023_precision}): a time-proportional part under a variable part's chain stands in
+     *  the gate there too. */
+    private static boolean proRata(Expr value) {
+        return value instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL;
     }
 
     /** The expression a ch. 4.10 {@code Let} chain ultimately DENOTES, for the shape-sensitive static checks:

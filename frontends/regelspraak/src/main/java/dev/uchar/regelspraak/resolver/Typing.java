@@ -566,7 +566,9 @@ public final class Typing {
                 // the temporal total adds whole periods of the grid (ch. 3.6); a rate whose period is not the grid's
                 // own unit is restated into it (ch. 2.6, rule 8)
                 Expr a = args.get(0);
-                Bounded total = bounded(scaled(own(a, model, binders), gridFactor(a, model)), unitOf(f));
+                Precision operand = own(a, model, binders);
+                if (operand != null && calendarUnbounded(a, model)) operand = Precision.UNBOUNDED;
+                Bounded total = bounded(scaled(operand, gridFactor(a, model)), unitOf(f));
                 yield f.emptyFallback() == null ? total
                         : combined(java.util.Arrays.asList(total, precision(f.emptyFallback(), model, binders)));
             }
@@ -602,6 +604,30 @@ public final class Typing {
         return Unit.Fraction.ONE;
     }
 
+    /** Whether a temporal total of {@code operand} integrates by the calendar where no finite bound is left
+     *  (RUNTIME-SEMANTICS ch. 2.3, ch. 3.6): its rate has no negative factor of the grid's class, and the first negative
+     *  factor the calendar table puts in a family is of the other family than the grid. A day weighs 1/len of its month,
+     *  quarter or year, and a week 1/7 of the days a month or a year holds, so only a day over a grid of the month family
+     *  keeps the bound of its operand (whole days). The rule of the verifier ({@code calendar_denominator} and the
+     *  calendar clause of the temporal total in its precision bound, {@code spec/verifier/lib/checks.ml}). */
+    private static boolean calendarUnbounded(Expr operand, dev.uchar.regelspraak.model.RegelSpraakModel model) {
+        Unit u = unitOf(operand);
+        if (u == null || !(operand instanceof Expr.AttributeReference a) || a.objectType() == null) return false;
+        dev.uchar.regelspraak.model.RegelSpraakModel.Granularity g = a.objectType().granularityOf(a.attribute());
+        if (g == null) return false;
+        Unit grid = dev.uchar.regelspraak.core.TimeCalculation.gridUnit(g, model);
+        if (grid != null)
+            for (Unit.Factor f : u.negativeFactors())
+                if (f.quantityClass().equals(grid.factors().get(0).quantityClass())) return false;
+        var gridFamily = dev.uchar.regelspraak.core.TimeCalculation.calendarFamily(g);
+        for (Unit.Factor f : u.negativeFactors()) {
+            var family = dev.uchar.regelspraak.core.TimeCalculation.calendarFamily(f.abbreviation());
+            if (family != null && family != gridFamily)
+                return !dev.uchar.regelspraak.core.TimeCalculation.isDay(f.abbreviation());
+        }
+        return false;
+    }
+
     /** The declared unit a factor names, with exponent 1. */
     private static Unit atom(Unit.Factor f) {
         return new Unit(f.abbreviation(), f.system(), f.canonical(), f.factorToCanonical());
@@ -625,12 +651,15 @@ public final class Typing {
 
     /** §6.1.2, the precision gate of RUNTIME-SEMANTICS ch. 2.4: a computed value whose bound, restated into the unit of
      *  the target, exceeds the target's declared decimals is RGS-372, and one without a finite bound RGS-370; an
-     *  unbounded target has no ceiling, and a value that makes no claim passes. A target with a timeline
-     *  ({@code timeline}) stands outside the gate: no executor carries a rounding around the pro-rata write of ch. 3.7,
-     *  the one computed write such a target takes, so the gate would leave that write no form (ch. 2.8). */
-    public static Coded precisionGate(Datatype target, boolean timeline, Expr value,
+     *  unbounded target has no ceiling, and a value that makes no claim passes. A rule on a target with a timeline
+     *  stands in the gate with its bound per segment, the value of each segment being the value of the expression on
+     *  its period (ch. 2.3, ch. 3.4). A write marked {@code outside} stands outside the gate: the pro-rata write of
+     *  ch. 3.7 into a timeline, around which no executor carries a rounding, so the gate would leave that write no form
+     *  (ch. 2.8), and a timeline member of an object creation, which no executor writes. The positions are the
+     *  verifier's ({@code wf023_precision}). */
+    public static Coded precisionGate(Datatype target, boolean outside, Expr value,
                                       dev.uchar.regelspraak.model.RegelSpraakModel model) {
-        if (timeline || target.isUnknown() || !target.isNumberLike() || target.unbounded()) return null;
+        if (outside || target.isUnknown() || !target.isNumberLike() || target.unbounded()) return null;
         Bounded b = precision(value, model);
         if (b == null) return null;
         Precision p = b.in(target.unitOf());
@@ -642,8 +671,8 @@ public final class Typing {
 
     /** §6.1.2 for a §13.4.10 verdeling share: the family and unit rule of {@link #assignment}, and the precision gate
      *  over the bound of a share, the rounding of the verdeling ({@code roundDec}) or else the declaration of its pot.
-     *  An unbounded ({@code getal}) target has no ceiling, and a target with a timeline stands outside the gate as in
-     *  {@link #precisionGate}. Returns the refusal, or null. */
+     *  An unbounded ({@code getal}) target has no ceiling, and a target with a timeline stands outside the gate: an
+     *  allocation writes no timeline. Returns the refusal, or null. */
     public static Coded allocationAssignment(Datatype target, boolean timeline, Datatype source, Integer roundDec) {
         // An Onbekend bron/doel carries no type claim — the assignment check no-ops.
         if (target == null || source == null || target.isUnknown() || source.isUnknown())

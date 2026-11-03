@@ -152,7 +152,7 @@ class PrecisionGateTest {
     }
 
     // wf023-precision-time-proportional-part
-    @Test void a_time_proportional_part_has_no_bound_and_a_timeline_target_stands_outside_the_gate() {
+    @Test void a_time_proportional_part_has_no_bound_and_its_write_into_a_timeline_stands_outside_the_gate() {
         String model = """
             Objecttype de Bakenmeester (mv: Bakenmeesters) (bezield)
                 het onderhoudstarief Numeriek (getal met 2 decimalen) voor elk jaar;
@@ -167,6 +167,149 @@ class PrecisionGateTest {
         refused(model.formatted(""), "RGS-370", unbounded(2));
         // into a monthly timeline the pro-rata write is the one computed write, and no executor rounds around it
         passes(model.formatted(" voor elke maand"));
+    }
+
+    /** The negative wf023-precision-timeline-target: the five other rules are those of the golden
+     *  jutterswet-rekenen-per-dag, each in the gate per segment, and each fits; {@code %s} is the datatype of the
+     *  loonverhouding and {@code %s} what its rule writes after the quotient. */
+    private static final String JUTTER = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het strandloon Numeriek (geheel getal) voor elke dag;
+            de stormtoeslag Numeriek (geheel getal) voor elke dag;
+            het loonproduct Numeriek (geheel getal) voor elke dag;
+            het nettoloon Numeriek (geheel getal) voor elke dag;
+            de loonverhouding Numeriek (%s) voor elke dag;
+            de afgekapte loonverhouding Numeriek (getal met 5 decimalen) voor elke dag;
+            de strandheffing Numeriek (getal met 2 decimalen) voor elke dag;
+            het jaarproduct Numeriek (geheel getal);
+
+        Regel loonproduct van een jutter
+            geldig altijd
+                Het loonproduct van een Jutter moet berekend worden als zijn strandloon maal zijn stormtoeslag.
+
+        Regel nettoloon van een jutter
+            geldig altijd
+                Het nettoloon van een Jutter moet berekend worden als zijn strandloon verminderd met zijn stormtoeslag.
+
+        Regel loonverhouding van een jutter
+            geldig altijd
+                De loonverhouding van een Jutter moet berekend worden als zijn strandloon gedeeld door zijn stormtoeslag%s.
+
+        Regel afgekapte loonverhouding van een jutter
+            geldig altijd
+                De afgekapte loonverhouding van een Jutter moet berekend worden als zijn strandloon gedeeld door (ABS) \
+        zijn stormtoeslag.
+
+        Regel strandheffing van een jutter
+            geldig altijd
+                De strandheffing van een Jutter moet berekend worden als 10%% van zijn strandloon.
+
+        Regel jaarproduct van een jutter
+            geldig altijd
+                Het jaarproduct van een Jutter moet gesteld worden op het totaal van zijn loonproduct.
+        """;
+
+    // wf023-precision-timeline-target
+    @Test void a_rule_on_a_timeline_target_stands_in_the_gate_per_segment() {
+        refused(JUTTER.formatted("geheel getal", ""), "RGS-370", unbounded(0));
+        // the golden: the quotient into the unbounded form
+        passes(JUTTER.formatted("getal", ""));
+        passes(JUTTER.formatted("geheel getal", " naar beneden afgerond op 0 decimalen"));
+        // 15% of a whole number has two decimals in every segment, 10% one
+        String heffing = """
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                het strandloon Numeriek (geheel getal) voor elke dag;
+                de smalle heffing Numeriek (getal met 1 decimalen) voor elke dag;
+
+            Regel smalle heffing van een jutter
+                geldig altijd
+                    De smalle heffing van een Jutter moet berekend worden als %s van zijn strandloon.
+            """;
+        refused(heffing.formatted("15%"), "RGS-372", exceeds(2, 1));
+        passes(heffing.formatted("10%"));
+    }
+
+    @Test void a_time_proportional_part_under_a_variable_part_stands_in_the_gate() {
+        // the pro-rata write is read off the value's own node, as the verifier reads it: under the chain of a
+        // variable part the value is the chain, and the gate holds it
+        refused("""
+            Objecttype de Bakenmeester (mv: Bakenmeesters) (bezield)
+                het onderhoudstarief Numeriek (getal met 2 decimalen) voor elk jaar;
+                de onderhoudsbijdrage Numeriek (getal met 2 decimalen) voor elke maand;
+                is dienstdoend kenmerk (bijvoeglijk) voor elke maand;
+
+            Regel onderhoudsbijdrage van een bakenmeester
+                geldig altijd
+                    De onderhoudsbijdrage van een Bakenmeester moet gesteld worden op de bijdrage.
+                    Daarbij geldt:
+                        de bijdrage is het tijdsevenredig deel per maand van zijn onderhoudstarief gedurende de tijd dat \
+            hij dienstdoend is.
+            """, "RGS-370", unbounded(2));
+    }
+
+    /** The negative wf023-precision-calendar-total, the anchor anchor/jutterswet-verzuimrente-dagen without its rounding;
+     *  {@code %s} is the value of the verzuimrente. */
+    private static final String AFDRACHT = """
+        Eenheidsysteem Munt
+            de euro (mv: euros) EUR €
+
+        Eenheidsysteem Tijd
+            de dag (mv: dagen) dg
+            het jaar (mv: jaren) jr
+
+        Parameter de verzuimrentevoet : Numeriek (getal met 2 decimalen) met eenheid 1/jr voor elke maand;
+
+        Objecttype de Afdracht (mv: Afdrachten)
+            het afdrachtbedrag Numeriek (geheel getal) met eenheid €;
+            de vervaldatum Datum in dagen;
+            de betaaldatum Datum in dagen;
+            is rentedragend kenmerk (bijvoeglijk) voor elke dag;
+            de dagrente Numeriek (getal met 2 decimalen) met eenheid €/jr voor elke dag;
+            de verzuimrente Numeriek (getal met 2 decimalen) met eenheid €;
+
+        Regel dagrente
+            geldig altijd
+                De dagrente van een Afdracht moet berekend worden als de verzuimrentevoet maal zijn afdrachtbedrag.
+
+        Regel verzuimrente
+            geldig altijd
+                De verzuimrente van een Afdracht moet berekend worden als %s.
+        """;
+
+    // wf023-precision-calendar-total
+    @Test void a_total_the_calendar_integrates_has_no_bound_unless_it_counts_whole_days() {
+        String total = "het totaal van zijn dagrente gedurende de tijd dat hij rentedragend is";
+        // a day weighs 1/365 or 1/366 of its year
+        refused(AFDRACHT.formatted(total), "RGS-370", unbounded(2));
+        // the anchor rounds it to the cent
+        passes(AFDRACHT.formatted("(" + total + ") rekenkundig afgerond op 2 decimalen"));
+        // over a grid of the month family a rate per day counts whole days, and keeps the bound of its operand; a rate
+        // per week weighs 1/7 of the days of the month
+        String huur = """
+            Eenheidsysteem Munt
+                de euro (mv: euros) EUR €
+
+            Eenheidsysteem Tijd
+                de dag (mv: dagen) dg
+                de week (mv: weken) wk = 7 dg
+                de maand (mv: maanden) mnd
+
+            Objecttype de Strandtent (mv: Strandtenten)
+                de huur Numeriek (geheel getal) met eenheid €/%s voor elke maand;
+                de huursom Numeriek (geheel getal) met eenheid €;
+
+            Regel huursom van een strandtent
+                geldig altijd
+                    De huursom van een Strandtent moet berekend worden als het totaal van zijn huur.
+            """;
+        passes(huur.formatted("dg"));
+        refused(huur.formatted("wk"), "RGS-370", unbounded(0));
+        // a rate whose period is declared in the class of the grid is restated by that factor, not by the calendar: with
+        // "jr = 400 dg", which WF-009 refuses, a day is 1/400 year, four decimals more than the two of the dagrente
+        String declared = AFDRACHT.formatted(total).replace("het jaar (mv: jaren) jr\n", "het jaar (mv: jaren) jr = 400 dg\n");
+        assertEquals(List.of("RGS-373 " + params("unit", "jr", "unitFamily", "de maandfamilie (maand, kwartaal, jaar)",
+                        "canonical", "dg", "canonicalFamily", "de dagfamilie (dag, week)", "unitSystem", "Tijd"),
+                "RGS-372 " + exceeds(6, 2)), errors(declared));
     }
 
     @Test void a_sum_across_units_is_bound_in_the_unit_that_bounds_it_best() {
