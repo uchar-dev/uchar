@@ -1447,9 +1447,15 @@ can meet one carries the guard
 
 with its twin on `T = #sup` (EF-036; RS ch. 3.6): a segment of 0 drops
 out of the `#sum` and adds the 0 it carries, any other value is the
-fault. A fold over the buckets of a timeline that may carry an open bound
-(the whole-period qualifier, ch. 3.9) is refused by name at translation
-time, since the bucket facts cover the case's span only. A model's
+fault. The bucket facts cover the case's dates — the bounds of its
+timelines and true periods, its scalar dates, its parameters' and the date
+literals of its windows — widened by a year on both sides, so beyond every
+finite bound lies a whole bucket of every grid of a year or less: a fold
+over the buckets an open segment touches (the whole-period qualifier,
+ch. 3.9) reads it there for every bucket further out, and the
+intersection of a segment with a bucket never computes with an open bound,
+since `#inf` lies below and `#sup` above every wall. A case without a date
+has the year around 1970-01-01. A model's
 `tl/5` atom with `#inf` or `#sup` reads back as the open bound of the
 expected segment.
 
@@ -1477,8 +1483,18 @@ translation time (temporal base, own temporal characteristic under
 gedurende, bucket = target granularity, base not finer than the
 bucket). **Day count** (aantal-dagen-in, ch. 3.8): the same bucket
 and true-day machinery (shared emit helpers) with the head carrying
-`TD` itself — pro-rata's numerator as the value, unitless; WF-058
-mirrors WF-056's facets. The 46340 contributor-count guard is
+`TD` itself — pro-rata's numerator as the value, in the target's unit
+(dg/mnd, dg/jr) where it declares one, else unitless; WF-058 mirrors
+WF-056's facets. A bucket without a true day writes 0 (RS ch. 3.8,
+over all time): `adgN_z(S,B,N)` holds on every bucket the head does not
+count (`adgN_cnt(S,B)`), on `(#inf, first)` and on `(last, #sup)`, and the
+maximal runs of those are segments of 0, the same join pattern as the
+period arithmetic below. A day-kind test of the counted day in the
+condition (RS ch. 3.8, `all` with one own characteristic) is evaluated at
+translation time over the bucket span, as the duration forms evaluate it:
+the days it rejects are facts `adgN_x(D)`, and a bucket's `TD` leaves out
+the true days among them. A derived true period that reaches outside the
+span is fenced by name. The 46340 contributor-count guard is
 shared; the 366-headroom bound differs per producer — pro-rata
 fences the weight |W|, the day count fences the target's decimal
 scale (a compile-time fault).
@@ -1535,12 +1551,23 @@ cut-merges, so the value of every day is ref's, and the maximal runs are
 ref's coalesced segments. On a standing target the arm of ch. 7.8 above
 applies with `paN_eff`. The subject's own total of such a target is a
 `#sum { W*N,V,T : tl(S,a,V,T,W), ptN_wu(V,T,N) }` over the case's finite
-endpoints — of the instances' and the parameters' timelines — with the
-open-bound guard above; where the timeline reads a timeline that another
-producer derives (a pro-rata part or a day count), its bounds are no case
-data and the total is refused by name. The gedurende-clipped total of such
-a target lays its whole-unit facts over the same endpoints and refuses the
-same derived bounds.
+endpoints — of the instances' timelines and true periods and the
+parameters' timelines — and the walls of the target's grid over the bucket
+span, with the open-bound guard above: a timeline that reads a pro-rata
+part, a day count or a condition per period has its bounds on those walls.
+A finite segment whose bounds are neither derives
+`viol("the temporal total of a meets a segment whose bounds are neither
+bounds of the case nor walls of the grid (no corpus case)")`, where ref
+totals it. The gedurende-clipped total of such a target lays its
+whole-unit facts over the case's endpoints and refuses derived bounds by
+name.
+
+**A time-dependent characteristic** within a period window (RS ch. 3.10,
+3.11): the condition is translated as a condition per period (below), the
+window a node that holds on the periods between its bound terms, and the
+maximal periods are derived `ktl(S,k,F,T)` atoms, which every reader of the
+characteristic reads as it reads the case's; a period with an open bound
+derives a named witness.
 
 **A condition per period** (RUNTIME-SEMANTICS ch. 3.10, the clip
 generalised; ch. 3.9 per bucket). On a rule of a timeline attribute target
@@ -1554,7 +1581,12 @@ holds where the node holds on the period starting at X: a characteristic
 comparison its tested value at X against the bound's term with the ch. 1.2
 leeg rows (a gap is no `tl/5` atom, a leeg bound binds none of its atoms),
 a composite `H = #count { i : member_i(S,X) }` against its quantifier, a
-node that reads no timeline its `cond_atoms` on every period. A qualifier
+period window `L <= X, X < H` between its bound terms, which are cuts as
+well (a leeg bound binds no atom, so the window holds on no period), a
+node that reads no timeline its `cond_atoms` on every period. A rounding in
+the period arithmetic rounds per period: a quotient straight from its two
+operands at the rounding's scale, any other value from its own, with the
+scalar rounding's integer formula and its witness for a negative operand. A qualifier
 fails in a bucket that holds a period on which its test fails, holds on
 the periods of every other bucket, and outside the buckets laid over the
 case's span, where every timeline is constant, holds where its test does.

@@ -61,13 +61,15 @@ backend 14 expectations per case, both Drools branches `PLAYED 6`.
 ## The bound shapes this document carries, and the one it does not
 
 WF-111 (maintainer decision 2026-09-23; before that ch. 3.10's v0 mirror note)
-bounds what a window bound may BE: a date literal or the subject's own scalar
-date attribute. Both shapes are carried here (four literal windows, one
-own-attribute window), which makes this document WF-111's passing golden. The
-general date expression is an OPEN wire decision and ill-formed until it is
-taken; its failing witness is
-`corpus/negative/wf111-period-boundary-parameter-date`, which was the red case
-`periodegrens-parameterdatum` until that day. The same holds for the window's
+bounds what a window bound may BE: a day-precise date expression over the
+subject, the parameters and literals (widened 2026-11-03,
+`spec/proposals/IMPLICIT-TIME.md` VB 6.1). Its two simplest shapes are carried
+here (four literal windows, one own-attribute window), which makes this
+document one of WF-111's passing goldens; a computed bound is carried by
+`corpus/golden/anchor/jutterswet-verzuimrente-30-360`. A bound that navigates
+or reads a timeline is ill-formed; its failing witnesses are
+`corpus/negative/wf111-computed-bound-navigated-read` and
+`corpus/negative/wf111-period-boundary-time-dependent-parameter`. The same holds for the window's
 POSITION: `borgpremie`'s `all` member is WF-112's passing golden, and the window
 under `none` is `corpus/negative/wf112-time-window-counting-quantifier`.
 
