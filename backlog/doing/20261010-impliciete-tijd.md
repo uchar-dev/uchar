@@ -9,6 +9,9 @@ EUPL-1.2-uitgave van ALEF door de Belastingdienst, `https://github.com/belasting
 (2026-07-02, branch `main`); paden hieronder relatief aan
 `AlefJava/alefRuntime/src/main/java/nl/belastingdienst/alef_runtime/`, tenzij anders vermeld.*
 
+*Noot 2026-11-03 (fase 0): de regelnummers van uchar in deze kaart staan op `a1c21727`; het voorstel
+`spec/proposals/IMPLICIT-TIME.md` meet ze opnieuw op main en noemt die hash.*
+
 ## Aanleiding
 
 In de presentatie "Implicit Temporal Reasoning for Executable Legal Rules" liet de Belastingdienst zien hoe ALEF, haar
