@@ -1299,6 +1299,7 @@ public final class SemanticTokens {
     private void expectation(VerwachtingContext v, Map<String, Opened> labels) {
         if (v instanceof VerwachtAttribuutLeegContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
         else if (v instanceof VerwachtTijdlijnLeegContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
+        else if (v instanceof VerwachtTijdlijnAltijdContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
         else if (v instanceof VerwachtAttribuutWaardeContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
         else if (v instanceof VerwachtKenmerkContext k) characteristicOf(k.UPPER_ID(), k.kaleNaam(), labels);
         else if (v instanceof VerwachtKenmerkHeeftContext k) characteristicOf(k.UPPER_ID(), k.kaleNaam(), labels);
