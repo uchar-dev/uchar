@@ -218,6 +218,61 @@
                 }
               ]
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "kiloprijs",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "kg",
+                  "system": "Gewicht",
+                  "canonical": "kg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vrachtprijs",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 4,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
           }
         ],
         "characteristics": []
@@ -243,6 +298,27 @@
             "spellings": [
               "kilogram",
               "kilogrammen"
+            ]
+          }
+        ]
+      },
+      {
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
             ]
           }
         ]
@@ -901,6 +977,124 @@
               },
               "source": {
                 "snippet": "de som van zijn vondstgewicht over alle seizoenen of 0,50 kg als die er niet zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vrachtprijs van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vrachtprijs",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De vrachtprijs van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "Aggregation",
+                "kind": "sum",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondstgewicht",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn vondstgewicht"
+                    }
+                  }
+                ],
+                "emptyFallback": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "0"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "0"
+                  }
+                },
+                "dimensionSelections": [
+                  {
+                    "node": "DimensionSelection",
+                    "dimension": "seizoen",
+                    "labels": [
+                      "voorjaar",
+                      "zomer",
+                      "najaar"
+                    ],
+                    "source": {
+                      "snippet": "over alle seizoenen"
+                    }
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "nonNegative",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "kg",
+                      "system": "Gewicht",
+                      "canonical": "kg",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "de som van zijn vondstgewicht over alle seizoenen of 0 als die er niet zijn"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "kiloprijs",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn kiloprijs"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 4,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "(de som van zijn vondstgewicht over alle seizoenen of 0 als die er niet zijn) maal zijn kiloprijs"
               }
             },
             "initialisation": false,

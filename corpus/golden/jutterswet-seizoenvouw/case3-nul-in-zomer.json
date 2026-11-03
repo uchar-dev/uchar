@@ -26,6 +26,9 @@
                 }
               }
             ]
+          },
+          "kiloprijs": {
+            "number": "3.00"
           }
         },
         "roles": {},
@@ -105,6 +108,14 @@
       "attribute": "basisgewicht",
       "value": {
         "number": "1.50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J4",
+      "attribute": "vrachtprijs",
+      "value": {
+        "number": "4.50"
       }
     },
     {

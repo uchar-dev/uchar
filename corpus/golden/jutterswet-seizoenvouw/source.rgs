@@ -1,6 +1,9 @@
 Eenheidsysteem Gewicht
     het kilogram (mv: kilogrammen) kg
 
+Eenheidsysteem Munt
+    de euro (mv: euros) EUR €
+
 Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
     1. voorjaar
     2. zomer
@@ -17,6 +20,8 @@ Objecttype de Jutter (mv: Jutters) (bezield)
     het najaarsvoorrangsgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
     het aantal vondstseizoenen Numeriek (niet-negatief geheel getal);
     het basisgewicht Numeriek (niet-negatief getal met 2 decimalen) met eenheid kg;
+    de kiloprijs Numeriek (niet-negatief getal met 2 decimalen) met eenheid €/kg;
+    de vrachtprijs Numeriek (niet-negatief getal met 4 decimalen) met eenheid €;
 
 Regel jaargewicht van een jutter
     geldig altijd
@@ -53,3 +58,7 @@ Regel aantal vondstseizoenen van een jutter
 Regel basisgewicht van een jutter
     geldig altijd
         Het basisgewicht van een Jutter moet berekend worden als de som van zijn vondstgewicht over alle seizoenen of 0,50 kg als die er niet zijn.
+
+Regel vrachtprijs van een jutter
+    geldig altijd
+        De vrachtprijs van een Jutter moet berekend worden als (de som van zijn vondstgewicht over alle seizoenen of 0 als die er niet zijn) maal zijn kiloprijs.

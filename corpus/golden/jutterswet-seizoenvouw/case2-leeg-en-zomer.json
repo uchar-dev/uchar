@@ -6,7 +6,11 @@
       {
         "label": "J2",
         "objectType": "Jutter",
-        "attributes": {},
+        "attributes": {
+          "kiloprijs": {
+            "number": "3.00"
+          }
+        },
         "roles": {},
         "characteristics": []
       },
@@ -25,6 +29,9 @@
                 }
               }
             ]
+          },
+          "kiloprijs": {
+            "number": "3.00"
           }
         },
         "roles": {},
@@ -152,6 +159,22 @@
       "attribute": "basisgewicht",
       "value": {
         "number": "1.25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "vrachtprijs",
+      "value": {
+        "number": "0.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J3",
+      "attribute": "vrachtprijs",
+      "value": {
+        "number": "3.75"
       }
     },
     {

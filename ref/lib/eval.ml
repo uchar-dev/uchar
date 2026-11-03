@@ -2526,7 +2526,7 @@ and eval_dimension_fold env world self ~err ~kind ~call_arguments ~empty_fallbac
   match call_arguments with
   | [ argument ] -> (
       match Option.value (Ir_v0.Checks.unanchored_expr argument) ~default:argument with
-      | Attribute_reference { attribute_ref = Some name; object_type = Some ot; _ } -> (
+      | Attribute_reference { attribute_ref = Some name; object_type = Some ot; _ } as read -> (
           let dims =
             match Ir_v0.Checks.attr_dimensions (object_type env ot) name with
             | Some dims -> dims
@@ -2544,7 +2544,9 @@ and eval_dimension_fold env world self ~err ~kind ~call_arguments ~empty_fallbac
           match kind with
           | Sum_function ->
               let fallback = Option.map (eval_expr env world self ~err) empty_fallback in
-              Arith.agg_sum ~fallback cells
+              (* a unitless fallback stands for the fold's value, so it takes the
+                 unit the fold carries by its declarations (ch. 2.10, §4.6) *)
+              Arith.agg_sum ~unit:(fun () -> declared_unit env read) ~fallback cells
           | Minimum -> Arith.agg_min cells
           | Maximum -> Arith.agg_max cells
           | First -> ( match Arith.filled cells with [] -> Value.Empty | v :: _ -> v)

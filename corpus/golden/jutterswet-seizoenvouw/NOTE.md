@@ -13,7 +13,8 @@ replay them (gates 5, 6 and 12): the dimension fold executes
 ## Source (`source.rgs`)
 
 A dimension `seizoen` with the labels `voorjaar`, `zomer`, `najaar`, and on
-the `Jutter` a `vondstgewicht` in `kg` dimensioned by it. Nine rules:
+the `Jutter` a `vondstgewicht` in `kg` dimensioned by it and a `kiloprijs`
+in `€/kg`. Ten rules:
 
 | rule | fold | written selection | `labels` on the wire |
 |---|---|---|---|
@@ -26,6 +27,12 @@ the `Jutter` a `vondstgewicht` in `kg` dimensioned by it. Nine rules:
 | `najaarsvoorrangsgewicht` | `first` | `over de seizoenen in {najaar en voorjaar}` | najaar, voorjaar |
 | `aantal vondstseizoenen` | `filledCount` ("het aantal voorkomens van") | `over alle seizoenen` | voorjaar, zomer, najaar |
 | `basisgewicht` | `sum`, `emptyFallback` 0.50 kg ("of 0,50 kg als die er niet zijn") | `over alle seizoenen` | voorjaar, zomer, najaar |
+| `vrachtprijs` | `sum`, `emptyFallback` 0 ("of 0 als die er niet zijn"), maal the `kiloprijs` | `over alle seizoenen` | voorjaar, zomer, najaar |
+
+The fallback of `vrachtprijs` carries no unit. It stands for the value of the
+fold, so it takes the unit the fold carries by its declarations, `kg`
+(RUNTIME-SEMANTICS ch. 2.10, §4.6), and the product is in `€`: J2's
+vrachtprijs is 0 €, not a unitless 0 times `€/kg`.
 
 The first and the last pick by position, the first and the last filled cell
 in the order of the selection, as ALEF does; a set keeps its written order,
@@ -82,12 +89,15 @@ hand-computed:
 | | J3: `zomer` 1.25 alone | 1.25 | 1.25 | 1.25 | 1.25 |
 | `case3-nul-in-zomer.json` | J4: `zomer` 0.00, `najaar` 1.50, `voorjaar` empty | 1.50 | 0.00 | 1.50 | 0.00 |
 
-| case | instance | `openingsgewicht` | `slotgewicht` | `najaarsvoorrangsgewicht` | `aantal vondstseizoenen` | `basisgewicht` |
-|---|---|---|---|---|---|---|
-| `case1-twee-seizoenen.json` | J1 | 3.00 | 2.00 | 2.00 | 2 | 5.00 |
-| `case2-leeg-en-zomer.json` | J2 | leeg | leeg | leeg | 0 | 0.50 |
-| | J3 | 1.25 | 1.25 | leeg | 1 | 1.25 |
-| `case3-nul-in-zomer.json` | J4 | 0.00 | 1.50 | 1.50 | 2 | 1.50 |
+| case | instance | `openingsgewicht` | `slotgewicht` | `najaarsvoorrangsgewicht` | `aantal vondstseizoenen` | `basisgewicht` | `vrachtprijs` |
+|---|---|---|---|---|---|---|---|
+| `case1-twee-seizoenen.json` | J1 | 3.00 | 2.00 | 2.00 | 2 | 5.00 | 15.00 |
+| `case2-leeg-en-zomer.json` | J2 | leeg | leeg | leeg | 0 | 0.50 | 0.00 |
+| | J3 | 1.25 | 1.25 | leeg | 1 | 1.25 | 3.75 |
+| `case3-nul-in-zomer.json` | J4 | 0.00 | 1.50 | 1.50 | 2 | 1.50 | 4.50 |
+
+Every Jutter has a `kiloprijs` of 3.00 €/kg, so the `vrachtprijs` is the sum
+of the cells, or 0 kg, times 3.00 €/kg.
 
 An empty cell is skipped (`groeigewicht` of J1 is `voorjaar` alone, the
 `dalgewicht` `najaar` alone), and a fold whose every cell is empty is leeg,
@@ -99,8 +109,8 @@ case with J3, since a case of J2 alone would hold on its input and the no-op
 guard (gate 7) would let it pass; for the same reason no case pins an input
 cell.
 
-| executor | outcome (2026-11-02) |
+| executor | outcome (2026-11-03) |
 |---|---|
-| `ref` (gate 5) | `oracle: PASS (10 expectations)`, `oracle: PASS (19 expectations)`, `oracle: PASS (10 expectations)` |
-| `clingo` (gate 6) | `clingo: PASS (10 expectations)`, `clingo: PASS (19 expectations)`, `clingo: PASS (10 expectations)` |
+| `ref` (gate 5) | `oracle: PASS (11 expectations)`, `oracle: PASS (21 expectations)`, `oracle: PASS (11 expectations)` |
+| `clingo` (gate 6) | `clingo: PASS (11 expectations)`, `clingo: PASS (21 expectations)`, `clingo: PASS (11 expectations)` |
 | Drools (gate 12) | `PLAYED 3`, both branches |
