@@ -56,6 +56,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * which is unequal to 100, so the composite holds until 01-01 and from 02-01: 5 until 01-01, 105 on [02-01, 04-01),
  * 155 up to 07-01, 5 from 07-01. "De premie … gesteld op 25 gedurende de tijd dat zijn strandloon groter is dan 120": 25
  * on [04-01, 07-01). J2 has no timeline: loon and premie the empty timeline, vrij loon 0 and hoog loon 5 on all time.
+ * J3 is J1 with aangesteld given as two adjacent periods, [02-01, 04-01) and [04-01, 06-01): the periods of the check are
+ * maximal, one period, so J3 has J1's timelines and J1's readings.
  *
  * <p><b>B, the whole-period qualifier per bucket.</b> J1: wachtplichtig (for each day) on [2025-11-16, 2026-03-13),
  * wachtloon 15 on [2025-01-01, 2026-07-01). "De dagen … als het aantal dagen in de maand dat hij wachtplichtig is
@@ -111,7 +113,10 @@ class TmsConditionPerPeriodWitnessTest {
         return TmsTimelineDocuments.caseDocument(null, List.of(
                         instance("J1", "Jutter", Map.of("strandloon", STRANDLOON, "toeslag", TOESLAG), List.of(),
                                 Map.of("aangesteld", List.of(period("2024-02-01", "2024-06-01"))), Map.of()),
-                        instance("J2", "Jutter", Map.of(), List.of(), Map.of(), Map.of())),
+                        instance("J2", "Jutter", Map.of(), List.of(), Map.of(), Map.of()),
+                        instance("J3", "Jutter", Map.of("strandloon", STRANDLOON, "toeslag", TOESLAG), List.of(),
+                                Map.of("aangesteld", List.of(period("2024-02-01", "2024-04-01"),
+                                        period("2024-04-01", "2024-06-01"))), Map.of())),
                 List.of(expectedTimeline("J1", "loon", List.of(segment("2024-02-01", "2024-03-01", "100"),
                                 segment("2024-03-01", "2024-04-01", "130"), segment("2024-04-01", "2024-05-01", "180"),
                                 segment("2024-05-01", "2024-06-01", "150"))),
@@ -122,6 +127,16 @@ class TmsConditionPerPeriodWitnessTest {
                                 segment("2024-02-01", "2024-04-01", "105"), segment("2024-04-01", "2024-07-01", "155"),
                                 openFrom("2024-07-01", "5"))),
                         expectedTimeline("J1", "premie", List.of(segment("2024-04-01", "2024-07-01", "25"))),
+                        expectedTimeline("J3", "loon", List.of(segment("2024-02-01", "2024-03-01", "100"),
+                                segment("2024-03-01", "2024-04-01", "130"), segment("2024-04-01", "2024-05-01", "180"),
+                                segment("2024-05-01", "2024-06-01", "150"))),
+                        expectedTimeline("J3", "vrij", List.of(openTo("2024-01-01", "0"),
+                                segment("2024-01-01", "2024-02-01", "100"), segment("2024-06-01", "2024-07-01", "150"),
+                                openFrom("2024-07-01", "0"))),
+                        expectedTimeline("J3", "hoog", List.of(openTo("2024-01-01", "5"),
+                                segment("2024-02-01", "2024-04-01", "105"), segment("2024-04-01", "2024-07-01", "155"),
+                                openFrom("2024-07-01", "5"))),
+                        expectedTimeline("J3", "premie", List.of(segment("2024-04-01", "2024-07-01", "25"))),
                         expectedTimeline("J2", "loon", List.of()), expectedTimeline("J2", "vrij", List.of(always("0"))),
                         expectedTimeline("J2", "hoog", List.of(always("5"))), expectedTimeline("J2", "premie", List.of()),
                         consistent()));
@@ -401,7 +416,7 @@ class TmsConditionPerPeriodWitnessTest {
 
     // ---------------- E: the readings ----------------
 
-    /** The readings of A on J1 and J2, line by line the reference interpreter's trace of the same document and case. */
+    /** The readings of A on J1, J2 and J3, line by line the reference interpreter's trace of the same document and case. */
     @Test void the_readings_of_conditions_per_period_are_those_of_the_reference_interpreter() throws Exception {
         Path dir = Files.createTempDirectory("tms-voorwaarde-per-periode");
         dir.toFile().deleteOnExit();
@@ -413,7 +428,8 @@ class TmsConditionPerPeriodWitnessTest {
                 r + "0/versions/0 \"J1\" 0 CharacteristicCheck [[2024-02-01 2024-06-01 empty]]",
                 r + "0/versions/0 \"J1\" 1 Binary [[2024-02-01 2024-03-01 100], [2024-03-01 2024-04-01 130],"
                         + " [2024-04-01 2024-05-01 180], [2024-05-01 2024-06-01 150]]",
-                r + "0/versions/0 \"J1\" 2 AttributeReference [[2024-01-01 2024-04-01 100], [2024-04-01 2024-07-01 150]]",
+                r + "0/versions/0 \"J1\" 2 AttributeReference [[2024-01-01 2024-04-01 100],"
+                        + " [2024-04-01 2024-07-01 150]]",
                 r + "0/versions/0 \"J1\" 3 AttributeReference [[2024-03-01 2024-05-01 30]]",
                 r + "0/versions/0 \"J1\" HOLDS",
                 r + "0/versions/0 \"J2\" 0 CharacteristicCheck []",
@@ -421,10 +437,18 @@ class TmsConditionPerPeriodWitnessTest {
                 r + "0/versions/0 \"J2\" 2 AttributeReference []",
                 r + "0/versions/0 \"J2\" 3 AttributeReference []",
                 r + "0/versions/0 \"J2\" HOLDS",
+                r + "0/versions/0 \"J3\" 0 CharacteristicCheck [[2024-02-01 2024-06-01 empty]]",
+                r + "0/versions/0 \"J3\" 1 Binary [[2024-02-01 2024-03-01 100], [2024-03-01 2024-04-01 130],"
+                        + " [2024-04-01 2024-05-01 180], [2024-05-01 2024-06-01 150]]",
+                r + "0/versions/0 \"J3\" 2 AttributeReference [[2024-01-01 2024-04-01 100],"
+                        + " [2024-04-01 2024-07-01 150]]",
+                r + "0/versions/0 \"J3\" 3 AttributeReference [[2024-03-01 2024-05-01 30]]",
+                r + "0/versions/0 \"J3\" HOLDS",
                 r + "1/versions/0 \"J1\" 0 CharacteristicCheck [[- 2024-02-01 empty], [2024-06-01 - empty]]",
                 r + "1/versions/0 \"J1\" 1 Binary [[- 2024-01-01 0], [2024-01-01 2024-02-01 100],"
                         + " [2024-06-01 2024-07-01 150], [2024-07-01 - 0]]",
-                r + "1/versions/0 \"J1\" 2 AttributeReference [[2024-01-01 2024-04-01 100], [2024-04-01 2024-07-01 150]]",
+                r + "1/versions/0 \"J1\" 2 AttributeReference [[2024-01-01 2024-04-01 100],"
+                        + " [2024-04-01 2024-07-01 150]]",
                 r + "1/versions/0 \"J1\" 3 AttributeReference [[2024-03-01 2024-05-01 30]]",
                 r + "1/versions/0 \"J1\" HOLDS",
                 r + "1/versions/0 \"J2\" 0 CharacteristicCheck [[- - empty]]",
@@ -432,15 +456,24 @@ class TmsConditionPerPeriodWitnessTest {
                 r + "1/versions/0 \"J2\" 2 AttributeReference []",
                 r + "1/versions/0 \"J2\" 3 AttributeReference []",
                 r + "1/versions/0 \"J2\" HOLDS",
+                r + "1/versions/0 \"J3\" 0 CharacteristicCheck [[- 2024-02-01 empty], [2024-06-01 - empty]]",
+                r + "1/versions/0 \"J3\" 1 Binary [[- 2024-01-01 0], [2024-01-01 2024-02-01 100],"
+                        + " [2024-06-01 2024-07-01 150], [2024-07-01 - 0]]",
+                r + "1/versions/0 \"J3\" 2 AttributeReference [[2024-01-01 2024-04-01 100],"
+                        + " [2024-04-01 2024-07-01 150]]",
+                r + "1/versions/0 \"J3\" 3 AttributeReference [[2024-03-01 2024-05-01 30]]",
+                r + "1/versions/0 \"J3\" HOLDS",
                 r + "2/versions/0 \"J1\" 0 Compound [[- 2024-01-01 empty], [2024-02-01 - empty]]",
                 r + "2/versions/0 \"J1\" 1 CharacteristicCheck [[2024-02-01 2024-06-01 empty]]",
                 r + "2/versions/0 \"J1\" 2 Comparison [[- 2024-01-01 empty], [2024-04-01 2024-07-01 150],"
                         + " [2024-07-01 - empty]]",
-                r + "2/versions/0 \"J1\" 3 AttributeReference [[2024-01-01 2024-04-01 100], [2024-04-01 2024-07-01 150]]",
+                r + "2/versions/0 \"J1\" 3 AttributeReference [[2024-01-01 2024-04-01 100],"
+                        + " [2024-04-01 2024-07-01 150]]",
                 r + "2/versions/0 \"J1\" 4 Literal 100",
                 r + "2/versions/0 \"J1\" 5 Binary [[- 2024-01-01 5], [2024-02-01 2024-04-01 105],"
                         + " [2024-04-01 2024-07-01 155], [2024-07-01 - 5]]",
-                r + "2/versions/0 \"J1\" 6 AttributeReference [[2024-01-01 2024-04-01 100], [2024-04-01 2024-07-01 150]]",
+                r + "2/versions/0 \"J1\" 6 AttributeReference [[2024-01-01 2024-04-01 100],"
+                        + " [2024-04-01 2024-07-01 150]]",
                 r + "2/versions/0 \"J1\" 7 Literal 5",
                 r + "2/versions/0 \"J1\" HOLDS",
                 r + "2/versions/0 \"J2\" 0 Compound [[- - empty]]",
@@ -452,8 +485,22 @@ class TmsConditionPerPeriodWitnessTest {
                 r + "2/versions/0 \"J2\" 6 AttributeReference []",
                 r + "2/versions/0 \"J2\" 7 Literal 5",
                 r + "2/versions/0 \"J2\" HOLDS",
+                r + "2/versions/0 \"J3\" 0 Compound [[- 2024-01-01 empty], [2024-02-01 - empty]]",
+                r + "2/versions/0 \"J3\" 1 CharacteristicCheck [[2024-02-01 2024-06-01 empty]]",
+                r + "2/versions/0 \"J3\" 2 Comparison [[- 2024-01-01 empty], [2024-04-01 2024-07-01 150],"
+                        + " [2024-07-01 - empty]]",
+                r + "2/versions/0 \"J3\" 3 AttributeReference [[2024-01-01 2024-04-01 100],"
+                        + " [2024-04-01 2024-07-01 150]]",
+                r + "2/versions/0 \"J3\" 4 Literal 100",
+                r + "2/versions/0 \"J3\" 5 Binary [[- 2024-01-01 5], [2024-02-01 2024-04-01 105],"
+                        + " [2024-04-01 2024-07-01 155], [2024-07-01 - 5]]",
+                r + "2/versions/0 \"J3\" 6 AttributeReference [[2024-01-01 2024-04-01 100],"
+                        + " [2024-04-01 2024-07-01 150]]",
+                r + "2/versions/0 \"J3\" 7 Literal 5",
+                r + "2/versions/0 \"J3\" HOLDS",
                 r + "3/versions/0 \"J1\" 0 Comparison [[2024-04-01 2024-07-01 150]]",
-                r + "3/versions/0 \"J1\" 1 AttributeReference [[2024-01-01 2024-04-01 100], [2024-04-01 2024-07-01 150]]",
+                r + "3/versions/0 \"J1\" 1 AttributeReference [[2024-01-01 2024-04-01 100],"
+                        + " [2024-04-01 2024-07-01 150]]",
                 r + "3/versions/0 \"J1\" 2 Literal 120",
                 r + "3/versions/0 \"J1\" 3 Literal [[2024-04-01 2024-07-01 25]]",
                 r + "3/versions/0 \"J1\" HOLDS",
@@ -462,6 +509,12 @@ class TmsConditionPerPeriodWitnessTest {
                 r + "3/versions/0 \"J2\" 2 Literal 120",
                 r + "3/versions/0 \"J2\" 3 Literal []",
                 r + "3/versions/0 \"J2\" HOLDS",
+                r + "3/versions/0 \"J3\" 0 Comparison [[2024-04-01 2024-07-01 150]]",
+                r + "3/versions/0 \"J3\" 1 AttributeReference [[2024-01-01 2024-04-01 100],"
+                        + " [2024-04-01 2024-07-01 150]]",
+                r + "3/versions/0 \"J3\" 2 Literal 120",
+                r + "3/versions/0 \"J3\" 3 Literal [[2024-04-01 2024-07-01 25]]",
+                r + "3/versions/0 \"J3\" HOLDS",
                 "READINGS 1"));
     }
 
