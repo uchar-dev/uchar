@@ -400,13 +400,23 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                 (s.s_from, s.s_to, scaled_expect ~label ~attr s.s_value))
               tl
           in
+          (* a bound is a day number, or #inf / #sup for an open bound
+             (Translate.bound_term) *)
+          let bound = function
+            | A_int d -> Some d
+            | A_term (T_func ("#inf", [])) -> Some Uchar_ref.Timeline.open_from
+            | A_term (T_func ("#sup", [])) -> Some Uchar_ref.Timeline.open_to
+            | _ -> None
+          in
           let got =
             List.filter_map
               (fun a ->
                 match a with
-                | { name = "tl"; args = [ A_str l; A_str at; A_int v; A_int t; A_int w ] }
-                  when String.equal l label && String.equal at (norm attr) ->
-                    Some (v, t, w)
+                | { name = "tl"; args = [ A_str l; A_str at; v; t; A_int w ] }
+                  when String.equal l label && String.equal at (norm attr) -> (
+                    match (bound v, bound t) with
+                    | Some v, Some t -> Some (v, t, w)
+                    | _ -> fault "a tl/5 atom of %s.%s with a bound that is no day: %s" label attr (render_arg v))
                 | _ -> None)
               model
             |> List.sort compare
@@ -417,7 +427,9 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
               if l = [] then "(empty)"
               else
                 String.concat " "
-                  (List.map (fun (v, t, w) -> Printf.sprintf "[%d,%d)=%d" v t w) l)
+                  (List.map
+                     (fun (v, t, w) -> Printf.sprintf "[%s,%s)=%d" (Translate.bound_term v) (Translate.bound_term t) w)
+                     l)
             in
             Some
               (Printf.sprintf "%s.%s timeline = %s, expected %s" label attr (render got)

@@ -121,6 +121,20 @@ let quote s =
 let str s = quote (norm s)
 let str_raw s = quote s (* labels keep their case-sensitive spelling *)
 
+(* A segment bound as an ASP term (ASP-TRANSLATION ch. 3): a day number, or for
+   an open bound of RUNTIME-SEMANTICS ch. 3.1 the terms #inf and #sup, which
+   clingo orders below and above every integer. A comparison with a day reads
+   them as ref reads its open ends; arithmetic on them is undefined and drops
+   the ground rule, so every sum over segment lengths guards them by name. *)
+let bound_term z =
+  if z = Uchar_ref.Timeline.open_from then "#inf"
+  else if z = Uchar_ref.Timeline.open_to then "#sup"
+  else string_of_int z
+
+(* the finite bounds among [zs]: the calendar facts are laid between days only *)
+let finite_bounds zs =
+  List.filter (fun z -> z <> Uchar_ref.Timeline.open_from && z <> Uchar_ref.Timeline.open_to) zs
+
 (* --- scales ------------------------------------------------------------- *)
 
 (* clingo grounds arithmetic in machine integers and wraps silently on
@@ -708,6 +722,21 @@ let deposit ctx ~code ~rule ~subject body =
   emit ctx "inconsistent(%s,%s) :- %s." rule subject body;
   emit ctx "inconsistent_code(%s,%s,%s) :- %s." rule subject (quote code) body
 
+(* EF-036 (RUNTIME-SEMANTICS ch. 3.6): a total meets a segment with an open bound
+   and a value other than 0. The whole-unit facts lie between days, so such a
+   segment joins none and would drop out of the #sum unseen; this guard names
+   it. A segment of 0 adds 0 either way. [bounds] and [value] are the variables
+   of the segment atom in [body]; [witness] is the label the fault names. *)
+let open_total_reason a =
+  Printf.sprintf "the temporal total of %S meets a segment with an open bound carrying a value other than 0" a
+
+let open_total_guard ctx ~witness ~body ~bounds:(v, t) ~value ~attr =
+  List.iter
+    (fun open_bound ->
+      emit ctx "viol(%s,%s) :- %s, %s != 0, %s." (quote (open_total_reason attr)) witness
+        (String.concat ", " body) value open_bound)
+    [ Printf.sprintf "%s = #inf" v; Printf.sprintf "%s = #sup" t ]
+
 (* a bare division's non-exact viol/2: inside the write of the unbounded form
    it names that form, since the spec mandates no rounding there *)
 let non_exact_division ctx =
@@ -791,6 +820,8 @@ let viol_code witness =
   else if opens "parameter \"" && holds "\" is unbound in this case" then
     Some ("EF-014", found "parameter" (between "parameter \"" "\" is unbound in this case"))
   else if opens "creation budget exhausted\"" then Some ("EF-015", [])
+  else if opens "the temporal total of \"" && holds "\" meets a segment with an open bound" then
+    Some ("EF-036", found "attribute" (between "the temporal total of \"" "\" meets") @ label)
   else if opens "two writers of one target disagree: " then
     (* the rule names are quoted and joined by " and ": rules "A" and "B" write … *)
     let rules =
@@ -4155,7 +4186,7 @@ let emit_grid_buckets ctx ~p ~(grid : Uchar_ref.Timeline.grid) =
           (fun _ periods acc -> List.concat_map (fun (v, t) -> [ v; t ]) periods @ acc)
           i.ctls tl_pts)
       ctx.case.world.instances []
-    |> List.sort_uniq compare
+    |> finite_bounds |> List.sort_uniq compare
   in
   match endpoints with
   | [] ->
@@ -4211,7 +4242,37 @@ let emit_true_days ctx ~p ~k =
    [sat] rides INSIDE the _g body, so it may bind only variables this rule
    binds — the segment value V and whatever ground terms the caller carried
    in. The caller fences that (see [whole_period_fails]). *)
+(* A whole-period fold walks the buckets a timeline touches, and an open
+   segment touches unboundedly many: ref refuses the walk, and the calendar
+   facts here lie over the case's span only, so the fold would answer for
+   that span. Refused by name wherever the timeline of [attr] may carry an
+   open bound: a case timeline with one, or a target of period arithmetic. *)
+let refuse_open_whole_period ctx ~attr =
+  let written_open =
+    List.exists
+      (fun (r : resolved_rule) ->
+        (match r.objective with
+        | Some (Attribute_reference { attribute_ref = Some b; _ }) -> norm b = norm attr
+        | _ -> false)
+        && match r.value_node with Some v -> Eval.is_period_arithmetic v | None -> false)
+      ctx.doc.resolved_rules
+  in
+  let case_open =
+    Eval.SMap.exists
+      (fun _ (i : Uchar_ref.World.instance) ->
+        match Uchar_ref.World.timeline i attr with
+        | Some tl -> List.exists Uchar_ref.Timeline.is_open tl
+        | None -> false)
+      ctx.case.world.instances
+  in
+  if written_open || case_open then
+    fault
+      "a whole-period fold over %S, whose timeline may carry an open bound, is not translated: the \
+       fold walks the buckets of a period with an open bound, which has no end to reach (ch. 3.1)"
+      attr
+
 let emit_value_days ctx ~p ~attr ~sat =
+  refuse_open_whole_period ctx ~attr;
   let rules suffix v extra =
     List.iter
       (fun (vcmp, vpick, tcmp, tpick) ->
@@ -4294,7 +4355,10 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
        Tot."
       p p p p
   end
-  else emit ctx "%s(S) :- tl(S,%s,KV,KT,_), KV < KT." p (str a);
+  else begin
+    refuse_open_whole_period ctx ~attr:a;
+    emit ctx "%s(S) :- tl(S,%s,KV,KT,_), KV < KT." p (str a)
+  end;
   match hops with
   | [] -> Printf.sprintf "%s(%s)" p subject
   | roles ->
@@ -4453,6 +4517,43 @@ let unshadow_payload (lets : (string * expr * datatype option * string option) l
 let bucketing = function Time_proportional_part | Day_count -> true | _ -> false
 
 let foreign_granularity () = fault "granularity facet on a non-bucketing kind"
+
+(* Whether the bounds of the timeline of [attr] on [otype] are bounds of case
+   timelines: they are where no rule writes it, and where every rule that
+   writes it is period arithmetic (ch. 3.4/3.5) over timelines whose bounds
+   are. The first timeline that another producer derives (the buckets of a
+   pro-rata part or a day count), with its writer, or None. *)
+let rec period_bounds_not_case ctx ~seen ~otype ~attr : (string * string) option =
+  if List.mem (norm otype, norm attr) seen then None
+  else
+    let seen = (norm otype, norm attr) :: seen in
+    let rec operands (e : expr) =
+      match e with
+      | Binary { left_side = Some l; right_side = Some r; _ } -> (
+          match operands l with Some _ as found -> found | None -> operands r)
+      | Attribute_reference { attribute_ref = Some b; object_type = Some otn; navigation_bindings = None; _ }
+        when attr_temporal ctx ~otype:otn ~attr:b ->
+          period_bounds_not_case ctx ~seen ~otype:otn ~attr:b
+      | Function_call
+          { kind = Sum_function; call_arguments = [ Attribute_reference { attribute_ref = Some x; _ } ];
+            element_object_type = Some el; _ }
+        when attr_temporal ctx ~otype:el ~attr:x ->
+          period_bounds_not_case ctx ~seen ~otype:el ~attr:x
+      | _ -> None
+    in
+    List.fold_left
+      (fun found (r : resolved_rule) ->
+        match found with
+        | Some _ -> found
+        | None -> (
+            match r.objective with
+            | Some (Attribute_reference { attribute_ref = Some b; object_type = Some o; _ })
+              when norm b = norm attr && Ir_v0.Checks.populations_overlap ctx.doc o otype -> (
+                match r.value_node with
+                | Some v when Eval.is_period_arithmetic v -> operands v
+                | _ -> Some (attr, Printf.sprintf "the rule %S" (Option.value r.rr_name ~default:"?")))
+            | _ -> None))
+      None ctx.doc.resolved_rules
 
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   match cell_source_fold ctx e with
@@ -5183,8 +5284,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   match Uchar_ref.World.timeline i a with
                   | None -> acc
                   | Some tl ->
-                      List.map
-                        (fun (s : Uchar_ref.Timeline.segment) -> (s.s_from, s.s_to))
+                      List.filter_map
+                        (fun (s : Uchar_ref.Timeline.segment) ->
+                          if Uchar_ref.Timeline.is_open s then None else Some (s.s_from, s.s_to))
                         tl
                       @ acc)
               ctx.case.world.instances []
@@ -5239,6 +5341,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                :: fatoms)
           in
           range_guard ctx ~subject ~body:((base :: ctx.rule_guard) @ body) [ (g, 46340) ];
+          open_total_guard ctx ~witness:x
+            ~body:
+              ((base :: ctx.rule_guard) @ join
+              @ (Printf.sprintf "tl(%s,%s,%s,%s,%s)" x (str a) vv tt g :: fatoms))
+            ~bounds:(vv, tt) ~value:g ~attr:a;
           (body, (Printf.sprintf "%s*%s" g n, Printf.sprintf "%s,%s,%s" x vv tt))
         end
       in
@@ -5778,7 +5885,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                 List.concat_map (fun (v, t) -> [ v; t ]) periods @ acc)
               i.ctls tl_pts)
           ctx.case.world.instances []
-        |> List.sort_uniq compare
+        |> finite_bounds |> List.sort_uniq compare
       in
       (* a DERIVED timeline (a pro-rata target) carries the fold's
          interior bucket walls, which the case endpoints do not: enrich
@@ -5858,11 +5965,73 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         (String.concat ", "
            (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard))
         p subject;
+      open_total_guard ctx ~witness:subject
+        ~body:
+          ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: ctx.rule_guard)
+          @ [ Printf.sprintf "%s_seg(%s,V,T,W)" p subject ])
+        ~bounds:("V", "T") ~value:"W" ~attr:a;
       emit ctx "%s_total(S,%s) :- isa(S,%s), %s = #sum { W*N,V,T : %s_seg(S,V,T,W), %s_wu(V,T,N) }."
         p q (str subject_ot) q p p;
       ( [ Printf.sprintf "%s_total(%s,%s)" p subject q ],
         q,
         pow10 (attr_decimals ctx ~otype:aot ~attr:a) )
+  | Function_call
+      { kind = Total;
+        call_arguments = [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ];
+        filter = None; source_role = None; source_path = None; _ }
+    when norm aot = norm subject_ot && attr_temporal ctx ~otype:aot ~attr:a
+         && Eval.period_arithmetic_target ctx.doc ~otype:aot ~attr:a ->
+      (* ch. 3.6 over the timeline a rule of ch. 3.4/3.5 writes, as ref totals
+         it: the written timeline whole, no asOfDate bucket, 0 where nothing is
+         written. Its finite bounds are bounds of case timelines, so the
+         whole-unit facts lie between the case's endpoints; an open segment
+         joins none of them, and [open_total_guard] names it where its value is
+         not 0 (EF-036). *)
+      refuse_date_timeline_total ctx ~what:"the total over the timeline" ~otype:aot ~attr:a;
+      let gran = attr_granularity ctx ~otype:aot ~attr:a in
+      grid_strip_ok ctx ~what:(Printf.sprintf "the temporal total of %S" a) ~gran (attr_unit ctx ~otype:aot ~attr:a);
+      (match period_bounds_not_case ctx ~seen:[] ~otype:aot ~attr:a with
+      | Some (b, who) ->
+          fault
+            "the temporal total of %S reads, through period arithmetic, the timeline of %S, which %s \
+             derives: its bounds are not case data, so the whole-unit facts cannot be laid (no corpus \
+             case)"
+            a b who
+      | None -> ());
+      let p = fresh ctx "pt" in
+      let endpoints =
+        Eval.SMap.fold
+          (fun _ (i : Uchar_ref.World.instance) acc ->
+            Eval.SMap.fold
+              (fun _ (tl : Uchar_ref.Timeline.t) acc ->
+                List.concat_map (fun (s : Uchar_ref.Timeline.segment) -> [ s.s_from; s.s_to ]) tl @ acc)
+              i.tls acc)
+          ctx.case.world.instances []
+        |> finite_bounds |> List.sort_uniq compare
+      in
+      (match endpoints with
+      | [] -> emit ctx "#defined %s_wu/3." p
+      | lo :: _ ->
+          let hi = List.fold_left max lo endpoints in
+          if Uchar_ref.Timeline.whole_units gran lo hi > 46340 then
+            fault "the endpoint span of the total of %S covers more whole units than the guarded sum range" a;
+          List.iter
+            (fun v ->
+              List.iter
+                (fun t ->
+                  if v < t then emit ctx "%s_wu(%d,%d,%d)." p v t (Uchar_ref.Timeline.whole_units gran v t))
+                endpoints)
+            endpoints);
+      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
+      let seg = Printf.sprintf "tl(%s,%s,V,T,W)" subject (str a) in
+      emit ctx "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, %s, |W| > 46340."
+        subject (String.concat ", " (base :: ctx.rule_guard)) seg;
+      open_total_guard ctx ~witness:subject ~body:((base :: ctx.rule_guard) @ [ seg ]) ~bounds:("V", "T")
+        ~value:"W" ~attr:a;
+      let q = fresh ctx "Q" in
+      emit ctx "%s_total(S,%s) :- isa(S,%s), %s = #sum { W*N,V,T : tl(S,%s,V,T,W), %s_wu(V,T,N) }." p q
+        (str subject_ot) q (str a) p;
+      ([ Printf.sprintf "%s_total(%s,%s)" p subject q ], q, pow10 (attr_decimals ctx ~otype:aot ~attr:a))
   | Function_call { kind = Total; call_arguments = [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ]; source_role = None; source_path = None; _ }
     when norm aot = norm subject_ot && attr_temporal ctx ~otype:aot ~attr:a ->
       (* ch. 3.6 over the asOfDate bucket: value × whole-units (= 1 for
@@ -10512,6 +10681,160 @@ let translate_day_count ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : grain) =
   (* the ch. 7.8 timeline arm, as for pro-rata *)
   write_segment ctx ~subject ~ot ~a ~clip ~p ~value:vterm ~body
 
+(* ch. 3.4 and 3.5 as the value of a rule on a temporal attribute target, over
+   all time (RUNTIME-SEMANTICS ch. 3.1; ASP-TRANSLATION ch. 3). One cut set per
+   subject serves the whole value: every bound of every timeline the value reads,
+   and the open bounds #inf and #sup. Its periods are the pairs of consecutive
+   cuts; each operand is read at the start of a period and the value is computed
+   per period from those reads, so on a cut set at least as fine as each of ref's
+   nested cut-merges the value of every day is ref's. Plus and minus coalesce a
+   leeg operand to 0; the sum over the members of a set skips a leeg member and
+   is leeg, or its fallback, where every member is (ch. 3.5). The written
+   segments are the maximal runs of equal values; a period whose value is leeg
+   writes nothing, the gap of ch. 3.1. *)
+let translate_period_arithmetic ctx ~subject ~ot ~a (value : expr) =
+  let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
+  let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
+  let target_unit = attr_unit ctx ~otype:ot ~attr:a in
+  let p = fresh ctx "pa" in
+  (* an operand on the target's scale: an operand with more decimals than the
+     target would need a division, which this encoding does not carry *)
+  let factor ~what s =
+    if s > target_scale || target_scale mod s <> 0 then
+      fault "the period arithmetic of %S reads %s with more decimals than the target: not translated" a what;
+    target_scale / s
+  in
+  let times v k = if k = 1 then v else Printf.sprintf "%s*%d" v k in
+  let read_cuts body ~holder ~attr =
+    emit ctx "%s_cut(%s,X) :- %s, tl(%s,%s,X,_,_)." p subject (String.concat ", " body) holder (str attr);
+    emit ctx "%s_cut(%s,X) :- %s, tl(%s,%s,_,X,_)." p subject (String.concat ", " body) holder (str attr)
+  in
+  (* the value of [e] at the start X of a period, where it is not leeg: a
+     predicate over (S, X, V), and whether it is defined on every period *)
+  let rec node (e : expr) : string * bool =
+    match e with
+    | Binary { op = (Plus | Min) as op; left_side = Some l; right_side = Some r; _ } ->
+        let l = filled (node l) and r = filled (node r) in
+        let q = fresh ctx (p ^ "_n") in
+        let body =
+          [ Printf.sprintf "%s_per(%s,X,_)" p subject; Printf.sprintf "%s(%s,X,VL)" l subject;
+            Printf.sprintf "%s(%s,X,VR)" r subject ]
+        in
+        range_guard ctx ~subject ~body:(base :: body) [ ("VL", 1073741823); ("VR", 1073741823) ];
+        emit ctx "%s(%s,X,V) :- %s, V = VL%sVR." q subject (String.concat ", " body)
+          (if op = Plus then "+" else "-");
+        (q, true)
+    | Attribute_reference
+        { attribute_ref = Some b; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
+      when attr_temporal ctx ~otype:otn ~attr:b ->
+        if norm otn <> norm ot then
+          fault
+            "an attribute reference without a path is the subject's own read, so its subjectType is the \
+             subject type '%s' — '%s' names another type, which only a navigation reaches"
+            ot otn;
+        units_identical_ok ~what:(Printf.sprintf "the period arithmetic of %S" a) target_unit
+          (attr_unit ctx ~otype:otn ~attr:b);
+        let k = factor ~what:(Printf.sprintf "%S" b) (pow10 (attr_decimals ctx ~otype:otn ~attr:b)) in
+        read_cuts [ base ] ~holder:subject ~attr:b;
+        let q = fresh ctx (p ^ "_r") in
+        emit ctx "%s(%s,X,V) :- %s_per(%s,X,_), tl(%s,%s,F,T,W), F <= X, X < T, V = %s." q subject p subject
+          subject (str b) (times "W" k);
+        (q, false)
+    | Function_call
+        { kind = Sum_function;
+          call_arguments = [ Attribute_reference { attribute_ref = Some x; navigation_bindings = None; anchor = None; _ } ];
+          element_object_type = Some el; empty_fallback; filter = None; grain = None; dimension_selections = None;
+          source_role; source_path; anchor = None; _ }
+      when (source_role <> None || source_path <> None) && attr_temporal ctx ~otype:el ~attr:x ->
+        units_identical_ok ~what:(Printf.sprintf "the period arithmetic of %S" a) target_unit
+          (attr_unit ctx ~otype:el ~attr:x);
+        let k = factor ~what:(Printf.sprintf "%S" x) (pow10 (attr_decimals ctx ~otype:el ~attr:x)) in
+        let env =
+          { Eval.doc = ctx.doc; params = ctx.case.params; param_tls = ctx.case.param_tls;
+            as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
+        in
+        let m = fresh ctx "M" in
+        let join = base :: source_join ctx env ~subject ~subject_ot:ot ~el ~source_role ~source_path ~x:m in
+        read_cuts join ~holder:m ~attr:x;
+        let q = fresh ctx (p ^ "_s") in
+        let reads = Printf.sprintf "tl(%s,%s,F,T,W), F <= X, X < T" m (str x) in
+        let at_x = Printf.sprintf "%s_per(%s,X,_)" p subject in
+        range_guard ctx ~subject ~body:(at_x :: join @ [ reads ]) [ ("W", 46340 / k) ];
+        emit ctx
+          "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",%s) :- %s, 46340 < \
+           #count { %s : %s }."
+          subject at_x m (String.concat ", " (join @ [ reads ]));
+        emit ctx "%s_any(%s,X) :- %s." q subject (String.concat ", " (at_x :: join @ [ reads ]));
+        emit ctx "%s(%s,X,V) :- %s_any(%s,X), V = #sum { %s,%s : %s }." q subject q subject (times "W" k) m
+          (String.concat ", " (join @ [ reads ]));
+        (match empty_fallback with
+        | None -> ()
+        | Some f ->
+            let fb, ft, fs = expr_term ctx ~subject ~subject_ot:ot f in
+            let kf = factor ~what:"the fallback" (numeric_scale ~what:"a sum fallback" fs) in
+            emit ctx "%s(%s,X,V) :- %s, not %s_any(%s,X), %s V = %s." q subject at_x q subject
+              (String.concat "" (List.map (fun b -> b ^ ", ") (base :: fb)))
+              (times ("(" ^ ft ^ ")") kf));
+        (q, false)
+    | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } -> scalar e
+    | Parameter_ref { parameter = Some n; _ } -> (
+        match Ir_v0.Checks.find_ci ctx.doc.parameters n with
+        | Some { par_granularity = None; _ } -> scalar e
+        | _ ->
+            fault
+              "the time-dependent parameter %S as an operand of the period arithmetic of ch. 3.4/3.5 is \
+               not translated (no corpus case)"
+              n)
+    | _ ->
+        fault
+          "this operand of the period arithmetic of ch. 3.4/3.5 is not translated: an operand is plus \
+           or minus, the sum of a temporal attribute over a set without a filter, an own temporal \
+           attribute, a literal, an own scalar attribute or a scalar parameter"
+  (* a scalar holds on every day: its value on every period, where it is filled *)
+  and scalar e =
+    units_identical_ok ~what:(Printf.sprintf "the period arithmetic of %S" a) target_unit (eff_unit ctx e);
+    let bindings, term, s = expr_term ctx ~subject ~subject_ot:ot e in
+    let k = factor ~what:"a scalar operand" (numeric_scale ~what:"the period arithmetic" s) in
+    let q = fresh ctx (p ^ "_c") in
+    let body = base :: Printf.sprintf "%s_per(%s,X,_)" p subject :: bindings in
+    range_guard ctx ~subject ~body [ (term, 1073741823 / k) ];
+    emit ctx "%s(%s,X,V) :- %s, V = %s." q subject (String.concat ", " body) (times ("(" ^ term ^ ")") k);
+    (q, false)
+  (* the coalescing of plus and minus: a leeg operand counts 0 on its period *)
+  and filled (q, total) =
+    if total then q
+    else begin
+      let z = q ^ "_z" in
+      emit ctx "%s(%s,X,V) :- %s(%s,X,V)." z subject q subject;
+      emit ctx "%s_d(%s,X) :- %s(%s,X,_)." q subject q subject;
+      emit ctx "%s(%s,X,0) :- %s_per(%s,X,_), not %s_d(%s,X)." z subject p subject q subject;
+      z
+    end
+  in
+  emit ctx "%s_cut(%s,#inf) :- %s." p subject base;
+  emit ctx "%s_cut(%s,#sup) :- %s." p subject base;
+  emit ctx "%s_per(%s,X,Y) :- %s_cut(%s,X), %s_cut(%s,Y), X < Y, #count { Z : %s_cut(%s,Z), X < Z, Z < Y } = 0."
+    p subject p subject p subject p subject;
+  let root, _ = node value in
+  emit ctx "%s_val(%s,X,Y,V) :- %s_per(%s,X,Y), %s(%s,X,V)." p subject p subject root subject;
+  (* the maximal runs: a cut between two periods of one value joins them *)
+  emit ctx "%s_join(%s,Y) :- %s_val(%s,X,Y,V), %s_val(%s,Y,Z,V)." p subject p subject p subject;
+  emit ctx "%s_start(%s,X) :- %s_val(%s,X,_,_), not %s_join(%s,X)." p subject p subject p subject;
+  emit ctx "%s_end(%s,Y) :- %s_val(%s,_,Y,_), not %s_join(%s,Y)." p subject p subject p subject;
+  emit ctx
+    "tl(%s,%s,X,Y,V) :- %s_start(%s,X), %s_val(%s,X,_,V), %s_end(%s,Y), X < Y, #count { Z : %s_end(%s,Z), X < \
+     Z, Z < Y } = 0."
+    subject (str a) p subject p subject p subject p subject;
+  (* ch. 7.8, the timeline arm: on a standing temporal target the rule decides
+     where it writes a segment, and the case's input timeline stands otherwise *)
+  if List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc) then begin
+    emit ctx "%s_eff(%s) :- %s_val(%s,_,_,_)." p subject p subject;
+    head_body ctx
+      (Printf.sprintf "tl(%s,%s,Van,Tot,V)" subject (str a))
+      [ Printf.sprintf "inputtl(%s,%s,Van,Tot,V)" subject (str a); base;
+        Printf.sprintf "not %s_eff(%s)" p subject ]
+  end
+
 (* the writers of the attribute target (ot, a) beside a natively translated
    initialisation (translate_rule's Initialisatie arm): the initialisations
    and the computing rules among the rules that apply on the case's date — an
@@ -10854,6 +11177,15 @@ let translate_rule ctx (r : resolved_rule) =
                        grain = Some g; empty_fallback = None; dimension_selections = None; _ }) ->
                   clip_member_qualifications fc;
                   translate_day_count ?clip ctx ~subject ~ot ~a ~cond ~k ~g
+              | Some v when Eval.is_period_arithmetic v ->
+                  (* a condition would restrict the timeline per period
+                     (spec/proposals/IMPLICIT-TIME.md, point 3), in ref's words *)
+                  if r.rr_condition <> None then
+                    fault
+                      "rule %S writes the temporal attribute %S by the period arithmetic of ch. \
+                       3.4/3.5 under a condition: a condition per period is not executed"
+                      ctx.rule_name a;
+                  translate_period_arithmetic ctx ~subject ~ot ~a v
               | _ ->
                   faultc "CLINGO-024"
                     "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count \
@@ -12491,7 +12823,8 @@ let translate_case ctx (case : Case.t) =
           in
           List.iter
             (fun (s : Uchar_ref.Timeline.segment) ->
-              emit ctx "%s(%s,%s,%d,%d,%d)." pred (str_raw label) (str aname) s.s_from s.s_to
+              emit ctx "%s(%s,%s,%s,%s,%d)." pred (str_raw label) (str aname) (bound_term s.s_from)
+                (bound_term s.s_to)
                 (scaled_input ~what:(label ^ "." ^ aname) dt s.s_value))
             tl)
         i.tls;
@@ -12536,7 +12869,7 @@ let translate_case ctx (case : Case.t) =
       | Some p ->
           List.iter
             (fun (s : Uchar_ref.Timeline.segment) ->
-              emit ctx "param_tl(%s,%d,%d,%d)." (str pname) s.s_from s.s_to
+              emit ctx "param_tl(%s,%s,%s,%d)." (str pname) (bound_term s.s_from) (bound_term s.s_to)
                 (scaled_input ~what:("parameter " ^ pname) p.par_datatype s.s_value))
             tl
       | None -> fault "unknown parameter %S" pname)
