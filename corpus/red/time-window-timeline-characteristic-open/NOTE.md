@@ -16,8 +16,8 @@ executors decline the form (EF-023), naming the characteristic.
     clingo              viol: the periods in which the time-dependent
                         characteristic geborgen holds have an open bound …
                         Declined in translation
-    Drools, both        EXCLUDE DROOLS-102: the time-dependent characteristic
-    branches            'geborgen' of Vondst as target
+    Drools, both        FAULT EF-023 {characteristic: geborgen}
+    branches
 
-Gate 8 pins the code and the parameter in both OCaml executors; the Drools
-branches decline the target by name (its exclusion list).
+Gate 8 pins the code and the parameter in both OCaml executors and on both
+Drools branches.

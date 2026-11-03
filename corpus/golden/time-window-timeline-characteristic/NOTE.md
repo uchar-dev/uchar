@@ -24,5 +24,4 @@ Until card `conditions-per-period` this document stood in `corpus/red`,
 with the one case `case1`: no executor wrote a time-dependent
 characteristic, and `ref` and the ASP backend refused it with EF-023, both
 Drools branches with DROOLS-102. Since then `ref` and the ASP backend write
-it; both Drools branches still refuse it by name (DROOLS-102; gate 12's
-channel list).
+it; both Drools branches write it since step B part ii.

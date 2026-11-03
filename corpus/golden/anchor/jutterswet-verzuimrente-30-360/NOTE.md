@@ -76,6 +76,4 @@ backend refuses by name there.
 
 ## Executors
 
-`ref` and the ASP backend play both cases. The Drools backend refuses the
-time-dependent characteristic target by name (DROOLS-102; gate 12's channel
-list) until it carries the form.
+`ref` and the ASP backend play both cases. Both Drools branches play both cases until it carries the form.

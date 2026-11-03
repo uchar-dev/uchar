@@ -81,7 +81,7 @@ needs the case schema to release expected timelines from the grid.
 
 `ref` and the ASP backend replay all three cases (4, 7 and 4
 expectations). Both
-Drools branches refuse the clip by name before fire. The exec-model branch
+Drools branches play the three cases since step B part ii. The exec-model branch
 reports `transpiler SKIP … periodevergelijking op tijdsafhankelijk doel —
 §8.4.3 clip`, the DRL-text branch `MARKER … TODO periodevergelijking op een
 tijdsafhankelijk doel (§8.4.3)`. Gate 12 therefore pins the golden in both

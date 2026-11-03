@@ -291,7 +291,7 @@ missing line makes `make gates` exit non-zero. Current gates:
    parameter column of ch. 5.7b, and the two pairs of cases that differ in a parameter only (`aanvoergeld-parameter-unbound`,
    `jutterswet-dubbele-melding`) are told apart by their pinned `params` (stale-guarded). An empty red set is a failure,
    never silently green. Floors: `EXPECTED_MIN_RED_CASES=44`, `EXPECTED_MIN_RED_CODES=82`, `EXPECTED_MIN_RED_PARAMS=120`,
-   `EXPECTED_MIN_EF_CODES=31`, `EXPECTED_MIN_GOLDEN_CODES=80`, `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=16`,
+   `EXPECTED_MIN_EF_CODES=31`, `EXPECTED_MIN_GOLDEN_CODES=80`, `EXPECTED_MIN_DROOLS_EXCLUDE_CODES=15`,
    `EXPECTED_MIN_DROOLS_PARAMS=28` (the last two on the Drools leg). An `EXCLUDE` entry of the Drools list pins the
    register code of the refusal (`name|EXCLUDE DROOLS-###  <reason>`) and the leg compares it with the head of the
    status line, failing by case name with both codes; a `NOFAULT` entry carries none (card `drools-refusal-codes`).
@@ -425,7 +425,13 @@ missing line makes `make gates` exit non-zero. Current gates:
     cut to its periods, the whole-period qualifier there per bucket; two or
     more computing rules of one timeline target each write their own
     `Value`, and the write-back puts their union with the target's input on
-    the bean (EF-016 on a day two decide differently). A golden whose forms the loader+transpiler carry
+    the bean (EF-016 on a day two decide differently). Since step B part ii
+    of the same card both branches write the day count over all time, read a
+    period window per period, its bound a day-precise date expression, and
+    write a time-dependent characteristic within a window as a standing of
+    its true periods (`PeriodCondition`, `CharacteristicPeriodsFault`, EF-023
+    on an open bound); the standing of a timeline target of two writers is
+    their union with its input (`Consequence.WritersUnion`). A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
     (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
     over the corpus). Not-carried forms never vanish silently: per-form
@@ -459,7 +465,7 @@ missing line makes `make gates` exit non-zero. Current gates:
     `runtime-tijdconditie-leeg` (2026-11-03) DROOLS-222, since the card
     `timeline-arithmetic-per-period` (2026-11-03) DROOLS-030, DROOLS-036,
     DROOLS-304 and DROOLS-307, since the card `conditions-per-period`
-    (2026-11-03) DROOLS-302; every raised code
+    (2026-11-03) DROOLS-302, DROOLS-104 and DROOLS-311; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`
