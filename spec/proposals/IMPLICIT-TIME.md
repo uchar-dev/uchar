@@ -2,8 +2,9 @@
 
 *Status: VOORSTEL · 2026-11-03 · werkproza, niet normatief. Fase 0 van de kaart
 `backlog/doing/20261010-impliciete-tijd.md`. Dit document verandert geen spec, schema, verifier,
-uitvoerder of corpus; het staat buiten elke zone van gate 1. Gemeten op main `95947ae0f`
-(regelnummers van uchar op die commit; de meting in §5 draaide op dezelfde code).*
+uitvoerder of corpus; het staat buiten elke zone van gate 1. Gemeten op main `27cfd3dfa`
+(regelnummers van uchar op die commit; de meting in §5 draaide op dezelfde code, en een eerdere
+run op `95947ae0f` gaf dezelfde uitkomst per document).*
 
 *Bronnen, alleen met nummer en in eigen woorden aangehaald. (1) De RegelSpraak-specificatie
 v2.3.0 van de Belastingdienst: het hoofddocument als "spec §…", het document met de typeringen als
@@ -42,6 +43,7 @@ de ASP-codering). Dat zijn **technische vragen**; ik beslis ze hier als **voorlo
 | 2 | Het tijddomein (een scalair, een tijdsafhankelijke parameter als operand) | tegenspraak (spec §5.1.1, §5.1.4.1 en ALEF tegen RS ch. 3.4) | **normvraag** | Alle tijd: een tijdlijn deelt de hele tijd in, leeg buiten haar perioden; een scalair geldt altijd. |
 | 3 | Een voorwaarde op een regel met een tijdsafhankelijk doel | spec spreekt (§10.3, §8.4.1) | besloten; technisch VB 3.1–3.3 | Per periode: de regel schrijft alleen waar de voorwaarde geldt; dat veralgemeent de knip van ch. 3.10. |
 | 4 | De gehele-periodekwalificator op zo'n regel | tegenspraak (RS ch. 3.9 vouwt; ALEF per emmer) | **normvraag** | Per emmer op een tijdsafhankelijk doel; de vouw blijft voor een scalair doel. Geen golden verandert. |
+| 4b | De lege dag in een vergelijking onder de kwalificator | tegenspraak (spec §8.2 met typ. §5.3, §5.6, en ALEF, tegen RS ch. 3.9) | **normvraag** | Ch. 1.2 per dag, zoals de knip van ch. 3.6: een gatdag voldoet aan "ongelijk aan", een lege grens maakt de toets niet onwaar. Geen golden verandert. |
 | 5 | Twee schrijvers van één tijdlijndoel | spec zwijgt (ALEF) | besloten; technisch VB 5.1–5.2 | Per dag: fout alleen op een dag waar beide schrijven en verschillen; RS ch. 5.7 per dag gelezen. |
 | 6 | Van datum tot datum; een datumexpressie als grens | spec spreekt (§10.3, §8.4.3, §9.2) | besloten; technisch VB 6.1–6.2 | Een tijdsafhankelijk kenmerk binnen een venster schrijven; WF-111 verruimen tot elke dagprecieze datumexpressie. |
 | 7 | De dagentelling: 0 of niets, een dagsoorttoets, de eenheid | tegenspraak voor 7a (typ. §4.21 en ALEF tegen RS ch. 3.8 en het anker `jutterswet-dagentelling`) | **normvraag (7a)**; 7b besloten (spec zwijgt), 7c besloten (spec spreekt) | 7a: 0 in een emmer zonder ware dag; 7b: een dagsoorttoets op de getelde dag toelaten; 7c: de telling draagt dagen per rastereenheid. |
@@ -52,9 +54,9 @@ de ASP-codering). Dat zijn **technische vragen**; ik beslis ze hier als **voorlo
 | 12 | Het totaal over een gedeeltelijke eenheid | tegenspraak (ALEF tegen RS ch. 3.6 en golden `jutterswet-vast-startpunt`) | **normvraag (12a, 12b)**; 12c besloten (spec spreekt) | 12a: naar rato van de werkelijke lengte; 12b: de gewone operand houden als "per rastereenheid"; 12c: een afwezige tijdlijn telt 0. |
 | 13 | Tijdsafhankelijke feittypen | spec zwijgt (ALEF) | besloten; geen bouwkaart | Vastleggen als later. |
 
-De normvragen voor de eigenaar zijn dus 2, 4, 7a, 11, 12a en 12b. Bij 2, 7a en 12a staat de
-specificatie (2, 7a) of haar stilte (12a) aan de kant van ALEF, en is het de gelande tekst van uchar
-die afwijkt.
+De normvragen voor de eigenaar zijn dus 2, 4, 4b, 7a, 11, 12a en 12b. Bij 2, 4b, 7a en 12a staat de
+specificatie (2, 4b, 7a) of haar stilte (12a) aan de kant van ALEF, en is het de gelande tekst van
+uchar die afwijkt.
 
 ## 2. Het principe: de lezing per dag
 
@@ -84,7 +86,7 @@ eenmalig (punt 10).
 
 Elk punt: de vraag; de lezingen (uchar nu, ALEF, de specificatie); de aanbeveling met reden; de
 voorlopige besluiten; een uitgewerkt voorbeeld met absolute waarden, dat `ref/test/` letterlijk kan
-overnemen (de voorgestelde testnaam staat erbij). "RS" is `spec/RUNTIME-SEMANTICS.md` op `95947ae0f`.
+overnemen (de voorgestelde testnaam staat erbij). "RS" is `spec/RUNTIME-SEMANTICS.md` op `27cfd3dfa`.
 De voorbeelden gebruiken, waar ze over de ankercasus gaan, de getallen van §4.
 
 ### Punt 1 — Rekenen per periode
@@ -151,7 +153,7 @@ operand?
   ze een tijddomein vragen (r. 1264–1270, ch. 3.11 r. 3456–3466, ch. 3.12 r. 3517). Een
   tijdsafhankelijke parameter is als tijdlijnoperand alleen bereikbaar via `TemporalRead` (ch. 3.3,
   8.3); ref en clingo weigeren hem op een scalaire positie (`backends/clingo/lib/translate.ml`
-  r. 4495), en het Drools-laadprogramma weigert elk document met een tijdsafhankelijke parameter
+  r. 4493), en het Drools-laadprogramma weigert elk document met een tijdsafhankelijke parameter
   (gemeten: DROOLS-030, §5). Geen golden schrijft ch. 3.4 of 3.5 via een regel.
 - *ALEF.* Een tijdsafhankelijke waarde deelt de hele tijd in aaneengesloten vakken in, van een open
   begin tot een open einde; leeg is een vak met waarde null (`time/ITimed.java` r. 15–20). Een
@@ -230,9 +232,12 @@ doet het, en uchar knipt al zo met het venster.
   samenstelling per dag met `and`/`or`/`not` en de tellende kwantoren); de knip snijdt segmenten en
   houdt waarden (ch. 3.10 r. 3401–3406).
 - VB 3.3 — Een voorwaarde waarvan het raster fijner is dan dat van het doel is ill-formed (punt 8);
-  de vergelijking per periode leest ch. 1.2 per periode, gelijk aan de knip van ch. 3.6. Dat raakt
-  de bugkaart `20261009-runtime-tijdconditie-leeg` (de Drools-hulp leest een lege kant van een
-  knipvergelijking als geen periode): haar uitkomst moet samenvallen met deze lezing.
+  een vergelijking leest per periode ch. 1.2, zoals de knip van ch. 3.6 sinds de kaart
+  `20261009-runtime-tijdconditie-leeg` (geland op `27cfd3dfa`, golden `jutterswet-peilwacht`) in ref,
+  clingo en beide Drools-takken doet: een gat in de getoetste tijdlijn en een lege grens zijn leeg,
+  dus een gat voldoet aan "ongelijk aan 5" en "gelijk aan" houdt op een gat tegen een lege grens. De
+  voorwaarde per periode leest een lege dag daarmee zoals die knip; dat ch. 3.9 hem anders leest, is
+  punt 4b.
 
 **Uitgewerkt voorbeeld** (`WV-3.10-voorwaarde-per-periode`). Een Afdracht met `rentedragend` (een
 kenmerk voor elke dag) op [2025-11-16, 2026-03-13) en `verzuimd` (een kenmerk voor elke maand) op
@@ -283,6 +288,69 @@ rentedragend is":
 - per emmer, met de dagentelling van nu en de span: 15 en 12, in november en maart;
 - gemeten nu (de vouw): 15, 31, 31, 28 en 12 in november tot en met maart.
 
+#### Punt 4b — De lege dag in een vergelijking onder de kwalificator
+
+**Vraag** (gevonden door de bouwer van `20261009-runtime-tijdconditie-leeg`, open vraag 1 van zijn
+`Result:`). De knip van ch. 3.6 en de kwalificator van ch. 3.9 lezen een lege dag van dezelfde
+vergelijking tegengesteld. Is dat bedoeld, en zo nee, welke lezing geldt?
+
+**Lezingen.**
+- *uchar nu.* De knip leest ch. 1.2 per periode: een gat voldoet aan "ongelijk aan" tegen een gevulde
+  grens (RS ch. 3.6 r. 2150–2154, het voorbeeld van 500,00), en tegen een lege grens geldt "ongelijk
+  aan" op elke gevulde dag (sinds `27cfd3dfa`, golden `jutterswet-peilwacht`). Onder de kwalificator
+  maakt een lege grens de toets onwaar (RS ch. 3.9 r. 2833–2834), en een gatdag of een dag onder een
+  expliciet leeg segment voldoet aan geen enkele vergelijking, ongelijkheid inbegrepen, hoewel ch. 1.2
+  een scalaire ongelijkheid tegen leeg waar maakt (r. 2938–2948, besloten 2026-09-26; ref
+  `ref/lib/timeline.ml` r. 284–288). Gemeten door die bouwer op een eigen document
+  (`werk/drools-clip-equality/scratch/vraag/`, verifier PASS; wachtvergoeding per maand 10 over 2024):
+  **K1**, peilstand 7 alleen in januari 2024 en drempelstand 5: de knip "ongelijk aan" geeft 120 in ref
+  en Drools, "gedurende het gehele jaar ongelijk aan" is onwaar in ref en Drools. **K2**, peilstand 7
+  over heel 2024 en drempelstand leeg: de knip "ongelijk aan" 120, de knip "gelijk aan" 0; "gedurende
+  het gehele jaar ongelijk aan" is in ref waar (tegen ch. 3.9 in) en in beide Drools-takken onwaar
+  (naar ch. 3.9); clingo weigert het document (CLINGO-010). Geen golden pint een vergelijking met
+  "gelijk aan" of "ongelijk aan" onder de kwalificator: gemeten over `corpus/golden`, elke vergelijking
+  onder de kwalificator (in `jutterswet-keurploeg`, `-ploegpremie`, `-reddingsvloot`, `-sleepvloot`
+  en `-vast-startpunt`) is "groter dan" een literal, en een ordening tegen leeg is in beide lezingen
+  onwaar.
+- *ALEF.* De vergelijking per moment is de scalaire vergelijking met null als leeg:
+  `Vergelijker.vergelijk` (`Vergelijker.java` r. 18–45) maakt "gelijk aan" waar op twee lege kanten,
+  "ongelijk aan" waar op precies één, en een ordening onwaar op een lege kant; de vertaler van een
+  tijdsafhankelijk predicaat roept haar aan (translator r. 11350, methode `tpredicaat`). De knip is
+  `ITimed.when` op die geldigheid en de kwalificator `TimeLine.wholePeriods` erop (r. 228–230): beide
+  lezen dezelfde geldigheid per moment, dus een lege dag op dezelfde manier. Gedraaid (eigen
+  proefprogramma, de vergelijking per moment met `Vergelijker.vergelijk`, de geldigheid met
+  `IValidity.whenTrue`): K1 "ongelijk aan": de knip 120, het gehele jaar 2024 **waar**; K2 "ongelijk
+  aan": de knip 120, het gehele jaar **waar**; K2 "gelijk aan": de knip 0, het gehele jaar onwaar.
+- *Specificatie.* Spreekt: de kwalificator is waar als de controle op elk moment van de periode waar
+  is (spec §8.2), en de controle is het predicaat van §8.1 met zijn rekentabel voor lege waarden:
+  "ongelijk aan" is waar bij precies één lege kant (typ. §5.6), "gelijk aan" bij een getal waar bij
+  twee lege kanten (typ. §5.3), een ordening onwaar bij een lege kant (typ. §5.1, §5.2, §5.4, §5.5).
+  Een gatdag voldoet dus aan "ongelijk aan 5", en tegen een lege grens geldt "ongelijk aan" op elke
+  gevulde dag, onder de kwalificator net als in de knip.
+
+**Normvraag** (de specificatie en ALEF tegen het besluit van 2026-09-26 in RS ch. 3.9).
+**Aanbeveling: ch. 1.2 per dag, ook onder de kwalificator**, zodat beide collapses een lege dag van
+dezelfde vergelijking gelijk lezen. Reden: zo staat het in §8.2 met typ. §5.3 en §5.6, zo rekent
+ALEF, en het is de lezing die de knip sinds `27cfd3dfa` in alle uitvoerders heeft. Gevolg: geen golden
+verandert; de clausules van ch. 3.9 over de lege grens en het expliciete lege segment bij een
+vergelijking, hun uitgewerkte voorbeelden met "≠ 40" (r. 2941–2946) en de `ref`-tests die ze pinnen
+gaan mee, en de Drools-hulp van de kwalificator en clingo's weigering van een attribuut als grens
+(CLINGO-010) ook. Dat is precies de uitweg die de bugkaart `20261009-ref-gehele-periode-lege-grens`
+in haar acceptatie (a) noemt: met deze lezing heeft ref op K2 gelijk en gaan ch. 3.9 en Drools mee.
+De leeg- en gevuld-toetsen van ch. 3.9 veranderen niet: die zijn al per dag (r. 2983–3017). Welke
+emmers de kwalificator raakt (de emmers van de getoetste tijdlijn, r. 2900–2911) is een andere vraag
+en blijft.
+
+**Uitgewerkt voorbeeld** (`WV-3.9-lege-dag`). Een maandattribuut `peilstand`, een scalair
+`drempelstand`, "gedurende het gehele jaar":
+- K1, peilstand 7 op [2024-01-01, 2024-02-01), drempelstand 5: "ongelijk aan" **waar** (31 dagen met
+  7 ≠ 5 en 335 gatdagen met leeg ≠ 5, 366 van 366); nu onwaar (31 van 366). "Gelijk aan" onwaar in
+  beide lezingen.
+- K2, peilstand 7 op [2024-01-01, 2025-01-01), drempelstand leeg: "ongelijk aan" **waar** (366 van
+  366 met 7 ≠ leeg); nu onwaar (de lege grens). "Gelijk aan" onwaar in beide lezingen.
+- Ter vergelijking de knip, wachtvergoeding 10 per maand over 2024: K1 "ongelijk aan" 120, K2
+  "ongelijk aan" 120 en "gelijk aan" 0 (zoals nu, in ref, clingo en Drools).
+
 ### Punt 5 — Twee schrijvers van één tijdlijndoel
 
 **Vraag.** Leest de schrijversregel van ch. 5.7 per dag, met een fout alleen op een dag waar beide
@@ -292,8 +360,8 @@ schrijven en verschillen?
 - *uchar nu.* RS ch. 5.7 r. 4342–4388: twee schrijvers wier voorwaarden op één instantie beide
   gelden en die verschillende waarden schrijven, geven een fout (EF-016); besloten door de eigenaar
   op 2026-11-02: telt wie aan het fixpunt beslist. Gemeten (§5, `p05-twee-schrijvers`): clingo
-  weigert twee schrijvers van een tijdlijndoel (`translate.ml` r. 10744), beide Drools-takken ook
-  (DROOLS-103, `backends/drools/README.md` r. 818); ref komt niet zo ver (het doel zelf, r. 3239).
+  weigert twee schrijvers van een tijdlijndoel (`translate.ml` r. 10789), beide Drools-takken ook
+  (DROOLS-103, `backends/drools/README.md` r. 819); ref komt niet zo ver (het doel zelf, r. 3239).
 - *ALEF.* `ITimed.merge` per moment: is één kant null, dan telt de andere; zijn beide gevuld en
   verschillend, dan een fout (`time/ITimed.java` r. 99–106); de vertaler van een actie gebruikt dat
   voor schrijvers van één tijdsafhankelijk attribuut (translator r. 2184–2335). Gedraaid: de twee
@@ -647,7 +715,8 @@ ankerwaarde maar een vraag van punt 2 en 6.
 
 ## 5. De meting
 
-Gemeten op main `95947ae0f` (de branch `card/implicit-time` stond er zonder codewijziging op), met de
+Gemeten op main `27cfd3dfa` (de branch `card/implicit-time` stond er zonder codewijziging op; dezelfde
+uitkomst per document als een eerdere run op `95947ae0f`), met de
 frontend (`make -C frontends/regelspraak ir`), de verifier, ref (`runner.exe`), clingo
 (`clingo_runner.exe`) en de Drools-jar in beide takken (zonder vlag en met `--drl`), gebouwd in de
 worktree. De documenten staan buiten de repo onder `werk/implicit-time/meting/`; de commando's in het
@@ -740,5 +809,9 @@ De volgorde, met per kaart de besluitpunten die ze nodig heeft; de kaartteksten 
 6. **2c** — Drools voor 1c.
 7. **12** — een eigen kaart als de eigenaar 12a of 12b als ALEF beslist; past na 1b (dezelfde
    integratie).
+8. **4b** — geen eigen kaart: de bestaande kaart `20261009-ref-gehele-periode-lege-grens` draagt het
+   besluit (haar acceptatie (a) noemt de lezing per dag al als uitweg); kiest de eigenaar de
+   aanbeveling, dan gaan ch. 3.9, de Drools-hulp van de kwalificator en clingo mee, en ref niet. Ze
+   staat los van 1a–2c en kan eerder.
 
 De punten 9, 10 en 13 krijgen geen bouwkaart.
