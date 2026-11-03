@@ -190,7 +190,7 @@ class FoldPlanWitnessTest {
                         + " member=4, place=selection 0 [keurendeJutter 0 1] MEMBER_FAULT, before=the per-element temporal"
                         + " total of \"keurtarief\" over , after=: the case supplies an asOfDate-bucket scalar, which"
                         + " carries no period of its own; a set fold needs each member's own timeline (ch."
-                        + " 3.6/§7.1, ch. 8.4), open=null, timeline=-1, insertion=LOGICAL]",
+                        + " 3.6/§7.1, ch. 8.4), attribute=keurtarief, timeline=-1, insertion=LOGICAL]",
                 "rule keurlast van een jutter: lidfout in vouw 0 over een open segment | form keurlast van een"
                         + " jutter | group null",
                 "  readings [0 LIST_PLACES $lijstplaatsen_plaats_17 (lijstplaatsen 0), 1 LIST_PLACE"
@@ -218,7 +218,7 @@ class FoldPlanWitnessTest {
                 "    test 0.1.0 SlotValue",
                 "  consequence MemberFault [subject=$vouwonderwerp, fold=keurlast van een jutter: vouw 0,"
                         + " member=4, place=selection 0 [keurendeJutter 0 1] MEMBER_FAULT, before=null, after=null,"
-                        + " open=keurtarief, timeline=3, insertion=LOGICAL]"),
+                        + " attribute=keurtarief, timeline=3, insertion=LOGICAL]"),
                 plans(golden("jutterswet-keurlast")));
     }
 
@@ -264,7 +264,7 @@ class FoldPlanWitnessTest {
                 "  consequence MemberFault [subject=$vouwonderwerp, fold=vondstopbrengst van een jutter: vouw 0,"
                         + " member=3, place=selection 0 [aanmeldendeJutter 0 1] MEMBER_FAULT, before=the period arithmetic"
                         + " of ch. 3.4/3.5 reads the temporal attribute \"opbrengst\" of , after=; the case supplies only"
-                        + " the asOfDate-bucket scalar, which carries no period, open=null, timeline=-1,"
+                        + " the asOfDate-bucket scalar, which carries no period, attribute=opbrengst, timeline=-1,"
                         + " insertion=LOGICAL]",
                 "rule gewaarborgde vondstopbrengst van een jutter: bijdrage aan vouw 1 | form gewaarborgde"
                         + " vondstopbrengst van een jutter | group null",
@@ -304,7 +304,7 @@ class FoldPlanWitnessTest {
                 "  consequence MemberFault [subject=$vouwonderwerp, fold=gewaarborgde vondstopbrengst van een"
                         + " jutter: vouw 1, member=3, place=selection 0 [aanmeldendeJutter 0 1] MEMBER_FAULT, before=the"
                         + " period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"opbrengst\" of , after=; the"
-                        + " case supplies only the asOfDate-bucket scalar, which carries no period, open=null,"
+                        + " case supplies only the asOfDate-bucket scalar, which carries no period, attribute=opbrengst,"
                         + " timeline=-1, insertion=LOGICAL]"),
                 plans(golden("jutterswet-maandloon")));
     }
@@ -1061,7 +1061,7 @@ class FoldPlanWitnessTest {
             }
             case Consequence.MemberFault f -> out.add("  consequence MemberFault [subject=" + f.subject() + ", fold=" + f.fold()
                     + ", member=" + f.member() + ", place=" + place(f.place()) + ", before=" + f.before() + ", after=" + f.after()
-                    + ", open=" + f.openAttribute() + ", timeline=" + f.timeline() + ", insertion=" + f.insertion() + "]");
+                    + ", attribute=" + f.attribute() + ", timeline=" + f.timeline() + ", insertion=" + f.insertion() + "]");
             default -> throw new IllegalStateException("geen gevolg van een vouw: " + g);
         }
     }

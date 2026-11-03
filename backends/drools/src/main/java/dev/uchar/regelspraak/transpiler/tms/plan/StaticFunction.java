@@ -224,8 +224,9 @@ public enum StaticFunction {
      *  calendar where a {@code String} constant names the time unit of the rate's denominator, the fault for a full
      *  timeline and for a session without an evaluation date. */
     OWN_TOTAL(ComputeHelpers.class, "ownTotal", true),
-    /** The full timeline a form reads whole, the fault where the case gives the asOfDate-bucket scalar (ch. 8.4), in
-     *  a sentence that names the object. */
+    /** The full timeline a form reads whole, the fault EF-037 where the case gives the asOfDate-bucket scalar (ch. 8.4,
+     *  5.7b), in a sentence that names the object; the attribute and whether that object is the input's own follow the
+     *  sentence. */
     COMPLETE(ComputeHelpers.class, "complete", true),
     /** A value as a bean holds it: an exact rational as a decimal, any other value as it is. */
     COLLAPSE(ComputeHelpers.class, "collapse", false),

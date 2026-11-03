@@ -1258,10 +1258,10 @@ final class DrlRendering {
                 case Consequence.FilterFault x -> filterFault(x, b);
                 case Consequence.MemberFault x -> insert(b, "    ", x.insertion(), "new " + typeName(MemberFault.class) + "("
                         + str(x.fold()) + ", " + x.subject() + ", " + variable(x.member()) + ", "
-                        + (x.openAttribute() == null
-                                ? route(Route.INPUT_FORM_FAULT) + "(" + str(x.before()) + ", " + variable(x.member()) + ", "
-                                        + str(x.after()) + ", null)"
-                                : route(Route.OPEN_SEGMENT_FAULT) + "(" + str(x.openAttribute()) + ", "
+                        + (x.before() != null
+                                ? route(Route.BUCKET_SCALAR_FAULT) + "(" + str(x.attribute()) + ", " + str(x.before()) + ", "
+                                        + variable(x.member()) + ", " + str(x.after()) + ")"
+                                : route(Route.OPEN_SEGMENT_FAULT) + "(" + str(x.attribute()) + ", "
                                         + variable(x.member()) + ", " + variable(x.timeline()) + ")")
                         + ", " + foldPlace(x.place(), x.fold(), x.member(), null) + ")");
                 case Consequence.UniquenessKey x -> uniquenessKey(x, b);

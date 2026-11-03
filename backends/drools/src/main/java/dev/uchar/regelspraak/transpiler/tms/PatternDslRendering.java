@@ -235,9 +235,9 @@ final class PatternDslRendering {
                     (drools, carrier, w) -> {
                         List<Integer> place = foldPlace(x.place(), x.fold(), w[x.member()], w);
                         insert(drools, x.insertion(), new MemberFault(x.fold(), carrier, w[x.member()],
-                                x.openAttribute() == null
-                                        ? ComputeHelpers.inputFormFault(x.before(), w[x.member()], x.after(), null)
-                                        : PeriodArithmetic.openSegmentFault(x.openAttribute(), w[x.member()], w[x.timeline()]),
+                                x.before() != null
+                                        ? ComputeHelpers.bucketScalarFault(x.attribute(), x.before(), w[x.member()], x.after())
+                                        : PeriodArithmetic.openSegmentFault(x.attribute(), w[x.member()], w[x.timeline()]),
                                 place));
                     });
             case Consequence.Creation x -> creation(x);

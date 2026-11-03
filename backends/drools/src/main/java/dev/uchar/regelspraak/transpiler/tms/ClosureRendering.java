@@ -396,7 +396,8 @@ final class ClosureRendering {
             case COUNT -> x -> ComputeHelpers.countOf(x[0]);
             case FOLD_VALUE -> x -> ComputeHelpers.foldValue(x[0], x[1], x[2]);
             case OWN_TOTAL -> x -> ComputeHelpers.ownTotal(x[0], x[1], x[2], (String) x[3], (String) x[4], (String) x[5]);
-            case COMPLETE -> x -> ComputeHelpers.complete(x[0], (String) x[1], x[2], (String) x[3]);
+            case COMPLETE -> x -> ComputeHelpers.complete(x[0], (String) x[1], x[2], (String) x[3], (String) x[4],
+                    (Boolean) x[5]);
             case COLLAPSE -> x -> ComputeHelpers.collapse(x[0]);
             case FIT_TARGET -> x -> ComputeHelpers.fitTarget(x[0], (Integer) x[1], (String) x[2], (String) x[3]);
             case RS_AGG_COMPARE -> x -> RegelSpraakRuntime.rsAggVergelijk(x[0], x[1], (String) x[2]);

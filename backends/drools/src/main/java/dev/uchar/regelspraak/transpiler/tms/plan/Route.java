@@ -47,6 +47,9 @@ public enum Route {
     /** The fault of the form of an input, its sentence around the object, named in a rule, which
      *  {@link Consequence.InputFormFault} inserts. */
     INPUT_FORM_FAULT(ComputeHelpers.class, "inputFormFault"),
+    /** The fault EF-037 of a member of a fold whose timeline the case gives as the asOfDate-bucket scalar
+     *  ({@link Consequence.MemberFault}). */
+    BUCKET_SCALAR_FAULT(ComputeHelpers.class, "bucketScalarFault"),
     /** The fault of a total over a member's timeline that has an open segment that is not 0
      *  ({@link Consequence.MemberFault}). */
     OPEN_SEGMENT_FAULT(PeriodArithmetic.class, "openSegmentFault"),

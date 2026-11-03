@@ -144,18 +144,20 @@ class ConditionTermWitnessTest {
                 "maandtoelagesom van een jutter: geen toets",
                 "stormpremie van een jutter WITHOUT_FAULT: WHOLE_PERIOD(COMPLETE(Read 0, Const the whole-period "
                         + "qualifier over \"stormwachtdagen\" needs the full timeline; , Read 1, Const  supplies only "
-                        + "the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)), Const null, Const JAAR, Const 6, Const "
-                        + "false)",
+                        + "the asOfDate-bucket scalar (ch. 3.9, ch. 8.4), Const stormwachtdagen, Const true), Const "
+                        + "null, Const JAAR, Const 6, Const false)",
                 "stormpremie van een jutter FAULT: WHOLE_PERIOD(COMPLETE(Read 0, Const the whole-period qualifier "
                         + "over \"stormwachtdagen\" needs the full timeline; , Read 1, Const  supplies only the "
-                        + "asOfDate-bucket scalar (ch. 3.9, ch. 8.4)), Const null, Const JAAR, Const 6, Const false)",
+                        + "asOfDate-bucket scalar (ch. 3.9, ch. 8.4), Const stormwachtdagen, Const true), Const null, "
+                        + "Const JAAR, Const 6, Const false)",
                 "maandpremie van een jutter WITHOUT_FAULT: WHOLE_PERIOD(COMPLETE(Read 0, Const the whole-period "
                         + "qualifier over \"maandwachtdagen\" needs the full timeline; , Read 1, Const  supplies only "
-                        + "the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)), Const 0, Const MAAND, Const 2, Const "
-                        + "false)",
+                        + "the asOfDate-bucket scalar (ch. 3.9, ch. 8.4), Const maandwachtdagen, Const true), Const 0, "
+                        + "Const MAAND, Const 2, Const false)",
                 "maandpremie van een jutter FAULT: WHOLE_PERIOD(COMPLETE(Read 0, Const the whole-period qualifier "
                         + "over \"maandwachtdagen\" needs the full timeline; , Read 1, Const  supplies only the "
-                        + "asOfDate-bucket scalar (ch. 3.9, ch. 8.4)), Const 0, Const MAAND, Const 2, Const false)",
+                        + "asOfDate-bucket scalar (ch. 3.9, ch. 8.4), Const maandwachtdagen, Const true), Const 0, "
+                        + "Const MAAND, Const 2, Const false)",
                 "weektoelagesom van een jutter: geen toets",
                 "kwartaaltoelagesom van een jutter: geen toets"), trees(plans));
         assertEquals(List.of(
@@ -166,6 +168,8 @@ class ConditionTermWitnessTest {
                 "stormpremie van een jutter WITHOUT_FAULT 0.0.1 Const String",
                 "stormpremie van een jutter WITHOUT_FAULT 0.0.2 SlotValue",
                 "stormpremie van een jutter WITHOUT_FAULT 0.0.3 Const String",
+                "stormpremie van een jutter WITHOUT_FAULT 0.0.4 Const String",
+                "stormpremie van een jutter WITHOUT_FAULT 0.0.5 Const Boolean",
                 "stormpremie van een jutter WITHOUT_FAULT 0.1 Const null",
                 "stormpremie van een jutter WITHOUT_FAULT 0.2 Const String",
                 "stormpremie van een jutter WITHOUT_FAULT 0.3 Const Integer",
@@ -178,6 +182,8 @@ class ConditionTermWitnessTest {
                 "maandpremie van een jutter WITHOUT_FAULT 0.0.1 Const String",
                 "maandpremie van een jutter WITHOUT_FAULT 0.0.2 SlotValue",
                 "maandpremie van een jutter WITHOUT_FAULT 0.0.3 Const String",
+                "maandpremie van een jutter WITHOUT_FAULT 0.0.4 Const String",
+                "maandpremie van een jutter WITHOUT_FAULT 0.0.5 Const Boolean",
                 "maandpremie van een jutter WITHOUT_FAULT 0.1 Const BigDecimal type Numeric[wholeNumber=true, "
                         + "decimals=0, sign=ONBEPAALD, unit=null] source '0'",
                 "maandpremie van een jutter WITHOUT_FAULT 0.2 Const String",

@@ -2177,7 +2177,7 @@ public final class TmsTranspiler {
         reads.markFail();
         Term whole = complete(timeline, "a condition per period reads the time-dependent attribute \"" + member.name()
                 + "\" of ", subjectType, " whole; the case supplies only the asOfDate-bucket scalar, which carries no"
-                + " period", source(tested.source()));
+                + " period", member.name(), true, source(tested.source()));
         note(tested, whole);
         Term bound = restated(value(boundExpr, reads), eff.unitOf(boundExpr), eff.unitOf(tested),
                 "een voorwaarde per periode");
@@ -2400,7 +2400,7 @@ public final class TmsTranspiler {
             reads.markFail();
             Term whole = complete(timeline, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \""
                     + operand.name() + "\" of ", subjectType, "; the case supplies only the asOfDate-bucket scalar, which"
-                    + " carries no period", source);
+                    + " carries no period", operand.name(), true, source);
             // read whole, an absent timeline is the empty one, as the reference interpreter's trace reads it
             noteDerived(a, List.of(whole), x -> x.get(0) == null ? List.of() : x.get(0));
             return whole;
@@ -2608,8 +2608,7 @@ public final class TmsTranspiler {
      * condition is read per period, {@code held} is the term of its periods, and the result is restricted to them
      * ({@link #periodCondition}, ch. 3.10). The
      * pro-rata part reads its base whole, bucket by bucket, so a base the case gives as the asOfDate-bucket scalar
-     * faults ({@link InputFormFault}, ch. 8.4), wherever the rule's evaluation reaches the value; the reference
-     * interpreter and the ASP backend read such a base as no timeline today and write nothing.
+     * faults ({@link InputFormFault}, ch. 8.4, EF-037), wherever the rule's evaluation reaches the value.
      *
      * <p>Refused by name, as the reference interpreter refuses them: a stated bucket other than the target's
      * granularity (WF-056, WF-058); a clause that is not a check of an own characteristic on a timeline, or is negated
@@ -2663,7 +2662,7 @@ public final class TmsTranspiler {
         // the reading of the clause is its true periods, none where the characteristic has no timeline
         noteDerived(f.filter(), List.of(periods), x -> periodsOf(x.get(0)));
         Term whole = complete(baseValue, "the pro-rata base \"" + baseName + "\" needs the full timeline; ", subjectType,
-                " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", source(b.source()));
+                " supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)", baseName, true, source(b.source()));
         note(b, whole);
         // a segment of the unbounded form would hold the exact part, which no Period holds where it does not terminate
         if (target.datatype().unbounded())
@@ -6252,7 +6251,8 @@ public final class TmsTranspiler {
         String source = source(f.source());
         if (periodArithmetic) {
             Term whole = complete(timeline, "the temporal total of \"" + name + "\" needs the full timeline; ",
-                    subjectType, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", source(a.source()));
+                    subjectType, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", name, true,
+                    source(a.source()));
             note(a, whole);
             return new Term.Call(StaticFunction.PERIOD_TOTAL, List.of(whole, constant(gran), constant(calendar),
                     constant(name), new Term.SlotValue(subjectType, null)), source);
@@ -6265,19 +6265,22 @@ public final class TmsTranspiler {
                     new Term.SlotValue(date, null), constant(name), constant(gran), constant(calendar)), source);
         }
         Term whole = complete(timeline, "the gedurende clip of \"" + name + "\" needs the full timeline; ", subjectType,
-                " supplies only the asOfDate-bucket scalar", source(a.source()));
+                " supplies only the asOfDate-bucket scalar", name, true, source(a.source()));
         note(a, whole);
         Term cut = clip(f.filter(), reads, description, name, whole, whole);
         return new Term.Call(StaticFunction.PERIOD_TOTAL, List.of(cut, constant(gran), constant(calendar),
                 constant(name), new Term.SlotValue(subjectType, null)), source);
     }
 
-    /** The timeline bound at slot {@code timeline}, which a form reads whole, or the fault in the sentence {@code voor},
-     *  the subject bound at slot {@code subjectType}, {@code na}, where the case gives that input as the asOfDate-bucket
-     *  scalar ({@link BucketScalar}, RUNTIME-SEMANTICS ch. 8.4; {@link ComputeHelpers#complete}). */
-    private static Term complete(int timeline, String before, int subjectType, String after, String source) {
+    /** The timeline of the attribute {@code attribute} bound at slot {@code timeline}, which a form reads whole, or the
+     *  fault EF-037 in the sentence {@code before}, the subject bound at slot {@code subjectType}, {@code after}, where
+     *  the case gives that input as the asOfDate-bucket scalar ({@link BucketScalar}, RUNTIME-SEMANTICS ch. 8.4, 5.7b;
+     *  {@link ComputeHelpers#complete}); {@code owner} says whether that subject is the object whose input it is, and
+     *  not the start of a path to it. */
+    private static Term complete(int timeline, String before, int subjectType, String after, String attribute,
+                                 boolean owner, String source) {
         return new Term.Call(StaticFunction.COMPLETE, List.of(new Term.SlotValue(timeline, source), constant(before),
-                new Term.SlotValue(subjectType, null), constant(after)), source);
+                new Term.SlotValue(subjectType, null), constant(after), constant(attribute), constant(owner)), source);
     }
 
     /**
@@ -6379,7 +6382,7 @@ public final class TmsTranspiler {
         String compared = tested.name();
         Term whole = complete(testedTimeline, "the gedurende clip of \"" + cut + "\" compares \"" + compared
                 + "\" per segment and needs its full timeline; ", subjectType,
-                " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", source(a.source()));
+                " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", compared, true, source(a.source()));
         note(a, whole);
         // the true periods take the gaps of the compared timeline within the clipped one, where a leeg side satisfies
         // the comparison (ch. 3.1: a gap reads leeg)
@@ -6825,10 +6828,10 @@ public final class TmsTranspiler {
             case BUCKET -> new Consequence.MemberFault(FOLD_SUBJECT, key, member, place,
                     "the per-element temporal total of \"" + name + "\" over ", ": the case supplies an asOfDate-bucket"
                     + " scalar, which carries no period of its own; a set fold needs each member's own timeline"
-                    + " (ch. 3.6/§7.1, ch. 8.4)", null, -1, Consequence.Insertion.LOGICAL);
+                    + " (ch. 3.6/§7.1, ch. 8.4)", name, -1, Consequence.Insertion.LOGICAL);
             case PERIOD_BUCKET -> new Consequence.MemberFault(FOLD_SUBJECT, key, member, place,
                     "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"" + name + "\" of ",
-                    "; the case supplies only the asOfDate-bucket scalar, which carries no period", null, -1,
+                    "; the case supplies only the asOfDate-bucket scalar, which carries no period", name, -1,
                     Consequence.Insertion.LOGICAL);
             case OPEN_SEGMENT -> new Consequence.MemberFault(FOLD_SUBJECT, key, member, place, null, null, name, value,
                     Consequence.Insertion.LOGICAL);
@@ -7302,9 +7305,9 @@ public final class TmsTranspiler {
      * The timeline of the attribute {@code member} bound at slot {@code timeline}, which the whole-period fold reads whole,
      * or the fault where the case gives its input as the asOfDate-bucket scalar ({@link BucketScalar},
      * {@link StaticFunction#COMPLETE}): ch. 8.4 makes a form that needs the one convention and finds the other fault, never
-     * guess. The fault names the object by the subject of the rule, through the roles of {@code path} where the attribute
-     * is read over one ("the werf of "S1""). Registers that the rule's evaluation can fault. The reference interpreter
-     * and the ASP backend read such an input as no timeline, which passes (measured 2026-10-09).
+     * guess (EF-037). The fault names the object by the subject of the rule, through the roles of {@code path} where the
+     * attribute is read over one ("the werf of "S1""), and then names no label among its parameters: the object whose
+     * input it is is not bound here. Registers that the rule's evaluation can fault.
      */
     private static Term fullTimeline(int timeline, Member member, Path path, Reads reads, String source) {
         int subjectType = reads.member();
@@ -7313,7 +7316,8 @@ public final class TmsTranspiler {
         if (path != null) for (int i = path.roles().size() - 1; i >= 0; i--)
             along.append("the ").append(path.roles().get(i)).append(" of ");
         String before = "the whole-period qualifier over \"" + member.name() + "\" needs the full timeline; " + along;
-        return complete(timeline, before, subjectType, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)", source);
+        return complete(timeline, before, subjectType, " supplies only the asOfDate-bucket scalar (ch. 3.9, ch. 8.4)",
+                member.name(), path == null, source);
     }
 
     /** Whether {@code e} reads an attribute on a timeline of this rule's subject itself: an attribute reference without

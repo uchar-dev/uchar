@@ -508,7 +508,7 @@ final class FormsPlan {
                         StaticFunction.PLACE_OF, O, List.of(new Term.Const(List.of(), null, null))))),
                 new Consequence.MemberFault(v, "proefvouw", 0, new Consequence.FoldPlace(0,
                         List.of(new Consequence.FoldPlace.Step("kustvak", 1, 2)), Consequence.PlaceReason.MEMBER_FAULT),
-                        "the total of ", ": a scalar", null, -1, Consequence.Insertion.LOGICAL)));
+                        "the total of ", ": a scalar", "hoogte", -1, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidfout over een open segment", "proef", null, table(heightSlot(), memberSlot(1),
                 placeSlot(2, ReadKind.LIST_PLACES, "$lijstplaatsen_1"), placeSlot(3, ReadKind.LIST_PLACE, "$plaats_1")),
                 List.of(foldSubject, member(post, v, height), places(1, "kustvak", new BetaTest("plaats-1",

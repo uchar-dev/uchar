@@ -223,12 +223,12 @@ class TmsConditionPerPeriodWitnessTest {
         assertEquals("InputFormFault: fout in de regel \"premie\": a condition per period reads the time-dependent"
                 + " attribute \"strandloon\" of \"J1\" whole; the case supplies only the asOfDate-bucket scalar, which"
                 + " carries no period", TmsFaultWitnessTest.playBoth(ir, caseBucket()));
-        // the fault stands at the read that raised it and fails the reading, and nothing after it is reached
-        // (RUNTIME-SEMANTICS ch. 5.12)
+        // the fault stands at the read that raised it, with its kind EF-037 (ch. 5.7b), and fails the reading, and
+        // nothing after it is reached (RUNTIME-SEMANTICS ch. 5.12)
         Path c = Files.writeString(Files.createTempFile("tms-emmerscalair", ".json"), caseBucket().toString());
         c.toFile().deleteOnExit();
         String r = "reading /rules/rules/0/versions/0 \"J1\" ";
-        readings(ir, c, List.of("case " + c.getFileName(), r + "0 Comparison unreached", r + "1 AttributeReference fault -",
+        readings(ir, c, List.of("case " + c.getFileName(), r + "0 Comparison unreached", r + "1 AttributeReference fault EF-037",
                 r + "2 Literal unreached", r + "3 Literal unreached", r + "FAULTS", "READINGS 1"));
     }
 

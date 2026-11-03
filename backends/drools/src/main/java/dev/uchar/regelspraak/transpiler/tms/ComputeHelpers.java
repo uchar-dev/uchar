@@ -797,11 +797,14 @@ public final class ComputeHelpers {
         return List.copyOf(out);
     }
 
-    /** {@code timeline}, the timeline of an attribute a form reads whole, or the fault where the case gives that input
-     *  as the asOfDate-bucket scalar ({@link BucketScalar}, RUNTIME-SEMANTICS ch. 8.4), in the sentence {@code before},
-     *  the object {@code object}, {@code after}. */
-    public static List<?> complete(Object timeline, String before, Object object, String after) {
-        if (timeline instanceof BucketScalar) throw new InputFormFault(before, object, after);
+    /** {@code timeline}, the timeline of the attribute {@code attribute} a form reads whole, or the fault EF-037 where
+     *  the case gives that input as the asOfDate-bucket scalar ({@link BucketScalar}, RUNTIME-SEMANTICS ch. 8.4,
+     *  5.7b), in the sentence {@code before}, the object {@code object}, {@code after}; {@code owner} says whether
+     *  {@code object} is the object whose input it is, and not the subject of the rule along a path. */
+    public static List<?> complete(Object timeline, String before, Object object, String after, String attribute,
+                                   boolean owner) {
+        if (timeline instanceof BucketScalar)
+            throw InputFormFault.bucketScalar(attribute, owner, before, object, after);
         return (List<?>) timeline;
     }
 
@@ -903,6 +906,14 @@ public final class ComputeHelpers {
      *  meets it. */
     public static InputFormFault inputFormFault(String before, Object object, String after, String rule) {
         return new InputFormFault(before, object, after).inRule(rule);
+    }
+
+    /** The fault EF-037 of the member {@code member} of a fold whose timeline of the attribute {@code attribute} the
+     *  case gives as the asOfDate-bucket scalar (RUNTIME-SEMANTICS ch. 8.4, 5.7b), the sentence {@code before}, the
+     *  member and {@code after}, named in no rule yet: the fault a {@code plan.Consequence.MemberFault} carries, which
+     *  the form that reads the fold names where it meets it. */
+    public static InputFormFault bucketScalarFault(String attribute, String before, Object member, String after) {
+        return InputFormFault.bucketScalar(attribute, true, before, member, after);
     }
 
     /** The keys of {@code element} in source {@code source} of the uniqueness {@code uniqueness}, linked to the parent

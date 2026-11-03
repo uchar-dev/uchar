@@ -373,21 +373,22 @@ public sealed interface Consequence {
         }
     }
 
-    /** The fault of the member in slot {@code member} of a fold over an attribute on a timeline whose value the fold
-     *  cannot read, a {@code MemberFault} on the fold's subject, the object {@code subject} binds: the member's
-     *  {@code place} in the fold's order, and, named in no rule yet, where {@code openAttribute} is null, the fault of
-     *  the form of an input, the case giving the timeline as the asOfDate-bucket scalar, the sentence {@code before},
-     *  the member and {@code after}, made by the route {@link Route#INPUT_FORM_FAULT}; and where it is not, the fault
-     *  of a total of that attribute over the member's timeline in slot {@code timeline}, which has an open segment that
-     *  is not 0 (RUNTIME-SEMANTICS ch. 3.6, EF-036), made by the route {@link Route#OPEN_SEGMENT_FAULT}. */
+    /** The fault of the member in slot {@code member} of a fold over the attribute {@code attribute} on a timeline whose
+     *  value the fold cannot read, a {@code MemberFault} on the fold's subject, the object {@code subject} binds: the
+     *  member's {@code place} in the fold's order, and, named in no rule yet, where {@code before} is not null, the fault
+     *  EF-037 of the case giving the timeline as the asOfDate-bucket scalar, the sentence {@code before}, the member and
+     *  {@code after}, made by the route {@link Route#BUCKET_SCALAR_FAULT}; and where it is null, the fault of a total of
+     *  that attribute over the member's timeline in slot {@code timeline}, which has an open segment that is not 0
+     *  (RUNTIME-SEMANTICS ch. 3.6, EF-036), made by the route {@link Route#OPEN_SEGMENT_FAULT}. */
     record MemberFault(String subject, String fold, int member, FoldPlace place, String before, String after,
-                   String openAttribute, int timeline, Insertion insertion) implements Consequence {
+                   String attribute, int timeline, Insertion insertion) implements Consequence {
         public MemberFault {
             if (place.reason() != PlaceReason.MEMBER_FAULT)
                 throw new IllegalArgumentException("de plaats van een lidfout is die van het lid, niet " + place.reason());
-            if ((openAttribute == null) == (timeline >= 0))
+            java.util.Objects.requireNonNull(attribute, "attribute");
+            if ((before == null) == (timeline < 0) || (before == null) != (after == null))
                 throw new IllegalArgumentException("een lidfout over een open segment leest de tijdlijn van het lid, en"
-                        + " alleen die");
+                        + " alleen die; een emmerscalair heeft een zin");
         }
     }
 
