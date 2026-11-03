@@ -25,6 +25,7 @@ import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.ComputeFault;
 import dev.uchar.regelspraak.transpiler.tms.EvaluationFaults;
 import dev.uchar.regelspraak.transpiler.tms.OpenSegmentFault;
+import dev.uchar.regelspraak.transpiler.tms.Period;
 import dev.uchar.regelspraak.transpiler.tms.WriteBoundaryFault;
 import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
 
@@ -739,14 +740,26 @@ public final class CaseRunner {
         return Namen.declaredName(declared, name);
     }
 
+    /** Sets the global of every parameter the case gives, as the reference interpreter's case loader reads it: a
+     *  time-dependent parameter takes its timeline, read as an attribute's timeline on the parameter's grid, open bounds
+     *  included, and set as the {@code List<Period>} the period arithmetic reads whole (RUNTIME-SEMANTICS ch. 3.4, 8.3);
+     *  any other parameter takes its value. A timeline on a parameter that is not time-dependent and a scalar on one
+     *  that is are a defective case, refused in the loader's words. */
     private void setGlobals(KieSession session, JsonNode c) {
         JsonNode params = c.get("input").get("parameters");
         if (params != null) for (Map.Entry<String, JsonNode> e : params.properties()) {
-            if (e.getValue().has("timeline"))
-                throw new Excluded(DroolsCode.GRANULAR_PARAMETER_TIMELINE.reason("parameter", e.getKey()));
             RegelSpraakModel.Parameter declared = Namen.byName(model.parameters, e.getKey());
-            inputFits(e.getValue(), declared == null ? null : declared.datatype(), "parameter " + e.getKey());
-            setGlobalSafe(session, Namen.ident(e.getKey(), false), valueToArg(e.getValue(), e.getKey()));
+            String at = "parameter " + e.getKey();
+            boolean granular = declared != null && declared.granularity() != null;
+            if (e.getValue().has("timeline") != granular)
+                throw new IllegalArgumentException(at + (granular
+                        ? ": a scalar value on a granular parameter (it takes a timeline)"
+                        : ": a timeline value on a non-granular parameter"));
+            inputFits(e.getValue(), declared == null ? null : declared.datatype(), at);
+            Object value = granular ? Period.list(timelineSegments(e.getValue().get("timeline"), e.getKey(), at,
+                    new Grid(declared.granularity(), 1, declared.fixedStartPoint(), false), false))
+                    : valueToArg(e.getValue(), e.getKey());
+            setGlobalSafe(session, Namen.ident(e.getKey(), false), value);
         }
         if (evaluationDate != null) setGlobalSafe(session, "rekendatum", evaluationDate);
         // §9.8 the DRL-text branch reaches its dagsoort predicates through globals (the exec branch closes over
@@ -778,7 +791,8 @@ public final class CaseRunner {
      *  reaching it here means the corpus and this reader disagree. A grid that carries no case timeline is a
      *  not-carried form, refused where ref's loader refuses it and in its sentence, at position {@code site}
      *  ({@code J1.m2} for an input, {@code expected J1.m2} for an expectation): a grid of several units and a
-     *  variable start before any segment is read, the calendar's day, week and quarter grid at the first segment. */
+     *  variable start before any segment is read, the calendar's week and quarter grid at the first segment. Every day
+     *  sits on the calendar's day grid. */
     List<Object> timelineSegments(JsonNode segs, String field, String site, Grid gran, boolean emptyAllowed) {
         if (segs == null || !segs.isArray())
             throw new IllegalArgumentException("misvormde tijdlijnwaarde op '" + field + "'");
@@ -797,7 +811,7 @@ public final class CaseRunner {
             if (van != null && to != null && !van.isBefore(to))
                 throw new IllegalArgumentException("segment 'to' op '" + field + "' ligt niet na 'from'");
             if (gran.fixed() == null) calendarGridForInput(gran.gran(), site);
-            if (van != null && !bucket(gran, van)[0].equals(van) || to != null && !bucket(gran, to)[0].equals(to))
+            if (van != null && !onGrid(gran, van) || to != null && !onGrid(gran, to))
                 throw new IllegalArgumentException("segmentgrens op '" + field + "' ligt niet op het "
                         + gran.gran() + "-raster" + (gran.fixed() == null ? "" : " vanaf " + gran.fixed()));
             if (openEnd || !out.isEmpty() && (van == null || previousTo.isAfter(van)))
@@ -850,14 +864,20 @@ public final class CaseRunner {
     }
 
     /** ref's loader checks a case timeline on the calendar grid through the calendar bucketing, which has month and
-     *  year buckets only (ch. 3.2), and refuses the other three granularities as a v0 limit, each in its own
-     *  sentence; this is that refusal, at position {@code site}. */
+     *  year buckets only (ch. 3.2), and every day sits on the day grid; it refuses the calendar's week and quarter grid
+     *  as a v0 limit, in its own sentence; this is that refusal, at position {@code site}. */
     private static void calendarGridForInput(Granularity gran, String site) {
         switch (gran) {
-            case JAAR, MAAND -> { }
-            case DAG -> throw new Excluded(DroolsCode.DAY_GRID_CALENDAR_BUCKETING.reason("site", site));
+            case JAAR, MAAND, DAG -> { }
             default -> throw new Excluded(DroolsCode.CALENDAR_GRID_UNSUPPORTED.reason("site", site, "granularity", spelling(gran), "granularity", spelling(gran)));
         }
+    }
+
+    /** Whether day {@code d} is a wall of the grid {@code gran}: every day of the calendar's day grid is one, and of
+     *  another grid the first day of the period that holds it ({@link #bucket}). */
+    private static boolean onGrid(Grid gran, LocalDate d) {
+        if (gran.fixed() == null && gran.gran() == Granularity.DAG) return true;
+        return bucket(gran, d)[0].equals(d);
     }
 
     /** A granularity in its wire spelling (IR-SPEC ch. 2.2), the word ref's sentences carry. */

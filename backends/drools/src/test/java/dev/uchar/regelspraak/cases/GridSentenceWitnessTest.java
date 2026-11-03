@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -16,7 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * word for word those of the reference interpreter and the ASP backend: for a case timeline the sentence of ref's
  * case loader with its position ({@code J1.m2}, {@code expected J1.m2}), for the asOfDate bucket of a scalar the
  * sentence of ref's grid function. Three grids lay no such period: a grid of several units, a variable start, whose
- * periods run from a per-object anchor the case does not give, and the calendar's day, week and quarter grid.
+ * periods run from a per-object anchor the case does not give, and the calendar's week and quarter grid; every day
+ * sits on the day grid, so a case timeline there is read.
  *
  * <p><b>Red before the fix round of 2026-09-26</b> (measured on the union e6844fba): the case runner refused each of
  * them in words of its own, one of them in the v0 spelling of the granularity, for example
@@ -110,15 +112,21 @@ class GridSentenceWitnessTest {
                 + " not as a defect of the case");
     }
 
-    @Test void a_timeline_on_the_week_and_the_day_of_the_calendar() throws Exception {
+    @Test void a_timeline_on_the_week_of_the_calendar() throws Exception {
         refuses(document(CALENDAR_WEEK), caseDocument(TIJDLIJN, null), "J1.m: the declared grid is week, and v0 defines"
                 + " calendar buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so this"
                 + " loader has no week grid to check the segment boundaries against: refused as a v0 limit, not as a"
                 + " defect of the case");
-        refuses(document(CALENDAR_DAY), caseDocument(TIJDLIJN, null), "J1.m: the declared grid is day, which every day"
-                + " boundary sits on, yet this loader checks a timeline's grid through the calendar bucketing and v0"
-                + " defines buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a"
-                + " v0 limit, not as a defect of the case");
+    }
+
+    /** Every day sits on the calendar's day grid, so a case reads a timeline there with any bounds, as an input and as an
+     *  expectation, as the reference interpreter's loader reads it. */
+    @Test void a_timeline_on_the_day_of_the_calendar_is_read() throws Exception {
+        String days = "[{\"from\":\"2024-01-03\",\"to\":\"2024-02-17\",\"value\":{\"number\":\"3\"}},"
+                + "{\"from\":\"2024-02-17\",\"value\":{\"number\":\"4\"}}]";
+        for (boolean viaDrl : new boolean[] { false, true })
+            assertNull(CaseRunner.playCase(document(CALENDAR_DAY), caseDocument("{\"timeline\":" + days + "}", days), viaDrl),
+                    viaDrl ? "drl-tekst" : "exec-model");
     }
 
     @Test void the_as_of_date_bucket_of_a_scalar() throws Exception {

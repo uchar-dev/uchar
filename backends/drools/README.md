@@ -658,19 +658,38 @@ open bound: in a `Period` an open `from` is `Period.OPEN_FROM` (`LocalDate.MIN`)
 (`LocalDate.MAX`), so that a clip, a complement and a comparison of bounds treat an open segment as any other; on a
 bean an open bound is null, as the case leaves `from` or `to` out, and the case reader reads it so in an input and in
 an expectation, the first segment alone beginning open and the last alone ending open. A rule on a temporal attribute
-whose value is plus or min, their operands plus or min again, or the sum of a member's attribute on a timeline over
-the members of a set, writes the timeline of ch. 3.4 and 3.5, computed by the pure functions of `PeriodArithmetic`
-over the values the rule binds: plus and min per period of all time, a leeg operand 0 there; the sum per period, a
-leeg member skipped, an all-leeg period leeg or the fallback, which fills all time, also over no member; an own
-attribute on a timeline read whole through its standing; a literal, an own scalar attribute or a scalar parameter on
-the one segment (−∞, +∞). The rule writes the filled segments, adjacent equal ones one segment, a leeg period a gap,
-each under the write boundary of the target's decimals. The subject's own total of such a timeline reads it whole,
-an absent one 0, and so do the clip and the per-element fold over a set: an open segment of 0 adds 0, one of another
+whose value is an operator of the arithmetic table of ch. 1.2 other than the power, its operands such operators again,
+or the sum of a member's attribute on a timeline over the members of a set, writes the timeline of ch. 3.4 and 3.5,
+computed by the pure functions of `PeriodArithmetic` over the values the rule binds: each operator per period of all
+time with the scalar operator of the runtime and its own leeg rule (plus, min, maal and percentage van a leeg operand
+0, verminderd met leeg where its left operand is, a division 0 over a leeg dividend and leeg over a leeg or zero
+divisor, heard by the probe of the rule's deposit, so that the rule × subject carries one §9.5 fact with each code
+once); the sum per period, a leeg member skipped, an all-leeg period leeg or the fallback, which fills all time, also
+over no member; an own attribute on a timeline read whole through its standing; a time-dependent parameter read whole
+off its global, the `List<Period>` the case runner sets from the parameter's timeline (open bounds included), and the
+fault of an unbound parameter (EF-014) where the case gives none; a literal, an own scalar attribute or a scalar
+parameter on the one segment (−∞, +∞). The values between two operators are exact, a decimal or a `Breuk`. The rule
+writes the filled segments, adjacent equal ones one segment, a leeg period a gap, each under the write boundary of the
+target's decimals; in a target of the unbounded form a segment whose value does not terminate faults by name
+(`ComputeFault`), a limit of this branch, whose segment holds a decimal. Units are computed without a restatement:
+the operands of an additive operator in one unit, a product and a quotient with no factor between their operands, and
+the result in the target's unit (else DROOLS-306). The subject's own total of such a timeline reads it whole, an
+absent one 0, and so do the clip and the per-element fold over a set: an open segment of 0 adds 0, one of another
 value faults with EF-036 (`OpenSegmentFault`, the attribute and the label of the object whose timeline it is). The
 whole-period qualifier over an open segment faults, since its fold has no end to walk to (ch. 3.1). An operand that
 the case gives as the asOfDate-bucket scalar faults in the reference interpreter's words. In a build with readings the
-nodes of such a value read unreached, as the reference interpreter's trace reads them. Witness
-`TmsPeriodArithmeticWitnessTest`, golden `jutterswet-maandloon`, red case `jutterswet-totaal-open-segment`.
+nodes of such a value read unreached, as the reference interpreter's trace reads them. Witnesses
+`TmsPeriodArithmeticWitnessTest`, `TmsPerDayArithmeticWitnessTest`, `PeriodArithmeticTest`, goldens
+`jutterswet-maandloon`, `jutterswet-rekenen-per-dag` and `anchor/jutterswet-verzuimrente-dagen`, red case
+`jutterswet-totaal-open-segment`.
+
+**The calendar.** A rate whose denominator is a time unit of the other family of the calendar than the grid's — dag
+and week count in days, maand, kwartaal and jaar in months (RUNTIME-SEMANTICS ch. 3.6) — totals by the actual length
+of the calendar unit: the whole units of the grid of a segment measured in the denominator's unit, a day 1/len of the
+calendar month, quarter or year that holds it (`PeriodArithmetic.weighed`), an exact rational. This holds on every
+route of the subject's own total, the asOfDate bucket, the whole timeline a period arithmetic writes and the clip. A
+case reads a timeline on the calendar's day grid with any bounds. Witnesses `TmsPerDayArithmeticWitnessTest`,
+`PeriodArithmeticTest`, `GridSentenceWitnessTest`, anchor `jutterswet-verzuimrente-dagen`.
 
 **The two input conventions of a timeline.** The case gives an attribute on a timeline either as its full timeline or
 as the asOfDate-bucket scalar, one value for the period of the attribute's grid that holds the evaluation date, and
@@ -840,19 +859,21 @@ never as a silent fall:
   7.8 keeps fenced, and an initialisation of one; a time window in the condition of a rule with a timeline target,
   which clips the timeline (ch. 3.10; golden `jutterswet-pachtvenster`); a
   characteristic on a timeline as a target; any value of a timeline target other than a pro-rata part, a day count or
-  the period arithmetic of ch. 3.4 and 3.5, and of that arithmetic a condition on the rule, a time-dependent parameter
-  as an operand, a die/dat subselection on the sum, an operand outside its forms or on a finer grid than the target's,
-  a restatement between two units and a target or a scalar of the unbounded form (witness
-  `TmsPeriodArithmeticWitnessTest`); a rate
+  the period arithmetic of ch. 3.4 and 3.5, among them a power, and of that arithmetic a condition on the rule, a
+  die/dat subselection on the sum, an operand outside its forms or on a finer grid than the target's and a restatement
+  between two units (witnesses `TmsPeriodArithmeticWitnessTest`, `TmsPerDayArithmeticWitnessTest`); a rate
   over a grid whose unit the document does not declare, or declares in two different canonical chains, which the
-  reference interpreter refuses to integrate, in its words; a rate whose denominator is not the unit of the grid, which
-  `rsTijdTotaal` would weigh unit-blind; a sum or a total per member over a timeline in a fold over a created relation,
+  reference interpreter refuses to integrate, in its words, where the calendar does not integrate it; a rate whose
+  denominator the declarations restate into the unit of the grid by a factor, which `rsTijdTotaal` would weigh
+  unit-blind, and one the calendar integrates in a total per member of a set; a sum or a total per member over a
+  timeline in a fold over a created relation,
   whose made links have no place in the fold order that names the member given as a bucket scalar; the total without a clip
   over a timeline a pro-rata part or a day count writes, which the reference interpreter refuses as well; every form that reads or writes a
   timeline on a variable start point (the `StartPointDetermination` itself is a declaration and refuses nothing, so a
   document that declares one and uses no timeline on its grid plays; witness `TmsStartPointWitnessTest`); a
-  time-dependent parameter, which the goldens with cases read in a `TemporalRead`
-  that the loader refuses for every branch; and what the reference interpreter refuses as well: a member on a grid of
+  time-dependent parameter read anywhere but as an operand of the period arithmetic, which the goldens with cases do in
+  a `TemporalRead` that the loader refuses for every branch; and what the reference interpreter refuses as well: a
+  member on a grid of
   more than one period, a fold over a member on a timeline other than a sum or a total, a uniqueness key with two
   components on a timeline, and a pro-rata part over a base with a unit or finer than the bucket, or onto or from a
   fixed start point. Witness `TmsTimelineRefusalWitnessTest`;

@@ -12,8 +12,10 @@ import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
  * (ch. 3.6, 8.1, 8.2), the bound day outside a day-kind evaluation (ch. 8.2), an {@code Unresolved} node the evaluation
  * reaches (ch. 5.7), an
  * easterSunday of a year that is not whole or lies outside the years a date holds (ch. 3.8), a dateWith or a
- * dateTimeWith over parts that name no calendar day or no clock time (EF-032) or that are no whole numbers, and an
- * irrational square root without a rounding (ch. 2.2). Its sentence
+ * dateTimeWith over parts that name no calendar day or no clock time (EF-032) or that are no whole numbers, an
+ * irrational square root without a rounding (ch. 2.2), a time-dependent parameter that the period arithmetic reads
+ * and the case does not bind (EF-014, ch. 3.4, 5.7), and a segment of a timeline of the unbounded form whose value does
+ * not terminate, which a segment of this branch does not hold (ch. 3.4). Its sentence
  * ({@link #sentence}) is the reference interpreter's wherever that executor names the fault, so a pinned fragment matches
  * both.
  *
@@ -45,6 +47,24 @@ public final class ComputeFault extends RuntimeException {
 
     /** The condition marker's sentence, in the reference interpreter's words. */
     public static final String UNRESOLVED_CONDITION = Msg.drools("EF-019.condition").text();
+
+    /** RUNTIME-SEMANTICS ch. 5.7 and 3.4: the sentence of a time-dependent parameter that the period arithmetic reads
+     *  and the case does not bind (EF-014), in the reference interpreter's words. */
+    static String unboundParameter(String parameter) {
+        return "parameter \"" + parameter + "\" is unbound in this case (binding is fail-fast, ch. 5.7)";
+    }
+
+    private static final java.util.regex.Pattern UNBOUND_PARAMETER =
+            java.util.regex.Pattern.compile("parameter \"(.*)\" is unbound in this case \\(binding is fail-fast, ch\\. 5\\.7\\)");
+
+    /** The sentence of a segment of a timeline of the unbounded form whose value does not terminate: a limit of this
+     *  branch, whose segment holds a decimal, where the reference interpreter writes the exact value (ch. 2.4 point 3,
+     *  3.4). No fault kind of ch. 5.7b. */
+    static String nonTerminatingSegment(String attribute, String value, String from, String to) {
+        return "the period arithmetic of ch. 3.4 writes " + value + " on [" + from + ", " + to + ") into the timeline of \""
+                + attribute + "\", of the unbounded form: the value does not terminate, and a segment of this branch holds"
+                + " a decimal (a limit of this branch, not of the document)";
+    }
 
     private final String sentence;
     private final String rule;
@@ -94,6 +114,7 @@ public final class ComputeFault extends RuntimeException {
         if (sentence.startsWith("duration count ") && sentence.endsWith(" is out of range")) return "EF-008";
         if (sentence.startsWith(ComputeHelpers.DAY_KIND_WALK)) return "EF-009";
         if (namesNoMoment(sentence)) return "EF-032";
+        if (UNBOUND_PARAMETER.matcher(sentence).matches()) return "EF-014";
         return null;
     }
 
@@ -115,7 +136,8 @@ public final class ComputeFault extends RuntimeException {
             java.util.regex.Pattern.compile("no day of the kind within (\\d+) calendar days of (\\S+)");
 
     /** The parameters of this fault's kind (RUNTIME-SEMANTICS ch. 5.7b) that its sentence carries, in the order of the
-     *  table: the count of EF-008, the reach and the starting day of EF-009, the parts of EF-032. The sentence is the one place they stand
+     *  table: the count of EF-008, the reach and the starting day of EF-009, the parameter of EF-014, the parts of
+     *  EF-032. The sentence is the one place they stand
      *  (a plan term carries a sentence, not fields); a kind whose sentence names none has none. */
     public java.util.Map<String, String> params() {
         java.util.Map<String, String> p = new java.util.LinkedHashMap<>();
@@ -132,6 +154,8 @@ public final class ComputeFault extends RuntimeException {
             p.put("month", day.group(2));
             p.put("day", day.group(3));
         }
+        var unbound = UNBOUND_PARAMETER.matcher(sentence);
+        if (unbound.matches()) p.put("parameter", unbound.group(1));
         var clock = NO_CLOCK_TIME.matcher(sentence);
         if (clock.matches()) {
             p.put("hour", clock.group(1));

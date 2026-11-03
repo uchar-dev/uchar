@@ -12,6 +12,7 @@ import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
+import dev.uchar.regelspraak.transpiler.tms.Period;
 
 import org.junit.jupiter.api.Test;
 import org.kie.api.runtime.KieSession;
@@ -552,11 +553,18 @@ class CaseInputWitnessTest {
         }
     }
 
-    /** A parameter value as a consumer gives it: the forms the corpus carries, and the replay's refusal of a timeline
-     *  and of a rational number. */
+    /** A parameter value as a consumer gives it: the forms the corpus carries, a time-dependent parameter's timeline
+     *  as the {@code List<Period>} the period arithmetic reads, an open bound the end of the date range, and the
+     *  replay's refusal of a rational number. */
     private static Object parameterValue(String name, JsonNode w) {
-        if (w.has("timeline"))
-            throw new CaseRunner.Excluded(DroolsCode.GRANULAR_PARAMETER_TIMELINE, "granular (timeline) parameter '" + name + "' is not carried by the v0 backend");
+        if (w.has("timeline")) {
+            List<Period> timeline = new ArrayList<>();
+            for (JsonNode s : w.get("timeline"))
+                timeline.add(new Period(s.has("from") ? LocalDate.parse(s.get("from").asText()) : Period.OPEN_FROM,
+                        s.has("to") ? LocalDate.parse(s.get("to").asText()) : Period.OPEN_TO,
+                        new BigDecimal(s.get("value").get("number").asText())));
+            return List.copyOf(timeline);
+        }
         if (w.has("number")) {
             if (w.get("number").asText().contains("/"))
                 throw new CaseRunner.Excluded(DroolsCode.RATIONAL_VALUE, "rational value on '" + name + "' is not carried by the v0 backend");

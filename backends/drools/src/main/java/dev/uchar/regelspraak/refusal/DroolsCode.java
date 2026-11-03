@@ -51,13 +51,13 @@ public enum DroolsCode {
     QUANTIFIER_THRESHOLD_MISMATCH("DROOLS-027", Kind.CONTRACT, "quantifier-threshold-mismatch", "quantifier,thresholdClause", null),
     PERIOD_TEST_ON_PARAMETER("DROOLS-028", Kind.REFUSAL, "period-test-on-parameter", "parameter", null),
     CHARACTERISTIC_FALSE_OUTSIDE_DEFAULTS("DROOLS-029", Kind.CONTRACT, "characteristic-false-outside-defaults", "rule,characteristic,value", null),
-    GRANULAR_PARAMETER_TIMELINE("DROOLS-030", Kind.REFUSAL, "granular-parameter-timeline", "parameter", null),
+    GRANULAR_PARAMETER_TIMELINE("DROOLS-030", Kind.RETIRED, "granular-parameter-timeline", "parameter", null),
     TIMELINE_MULTI_PERIOD_GRID("DROOLS-031", Kind.LIMIT, "timeline-multi-period-grid", "site,count,granularity", null),
     TIMELINE_VARIABLE_START_GRID("DROOLS-032", Kind.LIMIT, "timeline-variable-start-grid", "site", null),
     BUCKET_MULTI_PERIOD_GRID("DROOLS-033", Kind.LIMIT, "bucket-multi-period-grid", "count,granularity", null),
     BUCKET_VARIABLE_START_GRID("DROOLS-034", Kind.LIMIT, "bucket-variable-start-grid", "", null),
     BUCKET_GRANULARITY_UNSUPPORTED("DROOLS-035", Kind.LIMIT, "bucket-granularity-unsupported", "", null),
-    DAY_GRID_CALENDAR_BUCKETING("DROOLS-036", Kind.LIMIT, "day-grid-calendar-bucketing", "site", null),
+    DAY_GRID_CALENDAR_BUCKETING("DROOLS-036", Kind.RETIRED, "day-grid-calendar-bucketing", "site", null),
     CALENDAR_GRID_UNSUPPORTED("DROOLS-037", Kind.LIMIT, "calendar-grid-unsupported", "site,granularity,granularity", null),
     TIMELINE_VALUE_NON_NUMERIC("DROOLS-038", Kind.LIMIT, "timeline-value-non-numeric", "attribute", null),
     EXPECTATION_KIND_UNKNOWN("DROOLS-039", Kind.CONTRACT, "expectation-kind-unknown", "kind", null),
@@ -325,10 +325,10 @@ public enum DroolsCode {
     PRO_RATA_UNBOUNDED_TARGET("DROOLS-301", Kind.LIMIT, "pro-rata-unbounded-target", "description,attribute,objectType", null),
     PERIOD_ARITHMETIC_CONDITION("DROOLS-302", Kind.REFUSAL, "period-arithmetic-condition", "rule,attribute,declarant", null),
     PERIOD_ARITHMETIC_OPERAND("DROOLS-303", Kind.REFUSAL, "period-arithmetic-operand", "snippet", null),
-    PERIOD_ARITHMETIC_TIME_PARAMETER("DROOLS-304", Kind.REFUSAL, "period-arithmetic-time-parameter", "parameter", null),
+    PERIOD_ARITHMETIC_TIME_PARAMETER("DROOLS-304", Kind.RETIRED, "period-arithmetic-time-parameter", "parameter", null),
     PERIOD_SUM_SUBSELECTION("DROOLS-305", Kind.REFUSAL, "period-sum-subselection", "snippet", null),
     PERIOD_ARITHMETIC_RESTATEMENT("DROOLS-306", Kind.LIMIT, "period-arithmetic-restatement", "snippet,unit,targetUnit", null),
-    PERIOD_ARITHMETIC_INEXACT("DROOLS-307", Kind.LIMIT, "period-arithmetic-inexact", "snippet", null),
+    PERIOD_ARITHMETIC_INEXACT("DROOLS-307", Kind.RETIRED, "period-arithmetic-inexact", "snippet", null),
     PERIOD_ARITHMETIC_FINER_OPERAND("DROOLS-308", Kind.REFUSAL, "period-arithmetic-finer-operand", "attribute,operandGranularity,targetGranularity", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is

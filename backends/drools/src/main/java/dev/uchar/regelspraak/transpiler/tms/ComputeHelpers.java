@@ -687,15 +687,16 @@ public final class ComputeHelpers {
     /**
      * The temporal total of the subject's own timeline without a clip (RUNTIME-SEMANTICS ch. 3.6): of the input
      * {@code input} of the attribute {@code name}, which takes the asOfDate-bucket scalar, the session's date being the
-     * horizon: {@code rsTijdTotaal} of the one period of the grid {@code granularity} that holds the evaluation date
-     * ({@link BucketScalar}), and leeg where the attribute has no input. A full timeline faults, in the reference
-     * interpreter's words and naming {@code subject}, and so does a session without an evaluation date, where the
-     * total has no bucket to take: the reference interpreter tests the full timeline first, then the date
+     * horizon: the total of the one period of the grid {@code granularity} that holds the evaluation date
+     * ({@link BucketScalar}), by the calendar where {@code calendar} names the time unit of the rate's denominator
+     * ({@link PeriodArithmetic#weighed}), and leeg where the attribute has no input. A full timeline faults, in the
+     * reference interpreter's words and naming {@code subject}, and so does a session without an evaluation date, where
+     * the total has no bucket to take: the reference interpreter tests the full timeline first, then the date
      * ({@code rekendatum}), then the value.
      */
     public static Object ownTotal(Object input, Object subject, Object evaluationDate, String name,
-                                     String granularity) {
-        if (input instanceof BucketScalar e) return RegelSpraakRuntime.rsTijdTotaal(e.timeline(), granularity);
+                                     String granularity, String calendar) {
+        if (input instanceof BucketScalar e) return PeriodArithmetic.weighed(e.timeline(), granularity, calendar);
         // a timeline a form writes is refused while the model is built, so a full timeline here is the case's
         if (input != null)
             throw new InputFormFault("the temporal total of \"" + name + "\" over a case-supplied full timeline"

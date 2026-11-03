@@ -1912,8 +1912,8 @@ public final class TmsTranspiler {
      *
      * <p>Refused by name, each with no golden that has cases: any other writer of the target, a rule, an
      * initialisation, a defaults group or an allocation, since ch. 7.8 keeps a target with more writers fenced and
-     * the reference interpreter answers it in pass order; and any other value, among them the other operators of
-     * ch. 1.2 over timelines (spec/proposals/IMPLICIT-TIME.md, point 1). Refused by name as well: a time window in the
+     * the reference interpreter answers it in pass order; and any other value, among them a power over timelines, which
+     * the reference interpreter refuses as well (RUNTIME-SEMANTICS ch. 3.4). Refused by name as well: a time window in the
      * condition, which on a temporal target clips the timeline instead of gating the rule on the evaluation date
      * (ch. 3.10), golden {@code jutterswet-pachtvenster} has it; and any condition on a rule of period arithmetic, which
      * would restrict the timeline per period (spec/proposals/IMPLICIT-TIME.md, point 3), as the reference interpreter
@@ -1937,10 +1937,11 @@ public final class TmsTranspiler {
     }
 
     /** Whether {@code e}, the value of a rule on a temporal attribute, is the period arithmetic of RUNTIME-SEMANTICS
-     *  ch. 3.4 and 3.5: plus or min, or the sum over the members of a set; the reference interpreter and the ASP backend
-     *  ask the same of the value ({@code Eval.is_period_arithmetic}). */
+     *  ch. 3.4 and 3.5: an operator of the arithmetic table of ch. 1.2 other than the power, or the sum over the members
+     *  of a set; the reference interpreter and the ASP backend ask the same of the value
+     *  ({@code Eval.is_period_arithmetic}). */
     private static boolean isPeriodArithmetic(Expr e) {
-        return e instanceof Expr.Binary b && (b.op() == Expr.BinOp.PLUS || b.op() == Expr.BinOp.MIN)
+        return e instanceof Expr.Binary b && b.op() != Expr.BinOp.TOT_DE_MACHT
                 || e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM && f.elementObjectType() != null;
     }
 
@@ -1953,53 +1954,70 @@ public final class TmsTranspiler {
     /**
      * The timeline that the period arithmetic {@code value} writes into the target {@code target} of {@code subject}
      * (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11), as a function of the values the rule binds ({@link PeriodArithmetic}):
-     * plus and min over all time, their operands plus or min again ({@link #periodOperand}), the sum over the members
-     * of a set ({@link #periodSum}), an own attribute on a timeline read whole, and a scalar, a literal, an own scalar
-     * attribute or a scalar parameter, that holds on every day. The written timeline holds the filled segments, a leeg
-     * period a gap, each under the write boundary of the target's decimals (ch. 2.4 point 1).
+     * every operator of the arithmetic table of ch. 1.2 but the power, read per day over all time with its own leeg
+     * rule, its operands such operators again ({@link #periodOperand}), the sum over the members of a set
+     * ({@link #periodSum}), an own attribute on a timeline and a time-dependent parameter, read whole, and a scalar, a
+     * literal, an own scalar attribute or a scalar parameter, that holds on every day. The values between the operators
+     * are exact; the written timeline holds the filled segments, a leeg period a gap, each under the write boundary of
+     * the target's decimals (ch. 2.4 point 1), or, in a target of the unbounded form, a value that terminates
+     * ({@link PeriodArithmetic#written}).
      *
      * <p>In a build with readings the nodes of the value read unreached, as the reference interpreter's trace reads
      * them: its reading evaluates the value of a temporal target through the producer of ch. 3.7, so none of these
      * nodes is observed there ({@link #unreached}).
      *
-     * <p>Refused by name: a target that is no number, and one of the unbounded form, whose segment would hold a value
-     * that need not terminate ({@code PERIOD_ARITHMETIC_INEXACT}).
+     * <p>Refused by name: a target that is no number, and as a limit of this branch a value whose unit needs a
+     * restatement into the target's ({@link #periodUnit}).
      */
     private Term periodArithmetic(Expr value, Member target, ObjectType subject, Reads reads) {
         if (!target.datatype().isNumberLike())
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(value.source())));
-        if (target.datatype().unbounded())
-            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_INEXACT.reason("snippet", snippet(value.source())));
         Term timeline = periodOperand(value, target, subject, reads);
+        periodUnit(periodUnitOf(value), unitCarrier(value), target.datatype().unitOf());
         return new Term.Call(StaticFunction.PERIOD_WRITTEN, List.of(timeline, constant(ceiling(target.datatype())),
                 constant(target.spelled())), source(value.source()));
     }
 
     /**
-     * One operand of the period arithmetic into {@code target} ({@link #periodArithmetic}) as a timeline: plus or min
-     * of two operands, the sum over a set, an own attribute on a timeline, read whole through its standing, so that a
-     * timeline a rule derives takes the result along and the asOfDate-bucket scalar of the case faults, in the reference
-     * interpreter's words (ch. 8.4); or a scalar operand ({@link #scalarOperand}). Refused by name, as the reference
-     * interpreter refuses them: a time-dependent parameter (spec/proposals/IMPLICIT-TIME.md VB 2.3), a read over a path
+     * One operand of the period arithmetic into {@code target} ({@link #periodArithmetic}) as a timeline: an operator of
+     * ch. 1.2 other than the power over two operands, a division with the probe of the rule's deposit, which hears each
+     * period that divides by leeg or 0 ({@link PeriodArithmetic#divided}); the sum over a set; an own attribute on a
+     * timeline, read whole through its standing, so that a timeline a rule derives takes the result along and the
+     * asOfDate-bucket scalar of the case faults, in the reference interpreter's words (ch. 8.4); a time-dependent
+     * parameter, read whole, its timeline its binding ({@link #parameterOperand}); or a scalar operand
+     * ({@link #scalarOperand}). Refused by name, as the reference interpreter refuses them: a power, a read over a path
      * or of another object, an operand that is no number, and every other node; refused as well, by the rule of ch. 3.4,
-     * an operand on a finer grid than the target's, and as a limit of this branch a restatement between two units.
+     * an operand on a finer grid than the target's, and as a limit of this branch a restatement between two units
+     * ({@link #periodUnits}).
      */
     private Term periodOperand(Expr e, Member target, ObjectType subject, Reads reads) {
         if (anchored.contains(e)) throw new Refusal(DroolsCode.ANCHORED_FORM_NOT_CARRIED.reason("snippet", snippet(e.source())));
         String source = source(e.source());
-        if (e instanceof Expr.Binary b && (b.op() == Expr.BinOp.PLUS || b.op() == Expr.BinOp.MIN)) {
+        if (e instanceof Expr.Binary b && b.op() != Expr.BinOp.TOT_DE_MACHT) {
             Term left = periodOperand(b.left(), target, subject, reads), right = periodOperand(b.right(), target, subject, reads);
-            return new Term.Call(b.op() == Expr.BinOp.PLUS ? StaticFunction.PERIOD_PLUS : StaticFunction.PERIOD_MINUS,
-                    List.of(left, right), source);
+            periodUnits(b);
+            return switch (b.op()) {
+                case PLUS -> new Term.Call(StaticFunction.PERIOD_PLUS, List.of(left, right), source);
+                case MIN -> new Term.Call(StaticFunction.PERIOD_MINUS, List.of(left, right), source);
+                case VERMINDERD_MET -> new Term.Call(StaticFunction.PERIOD_REDUCED, List.of(left, right), source);
+                case MAAL -> new Term.Call(StaticFunction.PERIOD_TIMES, List.of(left, right), source);
+                case PERCENTAGE_VAN -> new Term.Call(StaticFunction.PERIOD_PERCENTAGE_OF, List.of(left, right), source);
+                case GEDEELD_DOOR, GEDEELD_DOOR_ABS -> {
+                    reads.markFail();
+                    yield new Term.Division(b.op() == Expr.BinOp.GEDEELD_DOOR ? StaticFunction.PERIOD_DIVIDED
+                            : StaticFunction.PERIOD_DIVIDED_ABS, left, right, reads.depositFlag(), source);
+                }
+                case TOT_DE_MACHT -> throw new IllegalStateException("een macht is geen rekenen per periode");
+            };
         }
         if (e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM && f.elementObjectType() != null)
             return periodSum(f, target, reads);
         if (e instanceof Expr.ParameterRef p && p.parameter() != null && p.parameter().granularity() != null)
-            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_TIME_PARAMETER.reason("parameter", p.parameter().name()));
+            return parameterOperand(p, target, reads);
         if (e instanceof Expr.AttributeReference a && a.attribute() != null && a.objectType() != null) {
             if (navigationBindings.containsKey(a) || !subject.chain().contains(a.objectType()))
                 throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(a.source())));
-            if (declared(subject, a.attribute(), false).time() == null) return scalarOperand(a, target, reads);
+            if (declared(subject, a.attribute(), false).time() == null) return scalarOperand(a, reads);
             Member operand = timeMember(subject, a.attribute(), false,
                     Msg.drools("PART.desc.period-arithmetic", "snippet", snippet(a.source())));
             periodMember(operand, a, target);
@@ -2010,49 +2028,106 @@ public final class TmsTranspiler {
                     + operand.name() + "\" of ", subjectType, "; the case supplies only the asOfDate-bucket scalar, which"
                     + " carries no period", source);
         }
-        if (e instanceof Expr.Literal || e instanceof Expr.ParameterRef) return scalarOperand(e, target, reads);
+        if (e instanceof Expr.Literal || e instanceof Expr.ParameterRef) return scalarOperand(e, reads);
         throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(e.source())));
     }
 
     /** {@code member}, an attribute on a timeline that the period arithmetic into {@code target} reads at {@code read},
-     *  where it may: a number, on a grid as coarse as the target's or coarser (RUNTIME-SEMANTICS ch. 3.4), in a unit
-     *  that needs no restatement into the target's ({@link #periodUnit}). */
+     *  where it may: a number, on a grid as coarse as the target's or coarser (RUNTIME-SEMANTICS ch. 3.4). */
     private void periodMember(Member member, Expr read, Member target) {
         if (!member.datatype().isNumberLike())
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(read.source())));
         if (member.time().ordinal() < target.time().ordinal())
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_FINER_OPERAND.reason("attribute", member.name(),
                     "operandGranularity", member.time(), "targetGranularity", target.time()));
-        periodUnit(member.datatype().unitOf(), read, target);
     }
 
-    /** Refuses a restatement of an operand in {@code unit} into the unit of {@code target}: this branch computes the
-     *  timeline in one unit, where RUNTIME-SEMANTICS ch. 3.4 restates the right operand into the left one's and ch. 3.5
-     *  each contributor into the target's. A unitless side adopts the other's (ch. 2.6); two units that do not
-     *  convert fault while the model is built, as every restatement does ({@link UnitConflict}). */
-    private static void periodUnit(Unit unit, Expr read, Member target) {
-        Unit destination = target.datatype().unitOf();
+    /** A time-dependent parameter {@code p} as an operand of the period arithmetic into {@code target} (RUNTIME-SEMANTICS
+     *  ch. 3.4, 8.3; spec/proposals/IMPLICIT-TIME.md VB 2.3): the timeline the case gives it, read whole off its global
+     *  ({@link Reads#parameterTimeline}), its open bounds included, and the fault of an unbound parameter where the case
+     *  gives none (EF-014, ch. 5.7), as the reference interpreter reads it. A number, on a grid as coarse as the
+     *  target's or coarser, as an attribute on a timeline ({@link #periodMember}). */
+    private Term parameterOperand(Expr.ParameterRef p, Member target, Reads reads) {
+        Parameter parameter = p.parameter();
+        if (!parameter.datatype().isNumberLike())
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(p.source())));
+        if (parameter.granularity().ordinal() < target.time().ordinal())
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_FINER_OPERAND.reason("attribute", parameter.name(),
+                    "operandGranularity", parameter.granularity(), "targetGranularity", target.time()));
+        int slot = reads.parameterTimeline(parameter);
+        reads.markFail();
+        return new Term.Call(StaticFunction.PERIOD_PARAMETER, List.of(new Term.SlotValue(slot, source(p.source())),
+                constant(parameter.name())), source(p.source()));
+    }
+
+    /** Refuses where the operator {@code b} of the period arithmetic restates a unit, a limit of this branch, which
+     *  computes a timeline without a restatement: an additive operator that restates its right operand into the left
+     *  one's unit (RUNTIME-SEMANTICS ch. 2.6, rule 1), and a product or a quotient whose right operand takes a factor
+     *  into the left factor of its class (rules 2 and 3). A percentage takes the unit of its right operand and
+     *  restates nothing. */
+    private void periodUnits(Expr.Binary b) {
+        Unit lu = periodUnitOf(b.left()), ru = periodUnitOf(b.right());
+        Unit.Fraction factor = switch (b.op()) {
+            case PLUS, MIN, VERMINDERD_MET -> {
+                periodUnit(ru, b.right(), lu);
+                yield Unit.Fraction.ONE;
+            }
+            case MAAL -> Unit.timesFactors(lu, ru);
+            case GEDEELD_DOOR, GEDEELD_DOOR_ABS -> Unit.divideFactors(lu, ru);
+            case PERCENTAGE_VAN, TOT_DE_MACHT -> Unit.Fraction.ONE;
+        };
+        if (!factor.equals(Unit.Fraction.ONE))
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_RESTATEMENT.reason("snippet", snippet(b.right().source()),
+                    "unit", ru.rendering(), "targetUnit", lu.rendering()));
+    }
+
+    /** The unit of the period arithmetic {@code e} by the rules of RUNTIME-SEMANTICS ch. 2.6, derived from the
+     *  declarations and never from the wire's annotation (ch. 2.10): an additive operator the left operand's, a unitless
+     *  one adopting the right's; a product and a quotient the units' product and quotient; a percentage its right
+     *  operand's; any other operand, a read, a literal, a sum, as {@link EffectiveUnit} derives it. */
+    private Unit periodUnitOf(Expr e) {
+        if (!(e instanceof Expr.Binary b)) return eff.unitOf(e);
+        Unit l = periodUnitOf(b.left()), r = periodUnitOf(b.right());
+        return switch (b.op()) {
+            case PLUS, MIN, VERMINDERD_MET -> l != null ? l : r;
+            case MAAL -> Unit.times(l, r);
+            case GEDEELD_DOOR, GEDEELD_DOOR_ABS -> Unit.divide(l, r);
+            case PERCENTAGE_VAN -> r;
+            case TOT_DE_MACHT -> eff.unitOf(e);
+        };
+    }
+
+    /** The operand of the period arithmetic {@code e} whose unit {@code e} carries ({@link #periodUnitOf}), which a
+     *  refusal of its restatement names: of an additive operator the left operand, or the right one where the left is
+     *  unitless, of a percentage the right one, and a product or a quotient itself. */
+    private Expr unitCarrier(Expr e) {
+        if (!(e instanceof Expr.Binary b)) return e;
+        return switch (b.op()) {
+            case PLUS, MIN, VERMINDERD_MET -> unitCarrier(periodUnitOf(b.left()) != null ? b.left() : b.right());
+            case PERCENTAGE_VAN -> unitCarrier(b.right());
+            case MAAL, GEDEELD_DOOR, GEDEELD_DOOR_ABS, TOT_DE_MACHT -> e;
+        };
+    }
+
+    /** Refuses a restatement of an operand in {@code unit}, read at {@code read}, into {@code destination}: this branch
+     *  computes the timeline in one unit, where RUNTIME-SEMANTICS ch. 3.4 restates the right operand into the left
+     *  one's, ch. 3.5 each contributor into the target's, and the result once into the target's. A unitless side adopts
+     *  the other's (ch. 2.6); two units that do not convert fault while the model is built, as every restatement does
+     *  ({@link UnitConflict}). */
+    private static void periodUnit(Unit unit, Expr read, Unit destination) {
         UnitConflict.requireRescalable(unit, destination, "een operand van het rekenen per periode");
         if (unit != null && destination != null && unit.requiredConversion(destination))
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_RESTATEMENT.reason("snippet", snippet(read.source()),
                     "unit", unit.rendering(), "targetUnit", destination.rendering()));
     }
 
-    /** A scalar operand {@code e} of the period arithmetic into {@code target}, a literal, an own scalar attribute or a
-     *  scalar parameter, evaluated as any value of the rule and held on every day (RUNTIME-SEMANTICS ch. 3.1, 3.4). It
-     *  is a number in a unit that needs no restatement ({@link #periodUnit}); a literal that does not terminate and an
-     *  attribute of the unbounded form, whose value need not, are refused as a limit of this branch, whose segment holds
-     *  a decimal. */
-    private Term scalarOperand(Expr e, Member target, Reads reads) {
-        Datatype type = eff.typeOf(e);
-        if (!type.isNumberLike())
+    /** A scalar operand {@code e} of the period arithmetic, a literal, an own scalar attribute or a scalar parameter,
+     *  evaluated as any value of the rule and held on every day (RUNTIME-SEMANTICS ch. 3.1, 3.4), its exact value as
+     *  working memory holds it. It is a number. */
+    private Term scalarOperand(Expr e, Reads reads) {
+        if (!eff.typeOf(e).isNumberLike())
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(e.source())));
-        periodUnit(eff.unitOf(e), e, target);
-        Term v = value(e, reads);
-        if (e instanceof Expr.AttributeReference && type.unbounded()
-                || v instanceof Term.Const c && c.value() instanceof Breuk b && !b.isTerminerend())
-            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_INEXACT.reason("snippet", snippet(e.source())));
-        return new Term.Call(StaticFunction.PERIOD_SCALAR, List.of(v), source(e.source()));
+        return new Term.Call(StaticFunction.PERIOD_SCALAR, List.of(value(e, reads)), source(e.source()));
     }
 
     /**
@@ -2066,8 +2141,9 @@ public final class TmsTranspiler {
      *
      * <p>Refused by name: a die/dat subselection, as the reference interpreter and the ASP backend refuse it; a member
      * that is no attribute on a timeline of the element type or is read over a path; a fold without a range, which is
-     * ill-formed (WF-083); and a fold over a relation a form creates, whose made links have no place in the fold order
-     * that names the member given as the bucket scalar.
+     * ill-formed (WF-083); a fold over a relation a form creates, whose made links have no place in the fold order
+     * that names the member given as the bucket scalar; and as a limit of this branch a fallback whose unit needs a
+     * restatement into the members' ({@link #periodUnit}).
      */
     private Term periodSum(Expr.FunctionCall f, Member target, Reads reads) {
         String fragment = source(f.source());
@@ -2093,15 +2169,19 @@ public final class TmsTranspiler {
             return new Fold(key, List.copyOf(rules), List.copyOf(readings), false, false, false, false, true);
         });
         int[] i = reads.fold(v, Accumulation.Kind.LIST);
-        Term fallback = f.emptyFallback() == null ? constant(null) : scalarOperandValue(f.emptyFallback(), target, reads);
+        Term fallback = constant(null);
+        if (f.emptyFallback() != null) {
+            periodUnit(eff.unitOf(f.emptyFallback()), f.emptyFallback(), member.datatype().unitOf());
+            fallback = scalarOperandValue(f.emptyFallback(), reads);
+        }
         return readFold(v, i, reads, new Term.Call(StaticFunction.PERIOD_SUM, List.of(new Term.SlotValue(i[1], null),
                 fallback), fragment), fragment);
     }
 
     /** The fallback {@code e} of a sum per period, a scalar that fills an all-leeg period (RUNTIME-SEMANTICS ch. 3.5),
      *  as {@link #scalarOperand} admits it, as a value and not a timeline. */
-    private Term scalarOperandValue(Expr e, Member target, Reads reads) {
-        return ((Term.Call) scalarOperand(e, target, reads)).arguments().get(0);
+    private Term scalarOperandValue(Expr e, Reads reads) {
+        return ((Term.Call) scalarOperand(e, reads)).arguments().get(0);
     }
 
     /** Notes every node of the period arithmetic {@code value} as unreached in a build with readings, but the members
@@ -5664,9 +5744,14 @@ public final class TmsTranspiler {
      * an open segment of 0 adds 0, and one of another value faults (EF-036, {@link PeriodArithmetic#total}). The clip
      * keeps the open bound of a fragment it cuts from an open segment, and its total faults alike.
      *
+     * <p>On every route a rate whose denominator is a time unit of the other family of the calendar than the grid's
+     * integrates by the calendar ({@link #calendar}, {@link PeriodArithmetic#weighed}): a rate per year over a day grid
+     * weighs a day by 1/365 or 1/366 of its year.
+     *
      * <p>Refused by name: an X over a path or of another type than the subject (WF-083 (c)), one that is not a number
-     * (WF-091), a rate over a grid whose unit the document does not declare as one unit or whose denominator is not that
-     * unit ({@link #integrable}), and the total without a clause over a timeline another form writes, a pro-rata part or
+     * (WF-091), a rate over a grid whose unit the document does not declare as one unit or whose denominator neither is
+     * that unit nor one the calendar integrates ({@link #calendar}), and the total without a clause over a timeline
+     * another form writes, a pro-rata part or
      * a day count: the reference interpreter takes that total only of the case's scalar on the period of the evaluation
      * date and faults on a full timeline (ch. 3.6), so no executor confirms it, and no golden has it.
      */
@@ -5675,7 +5760,8 @@ public final class TmsTranspiler {
         Expr.AttributeReference a = (Expr.AttributeReference) f.arguments().get(0);
         if (a.objectType() != reads.subject || navigationBindings.containsKey(a))
             throw new Refusal(DroolsCode.OWN_TOTAL_FOREIGN_ATTRIBUTE.reason("description", description));
-        Member member = integrable(timeMember(reads.subject, a.attribute(), false, description), description);
+        Member member = timeMember(reads.subject, a.attribute(), false, description);
+        String calendar = calendar(member, description);
         boolean periodArithmetic = f.filter() == null && periodArithmeticTarget(member);
         if (f.filter() == null && writers.containsKey(member.key()) && !periodArithmetic)
             throw new Refusal(DroolsCode.TOTAL_NO_CUT_WRITTEN.reason("description", description, "member", member.name()));
@@ -5689,22 +5775,22 @@ public final class TmsTranspiler {
             Term whole = complete(timeline, "the temporal total of \"" + name + "\" needs the full timeline; ",
                     subjectType, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", source(a.source()));
             note(a, whole);
-            return new Term.Call(StaticFunction.PERIOD_TOTAL, List.of(whole, constant(gran), constant(name),
-                    new Term.SlotValue(subjectType, null)), source);
+            return new Term.Call(StaticFunction.PERIOD_TOTAL, List.of(whole, constant(gran), constant(calendar),
+                    constant(name), new Term.SlotValue(subjectType, null)), source);
         }
         if (f.filter() == null) {
             int date = reads.evaluationDate();
             Term input = new Term.SlotValue(timeline, source(a.source()));
             note(a, input);
             return new Term.Call(StaticFunction.OWN_TOTAL, List.of(input, new Term.SlotValue(subjectType, null),
-                    new Term.SlotValue(date, null), constant(name), constant(gran)), source);
+                    new Term.SlotValue(date, null), constant(name), constant(gran), constant(calendar)), source);
         }
         Term whole = complete(timeline, "the gedurende clip of \"" + name + "\" needs the full timeline; ", subjectType,
                 " supplies only the asOfDate-bucket scalar", source(a.source()));
         note(a, whole);
         Term cut = clip(f.filter(), reads, description, name, whole, whole);
-        return new Term.Call(StaticFunction.PERIOD_TOTAL, List.of(cut, constant(gran), constant(name),
-                new Term.SlotValue(subjectType, null)), source);
+        return new Term.Call(StaticFunction.PERIOD_TOTAL, List.of(cut, constant(gran), constant(calendar),
+                constant(name), new Term.SlotValue(subjectType, null)), source);
     }
 
     /** The timeline bound at slot {@code timeline}, which a form reads whole, or the fault in the sentence {@code voor},
@@ -5907,31 +5993,82 @@ public final class TmsTranspiler {
     private static LocalDate earlier(LocalDate a, LocalDate b) { return a.isBefore(b) ? a : b; }
 
     /**
-     * {@code member}, a member on a timeline whose total over time is taken, where that total is the bare value times the
-     * count of whole units of the member's grid, as the runtime's {@code rsTijdTotaal} computes it: a number without a
-     * unit, with a unit without a denominator, or a rate with a negative factor in the time unit of the grid itself
-     * ({@code EUR/mnd} and {@code EUR/m/mnd} on a grid of months), where the integration of RUNTIME-SEMANTICS ch. 3.6
-     * cancels that factor one for one.
-     * Refused by name: a value that is no number (WF-091); a rate over a grid whose unit the document does not declare
-     * as exactly one unit ({@link #gridUnit}), which the reference interpreter refuses to integrate (ch. 3.6) and
-     * {@code rsTijdTotaal} would weigh as if it did; and a rate whose denominator is another unit, which the reference
-     * interpreter integrates through the declared factors and {@code rsTijdTotaal} would weigh unit-blind (the executor
-     * note of ch. 3.6); no golden has it.
+     * {@code member}, a member on a timeline whose total over time a per-element fold takes ({@link #contributionRules}),
+     * where that total is the bare value times the count of whole units of the member's grid, as the runtime's
+     * {@code rsTijdTotaal} computes it ({@link #calendar}). Refused by name as well: a rate the calendar integrates,
+     * which the fold over the members does not weigh (RUNTIME-SEMANTICS ch. 3.6).
      */
     private Member integrable(Member member, Object description) {
+        if (calendar(member, description) != null)
+            throw new Refusal(DroolsCode.RATE_DENOMINATOR_NOT_GRID.reason("description", description, "member", member.name(), "rate", member.datatype().unitOf().rendering(), "grid", member.time()));
+        return member;
+    }
+
+    /**
+     * How the total over time of {@code member}, a member on a timeline, weighs a segment (RUNTIME-SEMANTICS ch. 3.6):
+     * null where it is the bare value times the count of whole units of the member's grid, as the runtime's
+     * {@code rsTijdTotaal} computes it, for a number without a unit, with a unit without a denominator, or a rate with a
+     * negative factor in the time unit of the grid itself ({@code EUR/mnd} and {@code EUR/m/mnd} on a grid of months),
+     * where the integration cancels that factor one for one; and the time unit, as a granularity's name
+     * ({@code "JAAR"}), of a denominator that the calendar table spells as a unit of the other family than the grid's,
+     * the day family (dag, week) against the month family (maand, kwartaal, jaar), which the calendar integrates
+     * (maintainer decision 2026-11-03, {@code spec/proposals/IMPLICIT-TIME.md} point 11).
+     * Refused by name: a value that is no number (WF-091); a rate over a grid whose unit the document does not declare
+     * as exactly one unit ({@link #gridUnit}), where the calendar does not integrate it, which the reference interpreter
+     * refuses to integrate and {@code rsTijdTotaal} would weigh as if it did; and a rate whose denominator the
+     * declarations restate into the grid's unit by a factor, which the reference interpreter integrates through that
+     * factor, or refuses where it lies between the two families (WF-009), and {@code rsTijdTotaal} would weigh unit-blind
+     * (the executor note of ch. 3.6); no golden has it.
+     */
+    private String calendar(Member member, Object description) {
         if (!member.datatype().isNumber())
             throw new Refusal(DroolsCode.TEMPORAL_TOTAL_NON_NUMBER.reason("description", description, "member", member.name()));
         Unit e = member.datatype().unitOf();
-        if (e == null || e.denominator() == null) return member;
+        if (e == null || e.denominator() == null) return null;
         String grid = TimeCalculation.gridChronoUnit(member.time());
-        // the reference interpreter resolves the grid's unit before it looks at the denominator, so a document without
-        // one is refused for that whatever the denominator
+        // the reference interpreter resolves the grid's unit before it looks at the denominator, and integrates by the
+        // calendar only where no factor the declarations connect to that unit does
         String withoutGridUnit = gridUnit(member.time(), grid);
+        if (withoutGridUnit == null && TimeCalculation.hasNegativeFactorOfGrid(e, grid)) return null;
+        Unit gu = withoutGridUnit == null ? TimeCalculation.gridUnit(member.time(), model) : null;
+        boolean declaredFactor = gu != null && e.negativeFactors().stream()
+                .anyMatch(f -> f.quantityClass().equals(gu.factors().get(0).quantityClass()));
+        String calendar = declaredFactor ? null : calendarDenominator(e, grid);
+        if (calendar != null) return calendar;
         if (withoutGridUnit != null)
             throw new Refusal(DroolsCode.TEMPORAL_TOTAL_RATE_UNIT.reason("description", description, "member", member.name(), "unit", e.rendering(), "reason", withoutGridUnit));
-        if (!TimeCalculation.hasNegativeFactorOfGrid(e, grid))
-            throw new Refusal(DroolsCode.RATE_DENOMINATOR_NOT_GRID.reason("description", description, "member", member.name(), "rate", e.rendering(), "grid", member.time()));
-        return member;
+        throw new Refusal(DroolsCode.RATE_DENOMINATOR_NOT_GRID.reason("description", description, "member", member.name(), "rate", e.rendering(), "grid", member.time()));
+    }
+
+    /** The time unit, as a granularity's name, of the first negative factor of {@code e} that the calendar table spells
+     *  as a unit of the other family than the grid unit {@code grid} ({@link TimeCalculation#gridChronoUnit}): dag and
+     *  week count in days, maand, kwartaal and jaar in months (RUNTIME-SEMANTICS ch. 3.6). Null where it has none; a
+     *  unit below the day and one outside the table belong to no family. */
+    private static String calendarDenominator(Unit e, String grid) {
+        for (Unit.Factor f : e.negativeFactors()) {
+            String unit = TimeCalculation.chronoUnit(new Unit(f.abbreviation(), f.system(), f.canonical(), f.factorToCanonical()));
+            String family = calendarFamily(unit);
+            if (family != null && !family.equals(calendarFamily(grid))) return switch (unit) {
+                case "DAYS" -> "DAG";
+                case "WEEKS" -> "WEEK";
+                case "MONTHS" -> "MAAND";
+                case "KWARTAAL" -> "KWARTAAL";
+                case "YEARS" -> "JAAR";
+                default -> throw new IllegalStateException("geen kalendereenheid: " + unit);
+            };
+        }
+        return null;
+    }
+
+    /** The family of the calendar of a time unit as {@link TimeCalculation#chronoUnit} names it: "dag" for the units that
+     *  count in days, "maand" for those that count in months, null for any other. */
+    private static String calendarFamily(String unit) {
+        if (unit == null) return null;
+        return switch (unit) {
+            case "DAYS", "WEEKS" -> "dag";
+            case "MONTHS", "KWARTAAL", "YEARS" -> "maand";
+            default -> null;
+        };
     }
 
     /**
@@ -7842,11 +7979,23 @@ public final class TmsTranspiler {
          *  unset has a standing with a null value and reads leeg. */
         int parameter(Parameter p) {
             if (atForm) return unscoped(() -> parameter(p));
+            return parameterSlot(p, false);
+        }
+
+        /** A time-dependent parameter's timeline, read whole as an operand of the period arithmetic (RUNTIME-SEMANTICS
+         *  ch. 3.4), bound off its {@link ParameterState} as {@link #parameter} binds a scalar one: the
+         *  {@code List<Period>} the case runner sets on its global, or null where the case gives none. */
+        int parameterTimeline(Parameter p) {
+            if (atForm) return unscoped(() -> parameterTimeline(p));
+            return parameterSlot(p, true);
+        }
+
+        private int parameterSlot(Parameter p, boolean timeline) {
             String name = Namen.ident(p.name(), false);
             String key = "parameter " + name;
             int known = existing(key);
             if (known >= 0) return known;
-            global(p);
+            global(p, timeline);
             String w = readName(p.name());
             String st = "$parameter_" + slots.size();
             parameters(new FactPattern(ParameterState.class, st, List.of(equal(id("parameter"), "parameter", name)),
@@ -8083,13 +8232,18 @@ public final class TmsTranspiler {
                 new Consequence.InsertParameterState(name, name, Consequence.Insertion.LOGICAL));
     }
 
-    /** Declares the global of parameter {@code p}, of the Java type of its datatype, so that the case runner sets it by
-     *  name; one per parameter for the whole model. */
-    private void global(Parameter p) {
+    /** Declares the global of parameter {@code p}, of the Java type of its datatype, or a {@code List} where
+     *  {@code timeline} reads a time-dependent parameter's timeline whole, so that the case runner sets it by name; one
+     *  per parameter for the whole model. A time-dependent parameter read in any other place is refused by name. */
+    private void global(Parameter p, boolean timeline) {
         String name = Namen.ident(p.name(), false);
         if (globals.containsKey(name)) return;
-        if (p.granularity() != null)
+        if (p.granularity() != null && !timeline)
             throw new Refusal(DroolsCode.TEMPORAL_PARAMETER_GRANULARITY.reason("parameter", p.name()));
+        if (timeline) {
+            globals.put(name, List.class);
+            return;
+        }
         Datatype t = p.datatype();
         Class<?> javaClass = t.isNumber() || t.isPercentage() ? BigDecimal.class
                 : t instanceof Datatype.DateInDays ? java.time.LocalDate.class

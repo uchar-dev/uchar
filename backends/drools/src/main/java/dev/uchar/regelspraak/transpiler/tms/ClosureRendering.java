@@ -344,9 +344,15 @@ final class ClosureRendering {
             case PERIOD_SCALAR -> x -> PeriodArithmetic.scalar(x[0]);
             case PERIOD_PLUS -> x -> PeriodArithmetic.plus(x[0], x[1]);
             case PERIOD_MINUS -> x -> PeriodArithmetic.minus(x[0], x[1]);
+            case PERIOD_REDUCED -> x -> PeriodArithmetic.reduced(x[0], x[1]);
+            case PERIOD_TIMES -> x -> PeriodArithmetic.times(x[0], x[1]);
+            case PERIOD_PERCENTAGE_OF -> x -> PeriodArithmetic.percentageOf(x[0], x[1]);
+            case PERIOD_DIVIDED -> x -> PeriodArithmetic.divided(x[0], x[1], x[2]);
+            case PERIOD_DIVIDED_ABS -> x -> PeriodArithmetic.dividedAbs(x[0], x[1], x[2]);
+            case PERIOD_PARAMETER -> x -> PeriodArithmetic.parameter(x[0], (String) x[1]);
             case PERIOD_SUM -> x -> PeriodArithmetic.sum(x[0], x[1]);
             case PERIOD_WRITTEN -> x -> PeriodArithmetic.written(x[0], (Integer) x[1], (String) x[2]);
-            case PERIOD_TOTAL -> x -> PeriodArithmetic.total(x[0], (String) x[1], (String) x[2], x[3]);
+            case PERIOD_TOTAL -> x -> PeriodArithmetic.total(x[0], (String) x[1], (String) x[2], (String) x[3], x[4]);
             case DIVIDED -> x -> ComputeHelpers.divided(x[0], x[1], x[2]);
             case DIVIDED_ABS -> x -> ComputeHelpers.dividedAbs(x[0], x[1], x[2]);
             case RADICAND -> x -> ComputeHelpers.radicand(x[0], x[1]);
@@ -376,7 +382,7 @@ final class ClosureRendering {
             case FALLBACK -> x -> ComputeHelpers.fallback(x[0], x[1]);
             case COUNT -> x -> ComputeHelpers.countOf(x[0]);
             case FOLD_VALUE -> x -> ComputeHelpers.foldValue(x[0], x[1], x[2]);
-            case OWN_TOTAL -> x -> ComputeHelpers.ownTotal(x[0], x[1], x[2], (String) x[3], (String) x[4]);
+            case OWN_TOTAL -> x -> ComputeHelpers.ownTotal(x[0], x[1], x[2], (String) x[3], (String) x[4], (String) x[5]);
             case COMPLETE -> x -> ComputeHelpers.complete(x[0], (String) x[1], x[2], (String) x[3]);
             case COLLAPSE -> x -> ComputeHelpers.collapse(x[0]);
             case FIT_TARGET -> x -> ComputeHelpers.fitTarget(x[0], (Integer) x[1], (String) x[2], (String) x[3]);

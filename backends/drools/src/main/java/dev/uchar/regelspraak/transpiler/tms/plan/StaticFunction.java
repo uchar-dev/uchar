@@ -89,15 +89,32 @@ public enum StaticFunction {
     PERIOD_PLUS(PeriodArithmetic.class, "plus", false),
     /** Min per period of all time over two timelines, a leeg operand 0 (ch. 3.4). */
     PERIOD_MINUS(PeriodArithmetic.class, "minus", false),
+    /** "verminderd met" per period of all time over two timelines, a leeg left operand leeg, a leeg right one 0
+     *  (ch. 1.2, 3.4). */
+    PERIOD_REDUCED(PeriodArithmetic.class, "reduced", false),
+    /** A product per period of all time over two timelines, a leeg operand 0 (ch. 1.2, 3.4). */
+    PERIOD_TIMES(PeriodArithmetic.class, "times", false),
+    /** A percentage of a value per period of all time over two timelines, a leeg operand 0 (ch. 1.2, 3.4). */
+    PERIOD_PERCENTAGE_OF(PeriodArithmetic.class, "percentageOf", false),
+    /** A division per period of all time over two timelines with the probe of the rule's deposit, a period with a leeg
+     *  or numeric-zero divisor under a filled dividend leeg (ch. 1.2, 3.4). The function of a {@link Term.Division}; it
+     *  does not fault, and counts as one that can, as {@link #DIVIDED} does. */
+    PERIOD_DIVIDED(PeriodArithmetic.class, "divided", true),
+    /** As {@link #PERIOD_DIVIDED}, each quotient truncated toward zero at 5 decimals. */
+    PERIOD_DIVIDED_ABS(PeriodArithmetic.class, "dividedAbs", true),
+    /** The timeline of a time-dependent parameter as an operand of the period arithmetic (ch. 3.4), the parameter's
+     *  name a {@code String} constant: the fault of an unbound parameter where the case gives none (EF-014). */
+    PERIOD_PARAMETER(PeriodArithmetic.class, "parameter", true),
     /** The sum per period of the timelines a fold over a set collects, a leeg member skipped, with a fallback or none
      *  (ch. 3.5). */
     PERIOD_SUM(PeriodArithmetic.class, "sum", false),
     /** The timeline a rule of period arithmetic writes: its filled segments, each under the write boundary of the
      *  target's decimals, an {@code Integer} constant, and its attribute, a {@code String} constant (ch. 2.4, 3.1). */
     PERIOD_WRITTEN(PeriodArithmetic.class, "written", true),
-    /** The total over time of a timeline on a grid, a {@code String} constant (ch. 3.6), the attribute a {@code String}
-     *  constant and the object whose timeline it is: an open segment of 0 adds 0, one of another value the fault
-     *  (EF-036). */
+    /** The total over time of a timeline on a grid, a {@code String} constant (ch. 3.6), by the calendar where a second
+     *  {@code String} constant names the time unit of the rate's denominator and by the whole units of the grid where
+     *  it is null, the attribute a {@code String} constant and the object whose timeline it is: an open segment of 0
+     *  adds 0, one of another value the fault (EF-036). */
     PERIOD_TOTAL(PeriodArithmetic.class, "total", true),
     /** A division (ch. 1.4, 1.2): a leeg dividend 0, a leeg divisor leeg with the §6.5 deposit to the probe, a numeric
      *  zero leeg with the deposit of ch. 1.4 point 4 to the probe; the exact quotient. The function of a
@@ -161,8 +178,9 @@ public enum StaticFunction {
     COUNT(ComputeHelpers.class, "countOf", false),
     /** The value of a fold from its count, its folded value and its fallback: the fallback over no contribution. */
     FOLD_VALUE(ComputeHelpers.class, "foldValue", false),
-    /** The subject's own total over time without a clip (ch. 3.6): from the asOfDate-bucket scalar of the input, the
-     *  fault for a full timeline and for a session without an evaluation date. */
+    /** The subject's own total over time without a clip (ch. 3.6): from the asOfDate-bucket scalar of the input, by the
+     *  calendar where a {@code String} constant names the time unit of the rate's denominator, the fault for a full
+     *  timeline and for a session without an evaluation date. */
     OWN_TOTAL(ComputeHelpers.class, "ownTotal", true),
     /** The full timeline a form reads whole, the fault where the case gives the asOfDate-bucket scalar (ch. 8.4), in
      *  a sentence that names the object. */

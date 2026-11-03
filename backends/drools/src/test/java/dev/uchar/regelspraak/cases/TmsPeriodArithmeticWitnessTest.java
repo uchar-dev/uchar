@@ -18,7 +18,6 @@ import static dev.uchar.regelspraak.cases.TmsDocuments.factTypeOneToMany;
 import static dev.uchar.regelspraak.cases.TmsDocuments.number;
 import static dev.uchar.regelspraak.cases.TmsDocuments.numberValue;
 import static dev.uchar.regelspraak.cases.TmsDocuments.ownRead;
-import static dev.uchar.regelspraak.cases.TmsDocuments.parameterRead;
 import static dev.uchar.regelspraak.cases.TmsDocuments.sourceRole;
 import static dev.uchar.regelspraak.cases.TmsDocuments.value;
 import static dev.uchar.regelspraak.cases.TmsTimelineDocuments.WHOLE;
@@ -361,21 +360,12 @@ class TmsPeriodArithmeticWitnessTest {
                         check("actief", false)))), c,
                 "regel: maandloon — de regel \"maandloon\" schrijft het tijdsafhankelijke attribuut 'maandloon' van Jutter"
                         + " met het rekenen per periode van ch. 3.4/3.5 onder een voorwaarde", "DROOLS-302");
-        // another operator below plus
+        // a power below plus
         BothBranches.refused(document(MODEL_A, List.of(computingRule("maandloon", "BEREKENING", "Jutter", "maandloon",
-                        binary("plus", ownRead("strandloon", "Jutter"), binary("times", ownRead("stormtoeslag", "Jutter"),
+                        binary("plus", ownRead("strandloon", "Jutter"), binary("power", ownRead("stormtoeslag", "Jutter"),
                                 number("2"))), "null"))), c,
-                "regel: maandloon — deze operand van het rekenen per periode van ch. 3.4/3.5 wordt niet uitgevoerd ('times')",
+                "regel: maandloon — deze operand van het rekenen per periode van ch. 3.4/3.5 wordt niet uitgevoerd ('power')",
                 "DROOLS-303");
-        // a time-dependent parameter as an operand
-        String withParameter = TmsDocuments.modelWith(List.of(objectType("Jutter", List.of(
-                        timeAttribute("strandloon", WHOLE, "month"), timeAttribute("maandloon", WHOLE, "month")), List.of())),
-                List.of(), List.of("{\"node\":\"Parameter\",\"name\":\"tarief\",\"datatype\":" + WHOLE + ",\"timeline\":"
-                        + "{\"node\":\"TimelineFacet\",\"granularity\":\"month\",\"count\":1}}"), List.of());
-        BothBranches.refused(document(withParameter, List.of(computingRule("maandloon", "BEREKENING", "Jutter",
-                        "maandloon", binary("plus", ownRead("strandloon", "Jutter"), parameterRead("tarief")), "null"))), c,
-                "regel: maandloon — de tijdsafhankelijke parameter 'tarief' als operand van het rekenen per periode",
-                "DROOLS-304");
         // a die/dat subselection on the sum
         JsonNode set = setCase(timeline(List.of(segment("2024-01-01", "2024-02-01", "3"))),
                 timeline(List.of(segment("2024-01-01", "2024-02-01", "3"))), List.of(consistent()));
@@ -399,25 +389,18 @@ class TmsPeriodArithmeticWitnessTest {
                         binary("plus", ownRead("strandloon", "Jutter"), number("5")), "null"))), c,
                 "regel: maandloon — het rekenen per periode van ch. 3.4/3.5 herrekent de operand 'zijn strandloon'",
                 "DROOLS-306");
-        // a target of the unbounded form
-        String unbounded = TmsDocuments.model(List.of(objectType("Jutter", List.of(
-                timeAttribute("strandloon", WHOLE, "month"),
-                timeAttribute("maandloon", TmsDocuments.numberType(false, 0, null), "month")), List.of())), List.of());
-        BothBranches.refused(document(unbounded, List.of(MAANDLOON_OF_STRANDLOON)), c,
-                "regel: maandloon — het rekenen per periode van ch. 3.4/3.5 over 'plus', een waarde van de onbegrensde vorm",
-                "DROOLS-307");
         // an operand on a finer grid than the target's
         String year = TmsDocuments.model(List.of(objectType("Jutter", List.of(
                 timeAttribute("strandloon", WHOLE, "month"), timeAttribute("maandloon", WHOLE, "year")), List.of())), List.of());
         BothBranches.refused(document(year, List.of(MAANDLOON_OF_STRANDLOON)), c,
                 "regel: maandloon — de operand 'strandloon' van het rekenen per periode van ch. 3.4/3.5 ligt op een raster"
                         + " van MAAND, fijner dan het JAAR-raster van het doel", "DROOLS-308");
-        // another operator as the whole value
+        // a power as the whole value
         BothBranches.refused(document(MODEL_A, List.of(computingRule("maandloon", "BEREKENING", "Jutter", "maandloon",
-                        binary("times", ownRead("strandloon", "Jutter"), ownRead("stormtoeslag", "Jutter")), "null"))), c,
+                        binary("power", ownRead("strandloon", "Jutter"), number("2")), "null"))), c,
                 "regel: maandloon — een waarde van het tijdsafhankelijke doel 'maandloon' van Jutter die geen tijdsevenredig"
-                        + " deel, geen dagentelling en geen rekenen per periode met plus, min of een som is ('times')",
-                "DROOLS-105");
+                        + " deel, geen dagentelling en geen rekenen per periode met een operator van ch. 1.2 behalve de macht"
+                        + " of met een som is ('power')", "DROOLS-105");
     }
 
     static final String MAANDLOON_OF_STRANDLOON = computingRule("maandloon", "BEREKENING", "Jutter", "maandloon",
