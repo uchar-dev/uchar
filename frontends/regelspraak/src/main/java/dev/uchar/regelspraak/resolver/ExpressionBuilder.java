@@ -1953,6 +1953,11 @@ final class ExpressionBuilder {
             // shadow, a silently-wrong clip).
             if (c.expressie() != null && build(c.expressie()) instanceof Expr.AttributeReference a && a.navigationRole() != null)
                 return null;
+            // the same shadow where the onderwerp names another object without a navigation the builder reads
+            // ("zijn ploeg" over a role the subject reaches by type): only an onderwerp that denotes the subject
+            // reads the subject's own characteristic
+            if (c.toplevelOperator() != null && c.toplevelOperator().kaleNaam() != null && !denotesSubject(c.expressie()))
+                return null;
             Condition.CharacteristicCheck k = temporalCharacteristicCheckFromOperator(c.toplevelOperator(), null, source(cnd));  // §8.3.1 toplevel = vragende only
             if (k != null) return k;
             return duringComparison(c, source(cnd));   // §7.1 a temporal-attribute COMPARISON condition (EUR71)
@@ -2023,18 +2028,14 @@ final class ExpressionBuilder {
         // only a syntax error leaves the call without its condition, and its ERROR blocks the document
         Source marked = written != null ? source(written) : source(adf);
         ToplevelOperatorContext op = c == null ? null : c.toplevelOperator();
-        if (op != null && op.kaleNaam() != null && currentSubject != null) {
-            // the operator names the characteristic and the onderwerp before it says whose: a navigation reads another
-            // object, and the operator's name alone would bind the subject's own characteristic of that name
-            boolean navigated = c.expressie() != null && build(c.expressie()) instanceof Expr.AttributeReference a
-                    && a.navigationRole() != null;
-            if (!navigated) {
-                Condition.CharacteristicCheck k = temporalCharacteristicCheckFromOperator(op, null, source(adf));
-                if (k != null && !k.negation()) return k;
-                if (boundCharacteristic(src(op.kaleNaam())) == null)
-                    return new Condition.Unresolved(marked, Msg.frontend("RGS-092.day-count-name-unbound",
-                            "name", src(op.kaleNaam()), "subject", currentSubject.name));
-            }
+        // the operator names the characteristic and the onderwerp before it says whose: the operator's name alone would
+        // bind the subject's own characteristic of that name where the onderwerp names another object
+        if (op != null && op.kaleNaam() != null && denotesSubject(c.expressie())) {
+            Condition.CharacteristicCheck k = temporalCharacteristicCheckFromOperator(op, null, source(adf));
+            if (k != null && !k.negation()) return k;
+            if (boundCharacteristic(src(op.kaleNaam())) == null)
+                return new Condition.Unresolved(marked, Msg.frontend("RGS-092.day-count-name-unbound",
+                        "name", src(op.kaleNaam()), "subject", currentSubject.name));
         }
         return new Condition.Unresolved(marked, Msg.frontend("RGS-092.day-count-condition-form"));
     }
@@ -2062,6 +2063,15 @@ final class ExpressionBuilder {
         if (b == null || currentSubject.characteristicGranularityOf(b.characteristic()) == null
                 || currentSubject.characteristicTimelineCountOf(b.characteristic()) != null) return null;
         return new Condition.CharacteristicCheck(b.characteristic(), null, b.negation(), source);
+    }
+
+    /** Whether the onderwerp of a membership condition denotes the rule subject: "hij", or the name of the subject's own
+     *  type ("de Jutter"). The membership operator alone names the characteristic, so a check bound on the subject is
+     *  right only where the onderwerp is the subject. */
+    private boolean denotesSubject(ParserRuleContext onderwerp) {
+        if (onderwerp == null || currentSubject == null) return false;
+        String written = stripArticle(src(onderwerp)).trim();
+        return written.equalsIgnoreCase("hij") || written.equalsIgnoreCase(currentSubject.name);
     }
 
     /** The characteristic of the subject a written membership name binds, and whether a leading "geen"/"niet" negates
@@ -2105,6 +2115,9 @@ final class ExpressionBuilder {
     private Condition duringCompound(ToplevelSamengesteldeVoorwaardeContext sv, Source source) {
         VoorwaardeKwantificatieContext q = sv.voorwaardeKwantificatie();
         if (q == null || sv.samengesteldeVoorwaardeOnderdeel() == null) return null;
+        // "zijn ploeg aan alle volgende voorwaarden voldoet": the bullets' "hij" is then that other object
+        if (sv.voorwaardeSubject() != null && sv.voorwaardeSubject().onderwerp() != null
+                && !denotesSubject(sv.voorwaardeSubject().onderwerp())) return null;
         Condition.Quantifier quantifier;
         if (q.ALLE() != null) quantifier = Condition.Quantifier.ALLE;
         else if (q.TEN_MINSTE() != null && q.telwoord() != null && numeralValue(q.telwoord()) == 1)
@@ -2115,6 +2128,10 @@ final class ExpressionBuilder {
         for (GenesteVoorwaardeContext g : sv.samengesteldeVoorwaardeOnderdeel().genesteVoorwaarde()) {
             if (g.elementaireVoorwaarde() == null) return null;         // a nested compound bullet -> marker
             ElementaireVoorwaardeContext ev = g.elementaireVoorwaarde();
+            // a membership bullet reads the subject's own characteristic only where its onderwerp denotes the subject
+            boolean membership = (ev.toplevelOperator() != null && ev.toplevelOperator().kaleNaam() != null)
+                    || (ev.nonToplevelOperator() != null && ev.nonToplevelOperator().kaleNaam() != null);
+            if (membership && !denotesSubject(ev.expressie())) return null;
             Condition.CharacteristicCheck k = temporalCharacteristicCheckFromOperator(ev.toplevelOperator(), ev.nonToplevelOperator(), source(ev));
             if (k != null) { parts.add(k); temporal++; continue; }
             // §8.4 a non-temporal member (a COMPARISON) lowers to a static value-side guard. In an ALLE compound it

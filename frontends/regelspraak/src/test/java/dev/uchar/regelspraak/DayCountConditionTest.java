@@ -39,6 +39,14 @@ class DayCountConditionTest {
             de vaartocht Reis
         Eén reizende jutter maakt één vaartocht
 
+        Objecttype de Ploeg (mv: Ploegen)
+            is borgplichtig kenmerk (bijvoeglijk) voor elke maand;
+
+        Feittype ploegindeling
+            de ploeg Ploeg
+            de jutter (mv: jutters) Jutter
+        Eén ploeg omvat meerdere jutters
+
         """;
 
     private static RegelSpraakModel dayCount(String condition) {
@@ -108,6 +116,20 @@ class DayCountConditionTest {
                 "zijn vaartocht borgplichtig is");
     }
 
+    /** "zijn ploeg" builds no navigation of its own here; the onderwerp still names another object. */
+    @Test void a_characteristic_of_an_object_over_a_role_by_type_is_not_read_as_the_subjects_own() {
+        markedWith(dayCount("zijn ploeg borgplichtig is"), "RGS-092.day-count-condition-form",
+                "zijn ploeg borgplichtig is");
+    }
+
+    @Test void the_subject_named_by_its_type_is_the_subject() {
+        RegelSpraakModel m = dayCount("de Jutter borgplichtig is");
+        assertTrue(m.diagnostics.isEmpty(), m.diagnostics::toString);
+        String c = IrEmitter.emit(m).replaceAll("\\s+", "");
+        assertTrue(c.contains("\"kind\":\"dayCount\",\"arguments\":[],\"filter\":{\"node\":\"CharacteristicCheck\","
+                + "\"characteristic\":\"borgplichtig\",\"negated\":false,"), c);
+    }
+
     @Test void a_whole_period_qualifier_is_refused_by_its_form() {
         markedWith(dayCount("hij gedurende de gehele maand borgplichtig is"), "RGS-092.day-count-condition-form",
                 "hij gedurende de gehele maand borgplichtig is");
@@ -138,6 +160,7 @@ class DayCountConditionTest {
                 het wachttarief Numeriek (getal met 2 decimalen) voor elk jaar;
                 is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
                 is aangesteld kenmerk (bijvoeglijk) voor elke maand;
+                is bemand kenmerk (bijvoeglijk) voor elke maand;
                 de leeftijd Numeriek (geheel getal);
                 de wachtsom Numeriek (geheel getal);
                 de stilwachtsom Numeriek (geheel getal);
@@ -150,6 +173,14 @@ class DayCountConditionTest {
                 de reizende jutter Jutter
                 de vaartocht Reis
             Eén reizende jutter maakt één vaartocht
+
+            Objecttype de Ploeg (mv: Ploegen)
+                is bemand kenmerk (bijvoeglijk) voor elke maand;
+
+            Feittype ploegindeling
+                de ploeg Ploeg
+                de jutter (mv: jutters) Jutter
+            Eén ploeg omvat meerdere jutters
 
             """ + value);
     }
@@ -217,6 +248,36 @@ class DayCountConditionTest {
                     - hij wachtplichtig is
                     - zijn leeftijd is gedurende het gehele jaar groter dan 18).
             """), "gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij wachtplichtig is - zijn leeftijd is gedurende het gehele jaar groter dan 18");
+    }
+
+    // ---------------- the onderwerp of a membership in the condition of a gedurende clip ----------------
+
+    @Test void a_clip_does_not_read_another_objects_characteristic_as_the_subjects_own() {
+        clipMarked(clip("""
+            Regel wachtsom van een jutter
+                geldig altijd
+                    De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn ploeg bemand is).
+            """), "gedurende de tijd dat zijn ploeg bemand is");
+    }
+
+    @Test void a_compound_clip_does_not_read_another_objects_characteristic_in_a_bullet() {
+        clipMarked(clip("""
+            Regel wachtsom van een jutter
+                geldig altijd
+                    De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet:
+                    - hij wachtplichtig is
+                    - zijn ploeg bemand is).
+            """), "gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij wachtplichtig is - zijn ploeg bemand is");
+    }
+
+    @Test void a_compound_clip_over_another_object_is_not_the_subjects() {
+        clipMarked(clip("""
+            Regel wachtsom van een jutter
+                geldig altijd
+                    De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn ploeg aan alle volgende voorwaarden voldoet:
+                    - hij bemand is
+                    - hij bemand is).
+            """), "gedurende de tijd dat zijn ploeg aan alle volgende voorwaarden voldoet: - hij bemand is - hij bemand is");
     }
 
     @Test void the_same_clips_without_qualifier_stay_lowered() {
