@@ -7353,9 +7353,8 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
      never leeg (the case reader admits no leeg parameter value), and one the
      case does not bind is no leeg bound either: ref faults on it, and so does
      the shared fail-fast its read carries here. A leeg attribute bound
-     derives no val/3, so no day satisfies and every touched bucket fails:
-     ch. 3.9's "a leeg comparison bound makes the test false", while a
-     timeline without segments touches no bucket and passes. *)
+     derives no val/3: a leeg side, which the failure rules below read with
+     ch. 1.2 per day. *)
   let sa = pow10 (attr_decimals ctx ~otype:subject_ot ~attr:a) in
   let batoms, bterm, sb =
     match bound with
@@ -7435,12 +7434,32 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
   emit_value_days ctx ~p ~attr:a ~sat:(sat_atoms @ [ Printf.sprintf "%s %s %s" vt sym bt ]);
   (* per TOUCHED bucket: fail when the satisfying days fall short of the
      bucket's whole calendar length. A gap day contributes to _t and not to
-     _g, so a partially covered bucket fails; a timeline with no segments
-     touches no bucket, derives no failure, and passes vacuously. *)
-  emit ctx
-    "%s(S) :- %s_t(S,B,_,_,_), %s_b(B,_,Tot), GD = #sum { D,KV,KT : %s_g(S,B,KV,KT,D) }, GD < \
-     Tot."
-    p p p p;
+     _g; it reads leeg, and ch. 1.2 per day decides whether it satisfies
+     (ch. 3.9). An ordering never holds on it, and "=" only against a leeg
+     bound, where the filled day every touched bucket holds fails "=", so for
+     those the shortfall against the calendar length is the verdict. "≠"
+     holds on a gap day against a filled bound, so there the bucket fails
+     where a covered day does not satisfy; against a leeg bound "≠" holds on
+     every covered day and on no gap day, so there it fails where the bucket
+     has a gap. A timeline with no segments touches no bucket, derives no
+     failure, and passes vacuously. *)
+  (match op with
+  | Not_equal ->
+      emit ctx "%s_bound(S) :- %s." p
+        (String.concat ", " (Printf.sprintf "%s_t(S,_,_,_,_)" p :: batoms));
+      emit ctx
+        "%s(S) :- %s_t(S,B,_,_,_), %s_bound(S), TD = #sum { D,KV,KT : %s_t(S,B,KV,KT,D) }, GD = #sum \
+         { D,KV,KT : %s_g(S,B,KV,KT,D) }, GD < TD."
+        p p p p p;
+      emit ctx
+        "%s(S) :- %s_t(S,B,_,_,_), not %s_bound(S), %s_b(B,_,Tot), TD = #sum { D,KV,KT : \
+         %s_t(S,B,KV,KT,D) }, TD < Tot."
+        p p p p p
+  | _ ->
+      emit ctx
+        "%s(S) :- %s_t(S,B,_,_,_), %s_b(B,_,Tot), GD = #sum { D,KV,KT : %s_g(S,B,KV,KT,D) }, GD < \
+         Tot."
+        p p p p);
   p
 
 (* --- day kinds as duration units (ch. 3.7/3.8) --------------------------

@@ -4457,11 +4457,12 @@ let gpv_bound_case ~timeline_state ~grens ~truth =
      else {|{ "kind": "attributeEmpty", "label": "S1", "attribute": "toeslag" }|})
 
 let () =
-  (* ch. 3.9, the subject's own attribute as the bound: "a leeg comparison
-     bound makes the test false" on every day, for every comparison, the
-     inequality included; the qualifier's negation complements the fold, and
-     a timeline without segments passes whatever the bound. Each row in ref
-     and here, with the grens at the timeline's scale and finer. *)
+  (* ch. 3.9, the subject's own attribute as the bound: a leeg bound is a
+     leeg side on every day, read with ch. 1.2 — no ordering holds, "=" holds
+     on a gap day only, "≠" on a filled day only — and a gap day against a
+     filled bound satisfies "≠"; the qualifier's negation complements the
+     fold, and a timeline without segments passes whatever the bound. Each
+     row in ref and here, with the grens at the timeline's scale and finer. *)
   let row ~name ?(op = "greater") ?(not_flag = "false") ?(grens_decimals = 0) ~timeline_state ~grens ~truth () =
     let ir =
       gpv_doc ~object_types:(gpv_bound_types ~vangst_decimals:0 ~grens_decimals)
@@ -4471,15 +4472,24 @@ let () =
     clingo_matches ~name ~ir ~case_text
   in
   List.iter
-    (fun op ->
+    (fun (op, whole, half) ->
       row ~name:("ch3.9 empty bound " ^ op ^ " whole year") ~op ~timeline_state:(whole_year "50") ~grens:None
-        ~truth:false ();
+        ~truth:whole ();
+      row ~name:("ch3.9 empty bound " ^ op ^ " half year") ~op ~timeline_state:(half_year "50") ~grens:None
+        ~truth:half ();
       row ~name:("ch3.9 empty bound " ^ op ^ " negated") ~op ~not_flag:"true" ~timeline_state:(whole_year "50")
-        ~grens:None ~truth:true ();
+        ~grens:None ~truth:(not whole) ();
       row ~name:("ch3.9 empty bound " ^ op ^ " no segments") ~op ~timeline_state:"" ~grens:None ~truth:true ())
-    [ "less"; "lessOrEqual"; "greater"; "greaterOrEqual"; "equal"; "notEqual" ];
+    [ ("less", false, false); ("lessOrEqual", false, false); ("greater", false, false);
+      ("greaterOrEqual", false, false); ("equal", false, false); ("notEqual", true, false) ];
   row ~name:"ch3.9 own bound not-equal filled" ~op:"notEqual" ~timeline_state:(whole_year "50")
     ~grens:(Some "40") ~truth:true ();
+  row ~name:"ch3.9 own bound not-equal over the gap" ~op:"notEqual" ~timeline_state:(half_year "50")
+    ~grens:(Some "40") ~truth:true ();
+  row ~name:"ch3.9 own bound not-equal over the gap, on the bound" ~op:"notEqual"
+    ~timeline_state:(half_year "50") ~grens:(Some "50") ~truth:false ();
+  row ~name:"ch3.9 own bound equal over the gap" ~op:"equal" ~timeline_state:(half_year "50")
+    ~grens:(Some "50") ~truth:false ();
   row ~name:"ch3.9 own bound not-equal on the bound" ~op:"notEqual" ~timeline_state:(whole_year "50")
     ~grens:(Some "50") ~truth:false ();
   row ~name:"ch3.9 own bound equal filled" ~op:"equal" ~timeline_state:(whole_year "50") ~grens:(Some "50")
@@ -4504,6 +4514,17 @@ let () =
   table_row ~name:"ch3.9 value-c jan-jul 2026 at 50 (the gap)" ~timeline_state:(half_year "50")
     ~truth:false ();
   table_row ~name:"ch3.9 value-d whole 2026 at 30" ~timeline_state:(whole_year "30") ~truth:false ();
+  (* a gap day reads leeg, and "≠ 40" holds on it (ch. 1.2 per day), so the
+     half-covered year passes "≠ 40" where it fails "> 40"; "= 50" does not
+     hold on it, and "≠ 50" still asks the covered days *)
+  table_row ~name:"ch3.9 value not-equal over the gap" ~test:(kv_whole ~op:"notEqual" ())
+    ~timeline_state:(half_year "50") ~truth:true ();
+  table_row ~name:"ch3.9 value not-equal over the gap, negated"
+    ~test:(kv_whole ~op:"notEqual" ~not_flag:"true" ()) ~timeline_state:(half_year "50") ~truth:false ();
+  table_row ~name:"ch3.9 value not-equal over the gap, on the bound"
+    ~test:(kv_whole ~op:"notEqual" ~boundary:"50" ()) ~timeline_state:(half_year "50") ~truth:false ();
+  table_row ~name:"ch3.9 value equal over the gap" ~test:(kv_whole ~op:"equal" ~boundary:"50" ())
+    ~timeline_state:(half_year "50") ~truth:false ();
   (* the qualifier's own grid: six WHOLE months pass where the year failed *)
   table_row ~name:"ch3.9 value month-grid jan-jul" ~test:(kv_whole ~year:false ())
     ~timeline_state:(half_year "50") ~truth:true ();
@@ -9261,6 +9282,13 @@ let () =
     ~silent:"keur leeg: the member's whole-period test failed, so ALLE did";
   both_answer ~name:"temporal: a negated whole-period bound, bound" ~ir:gp_ir
     ~case_text:(gp_case ~bound:true ~truth:false);
+  (* a parameter bound is never leeg, so a gap day satisfies "≠" against it
+     (ch. 3.9, ch. 1.2 per day): the half-covered year passes *)
+  both_answer ~name:"temporal: a whole-period not-equal parameter bound over the gap"
+    ~ir:(with_parameter (gpv_doc ~test:(kv_whole ~op:"notEqual" ~right_side:(pf_p "grens") ()) ()))
+    ~case_text:
+      (replace ~tok:{|"parameters": {}|} ~by:{|"parameters": { "grens": { "number": "40" } }|}
+         (gpv_case ~timeline_state:(half_year "50") ~truth:true));
   unbound_fires ~name:"temporal: a negated whole-period bound, unbound" ~ir:gp_ir ~param:"grens"
     ~case_text:(gp_case ~bound:false ~truth:true)
     ~silent:"toeslag 5: no day satisfied, so the NEGATED whole-period test held";
