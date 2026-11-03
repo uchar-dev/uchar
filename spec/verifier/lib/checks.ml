@@ -1118,6 +1118,86 @@ let day_kind_of_unit (doc : document) (u : measure_unit) =
    executors stay loud on those forms *)
 let day_kind_unit ctx (u : measure_unit) = day_kind_of_unit ctx.doc u <> None
 
+(* The condition of a day count (WF-058, RUNTIME-SEMANTICS ch. 3.8): a check of
+   an own characteristic, or an `all` composite of such checks and day-kind
+   tests of the counted day, the `BoundDay` (IMPLICIT-TIME 7b). The shape as
+   (the characteristics, the day kinds with their negation), or None where the
+   condition has another. Whether the characteristics are time-dependent, and
+   whether there is one, is the caller's question. The verifier and both
+   executors read the shape here, so they cannot draw its boundary apart. *)
+let day_count_filter (c : condition_expr) =
+  let member (c : condition_expr) =
+    match c with
+    | Characteristic_check { characteristic = Some k; navigation_binding = None; negation = false; _ } ->
+        Some (Either.Left k)
+    | Predicate
+        { variety = Day_kind_predicate; operand = Some (Bound_day _); day_kind = Some d; negation;
+          time_period = None; _ } ->
+        Some (Either.Right (d, negation))
+    | _ -> None
+  in
+  let parts ms =
+    if List.exists Option.is_none ms then None
+    else Some (List.partition_map Fun.id (List.filter_map Fun.id ms))
+  in
+  match c with
+  | Compound { quantifier_kind = All; components; _ } -> parts (List.map member components)
+  | Characteristic_check _ -> (
+      match member c with Some (Either.Left k) -> Some ([ k ], []) | _ -> None)
+  | _ -> None
+
+(* The unit a day count writes into a target that declares the unit [u]
+   (IMPLICIT-TIME VB 7.2): days per unit of its bucket [g], a day unit over the
+   unit the bucket counts in, each recognised by the spelling table of ch. 3.8 *)
+let day_count_unit_fits (g : grain) (u : measure_unit) =
+  match (Units.positives u, Units.negatives u) with
+  | [ p ], [ n ] ->
+      Units.exponent p = 1 && Units.exponent n = -1
+      && Option.bind p.abbr_text time_unit_of_spelling = Some Tu_day
+      && Option.bind n.abbr_text time_unit_of_spelling = Some (granularity_time_unit g)
+  | _ -> false
+
+(* The value a `Let` whose body reads its binder and nothing else stands for: the
+   bound value, through every such Let; any other expression is itself. A rule
+   on a timeline target reads its producer through such a binding ("de getelde
+   dagen", a variable of the source), since the binding evaluates its value once,
+   at the one read of its body (RUNTIME-SEMANTICS ch. 10.6) *)
+let rec let_bound_value (e : expr) =
+  match e with
+  | Let { binder; value; body = Binder_ref { ident; _ }; _ } when norm ident = norm binder -> let_bound_value value
+  | e -> e
+
+(* WF-111 (IMPLICIT-TIME VB 6.1): the first part of a window bound that takes it
+   out of a day-precise date expression over the subject, the parameters and
+   literals, in the words the refusal names it with; None where there is none.
+   [subject] says whether the position has a subject (a day-kind definition has
+   none), [own] whether an object type is one the subject satisfies, [temporal_attr]
+   and [temporal_param] whether a member reads a timeline. A bound reads one value
+   per subject, so it reads no timeline, navigates no role and folds no set; the
+   precision of its type is the caller's question. Shared by the verifier and both
+   executors, which refuse in its words. *)
+let rec window_bound_misfit ?(subject = true) ~own ~temporal_attr ~temporal_param (e : expr) : string option =
+  let sub = window_bound_misfit ~subject ~own ~temporal_attr ~temporal_param in
+  match e with
+  | Literal _ -> None
+  | Attribute_reference { attribute_ref = Some a; navigation_bindings = None; _ } when not subject ->
+      Some ("the attribute '" ^ a ^ "' at a position with no subject to own it")
+  | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ } ->
+      if not (own otn) then Some (Printf.sprintf "the attribute '%s' of '%s', which the subject does not satisfy" a otn)
+      else if temporal_attr otn a then Some ("the time-dependent attribute '" ^ a ^ "'")
+      else None
+  | Attribute_reference { attribute_ref; _ } -> Some ("a navigated read of '" ^ Option.value attribute_ref ~default:"?" ^ "'")
+  | Parameter_ref { parameter = Some p; _ } ->
+      if temporal_param p then Some ("the time-dependent parameter '" ^ p ^ "'") else None
+  | Binary { left_side; right_side; _ } ->
+      List.find_map sub (Option.to_list left_side @ Option.to_list right_side)
+  | Function_call
+      { call_arguments; element_object_type = None; source_role = None; source_path = None; filter = None;
+        empty_fallback = None; grain = None; dimension_selections = None; _ } ->
+      List.find_map sub call_arguments
+  | Rounding { base_expr = Some b; _ } -> sub b
+  | _ -> Some "a computed date expression of a form that reads more than the subject, the parameters and literals"
+
 (* The position of a version pointer in its wire list, form index first:
    the order the wire writes the versions in. *)
 let wire_order at =
@@ -4801,24 +4881,24 @@ let wf097_clip_qualifications at (c : condition_expr) : violation list =
   in
   walk c
 
-(* WF-111 — the time window's BOUND SHAPE (IR-SPEC ch. 4.6, maintainer
-   decision 2026-09-23). The two shapes are the pair the v0 backends carry
-   and all four executors execute (golden `jutterswet-premievenster`); the
-   general date expression WF-042's typing admits is an OPEN wire decision,
-   so it is refused here instead of by each executor at its own phase.
-   "Own" is extensional, as everywhere (ch. 2.2): an attribute declared on a
-   type the subject satisfies. The day-precision clause (maintainer decision
-   2026-09-23) closes a measured split: an empty millisecond-precision attribute bound
-   played in ref (a leeg bound never matches; ref refused only a FILLED
-   instant) while the ASP backend refused it statically — ref ≠ clingo on a
-   verifier-clean document. Ch. 3.10 speaks of civil days only. The declared datatype decides for an
-   attribute and the annotation for a literal, which carries no other. *)
-let wf111_bound ctx ~subject at side (e : expr) =
+(* WF-111 — the time window's BOUND (IR-SPEC ch. 4.6; maintainer decision
+   2026-09-23, widened by IMPLICIT-TIME VB 6.1): a day-precise date expression
+   over the subject, the parameters and literals — what reads one value per
+   subject. The shape walk is [window_bound_misfit], which both executors
+   share. "Own" is extensional, as everywhere (ch. 2.2): an attribute declared
+   on a type the subject satisfies; a position with no subject owns none. The
+   day-precision clause (maintainer decision 2026-09-23) closes a measured
+   split: an empty millisecond-precision attribute bound played in ref (a leeg
+   bound never matches; ref refused only a FILLED instant) while the ASP
+   backend refused it statically — ref ≠ clingo on a verifier-clean document.
+   Ch. 3.10 speaks of civil days only. The static type decides: a reference's
+   declaration, every other value's annotation. *)
+let wf111_bound ctx ~subject ~binders at side (e : expr) =
   let refuse what =
     [ v ~params:[("side", side); ("form", what)] "WF-111.bound-form" at
         (Printf.sprintf
-           "the %s bound of a time window is %s — a bound is a date literal or an own scalar date \
-            attribute of the subject; the general date expression is an OPEN wire decision"
+           "the %s bound of a time window is %s — a bound is a day-precise date expression over the \
+            subject, the parameters and literals"
            side what) ]
   in
   let instant =
@@ -4828,28 +4908,14 @@ let wf111_bound ctx ~subject at side (e : expr) =
             of civil days and no clause reads an instant bound"
            side) ]
   in
-  match e with
-  | Literal { typ = Some Date_time_type; _ } -> instant
-  | Literal _ -> []
-  | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; _ }
-    -> (
-      match subject with
-      | None -> refuse ("the attribute '" ^ a ^ "' at a position with no subject to own it")
-      | Some st when not (is_sub ctx ~sub:st ~super:otn) ->
-          refuse
-            (Printf.sprintf "the attribute '%s' of '%s', which the subject '%s' does not satisfy" a
-               otn st)
-      | Some _ -> (
-          match object_type ctx otn with
-          | Some ot when attr_temporal ot a ->
-              refuse ("the time-dependent attribute '" ^ a ^ "'")
-          | Some ot when attr_of ot a = Some (Some Date_time_type) -> instant
-          | _ -> []))
-  | Attribute_reference { attribute_ref; _ } ->
-      refuse ("a navigated read of '" ^ Option.value attribute_ref ~default:"?" ^ "'")
-  | Parameter_ref { parameter; _ } ->
-      refuse ("the parameter '" ^ Option.value parameter ~default:"?" ^ "'")
-  | _ -> refuse "a computed date expression"
+  let own otn = match subject with Some st -> is_sub ctx ~sub:st ~super:otn | None -> false in
+  let temporal_attr otn a = match object_type ctx otn with Some ot -> attr_temporal ot a | None -> false in
+  let temporal_param p =
+    match find_ci ctx.doc.parameters p with Some { par_granularity = Some _; _ } -> true | _ -> false
+  in
+  match window_bound_misfit ~subject:(subject <> None) ~own ~temporal_attr ~temporal_param e with
+  | Some what -> refuse what
+  | None -> ( match expr_type ctx ~binders e with Some Date_time_type -> instant | _ -> [])
 
 (* WF-112 — the time window's POSITION (maintainer decision 2026-09-23): never
    under none or a counting quantifier. The walk is deep — a window inside an
@@ -7345,7 +7411,7 @@ and walk_cond ctx ~binders ~subject ?(body = Rule_pos) ?fc_target at (c : condit
                  | Some d when not (is_date d) ->
                      [ v ~params:[("type", datatype_kind d)] "WF-042.bound-not-date" (sub n) ("window bound is " ^ datatype_kind d ^ ", must be a date") ]
                  | _ -> [])
-                @ wf111_bound ctx
+                @ wf111_bound ctx ~binders
                     ~subject:(if unanchored_expr e <> None then ctx.form else subject)
                     (sub n) n e
                 @ walk_expr ctx ~binders ~subject (sub n) e
@@ -7535,10 +7601,25 @@ let expression_layer ctx =
          carries no type of its own (B13): the attribute declaration it writes
          is the one source, crossed where it is declared, so the target has
          no annotation left to cross here. *)
+      (* the producer of a timeline target, read through a variable that binds
+         it ([let_bound_value]), with its pointer *)
+      let rec bound_at ptr (e : expr) =
+        match e with
+        | Let { binder; value; body = Binder_ref { ident; _ }; _ } when norm ident = norm binder ->
+            bound_at (ptr ^ "/value") value
+        | e -> (ptr, e)
+      in
+      let value_at, value_node =
+        match r.value_node with
+        | Some e ->
+            let p, e = bound_at (at ^ "/value") e in
+            (p, Some e)
+        | None -> (at ^ "/value", None)
+      in
       (* WF-056 (rule level): a pro-rata value on a temporal target MUST
          bucket at the target's declared granularity; WF-058 states the
          same facet for the ch. 3.8 day count *)
-      (match (r.objective, r.value_node) with
+      (match (r.objective, value_node) with
       | ( Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }),
           Some
             (Function_call
@@ -7549,41 +7630,68 @@ let expression_layer ctx =
           in
           match object_type ctx ot with
           | Some otd -> (
-              match List.find_opt (fun (n, _) -> norm n = norm a) otd.attribute_granularity with
+              (match List.find_opt (fun (n, _) -> norm n = norm a) otd.attribute_granularity with
               | Some (_, Some tg) when tg <> g ->
-                  [ v ~params:[("function", what)] (wf ^ ".bucket-granularity-differs") (at ^ "/value")
+                  [ v ~params:[("function", what)] (wf ^ ".bucket-granularity-differs") value_at
                       (what ^ " bucket granularity differs from the target's declared granularity")
                   ]
               | Some (_, Some _) | None -> []
               (* TimelineFacet.granularity is a required enum since M1 *)
               | Some (_, None) -> assert false)
+              (* WF-058, the unit (IMPLICIT-TIME VB 7.2): the count is days per
+                 unit of its bucket, so a target that declares a unit declares
+                 that one; a target without one takes the bare number *)
+              @
+              match (kind, attr_of otd a) with
+              | Day_count, Some (Some (Number { measure_unit = Some u; _ })) when not (day_count_unit_fits g u) ->
+                  [ v ~params:[("target", a); ("unit", unit_spelling (Some u));
+                               ("bucket", Spelling.encode Spelling.granularity g)]
+                      "WF-058.target-unit" value_at
+                      (Printf.sprintf
+                         "the day count writes days per %s, and its target '%s' declares the unit '%s'"
+                         (Spelling.encode Spelling.granularity g) a (unit_spelling (Some u))) ]
+              | _ -> [])
           | None -> [])
       | _ -> [])
-      (* WF-058 (rule level): the day count MUST carry a gedurende
-         condition over an own temporal characteristic and takes no
-         arguments (the counting fold has no base) *)
-      @ (match r.value_node with
+      (* WF-058 (rule level): the day count MUST carry a gedurende condition,
+         a check of an own temporal characteristic or an all composite of one
+         such check and day-kind tests of the counted day (IMPLICIT-TIME 7b),
+         and takes no arguments (the counting fold has no base) *)
+      @ (match value_node with
         | Some (Function_call ({ kind = Day_count; _ } as f)) ->
             (if f.call_arguments <> [] then
-               [ v "WF-058.day-count-arguments" (at ^ "/value/arguments") "dayCount takes no arguments" ]
+               [ v "WF-058.day-count-arguments" (value_at ^ "/arguments") "dayCount takes no arguments" ]
              else [])
             @ (match f.filter with
-              | None -> [ v "WF-058.day-count-condition" (at ^ "/value") "dayCount without a gedurende condition" ]
-              | Some (Characteristic_check { characteristic = Some k; navigation_binding = None; negation = false; _ }) -> (
-                  match Option.bind subject (object_type ctx) with
-                  | Some otd
-                    when not
-                           (List.exists
-                              (fun (n, _) -> norm n = norm k)
-                              otd.characteristic_granularity) ->
-                      [ v ~params:[("characteristic", k)] "WF-058.condition-not-temporal" (at ^ "/value/filter")
-                          ("gedurende over '" ^ k ^ "', which is not a temporal characteristic")
+              | None -> [ v "WF-058.day-count-condition" value_at "dayCount without a gedurende condition" ]
+              | Some c -> (
+                  match day_count_filter c with
+                  | None ->
+                      [ v "WF-058.condition-not-check" (value_at ^ "/filter")
+                          "the day-count gedurende condition is an own temporal characteristic check, or an all \
+                           composite of one such check and day-kind tests of the counted day"
                       ]
-                  | _ -> [])
-              | Some _ ->
-                  [ v "WF-058.condition-not-check" (at ^ "/value/filter")
-                      "the day-count gedurende condition is an own temporal characteristic check"
-                  ])
+                  | Some ([], _) ->
+                      [ v "WF-058.condition-without-characteristic" (value_at ^ "/filter")
+                          "the day-count gedurende condition tests the counted day and no characteristic: it holds \
+                           on unboundedly many days"
+                      ]
+                  | Some ([ k ], _) -> (
+                      match Option.bind subject (object_type ctx) with
+                      | Some otd
+                        when not
+                               (List.exists
+                                  (fun (n, _) -> norm n = norm k)
+                                  otd.characteristic_granularity) ->
+                          [ v ~params:[("characteristic", k)] "WF-058.condition-not-temporal" (value_at ^ "/filter")
+                              ("gedurende over '" ^ k ^ "', which is not a temporal characteristic")
+                          ]
+                      | _ -> [])
+                  | Some (_ :: _ :: _, _) ->
+                      [ v "WF-058.condition-not-check" (value_at ^ "/filter")
+                          "the day-count gedurende condition is an own temporal characteristic check, or an all \
+                           composite of one such check and day-kind tests of the counted day"
+                      ]))
         | _ -> [])
       @ (match r.value_node with Some e -> walk_expr ctx ~binders:[] ~subject (at ^ "/value") e | None -> [])
       @ (match r.rr_condition with
@@ -10253,6 +10361,15 @@ let wf023 ctx =
       | Some (Equation | Calculation | Initialisation), Some objective, Some w -> (
           match (resolved_attr_datatype ctx objective, expr_type ctx ~binders:[] w) with
           | Some dt, Some wt ->
+              (* a day count writes days per unit of its bucket where its target
+                 declares a unit (IMPLICIT-TIME VB 7.2), so it carries the
+                 target's, which WF-058 judges *)
+              let wt =
+                match (let_bound_value w, dt, wt) with
+                | Function_call { kind = Day_count; _ }, Number { measure_unit; _ }, Number n ->
+                    Number { n with measure_unit }
+                | _ -> wt
+              in
               wf023_assignment at ~target:r.objective ~value:r.value_node ~value_at:(at ^ "/value") dt wt
           | _ -> [])
       | _ -> [])
@@ -12263,6 +12380,7 @@ let wf126 ctx =
                           when Option.value par_timeline_count ~default:1 = 1 ->
                             judge "value-grid" at (Printf.sprintf "the parameter '%s'" p) (Some (g, par_fixed_start_point))
                         | _ -> [])
+                    | Rounding { base_expr = Some b; _ } -> value (at ^ "/base") b
                     | _ -> []
                   in
                   let qualifier at (gp : entire_period) =

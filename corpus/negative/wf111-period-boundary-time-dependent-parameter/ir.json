@@ -30,6 +30,11 @@
         "datatype": {
           "node": "Date",
           "precision": "day"
+        },
+        "timeline": {
+          "node": "TimelineFacet",
+          "granularity": "month",
+          "count": 1
         }
       }
     ],

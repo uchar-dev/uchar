@@ -1,0 +1,381 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Afdracht",
+        "animate": false,
+        "plural": "Afdrachten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "rentedagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Rentetijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "mnd",
+                  "system": "Rentetijd",
+                  "canonical": "mnd",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kale dagen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Rentetijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "rentedragend",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "day",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Rentetijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Rentetijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "mnd",
+            "system": "Rentetijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "maand"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": [
+      {
+        "node": "DayKind",
+        "name": "schrikkeldag",
+        "plural": "schrikkeldagen"
+      }
+    ]
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "rentedagen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rentedagen",
+              "subjectType": "Afdracht",
+              "source": {
+                "snippet": "De rentedagen van een Afdracht"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "dayCount",
+              "arguments": [],
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "rentedragend",
+                    "negated": false,
+                    "source": {
+                      "snippet": "hij is rentedragend"
+                    }
+                  },
+                  {
+                    "node": "Predicate",
+                    "kind": "dayKind",
+                    "operand": {
+                      "node": "BoundDay",
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "de dag"
+                      }
+                    },
+                    "dayKind": "schrikkeldag",
+                    "negated": true,
+                    "digits": 0,
+                    "source": {
+                      "snippet": "de dag is geen schrikkeldag"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "er aan alle volgende voorwaarden wordt voldaan: - hij is rentedragend - de dag is geen schrikkeldag"
+                }
+              },
+              "granularity": "month",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt voldaan: - hij is rentedragend - de dag is geen schrikkeldag"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kale dagen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kale dagen",
+              "subjectType": "Afdracht",
+              "source": {
+                "snippet": "De kale dagen van een Afdracht"
+              }
+            },
+            "value": {
+              "node": "BuiltinCall",
+              "kind": "dayCount",
+              "arguments": [],
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "rentedragend",
+                "negated": false,
+                "source": {
+                  "snippet": "het aantal dagen in de maand dat hij rentedragend is"
+                }
+              },
+              "granularity": "month",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal dagen in de maand dat hij rentedragend is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [
+      {
+        "node": "DayKindDefinition",
+        "dayKind": "schrikkeldag",
+        "condition": {
+          "node": "Compound",
+          "quantifier": "all",
+          "threshold": 0,
+          "parts": [
+            {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "BuiltinCall",
+                "kind": "monthOf",
+                "arguments": [
+                  {
+                    "node": "BoundDay",
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "source": {
+                      "snippet": "de dag"
+                    }
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "de maand uit de dag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "source": {
+                "snippet": "de maand uit de dag gelijk is aan 2"
+              }
+            },
+            {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "BuiltinCall",
+                "kind": "dayOf",
+                "arguments": [
+                  {
+                    "node": "BoundDay",
+                    "type": {
+                      "node": "Date",
+                      "precision": "day"
+                    },
+                    "source": {
+                      "snippet": "de dag"
+                    }
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "de dag uit de dag"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "29"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "29"
+                }
+              },
+              "source": {
+                "snippet": "de dag uit de dag gelijk is aan 29"
+              }
+            }
+          ],
+          "source": {
+            "snippet": "er aan alle volgende voorwaarden wordt voldaan: - de maand uit de dag gelijk is aan 2 - de dag uit de dag gelijk is aan 29"
+          }
+        },
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

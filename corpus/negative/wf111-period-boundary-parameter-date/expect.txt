@@ -1,3 +1,0 @@
-WF-111.bound-form
-side=from
-form=the parameter 'peildatum'
