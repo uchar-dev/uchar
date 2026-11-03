@@ -302,7 +302,6 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-penningvintage|EXCLUDE DROOLS-023|loader Refusal: Expr:TemporalRead"
   "anchor/jutterswet-staffelvergoeding|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "anchor/jutterswet-toelagegronden|EXCLUDE DROOLS-054|bean name collision, refused before either branch lowers the document: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property, Jutter.toelage, which carries the attribute, and a defaults group writes the characteristic (v0 bean-model limit, not a defaults divergence). Until 2026-09-28 the transpiler's defaults fence refused it one phase later, on the same limit"
-  "anchor/jutterswet-verzuimrente-30-360|EXCLUDE DROOLS-102|transpiler SKIP: regel: rentedragend — the time-dependent characteristic 'rentedragend' of Afdracht as target (RUNTIME-SEMANTICS ch. 3.10, 3.11): measured 2026-11-03 (card conditions-per-period, step A part ii)"
   "anchor/jutterswet-vondstdossier|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "closed-runtime-division-by-zero|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a red case until card zero-division-channel (2026-10-19), excluded in check-red.sh on the same refusal"
   "jutterswet-aanspraakherziening|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
@@ -323,7 +322,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-muntketen|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Munt) has no bean field: the same many-to-many 'berging' as bootberging above — NOT the subtype landing it was written for, which the walk does carry (SourcePathChainWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
   "jutterswet-meldplichtspoor|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
   "jutterswet-meldtermijnen|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
-  "jutterswet-pachtvenster|EXCLUDE DROOLS-104|transpiler SKIP: regel 'jaarpacht van een strandpachter' — a period window in the condition of a rule with the temporal target 'jaarpacht': there the window clips the timeline (RUNTIME-SEMANTICS ch. 3.10), and the branch does not carry the form yet, as the DRL-text branch does not. The clip is built in ref and clingo since 2026-09-23 (card tijdvenster-conditie-normeren); the branch refuses the form by name, before the KieBase is built"
   "jutterswet-penningbeschikking-catala|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
   "jutterswet-penningstaffel-catala|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-postenheffing|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
@@ -341,7 +339,6 @@ EXPECTED_CHANNEL=(
   "synth3-standtarief|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
   "synth3-vangstsom|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
-  "time-window-timeline-characteristic|EXCLUDE DROOLS-102|transpiler SKIP: regel: berging van een vondst — the time-dependent characteristic 'geborgen' of Vondst as target (RUNTIME-SEMANTICS ch. 3.10, 3.11): measured 2026-11-03 (card conditions-per-period, step A part ii), when the document left corpus/red"
 )
 # The count that closes the one direction a played-by-default list cannot see. It moves ONLY with a
 # corpus change, and it moves TOGETHER with the list: a golden that starts playing leaves the list
@@ -1521,7 +1518,13 @@ EXPECTED_CHANNEL=(
 # time, 0 in every bucket without a true day, and the whole-period qualifier reads an open segment of a value on the
 # buckets beside its bound (RUNTIME-SEMANTICS ch. 3.1, 3.8, 3.9), so the six play again, with PLAYED 4, 4, 3, 7, 3
 # and 3.
-EXPECTED_PLAYED=325
+# 328 since the same step: a period window read per period as the condition of a rule of a timeline target, alone or
+# as a member (RUNTIME-SEMANTICS ch. 3.10), and a time-dependent characteristic within a window, its bound a
+# day-precise date expression, read by the day count with a day-kind test and a unit, by two writers whose union
+# stands, and by the rounded period arithmetic whose total is read (ch. 3.8, 3.11, 5.7): the goldens
+# jutterswet-pachtvenster, time-window-timeline-characteristic and anchor/jutterswet-verzuimrente-30-360, with
+# PLAYED 3, 2 and 2.
+EXPECTED_PLAYED=328
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
