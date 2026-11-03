@@ -1,0 +1,225 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "loonsom": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-03-01",
+                "value": {
+                  "number": "600"
+                }
+              },
+              {
+                "from": "2024-04-01",
+                "to": "2024-06-01",
+                "value": {
+                  "number": "600"
+                }
+              }
+            ]
+          },
+          "heffingstarief": {
+            "timeline": [
+              {
+                "from": "2024-02-01",
+                "to": "2024-05-01",
+                "value": {
+                  "number": "2"
+                }
+              }
+            ]
+          },
+          "vondstkorting": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-04-01",
+                "value": {
+                  "number": "1"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-02-01",
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "timeline": [
+              {
+                "from": "2024-01-15",
+                "to": "2024-03-01",
+                "value": {
+                  "number": "5"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "deelheffing",
+      "timeline": [
+        {
+          "to": "2024-02-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "120"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "to": "2024-05-01",
+          "value": {
+            "number": "120"
+          }
+        },
+        {
+          "from": "2024-05-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "vondstheffing",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-01-15",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2024-01-15",
+          "to": "2024-02-01",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "nettovondstheffing",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-01-15",
+          "value": {
+            "number": "18"
+          }
+        },
+        {
+          "from": "2024-01-15",
+          "to": "2024-02-01",
+          "value": {
+            "number": "28"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "8"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

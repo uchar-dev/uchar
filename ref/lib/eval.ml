@@ -1113,6 +1113,58 @@ let rec static_type env (e : expr) : datatype option =
      the node that consumes it derives the count's own whole type *)
   | Lambda _ | Instance_set_union _ -> None
 
+(* the unit of [op] over operands of units [ul] and [ur], as Arith gives it to
+   filled operands (ch. 2.6, rules 2, 3, 4 and 7; a power is unitless, WF-035) *)
+let operator_unit (op : bin_op) ul ur =
+  let ul' = Arith.unit_option ul and ur' = Arith.unit_option ur in
+  match op with
+  | Plus | Min | Reduced_by -> Arith.join_units ul ur
+  | Times -> Arith.unit_of_option (fst (Ir_v0.Units.times ul' ur'))
+  | Divided_by | Divided_by_abs -> Arith.unit_of_option (fst (Ir_v0.Units.divide ul' ur'))
+  | Percentage_of -> ur
+  | Power -> Value.Unitless
+
+(* The unit [e] carries by its declarations (ch. 2.10), whatever value it
+   evaluates to: the unit a leeg operand coalesces into (Arith.coalesce0), since
+   the empty rule of ch. 1.2 decides its value and not its unit. An operator, a
+   Let, a rounding, a clamp and a value aggregation take what ch. 2.6 derives
+   from their operands, never their own annotation, which is no source and which
+   gate 13 twists; a temporal total and the per-element fold of a temporal
+   attribute over a set integrate, so the factor of their grid rises (ch. 2.6,
+   rule 8). A reference takes its declaration's, a literal and a duration their
+   own type's (the source there), and every other node its own annotation, ch.
+   2.10's fourth class, where no rule derives a unit ([static_type]). *)
+let rec declared_unit ?(binders = SMap.empty) env (e : expr) : Value.unit_ =
+  let unit_of x = declared_unit ~binders env x in
+  match e with
+  | Binder_ref { ident; _ } when SMap.mem (norm ident) binders -> SMap.find (norm ident) binders
+  | Binary { op; left_side = Some l; right_side = Some r; _ } -> operator_unit op (unit_of l) (unit_of r)
+  | Let { binder; value; body; _ } ->
+      declared_unit ~binders:(SMap.add (norm binder) (unit_of value) binders) env body
+  | Rounding { base_expr = Some b; _ } | Clamp { base_expr = Some b; _ } -> unit_of b
+  | Function_call
+      { kind = (Sum_function | Total) as kind;
+        call_arguments = (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } as arg) :: _;
+        source_role; source_path; _ }
+    when (kind = Total || source_role <> None || source_path <> None)
+         && Ir_v0.Checks.attr_temporal (object_type env ot) a -> (
+      match unit_of arg with
+      | Value.Unit u when Ir_v0.Units.negatives u <> [] -> (
+          let grid =
+            match Timeline.grid_unit env.doc (attr_granularity (object_type env ot) a) with
+            | Ok (g :: _) -> Some g
+            | _ -> None
+          in
+          match Ir_v0.Units.integrated ?grid u with
+          | Some left -> Arith.unit_of_option left
+          | None ->
+              Value.fault "the temporal total of a %s value over the grid of %S leaves no unit (ch. 3.6)"
+                (Arith.show_unit (Value.Unit u)) a)
+      | plain -> plain)
+  | Function_call { kind = Sum_function | Total | Minimum | Maximum | First | Last; call_arguments = x :: _; _ } ->
+      unit_of x
+  | _ -> unit_of_datatype (static_type env e)
+
 (* the ch. 1.2d empty-equality asymmetry routes on the declared operand
    kind — two empty runtime values cannot reveal it (Arith.compare_op) *)
 let static_numeric env l r =
@@ -1259,17 +1311,21 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       | `Day_kind k ->
           Arith.date_plus_day_kind ~minus ~matches:(day_kind_pred env world self ~err k) d dur)
   | Binary { op; left_side; right_side; _ } -> (
-      let l = eval_expr env world self ~err (req "Binary.left" left_side) in
-      let r = eval_expr env world self ~err (req "Binary.right" right_side) in
+      let le = req "Binary.left" left_side and re = req "Binary.right" right_side in
+      let l = eval_expr env world self ~err le in
+      let r = eval_expr env world self ~err re in
+      (* the unit is derived only for a leeg operand, the one that coalesces *)
+      let leeg_unit v x = match v with Value.Empty -> declared_unit env x | _ -> Value.Unitless in
+      let units = (leeg_unit l le, leeg_unit r re) in
       match op with
-      | Plus -> Arith.add l r
-      | Min -> Arith.sub_min l r
-      | Reduced_by -> Arith.sub_reduced l r
-      | Times -> Arith.mul l r
-      | Divided_by -> Arith.div_ ~err l r
-      | Divided_by_abs -> Arith.div_abs ~err l r
+      | Plus -> Arith.add ~units l r
+      | Min -> Arith.sub_min ~units l r
+      | Reduced_by -> Arith.sub_reduced ~units l r
+      | Times -> Arith.mul ~units l r
+      | Divided_by -> Arith.div_ ~units ~err l r
+      | Divided_by_abs -> Arith.div_abs ~units ~err l r
       | Power -> Arith.pow_ l r
-      | Percentage_of -> Arith.pct_of l r)
+      | Percentage_of -> Arith.pct_of ~units l r)
   | Rounding { base_expr; mode_kind; decimal_places; _ } -> (
       match base_expr with
       | Some (Function_call { kind = Square_root; call_arguments = [ arg ]; _ }) ->
@@ -3343,15 +3399,17 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
         left_side = Some l; right_side = Some r; _ } ->
       let a = period_timeline env w self ~err ~target ~attr ~target_unit l in
       let b = period_timeline env w self ~err ~target ~attr ~target_unit r in
+      (* a period where an operand is leeg coalesces it into its declared unit *)
+      let units = (period_unit env l, period_unit env r) in
       let scalar =
         match op with
-        | Plus -> Arith.add
-        | Min -> Arith.sub_min
-        | Reduced_by -> Arith.sub_reduced
-        | Times -> Arith.mul
-        | Divided_by -> Arith.div_ ~err
-        | Divided_by_abs -> Arith.div_abs ~err
-        | Percentage_of -> Arith.pct_of
+        | Plus -> Arith.add ~units
+        | Min -> Arith.sub_min ~units
+        | Reduced_by -> Arith.sub_reduced ~units
+        | Times -> Arith.mul ~units
+        | Divided_by -> Arith.div_ ~units ~err
+        | Divided_by_abs -> Arith.div_abs ~units ~err
+        | Percentage_of -> Arith.pct_of ~units
         | Power -> assert false
       in
       seen (Timeline.cut_merge scalar a b)
@@ -3396,6 +3454,15 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
          operator of ch. 1.2 other than the power, the sum of a temporal attribute over a set without a \
          filter, an own temporal attribute, a time-dependent parameter, a literal, an own scalar \
          attribute or a scalar parameter"
+
+(* the unit an operand of the period arithmetic carries by its declarations: a sum
+   over a set is a sum per period here, so it takes its attribute's (§4.6), and
+   every other operand what [declared_unit] derives *)
+and period_unit env e =
+  match e with
+  | Binary { op; left_side = Some l; right_side = Some r; _ } -> operator_unit op (period_unit env l) (period_unit env r)
+  | Function_call { kind = Sum_function; call_arguments = [ x ]; _ } -> declared_unit env x
+  | _ -> declared_unit env e
 
 (* the root's value is the rule's, which its caller records *)
 and scalar_everywhere env w self ~err ~root e =

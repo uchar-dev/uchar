@@ -2879,6 +2879,113 @@ let () =
       ("2024-07-01", "+inf", Some "0");
     ]
 
+(* ch. 1.2 decides the value of a leeg operand, ch. 2.10 its unit: a coalesced
+   operand takes the unit its declarations give it ([units], the left and the
+   right one), so a product, a quotient and a percentage with a leeg operand
+   carry the unit ch. 2.6 gives both operands, and an additive result the left
+   one. A quotient over a filled divisor takes the divisor's own unit. *)
+let () =
+  let per_dg = Ir_v0.Units.canonical_order (Ir_v0.Units.inverted dg) in
+  let unit_is name v value (u : Ir_v0.Ast.measure_unit) =
+    match v with
+    | Value.Num (got, Value.Unit su) -> check name (Q.equal got (q value) && su = u)
+    | other -> check (name ^ " (got " ^ Value.to_string other ^ ")") false
+  in
+  let declared l r = (Value.Unit l, Value.Unit r) in
+  unit_is "ch2.10-empty-factor-times"
+    (Arith.mul ~units:(declared per_dg eur) (num_with_unit per_dg "2") empty_value) "0" (over eur dg);
+  unit_is "ch2.10-two-empty-factors-times" (Arith.mul ~units:(declared per_dg eur) empty_value empty_value) "0"
+    (over eur dg);
+  unit_is "ch2.10-empty-dividend-over-a-filled-divisor"
+    (Arith.div_ ~units:(Value.Unit eur, Value.Unitless) ~err:no_err empty_value (num_with_unit dg "30")) "0"
+    (over eur dg);
+  unit_is "ch2.10-empty-dividend-over-an-empty-divisor"
+    (Arith.div_ ~units:(declared eur dg) ~err:no_err empty_value empty_value) "0" (over eur dg);
+  unit_is "ch2.10-empty-dividend-abs"
+    (Arith.div_abs ~units:(declared eur dg) ~err:no_err empty_value (num_with_unit dg "30")) "0" (over eur dg);
+  unit_is "ch2.10-percentage-of-empty" (Arith.pct_of ~units:(Value.Unitless, Value.Unit eur) (n "10") empty_value) "0"
+    eur;
+  unit_is "ch2.10-empty-left-of-plus" (Arith.add ~units:(declared eur cent) empty_value (num_with_unit cent "5"))
+    "1/20" eur;
+  unit_is "ch2.10-empty-left-of-min" (Arith.sub_min ~units:(declared eur cent) empty_value (num_with_unit cent "5"))
+    "-1/20" eur;
+  (* the operator rules [Eval.declared_unit] composes, as Arith gives them to
+     filled operands *)
+  let operator_is name op l r spelling =
+    check ("ch2.10-operator-unit-" ^ name)
+      (match Eval.operator_unit op l r with
+      | Value.Unit u -> Ir_v0.Units.render u = spelling
+      | Value.Unitless -> spelling = "geen")
+  in
+  operator_is "plus" Ir_v0.Ast.Plus Value.Unitless (Value.Unit eur) "€";
+  operator_is "reducedBy" Ir_v0.Ast.Reduced_by (Value.Unit eur) (Value.Unit cent) "€";
+  operator_is "times" Ir_v0.Ast.Times (Value.Unit per_dg) (Value.Unit eur) "€/dg";
+  operator_is "dividedBy" Ir_v0.Ast.Divided_by (Value.Unit eur) (Value.Unit dg) "€/dg";
+  operator_is "dividedByAbs" Ir_v0.Ast.Divided_by_abs Value.Unitless (Value.Unit dg) "1/dg";
+  operator_is "percentageOf" Ir_v0.Ast.Percentage_of Value.Unitless (Value.Unit eur) "€";
+  operator_is "power" Ir_v0.Ast.Power Value.Unitless Value.Unitless "geen";
+  (* end to end: every rule multiplies a leeg operand, or a composite that is
+     leeg because its operand is, with a unit-bearing factor, scalar and per
+     period; on the scalar side each form of [Eval.declared_unit] once, on the
+     side per period the percentage and the sum over a set, which is a sum per
+     period there and keeps its rate *)
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/empty-operand-unit/" in
+  List.iter
+    (fun fixture ->
+      plays ~ident:("ch2.10-empty-operand-unit-" ^ fixture) ~ir:(read (dir ^ fixture ^ "/ir.json"))
+        ~case_data:(read (dir ^ fixture ^ "/case.json")) (fun _ -> ()))
+    [ "scalar"; "per-period" ];
+  (* the derivation never reads the annotation of a derived position: each
+     operand the scalar fixture multiplies, its annotation replaced by one in dg,
+     still takes the unit its operands give it, and so does a Let around one,
+     whose binder takes its value's *)
+  let doc = Ir_v0.Loader.load_file (corpus_file (dir ^ "scalar/ir.json")) in
+  let env = env_of doc in
+  let lie : Ir_v0.Ast.datatype option =
+    Some (Number { whole_part = true; decimal_places = 0; sign_char = None; measure_unit = Some dg })
+  in
+  let lying : Ir_v0.Ast.expr -> Ir_v0.Ast.expr = function
+    | Binary x -> Binary { x with typ = lie }
+    | Rounding x -> Rounding { x with typ = lie }
+    | Clamp x -> Clamp { x with typ = lie }
+    | Function_call x -> Function_call { x with typ = lie }
+    | Let x -> Let { x with typ = lie }
+    | e -> e
+  in
+  let factor name =
+    List.find_map
+      (fun (r : Ir_v0.Ast.resolved_rule) ->
+        match r.value_node with
+        | Some (Binary { op = Times; left_side = Some x; right_side = Some t; _ }) when r.rr_name = Some name -> Some (x, t)
+        | _ -> None)
+      doc.resolved_rules
+  in
+  let derives name e spelling =
+    check ("ch2.10-declared-unit-" ^ name)
+      (match Eval.declared_unit env (lying e) with
+      | Value.Unit u -> Ir_v0.Units.render u = spelling
+      | Value.Unitless -> false)
+  in
+  List.iter
+    (fun (name, rule, spelling) ->
+      match factor (rule ^ " van een jutter") with
+      | Some (x, _) -> derives name x spelling
+      | None -> check ("ch2.10-declared-unit-" ^ name ^ ": the rule " ^ rule) false)
+    [ ("reducedBy", "nettoheffing", "EUR"); ("dividedBy", "terugrekening", "EUR/dg");
+      ("percentageOf", "deelheffing", "EUR"); ("rounding", "afgeronde heffing", "EUR");
+      ("clamp", "begrensde heffing", "EUR"); ("sum", "vondstheffing", "EUR");
+      ("minimum", "minimumheffing", "EUR"); ("total", "totaalheffing", "EUR") ];
+  match factor "dagheffing van een jutter" with
+  | None -> check "ch2.10-declared-unit-let: the rule dagheffing" false
+  | Some (tarief, loonsom) ->
+      let body =
+        Ir_v0.Ast.Binary
+          { op = Times; left_side = Some (Binder_ref { ident = "x"; source_name = None }); right_side = Some tarief;
+            typ = lie; source_name = None }
+      in
+      derives "let" (Ir_v0.Ast.Let { typ = lie; binder = "x"; value = loonsom; body; source_name = None }) "EUR/dg"
+
 (* WV-3.5: temporal summation — the contributor-skipping rule *)
 let () =
   let p1 = [ seg "2024-01-01" "2024-02-01" (n "50"); seg "2024-02-01" "2024-03-01" (n "60") ] in

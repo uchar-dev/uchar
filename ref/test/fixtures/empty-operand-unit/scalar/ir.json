@@ -1,0 +1,1609 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "loonsom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "heffingstarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "werkduur",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "korting",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "dagbedrag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "day",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "dagheffing",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "nettoheffing",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "terugrekening",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "deelheffing",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "afgeronde heffing",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "begrensde heffing",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "absolute heffing",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vondstheffing",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "totaalheffing",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "minimumheffing",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                },
+                {
+                  "node": "Unit",
+                  "abbreviation": "dg",
+                  "system": "Tijd",
+                  "canonical": "dg",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  },
+                  "exponent": -1
+                }
+              ]
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "EUR",
+                  "system": "Munt",
+                  "canonical": "EUR",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "aanmelding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "aanmeldende jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Munt",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "EUR",
+            "system": "Munt",
+            "canonical": "EUR",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "\u20ac",
+              "euro",
+              "euros"
+            ]
+          }
+        ]
+      },
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "dagheffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "dagheffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De dagheffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "heffingstarief",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn heffingstarief"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "loonsom",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn loonsom"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "zijn heffingstarief maal zijn loonsom"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "nettoheffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "nettoheffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De nettoheffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "Binary",
+                "op": "reducedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "loonsom",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn loonsom"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "korting",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn korting"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "zijn loonsom verminderd met zijn korting"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "heffingstarief",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn heffingstarief"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "(zijn loonsom verminderd met zijn korting) maal zijn heffingstarief"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "terugrekening van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "terugrekening",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De terugrekening van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "loonsom",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn loonsom"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "werkduur",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn werkduur"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    },
+                    {
+                      "node": "Unit",
+                      "abbreviation": "dg",
+                      "system": "Tijd",
+                      "canonical": "dg",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      },
+                      "exponent": -1
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "zijn loonsom gedeeld door zijn werkduur"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "werkduur",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn werkduur"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "(zijn loonsom gedeeld door zijn werkduur) maal zijn werkduur"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "deelheffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "deelheffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De deelheffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "Binary",
+                "op": "percentageOf",
+                "left": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "loonsom",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn loonsom"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "10% van zijn loonsom"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "heffingstarief",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn heffingstarief"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "(10% van zijn loonsom) maal zijn heffingstarief"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "afgeronde heffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afgeronde heffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De afgeronde heffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "Rounding",
+                "base": {
+                  "node": "AttributeReference",
+                  "attribute": "loonsom",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn loonsom"
+                  }
+                },
+                "mode": "halfAwayFromZero",
+                "decimals": 0,
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "zijn loonsom rekenkundig afgerond op 0 decimalen"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "heffingstarief",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn heffingstarief"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "(zijn loonsom rekenkundig afgerond op 0 decimalen) maal zijn heffingstarief"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "begrensde heffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "begrensde heffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De begrensde heffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "Clamp",
+                "base": {
+                  "node": "AttributeReference",
+                  "attribute": "loonsom",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn loonsom"
+                  }
+                },
+                "minimum": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "0"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified",
+                    "unit": [
+                      {
+                        "node": "Unit",
+                        "abbreviation": "EUR",
+                        "system": "Munt",
+                        "canonical": "EUR",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        }
+                      }
+                    ]
+                  },
+                  "source": {
+                    "snippet": "0 \u20ac"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "zijn loonsom, met een minimum van 0 \u20ac"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "heffingstarief",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn heffingstarief"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "(zijn loonsom, met een minimum van 0 \u20ac) maal zijn heffingstarief"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "absolute heffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "absolute heffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De absolute heffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "BuiltinCall",
+                "kind": "absoluteValue",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "loonsom",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn loonsom"
+                    }
+                  }
+                ],
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "de absolute waarde van (zijn loonsom)"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "heffingstarief",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn heffingstarief"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "(de absolute waarde van (zijn loonsom)) maal zijn heffingstarief"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vondstheffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vondstheffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De vondstheffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "Aggregation",
+                "kind": "sum",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "waarde",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "de waarde van alle vondsten van de Jutter"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "aanmelding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "de som van de waarde van alle vondsten van de Jutter"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "heffingstarief",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn heffingstarief"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "(de som van de waarde van alle vondsten van de Jutter) maal zijn heffingstarief"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "totaalheffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "totaalheffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De totaalheffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "Aggregation",
+                "kind": "total",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "dagbedrag",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn dagbedrag"
+                    }
+                  }
+                ],
+                "elementType": "Jutter",
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "het totaal van zijn dagbedrag"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "heffingstarief",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn heffingstarief"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "(het totaal van zijn dagbedrag) maal zijn heffingstarief"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "minimumheffing van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "minimumheffing",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De minimumheffing van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "Aggregation",
+                "kind": "minimum",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "waarde",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "de waarde van alle vondsten van de Jutter"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "aanmelding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified",
+                  "unit": [
+                    {
+                      "node": "Unit",
+                      "abbreviation": "EUR",
+                      "system": "Munt",
+                      "canonical": "EUR",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    }
+                  ]
+                },
+                "source": {
+                  "snippet": "de minimale waarde van de waarde van alle vondsten van de Jutter"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "heffingstarief",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn heffingstarief"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified",
+                "unit": [
+                  {
+                    "node": "Unit",
+                    "abbreviation": "EUR",
+                    "system": "Munt",
+                    "canonical": "EUR",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    }
+                  },
+                  {
+                    "node": "Unit",
+                    "abbreviation": "dg",
+                    "system": "Tijd",
+                    "canonical": "dg",
+                    "factorToCanonical": {
+                      "num": 1,
+                      "den": 1
+                    },
+                    "exponent": -1
+                  }
+                ]
+              },
+              "source": {
+                "snippet": "(de minimale waarde van de waarde van alle vondsten van de Jutter) maal zijn heffingstarief"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

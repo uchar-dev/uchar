@@ -52,6 +52,9 @@
   (glob_files fixtures/period-arithmetic/open-whole-period/*.json)
   (glob_files fixtures/period-arithmetic/condition/*.json)
   (glob_files fixtures/period-arithmetic/total-over-pro-rata/*.json)
+  ; a leeg operand coalesces into the unit its declarations give it, scalar and per period
+  (glob_files fixtures/empty-operand-unit/scalar/*.json)
+  (glob_files fixtures/empty-operand-unit/per-period/*.json)
   ; the worked examples of a condition per period and of two writers per day
   (glob_files fixtures/conditions-per-period/afdracht/*.json)
   (glob_files fixtures/conditions-per-period/afdracht-botsing/*.json)

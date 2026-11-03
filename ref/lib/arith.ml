@@ -115,29 +115,36 @@ let num_exn ctx = function
   | Num (q, u) -> (q, u)
   | v -> fault "%s: expected a number, got %s" ctx (to_string v)
 
-(* coalesce empty to 0 (whitelisted contexts only, ch. 1.3) *)
-let coalesce0 ctx = function
-  | Empty -> (Q.zero, Unitless)
+(* coalesce empty to 0 (whitelisted contexts only, ch. 1.3). The 0 takes [unit],
+   the unit the operand's declarations give it (ch. 2.10): the empty rule of
+   ch. 1.2 decides the value of a leeg operand, not its unit, so a product with
+   a leeg factor carries the unit of both factors (ch. 2.6, rule 2) *)
+let coalesce0 ?(unit = Unitless) ctx = function
+  | Empty -> (Q.zero, unit)
   | v -> num_exn ctx v
 
 (* --- additive / multiplicative operators (ch. 1.2a + 2.2 + 2.6) -------- *)
 
-let add l r =
-  let lq, lu = coalesce0 "plus" l and rq, ru = coalesce0 "plus" r in
+(* [units] is the unit each operand's declarations give it, read only where that
+   operand is leeg; without it a leeg operand coalesces to a unitless 0 *)
+let no_units = (Unitless, Unitless)
+
+let add ?(units = no_units) l r =
+  let lq, lu = coalesce0 ~unit:(fst units) "plus" l and rq, ru = coalesce0 ~unit:(snd units) "plus" r in
   Num (Q.add lq (restate_into lu rq ru), join_units lu ru)
 
 (* min: both operands coalesce *)
-let sub_min l r =
-  let lq, lu = coalesce0 "min" l and rq, ru = coalesce0 "min" r in
+let sub_min ?(units = no_units) l r =
+  let lq, lu = coalesce0 ~unit:(fst units) "min" l and rq, ru = coalesce0 ~unit:(snd units) "min" r in
   Num (Q.sub lq (restate_into lu rq ru), join_units lu ru)
 
 (* verminderd met: left propagates, right coalesces (§6.3) *)
-let sub_reduced l r =
+let sub_reduced ?(units = no_units) l r =
   match l with
   | Empty -> Empty
   | _ ->
       let lq, lu = num_exn "verminderd met" l in
-      let rq, ru = coalesce0 "verminderd met" r in
+      let rq, ru = coalesce0 ~unit:(snd units) "verminderd met" r in
       Num (Q.sub lq (restate_into lu rq ru), join_units lu ru)
 
 let unit_option = function Unitless -> None | Unit u -> Some u
@@ -145,23 +152,28 @@ let unit_of_option = function None -> Unitless | Some u -> Unit u
 
 (* maal (ch. 2.6, rule 2): the unit of the product, and on the value the factor
    of the right factors a left factor of their class took in *)
-let mul l r =
-  let lq, lu = coalesce0 "maal" l and rq, ru = coalesce0 "maal" r in
+let mul ?(units = no_units) l r =
+  let lq, lu = coalesce0 ~unit:(fst units) "maal" l and rq, ru = coalesce0 ~unit:(snd units) "maal" r in
   let u, powers = Ir_v0.Units.times (unit_option lu) (unit_option ru) in
   Num (Q.mul (Q.mul lq rq) (restatement powers), unit_of_option u)
 
 (* percentage van: l/100 × r, exactly; result carries the right unit *)
-let pct_of l r =
-  let lq, _ = coalesce0 "percentage van" l and rq, ru = coalesce0 "percentage van" r in
+let pct_of ?(units = no_units) l r =
+  let lq, _ = coalesce0 "percentage van" l and rq, ru = coalesce0 ~unit:(snd units) "percentage van" r in
   Num (Q.mul (Q.div lq (Q.of_int 100)) rq, ru)
 
 (* gedeeld door: dividend (left) tested first and coalesces; an empty
    divisor under a filled dividend propagates as error-empty (§6.5), and so
    does a numeric zero divisor (ch. 1.4 point 4: v1 routes it into the §9.5
-   channel; the v0 mirror faults) *)
-let div_gen ~err ~collapse l r =
+   channel; the v0 mirror faults). A leeg dividend gives 0 before the divisor
+   is tested, in the unit ch. 2.6 (rule 3) gives the quotient: the dividend's
+   declared unit over the divisor's, its own where it is filled. *)
+let div_gen ?(units = no_units) ~err ~collapse l r =
   match l with
-  | Empty -> Num (Q.zero, Unitless)
+  | Empty ->
+      let ru = match r with Num (_, u) -> u | _ -> snd units in
+      let u, _ = Ir_v0.Units.divide (unit_option (fst units)) (unit_option ru) in
+      Num (Q.zero, unit_of_option u)
   | _ -> (
       let lq, lu = num_exn "gedeeld door" l in
       match r with
@@ -205,8 +217,8 @@ let round_v mode decimals = function
 
 (* abs-division variant: quotient truncated toward zero at 5 decimals —
    a defined collapse point (ch. 2.2) *)
-let div_ ~err l r = div_gen ~err ~collapse:(fun q u -> Num (q, u)) l r
-let div_abs ~err l r = div_gen ~err ~collapse:(fun q u -> Num (round_q Toward_zero 5 q, u)) l r
+let div_ ?units ~err l r = div_gen ?units ~err ~collapse:(fun q u -> Num (q, u)) l r
+let div_abs ?units ~err l r = div_gen ?units ~err ~collapse:(fun q u -> Num (round_q Toward_zero 5 q, u)) l r
 
 (* --- roots and powers (ch. 2.2) ---------------------------------------- *)
 
