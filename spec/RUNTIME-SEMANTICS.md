@@ -2817,9 +2817,12 @@ geheel(tl, grid, toets) = for EVERY bucket B touched by tl:
 ```
 
 - A value test (ordering, equality, filled, characteristic-holds) demands
-  satisfaction on **every day of each touched bucket**: a gap day, a leeg
-  day, or a partial-coverage bucket fails it — "at every moment of the
-  whole period" is literal.
+  satisfaction on **every day of each touched bucket** — "at every moment
+  of the whole period" is literal. A gap day and a day under an explicit
+  leeg segment read leeg (ch. 3.1): such a day fails an ordering, the
+  gevuld test and the characteristic-holds test, so a partial-coverage
+  bucket fails those, while a comparison reads it with ch. 1.2 (the leeg
+  day in a comparison, below).
 - The **leeg test** is the one test a leeg day satisfies: a gap day and
   a day under an explicit leeg segment both read leeg (ch. 3.1), so a
   timeline leeg throughout its touched buckets passes. Its threshold is
@@ -2831,7 +2834,8 @@ geheel(tl, grid, toets) = for EVERY bucket B touched by tl:
   every timeline.
 - A timeline with **no segments at all touches no bucket and passes
   vacuously** (the qualifier's negation then fails). A leeg comparison
-  bound makes the test false, never a fault. Negation complements the
+  bound is a leeg side of the comparison on every day, read with ch. 1.2
+  as a leeg day is (below), never a fault. Negation complements the
   folded result.
 - A failed **to-one** navigation contributes a null timeline, which passes
   vacuously (the ch. 1.2 leeg-navigation discipline, lifted).
@@ -2931,21 +2935,60 @@ negation complements each verdict — a → onwaar, b → onwaar, d → **waar**
 — and under the **month** grid row d passes (January through June are
 each touched in full) while a value on [2026-01-15, 2026-03-01) fails it
 (January is touched for 17 of 31 days). A **leeg** segment inside the
-period is a day that does not satisfy the test: 50 on the first half of
-2026 and explicit leeg on the second reads **onwaar**, never a fault
-(ch. 1.2d — a comparison against leeg is false).
+period gives days that read leeg, and no ordering holds on a leeg side:
+50 on the first half of 2026 and explicit leeg on the second reads
+**onwaar** under `> 40`, never a fault (ch. 1.2d — an ordering against
+leeg is false).
 
 An explicit leeg segment reads as a gap for every test, the comparisons
-included (ch. 3.1; decided 2026-09-26): it touches no bucket, and none of
-its days satisfies a test, the inequality included, although ch. 1.2d
-makes a scalar inequality against leeg true. Worked examples (absolute;
-`ref/` tests verbatim, tested under the year grid): 50 on 2025, explicit
-leeg on 2026 and 50 on 2027 → `> 40` **waar** and `≠ 40` **waar**, for
-2026 is not touched; 50 on the first half of 2026 and explicit leeg on the
-second → `≠ 40` **onwaar** (181 of 365 days); explicit leeg on 2026 alone
-→ `> 40` **waar**, no bucket touched. Only the Drools backend writes such
-a segment to a member (the temporal sum of ch. 3.5); a case input cannot
-carry one.
+included (ch. 3.1; decided 2026-09-26): it touches no bucket, and its
+days read leeg as gap days do, so a comparison holds on them exactly
+where it holds on a gap day (the next paragraph). Worked examples
+(absolute; `ref/` tests verbatim, tested under the year grid): 50 on
+2025, explicit leeg on 2026 and 50 on 2027 → `> 40` **waar** and `≠ 40`
+**waar**, for 2026 is not touched; 50 on the first half of 2026 and
+explicit leeg on the second → `≠ 40` **waar** (181 days 50 and 184 leeg
+days, 365 of 365) and `> 40` **onwaar** (181 of 365); explicit leeg on
+2026 alone → `> 40` **waar**, no bucket touched. Only the Drools backend
+writes such a segment to a member (the temporal sum of ch. 3.5); a case
+input cannot carry one.
+
+**A leeg day in a comparison** (decided by the owner 2026-11-03, point
+4b of `spec/proposals/IMPLICIT-TIME.md`; RegelSpraak §8.2 with typeringen
+§5.3 and §5.6). Each day of a touched bucket asks the comparison of
+ch. 1.2, and a day has a leeg side where the tested timeline reads leeg
+on it — a gap day or a day under an explicit leeg segment — and on every
+day where the bound is leeg. An ordering is onwaar on a leeg side;
+"gelijk aan" between numbers holds on two leeg sides and is onwaar on
+one; "ongelijk aan" holds on exactly one; a date takes the date row of
+ch. 1.2, where two leeg dates are not equal. satisfied-days(B, toets)
+counts a leeg day on which the comparison holds, as any other day. Every
+touched bucket holds a filled day, which no leeg bound equals, so
+"gelijk aan" against a leeg bound fails every touched bucket, and the
+date row and the numeric row give the same verdicts here. The clip of
+ch. 3.6 reads a leeg period of the same comparison in the same way, so
+"gedurende de tijd dat" and "gedurende het gehele" read a leeg day
+alike. The touched buckets do not change (they are the timeline's,
+above), nor do the leeg and gevuld tests.
+Worked examples (absolute; `ref/` tests and the ASP backend's suite
+verbatim, year grid; 2026 has 365 days): 50 on [2026-01-01, 2026-07-01)
+tested `≠ 40` → 181 days 50 and 184 gap days, 365 of 365 → **waar**, and
+under "niet gedurende …" **onwaar**; tested `≠ 50` → 184 of 365 →
+**onwaar**; tested `= 50` → 181 of 365 → **onwaar**. Against a leeg
+bound: 50 on the whole of 2026 → `≠` 365 of 365 **waar**, `=` 0 of 365
+**onwaar**; 50 on [2026-01-01, 2026-07-01) → `≠` 181 of 365 **onwaar**
+(a gap day and the bound are both leeg), `=` 184 of 365 **onwaar**.
+`corpus/golden/jutterswet-gehele-jaar-lege-grens` carries both bounds,
+both gaps and the qualifier's negation.
+
+Worked example `WV-3.9-lege-dag` (absolute; the `ref/` tests
+`WV-3.9-lege-dag-*` verbatim). A month-granular attribute `peilstand`, a
+scalar `drempelstand`, "gedurende het gehele jaar" over 2024 (366 days):
+
+| # | `peilstand` | `drempelstand` | "ongelijk aan" | "gelijk aan" |
+|---|---|---|---|---|
+| K1 | 7 on [2024-01-01, 2024-02-01) | 5 | **waar**: 31 days 7 ≠ 5 and 335 gap days leeg ≠ 5, 366 of 366 | onwaar: 0 of 366 |
+| K2 | 7 on [2024-01-01, 2025-01-01) | leeg | **waar**: 366 days 7 ≠ leeg | onwaar: 0 of 366 |
 
 When the temporal side stands on the RIGHT ("40 is kleiner dan zijn
 dagvergoeding gedurende het gehele jaar") the operator is **reversed**,
