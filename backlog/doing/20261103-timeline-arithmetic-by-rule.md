@@ -242,3 +242,203 @@ Groen op `3178e8772` (gerebased op `f6ad326c5`): 17 gates en de drie bouwstappen
 (`out/gates/20261103-115529/`). Gemeten: gate 6 1036 cases ref = clingo, clingo-suite 2401 checks; gate 8 62 rode
 cases, 36 foutsoorten in ch. 5.7b, Drools-poot 19 niet-gedragen met reden; gate 10 179 rgs-goldens byte-gelijk; gate
 12 PASS met `jutterswet-maandloon` als `EXCLUDE DROOLS-105`. De kaart blijft in `doing/` voor stap B.
+
+## Result: stap B (bouwer, 2026-11-03)
+
+Branch `card/timeline-arithmetic-by-rule`, gerebased op main `02be64433` (stap A van
+`timeline-arithmetic-per-period`; zonder conflict). Niet gemerged, niet gepusht. Beschermd in deze stap, dus
+**voorstel**: `scripts/check-drools.sh`, `scripts/check-red.sh`.
+
+### Commits
+
+- `8f549a67d` drools: rekenen per periode over alle tijd met truth maintenance
+- `283d0afbc` gates 8 en 12: maandloon speelt, de rode casus pint EF-036 (voorstel)
+- `eaac6ce19` tests: de schrijfgrens per segment van rekenen per periode
+- `ab00aa269` tests: een lid met een open einde in de vouw per lid, en de rode stand
+- het commit van dit Result
+
+### Rood eerst (op `53ab929d5`, letterlijk; `werk/timeline-arithmetic-by-rule-drools/logs/00-red-first.log`)
+
+- golden, beide takken: `EXCLUDE DROOLS-105: transpiler SKIP: regel: maandloon van een jutter — a value of the
+  time-dependent target 'maandloon' of Jutter that is neither a time-proportional part nor a day count ('zijn
+  strandloon plus zijn stormtoeslag'): this branch does not yet carry this form (RUNTIME-SEMANTICS ch. 3.4, 3.5,
+  3.11); no golden with cases writes one`
+- rode casus, `DroolsRedMain`: `EXCLUDE DROOLS-105: transpiler SKIP: regel: opgehoogd strandloon van een jutter — …
+  ('5 plus zijn strandloon') …`, dus geen FAULT EF-036.
+- De nieuwe getuige `TmsPeriodArithmeticWitnessTest` op `53ab929d5` (met alleen de testbestanden erbij): alle elf
+  tests rood, de vormen op die DROOLS-105-weigering en de klip, de vouw per lid en de gehele-periodekwalificator
+  op de case-lezer, `segment op '…' mist een 'from'-datum` (`logs/19-red-witness.log`).
+
+### Na de bouw
+
+- golden `jutterswet-maandloon`: `PLAYED 5` op beide takken; rode casus: `FAULT EF-036
+  {"attribute":"opgehoogde strandloon","label":"J1"}: OpenSegmentFault: error in the rule "opgehoogd jaarloon van een
+  jutter": the temporal total of "opgehoogde strandloon" on "J1" meets a segment with an open bound carrying 5: …`
+- de lezingen van de vijf cases zijn per regel gelijk aan de trace van ref, op beide takken.
+- de twee goldens van `timeline-arithmetic-per-period` stap A blijven op beide takken `EXCLUDE DROOLS-105`
+  (`dagrente`, `loonproduct van een jutter`: maal, een andere operator dan de kaart draagt), dus hun
+  kanaalregels houden.
+
+### Wat er veranderde
+
+- **Case-lezer** (`CaseRunner.timelineSegments`): een weggelaten `from` of `to` van een segment van een invoer en van
+  een verwachte tijdlijn is een open grens, op de `Segment`-bean null; alleen het eerste segment mag open beginnen en
+  alleen het laatste open eindigen (de volgordecontrole), en een open grens ligt op geen raster. De verdictregel
+  schrijft `-inf`/`+inf`. `characteristicTimelines` eist beide grenzen (VB-A6). Een case zonder open grens leest en
+  vergelijkt als voorheen.
+- **`Period`**: een open grens is `Period.OPEN_FROM` (`LocalDate.MIN`) of `Period.OPEN_TO` (`LocalDate.MAX`);
+  `Period.list` leest een null-grens van een bean als open, `Period.beans` schrijft hem als null terug.
+- **Runtime, zuivere functies** (`PeriodArithmetic`, precedent `Allocation.compute`): `scalar`, `plus`, `minus`
+  (knip over alle tijd, leeg → 0), `sum` (bijdragers overslaan, terugval over alle tijd, ook bij nul bijdragers),
+  `written` (gevulde segmenten als maximale reeksen, leeg een gat, schrijfgrens per segment, EF-006), `total` (open 0
+  telt 0, open ≠ 0 geeft `OpenSegmentFault`, EF-036, `attribute`, `label`), `openNonZero`, `withoutOpenZeros`,
+  `openSegmentFault`. `OpenSegmentFault` is een evaluatiefout, wordt bij het terugschrijven naar het caselabel
+  genoemd en is een foutsoort voor de rode route (`CaseRunner.faultKinds`) en de dump.
+- **Lowering met truth maintenance** (`TmsTranspiler`, één analyse, beide weergaven): `timelineRule` laat plus/min en
+  de som met elementtype toe (`isPeriodArithmetic`, de vraag van `Eval.is_period_arithmetic`); `periodArithmetic`,
+  `periodOperand`, `scalarOperand`, `periodSum`. De som is een vouw waarvan elk lid zijn hele tijdlijn bijdraagt
+  (`Consequence.Input.MemberValue.whole`, accumulate `LIST`); een lid als emmerscalair geeft een lidfout in de woorden
+  van ref. Het eigen totaal van een doel van rekenen per periode (`periodArithmeticTarget`) leest de tijdlijn heel
+  (`PERIOD_TOTAL`, afwezig → 0); de klip loopt ook via `PERIOD_TOTAL`; de vouw per lid krijgt een derde lidfoutregel
+  (`OPEN_NONZERO`, `MemberFault` met `openAttribute`). De gehele-periodekwalificator faalt op een open segment
+  (`ComputeFault`, de zin van ref).
+- **Lezingen**: de knopen van een waarde van rekenen per periode zijn `unreached`, zoals de trace van ref ze leest
+  (zie open punt 1); `SessionDump` schrijft een open grens als `-`, zoals ref.
+- **README** van de backend: de alinea "Period arithmetic over all time" en de weigeringen.
+
+### Codes en pins, oud en nieuw
+
+- Nieuw, beide catalogi: `DROOLS-302` (`period-arithmetic-condition`, REFUSAL), `DROOLS-303` (`…-operand`, REFUSAL),
+  `DROOLS-304` (`…-time-parameter`, REFUSAL), `DROOLS-305` (`period-sum-subselection`, REFUSAL), `DROOLS-306`
+  (`…-restatement`, LIMIT), `DROOLS-307` (`…-inexact`, LIMIT), `DROOLS-308` (`…-finer-operand`, REFUSAL); `EF-036` en
+  `PART.desc.period-arithmetic` in beide catalogi. Register 301 → 308 codes; geen floor gewijzigd.
+- `DROOLS-105` blijft (niet `RETIRED`): het geeft elke andere waarde van een tijdlijndoel, onder meer maal, en de twee
+  goldens van `timeline-arithmetic-per-period` rusten erop. De zin noemt nu "nor the period arithmetic of plus, min or
+  a sum per period". `DROOLS-216` blijft, voor het totaal zonder klip over een tijdlijn van een pro rata of een
+  dagentelling.
+- Gate 12 (voorstel): `EXPECTED_CHANNEL` − `jutterswet-maandloon|EXCLUDE DROOLS-105|…`; `EXPECTED_PLAYED` 319 → 320,
+  met een regel in het commentaarblok.
+- Gate 8 (voorstel): de uitsluiting `jutterswet-totaal-open-segment|EXCLUDE DROOLS-105 …` weg; het Drools-been pint de
+  casus nu op `EF-036` met `attribute` en `label`: 44 fault-gepind (was 43), 18 niet-gedragen (was 19), 16 EXCLUDE met
+  code (floor 16).
+- Tests die de kaart omdraait, oud → nieuw:
+  - `TmsTimelineRefusalWitnessTest`, rij `som-over-tijdlijnen`: DROOLS-105 → weg; hetzelfde document speelt in
+    `TmsPeriodArithmeticWitnessTest.the_sum_per_period_that_the_branch_refused_plays` (50, 70, 10).
+  - `TemporalSetFoldRangeWitnessTest`: `the_temporal_set_fold_over_a_unique_pair_is_refused` (DROOLS-105) →
+    `…_plays` (19 / 17 / 12, beide takken); `the_temporal_set_fold_reads_the_wire_binding_on_a_repeated_pair`:
+    geweigerd → speelt.
+  - `RoleFieldReaderWitnessTest.the_temporal_set_summation_refuses_a_join_without_field`: verwachte zin DROOLS-105 →
+    de zin van de bereikafleiding ("een Aggregation over de enkelvoudige elementrol 'vondst' wiens zusterrol
+    'bewarende jutter' meervoudig is …"), nog steeds gelijk op beide takken.
+  - Plangetuigen: `FoldPlanWitnessTest` drukt `whole`, `open` en `timeline` af en pint de nieuwe lidfoutregel bij
+    `jutterswet-keurlast` en de plannen van de som per periode (`a_sum_per_period_with_its_member_fault`, nieuw);
+    `TestTermWitnessTest` de toets `OPEN_NONZERO`; `RouteWitnessTest` de route `OPEN_SEGMENT_FAULT` en de extra
+    `boolean` van `contribution`; `FormsPlan` twee vormen erbij en het fragment `"MAAND", true)` →
+    `"MAAND", true, false)`.
+- Nieuwe getuige `TmsPeriodArithmeticWitnessTest` (11 tests): plus en min genest met een scalair en het totaal erover
+  (24 volgorden × 2 takken), de som per periode met en zonder terugval over afgeleide ledentijdlijnen (24 × 2), het
+  geweigerde document dat nu speelt, EF-036 op het eigen totaal (2 × 2), de klip en de vouw per lid (open begin én open
+  einde), de emmerscalair als operand en als lid, de gehele-periodewandeling, de schrijfgrens, de case-lezer en de
+  weigeringen 302–308 en 105 op beide takken in één zin. Gemeten: verifier, ref en clingo laten de vier speelbare
+  documenten van `main` door (`logs/08-ref-clingo-witness.log`).
+
+### Mutaties (niet gecommit; `logs/18-mutations.log`, `logs/21-mutations.log`)
+
+| # | mutatie | uitkomst |
+|---|---|---|
+| M1 | knip zonder open uiteinden | 3 tests rood (A, B, D) |
+| M2 | terugval zonder open uiteinden | B rood |
+| M3 | open segment telt altijd 0 in het totaal | eigen totaal en klip rood |
+| M4 | gelijke buren niet samengevoegd | A en B rood |
+| M5 | geen schrijfgrens per segment | schrijfgrens rood |
+| M6 | `Period.list` leest null niet als open | klip, gehele periode, vouw per lid rood |
+| M7 | terugschrijven zet het datumuiterste op de bean | A, B, D rood |
+| M8 | case-lezer eist `from` en `to` | 6 tests rood |
+| M9 | open begin na het eerste segment toegelaten | D rood |
+| M10 | bijdrage negeert een open segment ≠ 0 | eerst groen (alleen een open begin, de lidfout dekte het); getuige uitgebreid met een open einde (`ab00aa269`), daarna rood |
+| M11 | gehele-periodewandeling zonder weigering | de JVM van surefire valt om: `OutOfMemoryError` in `rsGeheelPeriode` |
+| M12 | voorwaarde niet geweigerd | E rood |
+| M13 | knopen niet als onbereikt genoteerd | `--readings` op de golden: `ERROR IllegalStateException: … de analyse noteerde geen term voor knoop 1` (gate 17 rood) |
+| M14 | lezing schrijft een open grens als datum | lezing van regel 5 wijkt af van ref (gate 17 rood) |
+| M15 | EF-036 niet uit de fout gelezen | `DroolsRedMain`: `FAULT OpenSegmentFault: …` zonder code (gate 8 rood) |
+| M16 | klip-totaal via `rsTijdTotaal` | klip rood |
+| M17 | eigen totaal van een doel van rekenen per periode geweigerd | A en eigen totaal rood |
+| M18 | geen lidfoutregel over een open segment | vouw per lid rood |
+
+### Voorgestelde CONSTRUCTS-tekst (rij 11, vervangt het voorstel van stap A)
+
+> **Landed (2026-11-03, card timeline-arithmetic-by-rule):** plus, min and the sum per period (RS ch. 3.4, 3.5) as
+> the value of a rule on a temporal attribute target, over **all time** (maintainer decision 2026-11-03,
+> `spec/proposals/IMPLICIT-TIME.md` point 2): a timeline divides all time, a segment may have an open bound, a scalar
+> operand holds on every day; the case format omits `from`/`to` for an open bound; the temporal total counts an open
+> segment of 0 as 0 and faults on any other value (EF-036). Executed by ref, the ASP backend (`#inf`/`#sup`) and both
+> branches of the Drools backend (`PeriodArithmetic`, an open bound `LocalDate.MIN`/`MAX` in a `Period` and null on a
+> bean); witness `jutterswet-maandloon`, red case `jutterswet-totaal-open-segment`. Tracked v1 delta: the v0 mirror's
+> span domain (a gap outside the operands' span, and an empty timeline for a fallback sum over no contributor) is
+> replaced by all time, following spec §5.1.4.1 and ALEF.
+
+### Voorgestelde tekst elders (beschermd of buiten mijn may-touch, voor de hoofdsessie)
+
+- `CLAUDE.md`, gate 12, na de zin over `subtype-characteristic-in-fold-filter`: "Since the card
+  `timeline-arithmetic-by-rule` (2026-11-03) the lowering writes the period arithmetic of RUNTIME-SEMANTICS ch. 3.4
+  and 3.5 over all time (`PeriodArithmetic`): an open bound is `LocalDate.MIN`/`LocalDate.MAX` in a `Period` and null
+  on a bean, and a total over an open segment that is not 0 faults with EF-036 (`OpenSegmentFault`)."
+- RS ch. 3.11, eerste opsommingspunt: "Executed by `ref` and the ASP backend" → "Executed by `ref`, the ASP backend
+  and both branches of the Drools backend". RS ch. 3.12, rij "Plus, min and the sum per period": "both Drools branches
+  refuse it by name (DROOLS-105)" → "and both Drools branches"; "refused by name in both OCaml executors" → "in every
+  executor".
+- `corpus/red/jutterswet-totaal-open-segment/NOTE.md`, laatste zin: "The Drools backend refuses the rule that writes
+  the timeline (DROOLS-105), which the gate-8 exclusion list records." → "The Drools backend faults alike on both
+  branches."
+
+### Voorlopige besluiten
+
+- VB-B1 — Een open grens is in `Period` het uiterste van het datumbereik, zodat `rsTijdKnip`, `rsTijdKnipNiet`,
+  `rsTijdConditie`, de pro rata (die de basis op een emmerbegin leest) en de vergelijkingen ongewijzigd blijven; alleen
+  een telling van eenheden en een emmerwandeling moeten ernaar vragen. Op de bean is hij null, de vorm van de case.
+  Gevolg voor de distributie: een `Segment` van een geschreven tijdlijn kan nu `van` of `tot` null hebben.
+- VB-B2 — De knopen van een waarde van rekenen per periode lezen `unreached`, gelijk aan de trace van ref, zodat gate
+  17 vergelijkt (zie open punt 1).
+- VB-B3 — Eenheden: geen herrekening (DROOLS-306, LIMIT); een eenheidloze kant neemt de andere over (ch. 2.6). Een doel
+  of scalaire operand van de onbegrensde vorm, en een literal die niet eindigt, weigert de tak (DROOLS-307), omdat een
+  segment een decimaal houdt. Een operand op een fijner raster dan het doel weigert de tak bij naam (DROOLS-308), naar de
+  regel van ch. 3.4; ref en clingo controleren dat niet (bevinding 4 van IMPLICIT-TIME §5).
+- VB-B4 — EF-036 ook op de klip en de vouw per lid (RS ch. 3.6, zoals ref en clingo): `PERIOD_TOTAL` voor de klip,
+  een lidfoutregel per lid met een open segment ≠ 0 voor de vouw, het lid als label; de bijdrage van zo'n lid valt weg,
+  ook met een open einde, waar `rsTijdTotaal` anders een `DateTimeException` gooit.
+- VB-B5 — De gehele-periodekwalificator over een segment met een open grens faalt met een `ComputeFault` in de zin van
+  ref (geen EF-code, zoals in ref).
+- VB-B6 — Een doel van rekenen per periode waarvan de case de invoer als emmerscalair geeft en dat de regel niet
+  schrijft (een staand doel met een lege som), faalt bij het eigen totaal met een `InputFormFault` (ch. 8.4). Geen
+  golden heeft het; ref telt daar leeg.
+- VB-B7 — Het eigen totaal van een afwezige tijdlijn van zo'n doel is 0 (VB-A4, RS ch. 3.6). Gemeten op een document
+  buiten de repo (de som zonder terugval over nul vondsten, totaal): ref, clingo en Drools geven alle drie 0.
+- VB-B8 — Een lid als emmerscalair faalt in de som per periode vóór de terugval wordt geëvalueerd; ref evalueert de
+  terugval eerst. Verschil alleen waar beide falen.
+
+### Open punten
+
+1. **De trace van ref leest de knopen van een waarde van rekenen per periode als `unreached`**: `ref/lib/reading.ml`
+   (de arm van een tijdsafhankelijk doel) rekent de waarde via `Eval.run_pro_rata`, niet via
+   `run_period_arithmetic`, dus de waarnemer ziet geen knoop. RS ch. 5.12 vraagt hun waarden. De Drools-lezingen volgen
+   ref, zodat gate 17 groen is; een kaart die de trace de tijdlijnen laat lezen, moet `TmsTranspiler.unreached`
+   tegelijk weghalen.
+2. De distributie (`regelspraak-toolchain`) leest de beans: een `Segment` met een null-grens bij de pin-bump nalopen.
+3. De drie tekstvoorstellen hierboven (RS ch. 3.11/3.12, NOTE van de rode casus, CLAUDE.md) zijn niet aangebracht.
+
+### `make gates`
+
+Groen op `ab00aa269` (gerebased op `02be64433`): 17 gates en de drie bouwstappen rc=0, `after-run` rc=0, 326 s
+(`out/gates/20261103-130727/`):
+
+```
+01-self-contained rc=0 2s     02-ir-schema rc=0 127s   04-case-schema rc=0 7s   03-verifier rc=0 38s
+05-oracle rc=0 22s            06-clingo rc=0 266s      07-noop rc=0 13s         08-red rc=0 147s
+09-catala rc=0 6s             10-regelspraak rc=0 233s 11-toka-parity rc=0 217s 12-drools rc=0 326s
+13-reftype rc=0 281s          14-flogic rc=0 2s        15-graph rc=0 47s        16-scenario rc=0 38s
+17-readings rc=0 244s         after-run rc=0 0s        end 2026-11-03 13:12:53 326s red=0
+```
+
+Gemeten: gate 12 `played matches the pinned 320`, de DRL-tekst-tak 320, kanaalvloer 49 met naam, JUnit 1787 tests
+(nul skips, floor 1573); gate 8 Drools-been 44 fault-gepind, 18 niet-gedragen, 16 EXCLUDE met code; gate 17 320 goldens
+en 906 cases op beide takken vergeleken, 0 afwijkingen. De kaart blijft in `doing/`.
