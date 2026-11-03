@@ -226,6 +226,24 @@ let time_unit_of_spelling s =
 let time_unit_of_unit (e : measure_unit) =
   Option.bind (Units.atom_name e) time_unit_of_spelling
 
+(* The two families of the calendar (RUNTIME-SEMANTICS ch. 3.6, the calendar):
+   the units that count in days and the units that count in months. Within a
+   family a factor is exact (a week is seven days, a year twelve months);
+   between the two no factor is: a month or a year has no fixed number of
+   days, so the temporal total crosses them by the actual length of the
+   calendar unit, and a declared factor between them is ill-formed (WF-009).
+   The sub-day units belong to neither family here: no decision names them. *)
+type calendar_family = Day_family | Month_family
+
+let calendar_family : time_unit -> calendar_family option = function
+  | Tu_day | Tu_week -> Some Day_family
+  | Tu_month | Tu_quarter | Tu_year -> Some Month_family
+  | Tu_hour | Tu_minute | Tu_second | Tu_millisecond -> None
+
+(* the family of a declared unit, read off its abbreviation by the table *)
+let unit_calendar_family (f : unit_factor) =
+  Option.bind (Option.bind f.abbr_text time_unit_of_spelling) calendar_family
+
 (* the time unit the granularity's grid counts in (ch. 3.2 job 1) *)
 let granularity_time_unit : grain -> time_unit = function
   | Day -> Tu_day
@@ -233,6 +251,18 @@ let granularity_time_unit : grain -> time_unit = function
   | Month -> Tu_month
   | Quarter -> Tu_quarter
   | Year -> Tu_year
+
+(* The negative factor of [u] that the calendar integrates over a grid of grain
+   [g] (RUNTIME-SEMANTICS ch. 3.6): a unit the spelling table names, of the
+   other family than the grid's, with its time unit. [None] where [u] has none. *)
+let calendar_denominator (g : grain) (u : measure_unit) =
+  let grid_family = calendar_family (granularity_time_unit g) in
+  List.find_map
+    (fun (f : unit_factor) ->
+      match Option.bind f.abbr_text time_unit_of_spelling with
+      | Some tu when calendar_family tu <> None && calendar_family tu <> grid_family -> Some (f, tu)
+      | _ -> None)
+    (Units.negatives u)
 
 (* The declared units the grid of a grain counts in, by the calendar table. *)
 let grid_candidates (doc : document) (g : grain) : unit_factor list =
@@ -1640,7 +1670,45 @@ let wf009 ctx =
              in
              follow (Option.to_list (Option.map norm d.ge_unit.abbr_text)) d.ge_unit)
            es.unit_list)
-      @ twice)
+      @ twice
+      @ List.concat
+          (List.mapi
+             (fun j (d : declared_unit) ->
+               (* the calendar (RUNTIME-SEMANTICS ch. 3.6): a month or a year has no
+                  fixed number of days, so a unit of the one family declared as a
+                  multiple of a unit of the other states a factor nobody can fix;
+                  the chain's end is the unit it is a multiple of *)
+               let rec root seen (u : unit_factor) =
+                 match u.canonical_form with
+                 | None -> Some u
+                 | Some c when u.abbr_text = Some c -> Some u
+                 | Some c when List.mem (norm c) seen -> None
+                 | Some c -> Option.bind (lookup c) (root (norm c :: seen))
+               in
+               let family = function
+                 | Day_family -> "the day family (dag, week)"
+                 | Month_family -> "the month family (maand, kwartaal, jaar)"
+               in
+               match
+                 ( d.ge_unit.abbr_text,
+                   unit_calendar_family d.ge_unit,
+                   root (Option.to_list (Option.map norm d.ge_unit.abbr_text)) d.ge_unit )
+               with
+               | Some a, Some fu, Some r -> (
+                   match (r.abbr_text, unit_calendar_family r) with
+                   | Some c, Some fr when fr <> fu ->
+                       [ v ~params:[ ("unit", a); ("canonical", c); ("unitSystem", sn) ]
+                           "WF-009.calendar-family-factor"
+                           (Printf.sprintf "/eenheidstelsels/%s/units/%d" sn j)
+                           (Printf.sprintf
+                              "the unit '%s' of %s is declared as a multiple of '%s' of %s: between the \
+                               two families of the calendar no factor is fixed, since a month or a year \
+                               has no fixed number of days, and the temporal total integrates across them \
+                               by the actual length of the calendar unit (RUNTIME-SEMANTICS ch. 3.6)"
+                              a (family fu) c (family fr)) ]
+                   | _ -> [])
+               | _ -> [])
+             es.unit_list))
     ctx.doc.unit_systems
 
 let wf011 ctx =
@@ -3098,6 +3166,15 @@ let set_reading ctx ~ranged (args : expr list) : bool option =
 (* The declared unit of the grid a total of [args] folds over, where the operand
    is an attribute with a granularity and the document declares that unit in one
    class; a claim over several classes would be a guess, and ref faults on them. *)
+(* the grain of the timeline a fold over [args] totals *)
+let fold_grain ctx (args : expr list) =
+  match args with
+  | Attribute_reference { object_type = Some otn; attribute_ref = Some a; _ } :: _ -> (
+      match Option.map (fun (ot : object_type) -> find_ci ot.attribute_granularity a) (object_type ctx otn) with
+      | Some (Some (Some g)) -> Some g
+      | _ -> None)
+  | _ -> None
+
 let fold_grid ctx (args : expr list) =
   match args with
   | Attribute_reference { object_type = Some otn; attribute_ref = Some a; _ } :: _ -> (
@@ -9811,17 +9888,32 @@ let rec precision ctx ?(calls = []) ~env (e : expr) : bounded option =
                  into it (ch. 2.6, rule 8) *)
               match call_arguments with
               | [ a0 ] ->
-                  let grid_factor =
+                  let own_class =
                     match (unit a0, fold_grid ctx call_arguments) with
-                    | Some u, Some g -> (
-                        match Units.negative_of_grid g u with
-                        | Some f when not (Units.same_atom g f) ->
-                            factor_value [ Units.with_exponent g 1; Units.with_exponent f (-1) ]
-                        | _ -> Some Q.one)
+                    | Some u, Some g -> Option.map (fun f -> (g, f)) (Units.negative_of_grid g u)
+                    | _ -> None
+                  in
+                  let grid_factor =
+                    match own_class with
+                    | Some (g, f) when not (Units.same_atom g f) ->
+                        factor_value [ Units.with_exponent g 1; Units.with_exponent f (-1) ]
                     | _ -> Some Q.one
+                  in
+                  (* the calendar (ch. 3.6): a day weighs 1/len of its month, quarter
+                     or year, and a week is 1/7 of the days a month or a year holds,
+                     so only whole days over a month-family grid keep the bound *)
+                  let calendar_unbounded =
+                    match (own_class, unit a0, fold_grain ctx call_arguments) with
+                    | None, Some u, Some gr -> (
+                        match calendar_denominator gr u with
+                        | Some (_, Tu_day) -> false
+                        | Some _ -> true
+                        | None -> false)
+                    | _ -> false
                   in
                   let* f = grid_factor in
                   let* b0 = own a0 in
+                  let b0 = if calendar_unbounded then Unbounded else b0 in
                   let* total = make (scaled b0 f) in
                   let* rest = all_of (List.map p (Option.to_list empty_fallback)) in
                   combined (total :: rest)
@@ -9931,13 +10023,16 @@ let precision_gate at ~share (dt : datatype) (value : bounded option) =
    consequence with its exception groups, and the share of an allocation, whose
    bound is its rounding or the declaration of its pot (the ALEF form: the
    division by the recipients is not typed, and a share that does not fit stays
-   the evaluation fault EF-006). A target with a timeline stands outside the
-   gate: no executor carries a rounding around the pro-rata write of ch. 3.7, the
-   one computed write such a target takes, so the gate would leave that write no
-   form (RUNTIME-SEMANTICS ch. 2.8). *)
+   the evaluation fault EF-006). A rule on a target with a timeline stands in the
+   gate with its bound per segment (ch. 2.3), the value of every segment being the
+   value of the expression on its period (ch. 3.4); the pro-rata write of ch. 3.7
+   stands outside it: no executor carries a rounding around it, so the gate would
+   leave that write no form (RUNTIME-SEMANTICS ch. 2.8). The other three positions
+   write no timeline. *)
 let wf023_precision ctx =
   let value_gate at dt w = precision_gate at ~share:false dt (precision ctx ~env:[] w) in
   let scalar ot a = not (attr_temporal ot a) in
+  let pro_rata = function Function_call { kind = Time_proportional_part; _ } -> true | _ -> false in
   List.concat_map
     (fun (r : resolved_rule) ->
       match (r.rr_presentation, r.objective, r.value_node) with
@@ -9948,7 +10043,7 @@ let wf023_precision ctx =
           match read with
           | Attribute_reference { object_type = Some otn; attribute_ref = Some a; _ } -> (
               match (object_type ctx otn, resolved_attr_datatype ctx read) with
-              | Some ot, Some dt when scalar ot a -> value_gate (r.rr_pointer ^ "/value") dt w
+              | Some ot, Some dt when scalar ot a || not (pro_rata w) -> value_gate (r.rr_pointer ^ "/value") dt w
               | _ -> [])
           | _ -> [])
       | _ -> [])
