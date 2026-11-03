@@ -1265,13 +1265,15 @@ below — v0 nests per-member clips over such flat lists, and
 intersection is associative), the four-way
 segment intersection
 (`clN_seg(S,V,T,W)` with V = max of starts, T = min of ends), the
-calendar as *data* (`clN_wu(V,T,N)`: whole units per clipped span),
+length of each candidate span as *data* (`clN_wu(V,T,N)`, a part of a
+unit by its days, over a denominator D where a span holds a part;
+`backends/clingo/README.md` [V8]),
 and the total `Q = #sum { W*N,V,T : clN_seg(S,V,T,W), clN_wu(V,T,N)
-}`. An absent or clipped-away timeline sums over the empty set: the
-clip's presence turns absence into 0 (the mirrored v0 nuance, RS
-ch. 3.6). Fences: |W| ≤ 46340, the endpoint span at 46340 whole
+}`. An absent or clipped-away timeline sums over the empty set: 0, as
+every total of an absent timeline (RS ch. 3.6). Fences: |W| ≤ 46340, the endpoint span at 46340 whole
 units (segments are disjoint slices of one timeline, so |ΣW×N| ≤
-46340² holds), and the comparison harmonisation bounds of S6.
+46340² holds); with D > 1 the guard on W is 2^31 − 1 over the weight
+of the full span; and the comparison harmonisation bounds of S6.
 
 **The negated clip member** (`negated: true` on a characteristic
 check, either as the whole condition or as a member of the composite
