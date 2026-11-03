@@ -1,41 +1,56 @@
 # runtime-tijdconditie-leeg: `rsTijdConditie` leest een lege kant van een vergelijkingsknip als geen periode
 
 *Gevonden op 2026-10-09 door de bouwer van stap 2 van `20261008-tms-verdeling-en-tijdlijnen` en door een lens op die
-stap, en door de hoofdsessie nagemeten en vastgelegd volgens de afspraak dat een bestaande bug in de gedeelde runtime
-een kaart krijgt. Gemeten met ref, clingo en de verifier uit `_build` van main `ac0f9008` en de shaded jar van die
-kaartbranch (`c2005edf`).*
+stap, en door de hoofdsessie vastgelegd volgens de afspraak dat een bestaande bug in de gedeelde runtime een kaart
+krijgt. Nagemeten op `95947ae0f` (2026-11-03), met ref, clingo en de verifier uit `_build` van de worktree
+`wt/drools-clip-equality` en de shaded jar van die worktree.*
 
 ## Aanleiding
 
 RUNTIME-SEMANTICS ch. 3.6 laat een totaal knippen op "de tijd dat" een vergelijking van een eigen tijdsafhankelijk
-attribuut met een grens geldt, en past daarbij ch. 1.2 per periode toe. Het voorbeeld rond regel 1774 ("gedurende
-'≠ 1000' where the tested timeline has leeg periods: leeg **satisfies** ≠ against a filled bound … 500,00") pint dat
-voor ongelijkheid. Ch. 1.2 zegt verder dat bij een getal twee keer leeg gelijk is. De runtimehulp `rsTijdConditie`
-(`backends/drools/.../runtime/RegelSpraakRuntime.java`) geeft bij een lege grens meteen geen perioden, en leest een gat
-in de getoetste tijdlijn als geen periode. Beide oude Drools-takken gebruiken die hulp.
+attribuut met een grens geldt, en leest die vergelijking per periode met de regels van ch. 1.2. Bij een getal is twee
+keer leeg gelijk en precies één keer leeg ongelijk, en een gat in de getoetste tijdlijn leest leeg (ch. 3.1). Het
+voorbeeld van 500,00 in ch. 3.6 pint dat voor ongelijkheid.
 
-Document: een Jutter met vergoeding 10 per maand van januari tot en met juni 2024, controle 5 alleen in januari, en
-"het totaal van zijn vergoeding gedurende de tijd dat zijn controle (on)gelijk is aan zijn grens". Verifier PASS.
+De oude exec-model- en DRL-teksttak zijn weg. De lowering met truth maintenance (`transpiler/tms`: exec-model en
+DRL-tekst, twee weergaven van één analyse) rekent de vergelijkingsknip met de runtimehulp `rsTijdConditie`
+(`backends/drools/.../runtime/RegelSpraakRuntime.java`, via `StaticFunction.RS_TIME_CONDITION`), die er op
+`95947ae0f` nog staat. Die hulp loopt alleen de segmenten van de getoetste tijdlijn langs, zodat een gat geen periode
+is, en geeft bij een lege grens geen enkele periode. Voor de ordeningen klopt dat met ch. 1.2; voor "gelijk aan" en
+"ongelijk aan" niet, en daarom weigert de tak die twee met DROOLS-222.
 
-| Geval | ref | oude exec-model- en DRL-teksttak |
-|---|---|---|
-| gelijk aan, grens leeg | 50 | 0 |
-| gelijk aan, grens 5 | 10 | 10 |
-| ongelijk aan, grens 5 | 50 | 0 |
-| ongelijk aan, grens leeg | 10 | 0 |
+Document (de golden `jutterswet-peilwacht` van deze kaart): een Jutter met een wachtvergoeding per maand van 10 van
+januari tot en met juni 2024, een peilstand van 5 alleen in januari, en "het totaal van zijn wachtvergoeding per maand
+gedurende de tijd dat zijn peilstand (on)gelijk is aan zijn drempelstand". Verifier PASS.
 
-Clingo vertaalt gelijkheid in een knip niet ("equality in a per-segment clip comparison is not translated (no corpus
-case exercises it)"). De tak met truth maintenance weigert "gelijk aan" en "ongelijk aan" in een knip met naam tot de
-hulp klopt. De documenten zijn uitgeschreven in de rijen `knip-gelijk` en `knip-ongelijk` van
-`TmsTimelineRefusalWitnessTest`.
+| Geval | met de hand (ch. 3.6, 1.2) | ref | tak met truth maintenance | die tak zonder de weigering | clingo |
+|---|---|---|---|---|---|
+| gelijk aan, grens leeg | 50 | 50 | `EXCLUDE DROOLS-222` | 0 | `TRANSLATION FAULT` |
+| gelijk aan, grens 5 | 10 | 10 | `EXCLUDE DROOLS-222` | 10 | `TRANSLATION FAULT` |
+| ongelijk aan, grens 5 | 50 | 50 | `EXCLUDE DROOLS-222` | 0 | `TRANSLATION FAULT` |
+| ongelijk aan, grens leeg | 10 | 10 | `EXCLUDE DROOLS-222` | 0 | `TRANSLATION FAULT` |
 
-## Acceptatie (bij oppakken aanscherpen)
+Letterlijk, op beide branches gelijk: `EXCLUDE DROOLS-222: transpiler SKIP: regel: peilsom van een jutter — a total
+over its own timeline ('het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn peilstand gelijk is
+aan zijn drempelstand') with 'equal to' in the clip ('gedurende de tijd dat zijn peilstand gelijk is aan zijn
+drempelstand'): this branch does not carry this form yet; the calculation helper rsTijdConditie reads an empty side, a
+gap in the compared timeline, or an empty boundary as no period, whereas RUNTIME-SEMANTICS ch. 3.6 and the reference
+interpreter apply the comparison of ch. 1.2 per period: two empty sides are equal, and exactly one empty side is
+unequal; no golden with cases has it`. Clingo: `TRANSLATION FAULT: equality in a per-segment clip comparison is not
+translated (no corpus case exercises it)`, exit 1. Ref: `oracle: PASS` op alle drie case-bestanden, met de waarden
+die met de hand uit ch. 3.6 en ch. 1.2 volgen. De kolom "zonder de weigering" is de tak met alleen de weigering
+weggehaald en de oude hulp: `FAIL case1-grens-leeg.json: attribuut peilsom: verwacht 50, werkelijk 0; attribuut
+afwijksom: verwacht 10, werkelijk 0; …`, op beide branches gelijk.
 
-- (a) Een golden met de vier gevallen hierboven, eigen Jutterswet-casus; de verwachtingen zoals ref.
-- (b) `rsTijdConditie` gerepareerd (of een eigen hulp in de tak met truth maintenance, als de oude takken dan al weg
-  zijn), rood eerst; de tak met truth maintenance draagt de vorm dan in plaats van haar te weigeren.
+## Acceptatie
+
+- (a) Een golden met de vier gevallen hierboven, eigen Jutterswet-casus, met absolute verwachtingen volgens ch. 3.6 en
+  ch. 1.2, met de hand nagerekend (ref is niet de maat).
+- (b) De tak met truth maintenance draagt "gelijk aan" en "ongelijk aan" in een knip op beide branches, rood eerst;
+  DROOLS-222 `RETIRED` als geen plek haar meer noemt; de rijen `knip-gelijk` en `knip-ongelijk` van
+  `TmsTimelineRefusalWitnessTest` spelende getuigen of naar de golden.
 - (c) Clingo vertaalt gelijkheid in een knip, of weigert haar met naam zoals nu.
-- (d) Alle gates groen.
+- (d) Drools-suite groen zonder skips, gates 5, 6, 12 en 17 groen op de golden, `make gates` groen.
 
 ## Omvang
 
