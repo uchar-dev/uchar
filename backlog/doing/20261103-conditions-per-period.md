@@ -567,3 +567,252 @@ gate 5 ref-suite 2262, gate 5 en 6 1055 cases ref = clingo; clingo-suite 2431; g
 185 rgs-goldens byte-gelijk (was 184); gate 12 PASS, played 319 op beide takken, 6 waardeverschillen met reden; gate 16 40
 scenario-goldens, 136 casebestanden; gate 17 325 goldens en 898 casebestanden vergeleken, 46 afwijkingen met reden. De
 kaart blijft in `doing/`.
+
+## Result: stap B deel i (bouwer, 2026-11-03; door de hoofdsessie overgenomen uit `werk/conditions-per-period-drools/verslag.md`, geland op `fdbec1f1c`)
+
+### Result: stap B deel i (bouwer Drools, 2026-11-03)
+
+Branch `card/conditions-per-period-drools`, gebouwd op main `3dda89983` en gerebased op main `1d7259100` (de fixronde
+`ref-empty-operand-unit`; zonder conflict). Niet gemerged, niet gepusht; de kaart is niet aangeraakt. Beschermd in deze
+stap, dus **voorstel**: `scripts/check-drools.sh`, `scripts/check-red.sh` (de uitsluitingslijst van het Drools-been).
+Logs, proefdocumenten en scripts onder `/Users/yeb/Developer/uchar-dev/werk/conditions-per-period-drools/` (`logs/`,
+`docs/`, `traces/`, `scripts/`).
+
+#### Commits
+
+- `5c36e2857` drools: voorwaarden per periode, de kwalificator per emmer, twee schrijvers per dag
+- `48e793c8e` gates 8 en 12: voorwaarden per periode spelen in Drools (voorstel)
+- `1cd7f2018` tests: een lid zonder tijdlijn en de emmerscalair in een voorwaarde per periode
+- `90b1d57c1` tests: de tijdlijn rechts in een vergelijking per periode, en de lezing van een fout
+- `0012df0ce` tests: twee aangrenzende perioden van een voorwaarde zijn er één
+
+#### Rood eerst (op `3dda89983`, letterlijk; `logs/01-red-first.log`, `logs/15-red-witness.log`)
+
+- `jutterswet-loon-per-periode`, beide takken: `EXCLUDE DROOLS-302: transpiler SKIP: regel: aangesteld loon van een
+  jutter — the rule "aangesteld loon van een jutter" writes the time-dependent attribute 'aangestelde loon' of Jutter by
+  the period arithmetic of ch. 3.4/3.5 under a condition: a condition per period is not executed (RUNTIME-SEMANTICS ch.
+  3.11)`
+- `jutterswet-wachtmaanden`, beide takken: `EXCLUDE DROOLS-105: transpiler SKIP: regel: wachtpremie van een jutter — a
+  value of the time-dependent target 'wachtpremie' of Jutter that is neither a time-proportional part, a day count nor
+  the period arithmetic of an operator of ch. 1.2 other than the power or of a sum per period ('50'): this branch does
+  not yet carry this form (RUNTIME-SEMANTICS ch. 3.4, 3.5, 3.11); no golden with cases writes one`
+- `jutterswet-wachtdagen-twee-schrijvers`, beide takken: `EXCLUDE DROOLS-103: transpiler SKIP: regel: wachtdagen in een
+  volle maand — a time-dependent target with a second writer ('wachtdagen' of Jutter is also written by "wachtdagen in
+  een gedeeltelijke maand"): this branch does not yet carry this form; a target with more writers stays fenced
+  (RUNTIME-SEMANTICS ch. 7.8), and no golden with cases has one`
+- rode casus `jutterswet-wachtdagen-botsing`, `DroolsRedMain`: `EXCLUDE DROOLS-103: … ('wachtdagen' of Jutter is also
+  written by "wachtdagen in elke maand") …`, dus geen FAULT EF-016.
+- De nieuwe getuige `TmsConditionPerPeriodWitnessTest` op `3dda89983` (alleen dat bestand erbij, in de stand van de eerste
+  testcommit, 9 tests): alle 9 rood — de vormen op DROOLS-302 ("… onder een voorwaarde: een voorwaarde per periode wordt
+  niet uitgevoerd"), DROOLS-105 en DROOLS-103, de lezing op de weigering, de weigerrijen op DROOLS-302 in plaats van 309.
+  De drie rijen die later kwamen (lid zonder tijdlijn, emmerscalair en zijn lezing, tijdlijn rechts) en J3 zijn niet op
+  `3dda89983` gedraaid; mutaties M1, M7, M20 en M21 tonen ze rood.
+
+#### Na de bouw
+
+- De drie goldens: `PLAYED 3` op beide takken; de rode casus: `FAULT EF-016 {"rules":"wachtdagen in een volle maand,
+  wachtdagen in elke maand","values":"30, 31","attribute":"wachtdagen","label":"J1","objectType":"Jutter"}: …`
+  (`logs/05-play.log`). Ook `values` is die van ref (VB-C7: clingo noemt hem niet).
+- De lezingen op beide takken regel voor regel gelijk aan `runner --trace` van ref: de negen casebestanden van de drie
+  goldens (`logs/06-readings.log`), de fixture `afdracht` van `WV-5.12-voorwaarde-per-periode` (20 regels), en de
+  fixtures `totaal-onder-voorwaarde` en `twee-schrijvers-gelijk`; `afdracht-botsing` geeft in `DroolsRedMain` precies de
+  vijf parameters van zijn pin, `afdracht-fijner` DROOLS-308 (de fijnere operand van rekenen per periode).
+
+#### Wat er veranderde
+
+- **Runtime, zuivere functies** (nieuwe klasse `PeriodCondition`, naast `PeriodArithmetic`): `truePeriods` en `outside`
+  (de ware perioden van een kenmerk, maximaal, en hun complement over alle tijd), `where` (de perioden van alle tijd
+  waarop een vergelijking met ch. 1.2 per dag geldt, een gat leeg; tijdlijn en grens in de volgorde van de vergelijking),
+  `comparisonReading` (de lezing: gevulde segmenten in de perioden met waarden, plus de gaten waar een lege kant voldoet),
+  `wholeBuckets` (de kwalificator per emmer van zijn kalendermaand of -jaar, open grenzen open, negatie als complement
+  over alle tijd), `member`/`composite` (elk lid gelezen, de kwantor per dag), `always` (een lid zonder tijdlijn: alle tijd
+  of niets), en voor twee schrijvers `clash` (de eerste dag waarop twee beslissen en verschillen) en `union` (de
+  segmenten in documentvolgorde, een gedeelde dag bij de eerste, de invoer op de dagen zonder schrijver).
+  `PeriodArithmetic.clipped` knipt de tijdlijn van elke producent tot de perioden, de perioden eerst; `Exact` is publiek
+  zodat een lezing de tijdlijn van een operator kan noemen. Zeven nieuwe `StaticFunction`s (`PERIOD_CLIPPED`,
+  `PERIOD_TRUE_PERIODS`, `PERIOD_OUTSIDE`, `PERIOD_WHERE`, `PERIOD_WHOLE_BUCKETS`, `PERIOD_MEMBER`, `PERIOD_COMPOSITE`,
+  `PERIOD_ALWAYS`), elk ook in `ClosureRendering`.
+- **Lowering met truth maintenance** (`TmsTranspiler`, één analyse, beide weergaven): `readsTimeline` stelt de vraag van
+  `Eval.reads_timeline` (syntax en declaraties). Leest de voorwaarde van een regel met een tijdlijndoel een tijdlijn, dan
+  komt er geen test in de linkerkant: `periodCondition` plant haar perioden als term in de consequentie, en de waarde
+  (pro rata, dagentelling, rekenen per periode) wordt daartoe geknipt; de fout- en depositoregels van de voorwaarde
+  vervallen, want haar fouten en deposito's zijn die van de waarde. Een voorwaarde zonder tijdlijn blijft de poort, nu
+  ook op rekenen per periode. `isPeriodArithmetic` neemt ook een literal, een eigen read zonder pad en een parameter als
+  hele waarde (zoals `Eval.is_period_arithmetic`), dus `periodArithmeticTarget` ook. `requireFits` is WF-126 als
+  fail-fast (`grid_fits` van de verifier). Twee of meer rekenregels van één tijdlijndoel (`timelineWriters`, per
+  concreet type, versies van één regel als één schrijver) zijn geen DROOLS-103 meer: elke regel schrijft zijn `Value`,
+  `readFixpoint` zet de vereniging met de invoer op de bean (`union`, niet bij een emmerscalair als invoer), en
+  `ComputeHelpers.differ` en `WritersConflict.of` vergelijken tijdlijnen per dag. Een lezing van zo'n doel weigert
+  `Reads.timeline`/`navigated` bij naam.
+- **Lezing** (gate 17): `ReadingRule` draagt de term van de perioden; is die er, dan is de status HOLDS, of FAULTS waar
+  de voorwaarde faalt, en daarna wordt de waarde gelezen. Elke voorwaardeknoop heeft zijn perioden, een vergelijking zonder
+  kwalificator haar afgeleide lezing (`comparisonReading`); in `periodOperand` noteert elke knoop zijn term (een
+  afwezige tijdlijn van een operand leest `[]`, zoals ref); `unreached` alleen nog zonder voorwaarde. `note` laat de
+  laatste notitie winnen (de wortel van een operand als hele waarde leest de geschreven tijdlijn). `SessionDump`
+  schrijft een `Exact`-segment als `[van tot waarde]`.
+- **Catalogi** (nl, en): DROOLS-309, -310, -311 en `PART.desc.period-condition`. **README** van de backend: de alinea's
+  "A condition read per period" en "Two writers per day", de lezing bij rekenen per periode, de weigeringen.
+
+#### Codes, floors en pins, oud en nieuw
+
+- `RETIRED`: DROOLS-302 (`period-arithmetic-condition`). Register 308 → 311 codes, 18 → 19 retired.
+- Nieuw: DROOLS-309 `period-condition-form` (REFUSAL; `attribute,declarant,snippet`): een genavigeerde of gehoste toets,
+  een kwalificator op een kenmerk met één waarde, een vergelijking van twee tijdlijnen, van datums of van geen getallen,
+  een leeg-/gevuldtoets en een kwantorvouw in een voorwaarde per periode. DROOLS-310 `period-condition-grid` (REFUSAL;
+  `operand,operandGranularity,attribute,targetGranularity`): WF-126. DROOLS-311 `timeline-writers-read` (REFUSAL;
+  `attribute,declarant`): een lezing van een tijdlijndoel van twee of meer schrijvers.
+- Blijven: DROOLS-103 (een andere schrijver dan een rekenregel naast een andere, een initialisatie, defaults, verdeling),
+  DROOLS-104 (het venster, deel ii), DROOLS-105 (de macht en elke andere waarde), DROOLS-271 (een tijdsafhankelijk lid
+  in een scalaire positie, ook een genavigeerde tijdsafhankelijke toets als poort, zoals ref haar niet per periode leest).
+- Gate 12 (voorstel): `EXPECTED_CHANNEL` − `jutterswet-loon-per-periode|EXCLUDE DROOLS-302|…`,
+  − `jutterswet-wachtdagen-twee-schrijvers|EXCLUDE DROOLS-103|…`, − `jutterswet-wachtmaanden|EXCLUDE DROOLS-105|…`;
+  `EXPECTED_PLAYED` 322 → 325 met een regel in het commentaarblok. Kanaalvloer 50 → 47 met naam.
+- Gate 8 (voorstel): de uitsluiting `jutterswet-wachtdagen-botsing|EXCLUDE DROOLS-103 …` weg; het Drools-been pint de
+  casus nu op EF-016 met de vier parameters van de case: 45 fault-gepind (was 44), 18 niet-gedragen (was 19), 16 EXCLUDE
+  met code (was 17, floor 16 — precies op de vloer).
+- Geen floor gewijzigd. JUnit 1804 → 1816 (floor 1573), nul skips.
+- Tests die de kaart omdraait, oud → nieuw:
+  - `TmsPeriodArithmeticWitnessTest.every_form_outside_the_period_arithmetic_it_carries_is_refused_by_name_on_both_branches`,
+    rij "a condition on the rule" (`maandloon` onder `check("actief")`, DROOLS-302) → weg; de vorm speelt als poort in
+    `TmsConditionPerPeriodWitnessTest.a_condition_that_reads_no_timeline_gates_the_period_arithmetic`.
+  - `TmsTimelineRefusalWitnessTest`, rij `tweede-schrijver` (twee pro-ratapoorten op `jaardeel`, DROOLS-103 voor elk) →
+    weg, met de helper `secondWriter` en de alinea in de javadoc ("the verifier passes all eleven" → "all ten"); het
+    document speelt in `…two_writers_of_a_pro_rata_part_each_under_a_gate_in_every_order_on_both_branches` (306 en 31,
+    de waarden die ref al gaf).
+- Nieuwe getuige `TmsConditionPerPeriodWitnessTest` (12 tests): A voorwaarden per periode op rekenen per periode en een
+  scalair (kenmerk, ontkenning, "ten minste één" met "ongelijk aan" over gaten, een scalair onder een vergelijking; J3
+  met twee aangrenzende perioden; 24 volgorden × 2 takken); de poort zonder tijdlijn; een lid zonder tijdlijn in een
+  samenstelling; de tijdlijn rechts; de emmerscalair (de fout van ch. 8.4 en de lezing FAULTS); B de kwalificator per
+  emmer (beide polariteiten, de negatie binnen de kwalificator, een jaarkwalificator op een vergelijking; 24 × 2); C twee
+  schrijvers met invoer op een dag die geen beslist, twee die een dag met één waarde delen, twee die verschillen (EF-016
+  in beide volgorden, de regels en waarden in documentvolgorde), twee pro-ratapoorten (elk 2 × 2); D de weigeringen 309
+  (drie vormen), 310 en 311 op beide takken in één zin met hun code; E de lezingen van A op beide takken, regel voor
+  regel de trace van ref. Gemeten (`logs/10-witness-ref.log`, de tien documenten uit `main`): de verifier laat ze alle
+  tien door; ref geeft op alle tien de verwachtingen van de getuige (de botsing in beide volgorden als EF-016 met de
+  regels en waarden van de getuige, de emmerscalair met dezelfde zin), en zijn trace is op de zeven zonder fout regel voor
+  regel die van Drools (`logs/11-witness-readings.log`); clingo geeft de verwachtingen op A, B, `a-actief`,
+  `a-tijdlijn-rechts`, de botsing en `c-jaardeel`, weigert bij naam de gedeelde dag ([V7]) en de invoer op een doel van
+  twee schrijvers, en **speelt de emmerscalair** (`clingo: PASS`), waar ref en Drools falen: clingo leest daar de
+  emmerscalair als geen tijdlijn (open punt 3). Ref schrijft voor een sessie met een fout geen trace, dus de lezing
+  FAULTS van de emmerscalair is met de hand naar RS ch. 5.12 gepind.
+
+#### Mutaties (niet gecommit; `scripts/mutate.py` op een losse worktree, `logs/18-mutations.log`, `logs/20-mutations-m1.log`)
+
+| # | mutatie | uitkomst |
+|---|---|---|
+| M1 | perioden van een toets niet samengevoegd | eerst groen op golden loon (gelijke buren worden één segment); na J3 rood: E (de lezing) |
+| M2 | een ontkende toets leest zijn ware perioden | rood: A |
+| M3 | een gatdag leest niet leeg in een vergelijking | rood: A |
+| M4 | de kwalificator per emmer negeert zijn ontkenning | rood: B |
+| M5 | de kwalificator houdt een gedeeltelijke eerste emmer | rood: B |
+| M6 | een samenstelling leest elke kwantor als "alle" | rood: A |
+| M7 | een lid zonder tijdlijn geldt altijd | rood: lid zonder tijdlijn |
+| M8 | de tijdlijn van de producent wordt niet geknipt | rood: A |
+| M9 | geen voorwaarde wordt per periode gelezen | rood: A |
+| M10 | de vereniging laat de invoer weg | rood: C invoer |
+| M11 | een latere schrijver houdt een dag die een eerdere beslist | rood: C gelijk |
+| M12 | de terugschrijving vergelijkt tijdlijnen heel | rood: C invoer |
+| M13 | twee schrijvers botsen nooit | rood: C botsing |
+| M14 | de verschilregel vergelijkt tijdlijnen heel | rood: C invoer |
+| M15 | elk raster past | rood: D (310) |
+| M16 | een lezing van een doel van twee schrijvers niet geweigerd | rood: D (311) |
+| M17 | een afwezige operandtijdlijn leest `empty` in plaats van `[]` | rood: E |
+| M18 | de knopen van de waarde onbereikt, ook onder een voorwaarde | rood: E |
+| M19 | de lezing van een vergelijking zonder haar gaten | rood: E |
+| M20 | een fout in de voorwaarde faalt de lezing niet | rood: emmerscalair (lezing) |
+| M21 | de operator niet omgekeerd voor een tijdlijn rechts | rood: tijdlijn rechts |
+| M22 | het conflict van twee tijdlijnen noemt hun hele waarden | rood: C botsing |
+
+#### Voorgestelde CONSTRUCTS-tekst (rij 11, in de zin van stap A deel i)
+
+"the Drools backend refuses the forms (DROOLS-302, -105, -103) until step B" →
+
+> since step B (2026-11-03) both branches of the Drools backend carry them too (`PeriodCondition`: the periods of the
+> condition in the rule's consequence, the producer's timeline cut to them; the union of two writers' timelines with the
+> target's input at the write-back, EF-016 on the first day two decide differently), refusing by name a form of the
+> condition it does not read per period (DROOLS-309), a grid that does not fit (DROOLS-310) and a read of a target of two
+> writers (DROOLS-311)
+
+#### Voorgestelde tekst elders (beschermd of buiten mijn may-touch, voor de hoofdsessie)
+
+- `CLAUDE.md`, gate 12, na de zin over `timeline-arithmetic-per-period`: "Since the card `conditions-per-period` (step B,
+  2026-11-03) a condition that reads a timeline on a rule with a timeline target is read per period in the rule's
+  consequence (`PeriodCondition`), the producer's timeline cut to its periods, the whole-period qualifier there per
+  bucket; two or more computing rules of one timeline target each write their own `Value`, and the write-back puts
+  their union with the target's input on the bean (EF-016 on a day two decide differently)." In de lijst van
+  `RETIRED`: "since the card `conditions-per-period` (2026-11-03) DROOLS-302".
+- RS ch. 3.10, de alinea "Executed since 2026-09-23": "Both Drools branches refuse the generalised clip by name
+  (DROOLS-103, DROOLS-105, DROOLS-302), so its goldens sit in their channel lists." → "Both Drools branches carry the
+  generalised clip since step B of the same card, refusing by name a form they do not read per period (DROOLS-309) and
+  a grid that does not fit (DROOLS-310)."
+- RS ch. 3.11, opsommingspunt rekenen per periode: "Executed by `ref` and the ASP backend, plus, min and the sum per
+  period without a condition also by both branches of the Drools backend" → "Executed by `ref`, the ASP backend and both
+  branches of the Drools backend".
+- RS ch. 3.12: rij "Plus, min and the sum per period …": "and refused by name in both Drools branches" → "and by both
+  Drools branches"; rij "A condition on a rule with a timeline target that reads a timeline …": "both Drools branches
+  refuse it by name (DROOLS-103, DROOLS-105, DROOLS-302)" → "and both Drools branches"; "Refused by name in both OCaml
+  executors: …" → "Refused by name in every executor: …" (Drools: DROOLS-309; het venster DROOLS-104); "The total of a
+  timeline written under such a condition is executed by `ref`" → "by `ref` and both Drools branches"; rij "Two or more
+  writers of one timeline target": "both Drools branches refuse it by name (DROOLS-103)" → "and both Drools branches,
+  which refuse a read of such a target by name (DROOLS-311)"; "and `ref` keeps it on the days no writer decides" → "and
+  `ref` and both Drools branches keep it on the days no writer decides".
+- RS ch. 5.7, "Two writers per day": geen wijziging nodig; eventueel achter de getuigen "executed by `ref`, the ASP
+  backend and both Drools branches".
+- `NOTE.md` van de drie goldens en de rode casus noemen Drools niet; niets te doen.
+
+#### Voorlopige besluiten
+
+- VB-D1 — De perioden van een voorwaarde per periode worden in de consequentie gerekend, niet in de linkerkant: de
+  regel vuurt altijd, haar fouten en deposito's zijn die van de waarde (geen aparte fout- of depositoregel), en de
+  evaluatievolgorde is die van ref: de voorwaarde vóór de waarde (`clipped(periods, timeline)`).
+- VB-D2 — Twee schrijvers: elk schrijft zijn eigen `Value`; de vereniging bestaat alleen bij het terugschrijven, dus een
+  lezing van zo'n doel weigert de tak bij naam (DROOLS-311; geen golden leest er een). Een emmerscalair als invoer van
+  zo'n doel telt als geen invoertijdlijn, zoals ref. Bij drie of meer schrijvers die op dezelfde eerste dag botsen, noemt
+  EF-016 het paar dat het document het eerst noemt (ref neemt het paar van de schrijver die als tweede schrijft; met twee
+  schrijvers gelijk).
+- VB-D3 — De zin van EF-016 voor tijdlijnen is die van de scalaire fout met de waarden van de eerste botsingsdag; de dag
+  zelf staat niet in de zin (geen nieuwe catalogusplaats). De parameters zijn die van ref, `values` inbegrepen.
+- VB-D4 — WF-126 als fail-fast: raster en vast startpunt van doel en gelezen tijdlijn met de regel van `grid_fits`; de
+  kwalificator telt met zijn kalendermaand of -jaar. Een fijnere operand van rekenen per periode blijft DROOLS-308.
+- VB-D5 — Een vergelijking per periode herrekent de grens naar de eenheid van de tijdlijn (ch. 2.6) en keert de operator
+  om waar de tijdlijn rechts staat; datums en niet-getallen weigert de tak (DROOLS-309; ref vergelijkt ze, geen golden).
+- VB-D6 — In de lezing leest een operand van rekenen per periode zonder tijdlijn `[]` en de getoetste tijdlijn van een
+  vergelijking `empty`, zoals ref (`Whole (Some [])` tegen `Whole None`).
+
+#### Wat deel ii voor Drools nog nodig heeft
+
+- Het venster (punt 6): DROOLS-104 weigert elk venster in de voorwaarde van een tijdlijndoel. Met `PeriodCondition` is
+  een venster een voorwaarde met de perioden [van, tot), dus een term naast `PERIOD_TRUE_PERIODS`; nodig voor
+  `jutterswet-pachtvenster` (staat nu als `EXCLUDE DROOLS-104` in gate 12), voor een venster als lid van een samenstelling
+  en als voorwaarde van rekenen per periode, en voor een dagprecieze datumexpressie als grens (WF-111 verruimd).
+- `time-window-timeline-characteristic` als golden: een tijdsafhankelijk kenmerkdoel. Drools weigert dat doel bij naam
+  (DROOLS-102) en heeft geen schrijver van kenmerktijdlijnen; dat is een vorm van zijn eigen, niet alleen een knip.
+- 7a (0 in een emmer zonder ware dag): `rsAantalDagenIn` geeft geen segment voor een lege emmer; de dagentelling moet dan
+  0 geven in elke emmer van alle tijd zonder ware dag (open segmenten van 0 vóór en na), en de knip en de twee
+  schrijvers lezen dat mee (een 0 in een gehele maand botst met 30). Gate 17: de lezing van de dagentelling verandert mee.
+- 7b (een dagsoorttoets op de getelde dag in de voorwaarde van de dagentelling) en 7c (de eenheid dg/mnd): `clipTimeline`
+  neemt nu alleen een eigen tijdsafhankelijk kenmerk (DROOLS-114 en verwanten); de eenheid van de telling is een nieuwe
+  regel in `timelineValue`.
+- De goldens met een dagentelling (`anchor/jutterswet-dagentelling`, `jutterswet-dagentelling-rgs`,
+  `jutterswet-vast-startpunt`, `jutterswet-pachtvenster`) krijgen nieuwe verwachtingen; zolang Drools de oude telling
+  schrijft, worden ze in gate 12 een FAIL of een kanaalregel.
+
+#### Open punten
+
+1. Drie of meer schrijvers die op één dag botsen (VB-D2): geen golden, geen getuige.
+2. Een sum per periode onder een voorwaarde per periode: de knoop van de som noteert zijn term, de lezing van zijn
+   bijdragers is niet tegen ref gemeten (geen golden).
+3. **clingo en ref verschillen op een voorwaarde per periode over een emmerscalair** (document
+   `docs/a-emmerscalair`, verifier PASS): ref `EVALUATION FAULT: a condition per period reads the time-dependent
+   attribute "strandloon" of "J1" whole; the case supplies only the asOfDate-bucket scalar, which carries no period`,
+   Drools op beide takken dezelfde fout (`InputFormFault`), clingo `clingo: PASS (1 expectations)`. Geen golden heeft het;
+   een fix in clingo (buiten mijn may-touch).
+4. De tekstvoorstellen hierboven zijn niet aangebracht.
+
+#### `make gates`
+
+Groen op `0012df0ce` (gerebased op `1d7259100`): 17 gates en de drie bouwstappen rc=0, `after-run` rc=0, 349 s
+(`out/gates/20261103-150340/`, `logs/gates-1.log`). Gemeten: gate 12 `played matches the pinned 325`, de DRL-tekst-tak
+325, kanaalvloer 47 met naam, JUnit 1816 tests (nul skips, floor 1573), `check-drools-codes` 311 codes, 19 retired;
+gate 8 Drools-been 45 fault-gepind, 18 niet-gedragen, 16 EXCLUDE met code; gate 17 325 goldens en 921 casebestanden op
+beide takken vergeleken, 0 afwijkingen; gate 13 groen.
