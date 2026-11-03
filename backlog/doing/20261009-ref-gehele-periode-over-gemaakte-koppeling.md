@@ -45,8 +45,8 @@ kaartverplaatsing.
 
 ## Result:
 
-Gebouwd op main `95947ae0f` en gerebased op main `27cfd3dfa` in de worktree `wt/ref-whole-period` (branch
-`card/ref-whole-period`), samen met
+Gebouwd op main `95947ae0f`, gerebased op main `27cfd3dfa` en daarna op main `a9d572d59`, in de worktree
+`wt/ref-whole-period` (branch `card/ref-whole-period`; de golden in commit `fcf37d2e1`), samen met
 `20261009-ref-gehele-periode-lege-grens`. De kaart blijft in `doing/`; de hoofdsessie landt. Proefdocumenten, scripts en
 logs onder `/Users/yeb/Developer/uchar-dev/werk/ref-whole-period/` (`probe/`, `logs/`).
 
@@ -135,5 +135,9 @@ Geen.
 
 ### Gates
 
-`make gates` op `d19b72012`, alle 17 groen, `red=0`, 385 s (`out/gates/20261103-095725/`); de samenvatting staat in
-`20261009-ref-gehele-periode-lege-grens`.
+`make gates` op `00b94ba63`, de tweede ronde van `20261009-ref-gehele-periode-lege-grens` (besluit 4b), alle 17
+groen, `red=0`, 324 s (`out/gates/20261103-112911/`); de samenvatting staat in die kaart. De tweede ronde raakt deze
+golden niet: haar regels lezen een kenmerk en een vergelijking zonder kwalificator, en ref, clingo en beide
+Drools-branches geven haar 4 cases nog steeds PASS en `PLAYED 4` (gate 5, 6 en 12;
+`logs4b/s18-koppeling.log`). Eerder: `make gates` op `d19b72012`,
+alle 17 groen, `red=0`, 385 s (`out/gates/20261103-095725/`).
