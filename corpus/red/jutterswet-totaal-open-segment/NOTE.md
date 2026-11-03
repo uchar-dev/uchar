@@ -7,5 +7,5 @@ first half of 2024 and 5 from 2024-07-01: its two segments with an open
 bound carry 5. A total of 5 over unboundedly many months has no value
 (RUNTIME-SEMANTICS ch. 3.6, ch. 5.7b): the session faults with EF-036,
 attribute `opgehoogde strandloon`, label `J1`, in the reference interpreter
-and the ASP backend. The Drools backend refuses the rule that writes the
-timeline (DROOLS-105), which the gate-8 exclusion list records.
+and the ASP backend. The Drools backend faults alike on both
+branches.

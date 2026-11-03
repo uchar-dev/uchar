@@ -408,7 +408,12 @@ missing line makes `make gates` exit non-zero. Current gates:
     of the host's characteristic, and a rule of its own puts a false
     standing on every object of the subject's type outside the host
     (`TmsTranspiler.outsideStateRule`), so such an object reads false
-    instead of leaving the rule. A golden whose forms the loader+transpiler carry
+    instead of leaving the rule. Since the card `timeline-arithmetic-by-rule`
+    (2026-11-03) the lowering writes the period arithmetic of
+    RUNTIME-SEMANTICS ch. 3.4 and 3.5 over all time (`PeriodArithmetic`): an
+    open bound is `LocalDate.MIN`/`LocalDate.MAX` in a `Period` and null on a
+    bean, and a total over an open segment that is not 0 faults with EF-036
+    (`OpenSegmentFault`). A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
     (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
     over the corpus). Not-carried forms never vanish silently: per-form
