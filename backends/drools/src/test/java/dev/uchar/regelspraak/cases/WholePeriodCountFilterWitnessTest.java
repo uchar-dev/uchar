@@ -30,12 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the route of the whole period, and no accumulate holds it.
  *
  * <p>The two documents, the corpus goldens {@code jutterswet-aantalfilter-gehele-jaar} (the computation rule) and
- * {@code jutterswet-aantalfilter-gehele-jaar-creatieguard} (the creation guard), are own work: written in RegelSpraak and
- * emitted by the frontend, which does not lower a die/dat-subselection with a qualifier on the operand of an
- * aggregation yet (it writes an {@code Unresolved} filter and a warning). The filter of each count is therefore written
- * in by hand, the check of the characteristic "bemand" of the member under the qualifier of the whole year, and the
- * warning is dropped; so the goldens carry no {@code source.rgs}, which gate 10 would hold to their IR, and their NOTE.md
- * quotes the source. The expectations are computed by hand from RUNTIME-SEMANTICS ch. 3.9: a post counts where each
+ * {@code jutterswet-aantalfilter-gehele-jaar-creatieguard} (the creation guard), are own work, written in RegelSpraak:
+ * the frontend emits their IR from {@code source.rgs}, which gate 10 holds byte for byte, the filter of each count the
+ * check of the characteristic "bemand" of the member under the qualifier of the whole year. The expectations are computed by hand from RUNTIME-SEMANTICS ch. 3.9: a post counts where each
  * year its true periods touch is covered on every day, so a post manned for the first half of 2026 does not count, a
  * post manned through 2025 and 2026 does, and a post without any period counts vacuously.
  *
