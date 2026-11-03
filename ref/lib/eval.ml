@@ -887,6 +887,31 @@ let target_member env (target : expr option) =
       Some (ot, a, cell_member env ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels))
   | _ -> None
 
+(* The value shapes of a rule on a temporal attribute target that ch. 3.4 and
+   ch. 3.5 produce over all time: plus or minus, and the sum over the members
+   of a set. The other operators of ch. 1.2 over timelines are not executed
+   (spec/proposals/IMPLICIT-TIME.md, point 1). *)
+let is_period_arithmetic (e : expr) =
+  match e with
+  | Binary { op = Plus | Min; _ } -> true
+  | Function_call { kind = Sum_function; element_object_type = Some _; _ } -> true
+  | _ -> false
+
+(* Whether a rule writes [attr] of [otype] as ch. 3.4/3.5 period arithmetic.
+   Such a timeline divides all time, open segments included, so the subject's
+   own total reads it whole (ch. 3.6) instead of an asOfDate bucket. A static
+   property of the document, so the ASP backend asks the same question. *)
+let period_arithmetic_target (doc : document) ~otype ~attr =
+  List.exists
+    (fun (r : resolved_rule) ->
+      r.rr_presentation <> Some Characteristic_attribution
+      && (match r.objective with
+         | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }) ->
+             norm a = norm attr && Ir_v0.Checks.populations_overlap doc ot otype
+         | _ -> false)
+      && match r.value_node with Some v -> is_period_arithmetic v | None -> false)
+    doc.resolved_rules
+
 (* The member an object creation's initialisation writes on the object it
    makes (ch. 5.5, 5.8c): the member, or its cell where it carries labels *)
 let init_member env ~created (t : assignment) =
@@ -1906,7 +1931,16 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
           in
           clip_member_qualifications c;
           let true_periods = true_periods_of_cond c in
-          Timeline.grand_total ~grid_unit:grid gran (Timeline.clip tl true_periods))
+          Timeline.grand_total ~grid_unit:grid ~place:(self.label, a) gran (Timeline.clip tl true_periods))
+      | None when period_arithmetic_target env.doc ~otype:aot ~attr:a -> (
+          (* ch. 3.6 over the timeline a rule of ch. 3.4/3.5 writes: it divides all
+             time and is totalled whole, so no asOfDate bucket enters. Before that
+             rule has written it is absent and totals to leeg. *)
+          let tl = World.timeline self a in
+          read_whole base tl;
+          match tl with
+          | None -> Value.Empty
+          | Some tl -> Timeline.grand_total ~grid_unit:grid ~place:(self.label, a) gran tl)
       | None -> (
       if World.timeline self a <> None then
         Value.fault
@@ -2064,7 +2098,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
             (contributing_values members @@ map_in_order
                (fun (i : World.instance) ->
                  match World.timeline i name with
-                 | Some tl -> Timeline.grand_total ~grid_unit:grid gran tl
+                 | Some tl -> Timeline.grand_total ~grid_unit:grid ~place:(i.label, name) gran tl
                  | None ->
                      if World.attr i name = Value.Empty then Value.Empty
                      else
@@ -2992,6 +3026,79 @@ let clip_window window result =
   | None -> result
   | Some (lo, hi) -> if hi <= lo then [] else Timeline.clip result [ (lo, hi) ]
 
+(* ch. 3.4 and 3.5 as the value of a rule on a temporal attribute target: the
+   timeline of [e] over all time (ch. 3.1). Plus and minus cut and merge their
+   operands per period (the period-coalescing rule), the sum over the members
+   of a set sums their timelines per period (the contributor-skipping rule),
+   an own temporal attribute is read whole, and a scalar operand holds on every
+   day: one segment with two open bounds, or none where it is leeg. Every other
+   shape is refused by name, never read as a scalar at some instant. *)
+let rec period_timeline env w (self : World.instance) ~err ~target_unit (e : expr) : Timeline.t =
+  let whole (i : World.instance) a =
+    match World.timeline i a with
+    | Some tl -> tl
+    | None ->
+        if World.attr i a = Value.Empty then []
+        else
+          Value.fault
+            "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute %S of %S whole; the \
+             case supplies only the asOfDate-bucket scalar, which carries no period"
+            a i.label
+  in
+  match e with
+  | Binary { op = (Plus | Min) as op; left_side = Some l; right_side = Some r; _ } ->
+      let a = period_timeline env w self ~err ~target_unit l in
+      let b = period_timeline env w self ~err ~target_unit r in
+      if op = Plus then Timeline.plus a b else Timeline.min_ a b
+  | Attribute_reference { attribute_ref = Some a; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
+    when Ir_v0.Checks.attr_temporal (object_type env otn) a ->
+      if not (own_read env self otn) then
+        Value.fault "a read of %S on %S without navigation bindings is the subject's own read, but the subject is %S"
+          a otn self.otype;
+      whole self a
+  | Function_call
+      { kind = Sum_function;
+        call_arguments = [ Attribute_reference { attribute_ref = Some x; navigation_bindings = None; anchor = None; _ } ];
+        element_object_type = Some el; empty_fallback; filter = None; grain = None; dimension_selections = None;
+        source_role; source_path; anchor = None; _ }
+    when (source_role <> None || source_path <> None) && Ir_v0.Checks.attr_temporal (object_type env el) x ->
+      let members = fold_members ?binding:source_role ?path:source_path env w self ~element:el in
+      let fallback = Option.map (eval_expr env w self ~err) empty_fallback in
+      Timeline.summed ?fallback ~target_unit (List.map (fun i -> whole i x) members)
+  | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } -> scalar_everywhere env w self ~err e
+  | Parameter_ref { parameter = Some p; _ } -> (
+      match Ir_v0.Checks.find_ci env.doc.parameters p with
+      | Some { par_granularity = None; _ } -> scalar_everywhere env w self ~err e
+      | _ ->
+          Value.fault
+            "the time-dependent parameter %S as an operand of the period arithmetic of ch. 3.4/3.5 is \
+             not executed (no corpus case)"
+            p)
+  | _ ->
+      Value.fault
+        "this operand of the period arithmetic of ch. 3.4/3.5 is not executed: an operand is plus or \
+         minus, the sum of a temporal attribute over a set without a filter, an own temporal \
+         attribute, a literal, an own scalar attribute or a scalar parameter"
+
+and scalar_everywhere env w self ~err e =
+  match eval_expr env w self ~err e with
+  | Value.Empty -> []
+  | v -> [ { Timeline.s_from = Timeline.open_from; s_to = Timeline.open_to; s_value = v } ]
+
+(* the write of [period_timeline] (ch. 3.11): a period where the value is leeg
+   is a gap, so the written timeline holds filled segments only; the ch. 7.8
+   timeline arm as for the pro-rata below *)
+let run_period_arithmetic env w (self : World.instance) ~err ~form ~ot ~attr value_node =
+  let decl = attr_decl env ~otype:ot ~attr in
+  let result =
+    List.filter
+      (fun (s : Timeline.segment) -> s.s_value <> Value.Empty)
+      (period_timeline env w self ~err ~target_unit:(unit_of_datatype decl) value_node)
+  in
+  if result = [] && List.mem (norm ot, norm attr) (Ir_v0.Desugar.standing_temporal_targets env.doc)
+  then World.release w ~form ~label:self.label ~attr
+  else World.write_timeline_by w ~form ~label:self.label ~attr ~decl result
+
 let run_pro_rata ?window env w (self : World.instance) ~form ~ot ~attr value_node =
   let ot_decl = object_type env ot in
   match value_node with
@@ -3244,9 +3351,10 @@ let run_rule ?only env world (r : resolved_rule) =
               let hi = match dt with Some (Some z) -> if incl then z + 1 else z | _ -> max_int in
               (lo, hi)
         in
-        (* ch. 3.11: the only implemented temporal write is the ch. 3.7
-           pro-rata target; every other temporal target refuses — never
-           silently coerce a scalar into a timeline *)
+        (* ch. 3.11: the implemented temporal writes are the ch. 3.7 pro-rata
+           and ch. 3.8 day-count targets and the period arithmetic of ch. 3.4
+           and 3.5; every other temporal target refuses — never silently coerce
+           a scalar into a timeline *)
         (match r.rr_presentation with
         | Some Characteristic_attribution ->
             if characteristic_temporal (object_type env ot) attr then
@@ -3256,6 +3364,14 @@ let run_rule ?only env world (r : resolved_rule) =
             if temporal_target then
               match r.value_node with
               | Some (Function_call { kind = Time_proportional_part | Day_count; _ }) -> ()
+              | Some v when is_period_arithmetic v ->
+                  (* a condition on this rule would restrict the timeline per period
+                     (spec/proposals/IMPLICIT-TIME.md, point 3), which is not executed *)
+                  if r.rr_condition <> None then
+                    Value.fault
+                      "rule %S writes the temporal attribute %S by the period arithmetic of ch. 3.4/3.5 \
+                       under a condition: a condition per period is not executed"
+                      (rule_name r) attr
               | _ ->
                   Value.fault
                     "temporal attribute %S as a target: temporal writes are not implemented"
@@ -3299,6 +3415,9 @@ let run_rule ?only env world (r : resolved_rule) =
               (* the value is the constant waar, checked before any subject
                  was taken ([characteristic_value_constant_true]) *)
               | Some Characteristic_attribution -> World.set_char_by w ~form ~label:self.label ~char:attr
+              | Some (Equation | Calculation)
+                when temporal_target && Option.fold ~none:false ~some:is_period_arithmetic r.value_node ->
+                  run_period_arithmetic env w self ~err ~form ~ot ~attr (req "RuleVersion.value" r.value_node)
               | Some (Equation | Calculation) when temporal_target ->
                   let window = Option.map (window_of w self ~err) clip in
                   run_pro_rata ?window env w self ~form ~ot ~attr (req "RuleVersion.value" r.value_node)

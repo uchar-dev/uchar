@@ -2777,12 +2777,16 @@ let day s = match Value.date_of_iso s with Value.Date z -> z | _ -> assert false
 let seg van up_to v : Timeline.segment = { s_from = day van; s_to = day up_to; s_value = v }
 let seg_empty van up_to : Timeline.segment = { s_from = day van; s_to = day up_to; s_value = empty_value }
 
+(* a segment bound in an expected shape: a day, or "-inf" and "+inf" for the
+   open bounds of ch. 3.1 *)
+let bound s = if s = "-inf" then Timeline.open_from else if s = "+inf" then Timeline.open_to else day s
+
 let tl_shape name (tl : Timeline.t) expected =
   check name
     (List.length tl = List.length expected
     && List.for_all2
          (fun (s : Timeline.segment) (van, up_to, v) ->
-           s.s_from = day van && s.s_to = day up_to
+           s.s_from = bound van && s.s_to = bound up_to
            &&
            match (s.s_value, v) with
            | Value.Empty, None -> true
@@ -2790,36 +2794,53 @@ let tl_shape name (tl : Timeline.t) expected =
            | _ -> false)
          tl expected)
 
-(* WV-1.2f: the two timeline empty rules side by side *)
+(* WV-1.2f: the two timeline empty rules side by side; ch. 3.4 reads all time,
+   so the plus is 0 outside the one period as well, and the fallback of ch. 3.5
+   fills all time where every contributor is leeg *)
 let () =
   let a = [ seg_empty "2024-01-01" "2024-02-01" ] in
   let b = [ seg "2024-01-01" "2024-02-01" (n "4") ] in
-  tl_shape "WV-1.2f-tl-1" (Timeline.plus a b) [ ("2024-01-01", "2024-02-01", Some "4") ];
+  tl_shape "WV-1.2f-tl-1" (Timeline.plus a b)
+    [ ("-inf", "2024-01-01", Some "0"); ("2024-01-01", "2024-02-01", Some "4"); ("2024-02-01", "+inf", Some "0") ];
   tl_shape "WV-1.2f-tl-2" (Timeline.summed [ a; b ]) [ ("2024-01-01", "2024-02-01", Some "4") ];
   let bb = [ seg_empty "2024-01-01" "2024-02-01" ] in
-  tl_shape "WV-1.2f-tl-3" (Timeline.plus a bb) [ ("2024-01-01", "2024-02-01", Some "0") ];
+  tl_shape "WV-1.2f-tl-3" (Timeline.plus a bb) [ ("-inf", "+inf", Some "0") ];
   tl_shape "WV-1.2f-tl-4" (Timeline.summed [ a; bb ]) [ ("2024-01-01", "2024-02-01", None) ];
-  tl_shape "WV-1.2f-tl-4-fallback"
-    (Timeline.summed ~fallback:(n "0") [ a; bb ])
-    [ ("2024-01-01", "2024-02-01", Some "0") ]
+  tl_shape "WV-1.2f-tl-4-fallback" (Timeline.summed ~fallback:(n "0") [ a; bb ]) [ ("-inf", "+inf", Some "0") ]
 
-(* WV-3.4: cut-merge — the period-coalescing rule *)
+(* WV-3.4: cut-merge — the period-coalescing rule, over all time *)
 let () =
   let a = [ seg "2024-01-01" "2024-07-01" (n "100") ] in
   let b = [ seg "2024-04-01" "2024-10-01" (n "30") ] in
   tl_shape "WV-3.4-a" (Timeline.plus a b)
     [
+      ("-inf", "2024-01-01", Some "0");
       ("2024-01-01", "2024-04-01", Some "100");
       ("2024-04-01", "2024-07-01", Some "130");
       ("2024-07-01", "2024-10-01", Some "30");
+      ("2024-10-01", "+inf", Some "0");
     ];
+  tl_shape "WV-3.4-a-min" (Timeline.min_ a b)
+    [
+      ("-inf", "2024-01-01", Some "0");
+      ("2024-01-01", "2024-04-01", Some "100");
+      ("2024-04-01", "2024-07-01", Some "70");
+      ("2024-07-01", "2024-10-01", Some "-30");
+      ("2024-10-01", "+inf", Some "0");
+    ];
+  (* WV-3.4-domein: a scalar holds on every day *)
+  let five = [ { Timeline.s_from = Timeline.open_from; s_to = Timeline.open_to; s_value = n "5" } ] in
+  tl_shape "WV-3.4-domein" (Timeline.plus five a)
+    [ ("-inf", "2024-01-01", Some "5"); ("2024-01-01", "2024-07-01", Some "105"); ("2024-07-01", "+inf", Some "5") ];
   let a = [ seg "2024-01-01" "2024-02-01" (n "1") ] in
   let b = [ seg "2024-03-01" "2024-04-01" (n "2") ] in
   tl_shape "WV-3.4-b" (Timeline.plus a b)
     [
+      ("-inf", "2024-01-01", Some "0");
       ("2024-01-01", "2024-02-01", Some "1");
       ("2024-02-01", "2024-03-01", Some "0");
       ("2024-03-01", "2024-04-01", Some "2");
+      ("2024-04-01", "+inf", Some "0");
     ]
 
 (* WV-3.5: temporal summation — the contributor-skipping rule *)
@@ -2843,11 +2864,14 @@ let () =
   tl_shape "WV-3.5-b-fallback"
     (Timeline.summed ~fallback:(n "0") [ p1; p2 ])
     [
+      ("-inf", "2024-01-01", Some "0");
       ("2024-01-01", "2024-02-01", Some "40");
       ("2024-02-01", "2024-03-01", Some "0");
       ("2024-03-01", "2024-04-01", Some "20");
+      ("2024-04-01", "+inf", Some "0");
     ];
-  check "WV-3.5-c-empty-set" (Timeline.summed ~fallback:(n "0") [] = []);
+  check "WV-3.5-c-empty-set" (Timeline.summed [] = []);
+  tl_shape "WV-3.5-c-empty-set-fallback" (Timeline.summed ~fallback:(n "0") []) [ ("-inf", "+inf", Some "0") ];
   (* cross-unit: €/mnd contributors into a €/jr target — restated before
      the fold: 50×12 + 10×12 = 720 *)
   let eur_mnd = over eur mnd in
@@ -2870,6 +2894,16 @@ let () =
     [ seg "2024-01-01" "2024-01-01" (n "99"); { s_from = day "2024-06-01"; s_to = day "2024-05-01"; s_value = n "7" }; seg "2024-01-01" "2024-07-01" (n "10") ]
   in
   expect_num "WV-3.6-b" (Timeline.grand_total month degenerate) "60";
+  (* WV-3.6-open: an open segment holds unboundedly many units; with 0 it adds 0,
+     with any other value the total has none (EF-036) *)
+  let a = [ seg "2024-01-01" "2024-07-01" (n "100") ] and b = [ seg "2024-04-01" "2024-10-01" (n "30") ] in
+  expect_num "WV-3.6-open-zero" (Timeline.grand_total month (Timeline.plus a b)) "780";
+  let five = [ { Timeline.s_from = Timeline.open_from; s_to = Timeline.open_to; s_value = n "5" } ] in
+  check "WV-3.6-open-nonzero"
+    (match Timeline.grand_total ~place:("J1", "opgehoogde strandloon") month (Timeline.plus five a) with
+    | exception Value.Fault { code = Some "EF-036"; params; _ } ->
+        params = [ ("attribute", "opgehoogde strandloon"); ("label", "J1") ]
+    | _ -> false);
   (* gedurende "> 1000" clips to the 1200 months *)
   let vals = [ seg "2024-01-01" "2024-04-01" (n "1200"); seg "2024-04-01" "2024-06-01" (n "800") ] in
   let span = List.map (fun (s : Timeline.segment) -> (s.s_from, s.s_to)) vals in

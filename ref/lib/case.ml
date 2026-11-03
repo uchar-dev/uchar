@@ -356,11 +356,18 @@ let timeline_of_json ?(allow_empty = false) ~at ~(grid : Timeline.grid) (decl : 
       (fun i sj ->
         let seg = Printf.sprintf "%s.timeline[%d]" at i in
         let kvs = obj ~at:seg sj in
-        let boundary what = day_at ~at:(child seg what) (str_field ~at:seg kvs what) in
-        let van = boundary "from" in
-        let up_to = boundary "to" in
+        (* an omitted bound is open (RUNTIME-SEMANTICS ch. 3.1): the segment
+           begins before every day or runs past every day, and no grid wall
+           bounds it *)
+        let boundary what ~open_bound =
+          if List.mem_assoc what kvs then day_at ~at:(child seg what) (str_field ~at:seg kvs what)
+          else open_bound
+        in
+        let van = boundary "from" ~open_bound:Timeline.open_from in
+        let up_to = boundary "to" ~open_bound:Timeline.open_to in
         if up_to <= van then fail "%s: segment 'to' must lie after 'from'" seg;
-        if not (aligned van && aligned up_to) then
+        let on_grid d = d = Timeline.open_from || d = Timeline.open_to || aligned d in
+        if not (on_grid van && on_grid up_to) then
           fail "%s: segment boundaries must sit on the declared granularity grid" seg;
         {
           Timeline.s_from = van;
@@ -1178,9 +1185,11 @@ let check (case : t) (final : World.t) : string list =
           if actual = Value.Empty then None
           else Some (Printf.sprintf "%s.%s = %s, expected leeg" label member (Value.to_string actual))
       | Attribute_timeline { label; attr; tl } -> (
+          let bound z =
+            if z = Timeline.open_from then "-inf" else if z = Timeline.open_to then "+inf" else Value.iso_of_date z
+          in
           let show (s : Timeline.segment) =
-            Printf.sprintf "[%s,%s)=%s" (Value.iso_of_date s.s_from) (Value.iso_of_date s.s_to)
-              (Value.to_string s.s_value)
+            Printf.sprintf "[%s,%s)=%s" (bound s.s_from) (bound s.s_to) (Value.to_string s.s_value)
           in
           let render l = if l = [] then "(empty)" else String.concat " " (List.map show l) in
           match World.timeline (World.get final label) attr with

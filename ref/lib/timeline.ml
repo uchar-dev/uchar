@@ -1,10 +1,12 @@
 (* Timeline algebra, RUNTIME-SEMANTICS ch. 3.
 
-   A timeline value is a finite list of segments — half-open day
-   intervals [van, tot) carrying one constant value or explicit leeg —
-   sorted ascending and non-overlapping; days covered by no segment read
-   leeg (ch. 3.1). Semantics are defined over [read]; only the
-   change-detection rule compares segment lists.
+   A timeline value divides all time: a finite list of segments — half-open
+   day intervals [van, tot) carrying one constant value or explicit leeg,
+   the first of which may begin before every day and the last of which may
+   run past every day (an open bound) — sorted ascending and
+   non-overlapping; days covered by no segment read leeg (ch. 3.1).
+   Semantics are defined over [read]; only the change-detection rule
+   compares segment lists.
 
    Implemented here: read, calendar and anchored buckets with the
    month-end clamp and the grid a fixed start point lays (ch. 3.2), cut-merge arithmetic with the
@@ -19,6 +21,19 @@ open Value
 
 type segment = { s_from : int; s_to : int; s_value : Value.t }
 type t = segment list
+
+(* The open bounds of ch. 3.1: the two ends of the integer range, below and
+   above every day number. [read], the cut sets, the clip and the complement
+   then treat an open segment as any other, and only the folds that walk a
+   period bucket by bucket or count its units have to ask for one. *)
+let open_from = min_int
+let open_to = max_int
+let is_open (s : segment) = s.s_from = open_from || s.s_to = open_to
+
+(* a bucket walk over an open period never ends, so it is refused by name *)
+let refuse_open_periods what (periods : (int * int) list) =
+  if List.exists (fun (v, t) -> v = open_from || t = open_to) periods then
+    fault "%s walks the buckets of a period with an open bound, which has no end to reach (ch. 3.1)" what
 
 (* degenerate segments (tot <= van) contribute nothing anywhere *)
 let normalise (segs : t) : t =
@@ -194,6 +209,7 @@ let count_days_in_grid (gr : grid) (true_periods : (int * int) list) : t =
   (match gr.g_gran with
   | Month | Year -> ()
   | _ -> fault "day-count buckets are month or year only (ch. 3.8)");
+  refuse_open_periods "a fold over the buckets of a grid" true_periods;
   let module IMap = Map.Make (Int) in
   let acc =
     List.fold_left
@@ -405,10 +421,16 @@ let coalesce (segs : t) : t =
 
 (* --- ch. 3.4: cut-merge arithmetic (the period-coalescing rule) --------- *)
 
-(* [op] is the scalar operator (Arith.add / Arith.sub_min); empty operands
-   coalesce to 0 per period — inside the union's span only *)
+(* the cut set with both open ends: the periods before the first cut and after
+   the last one are periods of all time as well (ch. 3.4) *)
+let with_open_ends cs = List.sort_uniq compare (open_from :: open_to :: cs)
+
+(* [op] is the scalar operator (Arith.add / Arith.sub_min), applied per period
+   of all time: empty operands coalesce to 0 there, before the first cut and
+   after the last one too, so a scalar operand (one open segment) is read on
+   every day and the result is a division of all time *)
 let cut_merge op (a : t) (b : t) : t =
-  let cs = cuts [ a; b ] in
+  let cs = with_open_ends (cuts [ a; b ]) in
   let rec pairs = function c1 :: (c2 :: _ as rest) -> (c1, c2) :: pairs rest | _ -> [] in
   List.map
     (fun (c1, c2) ->
@@ -423,19 +445,21 @@ let min_ = cut_merge Arith.sub_min
 (* --- ch. 3.5: temporal summation (the contributor-skipping rule) -------- *)
 
 (* [target_unit]: each contributor is restated to the target's unit
-   before the fold (exact factors, ch. 2.6). Zero contributors yield the
-   empty timeline, fallback or not; all-leeg periods the fallback does
-   not fill are emitted as explicit leeg segments. *)
+   before the fold (exact factors, ch. 2.6). All-leeg periods the fallback
+   does not fill are emitted as explicit leeg segments. Outside every
+   contributor all of them are leeg, so the fallback fills all time there,
+   with zero contributors as well; without it that time stays leeg and no
+   segment is emitted for it (ch. 3.5). *)
 let summed ?fallback ?(target_unit = Value.Unitless) (tls : t list) : t =
   match tls with
-  | [] -> []
+  | [] when Option.is_none fallback -> []
   | _ ->
       let restate v =
         match v with
         | Num (q, u) -> Num (Arith.restate_into target_unit q u, target_unit)
         | v -> v
       in
-      let cs = cuts tls in
+      let cs = if Option.is_none fallback then cuts tls else with_open_ends (cuts tls) in
       let rec pairs = function c1 :: (c2 :: _ as rest) -> (c1, c2) :: pairs rest | _ -> [] in
       List.map
         (fun (c1, c2) ->
@@ -606,12 +630,26 @@ let integrated_segment ?(grid_unit : (Ir_v0.Ast.measure_unit, string) result opt
    contributes 0; a segmentless timeline totals to 0 (the absent-timeline
    leeg case is the caller's, ch. 3.6). [grid_unit] is resolved once per
    fold by the caller (it needs the document); its absence only bites a
-   rate-valued segment. *)
-let grand_total ?grid_unit (g : Ir_v0.Ast.grain) (tl : t) : Value.t =
+   rate-valued segment. An open segment holds unboundedly many units: with
+   the value 0 it contributes 0, with any other value the total has none
+   (EF-036); [place] is the (label, attribute) the fault names. *)
+let grand_total ?grid_unit ?place (g : Ir_v0.Ast.grain) (tl : t) : Value.t =
   List.fold_left
     (fun acc s ->
       match s.s_value with
       | Empty -> acc
+      | Num (q, _) when is_open s && Q.equal q Q.zero -> acc
+      | v when is_open s ->
+          let params, where =
+            match place with
+            | Some (label, attribute) ->
+                ([ ("attribute", attribute); ("label", label) ], Printf.sprintf " of %S on %S" attribute label)
+            | None -> ([], "")
+          in
+          faultc ~params "EF-036"
+            "the temporal total%s meets a segment with an open bound carrying %s: a value other than 0 \
+             over unboundedly many units has no total (ch. 3.6)"
+            where (Value.to_string v)
       | v ->
           let units = whole_units g s.s_from s.s_to in
           Arith.add acc (integrated_segment ?grid_unit units v))
