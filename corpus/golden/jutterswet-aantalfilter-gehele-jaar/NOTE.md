@@ -34,42 +34,14 @@ Een telling over een lege verzameling is 0, nooit leeg (ch. 1.2e). Het
 waaktarief blijft leeg waar de voorwaarde onwaar is: de regel schrijft
 dan niets. Elke case pint ook dat het kanaal leeg is.
 
-## Waarom er geen `source.rgs` bij staat
+## De bron (`source.rgs`)
 
-Het document is in RegelSpraak geschreven:
-
-```
-Objecttype het Kustvak (mv: Kustvakken)
-    het postental Numeriek (niet-negatief geheel getal);
-    het waaktarief Numeriek (geheel getal);
-
-Objecttype de Post (mv: Posten)
-    is bemand kenmerk (bijvoeglijk) voor elke maand;
-
-Feittype postindeling
-    het kustvak Kustvak
-    de post (mv: posten) Post
-Eén kustvak omvat meerdere posten
-
-Regel postental van een kustvak
-    geldig altijd
-        Het postental van een Kustvak moet berekend worden als het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn.
-
-Regel waaktarief van een kustvak
-    geldig altijd
-        Het waaktarief van een Kustvak moet gesteld worden op 10
-        indien het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn groter is dan 0.
-```
-
-De frontend zet een die/dat-subselectie met een kwalificatie van de hele
-periode op de operand van een aggregatie nog niet om: hij schrijft een
-`Unresolved`-filter met een waarschuwing ("een 'die/dat'-subselectie op
-een aggregatie-operand wordt nog niet omgezet"). In `ir.json` is dat
-filter met de hand vervangen door de kenmerktoets `bemand` met de
-kwalificatie van het jaar, en de waarschuwing is weggelaten. De bron
-levert dus niet byte voor byte deze IR op, en gate 10 eist dat van elke
-golden met een `source.rgs`. De IR is daarom handgeschreven, zoals een
-golden voor een vorm die geen frontend nog maakt (`corpus/golden/README.md`).
+Het document is in RegelSpraak geschreven, in `source.rgs`. De frontend
+zet de die/dat-subselectie met de kwalificatie van het gehele jaar op de
+operand van de telling (in een rekenregel en in de voorwaarde van een
+gelijkstelling) om naar het filter van de telling: de kenmerktoets
+`bemand` met de kwalificatie van het jaar. Gate 10 emitteert `ir.json`
+byte voor byte uit de bron.
 
 ## Herkomst
 

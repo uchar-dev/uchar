@@ -1,0 +1,20 @@
+Objecttype het Kustvak (mv: Kustvakken)
+    het postental Numeriek (niet-negatief geheel getal);
+    het waaktarief Numeriek (geheel getal);
+
+Objecttype de Post (mv: Posten)
+    is bemand kenmerk (bijvoeglijk) voor elke maand;
+
+Feittype postindeling
+    het kustvak Kustvak
+    de post (mv: posten) Post
+Eén kustvak omvat meerdere posten
+
+Regel postental van een kustvak
+    geldig altijd
+        Het postental van een Kustvak moet berekend worden als het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn.
+
+Regel waaktarief van een kustvak
+    geldig altijd
+        Het waaktarief van een Kustvak moet gesteld worden op 10
+        indien het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn groter is dan 0.

@@ -5412,7 +5412,7 @@ final class RuleChecker {
     /** §8.2 / §13.4.15.70: the optional "(niet) gedurende de/het gehele jaar|maand" whole-period qualifier that
      *  precedes a predicate (verb-split or verb-leading); null when absent. {@code year} reads the JAAR vs MAAND
      *  keyword, {@code negated} the leading negation. The transpilers honour it on a tijdsafhankelijk onderwerp. */
-    private static Condition.WholePeriod wholePeriod(GehelePeriodevergelijkingContext g) {
+    static Condition.WholePeriod wholePeriod(GehelePeriodevergelijkingContext g) {
         if (g == null) return null;
         boolean year = g.JAAR() != null;   // else MAAND
         // the negation is either the bare NIET prefix (stellende vorm "is niet gedurende …") or the combined

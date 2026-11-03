@@ -30,49 +30,13 @@ De creatie maakt per Kustvak hoogstens één Wachtbrief; het brieftal is
 een telling en dus 0 waar geen brief bestaat, nooit leeg (ch. 1.2e). Elke
 case pint ook dat het kanaal leeg is.
 
-## Waarom er geen `source.rgs` bij staat
+## De bron (`source.rgs`)
 
-Het document is in RegelSpraak geschreven:
-
-```
-Objecttype het Kustvak (mv: Kustvakken)
-    het brieftal Numeriek (niet-negatief geheel getal);
-
-Objecttype de Post (mv: Posten)
-    is bemand kenmerk (bijvoeglijk) voor elke maand;
-
-Objecttype de Wachtbrief (mv: Wachtbrieven)
-    het briefbedrag Numeriek (geheel getal);
-
-Feittype postindeling
-    het kustvak Kustvak
-    de post (mv: posten) Post
-Eén kustvak omvat meerdere posten
-
-Feittype briefuitgifte
-    het uitgevende kustvak Kustvak
-    de uitgegeven wachtbrief (mv: uitgegeven wachtbrieven) Wachtbrief
-Eén uitgevende kustvak heeft één uitgegeven wachtbrief
-
-Regel geef een wachtbrief uit
-    geldig altijd
-        Een Kustvak heeft een Wachtbrief met briefbedrag gelijk aan 10
-        indien het aantal posten van het Kustvak die gedurende het gehele jaar bemand zijn groter is dan 0.
-
-Regel tel de wachtbrieven
-    geldig altijd
-        Het brieftal van een Kustvak moet berekend worden als het aantal uitgegeven wachtbrieven van het Kustvak.
-```
-
-De frontend zet een die/dat-subselectie met een kwalificatie van de hele
-periode op de operand van een aggregatie nog niet om: hij schrijft een
-`Unresolved`-filter met een waarschuwing ("een 'die/dat'-subselectie op
-een aggregatie-operand wordt nog niet omgezet"). In `ir.json` is dat
-filter met de hand vervangen door de kenmerktoets `bemand` met de
-kwalificatie van het jaar, en de waarschuwing is weggelaten. De bron
-levert dus niet byte voor byte deze IR op, en gate 10 eist dat van elke
-golden met een `source.rgs`. De IR is daarom handgeschreven, zoals een
-golden voor een vorm die geen frontend nog maakt (`corpus/golden/README.md`).
+Het document is in RegelSpraak geschreven, in `source.rgs`. De frontend
+zet de die/dat-subselectie met de kwalificatie van het gehele jaar op de
+operand van de telling (in de voorwaarde van de objectcreatie) om naar
+het filter van de telling: de kenmerktoets `bemand` met de kwalificatie
+van het jaar. Gate 10 emitteert `ir.json` byte voor byte uit de bron.
 
 ## Herkomst
 

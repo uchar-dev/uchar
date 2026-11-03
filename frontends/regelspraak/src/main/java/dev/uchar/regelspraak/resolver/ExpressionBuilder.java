@@ -2204,7 +2204,7 @@ final class ExpressionBuilder {
                 return c != null ? c : new Condition.Unresolved(source(p), null);
             }
             Condition filter = identityFilter(p);
-            if (filter == null) filter = elementCharacteristicCheckFilter(p, elem);
+            if (filter == null) filter = elementCharacteristicCheckFilter(p, elem, true);
             // §5.6 getalpredicaat "die <op> <expr>" (e.g. "die kleiner zijn dan 18"): a comparison of the AGGREGATED
             // attribute (the LHS the operator folds) -> a Condition.Comparison the accumulate source pattern constrains.
             if (filter == null) filter = elementComparison(p, elem, arguments);
@@ -2505,8 +2505,19 @@ final class ExpressionBuilder {
     /** A "die een &lt;kenmerk&gt; zijn" subselectie resolved against the counted element type: the
      *  predicaat's name matched (case-insensitively) to a declared kenmerk of the element, as a
      *  {@link Condition.CharacteristicCheck}; null when the predicaat is not such a kenmerk of the element (a
-     *  comparison, an objecttype/role membership, an unknown name — all left to the marker path). */
+     *  comparison, an objecttype/role membership, an unknown name — all left to the marker path).
+     *
+     *  <p>{@code wholePeriods}: whether the caller lowers a "(niet) gedurende de/het gehele &lt;periode&gt;" qualifier
+     *  (§8.2) onto the check. A subselection is no clip, so the qualifier is a field of its check (IR-SPEC ch. 4.5;
+     *  WF-097 fences the clips only) and the fold's filter reads it per element (RUNTIME-SEMANTICS ch. 3.9). The
+     *  aggregation's filter lowers it; the filters of a quantifier fold and of a union branch return null on a
+     *  qualifier, and their callers refuse the subselection. A qualifier on a characteristic that is not
+     *  time-dependent has no reading (WF-043): the ERROR is raised here, and the null leaves the caller's marker. */
     private Condition elementCharacteristicCheckFilter(PredicaatContext p, ObjectType elem) {
+        return elementCharacteristicCheckFilter(p, elem, false);
+    }
+
+    private Condition elementCharacteristicCheckFilter(PredicaatContext p, ObjectType elem, boolean wholePeriods) {
         if (elem == null) return null;
         // §13.4.13.5-.8: a kenmerk membership predicate is "(een) <kenmerk> is/zijn" — the spec's
         // verb-trailing toplevelOperator register ("die een minderjarige zijn") — OR, in the permissive
@@ -2515,31 +2526,37 @@ final class ExpressionBuilder {
         // hebben" / "die heeft een kind" = that HAVE a child), a different predicate class — not the
         // element's boolean kenmerk; its bareName carries no is/zijn here, so it falls through to the marker.
         String nameSource = null;
-        boolean hasWholePeriod = false;
+        GehelePeriodevergelijkingContext qualifier = null;
         if (p.toplevelOperator() != null) {                  // EEN? bareName (IS | HEEFT | ZIJN | HEBBEN)
             ToplevelOperatorContext op = p.toplevelOperator();
             if (op.kaleNaam() != null && (op.IS() != null || op.ZIJN() != null)) nameSource = src(op.kaleNaam());
-            hasWholePeriod = op.gehelePeriodevergelijking() != null;
+            qualifier = op.gehelePeriodevergelijking();
         } else if (p.nonToplevelOperator() != null) {        // (IS | HEEFT | ZIJN | HEBBEN) EEN? bareName, or EEN bareName (IS | ZIJN)
             NonToplevelOperatorContext op = p.nonToplevelOperator();
             if (op.kaleNaam() != null && (op.IS() != null || op.ZIJN() != null)) nameSource = src(op.kaleNaam());
-            hasWholePeriod = op.gehelePeriodevergelijking() != null;
+            qualifier = op.gehelePeriodevergelijking();
         }
         if (nameSource == null) return null;
-        // §8.2: a "(niet) gedurende de/het gehele <periode>" whole-period qualifier on a subselectie element kenmerk is
-        // NOT yet lowered onto the accumulate source — MARKER it (return null -> the caller markers the whole subselectie)
-        // rather than SILENTLY binding a static kenmerk check that drops the §8.2 semantics. Both back-ends decline
-        // symmetrically (no-silent-drop). The unqualified kenmerk subselectie ("die een minderjarige zijn") fires as before.
-        if (hasWholePeriod) return null;
+        // a check without the qualifier the source writes would select other elements
+        if (qualifier != null && !wholePeriods) return null;
+        Condition.WholePeriod period = RuleChecker.wholePeriod(qualifier);
         // §5.6: the written form may be the kenmerk's inflected/nominalized spelling
         // ("die een minderjarige zijn" against the declared "minderjarig") — bind it morphologically.
         String characteristic = CharacteristicMatcher.find(elem, nameSource);
-        if (characteristic != null) return new Condition.CharacteristicCheck(characteristic, source(p));
         String written = nameSource;
-        return narrowingHost(elem, written, source(p), t -> {
-            String g = CharacteristicMatcher.find(t, written);
-            return g == null ? null : new Condition.CharacteristicCheck(g, source(p));
-        });
+        Condition filter = characteristic != null
+                ? new Condition.CharacteristicCheck(characteristic, null, false, null, period, source(p))
+                : narrowingHost(elem, written, source(p), t -> {
+                    String g = CharacteristicMatcher.find(t, written);
+                    return g == null ? null : new Condition.CharacteristicCheck(g, null, false, null, period, source(p));
+                });
+        if (period != null && filter instanceof Condition.CharacteristicCheck k
+                && (k.owner() != null ? k.owner() : elem).characteristicGranularityOf(k.characteristic()) == null) {
+            model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.ERROR,
+                    "RGS-207", params(), p.getStart().getLine()));
+            return null;
+        }
+        return filter;
     }
 
     /** False while the condition of a fact creation is built: its guard binds two objects, the anchor and the target, and
