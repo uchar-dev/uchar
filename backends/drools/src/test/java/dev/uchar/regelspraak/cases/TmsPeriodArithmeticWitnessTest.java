@@ -69,7 +69,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * of 0 it is 2 × 10 + 1 × 10 = 30; the per-element total faults naming the member whose timeline has an open segment
  * of 5, and adds an open segment of 0 as 0, 2 × 5 + 3 = 13; a period-arithmetic operand and a member of a sum per
  * period given as the asOfDate-bucket scalar fault in the reference interpreter's words; the whole-period qualifier
- * over an open segment has no end to walk to (ch. 3.1).
+ * over an open segment has no end to walk to (ch. 3.1); a segment that does not fit the decimals of the target faults
+ * at the write boundary (ch. 2.4, EF-006).
  *
  * <p><b>D, the case reader.</b> A segment without {@code from} after another is out of order; a mismatch names an open
  * bound as {@code -inf} or {@code +inf}.
@@ -311,6 +312,19 @@ class TmsPeriodArithmeticWitnessTest {
                 Map.of(), Map.of())), List.of(consistent()));
         assertEquals("ComputeFault: fout in de regel \"vast\": a fold over the buckets of a grid walks the buckets of a"
                 + " period with an open bound, which has no end to reach (ch. 3.1)", TmsFaultWitnessTest.playBoth(ir, c));
+    }
+
+    @Test void a_segment_that_does_not_fit_the_decimals_of_the_target_faults_at_the_write_boundary() throws Exception {
+        String model = TmsDocuments.model(List.of(objectType("Jutter", List.of(
+                timeAttribute("strandloon", TmsDocuments.numberType(false, 2, null), "month"),
+                timeAttribute("maandloon", WHOLE, "month")), List.of())), List.of());
+        JsonNode c = TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of("strandloon",
+                timeline(List.of(segment("2024-01-01", "2024-07-01", "100.50")))), List.of(), Map.of(), Map.of())),
+                List.of(consistent()));
+        // 5 on the open segments fits; 100,50 plus 5 on the first half of 2024 does not
+        assertEquals("WriteBoundaryFault: fout in de regel \"maandloon\": J1.maandloon: de waarde 211/2 past niet in de"
+                + " gedeclareerde 0 decimalen — een expliciete afronding is verplicht (RUNTIME-SEMANTICS ch. 2.4)",
+                TmsFaultWitnessTest.playBoth(document(model, List.of(MAANDLOON_OF_STRANDLOON)), c));
     }
 
     // ---------------- D: the case reader ----------------
