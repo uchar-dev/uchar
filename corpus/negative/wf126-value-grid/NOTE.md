@@ -1,0 +1,3 @@
+Violates WF-126 (`spec/IR-SPEC.md` ch. 3.1): a timeline that the value of a rule on a timeline target reads per period lies on a grid that does not fit the target's.
+
+The parameter `dagrentevoet` is declared for every day; the rule writes `maandrente`, declared for every month, as the dagrentevoet maal the afdrachtbedrag. The product changes value on any day the dagrentevoet does, and a timeline for every month cannot carry a cut inside a month. RUNTIME-SEMANTICS ch. 3.4 (granularity) demands an operand whose grid fits the target's; no executor turns a finer operand into a coarser target (RegelSpraak typeringen §3, `spec/proposals/IMPLICIT-TIME.md` point 8, `WV-3.4-fijner-geweigerd`).

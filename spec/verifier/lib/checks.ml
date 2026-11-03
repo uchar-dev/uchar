@@ -616,6 +616,21 @@ let read_fixed_start_point s =
    0 for a day or week grid. *)
 let step_months = function Month -> 1 | Quarter -> 3 | Year -> 12 | Day | Week -> 0
 
+(* WF-126 (IR-SPEC ch. 3.1): whether a timeline on the grid [operand] fits a
+   target on the grid [target], every wall of the first a wall of the second,
+   so the target can carry each cut the operand makes. A grid is its
+   granularity and its start: None on the calendar, else a key of its fixed or
+   variable start. Every grid fits the day grid; on the calendar a month,
+   quarter or year fits a target of its family no coarser than itself; two
+   other grids fit where they are the same grid. *)
+let grid_fits ~(operand : grain * string option) ~(target : grain * string option) =
+  let og, os = operand and tg, ts = target in
+  tg = Day
+  || (og = tg && os = ts)
+  || os = None && ts = None
+     && step_months og > 0 && step_months tg > 0
+     && step_months og mod step_months tg = 0
+
 (* The canonical day-month of a one-unit month, quarter or year grid with a
    wall on day [d] of month [m]: the earliest month of the year in that
    month's cycle that has the day itself; None when no month of it has. *)
@@ -12172,6 +12187,118 @@ let wf125 ctx =
           ot.attribute_dimensions)
       ctx.doc.object_types
 
+(* WF-126 (IR-SPEC ch. 3.1): every timeline that the value or the condition of
+   a rule on a timeline attribute target reads per period lies on a grid that
+   fits the target's ([grid_fits]), so the target can carry each cut it makes
+   (RegelSpraak typeringen §3; spec/proposals/IMPLICIT-TIME.md VB 8.1). The
+   timelines read per period: an own time-dependent attribute, the member
+   attribute of a sum over a set and a time-dependent parameter in the value; a
+   check of an own time-dependent characteristic and a compared own
+   time-dependent attribute in the condition, and a whole-period qualifier
+   there, whose grid is the month or the year it names. The producers with a
+   grid of their own — the time-proportional part and the day count (WF-056,
+   WF-058) — and the operand of a whole-period qualifier follow their own
+   rule. *)
+let wf126 ctx =
+  let word g = Spelling.encode Spelling.granularity g in
+  let attr_grid (ot : object_type) a =
+    match find_ci ot.attribute_granularity a with
+    | Some (Some g) ->
+        let period = find_ci ot.attribute_timeline_count a in
+        let count = Option.value (Option.bind period (fun p -> p.tv_count)) ~default:1 in
+        let start =
+          match Option.join (find_ci ot.attribute_timeline_names a) with
+          | Some n -> Some ("timeline " ^ norm n)
+          | None -> Option.bind period (fun p -> p.tv_fixed_start_point)
+        in
+        if count = 1 then Some (g, start) else None
+    | _ -> None
+  in
+  let calendar g = (g, None) in
+  List.concat_map
+    (fun (r : resolved_rule) ->
+      match (r.rr_presentation, r.objective) with
+      | Some (Equation | Calculation), Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ })
+        -> (
+          match object_type ctx otn with
+          | None -> []
+          | Some ot -> (
+              match attr_grid ot a with
+              | None -> []
+              | Some target ->
+                  let judge kind at what operand =
+                    match operand with
+                    | Some operand when not (grid_fits ~operand ~target) ->
+                        [ v
+                            ~params:
+                              [ ("operand", what); ("operandGrid", word (fst operand)); ("target", a);
+                                ("targetGrid", word (fst target)) ]
+                            ("WF-126." ^ kind) at
+                            (Printf.sprintf
+                               "%s, read per period by the %s of a rule on the timeline target '%s', lies on the %s \
+                                grid, which does not fit the %s grid of the target: the target cannot carry its cuts"
+                               what (if kind = "value-grid" then "value" else "condition") a (word (fst operand))
+                               (word (fst target))) ]
+                    | _ -> []
+                  in
+                  let rec value at (e : expr) =
+                    match e with
+                    | Binary { left_side; right_side; _ } ->
+                        Option.fold ~none:[] ~some:(value (at ^ "/left")) left_side
+                        @ Option.fold ~none:[] ~some:(value (at ^ "/right")) right_side
+                    | Attribute_reference { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ }
+                      -> (
+                        match object_type ctx botn with
+                        | Some bot -> judge "value-grid" at (Printf.sprintf "the attribute '%s'" b) (attr_grid bot b)
+                        | None -> [])
+                    | Function_call
+                        { kind = Sum_function; element_object_type = Some el;
+                          call_arguments = [ Attribute_reference { attribute_ref = Some x; _ } ]; _ } -> (
+                        match object_type ctx el with
+                        | Some elt -> judge "value-grid" (at ^ "/arguments/0") (Printf.sprintf "the attribute '%s'" x) (attr_grid elt x)
+                        | None -> [])
+                    | Parameter_ref { parameter = Some p; _ } -> (
+                        match find_ci ctx.doc.parameters p with
+                        | Some { par_granularity = Some g; par_fixed_start_point; par_timeline_count; _ }
+                          when Option.value par_timeline_count ~default:1 = 1 ->
+                            judge "value-grid" at (Printf.sprintf "the parameter '%s'" p) (Some (g, par_fixed_start_point))
+                        | _ -> [])
+                    | _ -> []
+                  in
+                  let qualifier at (gp : entire_period) =
+                    judge "condition-grid" at "the whole-period qualifier" (Some (calendar (if gp.gp_granularity then Year else Month)))
+                  in
+                  let rec condition at (c : condition_expr) =
+                    match c with
+                    | Characteristic_check { time_period = Some gp; _ } | Comparison { time_period = Some gp; _ }
+                    | Predicate { time_period = Some gp; _ } ->
+                        qualifier at gp
+                    | Characteristic_check { characteristic = Some k; navigation_binding = None; _ } -> (
+                        match find_ci ot.characteristic_granularity k with
+                        | Some (Some g) -> judge "condition-grid" at (Printf.sprintf "the characteristic '%s'" k) (Some (calendar g))
+                        | _ -> [])
+                    | Comparison { left_side; right_side; _ } ->
+                        let side key e =
+                          match e with
+                          | Some (Attribute_reference { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ })
+                            -> (
+                              match object_type ctx botn with
+                              | Some bot -> judge "condition-grid" (at ^ key) (Printf.sprintf "the attribute '%s'" b) (attr_grid bot b)
+                              | None -> [])
+                          | _ -> []
+                        in
+                        side "/left" left_side @ side "/right" right_side
+                    | Compound { components; _ } ->
+                        List.concat (List.mapi (fun i c -> condition (Printf.sprintf "%s/parts/%d" at i) c) components)
+                    | _ -> []
+                  in
+                  (match r.value_node with
+                  | Some (Function_call { kind = Time_proportional_part | Day_count; _ }) | None -> []
+                  | Some e -> value (r.rr_pointer ^ "/value") e)
+                  @ Option.fold ~none:[] ~some:(condition (r.rr_pointer ^ "/condition")) r.rr_condition))
+      | _ -> [])
+    ctx.doc.resolved_rules
+
 let all (doc : document) : violation list =
   let ctx = ctx_of doc in
   List.map (fun x -> { x with at = m1_named doc x.at })
@@ -12189,4 +12316,4 @@ let all (doc : document) : violation list =
       wf047_allocations ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf088 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; wf113 ctx; expression_layer ctx;
-      wf040_writes ctx; wf125 ctx ]
+      wf040_writes ctx; wf125 ctx; wf126 ctx ]

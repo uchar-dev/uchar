@@ -1,0 +1,5 @@
+WF-126.condition-grid
+operand=the whole-period qualifier
+operandGrid=month
+target=jaarpremie
+targetGrid=year
