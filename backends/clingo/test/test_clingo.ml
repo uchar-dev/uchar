@@ -7783,9 +7783,25 @@ let () =
             "datatype": { "node": "Date", "precision": "day" } }|}
       ~rule_def:(rule_def parameter_bound)
   in
-  faults_with ~name:"ch3.10 a parameter bound is the deferred bound form" ~ir
+  ref_matches ~name:"ch3.10 a parameter bound is a date expression over the parameters" ~ir ~case_text:window_case;
+  clingo_matches ~name:"ch3.10 a parameter bound is a date expression over the parameters" ~ir
+    ~case_text:window_case;
+  let foreign_bound =
+    {|{ "node": "TimeWindow",
+        "from": { "node": "AttributeReference", "attribute": "meldatum", "subjectType": "Strandvak",
+                   "source": { "snippet": "de meldatum van het strandvak" } },
+        "toInclusive": false, "source": { "snippet": "vanaf de meldatum van het strandvak" } }|}
+  in
+  let ir =
+    window_doc ~attributes:(attribute_ref "vondstpremie" num_whole)
+      ~parameters:
+        {|{ "node": "Parameter", "name": "peildatum",
+            "datatype": { "node": "Date", "precision": "day" } }|}
+      ~rule_def:(rule_def foreign_bound)
+  in
+  faults_with ~name:"ch3.10 a bound that reads more than the subject is refused" ~ir
     ~case_text:window_case
-    ~needle:"neither a date literal nor an own scalar date attribute of the subject";
+    ~needle:"which the subject does not satisfy, and WF-111 admits a day-precise date expression";
   faults_with ~name:"ch3.10 the bound refusal carries its phase-tail" ~ir
     ~case_text:window_case ~needle:"Declined in translation"
 
@@ -7923,10 +7939,10 @@ let () =
     ~ir:(clip_doc from_2025) ~case_text:outside_window_case;
   let one_member = {|{ "node": "Compound", "quantifier": "all", "threshold": 0, "parts": [ |}
             ^ clip_window ^ {| ], "source": { "snippet": "alle" } }|} in
-  faults_with ~name:"ch3.10 the window as a member on a timeline target stays refused"
-    ~ir:(clip_doc one_member) ~case_text:clip_case ~needle:"inside a composite on the temporal target";
-  faults_with ~name:"ch3.10 the member refusal carries its phase-tail" ~ir:(clip_doc one_member)
-    ~case_text:clip_case ~needle:"Declined in translation"
+  ref_matches ~name:"ch3.10 the window as a member on a timeline target cuts" ~ir:(clip_doc one_member)
+    ~case_text:clip_case;
+  clingo_matches ~name:"ch3.10 the window as a member on a timeline target cuts" ~ir:(clip_doc one_member)
+    ~case_text:clip_case
 
 (* ch. 3.11 — een KENMERKTOEKENNING op een tijdsafhankelijk kenmerk schrijft
    een tijdlijn, en has/2 is de scalaire lezing. Tot 2026-09-23 schreef
@@ -7968,7 +7984,7 @@ let () =
 |}
   in
   faults_with ~name:"ch3.11 a time-dependent characteristic gets no scalar has-fact" ~ir
-    ~case_text ~needle:"temporal characteristic \"geborgen\": temporal writes are not implemented"
+    ~case_text ~needle:"without one it is not translated"
 
 (* WF-110 / ch. 3.4d — the INSTANCE-SET UNION, the §5.7 concatenation of
    subject expressions under a count. Three things no corpus golden can
@@ -15040,13 +15056,16 @@ let () =
       (if guard_cond then {|,"characteristicTimelines":{"wachtplichtig":[{"from":"2025-01-01","to":"2026-01-01"}]}|} else "")
       (String.concat "," (List.map table_row [ "vol"; "maandvol"; "boven" ]))
   in
-  let over_2025 = case_data ~guard_cond:true ~hits_list:[] in
+  (* the count is 0 in every period without a counted day (IMPLICIT-TIME 7a),
+     so both counts are filled on every day of every year and month, and a
+     count greater than 0 fails on the zeros around the counted periods *)
+  let over_2025 = case_data ~guard_cond:true ~hits_list:[ ("vol", 301); ("maandvol", 302) ] in
   ref_matches ~name:"ch3.2/3.9 day count on a fixed grid over 2025, whole-period folds" ~ir ~case_text:over_2025;
   clingo_matches ~name:"ch3.2/3.9 day count on a fixed grid over 2025, whole-period folds" ~ir
     ~case_text:over_2025;
-  let excluding = case_data ~guard_cond:false ~hits_list:[ ("vol", 301); ("maandvol", 302); ("boven", 400) ] in
-  ref_matches ~name:"ch3.2/3.9 no day counted, the folds pass vacuously" ~ir ~case_text:excluding;
-  clingo_matches ~name:"ch3.2/3.9 no day counted, the folds pass vacuously" ~ir ~case_text:excluding
+  let excluding = case_data ~guard_cond:false ~hits_list:[ ("vol", 301); ("maandvol", 302) ] in
+  ref_matches ~name:"ch3.2/3.9 no day counted, the counts are 0 on all time" ~ir ~case_text:excluding;
+  clingo_matches ~name:"ch3.2/3.9 no day counted, the counts are 0 on all time" ~ir ~case_text:excluding
 
 (* RUNTIME-SEMANTICS ch. 3.2 and 3.6, the asOfDate bucket on the member's own
    grid: a scalar case value is the value of the period of that grid which
@@ -17159,12 +17178,13 @@ let () =
       "rule \"najaarsmerk\" attributes a characteristic to the cell \"vondstgewicht[najaar]\": a cell is a cell of an \
        attribute, written by a computation or an initialisation (WF-022)"
 
-(* RUNTIME-SEMANTICS ch. 3.1, 3.6, 3.11: the refusals around period arithmetic
-   over all time, on the documents of ref's own witnesses (ref/test/fixtures).
-   A whole-period fold over a timeline with an open bound would answer for the
-   case's span alone, and a total over a timeline that reads a pro-rata part
-   would lay its whole-unit facts between bounds that are no case data. A
-   condition without a timeline on such a rule gates it, as ref plays it. *)
+(* RUNTIME-SEMANTICS ch. 3.1, 3.6, 3.11: period arithmetic over all time, on
+   the documents of ref's own witnesses (ref/test/fixtures). A whole-period fold
+   over a timeline with an open bound reads the bucket beside each finite bound
+   for every bucket further out; a total over a timeline that reads a pro-rata
+   part lays its whole-unit facts between the walls of the grid as well; an
+   unbound time-dependent parameter is refused. A condition without a timeline
+   on such a rule gates it, as ref plays it. *)
 let () =
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/period-arithmetic/" in
@@ -17172,9 +17192,13 @@ let () =
     (fun (fixture, needle) ->
       faults_with ~name:("period arithmetic: " ^ fixture) ~ir:(read (dir ^ fixture ^ "/ir.json"))
         ~case_text:(read (dir ^ fixture ^ "/case.json")) ~needle)
-    [ ("open-whole-period", "whose timeline may carry an open bound, is not translated");
-      ("total-over-pro-rata", "its bounds are not case data, so the whole-unit facts cannot be laid");
-      ("parameter-unbound", "parameter \"verzuimrentevoet\" is unbound in this case") ];
+    [ ("parameter-unbound", "parameter \"verzuimrentevoet\" is unbound in this case") ];
+  List.iter
+    (fun fixture ->
+      let ir = read (dir ^ fixture ^ "/ir.json") and case_text = read (dir ^ fixture ^ "/case.json") in
+      ref_matches ~name:("period arithmetic: " ^ fixture) ~ir ~case_text;
+      clingo_matches ~name:("period arithmetic: " ^ fixture) ~ir ~case_text)
+    [ "open-whole-period"; "total-over-pro-rata" ];
   (let ir = read (dir ^ "condition/ir.json") and case_text = read (dir ^ "condition/case.json") in
    ref_matches ~name:"period arithmetic: condition" ~ir ~case_text;
    clingo_matches ~name:"period arithmetic: condition" ~ir ~case_text);
@@ -17232,8 +17256,10 @@ let () =
    examples WV-3.10-voorwaarde-per-periode, WV-3.9-per-emmer and
    WV-5.7-per-dag played in both executors; the two writers that decide one
    day with different values, the fault of ch. 5.7 (EF-016); a timeline finer
-   than the target, refused in the verifier's rule (WF-126); and the two forms
-   ref plays where this encoding refuses (README [V7], [V8]). *)
+   than the target, refused in the verifier's rule (WF-126); the form ref plays
+   where this encoding refuses (README [V7]); and the total of a timeline
+   written under a condition per period, whose cuts lie on case bounds and
+   grid walls. *)
 let () =
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/conditions-per-period/" in
@@ -17265,8 +17291,35 @@ let () =
    pinned_loud ~entry:"V7" ~name:"condition per period: two writers decide one day with one value" ~ir ~case_text
      ~needle:"decide one day of the timeline wachtdagen with one value");
   (let ir, case_text = pair "totaal-onder-voorwaarde" in
-   pinned_loud ~entry:"V8" ~name:"condition per period: the total of a timeline written under it" ~ir ~case_text
-     ~needle:"under a condition read per period derives: its bounds are not case data")
+   ref_matches ~name:"condition per period: the total of a timeline written under it" ~ir ~case_text;
+   clingo_matches ~name:"condition per period: the total of a timeline written under it" ~ir ~case_text);
+  (* a time-dependent characteristic within a window, the day count with 0 in a
+     month without a true day and its day-kind test, the window as a member and
+     as the condition of the period arithmetic: ref's WV-3.10-kenmerk-venster,
+     WV-3.8-nul-en-dagsoort, WV-3.10-venster-als-lid and WV-3.10-venster-rekenen *)
+  List.iter
+    (fun f ->
+      let ir, case_text = pair f in
+      ref_matches ~name:("condition per period: " ^ f) ~ir ~case_text;
+      clingo_matches ~name:("condition per period: " ^ f) ~ir ~case_text)
+    [ "kenmerk-venster"; "nul-en-dagsoort"; "venster-als-lid"; "venster-rekenen" ];
+  (* formulation A without the roundings: the maandrente 16 2/3 has no decimal
+     scale, and this encoding holds the unbounded form as a whole number *)
+  (let name = "condition per period: formulation A unrounded" in
+   let doc, case =
+     load_pair ~ir:(read (dir ^ "verzuimrente-onafgerond/ir.json"))
+       ~case_text:(read (dir ^ "verzuimrente-onafgerond/case1.json"))
+   in
+   let needle = "this encoding holds the unbounded form as a whole number" in
+   match translate doc case with
+   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (translation fault: " ^ m ^ ")") false
+   | program -> (
+       match Solve.run_clingo program with
+       | _, Unix.WEXITED 20 ->
+           let ws = Solve.diagnostic program in
+           check (name ^ ": clingo refuses (" ^ String.concat "; " ws ^ ")")
+             (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
+       | _, _ -> check (name ^ ": clingo refuses (it found a model)") false))
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

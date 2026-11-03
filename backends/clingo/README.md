@@ -110,7 +110,7 @@ spec bug.
     arm's atoms.)
 
   Each tagged entry, here and under Recorded limitations ([V1], [V2],
-  [V3], [V4], [V5], [V6], [V7], [V8]),
+  [V3], [V4], [V5], [V6], [V7]),
   has a frame in the suite, named `README [tag]`, that pins it and
   goes red when the entry no longer holds.
 - Exact arithmetic by declared-decimals integer scaling: a value of an
@@ -479,13 +479,6 @@ Recorded limitations:
   month beside the day count of every month, over a November that is whole
   (30 days), is 30 on November in ref (suite fixture
   `twee-schrijvers-gelijk`).
-- [V8] The temporal total of a timeline that a rule writes under a
-  condition read per period (RUNTIME-SEMANTICS ch. 3.10) is refused by
-  name: the condition cuts the timeline at the bounds of its periods, which
-  a whole-period qualifier lays on the walls of its buckets, and the
-  whole-unit facts lie between the case's endpoints only. Ref totals the
-  written timeline whole: 25 in each month aangesteld, February to July
-  2024, totals 150 (suite fixture `totaal-onder-voorwaarde`).
 - Negative or empty allocation operands make the generated program
   UNSATISFIABLE — clingo then fails exactly where `ref/` faults
   (ch. 4.4), instead of silently diverging by the truncation/floor
