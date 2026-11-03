@@ -17196,6 +17196,22 @@ let () =
            check (name ^ ": clingo refuses (" ^ String.concat "; " ws ^ ")")
              (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
        | _, _ -> check (name ^ ": clingo refuses (it found a model)") false));
+  (* the write boundary per segment: a period whose value has more decimals than
+     the target does not fit (EF-006), a document WF-023 refuses before it runs *)
+  (let ir = read (dir ^ "period-arithmetic-misfit/ir.json")
+   and case_text = read (dir ^ "period-arithmetic-misfit/case.json") in
+   let name = "period arithmetic: period-arithmetic-misfit" in
+   let doc, case = load_pair ~ir ~case_text in
+   let needle = "non-exact period arithmetic value" in
+   match translate doc case with
+   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (translation fault: " ^ m ^ ")") false
+   | program -> (
+       match Solve.run_clingo program with
+       | _, Unix.WEXITED 20 ->
+           let ws = Solve.diagnostic program in
+           check (name ^ ": clingo refuses (" ^ String.concat "; " ws ^ ")")
+             (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
+       | _, _ -> check (name ^ ": clingo refuses (it found a model)") false));
   (* ch. 3.6, the calendar: a declared factor between the day family and the
      month family would stand in for it, and is refused by name (WF-009) *)
   faults_with ~name:"period arithmetic: calendar-family factor"

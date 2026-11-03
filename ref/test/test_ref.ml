@@ -2959,6 +2959,17 @@ let () =
       check "WV-3.4-tijdsafhankelijke-parameter-ongebonden"
         (match evaluate () with
         | exception Value.Fault { code = Some "EF-014"; params; _ } -> params = [ ("parameter", "verzuimrentevoet") ]
+        | _ -> false));
+  (* the write boundary per segment (ch. 2.4): 10% van 105 is 21/2, which a whole
+     timeline target does not hold (a document WF-023 refuses before it runs) *)
+  with_files ~ir:(read (dir ^ "period-arithmetic-misfit/ir.json"))
+    ~case_data:(read (dir ^ "period-arithmetic-misfit/case.json"))
+    (fun findings _ evaluate ->
+      check "WV-3.4-schrijfgrens-per-segment: WF-023 refuses it" (findings <> []);
+      check "WV-3.4-schrijfgrens-per-segment"
+        (match evaluate () with
+        | exception Value.Fault { code = Some "EF-006"; params; _ } ->
+            List.assoc_opt "place" params = Some "J1.strandheffing" && List.assoc_opt "value" params = Some "21/2"
         | _ -> false))
 
 (* WV-3.6: the temporal total *)
