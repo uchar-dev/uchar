@@ -5522,8 +5522,9 @@ public final class TmsTranspiler {
      * not the timeline the clip leaves: the true periods of a characteristic, or, negated, the periods outside them
      * within the segments of {@code base}; for a composite the intersection of its members' periods, each member read
      * on its own, each a period without a value; for a comparison the segments of the compared timeline where it
-     * holds, with their values, cut where the segments of {@code base} are cut, and none for a gap, which holds no
-     * segment. The clip computes none of these, so the reading follows from terms it does compute
+     * holds, with their values, and its gaps within the segments of the clipped timeline where a leeg side satisfies
+     * it, each without a value, all cut where the segments of the clipped timeline are cut, in the order of their days.
+     * The clip computes none of these, so the reading follows from terms it does compute
      * ({@link #noteDerived}), and the rule's terms stay those of a build without readings.
      *
      * <p>Refused by name: any other clause, a compound other than {@code all}, a check navigated or with an owner or a
@@ -5606,11 +5607,11 @@ public final class TmsTranspiler {
         // the comparison (ch. 3.1: a gap reads leeg)
         Term periods = new Term.Call(StaticFunction.RS_TIME_CONDITION, List.of(whole, constant(testCode), bound,
                 timeline, constant(Period.class)), null);
-        // the segments of the compared timeline where the comparison holds, without the gaps, which hold no segment,
-        // cut where the clipped timeline's segments are cut (ch. 3.6: the comparison is read per period of their
-        // common cuts; ch. 5.12)
-        noteDerived(v, List.of(whole, bound, timeline), x -> cutAt(RegelSpraakRuntime.rsTijdConditie(
-                (List<?>) x.get(0), testCode, x.get(1), null, Period.class), x.get(2)));
+        // the segments of the compared timeline where the comparison holds, and its gaps within the clipped timeline
+        // where a leeg side does, each without a value, cut where the clipped timeline's segments are cut and in the
+        // order of their days (ch. 3.6: the comparison is read per period of their common cuts; ch. 5.12)
+        noteDerived(v, List.of(whole, bound, timeline), x -> inOrder(cutAt(RegelSpraakRuntime.rsTijdConditie(
+                (List<?>) x.get(0), testCode, x.get(1), (List<?>) x.get(2), Period.class), x.get(2))));
         return new Term.Call(StaticFunction.RS_TIME_CLIP, List.of(timeline, periods, constant(Period.class)),
                 source(v.source()));
     }
@@ -5680,6 +5681,12 @@ public final class TmsTranspiler {
             out.add(new Period(at, p.to(), p.value()));
         }
         return out;
+    }
+
+    /** {@code periods} in the order of their days; {@code rsTijdConditie} gives the gaps after the segments. */
+    private static List<Period> inOrder(List<Period> periods) {
+        periods.sort(Comparator.comparing(Period::from).thenComparing(Period::to));
+        return periods;
     }
 
     private static LocalDate later(LocalDate a, LocalDate b) { return a.isAfter(b) ? a : b; }

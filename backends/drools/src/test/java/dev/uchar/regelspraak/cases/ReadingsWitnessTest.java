@@ -599,6 +599,54 @@ class ReadingsWitnessTest {
                 "READINGS 1"));
     }
 
+    /** A gap of the compared timeline of a comparison clip reads leeg (RUNTIME-SEMANTICS ch. 3.1), so where a leeg side
+     *  satisfies the comparison the reading of the comparison carries the gap as a period without a value, within the
+     *  segments of the clipped timeline, in the order of the days (ch. 5.12, the worked example of a gap in a
+     *  comparison clip): "gelijk aan" against a leeg drempelstand, "ongelijk aan" against a filled one. The golden
+     *  {@code jutterswet-peilwacht}, on both branches, the reading of node 2, the comparison, of both rules on every
+     *  Jutter of three case files; each line was written by hand from ch. 3.6 and ch. 1.2, and is the reference
+     *  interpreter's {@code WV-5.12-peilwacht}. Case 4 has a gap before a segment, and a segment beyond the
+     *  wachtvergoeding that is cut where the wachtvergoeding ends.
+     *
+     *  <p><b>Red</b> with the gaps left out of the reading: on case 1 the comparison of the peilsom of J1 read
+     *  {@code []} beside a total of 50, on both branches. */
+    @Test void the_clip_by_a_comparison_reads_the_gaps_where_a_leeg_side_satisfies_it() {
+        Path dir = Path.of("..", "..", "corpus", "golden", "jutterswet-peilwacht");
+        String eq = "reading " + R + "0/versions/0 ", ne = "reading " + R + "1/versions/0 ";
+        Map<String, List<String>> expected = new java.util.LinkedHashMap<>();
+        expected.put("case1-grens-leeg.json", List.of(
+                eq + "\"J1\" 2 Comparison [[2024-02-01 2024-07-01 empty]]",
+                eq + "\"J2\" 2 Comparison [[2024-01-01 2024-07-01 empty]]",
+                ne + "\"J1\" 2 Comparison [[2024-01-01 2024-02-01 5]]",
+                ne + "\"J2\" 2 Comparison []"));
+        expected.put("case2-grens-gevuld.json", List.of(
+                eq + "\"J1\" 2 Comparison [[2024-01-01 2024-02-01 5]]",
+                eq + "\"J2\" 2 Comparison []",
+                eq + "\"J3\" 2 Comparison [[2024-01-01 2024-02-01 5]]",
+                ne + "\"J1\" 2 Comparison [[2024-02-01 2024-07-01 empty]]",
+                ne + "\"J2\" 2 Comparison [[2024-01-01 2024-07-01 empty]]",
+                ne + "\"J3\" 2 Comparison [[2024-02-01 2024-04-01 7], [2024-04-01 2024-07-01 empty]]"));
+        expected.put("case4-gat-voor-de-peilstand.json", List.of(
+                eq + "\"J1\" 2 Comparison []",
+                eq + "\"J2\" 2 Comparison [[2024-01-01 2024-03-01 empty]]",
+                ne + "\"J1\" 2 Comparison [[2024-01-01 2024-03-01 empty], [2024-03-01 2024-07-01 7],"
+                        + " [2024-07-01 2024-09-01 7]]",
+                ne + "\"J2\" 2 Comparison [[2024-03-01 2024-07-01 7], [2024-07-01 2024-09-01 7]]"));
+        for (boolean drl : List.of(false, true))
+            expected.forEach((file, lines) -> {
+                java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+                List<String> arguments = new ArrayList<>(List.of("--readings"));
+                if (drl) arguments.add("--drl");
+                arguments.addAll(List.of(dir.resolve("ir.json").toString(), dir.resolve(file).toString()));
+                int code = DroolsBackendMain.run(arguments.toArray(String[]::new),
+                        new java.io.PrintStream(out, true, java.nio.charset.StandardCharsets.UTF_8));
+                assertEquals(lines, out.toString(java.nio.charset.StandardCharsets.UTF_8).lines()
+                        .filter(l -> l.contains(" 2 Comparison ")).toList(),
+                        (drl ? "DRL_TEXT" : "EXEC_MODEL") + ": " + file);
+                assertEquals(0, code);
+            });
+    }
+
     // ---------------- the objects a reading read its members on ----------------
 
     /** A node that reads a member of one object names the object it read it on (RUNTIME-SEMANTICS ch. 5.12): the
