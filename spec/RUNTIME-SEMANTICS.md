@@ -547,7 +547,9 @@ digits rounded half to even where it does not (the 1/3 above is
 values, and a value of that form that an object creation initialises
 stands exactly in its working memory too. It refuses by name a case value
 written as a rational (`1/6`), and a time-proportional part into a timeline
-of that form (ch. 3.7), since a segment of its timelines holds a decimal.
+of that form (ch. 3.7), since a segment of its timelines holds a decimal; a
+segment of the period arithmetic of ch. 3.4 into such a timeline whose value
+does not terminate faults by name.
 
 Worked example — the exact value at rest (`ref/` test `WV-2.4-p`; the Drools
 backend's `RationalAtRestWitnessTest`): a Jutter with `begrensde opbrengst`,
@@ -2254,7 +2256,10 @@ segment's bounds (ch. 3.2 job 1: all five granularities). Clauses:
   multiple D of the lengths the case's span meets, and carries the total at
   the scale of its value times D, which only a rounding of the total divides
   away (`ASP-TRANSLATION.md` S9); elsewhere it refuses that total by name.
-  The Drools backend refuses the calendar integration by name (DROOLS-228).
+  Both Drools branches integrate by the calendar on every route of the
+  subject's own total (the asOfDate bucket, a timeline the period
+  arithmetic writes, the clip) and refuse it by name in the per-element fold
+  over a set (DROOLS-228).
 - **The per-element fold over a set (§7.1).** `het totaal van <temporal
   attribute> van alle <set>` folds **twice**: each set member's own
   timeline collapses over time first — by the rule above, at that
@@ -3786,8 +3791,8 @@ idempotent (ch. 5).
   die/dat subselection on the sum is refused by name. A condition on such a
   rule restricts the timeline to its periods where it reads a timeline, and
   gates the rule where it reads none (ch. 3.10). Executed by `ref` and the
-  ASP backend, plus, min and the sum per period without a condition also by
-  both branches of the Drools backend; witnesses
+  ASP backend, and without a condition by both branches of the Drools
+  backend; witnesses
   `corpus/golden/jutterswet-maandloon` (plus, min, the sum),
   `corpus/golden/jutterswet-rekenen-per-dag` (the other five operators) and
   `corpus/golden/anchor/jutterswet-verzuimrente-dagen` (a time-dependent
@@ -3860,12 +3865,12 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Calendar bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision. A fixed start point lays week and quarter periods of its own (ch. 3.2), and the case loader and the asOfDate bucket read them in all three executors. A case timeline on the day grid needs no bucket: since 2026-11-03 (card `timeline-arithmetic-per-period`) the case loaders of `ref` and the ASP backend read it, every day sitting on the grid |
 | Fixed start point off the calendar grid (§13.3.6.3–.7) | **landed (v1 addition)**: `fixedStart` on a timeline and on its facets (`IR-SPEC.md` ch. 2.8, WF-115), the grid in ch. 3.2; read by a case input, the asOfDate bucket and the day count; the pro-rata over a fixed-start grid fenced; the calendar start point is written without one |
 | Point-in-time read (the "op dat tijdstip" node) | **landed (v1 extension)**: `read(tl, d)` is `IR-SPEC.md` ch. 4.3a (`TemporalRead`, WF-049; ch. 3.3, row 11), anchor-witnessed and replayed by both executors |
-| Timeline arithmetic beyond `plus`/`minus` (plus/min): `reducedBy` (verminderd-met), `times` (maal), `dividedBy` and `dividedByAbs` (division), `percentageOf` (percentage) | **specified (delta) and executed**, ch. 3.4: each operator read per day with its ch. 1.2 empty rule (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 1), a division's deposit once per rule × subject × code. `ref` and the ASP backend, witness `corpus/golden/jutterswet-rekenen-per-dag`; both Drools branches refuse it by name (DROOLS-105). The power stays refused |
+| Timeline arithmetic beyond `plus`/`minus` (plus/min): `reducedBy` (verminderd-met), `times` (maal), `dividedBy` and `dividedByAbs` (division), `percentageOf` (percentage) | **specified (delta) and executed**, ch. 3.4: each operator read per day with its ch. 1.2 empty rule (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 1), a division's deposit once per rule × subject × code. `ref` and the ASP backend, witness `corpus/golden/jutterswet-rekenen-per-dag`; and both Drools branches. The power stays refused |
 | Plus, min and the sum per period (ch. 3.4, 3.5) as the value of a rule on a temporal attribute target | **specified and executed** over all time (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 2): `ref` and the ASP backend, witness `corpus/golden/jutterswet-maandloon` (ch. 3.11), and both Drools branches. A time-dependent parameter as an operand is executed since the same day (IMPLICIT-TIME VB 2.3; witness `corpus/golden/anchor/jutterswet-verzuimrente-dagen`). A condition on such a rule is executed by `ref` and the ASP backend since the same day (the row below), and refused by name in both Drools branches; a die/dat subselection on the sum is refused by name in every executor |
 | A condition on a rule with a timeline target that reads a timeline (ch. 3.10, the clip generalised), the whole-period qualifier in it per bucket (ch. 3.9) | **specified (delta) and executed** (maintainer decisions 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` points 3 and 4): `ref` and the ASP backend on every producer of ch. 3.4–3.8, witnesses `corpus/golden/jutterswet-loon-per-periode` and `corpus/golden/jutterswet-wachtmaanden`; both Drools branches refuse it by name (DROOLS-103, DROOLS-105, DROOLS-302). A condition that reads no timeline gates the rule. Refused by name in both OCaml executors: a navigated or hosted check, a comparison of two timelines, a leeg or gevuld test and a quantifier fold in such a condition, a window as a member of it or as the condition of the period arithmetic. The total of a timeline written under such a condition is executed by `ref` and refused by name in the ASP backend (`backends/clingo/README.md` [V8]) |
 | Two or more writers of one timeline target (ch. 5.7, per day) | **specified (delta) and executed** (`spec/proposals/IMPLICIT-TIME.md` point 5): `ref` and the ASP backend, witness `corpus/golden/jutterswet-wachtdagen-twee-schrijvers`, red case `corpus/red/jutterswet-wachtdagen-botsing` (EF-016); both Drools branches refuse it by name (DROOLS-103). Two writers that decide one day with one value hold together; the ASP backend refuses that day by name ([V7]). A case input on such a target is refused by name in the ASP backend, and `ref` keeps it on the days no writer decides |
 | A timeline read per period on a finer grid than the target's | **ill-formed (WF-126**, maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 8): negatives `wf126-value-grid`, `wf126-condition-grid`, `wf126-whole-period-grid`; the RegelSpraak frontend refuses it (RGS-374), `ref` and the ASP backend fail fast in the verifier's terms |
-| The temporal total across the day and the month family of time units (ch. 3.6) | **specified (delta) and executed**: the calendar (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 11), the actual length of the month, quarter or year; a declared factor between the two families is ill-formed (WF-009, negative `wf009-calendar-family-factor`). `ref` in every route of the total; the ASP backend under a rounding of the gedurende-clipped total, refusing it by name elsewhere; both Drools branches refuse it by name (DROOLS-228). Witness `corpus/golden/anchor/jutterswet-verzuimrente-dagen` |
+| The temporal total across the day and the month family of time units (ch. 3.6) | **specified (delta) and executed**: the calendar (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 11), the actual length of the month, quarter or year; a declared factor between the two families is ill-formed (WF-009, negative `wf009-calendar-family-factor`). `ref` in every route of the total; the ASP backend under a rounding of the gedurende-clipped total, refusing it by name elsewhere; both Drools branches on every route of the subject's own total, refusing it by name in the per-element fold (DROOLS-228). Witness `corpus/golden/anchor/jutterswet-verzuimrente-dagen` |
 | Open segments (ch. 3.1) | **specified**: a timeline divides all time, a segment may have an open bound, the case format omits `from` or `to` for one (`uchar-case-v0`); the total of ch. 3.6 counts an open segment of 0 as 0 and faults on any other value (EF-036, red case `jutterswet-totaal-open-segment`); a fold over the buckets of an open period (ch. 3.7–3.9) is refused by name. A characteristic's true-periods (`characteristicTimelines`) carry no open bound |
 | Scalar operand of timeline arithmetic / unconditional temporal characteristic | the scalar operand of every operator is **specified and executed**, ch. 3.4 (one segment (−∞, +∞)), and since 2026-11-03 a scalar as the whole value of a timeline target as well (ch. 3.11); the unconditional temporal characteristic has the time domain since then and stays OPEN, because no executor writes a temporal characteristic (ch. 3.11) |
 | `minimum`/`maximum`/`first`/`last` (min/max/eerste/laatste) over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |

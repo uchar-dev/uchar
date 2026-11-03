@@ -413,7 +413,13 @@ missing line makes `make gates` exit non-zero. Current gates:
     RUNTIME-SEMANTICS ch. 3.4 and 3.5 over all time (`PeriodArithmetic`): an
     open bound is `LocalDate.MIN`/`LocalDate.MAX` in a `Period` and null on a
     bean, and a total over an open segment that is not 0 faults with EF-036
-    (`OpenSegmentFault`). A golden whose forms the loader+transpiler carry
+    (`OpenSegmentFault`). Since the card `timeline-arithmetic-per-period`
+    (step B, 2026-11-03) the lowering reads every operator of ch. 1.2 but
+    the power per day over timelines, a time-dependent parameter as a
+    timeline operand (the case runner sets its timeline as a `List<Period>`
+    on its global), and the temporal total by the calendar between the day
+    and the month family; the case reader reads a timeline on the day grid.
+    A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
     (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
     over the corpus). Not-carried forms never vanish silently: per-form
@@ -444,7 +450,9 @@ missing line makes `make gates` exit non-zero. Current gates:
     DROOLS-191, DROOLS-297 and DROOLS-298, since the card
     `dimensions-remaining` (2026-11-02) DROOLS-189, since the card
     `drools-exact-arithmetic` (2026-11-02) DROOLS-296, since the card
-    `runtime-tijdconditie-leeg` (2026-11-03) DROOLS-222; every raised code
+    `runtime-tijdconditie-leeg` (2026-11-03) DROOLS-222, since the card
+    `timeline-arithmetic-per-period` (2026-11-03) DROOLS-030, DROOLS-036,
+    DROOLS-304 and DROOLS-307; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`

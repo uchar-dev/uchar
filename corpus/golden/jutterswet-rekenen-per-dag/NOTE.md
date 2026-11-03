@@ -49,5 +49,5 @@ gave 4800 × 70 + 7200 × 30 = 552 000, which the case now pins.
 
 ## Executors
 
-`ref` and the ASP backend play the three cases. The Drools backend refuses
-the forms by name (DROOLS-105; gate 12's channel list).
+`ref`, the ASP backend and both branches of the Drools backend play the
+three cases.

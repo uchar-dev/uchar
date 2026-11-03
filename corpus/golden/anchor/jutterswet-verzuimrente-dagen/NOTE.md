@@ -59,6 +59,5 @@ rule, to the cent; the rounding rounds the exact value once (ch. 2.5).
 
 ## Executors
 
-`ref` and the ASP backend play both cases. The Drools backend refuses the
-per-day product on a time-dependent target by name (DROOLS-105; gate 12's
-channel list) until it carries the form.
+`ref`, the ASP backend and both branches of the Drools backend play both
+cases.
