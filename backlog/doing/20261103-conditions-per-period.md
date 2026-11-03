@@ -266,3 +266,304 @@ Groen op `aa4f42b12` (gerebased op `4d3de105c`): 17 gates en de drie bouwstappen
 gate 5 ref-suite 2214, gate 5 en 6 1050 cases ref = clingo (was 1041), clingo-suite 2418; gate 8 63 rode cases (was 62), 19
 niet-gedragen in de Drools-poot; gate 10 1483 tests, 184 rgs-goldens byte-gelijk, 364 RGS-codes; gate 12 PASS, played 320 op
 beide takken; gate 17 320 goldens en 906 case files vergeleken, 0 afwijkingen. De kaart blijft in `doing/`.
+
+## Result: stap A deel ii (bouwer, 2026-11-03)
+
+Deel 1c-ii: de punten 6 en 7 (7a, 7b, 7c) van `spec/proposals/IMPLICIT-TIME.md` en het anker formulering A. Branch
+`card/conditions-per-period`, gebouwd op main `b8fed38a0`, gerebased op `1d7259100` (stap B van
+`timeline-arithmetic-per-period`, de fixronde in ref; zonder conflict) en op `fdbec1f1c` (stap B deel i van deze kaart;
+één conflict in RS ch. 3.10 en 3.12, beide kanten gehouden: Drools draagt de voorwaarde per periode, ref en clingo het
+venster als lid en het kenmerkdoel). Niet gemerged, niet gepusht. Beschermd, dus **voorstel**: `spec/RUNTIME-SEMANTICS.md`,
+`spec/IR-SPEC.md`, `spec/verifier/`, `corpus/golden/anchor/` (het nieuwe anker, de verwachtingen van
+`jutterswet-dagentelling`, de README), `scripts/check-drools.sh`, `scripts/check-red.sh`, `scripts/check-noop.sh`,
+`scripts/check-readings.sh`; `spec/ASP-TRANSLATION.md` onder het CODEOWNERS-net. Buiten de may-touch van stap A en
+daarom hier genoemd: `scripts/check-noop.sh` en `scripts/check-readings.sh` (7a maakt vier overlevers van gate 7 en 46
+lezingen van gate 17 anders) en drie testklassen onder `backends/drools/src/test` (zie Drools). Proefdocumenten,
+scripts en logs onder `/Users/yeb/Developer/uchar-dev/werk/conditions-per-period-ii/` (`scripts/`, `logs/`, `neg/`).
+
+### Commits
+
+- `b4fd47a80` verifier: WF-111 en WF-058 verruimd; vier negatieven, één weg
+- `653a41813` ref: het kenmerk binnen een venster, het venster per periode, de dagentelling met 0, dagsoorttoets en
+  eenheid, de vouw over een open segment, afronden per segment, de variabele; fixtures en suite-rijen
+- `e9ac3597d` clingo: hetzelfde, over een kalender met een jaar marge; README [V8] weg
+- `63d4d54c1` frontend: de berekende venstergrens (RGS-202), de samengestelde dagentelling, het type van de variabele
+- `28b99c350` corpus: het anker, de golden uit `corpus/red`, de verwachtingen van 7a met hun NOTE's, gate 7 en 8
+- `dc72e4dbf` ref en clingo: een kenmerk in een open periode is EF-023, met rode casus; het ch. 5.11-paar van het venster
+- `f77689705` spec: RS ch. 3.1, 3.8, 3.9, 3.10, 3.11, 3.12, 5.7b, 5.11; IR-SPEC WF-111, WF-058, BoundDay, TimeWindow;
+  ASP-TRANSLATION S9; NOTE van `jutterswet-premievenster`
+- `9e49d39c6` gate 12 en 17: zes waardeverschillen, twee kanaalregels, 46 lezingsafwijkingen; `EXPECTED_PLAYED` 325 → 319
+- `28c2c180e` frontend: een verwacht segment mag open zijn (scenariolaag), het scenario van `jutterswet-dagentelling-rgs`
+- `c75ef4255` drools-tests: de dagentelling zonder haar 0 als bekend verschil in de twee corpusgetuigen
+- `de3e2651c` frontend: de semantische tokens van "is altijd <waarde>"
+- het commit van dit Result
+
+### De meting op main `b8fed38a0` (letterlijk; `logs/11-red-first.log`, uitvoerders gebouwd in een losse worktree)
+
+- Het anker `anchor/jutterswet-verzuimrente-30-360`, verifier: `WF-023.incompatible-units FAIL /rules/rules/2/versions/0:
+  assignment across incompatible units: value unit 'geen', target unit 'dg/mnd'` en `WF-111.bound-form FAIL
+  /rules/rules/0/versions/0/condition/from: the from bound of a time window is a computed date expression — a bound is a
+  date literal or an own scalar date attribute of the subject; the general date expression is an OPEN wire decision`.
+  Beide cases, ref: `EVALUATION FAULT: EF-023: a period condition on the temporal characteristic target "rentedragend" is
+  ch. 3.10's CLIP over a characteristic timeline, and no temporal characteristic is written here (ch. 3.11), so there is
+  no timeline to cut. Declined at evaluation`; clingo dezelfde zin als `TRANSLATION FAULT`, met `Declined in translation`.
+- De frontend op de bron van het anker (Z1): `ERROR (line 32): periodevergelijking (de vanaf-grens 'zijn vervaldatum plus 1
+  dg'): the from bound of a time window is a computed date expression — …` en (Z17) `WARNING (line 42): onopgelost: een
+  dagentelling telt alleen de dagen waarop het onderwerp zelf één tijdsafhankelijk kenmerk heeft …`. Op
+  `werk/implicit-time/meting/a-attribuutgrens` (Z2): `Exception in thread "main" java.lang.IllegalStateException: IrEmitter:
+  een onbekend datatype ('niet opgelost') heeft op deze positie geen spelling in uchar-ir-v1; …`; op de branch schrijft
+  hij dat document.
+- `time-window-timeline-characteristic` (nu golden), beide cases: ref en clingo de EF-023-zin hierboven over "geborgen".
+- De goldens met een dagentelling met de verwachtingen van 7a: ref `MISMATCH`, bijvoorbeeld `J1.jaardagen =
+  [2024-01-01,2025-01-01)=36, expected [-inf,2024-01-01)=0 [2024-01-01,2025-01-01)=36 [2025-01-01,+inf)=0`; clingo
+  `MISMATCH`, bijvoorbeeld `J1.borgdagen timeline = [19783,19814)=99, expected [#inf,#sup)=0`, of in `vast-startpunt`
+  `J1.stormpremie is underived (leeg), expected 50`. Eén case van een veranderde golden speelt op main al: `loon-per-
+  periode/case2-nooit-aangesteld` (die case veranderde niet).
+- De fixtures: `kenmerk-venster` EF-023 (beide), `nul-en-dagsoort` ref `REF-010: unsupported day-count condition shape …`,
+  clingo `CLINGO-024: …`, verifier `WF-023.incompatible-units` en `WF-058.condition-not-check`; `venster-als-lid` beide
+  `a period condition inside a composite on the temporal target "wachtdagen": … Declined at evaluation` (resp. in
+  translation); `venster-rekenen` beide `a period window as the condition of the period arithmetic of "seizoensloon" is not
+  executed (no corpus case)` (resp. translated); `afdracht` beide `MISMATCH` op de nullen.
+- De vier nieuwe negatieven op main: `wf111-computed-bound-navigated-read` en `wf111-period-boundary-time-dependent-parameter`
+  gaven WF-111 met de oude `form` (`a computed date expression`, `the parameter 'peildatum'`), dus niet op hun nieuwe
+  parameters; `wf058-day-count-without-characteristic` en `wf058-day-count-target-unit` gaven `WF-023.incompatible-units` en
+  `WF-058.condition-not-check`, niet hun arm. De rode casus `time-window-timeline-characteristic-open` faalt op main al met
+  EF-023 en dezelfde parameter: de soort die toen elk venster op een kenmerkdoel afwees; nu wijst zij alleen de open
+  grens af.
+
+### Wat er veranderde
+
+- **ref** (`eval.ml`, `timeline.ml`, `world.ml`, `reading.ml`). Een tijdsafhankelijk kenmerkdoel met een venster in zijn
+  voorwaarde schrijft de maximale perioden van `cond_periods` in `ctls` (`World.write_char_timeline_by`,
+  `release_char_timeline`); `characteristic_window_refusals` weigert bij naam vóór elk onderwerp: geen venster, twee
+  regels, en per onderwerp een case-tijdlijn van het kenmerk; een open grens is EF-023. `cond_periods` leest het venster
+  als knoop (zijn dagen, ook als lid), `read_per_period` = `reads_timeline` of een venster; het venster als hele
+  voorwaarde van rekenen per periode knipt. `window_bounds` volgt WF-111 via `Checks.window_bound_misfit`. De dagentelling:
+  `day_count_periods` (één kenmerk, de dagsoorttoetsen per dag via `day_kind_matches`; meer kenmerken bij naam
+  geweigerd), `day_count_unit` (7c), `Timeline.day_count` (7a). `Timeline.fold_part` laat de gehele-periodevouw een open
+  segment op de emmer naast zijn grens lezen. `period_timeline` rondt per segment af. `run_rule` leest de producent door
+  een variabele heen (`Checks.let_bound_value`). De lezing van een kenmerkdoel is `read_periods` zonder waarde.
+- **clingo** (`translate.ml`). `calendar_span`: de datums van de case (grenzen, scalaire datums, parameters, letterlijke
+  venstergrenzen) met 366 dagen marge, zonder datums het jaar rond 1970-01-01; `emit_grid_buckets` legt daarover.
+  `translate_characteristic_timeline` leidt `ktl/4` af uit `period_condition` (`?target`); het venster is een knoop met
+  zijn grenzen als knips. `translate_day_count`: nullen als maximale reeksen (`adgN_z`, `_run`), de afgewezen dagen van
+  een dagsoorttoets als feiten (`adgN_x`, via `dk_holds`), de eenheid, een hek voor afgeleide perioden buiten de kalender.
+  Een afronding is een knoop van het rekenen per periode. Het totaal van zo'n doel legt `_wu` ook over de wanden van het
+  raster, met een getuige voor een segment ertussen; `period_bounds_not_case` blijft alleen voor het geknipte totaal.
+  `refuse_open_whole_period` is weg. `viol_code` leest EF-023 met `characteristic`.
+- **verifier**: zie het eerste commit; `Checks.day_count_filter`, `day_count_unit_fits`, `let_bound_value`,
+  `window_bound_misfit` zijn de gedeelde vormvragen. WF-126 leest door een afronding.
+- **frontend**: `RuleChecker.boundMisfit` (RGS-202 verruimd; de sleutel heet nu `window-bound-not-day-date-expression`,
+  de delen `computed` en `parameter-bound` kregen nieuwe tekst), `ExpressionBuilder.dayCountCompound` met
+  `ElementaryResolver`, `IrEmitter.letType`; de scenariolaag kent `tot <d>`, `vanaf <d>` en `altijd <waarde>` in een
+  verwachting (`verwachtePeriode`, `verwachtTijdlijnAltijd`, `DIVERGENCES.md`).
+- **spec** (voorstel): zie het spec-commit.
+- **Drools** (alleen tests): `TmsCorpusWitnessTest` en `DrlTextCorpusWitnessTest` noemen de zes goldens bij naam
+  (`DAY_COUNT_WITHOUT_ZERO`, rood als er een speelt of een andere faalt); `ScenarioReportWitnessTest` neemt
+  `jutterswet-maandloon` als voertuig in plaats van `jutterswet-dagentelling-rgs`. Zonder dat was gate 12 rood (de
+  backendsuite), en de JUnit-tests zijn de enige plek die de corpusverandering niet via een gatelijst kon dragen.
+
+### Goldens, negatieven, rode gevallen
+
+| | cases | inhoud |
+|---|---|---|
+| `corpus/golden/anchor/jutterswet-verzuimrente-30-360` (nieuw, `source.rgs`) | 2 (8 verwachtingen) | formulering A, geval 1 en 2 |
+| `corpus/golden/time-window-timeline-characteristic` (uit `corpus/red`) | 2 (4) | `geborgen` op [2024-01-01, 2025-01-01), via `bergdagen` 366; de evaluatiedatum binnen en na het venster |
+| `corpus/red/time-window-timeline-characteristic-open` (nieuw) | 1 | EF-023 `{characteristic: geborgen}`, venster "vanaf 1 januari 2024" |
+| `corpus/negative/wf111-computed-bound-navigated-read` (nieuw) | — | `WF-111.bound-form`, `form=a navigated read of 'vervaldatum'` |
+| `corpus/negative/wf111-period-boundary-time-dependent-parameter` (uit `…-parameter-date`) | — | `WF-111.bound-form`, de parameter voor elke maand |
+| `corpus/negative/wf058-day-count-without-characteristic` (nieuw) | — | `WF-058.condition-without-characteristic` |
+| `corpus/negative/wf058-day-count-target-unit` (nieuw) | — | `WF-058.target-unit` `target=kale dagen unit=dg bucket=month` |
+| `corpus/negative/wf111-period-boundary-parameter-date` | weg | een scalaire datumparameter is sinds VB 6.1 een grens |
+
+Suitefixtures (`ref/test/fixtures/conditions-per-period/`, gedeeld door beide suites, elk met `source.rgs`):
+`kenmerk-venster`, `nul-en-dagsoort`, `venster-als-lid`, `venster-rekenen`, `verzuimrente-onafgerond`. Alle verwachtingen
+met de hand gerekend vóór een uitvoerder ze zag; ref en clingo spelen alles, gate 10 vindt het anker byte-gelijk, gate 16
+maakt de vier casebestanden van `jutterswet-dagentelling-rgs` byte-gelijk uit het scenario dat de verwachtingen apart
+schrijft (een tweede, onafhankelijke spelling van dezelfde handwaarden).
+
+**Het anker.** rentedagen geval 1: 0 tot 2025-11-01, 15, 30 op [2025-12-01, 2026-03-01), 12, 0 vanaf 2026-04-01; geval
+2: 0 tot 2028-02-01, 18 (19 min de schrikkeldag), 30, 4, 0 vanaf 2028-05-01. Maandrente exact 16 2/3, 33 1/3, 33 1/3,
+41 2/3, 16 2/3 en 25, 41 2/3, 5 5/9, totaal **141 2/3 €** en **72 2/9 €** (suite `WV-3.11-formulering-A-onafgerond-*`). De
+keuze van het doel: de maandrente rekenkundig op **3 decimalen** (16,667; 33,333; 41,667; 16,667 en 25,000; 41,667;
+5,556), de verzuimrente op de cent (**141,67 €**, **72,22 €**), omdat de ASP-codering geen niet-decimale waarde houdt. Drie
+decimalen is de kleinste schaal waarop afronden per maand het totaal op de cent gelijk laat aan de afronding van het
+exacte totaal (met twee: 25,00 + 41,67 + 5,56 = 72,23), en houdt elke maandwaarde onder 46 340 op zijn schaal. Het product
+staat als rentevoet × rentedagen × afdrachtbedrag: rentevoet × afdrachtbedrag is 50 000 op de schaal van de rentevoet,
+boven de factorgrens van clingo. Geen besluit maakt een maand anders dan het voorstel rekent: 7a voegt alleen maanden van
+0 toe, met maandrente 0.
+
+### Veranderde verwachtingen, oud → nieuw (7a; elke tijdlijn kreeg de open segmenten van 0 en 0 in elke tussenmaand)
+
+- `anchor/jutterswet-dagentelling` (beschermd) en `jutterswet-dagentelling-rgs` (dezelfde vier cases): case1 borgdagen
+  [jan)=23 [feb)=13 → +(−∞, 2024-01-01)=0, [2024-03-01, +∞)=0; jaardagen 2024=36 → +(−∞,2024)=0, [2025,+∞)=0. case2
+  borgdagen dec=2 jan=2 → +(−∞, 2024-12-01)=0, [2025-02-01,+∞)=0; jaardagen 2024=2 2025=2 → +(−∞,2024)=0, [2026,+∞)=0.
+  case3 beide `[]` → (−∞, +∞)=0. case4 (`input-blijft`) borgdagen [2024-03-01, 2024-04-01)=99 (de invoer bleef staan) →
+  (−∞, +∞)=0: de telling beslist nu elke dag, dus de invoer wijkt; de naam bleef staan.
+- `jutterswet-vast-startpunt`: elke case stormwachtdagen en maandwachtdagen + de open nullen (case4: `[]` → (−∞,+∞)=0);
+  case4 `maandpremie` 20 → leeg (0 is niet groter dan 0); case6 en case7 `stormpremie` leeg → 50 (de telling heeft nu op
+  elke dag een waarde, ook in 2024).
+- `jutterswet-wachtmaanden`: toeslagdagen case1 15, 12 → 0 tot 2025-11-01, 15, 12, 0 vanaf 2026-04-01; case2 19, 4 →
+  0 tot 2028-02-01, 19, 4, 0 vanaf 2028-05-01; case3 `[]` → (−∞, +∞)=0.
+- `jutterswet-wachtdagen-twee-schrijvers`: case1 15, 30, 12 → + 0 tot 2025-11-01 en vanaf 2026-04-01; case2 19, 30, 4 →
+  + 0 tot 2028-02-01 en vanaf 2028-05-01; case3 10, 27, 2 → 0 tot 2024-01-01, 10, **0 in februari**, 27, 2, 0 vanaf
+  2024-05-01. De botsing die deel i noemde treedt niet op: de tweede schrijver schrijft een 0 alleen in een maand die niet
+  geheel is.
+- `jutterswet-loon-per-periode` (gemeten, niet in de opdracht genoemd): wachtdagen case1 29, 9, 20 → 29, 9, **0 in april**,
+  20, **0 op [2024-06-01, 2024-08-01)** (de nullen geknipt tot aangesteld); case3 `[]` → 0 op januari en op
+  [2024-03-01, 2024-05-01).
+- `jutterswet-pachtvenster`: gemeten, **geen verschil** (in elk venster heeft elke emmer een ware dag of het venster is
+  leeg).
+- Rode casus `jutterswet-wachtdagen-botsing`: ongewijzigd, EF-016 op december 2025.
+- ref-tests die de kaart omdraait: `WV-3.9-per-emmer` (de `toetsdagen` van de fixture `afdracht`, gespeeld als
+  `WV-3.10-voorwaarde-per-periode`) 15, 12 → + 0 tot 2025-11-01 en vanaf 2026-04-01, en de rentedagen idem;
+  `WV-5.7-per-dag-gelijk` [nov)=30 → (−∞, nov)=0, 30, [dec, +∞)=0; `WV-5.12-voorwaarde-per-periode` de twee
+  BuiltinCall-regels met de nullen; `WV-3.10-clip-dagtelling-31-gesneden-op-de-vijfde` 31 → 31 en [2025-08-01, +∞)=0.
+  Door punt 6 en VB 6.1: `WV-3.10-grens-buiten-de-mirror-note` en `-fasestaart` (een parameter als grens geweigerd → een
+  attribuut van een ander type geweigerd), `WV-3.10-clip-als-lid-geweigerd`/`-fasestaart` → `WV-3.10-clip-als-lid` (knipt
+  als het hele venster), `WV-3.10-tijdlijnKENMERKdoel-is-de-clip` (EF-023 → de perioden [2024-01-01, 2025-01-01)) plus
+  `-open-grens`. Door de open vouw: `WV-3.1-open-bucket-walk` (weigering → waar, plus `-onwaar` en `-buur`) en
+  `WV-3.11-open-whole-period` (weigering → speelt, de fixture-case kreeg `loonpremie` 50).
+- clingo-tests die de kaart omdraait: `ch3.10 a parameter bound …` (weigering → speelt; de weigering verhuist naar een
+  attribuut van een ander type), `ch3.10 the window as a member …` (weigering → `ref_matches`/`clingo_matches`), `ch3.11 …
+  has-fact` (andere zin: zonder venster), `ch3.2/3.9 day count on a fixed grid` (vol en maandvol leeg → 301 en 302) en
+  `… no day counted` (boven 400 → leeg), `period arithmetic: open-whole-period` en `total-over-pro-rata` (weigering →
+  speelt), `README [V8]` (weigering → speelt).
+- frontendtests die VB 6.1 omdraait: `PeriodBoundaryTest` (de parameter en de berekende grens gaan van geweigerd naar
+  schoon; twee nieuwe geweigerde rijen met "plus 1 dg"), `StructureSentenceTest` (de nieuwe staart van RGS-202).
+
+### Rood en mutaties (niet gecommit; `scripts/mutate.py` op een losse worktree, `logs/32-`, `34-`, `36-mutations*.log`)
+
+Rood eerst: zie de meting. Per bewaking een mutatie, elk rood (een andere fout of een MISMATCH op de getuige):
+
+| # | mutatie | getuige | uitkomst |
+|---|---|---|---|
+| R1 | ref 7a: geen nullen | anker dagentelling case1 | MISMATCH borgdagen, jaardagen |
+| R2 | ref 7b: dagsoorttoets genegeerd | anker 30-360 case2 | MISMATCH maandrente 26.389, verzuimrente 73.61 |
+| R3 | ref 7c: telling zonder eenheid | ref-suite | `WV-3.8-nul-en-dagsoort-eenheid`, `-onafgerond-*` |
+| R4 | ref 6: venster op alle tijd | fixture kenmerk-venster | EF-023 open grens |
+| R5 | ref: open kenmerkperiode niet geweigerd | rode casus open | EXPECTED FAULT MISMATCH |
+| R6 | ref: vouw leest open segment heel | vast-startpunt case1 | EVALUATION FAULT (emmerwandeling) |
+| R7 | ref WF-111: elke grens toegelaten | ref-suite | `WV-3.10-grens-*` |
+| R8 | ref: geen afronding per segment | anker 30-360 case1 | EF-006 50/3 |
+| R9 | ref: variabele niet doorzien | anker 30-360 case1 | REF-011 |
+| R10 | ref 5.11: tot vóór van | ref-suite | `WV-5.11-venster-*` |
+| C1 | clingo 7a: geen nulreeksen | anker dagentelling case1 | MISMATCH |
+| C2 | clingo 7b: afgewezen dagen geteld | anker 30-360 case2 | MISMATCH 26389, 7361 |
+| C3 | clingo 6: geen afgeleide ktl | fixture kenmerk-venster | MISMATCH |
+| C4 | clingo: geen kalendermarge | clingo-suite | `condition per period: kenmerk-venster` UNSAT |
+| C5 | clingo: geen rasterwanden in het totaal | anker 30-360 case1 | UNSAT, de nieuwe getuige |
+| C6 | clingo: afronding kapt af | anker 30-360 case1 | MISMATCH 16666, 14166 |
+| C7 | clingo 6: vensterknoop houdt altijd | fixture venster-als-lid | MISMATCH |
+| C8 | clingo: open kenmerkperiode niet geweigerd | rode casus open | EXPECTED FAULT MISMATCH |
+| V1 | verifier: geen eenheidsarm | `wf058-day-count-target-unit` | `verifier: PASS` |
+| V2 | verifier: samenstelling zonder kenmerk toegelaten | `wf058-day-count-without-characteristic` | andere arm |
+| V3 | verifier: geen wandeling in een operator | `wf111-computed-bound-navigated-read` | `verifier: PASS` |
+| F1 | frontend: samenstelling blijft marker | `DayCountConditionTest` | 2 rood |
+| F2 | frontend: Let houdt onbekend type | `DayCountConditionTest` | 1 rood |
+| F3 | frontend: geen wandeling in een operator | `PeriodBoundaryTest` | 2 rood |
+| F4 | frontend: open grens als dag | `ScenarioLoweringTest` | 1 rood |
+
+### Codes, floors en pins, oud en nieuw
+
+- Nieuw: de armen `WF-058.condition-without-characteristic` en `WF-058.target-unit` (parameters `target`, `unit`,
+  `bucket`). `WF-111.bound-form` krijgt nieuwe `form`-teksten. EF-023 (ch. 5.7b) **versmald**: "a period condition on a
+  temporal characteristic target leaves its true periods with an open bound", getuige de nieuwe rode casus in plaats van
+  de vertrokken; de Drools-codes DROOLS-104 en DROOLS-268 noemen EF-023 nog als `ef` (stap B moet dat bekijken). Geen
+  nieuwe EF-, REF-, CLINGO- of RGS-code; RGS-202 houdt zijn nummer, sleutel `window-bound-not-literal-or-own-attribute`
+  → `window-bound-not-day-date-expression`. REF-010 en CLINGO-024 kregen een langere zin. clingo README: [V8] weg.
+- Gate 12 (voorstel, op `fdbec1f1c`): `EXPECTED_CHANNEL` + zes `DIVERGE`-regels (`anchor/jutterswet-dagentelling`,
+  `jutterswet-dagentelling-rgs`, `jutterswet-loon-per-periode`, `jutterswet-vast-startpunt`,
+  `jutterswet-wachtdagen-twee-schrijvers`, `jutterswet-wachtmaanden`), elk met reden in `EXCLUDE_KNOWN` ("7a: 0 in een
+  emmer zonder ware dag; Drools volgt in stap B deel ii …"), en + `anchor/jutterswet-verzuimrente-30-360|EXCLUDE
+  DROOLS-102`, `time-window-timeline-characteristic|EXCLUDE DROOLS-102`; `EXPECTED_PLAYED` 325 → 319. Gate 8:
+  Drools-uitsluiting `time-window-timeline-characteristic` weg, `time-window-timeline-characteristic-open|EXCLUDE
+  DROOLS-102` erbij. Gate 7: vier overlevers weg (`dagentelling` en `dagentelling-rgs`, case3 en case4). Gate 17:
+  `DEVIATIONS` + 46 regels (de 23 casebestanden van de zes goldens × twee takken). Geen floor veranderd.
+- Suites: ref 2262 voorbeelden (na de rebase; deel ii voegde er 18 toe), clingo 2431 checks (was 2418), frontend 1490
+  tests, Drools-suite groen.
+
+### Voorgestelde CONSTRUCTS-tekst (rij 11, achteraan; rij 26 voor WF-111 en WF-058)
+
+> **Landed (2026-11-03, card conditions-per-period, step A part ii):** a time-dependent characteristic is written within
+> a period window: it holds in the periods of the window, cut by the rest of its condition read per period
+> (`spec/proposals/IMPLICIT-TIME.md` point 6, RegelSpraak §10.3, §8.4.3); a window bound is a day-precise date
+> expression over the subject, the parameters and literals (`WF-111` widened, VB 6.1); a window is read per period as a
+> member of a condition and as the condition of the period arithmetic. The day count is 0 in every bucket without a
+> true day over all time (maintainer decision 2026-11-03, 7a), takes a day-kind test of the counted day beside one own
+> characteristic (7b) and carries days per unit of its bucket into a target that declares a unit (7c; `WF-058`
+> widened). Executed by ref and the ASP backend; witnesses `anchor/jutterswet-verzuimrente-30-360` (formulation A),
+> `time-window-timeline-characteristic`, red case `time-window-timeline-characteristic-open` (EF-023, an open period),
+> negatives `wf111-computed-bound-navigated-read`, `wf111-period-boundary-time-dependent-parameter`,
+> `wf058-day-count-without-characteristic`, `wf058-day-count-target-unit`. The Drools backend refuses the characteristic
+> target (DROOLS-102) and writes the day count without its 0 (six value divergences in gate 12) until step B part ii.
+> Tracked v1 delta: v0 refuses a temporal characteristic target and a computed bound, and its day count writes no
+> segment in a bucket without a true day.
+
+### Voorlopige besluiten
+
+- VB-C11 — De nullen van 7a: elke emmer met een ware dag is één segment, zoals eerst; elke reeks emmers zonder ware dag
+  is één segment van 0, ook tussen twee getelde emmers, open waar zij voor de eerste of na de laatste reikt; zonder ware
+  dag (−∞, +∞) = 0. ALEF vult de gaten zo; de getelde emmers blijven per emmer omdat de goldens dat pinnen (31, 31).
+- VB-C12 — De arm van ch. 7.8 geldt voor de telling alleen nog waar haar voorwaarde haar tot niets knipt: over alle tijd
+  beslist zij elke dag. `case4-input-blijft` houdt zijn naam en verwacht nu de 0.
+- VB-C13 — 7b: een `all`-samenstelling van precies één eigen tijdsafhankelijk kenmerk en dagsoorttoetsen op `BoundDay`, in
+  beide polariteiten; zonder kenmerk de nieuwe arm, met twee kenmerken `condition-not-check` (ref en clingo weigeren dat
+  bij naam als faalsnel-hek). De frontend schrijft alleen die vorm; twee kenmerken blijven een marker.
+- VB-C14 — 7c: de eenheid van het doel is een dageenheid over de eenheid van de emmer, beide herkend aan de spellingtabel
+  van ch. 3.8; WF-023 vergelijkt de eenheid van de telling niet, WF-058 wel.
+- VB-C15 — WF-111: toegelaten zijn literal, eigen scalair attribuut, scalaire parameter en `Binary`, `BuiltinCall` zonder
+  verzameling, filter of emmer, `Rounding` daarover; geweigerd elke navigatie, tijdlijn, vouw, sessiewaarde en
+  `BoundDay`. Een positie zonder onderwerp leest geen attribuut (de oude zin blijft).
+- VB-C16 — Een kenmerkdoel eist een venster op enige diepte onder `all`/`the`; de perioden zijn die van `cond_periods`.
+  Bij naam geweigerd: geen venster, twee schrijvers, een case-tijdlijn van het kenmerk (ref per onderwerp bij de eerste
+  schrijfactie, clingo per case), en een open grens als EF-023.
+- VB-C17 — EF-023 blijft bestaan omdat de Drools-codes haar noemen en gate 8 elke rij een getuige laat eisen; haar soort
+  is nu de open periode van een kenmerk.
+- VB-C18 — Een `Let` waarvan het lichaam zijn binder is, wordt doorzien voor de producenten van een tijdlijndoel en voor
+  WF-058 (`Checks.let_bound_value`); een andere `Let` op zo'n doel blijft geweigerd. De frontend schrijft het type van
+  zo'n `Let` uit het vaste type van de telling.
+- VB-C19 — Rekenen per periode rondt per segment af en voegt daarna gelijke buren samen.
+- VB-C20 — De afronding van het anker: zie "Het anker".
+- VB-C21 — De gehele-periodevouw over een open segment: ref leest de emmer naast de eindige grens en die ernaast
+  (`fold_part`), clingo legt een jaar marge; dat heft VB-A8 op voor ch. 3.9. Een vouw die emmers afloopt voor ch. 3.7 en
+  3.8 weigert een open periode nog steeds.
+- VB-C22 — De kalender van clingo: de datums van de case met 366 dagen marge, zonder datums het jaar rond 1970-01-01; een
+  afgeleide ware periode erbuiten is een benoemde getuige, nooit een stille waarde.
+- VB-C23 — Het totaal van een doel van rekenen per periode in clingo legt `_wu` over de case-grenzen, de ware perioden en
+  de wanden van het raster (maand, kwartaal, jaar en vaste starts); een segment met andere grenzen is een getuige. Dat
+  heft VB-A9 en [V8] op voor dat totaal; het geknipte totaal houdt zijn weigering.
+- VB-C24 — De dagsoorttoets in clingo wordt per dag van de kalender uitgerekend met `dk_holds`, zoals de duurvormen doen.
+- VB-C25 — De scenariolaag krijgt `tot <d>`, `vanaf <d>` en `altijd <waarde>` alleen in een verwachting; een invoer houdt
+  twee grenzen.
+- VB-C26 — De drie Drools-tests: zie "Drools"; stap B deel ii haalt de lijst `DAY_COUNT_WITHOUT_ZERO` weer weg.
+
+### Wat stap B (Drools) moet weten (bovenop deel i)
+
+- 7a: beide takken schrijven geen 0 in een emmer zonder ware dag. Zes goldens staan als `DIVERGE` (gate 12), hun 23
+  casebestanden × twee takken in gate 17 `DEVIATIONS`, en dezelfde zes in `DAY_COUNT_WITHOUT_ZERO` van de twee
+  corpusgetuigen; speelt Drools ze, dan gaan alle drie de lijsten weg en `EXPECTED_PLAYED` 319 → 325. In
+  `vast-startpunt` leest de gehele-periodevouw daarna open segmenten: `stormpremie` 50 in case6/7, `maandpremie` leeg in
+  case4.
+- Nieuwe vormen: een tijdsafhankelijk kenmerk als doel binnen een venster (DROOLS-102 op het anker en op
+  `time-window-timeline-characteristic`; de rode casus met een open venster moet EF-023 geven, nu EXCLUDE in gate 8);
+  het venster als lid en als voorwaarde van rekenen per periode (DROOLS-104 op `pachtvenster`, ongewijzigd); een
+  berekende venstergrens; de dagentelling met een dagsoorttoets (DROOLS-114 volgens de meting van IMPLICIT-TIME §5) en
+  met eenheid dg/mnd; een afronding in rekenen per periode; de telling achter een variabele (`Let` met de binder als
+  lichaam); het totaal over een tijdlijn met afgeleide grenzen.
+- De lezing (gate 17): een kenmerkdoel leest ref als `read_periods` zonder waarde (HOLDS, de knopen hun perioden, het
+  venster zijn dagen); in een samengestelde voorwaarde van een dagentelling draagt het kenmerk zijn ware perioden en de
+  dagsoorttoets de getelde dagen.
+- EF-023 is versmald (zie Codes); DROOLS-104 en DROOLS-268 noemen haar nog als `ef`.
+
+### `make gates`
+
+Groen op `de3e2651c` (gerebased op `fdbec1f1c`): 17 gates en de drie bouwstappen rc=0, `after-run` rc=0, 329 s
+(`out/gates/20261103-154113/`, `logs/gates-3.log`). Twee eerdere runs waren rood en zijn gerepareerd: run 1 op gate 12
+(de Drools-suite: de twee corpusgetuigen en het scenariorapport) en gate 16 (het scenario van
+`jutterswet-dagentelling-rgs` kon de open segmenten niet schrijven), run 2 op gate 10 (de semantische tokens van de
+nieuwe verwachting). Gemeten: gate 3 424 goldens schoon, 606 negatieven verworpen (was 603), 449 op hun arm (was 446);
+gate 5 ref-suite 2262, gate 5 en 6 1055 cases ref = clingo; clingo-suite 2431; gate 8 63 rode cases; gate 10 1490 tests,
+185 rgs-goldens byte-gelijk (was 184); gate 12 PASS, played 319 op beide takken, 6 waardeverschillen met reden; gate 16 40
+scenario-goldens, 136 casebestanden; gate 17 325 goldens en 898 casebestanden vergeleken, 46 afwijkingen met reden. De
+kaart blijft in `doing/`.
