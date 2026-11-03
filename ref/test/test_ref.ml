@@ -12272,7 +12272,17 @@ let () =
     (fun findings _ evaluate ->
       check "WV-3.4-fijner-geweigerd: WF-126 refuses it"
         (List.exists (fun (x : Ir_v0.Checks.violation) -> x.wf = "WF-126") findings);
-      expect_fault_msg "WV-3.4-fijner-geweigerd" evaluate "does not fit the month grid of the timeline target")
+      expect_fault_msg "WV-3.4-fijner-geweigerd" evaluate "does not fit the month grid of the timeline target");
+  (* WV-5.7-per-dag-gelijk: the two writers of rentedagen-botsing over a
+     November that is whole, 30 days: both decide it with 30, and the
+     equations hold together *)
+  plays ~ident:"WV-5.7-per-dag-gelijk" ~ir:(read (dir ^ "twee-schrijvers-gelijk/ir.json"))
+    ~case_data:(read (dir ^ "twee-schrijvers-gelijk/case.json")) (fun _ -> ());
+  (* WV-3.6-totaal-onder-voorwaarde: the subject's own total of a timeline a
+     rule writes under a condition per period reads it whole: 25 in each of the
+     six months aangesteld, 150 *)
+  plays ~ident:"WV-3.6-totaal-onder-voorwaarde" ~ir:(read (dir ^ "totaal-onder-voorwaarde/ir.json"))
+    ~case_data:(read (dir ^ "totaal-onder-voorwaarde/case.json")) (fun _ -> ())
 
 (* WV-5.7-per-dag-invoer: two writers of one timeline target, each deciding its
    own segments, over an input timeline 7 on 2024. The input stands on the days

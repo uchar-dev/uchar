@@ -110,7 +110,7 @@ spec bug.
     arm's atoms.)
 
   Each tagged entry, here and under Recorded limitations ([V1], [V2],
-  [V3], [V4], [V5], [V6]),
+  [V3], [V4], [V5], [V6], [V7], [V8]),
   has a frame in the suite, named `README [tag]`, that pins it and
   goes red when the entry no longer holds.
 - Exact arithmetic by declared-decimals integer scaling: a value of an
@@ -471,6 +471,21 @@ Recorded limitations:
   holds the exact value: the anchor `jutterswet-verzuimrente-dagen` with
   its verzuimrente in the unbounded form and without the rounding is
   139 13/73 € in ref (suite fixture `calendar-total-unrounded`).
+- [V7] Two writers of one timeline target that decide one day with one
+  value (RUNTIME-SEMANTICS ch. 5.7 per day) hold together. Ref writes the
+  day in the segment of the writer the document names first; this backend
+  writes each writer's segments as written, so the two would overlap, and
+  it refuses that day by name instead: `wachtdagen` set to 30 in a whole
+  month beside the day count of every month, over a November that is whole
+  (30 days), is 30 on November in ref (suite fixture
+  `twee-schrijvers-gelijk`).
+- [V8] The temporal total of a timeline that a rule writes under a
+  condition read per period (RUNTIME-SEMANTICS ch. 3.10) is refused by
+  name: the condition cuts the timeline at the bounds of its periods, which
+  a whole-period qualifier lays on the walls of its buckets, and the
+  whole-unit facts lie between the case's endpoints only. Ref totals the
+  written timeline whole: 25 in each month aangesteld, February to July
+  2024, totals 150 (suite fixture `totaal-onder-voorwaarde`).
 - Negative or empty allocation operands make the generated program
   UNSATISFIABLE — clingo then fails exactly where `ref/` faults
   (ch. 4.4), instead of silently diverging by the truncation/floor

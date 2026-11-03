@@ -4336,7 +4336,8 @@ let refuse_open_whole_period ctx ~attr =
   let written_open =
     List.exists
       (fun (r : resolved_rule) ->
-        (match r.objective with
+        r.rr_presentation <> Some Characteristic_attribution
+        && (match r.objective with
         | Some (Attribute_reference { attribute_ref = Some b; _ }) -> norm b = norm attr
         | _ -> false)
         && match r.value_node with Some v -> Eval.is_period_arithmetic v | None -> false)
@@ -4633,8 +4634,13 @@ let rec period_bounds_not_case ctx ~seen ~otype ~attr : (string * string) option
         | None -> (
             match r.objective with
             | Some (Attribute_reference { attribute_ref = Some b; object_type = Some o; _ })
-              when norm b = norm attr && Ir_v0.Checks.populations_overlap ctx.doc o otype -> (
+              when norm b = norm attr && Ir_v0.Checks.populations_overlap ctx.doc o otype
+                   && r.rr_presentation <> Some Characteristic_attribution -> (
                 match r.value_node with
+                | Some _ when Option.fold ~none:false ~some:(Eval.reads_timeline ctx.doc ~ot:o) r.rr_condition ->
+                    (* a condition read per period cuts the timeline at the bounds of its periods, which a
+                       whole-period qualifier lays on the walls of its buckets *)
+                    Some (attr, Printf.sprintf "the rule %S under a condition read per period" (Option.value r.rr_name ~default:"?"))
                 | Some v when Eval.is_period_arithmetic v -> operands v
                 | _ -> Some (attr, Printf.sprintf "the rule %S" (Option.value r.rr_name ~default:"?")))
             | _ -> None))
@@ -10631,6 +10637,193 @@ let fitted ?(unbounded = false) ctx ~subject ~what ~body term scale target =
     end
     else fault "value scale %d does not align with target scale %d for %S" scale target what
 
+(* A condition read per period on a rule of the timeline target [a] of [ot]
+   (RUNTIME-SEMANTICS ch. 3.10, the clip generalised; ref's Eval.cond_periods,
+   whose shapes and refusals this follows): the name [q] of a predicate whose
+   atoms q(S,F,T) are the maximal periods of all time in which [c] holds on S.
+   One cut set per subject serves the whole condition: #inf, #sup, every bound
+   of every timeline the condition reads, and the walls of the buckets of each
+   whole-period qualifier in it; each node holds or fails on a whole period
+   between two cuts, read at its start X, so on these periods every day reads
+   what ref reads. A qualifier holds on the periods of the buckets in which its
+   test holds on every period, and outside the buckets laid over the case's
+   span its test is constant, so there it holds where its test does. The true
+   periods are the maximal runs of periods on which the root holds. *)
+let period_condition ctx ~ot ~a (c : condition_expr) : string =
+  let p = fresh ctx "pc" in
+  let base = Printf.sprintf "isa(S,%s)" (str ot) in
+  let per = Printf.sprintf "%s_per(S,X,_)" p in
+  let target = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) a in
+  let ot_decl = object_type ctx ot in
+  emit ctx "%s_cut(S,#inf) :- %s." p base;
+  emit ctx "%s_cut(S,#sup) :- %s." p base;
+  let cuts_of_ktl k =
+    emit ctx "%s_cut(S,X) :- %s, ktl(S,%s,X,_)." p base (str k);
+    emit ctx "%s_cut(S,X) :- %s, ktl(S,%s,_,X)." p base (str k)
+  in
+  let cuts_of_tl b =
+    emit ctx "%s_cut(S,X) :- %s, tl(S,%s,X,_,_)." p base (str b);
+    emit ctx "%s_cut(S,X) :- %s, tl(S,%s,_,X,_)." p base (str b)
+  in
+  let rec node (c : condition_expr) : string =
+    let n = fresh ctx (p ^ "_n") in
+    if not (Eval.reads_timeline ctx.doc ~ot c) then begin
+      let atoms = cond_atoms ctx ~subject:"S" ~subject_ot:ot c in
+      emit ctx "%s(S,X) :- %s." n (String.concat ", " (per :: atoms));
+      n
+    end
+    else
+      match c with
+      | Characteristic_check { characteristic = Some k; navigation_binding = None; negation; holder = None; time_period; _ } ->
+          if not (characteristic_temporal ctx ~otype:ot ~characteristic:k) then
+            fault "wholePeriod qualifier on a non-time-dependent operand";
+          cuts_of_ktl k;
+          let pos = n ^ "_k" in
+          emit ctx "%s(S,X) :- %s, ktl(S,%s,F,T), F <= X, X < T." pos per (str k);
+          let inner =
+            if negation then begin
+              emit ctx "%s(S,X) :- %s, not %s(S,X)." (n ^ "_i") per pos;
+              n ^ "_i"
+            end
+            else pos
+          in
+          (match time_period with
+          | Some gp -> qualifier n gp inner
+          | None ->
+              (match Ir_v0.Checks.find_ci ot_decl.characteristic_granularity k with
+              | Some (Some g) ->
+                  Eval.refuse_finer ~what:(Printf.sprintf "the characteristic %S" k)
+                    ~operand:(Uchar_ref.Timeline.calendar_grid g) ~target ~attr:a
+              | _ -> ());
+              emit ctx "%s(S,X) :- %s(S,X)." n inner);
+          n
+      | Comparison { op; left_side = Some le; right_side = Some re; time_period; _ } ->
+          let temporal_side (e : expr) =
+            match e with
+            | Attribute_reference
+                { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; anchor = None; _ }
+              when norm botn = norm ot && attr_temporal ctx ~otype:botn ~attr:b ->
+                Some b
+            | _ -> None
+          in
+          let b, bound_e, op =
+            match (temporal_side le, temporal_side re) with
+            | Some b, None -> (b, re, op)
+            | None, Some b -> (b, le, Eval.reversed op)
+            | _ ->
+                fault
+                  "a comparison in a condition per period compares one time-dependent attribute of the subject \
+                   with a scalar bound; this one does not"
+          in
+          (match attr_datatype ctx ~otype:ot ~attr:b with
+          | Some (Date_in_days | Date_time_type) ->
+              fault "a comparison over a date timeline in a condition per period is not translated (no corpus case)"
+          | _ -> ());
+          units_identical_ok ~what:"a comparison in a condition per period" (attr_unit ctx ~otype:ot ~attr:b)
+            (eff_unit ctx bound_e);
+          cuts_of_tl b;
+          let gb, gt, gs = expr_term ctx ~subject:"S" ~subject_ot:ot bound_e in
+          let gs = numeric_scale ~what:"a comparison in a condition per period" gs in
+          let bscale = pow10 (attr_decimals ctx ~otype:ot ~attr:b) in
+          let m = max bscale gs in
+          let wl = if bscale = m then "WB" else Printf.sprintf "(WB*%d)" (m / bscale) in
+          let gl = if gs = m then gt else Printf.sprintf "(%s*%d)" gt (m / gs) in
+          let tv = n ^ "_v" and bd = n ^ "_b" and inner = n ^ "_c" in
+          emit ctx "%s(S,X,WB) :- %s, tl(S,%s,F,T,WB), F <= X, X < T." tv per (str b);
+          emit ctx "%s(S,X) :- %s(S,X,_)." (tv ^ "d") tv;
+          emit ctx "%s(S) :- %s." bd (String.concat ", " (base :: gb));
+          range_guard ctx ~subject:"S" ~body:((base :: gb) @ [ Printf.sprintf "%s(S,_,WB)" tv ])
+            [ ("WB", max_int31 / (m / bscale)); (gt, max_int31 / (m / gs)) ];
+          let filled sym =
+            emit ctx "%s(S,X) :- %s." inner
+              (String.concat ", " ((Printf.sprintf "%s(S,X,WB)" tv :: gb) @ [ Printf.sprintf "%s %s %s" wl sym gl ]))
+          in
+          (* ch. 1.2 per day: a gap reads leeg, and so does a bound whose atoms
+             bind nothing; gelijk aan holds on two leeg sides, ongelijk aan on
+             exactly one, an ordering on none *)
+          (match op with
+          | Equal ->
+              filled "==";
+              emit ctx "%s(S,X) :- %s, not %sd(S,X), not %s(S)." inner per tv bd
+          | Not_equal ->
+              filled "!=";
+              emit ctx "%s(S,X) :- %s, not %sd(S,X), %s(S)." inner per tv bd;
+              emit ctx "%s(S,X) :- %sd(S,X), not %s(S)." inner tv bd
+          | _ -> filled (compare_sym op));
+          emit ctx "#defined %s/2." inner;
+          (match time_period with
+          | Some gp -> qualifier n gp inner
+          | None ->
+              Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
+                ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc ot_decl b) ~target ~attr:a;
+              emit ctx "%s(S,X) :- %s(S,X)." n inner);
+          n
+      | Compound { quantifier_kind; cutoff; components; _ } ->
+          if List.exists Eval.contains_time_window components then
+            fault
+              "a period condition inside a composite on the temporal target %S: ch. 3.10 specifies the clip for \
+               the window as the rule's whole condition and says nothing about what the other members do to a \
+               timeline. Declined in translation"
+              a;
+          let members = List.mapi (fun i c -> (i, node c)) components in
+          let count =
+            String.concat "; " (List.map (fun (i, m) -> Printf.sprintf "%d : %s(S,X)" i m) members)
+          in
+          let verdict =
+            match quantifier_kind with
+            | The | All -> Printf.sprintf "H = %d" (List.length members)
+            | None_of -> "H = 0"
+            | At_least -> Printf.sprintf "H >= %d" cutoff
+            | At_most -> Printf.sprintf "H <= %d" cutoff
+            | Exactly -> Printf.sprintf "H = %d" cutoff
+          in
+          emit ctx "%s(S,X) :- %s, H = #count { %s }, %s." n per count verdict;
+          n
+      | _ ->
+          fault
+            "this condition on the timeline target %S reads a timeline in a shape that is not read per period: a \
+             condition per period is a check of a time-dependent characteristic of the subject, a comparison of a \
+             time-dependent attribute of the subject with a scalar bound, either under a whole-period qualifier, \
+             or a composite of such conditions"
+            a
+  (* the whole-period qualifier per bucket of its own grid (IMPLICIT-TIME
+     point 4): it holds in a bucket in which its test [inner] holds on every
+     period, and, outside the buckets laid over the case's span, where its test
+     holds *)
+  and qualifier n (gp : entire_period) inner =
+    let g : grain = if gp.gp_granularity then Year else Month in
+    Eval.refuse_finer ~what:"the whole-period qualifier" ~operand:(Uchar_ref.Timeline.calendar_grid g) ~target ~attr:a;
+    let qb = n ^ "_w" in
+    emit_grid_buckets ctx ~p:qb ~grid:(Uchar_ref.Timeline.calendar_grid g);
+    emit ctx "%s_cut(S,B) :- %s, %s_b(B,_,_)." p base qb;
+    emit ctx "%s_cut(S,N) :- %s, %s_b(_,N,_)." p base qb;
+    emit ctx "%s_fail(S,B) :- %s_b(B,N,_), %s, B <= X, X < N, not %s(S,X)." qb qb per inner;
+    emit ctx "%s_in(S,X) :- %s, %s_b(B,N,_), B <= X, X < N." qb per qb;
+    let held = n ^ "_h" in
+    emit ctx "%s(S,X) :- %s, %s_b(B,N,_), B <= X, X < N, not %s_fail(S,B)." held per qb qb;
+    emit ctx "%s(S,X) :- %s, not %s_in(S,X), %s(S,X)." held per qb inner;
+    if gp.gp_negated then emit ctx "%s(S,X) :- %s, not %s(S,X)." n per held
+    else emit ctx "%s(S,X) :- %s(S,X)." n held
+  in
+  let root = node c in
+  emit ctx "%s_per(S,X,Y) :- %s_cut(S,X), %s_cut(S,Y), X < Y, #count { Z : %s_cut(S,Z), X < Z, Z < Y } = 0." p p p p;
+  emit ctx "%s_t(S,X,Y) :- %s_per(S,X,Y), %s(S,X)." p p root;
+  emit ctx "%s_join(S,Y) :- %s_t(S,_,Y), %s_t(S,Y,_)." p p p;
+  emit ctx "%s_start(S,X) :- %s_t(S,X,_), not %s_join(S,X)." p p p;
+  emit ctx "%s_end(S,Y) :- %s_t(S,_,Y), not %s_join(S,Y)." p p p;
+  emit ctx "%s(S,X,Y) :- %s_start(S,X), %s_end(S,Y), X < Y, #count { Z : %s_end(S,Z), X < Z, Z < Y } = 0." p p p p;
+  emit ctx "#defined %s/3." p;
+  p
+
+(* the four cases of the restriction of a segment [VAN, TOT) to a period
+   (QF, QT) of [q], as (start, end, guards): gringo has no min or max on terms *)
+let period_cuts q ~van ~tot =
+  List.concat_map
+    (fun (l, lg) ->
+      List.map (fun (h, hg) -> (l, h, [ Printf.sprintf "%s(S,QF,QT)" q; lg; hg; Printf.sprintf "%s < %s" l h ]))
+        [ (tot, Printf.sprintf "QT >= %s" tot); ("QT", Printf.sprintf "QT < %s" tot) ])
+    [ (van, Printf.sprintf "QF <= %s" van); ("QF", Printf.sprintf "QF > %s" van) ]
+
 (* the write of one bucket segment [B, N) with value [value], and — when
    ch. 3.10's clip is in force — its restriction to the subject's window.
    The restriction cuts segments and keeps their values, as ref's
@@ -10648,10 +10841,11 @@ let fitted ?(unbounded = false) ctx ~subject ~what ~body term scale target =
    UNSAT on a non-exact bucket no one writes (lens finding 2026-09-23). A
    leeg own-attribute bound binds no val atom, so the fences stay silent
    exactly where nothing is written. *)
-let window_overlap ctx ~subject ~ot clip =
-  match clip with
-  | None -> []
-  | Some (starting_at, up_to, incl) ->
+let window_overlap ?periods ctx ~subject ~ot clip =
+  match (clip, periods) with
+  | _, Some q -> [ Printf.sprintf "%s(S,QF,QT)" q; "QF < N"; "B < QT" ]
+  | None, None -> []
+  | Some (starting_at, up_to, incl), None ->
       let v, t = window_bounds ctx ~subject ~subject_ot:ot starting_at up_to in
       (match v with None -> [] | Some (atoms, l) -> atoms @ [ Printf.sprintf "N > %s" l ])
       @
@@ -10661,11 +10855,12 @@ let window_overlap ctx ~subject ~ot clip =
           let h = if incl then Printf.sprintf "(%s+1)" h else h in
           atoms @ [ Printf.sprintf "B < %s" h ]
 
-let write_segment ctx ~subject ~ot ~a ~clip ~p ~value ~body =
+let write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~p ~value ~body =
   let heads =
-    match clip with
-    | None -> [ ("B", "N", body) ]
-    | Some (starting_at, up_to, incl) ->
+    match (clip, periods) with
+    | _, Some q -> List.map (fun (l, h, g) -> (l, h, body @ g)) (period_cuts q ~van:"B" ~tot:"N")
+    | None, None -> [ ("B", "N", body) ]
+    | Some (starting_at, up_to, incl), None ->
         let v, t = window_bounds ctx ~subject ~subject_ot:ot starting_at up_to in
         let lo =
           match v with
@@ -10689,7 +10884,10 @@ let write_segment ctx ~subject ~ot ~a ~clip ~p ~value ~body =
   in
   List.iter
     (fun (van, up_to, b) ->
-      head_body ctx (Printf.sprintf "tl(%s,%s,%s,%s,%s)" subject (str a) van up_to value) b)
+      head_body ctx (Printf.sprintf "tl(%s,%s,%s,%s,%s)" subject (str a) van up_to value) b;
+      Option.iter
+        (fun i -> head_body ctx (Printf.sprintf "wtl(%s,%s,%s,%s,%s,%d)" subject (str a) van up_to value i) b)
+        writer)
     heads;
   if List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc) then begin
     let eff = Printf.sprintf "%s_eff(%s)" p subject in
@@ -10710,7 +10908,7 @@ let write_segment ctx ~subject ~ot ~a ~clip ~p ~value ~body =
    remainder derives a viol/2 witness (ref computes the exact rational;
    v0 approximates a non-terminating fraction in DECIMAL64 — the
    recorded ch. 3.7 delta), fenced like every division. *)
-let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : grain) =
+let translate_pro_rata ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~b ~k ~(g : grain) =
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   if not (attr_temporal ctx ~otype:ot ~attr:b) then
     fault "pro-rata base %S is not a temporal attribute" b;
@@ -10773,7 +10971,7 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : grain) =
         Printf.sprintf "TD = #sum { D,KV,KT : %s_d(S,B,KV,KT,D) }" p;
         "TD > 0";
         Printf.sprintf "tl(S,%s,BV,BT,W), BV <= B, B < BT" (str b) ]
-    @ window_overlap ctx ~subject ~ot clip
+    @ window_overlap ?periods ctx ~subject ~ot clip
   in
   (* the wrap fence: |W×TD×kn| ≤ 2^31 with TD ≤ 366 per bucket, and the
      #sum's contributors (D ≤ 366) count-bounded like every sum *)
@@ -10786,7 +10984,7 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : grain) =
      46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }."
     (String.concat ", "
        ((base :: ctx.rule_guard) @ cond
-        @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ctx ~subject ~ot clip)))
+        @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ?periods ctx ~subject ~ot clip)))
     p;
   (* a part that does not fit the target's scale is the write boundary of
      ch. 2.4 on its segment (EF-006); the unbounded form fixes no scale, and a
@@ -10803,14 +11001,14 @@ let translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~(g : grain) =
      decides only when it derives at least one bucket — the case's
      input timeline (entered as inputtl/5) stands whole by NAF
      otherwise, matching ref's no-write on an empty result *)
-  write_segment ctx ~subject ~ot ~a ~clip ~p
+  write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~p
     ~value:(Printf.sprintf "%s/%s" numt dent)
     ~body:(body @ [ Printf.sprintf "%s \\ %s == 0" numt dent ])
 
 (* ch. 3.8 "aantal dagen in (de maand / het jaar)": per touched bucket
    one segment carrying the true-day count — the pro-rata numerator
    without the base join. WF-058 mirrors WF-056's facets. *)
-let translate_day_count ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : grain) =
+let translate_day_count ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~k ~(g : grain) =
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   if attr_unit ctx ~otype:ot ~attr:a <> None then
     fault "day-count into a unit-carrying target is not translated (no corpus case)";
@@ -10840,17 +11038,17 @@ let translate_day_count ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : grain) =
     @ [ Printf.sprintf "%s_b(B,N,_)" p;
         Printf.sprintf "TD = #sum { D,KV,KT : %s_d(S,B,KV,KT,D) }" p;
         "TD > 0" ]
-    @ window_overlap ctx ~subject ~ot clip
+    @ window_overlap ?periods ctx ~subject ~ot clip
   in
   emit ctx
     "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- %s, \
      46340 < #count { KV,KT : %s_d(S,B,KV,KT,_) }."
     (String.concat ", "
        ((base :: ctx.rule_guard) @ cond
-        @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ctx ~subject ~ot clip)))
+        @ (Printf.sprintf "%s_b(B,N,_)" p :: window_overlap ?periods ctx ~subject ~ot clip)))
     p;
   (* the ch. 7.8 timeline arm, as for pro-rata *)
-  write_segment ctx ~subject ~ot ~a ~clip ~p ~value:vterm ~body
+  write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~p ~value:vterm ~body
 
 (* ch. 3.4 and 3.5 as the value of a rule on a temporal attribute target, over
    all time (RUNTIME-SEMANTICS ch. 3.1; ASP-TRANSLATION ch. 3). One cut set per
@@ -10863,8 +11061,9 @@ let translate_day_count ?clip ctx ~subject ~ot ~a ~cond ~k ~(g : grain) =
    is leeg, or its fallback, where every member is (ch. 3.5). The written
    segments are the maximal runs of equal values; a period whose value is leeg
    writes nothing, the gap of ch. 3.1. *)
-let translate_period_arithmetic ctx ~subject ~ot ~a (value : expr) =
+let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~a (value : expr) =
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
+  let target = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) a in
   let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
   let target_unit = attr_unit ctx ~otype:ot ~attr:a in
   let what = Printf.sprintf "the period arithmetic of %S" a in
@@ -10958,6 +11157,8 @@ let translate_period_arithmetic ctx ~subject ~ot ~a (value : expr) =
             "an attribute reference without a path is the subject's own read, so its subjectType is the \
              subject type '%s' — '%s' names another type, which only a navigation reaches"
             ot otn;
+        Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
+          ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx otn) b) ~target ~attr:a;
         read_cuts [ base ] ~holder:subject ~attr:b;
         let q = fresh ctx (p ^ "_r") in
         emit ctx "%s(%s,X,V) :- %s, tl(%s,%s,F,T,V), F <= X, X < T." q subject at_x subject (str b);
@@ -10968,6 +11169,8 @@ let translate_period_arithmetic ctx ~subject ~ot ~a (value : expr) =
           element_object_type = Some el; empty_fallback; filter = None; grain = None; dimension_selections = None;
           source_role; source_path; anchor = None; _ }
       when (source_role <> None || source_path <> None) && attr_temporal ctx ~otype:el ~attr:x ->
+        Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" x)
+          ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx el) x) ~target ~attr:a;
         let sx = pow10 (attr_decimals ctx ~otype:el ~attr:x) in
         let env =
           { Eval.doc = ctx.doc; params = ctx.case.params; param_tls = ctx.case.param_tls;
@@ -11001,9 +11204,11 @@ let translate_period_arithmetic ctx ~subject ~ot ~a (value : expr) =
     | Parameter_ref { parameter = Some n; _ } -> (
         match Ir_v0.Checks.find_ci ctx.doc.parameters n with
         | Some { par_granularity = None; _ } -> scalar e
-        | Some { par_datatype; _ } ->
+        | Some ({ par_datatype; _ } as decl) ->
             (* a time-dependent parameter is a timeline operand; its timeline is its
                binding, so an absent one is an unbound parameter (ch. 5.7) *)
+            Eval.refuse_finer ~what:(Printf.sprintf "the parameter %S" n) ~operand:(Uchar_ref.Timeline.param_grid decl)
+              ~target ~attr:a;
             if not (Eval.SMap.mem (norm n) ctx.case.param_tls) then
               faultc ~params:[ ("parameter", n) ] "EF-014" "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" n;
             emit ctx "%s_cut(%s,X) :- %s, param_tl(%s,X,_,_)." p subject base (str n);
@@ -11043,8 +11248,11 @@ let translate_period_arithmetic ctx ~subject ~ot ~a (value : expr) =
   in
   emit ctx "%s_cut(%s,#inf) :- %s." p subject base;
   emit ctx "%s_cut(%s,#sup) :- %s." p subject base;
-  emit ctx "%s_per(%s,X,Y) :- %s_cut(%s,X), %s_cut(%s,Y), X < Y, #count { Z : %s_cut(%s,Z), X < Z, Z < Y } = 0."
-    p subject p subject p subject p subject;
+  (* a condition that reads no timeline gates the rule (ch. 3.3): without it
+     there is no period *)
+  emit ctx "%s_per(%s,X,Y) :- %s_cut(%s,X), %s_cut(%s,Y), X < Y, #count { Z : %s_cut(%s,Z), X < Z, Z < Y } = 0%s."
+    p subject p subject p subject p subject
+    (String.concat "" (List.map (fun c -> ", " ^ c) cond));
   units_identical_ok ~what target_unit (eff_unit ctx value);
   let root0, _, root_scale = node value in
   (* the value restated once to the target's scale: a value with more decimals
@@ -11077,10 +11285,24 @@ let translate_period_arithmetic ctx ~subject ~ot ~a (value : expr) =
   emit ctx "%s_join(%s,Y) :- %s_val(%s,X,Y,V), %s_val(%s,Y,Z,V)." p subject p subject p subject;
   emit ctx "%s_start(%s,X) :- %s_val(%s,X,_,_), not %s_join(%s,X)." p subject p subject p subject;
   emit ctx "%s_end(%s,Y) :- %s_val(%s,_,Y,_), not %s_join(%s,Y)." p subject p subject p subject;
-  emit ctx
-    "tl(%s,%s,X,Y,V) :- %s_start(%s,X), %s_val(%s,X,_,V), %s_end(%s,Y), X < Y, #count { Z : %s_end(%s,Z), X < \
-     Z, Z < Y } = 0."
-    subject (str a) p subject p subject p subject p subject;
+  (* the written segments, restricted to the periods of a condition read per
+     period (ch. 3.10's clip generalised) and, on a target of several writers,
+     each also as this writer's ([writer_timeline_conflicts]) *)
+  let run = Printf.sprintf
+      "%s_start(%s,X), %s_val(%s,X,_,V), %s_end(%s,Y), X < Y, #count { Z : %s_end(%s,Z), X < Z, Z < Y } = 0"
+      p subject p subject p subject p subject in
+  let heads =
+    match periods with
+    | None -> [ ("X", "Y", [ run ]) ]
+    | Some q ->
+        emit ctx "%s_seg(%s,X,Y,V) :- %s." p subject run;
+        List.map (fun (l, h, g) -> (l, h, Printf.sprintf "%s_seg(%s,X,Y,V)" p subject :: g)) (period_cuts q ~van:"X" ~tot:"Y")
+  in
+  List.iter
+    (fun (l, h, b) ->
+      head_body ctx (Printf.sprintf "tl(%s,%s,%s,%s,V)" subject (str a) l h) b;
+      Option.iter (fun i -> head_body ctx (Printf.sprintf "wtl(%s,%s,%s,%s,V,%d)" subject (str a) l h i) b) writer)
+    heads;
   (* ch. 7.8, the timeline arm: on a standing temporal target the rule decides
      where it writes a segment, and the case's input timeline stands otherwise *)
   if List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc) then begin
@@ -11185,6 +11407,50 @@ let co_writer ctx (r : resolved_rule) ~ot ~a =
       else None
   | _ -> None
 
+(* The writers of a timeline target (ot, a) of two or more computing rules
+   decide their own segments (RUNTIME-SEMANTICS ch. 5.7 per day): writer [r]
+   writes wtl/6 under its index in the document, and with every writer before
+   it, one that decides a day with another value is a fault in the sentence of
+   [writer_conflicts], so the fault kind is EF-016. Two writers that decide one
+   day with one value hold together; ref then gives the day to the writer the
+   document names first, and this encoding, which writes each writer's
+   segments as written, refuses that day by name. *)
+let writer_timeline_conflicts ctx (r : resolved_rule) ~ot ~a =
+  let _, comps, _ = init_writers ctx ~ot ~a in
+  let index r' = List.find_index (fun r'' -> r'' == r') ctx.doc.resolved_rules in
+  emit ctx "#defined wtl/6.";
+  match index r with
+  | None -> ()
+  | Some j ->
+      List.iter
+        (fun (ri : resolved_rule) ->
+          match index ri with
+          | Some i when i < j ->
+              let name (r : resolved_rule) = "\"" ^ Option.value r.rr_name ~default:"<naamloos>" ^ "\"" in
+              let lower =
+                match Ir_v0.Desugar.target_of ri with
+                | Some (oti, _) when Ir_v0.Checks.subtype_of ctx.doc ~sub:ot ~super:oti -> ot
+                | Some (oti, _) -> oti
+                | None -> ot
+              in
+              let overlap = Printf.sprintf "wtl(S,%s,F1,T1,V1,%d), wtl(S,%s,F2,T2,V2,%d), F1 < T2, F2 < T1" (str a) i (str a) j in
+              emit ctx "viol(%s,S) :- %s, V1 != V2."
+                (quote
+                   (Printf.sprintf
+                      "two writers of one target disagree: rules %s and %s write different values to the \
+                       attribute %s of a %s — no fixpoint, divergence is a fault (ch. 5.7)"
+                      (name ri) (name r) a lower))
+                overlap;
+              emit ctx "viol(%s,S) :- %s, V1 == V2."
+                (quote
+                   (Printf.sprintf
+                      "rules %s and %s decide one day of the timeline %s with one value, and this encoding writes \
+                       their segments as written, so it has no segment for the day of one of them (no corpus case)"
+                      (name ri) (name r) a))
+                overlap
+          | _ -> ())
+        comps
+
 let translate_rule ctx (r : resolved_rule) =
   (* the ch. 8.2 validity gate: an excluded rule does not apply — nothing
      is emitted, so its target's case input stands untouched as the plain
@@ -11276,9 +11542,18 @@ let translate_rule ctx (r : resolved_rule) =
                 :: (if comps <> [] then [ Printf.sprintf "not comp_decides(%s,%s)" subject (str a) ] else [])
             | _ -> []
           in
+          (* a condition that reads a timeline is read per period on a timeline
+             target (ch. 3.10's clip generalised), in ref's question
+             (Eval.reads_timeline); one that reads none gates the rule *)
+          let per_period =
+            target_timeline && clip = None
+            && r.rr_presentation <> Some Characteristic_attribution
+            && Option.fold ~none:false ~some:(Eval.reads_timeline ctx.doc ~ot) r.rr_condition
+          in
           let cond =
             match (clip, r.rr_condition) with
             | Some _, _ | None, None -> []
+            | None, Some _ when per_period -> []
             | None, Some c ->
                 ctx.rule_guard <- init_guard;
                 let atoms = cond_atoms ctx ~subject ~subject_ot:ot c in
@@ -11393,13 +11668,16 @@ let translate_rule ctx (r : resolved_rule) =
                  read and a derived val/3 would split; no corpus case)"
                 a
           | Some (Calculation | Equation) when attr_temporal ctx ~otype:ot ~attr:a -> (
-              (* a timeline written by two rules has no wval/4 encoding: a
-                 segment list is no single term to compare *)
-              if writer <> None then
-                fault
-                  "two computing rules write the temporal target %S, and a divergence between their \
-                   timelines is not translated (no corpus case)"
-                  a;
+              (* a timeline of two or more writers: each writes its own
+                 segments, also as wtl/6 under its index, and two that decide
+                 one day with different values are a fault (ch. 5.7 per day,
+                 [writer_timeline_conflicts]) *)
+              if writer <> None then writer_timeline_conflicts ctx r ~ot ~a;
+              let periods =
+                match r.rr_condition with
+                | Some c when per_period -> Some (period_condition ctx ~ot ~a c)
+                | _ -> None
+              in
               if
                 (not (List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc)))
                 && case_supplies ctx ~otype:ot ~attr:a
@@ -11422,7 +11700,7 @@ let translate_rule ctx (r : resolved_rule) =
                        grain = Some g; empty_fallback = None; dimension_selections = None; _ })
                 when norm bot = norm ot ->
                   clip_member_qualifications fc;
-                  translate_pro_rata ?clip ctx ~subject ~ot ~a ~cond ~b ~k ~g
+                  translate_pro_rata ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~b ~k ~g
               | Some
                   (Function_call
                      { kind = Day_count; call_arguments = [];
@@ -11432,16 +11710,16 @@ let translate_rule ctx (r : resolved_rule) =
                               { characteristic = Some k; navigation_binding = None; negation = false; _ } as fc);
                        grain = Some g; empty_fallback = None; dimension_selections = None; _ }) ->
                   clip_member_qualifications fc;
-                  translate_day_count ?clip ctx ~subject ~ot ~a ~cond ~k ~g
+                  translate_day_count ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~k ~g
               | Some v when Eval.is_period_arithmetic v ->
-                  (* a condition would restrict the timeline per period
-                     (spec/proposals/IMPLICIT-TIME.md, point 3), in ref's words *)
-                  if r.rr_condition <> None then
-                    fault
-                      "rule %S writes the temporal attribute %S by the period arithmetic of ch. \
-                       3.4/3.5 under a condition: a condition per period is not executed"
-                      ctx.rule_name a;
-                  translate_period_arithmetic ctx ~subject ~ot ~a v
+                  (match clip with
+                  | Some _ ->
+                      fault
+                        "a period window as the condition of the period arithmetic of %S is not translated (no \
+                         corpus case)"
+                        a
+                  | None -> ());
+                  translate_period_arithmetic ?periods ?writer ~cond ctx ~subject ~ot ~a v
               | _ ->
                   faultc "CLINGO-024"
                     "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count \

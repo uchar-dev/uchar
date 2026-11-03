@@ -1,0 +1,51 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "aangesteld": [
+            {
+              "from": "2024-02-01",
+              "to": "2024-08-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "aanstellingspremie",
+      "timeline": [
+        {
+          "from": "2024-02-01",
+          "to": "2024-08-01",
+          "value": {
+            "number": "25"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "premietotaal",
+      "value": {
+        "number": "150"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

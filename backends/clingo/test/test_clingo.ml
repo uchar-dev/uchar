@@ -17162,9 +17162,9 @@ let () =
 (* RUNTIME-SEMANTICS ch. 3.1, 3.6, 3.11: the refusals around period arithmetic
    over all time, on the documents of ref's own witnesses (ref/test/fixtures).
    A whole-period fold over a timeline with an open bound would answer for the
-   case's span alone, a condition would restrict the timeline per period, and a
-   total over a timeline that reads a pro-rata part would lay its whole-unit
-   facts between bounds that are no case data. *)
+   case's span alone, and a total over a timeline that reads a pro-rata part
+   would lay its whole-unit facts between bounds that are no case data. A
+   condition without a timeline on such a rule gates it, as ref plays it. *)
 let () =
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/period-arithmetic/" in
@@ -17173,9 +17173,11 @@ let () =
       faults_with ~name:("period arithmetic: " ^ fixture) ~ir:(read (dir ^ fixture ^ "/ir.json"))
         ~case_text:(read (dir ^ fixture ^ "/case.json")) ~needle)
     [ ("open-whole-period", "whose timeline may carry an open bound, is not translated");
-      ("condition", "by the period arithmetic of ch. 3.4/3.5 under a condition");
       ("total-over-pro-rata", "its bounds are not case data, so the whole-unit facts cannot be laid");
       ("parameter-unbound", "parameter \"verzuimrentevoet\" is unbound in this case") ];
+  (let ir = read (dir ^ "condition/ir.json") and case_text = read (dir ^ "condition/case.json") in
+   ref_matches ~name:"period arithmetic: condition" ~ir ~case_text;
+   clingo_matches ~name:"period arithmetic: condition" ~ir ~case_text);
   pinned_loud ~entry:"V6" ~name:"period arithmetic: calendar-total-unrounded"
     ~ir:(read (dir ^ "calendar-total-unrounded/ir.json")) ~case_text:(read (dir ^ "calendar-total-unrounded/case.json"))
     ~needle:"it is translated only as the base of a rounding";
@@ -17222,6 +17224,49 @@ let () =
     ~ir:(read "corpus/negative/wf009-calendar-family-factor/ir.json")
     ~case_text:(read "corpus/golden/anchor/jutterswet-verzuimrente-dagen/case2-schrikkeljaar.json")
     ~needle:"by a declared factor between the day family and the month family of the calendar"
+
+
+(* RUNTIME-SEMANTICS ch. 3.10, 3.9, 5.7: a condition per period on a rule of a
+   timeline target, the qualifier per bucket and two writers per day, on ref's
+   documents (ref/test/fixtures/conditions-per-period): the proposal's worked
+   examples WV-3.10-voorwaarde-per-periode, WV-3.9-per-emmer and
+   WV-5.7-per-dag played in both executors; the two writers that decide one
+   day with different values, the fault of ch. 5.7 (EF-016); a timeline finer
+   than the target, refused in the verifier's rule (WF-126); and the two forms
+   ref plays where this encoding refuses (README [V7], [V8]). *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let dir = "ref/test/fixtures/conditions-per-period/" in
+  let pair f = (read (dir ^ f ^ "/ir.json"), read (dir ^ f ^ "/case.json")) in
+  (let ir, case_text = pair "afdracht" in
+   ref_matches ~name:"condition per period: afdracht" ~ir ~case_text;
+   clingo_matches ~name:"condition per period: afdracht" ~ir ~case_text);
+  (let ir, case_text = pair "afdracht-botsing" in
+   let name = "condition per period: two writers decide one day with different values" in
+   let doc, case = load_pair ~ir ~case_text in
+   let needle =
+     "two writers of one target disagree: rules \"rentedagen in een gehele maand\" and \"rentedagen in elke maand\" \
+      write different values to the attribute rentedagen of a Afdracht"
+   in
+   match translate doc case with
+   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (translation fault: " ^ m ^ ")") false
+   | program -> (
+       match Solve.run_clingo program with
+       | _, Unix.WEXITED 20 ->
+           let ws = Solve.diagnostic program in
+           check (name ^ " (" ^ String.concat "; " ws ^ ")")
+             (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws
+             && List.exists (fun w -> Translate.viol_code w = Some ("EF-016", [ ("rules", "rentedagen in een gehele maand, rentedagen in elke maand"); ("attribute", "rentedagen"); ("label", "A1"); ("objectType", "Afdracht") ])) ws)
+       | _, _ -> check (name ^ " (it found a model)") false));
+  (let ir, case_text = pair "afdracht-fijner" in
+   faults_with ~name:"condition per period: a finer operand" ~ir ~case_text
+     ~needle:"does not fit the month grid of the timeline target \"maandrente\": the target cannot carry its cuts (WF-126)");
+  (let ir, case_text = pair "twee-schrijvers-gelijk" in
+   pinned_loud ~entry:"V7" ~name:"condition per period: two writers decide one day with one value" ~ir ~case_text
+     ~needle:"decide one day of the timeline wachtdagen with one value");
+  (let ir, case_text = pair "totaal-onder-voorwaarde" in
+   pinned_loud ~entry:"V8" ~name:"condition per period: the total of a timeline written under it" ~ir ~case_text
+     ~needle:"under a condition read per period derives: its bounds are not case data")
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
