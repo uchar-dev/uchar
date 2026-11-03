@@ -319,6 +319,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-kinderlet|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-kindermacht|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-kinderprocent|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "jutterswet-maandloon|EXCLUDE DROOLS-105|transpiler SKIP: regel 'maandloon van een jutter' — plus over two timelines as the value of the temporal target 'maandloon', which neither branch carries: the period arithmetic of RUNTIME-SEMANTICS ch. 3.4 and 3.5 over all time, with open segments, built in ref and clingo since card timeline-arithmetic-by-rule (step A, 2026-11-03); step B carries it in the lowering with truth maintenance, and until then the golden's pins are a ref = clingo pair"
   "jutterswet-muntketen|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Munt) has no bean field: the same many-to-many 'berging' as bootberging above — NOT the subtype landing it was written for, which the walk does carry (SourcePathChainWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
   "jutterswet-meldplichtspoor|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
   "jutterswet-meldtermijnen|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"

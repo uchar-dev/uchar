@@ -160,14 +160,14 @@
       ]
     },
     "timelineValue": {
-      "description": "A full timeline: day-precision segments, from inclusive, to exclusive, ordered and non-overlapping, aligned to the declaration's granularity grid; absence between segments is a gap (leeg on read). The ref loader owns the cross-checks.",
+      "description": "A full timeline: day-precision segments, from inclusive, to exclusive, ordered and non-overlapping, aligned to the declaration's granularity grid; absence between segments is a gap (leeg on read). A segment without 'from' begins before every day and one without 'to' runs past every day (an open bound, RUNTIME-SEMANTICS ch. 3.1), so only the first segment may omit 'from' and only the last may omit 'to'; an open bound sits on no grid wall. The ref loader owns the cross-checks.",
       "type": "object", "additionalProperties": false, "required": ["timeline"],
       "properties": {
         "timeline": {
           "type": "array",
           "minItems": 1,
           "items": {
-            "type": "object", "additionalProperties": false, "required": ["from", "to", "value"],
+            "type": "object", "additionalProperties": false, "required": ["value"],
             "properties": {
               "from": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
               "to": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
@@ -223,11 +223,11 @@
             "label": { "type": "string", "minLength": 1 },
             "attribute": { "type": "string", "minLength": 1 },
             "timeline": {
-              "description": "The expected full timeline of a temporal target, segment-exact (an empty array pins an empty timeline); ordering, non-overlap and grid alignment are the ref loader's cross-checks.",
+              "description": "The expected full timeline of a temporal target, segment-exact over all time (an empty array pins an empty timeline): its filled segments, open segments included, where a segment without 'from' or 'to' has an open bound as in timelineValue; ordering, non-overlap and grid alignment are the ref loader's cross-checks.",
               "type": "array",
               "items": {
                 "type": "object", "additionalProperties": false,
-                "required": ["from", "to", "value"],
+                "required": ["value"],
                 "properties": {
                   "from": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
                   "to": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },

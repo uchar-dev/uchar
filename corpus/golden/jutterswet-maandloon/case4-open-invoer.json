@@ -1,0 +1,224 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "strandloon": {
+            "timeline": [
+              {
+                "to": "2024-01-01",
+                "value": {
+                  "number": "0"
+                }
+              },
+              {
+                "from": "2024-01-01",
+                "to": "2024-07-01",
+                "value": {
+                  "number": "100"
+                }
+              },
+              {
+                "from": "2024-07-01",
+                "value": {
+                  "number": "0"
+                }
+              }
+            ]
+          },
+          "stormtoeslag": {
+            "timeline": [
+              {
+                "from": "2024-04-01",
+                "to": "2024-10-01",
+                "value": {
+                  "number": "30"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {
+          "vondsten": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "opbrengst": {
+            "timeline": [
+              {
+                "to": "2024-02-01",
+                "value": {
+                  "number": "50"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "maandloon",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "100"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "to": "2024-07-01",
+          "value": {
+            "number": "130"
+          }
+        },
+        {
+          "from": "2024-07-01",
+          "to": "2024-10-01",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2024-10-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "loonverschil",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "100"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "to": "2024-07-01",
+          "value": {
+            "number": "70"
+          }
+        },
+        {
+          "from": "2024-07-01",
+          "to": "2024-10-01",
+          "value": {
+            "number": "-30"
+          }
+        },
+        {
+          "from": "2024-10-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "opgehoogde strandloon",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-07-01",
+          "value": {
+            "number": "105"
+          }
+        },
+        {
+          "from": "2024-07-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "vondstopbrengst",
+      "timeline": [
+        {
+          "to": "2024-02-01",
+          "value": {
+            "number": "50"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "gewaarborgde vondstopbrengst",
+      "timeline": [
+        {
+          "to": "2024-02-01",
+          "value": {
+            "number": "50"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "jaarloon",
+      "value": {
+        "number": "780"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

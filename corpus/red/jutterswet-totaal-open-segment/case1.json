@@ -1,0 +1,35 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "strandloon": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-07-01",
+                "value": {
+                  "number": "100"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-036",
+    "params": {
+      "attribute": "opgehoogde strandloon",
+      "label": "J1"
+    }
+  }
+}

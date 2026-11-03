@@ -1,0 +1,41 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het strandloon Numeriek (geheel getal) voor elke maand;
+    de stormtoeslag Numeriek (geheel getal) voor elke maand;
+    het maandloon Numeriek (geheel getal) voor elke maand;
+    het loonverschil Numeriek (geheel getal) voor elke maand;
+    het opgehoogde strandloon Numeriek (geheel getal) voor elke maand;
+    de vondstopbrengst Numeriek (geheel getal) voor elke maand;
+    de gewaarborgde vondstopbrengst Numeriek (geheel getal) voor elke maand;
+    het jaarloon Numeriek (geheel getal);
+
+Objecttype de Vondst (mv: Vondsten)
+    de opbrengst Numeriek (geheel getal) voor elke maand;
+
+Feittype aanmelding
+    de aanmeldende jutter Jutter
+    de vondst (mv: vondsten) Vondst
+Eén aanmeldende jutter telt meerdere vondsten
+
+Regel maandloon van een jutter
+    geldig altijd
+        Het maandloon van een Jutter moet berekend worden als zijn strandloon plus zijn stormtoeslag.
+
+Regel loonverschil van een jutter
+    geldig altijd
+        Het loonverschil van een Jutter moet berekend worden als zijn strandloon min zijn stormtoeslag.
+
+Regel opgehoogd strandloon van een jutter
+    geldig altijd
+        Het opgehoogde strandloon van een Jutter moet berekend worden als 5 plus zijn strandloon.
+
+Regel vondstopbrengst van een jutter
+    geldig altijd
+        De vondstopbrengst van een Jutter moet berekend worden als de som van de opbrengst van alle vondsten van de Jutter.
+
+Regel gewaarborgde vondstopbrengst van een jutter
+    geldig altijd
+        De gewaarborgde vondstopbrengst van een Jutter moet berekend worden als de som van de opbrengst van alle vondsten van de Jutter of 0 als die er niet zijn.
+
+Regel jaarloon van een jutter
+    geldig altijd
+        Het jaarloon van een Jutter moet gesteld worden op het totaal van zijn maandloon.

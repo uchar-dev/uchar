@@ -1,0 +1,262 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "strandloon": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-02-01",
+                "value": {
+                  "number": "1"
+                }
+              }
+            ]
+          },
+          "stormtoeslag": {
+            "timeline": [
+              {
+                "from": "2024-03-01",
+                "to": "2024-04-01",
+                "value": {
+                  "number": "2"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "opbrengst": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2024-02-01",
+                "value": {
+                  "number": "40"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "opbrengst": {
+            "timeline": [
+              {
+                "from": "2024-03-01",
+                "to": "2024-04-01",
+                "value": {
+                  "number": "20"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "maandloon",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-02-01",
+          "value": {
+            "number": "1"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "2"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "loonverschil",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-02-01",
+          "value": {
+            "number": "1"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "-2"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "opgehoogde strandloon",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-02-01",
+          "value": {
+            "number": "6"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "vondstopbrengst",
+      "timeline": [
+        {
+          "from": "2024-01-01",
+          "to": "2024-02-01",
+          "value": {
+            "number": "40"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "20"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "gewaarborgde vondstopbrengst",
+      "timeline": [
+        {
+          "to": "2024-01-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-01-01",
+          "to": "2024-02-01",
+          "value": {
+            "number": "40"
+          }
+        },
+        {
+          "from": "2024-02-01",
+          "to": "2024-03-01",
+          "value": {
+            "number": "0"
+          }
+        },
+        {
+          "from": "2024-03-01",
+          "to": "2024-04-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2024-04-01",
+          "value": {
+            "number": "0"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "jaarloon",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
