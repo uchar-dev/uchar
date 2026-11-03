@@ -1848,7 +1848,26 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                 let periods =
                   Timeline.true_periods_of tested ~span (fun v -> Arith.compare_op op v bound)
                 in
-                held_over c (Timeline.clip tested periods);
+                (* ch. 5.12: a gap of the compared timeline reads leeg (ch. 3.1), so
+                   where a leeg side satisfies the comparison the reading shows it as a
+                   period without a value, within each segment of the totalled timeline;
+                   it has no segment that [Timeline.clip] could keep *)
+                let gaps =
+                  match
+                    Timeline.complement
+                      (List.map (fun (s : Timeline.segment) -> (s.s_from, s.s_to)) tested)
+                      ~span
+                  with
+                  | [] -> []
+                  | gaps when Arith.compare_op op Value.Empty bound ->
+                      List.map (fun (v, t) -> { Timeline.s_from = v; s_to = t; s_value = Value.Empty }) gaps
+                  | _ -> []
+                in
+                held_over c
+                  (List.sort
+                     (fun (a : Timeline.segment) (b : Timeline.segment) ->
+                       compare (a.s_from, a.s_to) (b.s_from, b.s_to))
+                     (Timeline.clip tested periods @ gaps));
                 periods
             | Compound { quantifier_kind = All; components = (_ :: _ as components); _ } ->
                 (* ch. 3.6, the FLAT composite `all` clip: the

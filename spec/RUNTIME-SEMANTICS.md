@@ -6114,8 +6114,14 @@ check the periods outside them within each segment of the totalled
 timeline, and a composite the intersection of its members' periods, each
 member read on its own — each a period without a value; a comparison has
 the segments of the compared timeline where it holds, with their values,
-cut where the segments of the totalled timeline are cut (the `ref/` test
-`WV-5.12-gedurende-clip`).
+and, where a leeg side satisfies it, the gaps of the compared timeline
+within the segments of the totalled timeline, each a period without a
+value: a gap reads leeg (ch. 3.1), so "gelijk aan" holds on it against a
+leeg bound and "ongelijk aan" against a filled one (ch. 1.2), and an
+ordering never does; all of it cut where the segments of the totalled
+timeline are cut, in the order of their days (the `ref/` tests
+`WV-5.12-gedurende-clip` and `WV-5.12-peilwacht`, and the worked example
+of a gap in a comparison clip, below).
 
 **The object of a read** (card `reading-read-objects`, 2026-10-27). A
 node that reads a member of one object names the object it read the member
@@ -6486,6 +6492,57 @@ target: the emptiness of the target in the input is the justification of
 the initialisation default (ch. 7.3), not the turn of its chain, so it has
 no nodes, as in case 5.
 
+**Worked example — a gap in a comparison clip** (absolute; the
+`jutterswet-peilwacht` golden of ch. 3.6, cases 1, 2 and 4, verbatim in
+the `ref/` test `WV-5.12-peilwacht`). Two rules without a condition on the
+`Jutter`, `/rules/rules/0/versions/0` the peilsom, "het totaal van zijn
+wachtvergoeding per maand gedurende de tijd dat zijn peilstand gelijk is
+aan zijn drempelstand", and `/rules/rules/1/versions/0` the afwijksom, the
+same with "ongelijk aan". Each numbers its nodes 0 `Aggregation`, 1
+`AttributeReference` (the wachtvergoeding per maand, the totalled
+timeline), 2 `Comparison`, 3 `AttributeReference` (the peilstand, the
+compared timeline) and 4 `AttributeReference` (the drempelstand, the
+bound). Every Jutter has a wachtvergoeding per maand of 10 from 2024-01-01
+to 2024-07-01, one segment. Node 2 and the total, node 0, per Jutter:
+
+| case, Jutter | peilstand | drempelstand | peilsom: node 2 | node 0 | afwijksom: node 2 | node 0 |
+|----|----|----|----|----|----|----|
+| 1, J1 | 5 in January | leeg | `[[2024-02-01 2024-07-01 empty]]` | 50 | `[[2024-01-01 2024-02-01 5]]` | 10 |
+| 1, J2 | — | leeg | `[[2024-01-01 2024-07-01 empty]]` | 60 | `[]` | 0 |
+| 2, J1 | 5 in January | 5 | `[[2024-01-01 2024-02-01 5]]` | 10 | `[[2024-02-01 2024-07-01 empty]]` | 50 |
+| 2, J2 | — | 5 | `[]` | 0 | `[[2024-01-01 2024-07-01 empty]]` | 60 |
+| 2, J3 | 5 in January, 7 in February and March | 5 | `[[2024-01-01 2024-02-01 5]]` | 10 | `[[2024-02-01 2024-04-01 7], [2024-04-01 2024-07-01 empty]]` | 50 |
+| 4, J1 | 7 from 2024-03-01 to 2024-09-01 | 5 | `[]` | 0 | `[[2024-01-01 2024-03-01 empty], [2024-03-01 2024-07-01 7], [2024-07-01 2024-09-01 7]]` | 60 |
+| 4, J2 | 7 from 2024-03-01 to 2024-09-01 | leeg | `[[2024-01-01 2024-03-01 empty]]` | 20 | `[[2024-03-01 2024-07-01 7], [2024-07-01 2024-09-01 7]]` | 40 |
+
+In case 1 the peilstand of J1 has a gap from February to June, where it and
+the leeg drempelstand are both leeg: "gelijk aan" holds there, and the
+peilsom totals those five months to 50; the comparison reads that gap,
+where the clip holds, and not only the segments of the peilstand, none of
+which is equal to a leeg bound. Against the drempelstand 5 of case 2 the
+same gap satisfies "ongelijk aan" instead. A gap is read only within the
+segments of the wachtvergoeding: J2 of case 1 has no peilstand at all, and
+its gap is the segment of the wachtvergoeding. A segment of the peilstand
+is read where it satisfies the comparison, also beyond the wachtvergoeding,
+cut where the wachtvergoeding ends: J1 and J2 of case 4 read the peilstand
+from July to September, which the clip does not total. In the canonical
+text J1 of case 4 reads, for the afwijksom, the gap before the segments:
+
+```
+/rules/rules/1/versions/0 "J1" 0 Aggregation 60
+/rules/rules/1/versions/0 "J1" 1 AttributeReference [[2024-01-01 2024-07-01 10]]
+/rules/rules/1/versions/0 "J1" 2 Comparison [[2024-01-01 2024-03-01 empty], [2024-03-01 2024-07-01 7], [2024-07-01 2024-09-01 7]]
+/rules/rules/1/versions/0 "J1" 3 AttributeReference [[2024-03-01 2024-09-01 7]]
+/rules/rules/1/versions/0 "J1" 4 AttributeReference 5
+/rules/rules/1/versions/0 "J1" HOLDS
+```
+
+and J1 of case 1, for the peilsom, the gap alone:
+
+```
+/rules/rules/0/versions/0 "J1" 2 Comparison [[2024-02-01 2024-07-01 empty]]
+```
+
 **The artifacts.** The `ref/` tests `WV-5.12-ploegaandeel`,
 `WV-5.12-keurgemiddelde` and `WV-5.12-opgave-bedrag` (the three examples
 above),
@@ -6502,7 +6559,10 @@ also the Drools backend's `ReadingsWitnessTest`, beside its record of forms
 without a condition (a sum over a role with its contributors and an empty
 one, a `gesteld worden op` one role away, an initialisation at its turn and
 displaced, an initialisation default at its turn and displaced by a higher
-default and by the input). Gate 17
+default and by the input). `WV-5.12-peilwacht` (the example of a gap in a
+comparison clip above) pins the gaps of a comparison clip in `ref/`, and
+the backend's `ReadingsWitnessTest` the same readings of the comparison on
+both its branches. Gate 17
 (`scripts/check-readings.sh`) holds the readings of `runner --trace`, per
 golden case file, to those of the Drools backend on both its branches: per
 contributor the member and its verdict, value or fault verbatim, the

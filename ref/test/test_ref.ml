@@ -9972,6 +9972,60 @@ let () =
       check "WV-5.12-gedurende-clip" (got = expected);
       if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
 
+(* WV-5.12-peilwacht: the worked example of a gap in a comparison clip in
+   ch. 5.12, the golden jutterswet-peilwacht of ch. 3.6, verbatim. A gap of
+   the compared timeline reads leeg (ch. 3.1), so where a leeg side satisfies
+   the comparison — "gelijk aan" against a leeg drempelstand, "ongelijk aan"
+   against a filled one — the reading of the comparison carries the gap as a
+   period without a value, within the segments of the wachtvergoeding, in the
+   order of the days. Per case the total and the comparison of both rules, and
+   the canonical text of the afwijksom of J1 in case 4, where the gap comes
+   before the segments. *)
+let () =
+  let golden = "corpus/golden/jutterswet-peilwacht/" in
+  let readings file = readings_of (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ file)) in
+  let line rule subject cell = Printf.sprintf "/rules/rules/%d/versions/0 \"%s\" %s" rule subject cell in
+  let rows subject (peilsom, equal) (afwijksom, unequal) =
+    [ line 0 subject ("0 Aggregation " ^ peilsom); line 0 subject ("2 Comparison " ^ equal);
+      line 1 subject ("0 Aggregation " ^ afwijksom); line 1 subject ("2 Comparison " ^ unequal) ]
+  in
+  List.iter
+    (fun (file, expected) ->
+      let got =
+        List.filter (fun l -> substring l " 0 Aggregation " || substring l " 2 Comparison ") (readings file)
+      in
+      let expected = List.sort compare expected in
+      check ("WV-5.12-peilwacht " ^ file) (got = expected);
+      if got <> expected then List.iter (Printf.printf "  got: %s\n") got)
+    [ ( "case1-grens-leeg.json",
+        rows "J1" ("50", "[[2024-02-01 2024-07-01 empty]]") ("10", "[[2024-01-01 2024-02-01 5]]")
+        @ rows "J2" ("60", "[[2024-01-01 2024-07-01 empty]]") ("0", "[]") );
+      ( "case2-grens-gevuld.json",
+        rows "J1" ("10", "[[2024-01-01 2024-02-01 5]]") ("50", "[[2024-02-01 2024-07-01 empty]]")
+        @ rows "J2" ("0", "[]") ("60", "[[2024-01-01 2024-07-01 empty]]")
+        @ rows "J3" ("10", "[[2024-01-01 2024-02-01 5]]")
+            ("50", "[[2024-02-01 2024-04-01 7], [2024-04-01 2024-07-01 empty]]") );
+      ( "case4-gat-voor-de-peilstand.json",
+        rows "J1" ("0", "[]")
+          ("60", "[[2024-01-01 2024-03-01 empty], [2024-03-01 2024-07-01 7], [2024-07-01 2024-09-01 7]]")
+        @ rows "J2" ("20", "[[2024-01-01 2024-03-01 empty]]")
+            ("40", "[[2024-03-01 2024-07-01 7], [2024-07-01 2024-09-01 7]]") ) ];
+  let afwijksom = line 1 "J1" "" in
+  let got =
+    List.filter
+      (fun l -> String.length l >= String.length afwijksom && String.sub l 0 (String.length afwijksom) = afwijksom)
+      (readings "case4-gat-voor-de-peilstand.json")
+  in
+  let expected =
+    [ line 1 "J1" "0 Aggregation 60"; line 1 "J1" "1 AttributeReference [[2024-01-01 2024-07-01 10]]";
+      line 1 "J1"
+        "2 Comparison [[2024-01-01 2024-03-01 empty], [2024-03-01 2024-07-01 7], [2024-07-01 2024-09-01 7]]";
+      line 1 "J1" "3 AttributeReference [[2024-03-01 2024-09-01 7]]"; line 1 "J1" "4 AttributeReference 5";
+      line 1 "J1" "HOLDS" ]
+  in
+  check "WV-5.12-peilwacht canonical text" (got = expected);
+  if got <> expected then List.iter (Printf.printf "  got: %s\n") got
+
 (* WV-5.12-nestuitzondering-verdrongen: the worked example of a displaced
    default in ch. 5.12, the golden anchor/jutterswet-nestuitzondering of
    ch. 7.9 (card readings-of-displaced-defaults). Default 0 carries grondX ->
