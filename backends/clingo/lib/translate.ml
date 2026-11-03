@@ -831,6 +831,8 @@ let viol_code witness =
   else if opens "parameter \"" && holds "\" is unbound in this case" then
     Some ("EF-014", found "parameter" (between "parameter \"" "\" is unbound in this case"))
   else if opens "creation budget exhausted\"" then Some ("EF-015", [])
+  else if opens "the periods in which the time-dependent characteristic " && holds " holds have an open bound" then
+    Some ("EF-023", found "characteristic" (between "the periods in which the time-dependent characteristic " " holds have"))
   else if opens "the temporal total of \"" && holds "\" meets a segment with an open bound" then
     Some ("EF-036", found "attribute" (between "the temporal total of \"" "\" meets") @ label)
   else if opens "two writers of one target disagree: " then
@@ -11652,8 +11654,8 @@ let translate_characteristic_timeline ctx (r : resolved_rule) ~ot ~k =
     (fun open_side ->
       emit ctx
         "viol(\"the periods in which the time-dependent characteristic %s holds have an open bound: a \
-         characteristic holds in bounded periods only (no corpus case)\",S) :- isa(S,%s), %s."
-        (norm k) (str ot) open_side)
+         characteristic holds in bounded periods only (ch. 3.11). Declined in translation\",S) :- isa(S,%s), %s."
+        k (str ot) open_side)
     [ Printf.sprintf "%s(S,#inf,_)" q; Printf.sprintf "%s(S,_,#sup)" q ]
 
 let translate_rule ctx (r : resolved_rule) =

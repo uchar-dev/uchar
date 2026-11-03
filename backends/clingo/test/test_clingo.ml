@@ -7712,11 +7712,11 @@ let () =
 
    De evaluatiedatum-poort zelf staat groen in het corpus
    (corpus/golden/jutterswet-premievenster, vier uitvoerders, zes
-   clausules). Wat hier staat: de grensvorm die WF-111 sinds 2026-09-23
-   verbiedt (negative wf111-period-boundary-parameter-date; deze arm is nu
-   het faalsnel-hek achter de verifier), en ch. 3.10's ANDERE geval, de
-   clip op een tijdlijndoel, met de clausule die geen corpusgolden kan
-   dragen en de weigering die blijft.
+   clausules). Wat hier staat: een grens over een parameter, die WF-111
+   sinds IMPLICIT-TIME VB 6.1 toelaat, en een grens die WF-111 verbiedt
+   (negative wf111-computed-bound-navigated-read; deze arm is het
+   faalsnel-hek achter de verifier), en ch. 3.10's ANDERE geval, de clip op
+   een tijdlijndoel, met de clausule die geen corpusgolden kan dragen.
 
    Beide zinnen lopen door tot de FASE-staart ("Declined in translation"),
    want `ref` weigert woordelijk hetzelfde tot aan die staart. Zonder haar

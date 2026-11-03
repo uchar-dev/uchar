@@ -7533,6 +7533,22 @@ let () =
   in
   expect_msg "WV-5.11-datummet-deel0-eerst" (run_v (date_with [ tree; pit ])) bm;
   expect_msg "WV-5.11-datummet-deel1-later" (run_v (date_with [ pit; tree ])) pm;
+  (* row: TimeWindow — from before to. A bound is a date expression over the
+     parameters and literals (WF-111), so a date construction whose parts name
+     no day faults there (EF-032, ch. 3.8); month 13 and day 31 of April tell
+     the two bounds apart *)
+  let date_of y m d : Ir_v0.Ast.expr =
+    Function_call
+      { kind = Date_with; call_arguments = [ litv y num0; litv m num0; litv d num0 ]; element_object_type = None;
+        empty_fallback = None; filter = None; dimension_selections = None; typ = Some Date_in_days;
+        source_name = None; grain = None; source_role = None; source_path = None; anchor = None }
+  in
+  let window f t : Ir_v0.Ast.condition_expr =
+    Time_window { starting_at = Some f; up_to = Some t; to_inclusive = false; source_name = None }
+  in
+  let month13 = "month 13" and april31 = "day 31" in
+  expect_msg "WV-5.11-venster-van-eerst" (run_c (window (date_of "2026" "13" "1") (date_of "2026" "4" "31"))) month13;
+  expect_msg "WV-5.11-venster-tot-later" (run_c (window (date_of "2026" "4" "31") (date_of "2026" "13" "1"))) april31;
   (* row: ListLiteral — element order *)
   let list_lit a b : Ir_v0.Ast.expr =
     List_literal { typ = Some element_list; elements = [ a; b ]; source_name = None }

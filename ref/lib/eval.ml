@@ -304,7 +304,7 @@ let characteristic_temporal (ot : object_type) name =
    attribute table alone, a temporal CHARACTERISTIC target passed the test
    and got the scalar gate). Both target tests stay unshared, on purpose, and
    the position has a red witness
-   (`corpus/red/time-window-timeline-characteristic`). Share the syntax walk,
+   (`corpus/golden/time-window-timeline-characteristic`). Share the syntax walk,
    never the judgement it feeds. *)
 let rec contains_time_window (c : condition_expr) =
   match c with
@@ -3896,9 +3896,9 @@ let run_rule ?only env world (r : resolved_rule) =
                   in
                   let periods = cond_periods env w self ~err ~target:grid ~attr c in
                   if List.exists (fun (v, t) -> v = Timeline.open_from || t = Timeline.open_to) periods then
-                    Value.fault
+                    Value.faultc ~params:[ ("characteristic", attr) ] "EF-023"
                       "the periods in which the time-dependent characteristic %S of %S holds have an open \
-                       bound: a characteristic holds in bounded periods only (no corpus case)"
+                       bound: a characteristic holds in bounded periods only (ch. 3.11). Declined at evaluation"
                       attr self.label;
                   World.write_char_timeline_by w ~form ~label:self.label ~char:attr periods
               (* the value is the constant waar, checked before any subject
