@@ -2409,6 +2409,66 @@ let () =
   clingo_matches ~name:"gedurende ALLE composite, both members temporal" ~ir:all_ok
     ~case_text:clip_case
 
+(* An equality in a clip comparison over DATES. ch. 3.6 reads the comparison
+   per period by ch. 1.2, whose date row differs from the numeric one exactly
+   at two leeg sides (they are not equal), and the translation carries the
+   numeric rows alone; golden `jutterswet-peilwacht` pins those. The verifier
+   passes this document and ref answers it; the translation refuses it by
+   name, decided on the declaration, so the case need not carry a peildatum. *)
+let date_clip_doc =
+  {|{ "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+        "attributes": [
+          { "node": "Attribute", "name": "wachtvergoeding per maand", "datatype": |} ^ num0 ^ {|,
+            "timeline": { "node": "TimelineFacet", "granularity": "month", "count": 1 } },
+          { "node": "Attribute", "name": "peildatum", "datatype": { "node": "Date", "precision": "day" },
+            "timeline": { "node": "TimelineFacet", "granularity": "month", "count": 1 } },
+          { "node": "Attribute", "name": "grensdatum", "datatype": { "node": "Date", "precision": "day" } },
+          { "node": "Attribute", "name": "peilsom", "datatype": |} ^ num0 ^ {| } ],
+        "characteristics": [] } ],
+    "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [],
+    "timelines": [], "dayKinds": [] },
+  "rules": {
+    "rules": [ { "node": "Rule", "name": "peilsom van een jutter", "versions": [ {
+      "initialisation": false, "presentation": "calculation",
+      "target": { "node": "AttributeReference", "attribute": "peilsom", "subjectType": "Jutter",
+        "source": { "snippet": "De peilsom van een Jutter" } },
+      "value": { "node": "Aggregation", "kind": "total",
+        "arguments": [ { "node": "AttributeReference", "attribute": "wachtvergoeding per maand",
+          "subjectType": "Jutter", "source": { "snippet": "zijn wachtvergoeding per maand" } } ],
+        "elementType": "Jutter",
+        "filter": { "node": "Comparison", "op": "equal",
+          "left": { "node": "AttributeReference", "attribute": "peildatum", "subjectType": "Jutter",
+            "source": { "snippet": "zijn peildatum" } },
+          "right": { "node": "AttributeReference", "attribute": "grensdatum", "subjectType": "Jutter",
+            "source": { "snippet": "zijn grensdatum" } },
+          "source": { "snippet": "gedurende de tijd dat zijn peildatum gelijk is aan zijn grensdatum" } },
+        "type": |} ^ num0 ^ {|,
+        "source": { "snippet": "het totaal van zijn wachtvergoeding per maand gedurende die tijd" } },
+      "validity": { "node": "Validity" } } ] } ],
+    "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+    "uniquenesses": [], "factCreations": [], "startPointDeterminations": [],
+    "ruleGroups": [] },
+  "diagnostics": []
+}
+|}
+
+let () =
+  faults_with ~name:"gedurende clip, gelijk-aan over a date timeline" ~ir:date_clip_doc
+    ~case_text:
+      {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [
+      { "label": "J1", "objectType": "Jutter",
+        "attributes": { "wachtvergoeding per maand": { "timeline": [
+            { "from": "2024-01-01", "to": "2024-07-01", "value": { "number": "10" } } ] } },
+        "roles": {}, "characteristics": [] } ],
+    "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }
+|}
+    ~needle:"equality in a per-segment clip comparison over dates is not translated"
+
 (* --- the datum-tijd ORDERING (S6a, 2026-09-06) ---------------------------
    Golden `jutterswet-meldstip` pins the ordering against a LITERAL, which is
    the shape a producer writes. Two neighbours of it cannot be corpus

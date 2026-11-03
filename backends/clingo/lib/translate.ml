@@ -2782,14 +2782,12 @@ let compare_sym = function
   | Less | Earlier -> "<"
   | Less_or_equal | Earlier_or_equal -> "<="
   | Equal | Not_equal ->
-      (* scalar conditions take the eqN-helper route in cond_atoms (date
-         gelijk-aan its positive join, which maps its own ==); what
-         remains on this symbol path is the per-segment clip comparison,
-         whose operands are timeline segments — the empty corner there
-         is a different shape (a gap, not an empty operand) *)
-      fault
-        "equality in a per-segment clip comparison is not translated (no corpus case \
-         exercises it)"
+      (* every caller takes equality by an arm of its own, because the
+         empty corner differs per shape: the scalar conditions by the
+         eqN helper in cond_atoms (date gelijk-aan by its positive join,
+         which maps its own ==), the whole-period fold by its own symbols,
+         and the per-segment clip comparison by its gap rules *)
+      fault "an equality reached the ordering symbols, which no caller hands it"
 
 (* arithmetic operands must be statically numeric: ref faults date
    arithmetic under the additive/multiplicative operators, so a
@@ -5671,11 +5669,58 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               [ ("WB", max_int31 / (m / bscale)); (gt, max_int31 / (m / gs)) ];
             ctx.fresh <- ctx.fresh + 1;
             let q = Printf.sprintf "cl%d_cond" ctx.fresh in
-            emit ctx "%s(S,V2,T2) :- %s." q
-              (String.concat ", "
-                 (Printf.sprintf "tl(S,%s,V2,T2,WB)" (str b)
-                 :: gb
-                 @ [ Printf.sprintf "%s %s %s" wl (compare_sym op) gl ]));
+            let filled sym =
+              emit ctx "%s(S,V2,T2) :- %s." q
+                (String.concat ", "
+                   (Printf.sprintf "tl(S,%s,V2,T2,WB)" (str b)
+                   :: gb
+                   @ [ Printf.sprintf "%s %s %s" wl sym gl ]))
+            in
+            (match op with
+            | Equal | Not_equal ->
+                (* ch. 3.6 reads the comparison per period by the NUMERIC rules
+                   of ch. 1.2: gelijk-aan holds on two leeg sides, ongelijk-aan
+                   on exactly one. A gap in the tested timeline reads leeg
+                   (ch. 3.1), and so does a bound whose body does not bind. A
+                   DATE side would take ch. 1.2's date row instead (two leeg
+                   dates are not equal), which no corpus case exercises. *)
+                let date_tested =
+                  match attr_datatype ctx ~otype:botn ~attr:b with
+                  | Some (Date_in_days | Date_time_type) -> true
+                  | _ -> false
+                in
+                if date_tested || is_date_operand ctx (Some boundary) then
+                  fault
+                    "equality in a per-segment clip comparison over dates is not translated (no \
+                     corpus case exercises it)";
+                filled (if op = Equal then "==" else "!=");
+                (* the bound's definedness, keyed on the caller's subject like the
+                   fence above *)
+                let bound = q ^ "_bound" in
+                emit ctx "%s(%s) :- %s." bound subject
+                  (String.concat ", " (Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: gb));
+                (* the gaps of the tested timeline: the maximal stretches of a
+                   segment of the clipped timeline that no tested segment covers,
+                   derived by the two candidate rules of the negated characteristic
+                   clip above, with the tested segments as the covered periods *)
+                let gap = q ^ "_gap" in
+                emit ctx "%s_lo(S,X) :- tl(S,%s,X,_,_)." gap (str a);
+                emit ctx "%s_lo(S,X) :- tl(S,%s,V,X,_), V < X." gap (str b);
+                emit ctx "%s_hi(S,Y) :- tl(S,%s,_,Y,_)." gap (str a);
+                emit ctx "%s_hi(S,Y) :- tl(S,%s,Y,T,_), Y < T." gap (str b);
+                emit ctx
+                  "%s_cov(S,X,Y) :- %s_lo(S,X), %s_hi(S,Y), X < Y, tl(S,%s,V,T,_), V < Y, X < T." gap
+                  gap gap (str b);
+                emit ctx
+                  "%s(S,X,Y) :- tl(S,%s,SV,ST,_), %s_lo(S,X), %s_hi(S,Y), SV <= X, X < Y, Y <= ST, \
+                   not %s_cov(S,X,Y)."
+                  gap (str a) gap gap gap;
+                if op = Equal then emit ctx "%s(S,X,Y) :- %s(S,X,Y), not %s(S)." q gap bound
+                else begin
+                  emit ctx "%s(S,V2,T2) :- tl(S,%s,V2,T2,_), not %s(S)." q (str b) bound;
+                  emit ctx "%s(S,X,Y) :- %s(S,X,Y), %s(S)." q gap bound
+                end
+            | _ -> filled (compare_sym op));
             fun v t -> Printf.sprintf "%s(S,%s,%s)" q v t
         | Compound { quantifier_kind = All; components = (_ :: _ as components); _ } ->
             (* the FLAT composite only (WF-055): v0 partitions static
