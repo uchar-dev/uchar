@@ -419,7 +419,13 @@ missing line makes `make gates` exit non-zero. Current gates:
     timeline operand (the case runner sets its timeline as a `List<Period>`
     on its global), and the temporal total by the calendar between the day
     and the month family; the case reader reads a timeline on the day grid.
-    A golden whose forms the loader+transpiler carry
+    Since the card `conditions-per-period` (step B, 2026-11-03) a condition
+    that reads a timeline on a rule with a timeline target is read per period
+    in the rule's consequence (`PeriodCondition`), the producer's timeline
+    cut to its periods, the whole-period qualifier there per bucket; two or
+    more computing rules of one timeline target each write their own
+    `Value`, and the write-back puts their union with the target's input on
+    the bean (EF-016 on a day two decide differently). A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
     (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
     over the corpus). Not-carried forms never vanish silently: per-form
@@ -452,7 +458,8 @@ missing line makes `make gates` exit non-zero. Current gates:
     `drools-exact-arithmetic` (2026-11-02) DROOLS-296, since the card
     `runtime-tijdconditie-leeg` (2026-11-03) DROOLS-222, since the card
     `timeline-arithmetic-per-period` (2026-11-03) DROOLS-030, DROOLS-036,
-    DROOLS-304 and DROOLS-307; every raised code
+    DROOLS-304 and DROOLS-307, since the card `conditions-per-period`
+    (2026-11-03) DROOLS-302; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`
