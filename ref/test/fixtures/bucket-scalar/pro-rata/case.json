@@ -1,0 +1,33 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2025-06-15",
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Bakenmeester",
+        "attributes": {
+          "onderhoudstarief": {
+            "number": "24"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "dienstdoend": [
+            {
+              "from": "2025-03-01",
+              "to": "2025-04-16"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "consistent"
+    }
+  ]
+}

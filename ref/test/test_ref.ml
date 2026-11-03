@@ -3034,19 +3034,22 @@ let () =
     [ "percentage-per-period"; "percentage-scalar"; "sum-of-rate"; "rounded-sum-factor" ];
   (* ch. 8.4: a form that reads a time-dependent attribute whole needs its full
      timeline, and a case that gives the asOfDate-bucket scalar faults, in the
-     sentence the ASP backend speaks too *)
+     sentence the ASP backend and the Drools backend speak too *)
   let dir = "ref/test/fixtures/bucket-scalar/" in
-  let bucket = "whole; the case supplies only the asOfDate-bucket scalar, which carries no period" in
+  let bucket = " whole; the case supplies only the asOfDate-bucket scalar, which carries no period" in
   List.iter
-    (fun (fixture, reads) ->
+    (fun (fixture, sentence) ->
       let ident = "ch8.4-bucket-scalar-" ^ fixture in
       with_files ~ir:(read (dir ^ fixture ^ "/ir.json")) ~case_data:(read (dir ^ fixture ^ "/case.json"))
         (fun findings _ evaluate ->
           check (ident ^ ": verifier-clean") (findings = []);
-          expect_fault_msg ident (fun () -> evaluate ()) (reads ^ " " ^ bucket)))
-    [ ("condition", {|a condition per period reads the time-dependent attribute "strandloon" of "J1"|});
-      ("arithmetic", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "strandloon" of "J1"|});
-      ("sum", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "opbrengst" of "V1"|}) ]
+          expect_fault_msg ident (fun () -> evaluate ()) sentence))
+    [ ("condition", {|a condition per period reads the time-dependent attribute "strandloon" of "J1"|} ^ bucket);
+      ("arithmetic", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "strandloon" of "J1"|} ^ bucket);
+      ("sum", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "opbrengst" of "V1"|} ^ bucket);
+      ( "pro-rata",
+        {|the pro-rata base "onderhoudstarief" needs the full timeline; "B1" supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)|}
+      ) ]
 
 (* WV-3.5: temporal summation — the contributor-skipping rule *)
 let () =

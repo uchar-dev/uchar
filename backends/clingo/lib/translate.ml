@@ -588,23 +588,26 @@ let refuse_attr_timeline ctx ~otype ~attr =
           attr)
     ctx.case.world.instances
 
-(* A form that reads the timeline of [attr] whole — the period arithmetic and a
-   condition per period (ch. 3.4, 3.5, 3.10) — needs the full timeline, and an
-   instance of [otype] whose case gives the asOfDate-bucket scalar faults (ch.
-   8.4), in ref's sentence [reads] … of the label …; an absent attribute is the
-   empty timeline. Eager, over every instance of the type, where ref faults on
-   the instance it evaluates. *)
-let refuse_bucket_scalar ctx ~otype ~attr ~reads =
+(* A form that reads the timeline of [attr] whole — the period arithmetic, a
+   condition per period and the base of a pro-rata part (ch. 3.4, 3.5, 3.7,
+   3.10) — needs the full timeline, and an instance of [otype] whose case gives
+   the asOfDate-bucket scalar faults (ch. 8.4), in ref's sentence for the label
+   of that instance; an absent attribute is the empty timeline. Eager, over
+   every instance of the type, where ref faults on the instance it evaluates. *)
+let refuse_bucket_scalar ctx ~otype ~attr ~(sentence : string -> string) =
   Eval.SMap.iter
     (fun _ (i : Uchar_ref.World.instance) ->
       if
         isa ctx i.otype otype
         && Uchar_ref.World.timeline i attr = None
         && Uchar_ref.World.attr i attr <> Value.Empty
-      then
-        fault "%s %S of %S whole; the case supplies only the asOfDate-bucket scalar, which carries no period" reads
-          attr i.label)
+      then fault "%s" (sentence i.label))
     ctx.case.world.instances
+
+(* ref's sentence for a form that [reads] the timeline of [attr] of [label] whole *)
+let read_whole_sentence ~reads ~attr label =
+  Printf.sprintf "%s %S of %S whole; the case supplies only the asOfDate-bucket scalar, which carries no period"
+    reads attr label
 
 (* the variables of an ASP text: the identifiers that start with a capital,
    outside string literals, an aggregate's local ones included *)
@@ -10783,7 +10786,8 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
           | _ -> ());
           units_identical_ok ~what:"a comparison in a condition per period" (attr_unit ctx ~otype:ot ~attr:b)
             (eff_unit ctx bound_e);
-          refuse_bucket_scalar ctx ~otype:ot ~attr:b ~reads:"a condition per period reads the time-dependent attribute";
+          refuse_bucket_scalar ctx ~otype:ot ~attr:b
+            ~sentence:(read_whole_sentence ~reads:"a condition per period reads the time-dependent attribute" ~attr:b);
           cuts_of_tl b;
           let gb, gt, gs = expr_term ctx ~subject:"S" ~subject_ot:ot bound_e in
           let gs = numeric_scale ~what:"a comparison in a condition per period" gs in
@@ -11012,6 +11016,10 @@ let translate_pro_rata ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~b ~k ~(
     fault
       "pro-rata onto or from a grid that does not lie on the calendar is fenced (RUNTIME-SEMANTICS \
        ch. 3.2)";
+  refuse_bucket_scalar ctx ~otype:ot ~attr:b ~sentence:(fun label ->
+      Printf.sprintf
+        "the pro-rata base %S needs the full timeline; %S supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)" b
+        label);
   ctx.fresh <- ctx.fresh + 1;
   let p = Printf.sprintf "pr%d" ctx.fresh in
   emit_grid_buckets ctx ~p ~grid:(Uchar_ref.Timeline.calendar_grid g);
@@ -11285,7 +11293,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
             ot otn;
         Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
           ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx otn) b) ~target ~attr:a;
-        refuse_bucket_scalar ctx ~otype:ot ~attr:b ~reads:period_reads;
+        refuse_bucket_scalar ctx ~otype:ot ~attr:b ~sentence:(read_whole_sentence ~reads:period_reads ~attr:b);
         read_cuts [ base ] ~holder:subject ~attr:b;
         let q = fresh ctx (p ^ "_r") in
         emit ctx "%s(%s,X,V) :- %s, tl(%s,%s,F,T,V), F <= X, X < T." q subject at_x subject (str b);
@@ -11298,7 +11306,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
       when (source_role <> None || source_path <> None) && attr_temporal ctx ~otype:el ~attr:x ->
         Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" x)
           ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx el) x) ~target ~attr:a;
-        refuse_bucket_scalar ctx ~otype:el ~attr:x ~reads:period_reads;
+        refuse_bucket_scalar ctx ~otype:el ~attr:x ~sentence:(read_whole_sentence ~reads:period_reads ~attr:x);
         let sx = pow10 (attr_decimals ctx ~otype:el ~attr:x) in
         let env =
           { Eval.doc = ctx.doc; params = ctx.case.params; param_tls = ctx.case.param_tls;

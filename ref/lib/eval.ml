@@ -3649,6 +3649,13 @@ let run_pro_rata ?periods env w (self : World.instance) ~err ~form ~ot ~attr val
               "unsupported pro-rata condition shape (an own temporal characteristic; no corpus \
                case for more)"
       in
+      (* ch. 8.4: the base is read whole, so a case that gives it as the
+         asOfDate-bucket scalar faults; an absent base is the empty timeline *)
+      if World.timeline self b = None && World.attr self b <> Value.Empty then
+        Value.fault
+          "the pro-rata base %S needs the full timeline; %S supplies only the asOfDate-bucket scalar (ch. 3.7, \
+           ch. 8.4)"
+          b self.label;
       (match value_node with
       | Function_call { call_arguments = [ base ]; _ } -> read_whole base (World.timeline self b)
       | _ -> ());

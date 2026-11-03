@@ -69,5 +69,6 @@
   ; a form that reads a timeline whole, given the asOfDate-bucket scalar
   (glob_files fixtures/bucket-scalar/condition/*.json)
   (glob_files fixtures/bucket-scalar/arithmetic/*.json)
-  (glob_files fixtures/bucket-scalar/sum/*.json))
+  (glob_files fixtures/bucket-scalar/sum/*.json)
+  (glob_files fixtures/bucket-scalar/pro-rata/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

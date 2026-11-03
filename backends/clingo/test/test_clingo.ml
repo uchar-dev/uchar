@@ -17327,8 +17327,8 @@ let () =
    product; a sum per period of a rate keeps the rate as an operand of maal and
    verminderd met, and under a rounding; and a form that reads a time-dependent
    attribute whole — a condition per period, the period arithmetic, a sum per
-   period of its members — faults where the case gives the asOfDate-bucket
-   scalar, in ref's sentence *)
+   period of its members, the base of a pro-rata part — faults where the case
+   gives the asOfDate-bucket scalar, in ref's sentence *)
 let () =
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let pair d = (read (d ^ "/ir.json"), read (d ^ "/case.json")) in
@@ -17338,14 +17338,17 @@ let () =
       ref_matches ~name:("period units: " ^ f) ~ir ~case_text;
       clingo_matches ~name:("period units: " ^ f) ~ir ~case_text)
     [ "percentage-per-period"; "percentage-scalar"; "sum-of-rate"; "rounded-sum-factor" ];
-  let bucket = "whole; the case supplies only the asOfDate-bucket scalar, which carries no period" in
+  let bucket = " whole; the case supplies only the asOfDate-bucket scalar, which carries no period" in
   List.iter
-    (fun (f, reads) ->
+    (fun (f, needle) ->
       let ir, case_text = pair ("ref/test/fixtures/bucket-scalar/" ^ f) in
-      faults_with ~name:("bucket scalar: " ^ f) ~ir ~case_text ~needle:(reads ^ " " ^ bucket))
-    [ ("condition", {|a condition per period reads the time-dependent attribute "strandloon" of "J1"|});
-      ("arithmetic", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "strandloon" of "J1"|});
-      ("sum", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "opbrengst" of "V1"|}) ]
+      faults_with ~name:("bucket scalar: " ^ f) ~ir ~case_text ~needle)
+    [ ("condition", {|a condition per period reads the time-dependent attribute "strandloon" of "J1"|} ^ bucket);
+      ("arithmetic", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "strandloon" of "J1"|} ^ bucket);
+      ("sum", {|the period arithmetic of ch. 3.4/3.5 reads the temporal attribute "opbrengst" of "V1"|} ^ bucket);
+      ( "pro-rata",
+        {|the pro-rata base "onderhoudstarief" needs the full timeline; "B1" supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)|}
+      ) ]
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
