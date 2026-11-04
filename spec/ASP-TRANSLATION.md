@@ -396,13 +396,22 @@ body underivable. A cell of a text, an enumeration or a boolean is read in a
 symbolic position as such an attribute is, on the subject or over a path,
 its value the ground term of the case input, without a scale
 (`jutterswet-seizoenlogboek`, `jutterswet-ploegseizoen`). **evaluationDate** (ch. 8.2): the session's evaluation date
-as a compile-time civil day number; a case without `asOfDate` faults.
+as a compile-time civil day number; in a case without `asOfDate` the read is
+a `viol/2` witness in ref's sentence (EF-011) under the reach of the read, the
+reach of the unbound-parameter guard (S5), and its term derives nothing; the
+evaluation year and the bound day outside a day-kind condition (EF-010) the
+same.
 **Temporal point read** (ch. 3.3): a `tl/5`/`param_tl/4` atom with
 `F <= D, D < T` — the gap and the empty-index corner are the
-underivable body, for free (more in S9). **Unresolved**: translation
-faults with "Unresolved reached" — the WF-044 unsolved-state guard;
-the rule fails observably (gate-8 witness
-`corpus/red/wf044-unresolved-reached`).
+underivable body, for free (more in S9). **Unresolved**: a `viol/2`
+witness in ref's sentence ("Unresolved reached in evaluation"), at an
+expression or a condition position, under the reach of the node — the
+WF-044 unsolved-state guard; a rule whose evaluation reaches it fails
+observably (gate-8 witnesses `corpus/red/wf044-unresolved-reached`,
+`corpus/red/unresolved-behind-a-holding-condition`; behind a condition that
+does not hold `corpus/golden/unresolved-behind-a-failing-condition`, and so
+for EF-010 and EF-011 the goldens `bound-day-behind-a-failing-condition` and
+`context-value-behind-a-failing-condition`).
 
 Witnesses: navigation by `synth-navigatiepremie`,
 `jutterswet-vindersloon`, `jutterswet-borgdeel`; evaluationDate and point
@@ -842,9 +851,15 @@ and this backend); declared factors and stelsel never enter.
   REFUSES it by name ("a day-kind condition carries an expression this
   backend does not evaluate"). The boundary is a straightforwardly
   extensible one: each missing form is one arm in the same evaluator.
-  A parameter the case does not bind is a FAULT here, in `ref`'s own words
-  ("parameter … is unbound in this case"), never an empty value quietly
-  shipped into the table. §6.10 is then one `#count` over the matching days in the interval
+  A day on which the condition reads a parameter the case does not bind,
+  or tests a day kind on a day other than the bound day, is a day that
+  FAULTS, never an empty value quietly shipped into the table: no match,
+  a fact `dke<i>_<k>(D)` per sentence, and a `viol/2` witness in `ref`'s
+  words (EF-014, "parameter … is unbound in this case"; EF-022) under the
+  reach of the duration, where a step walks that day before it has found
+  the days of the kind it counts, or a count's interval holds it. The
+  composite of the condition is read in the order of ch. 5.10, so a
+  member after its stop is not evaluated on that day. §6.10 is then one `#count` over the matching days in the interval
   and §6.11 a rank lookup, since "the Nth day of the kind after A" IS "the
   day whose rank is rank(A) + N". The reach fence is read off the same
   table (no match within the reach of the start, or a gap wider than the
@@ -1552,8 +1567,10 @@ unbound-parameter guard (S5) — with the path or the set from the subject
 to the instance. An unbound parameter of the period arithmetic,
 time-dependent or a scalar operand, faults (EF-014) under the same reach.
 Where an atom of that reach hangs on the order of the members a creation
-adds, the fault is raised at translation, over every instance that gives
-the scalar. Each operator applies its ch. 1.2
+adds, the witness takes the two forms of the unbound-parameter guard: ref's
+words where every allowed order reaches the read, and a refusal in a sentence
+that names the unnormed order (CLINGO-035) where one allowed order does and
+another does not. Each operator applies its ch. 1.2
 empty rule per period: plus, min, maal and percentage van coalesce a leeg
 operand to 0 (`…_z`, `not …_d`), verminderd met only its right; a division
 writes 0 where the dividend is leeg, and where it is filled over a leeg
@@ -1858,9 +1875,11 @@ parent. The **union** shares one key predicate `uuI_key(S,J,⟨K…⟩)`
 across its sources (positions harmonised to the max scale, each
 upscale fenced), colliding by `2 <= #count { O,J : uuI_key(O,J,⟨V…⟩)
 }` — the source index J rides along because v0 sums per-source
-counts. An ever-unique key served by a bucket scalar faults; so do
-two temporal components (the same-moment tuple join has no corpus
-case).
+counts. An ever-unique key served by a bucket scalar faults at
+translation, for each case instance that gives it (EF-020); two temporal
+components (the same-moment tuple join has no corpus case) are a `viol/2`
+witness for each instance of the type (EF-024), as ref asks it of every
+instance it keys, so over a type without instances nothing faults.
 
 Witnesses: proportional allocation by `jutterswet-bergingstoezicht`,
 `jutterswet-berging`, and the exact (unrounded) proportional share
