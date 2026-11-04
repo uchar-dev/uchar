@@ -183,6 +183,24 @@ let val_present model label attr =
       | _ -> None)
     model
 
+(* The canonical form of ch. 3.1 over the scaled segments (from, to, value)
+   of one timeline: sorted, a degenerate segment gone, adjacent segments with
+   equal values merged into one, an open bound (#inf / #sup) as it stands. An
+   expectation and the model compare in this form, so how the translation or
+   the case divides a run of equal values into segments is not observed. A
+   gap between two segments keeps them apart; this encoding writes no leeg
+   segment, so there is none to drop. *)
+let canonical_timeline (segs : (int * int * int) list) : (int * int * int) list =
+  List.filter (fun (v, t, _) -> t > v) segs
+  |> List.sort compare
+  |> List.fold_left
+       (fun acc (v, t, w) ->
+         match acc with
+         | (pv, pt, pw) :: rest when pt = v && pw = w -> (pv, t, pw) :: rest
+         | _ -> (v, t, w) :: acc)
+       []
+  |> List.rev
+
 (* returns mismatches; [] on success *)
 (* Expectations resolve their declaration against the instance's EFFECTIVE
    object type (IR-SPEC ch. 2.2): an inherited attribute scales by the
@@ -391,14 +409,15 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                 (Printf.sprintf "%s.%s = [%s], expected leeg" label member
                    (String.concat ";" (List.map render_arg got))))
       | Attribute_timeline { label; attr; tl } ->
-          (* segment-exact: the model's tl/5 atoms for this attribute
-             (derived plus any case-supplied) must equal the expected
-             list, values scaled by the declared decimals *)
+          (* the model's tl/5 atoms for this attribute (derived plus any
+             case-supplied) and the expected list, values scaled by the
+             declared decimals, compared in the canonical form of ch. 3.1 *)
           let because =
-            List.map
-              (fun (s : Uchar_ref.Timeline.segment) ->
-                (s.s_from, s.s_to, scaled_expect ~label ~attr s.s_value))
-              tl
+            canonical_timeline
+              (List.map
+                 (fun (s : Uchar_ref.Timeline.segment) ->
+                   (s.s_from, s.s_to, scaled_expect ~label ~attr s.s_value))
+                 tl)
           in
           (* a bound is a day number, or #inf / #sup for an open bound
              (Translate.bound_term) *)
@@ -419,7 +438,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                     | _ -> fault "a tl/5 atom of %s.%s with a bound that is no day: %s" label attr (render_arg v))
                 | _ -> None)
               model
-            |> List.sort compare
+            |> canonical_timeline
           in
           if got = because then None
           else

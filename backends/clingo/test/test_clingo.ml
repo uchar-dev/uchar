@@ -17437,6 +17437,45 @@ let () =
       ("qualifier-own", ("bemanning", "S1"), qualifier "bemanning" "S1");
       ("qualifier-path", ("havengeld", "W1"), qualifier "havengeld" "W1") ]
 
+(* RUNTIME-SEMANTICS ch. 3.1: an expected timeline compares with the tl/5
+   atoms in the canonical form — the maximal runs of equal values, gaps
+   omitted, open bounds as they stand — on the documents of three goldens and
+   the cases of ref's suite (ref/test/fixtures/canonical-timeline). *)
+let () =
+  let c = Model.canonical_timeline in
+  let inf = Uchar_ref.Timeline.open_from and sup = Uchar_ref.Timeline.open_to in
+  check "canonical timeline: equal neighbours merge, an open bound stays open"
+    (c [ (10, 20, 0); (inf, 10, 0); (20, 30, 12); (30, 40, 12); (50, sup, 12) ]
+    = [ (inf, 20, 0); (20, 40, 12); (50, sup, 12) ]);
+  check "canonical timeline: a gap keeps two equal values apart" (c [ (1, 2, 40); (3, 4, 40) ] = [ (1, 2, 40); (3, 4, 40) ]);
+  check "canonical timeline: unequal neighbours stay apart" (c [ (1, 2, 50); (2, 3, 70) ] = [ (1, 2, 50); (2, 3, 70) ]);
+  check "canonical timeline: a degenerate segment contributes nothing" (c [ (5, 5, 1); (6, 4, 1) ] = []);
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let dir = "ref/test/fixtures/canonical-timeline/" in
+  List.iter
+    (fun (case_file, golden) ->
+      clingo_matches ~name:("canonical timeline: " ^ case_file) ~ir:(read (golden ^ "/ir.json"))
+        ~case_text:(read (dir ^ case_file ^ ".json")))
+    [ ("pro-rata", "corpus/golden/anchor/jutterswet-borgdeel");
+      ("day-count", "corpus/golden/anchor/jutterswet-dagentelling");
+      ("period-arithmetic", "corpus/golden/jutterswet-maandloon") ];
+  List.iter
+    (fun (case_file, expected_mismatch) ->
+      let name = "canonical timeline: " ^ case_file ^ " stays a mismatch" in
+      let doc, case =
+        load_pair ~ir:(read "corpus/golden/jutterswet-maandloon/ir.json") ~case_text:(read (dir ^ case_file ^ ".json"))
+      in
+      match Solve.run_clingo (translate doc case) with
+      | out, Unix.WEXITED (10 | 30) ->
+          let got = Model.check doc case (Model.model_of_outf2 (Yojson.Safe.from_string out)) in
+          check (name ^ " (" ^ String.concat "; " got ^ ")") (got = [ expected_mismatch ])
+      | _, _ -> check (name ^ " (clingo found no model)") false)
+    [ ( "gap-not-bridged",
+        "J1.vondstopbrengst timeline = [19723,19754)=40 [19783,19814)=40, expected [19723,19814)=40" );
+      ( "value-differs",
+        "J1.vondstopbrengst timeline = [19723,19754)=50 [19754,19783)=70 [19783,19814)=10, expected \
+         [19723,19754)=50 [19754,19783)=60 [19783,19814)=10" ) ]
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin
