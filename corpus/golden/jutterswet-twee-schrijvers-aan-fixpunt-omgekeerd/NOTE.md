@@ -2,8 +2,9 @@
 
 Two rules write the `spoedpremie`: 1 where the `meldingsgetal` is below 5, the `boete` where it exceeds 20.
 The value at the fixpoint is that of the writers that decide there (RUNTIME-SEMANTICS ch. 5.7): none, and the
-target keeps its input or stays leeg (case 1, 2, 5); one, and the target takes its value (case 3, 4), also where
-that value is leeg (case 6: a writer that fires with a leeg value writes leeg, ch. 1.2g). In case 1, 2, 3 and 6 the
+target keeps its input or stays leeg (case 1, 2, 5, 6); one, and the target takes its value (case 3, 4). A writer
+that fires with a leeg value decides nothing (case 6: the second writer fires without a `boete`, so the input 7
+stands, ch. 3.11). In case 1, 2, 3 and 6 the
 input `meldingsgetal` 3 holds the condition of the first writer on the state before the `meldingsgetal` is
 computed, in case 4 and 5 the input 30 that of the second.
 
@@ -16,4 +17,4 @@ The rules stand in the reverse order of `jutterswet-twee-schrijvers-aan-fixpunt`
 | case3-veel-meldingen-beslist | V3 aantal getuigen 30, meldingsgetal 3, boete 4 | **30** | **4** |
 | case4-weinig-meldingen-beslist | V4 aantal getuigen 2, meldingsgetal 30, boete 4 | **2** | **1** |
 | case5-veel-meldingen-vervalt | V5 aantal getuigen 10, meldingsgetal 30, boete 4, spoedpremie 7 | **10** | **7** |
-| case6-lege-boete-beslist | V6 aantal getuigen 30, meldingsgetal 3, spoedpremie 7 | **30** | **leeg** |
+| case6-lege-boete-beslist-niet | V6 aantal getuigen 30, meldingsgetal 3, spoedpremie 7 | **30** | **7** |

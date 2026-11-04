@@ -33,9 +33,12 @@
       }
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeValue",
       "label": "V6",
-      "attribute": "spoedpremie"
+      "attribute": "spoedpremie",
+      "value": {
+        "number": "7"
+      }
     },
     {
       "kind": "consistent"

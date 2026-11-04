@@ -1,0 +1,7 @@
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+    de opgave Numeriek (geheel getal);
+
+Regel taxatie van een vondst
+    geldig vanaf 2020
+        De taxatie van een Vondst moet gesteld worden op zijn opgave.

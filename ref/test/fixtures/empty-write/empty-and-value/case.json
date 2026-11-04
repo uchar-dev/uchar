@@ -1,0 +1,83 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "40"
+          },
+          "schatting": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemeld",
+          "erkend"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "schatting": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemeld",
+          "erkend"
+        ]
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemeld",
+          "erkend"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "taxatie",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "taxatie",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "taxatie",
+      "value": {
+        "number": "40"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

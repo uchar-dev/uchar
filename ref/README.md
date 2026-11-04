@@ -146,11 +146,11 @@ faults with file/position context — never a silent fallback.
   Two conditional writers whose conditions both hold on one instance
   reach this (WF-079 refuses two unconditional ones), also when they
   sit in different strata, because the fixpoint of each stratum runs
-  the forms of the lower strata again; so do a computing rule that
-  evaluates leeg and the conditional initialisation beside it
-  (ch. 5.4). Two writers that write the same value hold both their
-  equations and play, and a standing writer (ch. 7.8) that evaluates
-  leeg writes nothing.
+  the forms of the lower strata again. Two writers that write the same
+  value hold both their equations and play, and a computing rule that
+  evaluates leeg writes nothing and gives back what it wrote before
+  (ch. 3.11, 7.8), so the target holds another writer's value, an
+  initialisation's, its input or leeg.
 - **Timelines** (ch. 3): `lib/timeline.ml` carries the algebra — read,
   calendar and anchored buckets with the month-end clamp, the grid a
   member reads (the calendar's, or the one a fixed start point lays —
@@ -184,7 +184,7 @@ faults with file/position context — never a silent fallback.
   whose target is a cell writes that cell, and an object creation's member
   with `labels` that cell of the object it makes; the write boundary holds
   per cell (EF-006, its place the cell), and a cell is a target of its own
-  in the standing norm and in the ch. 7.7 domain, read natively. A read of
+  for the writers and the input beside them. A read of
   a dimensioned attribute outside a cell is refused (WF-125).
 - **Not implemented** (each faults with context): multi-period grids,
   variable/constant refs, the "is gevuurd" test (row 30:

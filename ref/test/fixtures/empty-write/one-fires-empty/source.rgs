@@ -1,0 +1,13 @@
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+    de opgave Numeriek (geheel getal);
+    de schatting Numeriek (geheel getal);
+    is gemeld kenmerk (bijvoeglijk);
+
+Regel taxatie uit opgave
+    geldig altijd
+        De taxatie van een Vondst moet gesteld worden op zijn opgave indien hij gemeld is.
+
+Regel taxatie uit schatting
+    geldig altijd
+        De taxatie van een Vondst moet gesteld worden op zijn schatting indien hij niet gemeld is.

@@ -69,6 +69,10 @@
   (glob_files fixtures/writers-per-day/een-schrijver-gelijk/*.json)
   (glob_files fixtures/writers-per-day/een-schrijver-gat/*.json)
   (glob_files fixtures/writers-per-day/twee-schrijvers/*.json)
+  ; a writer that fires with a leeg value on a scalar target, beside a second writer and in a window
+  (glob_files fixtures/empty-write/one-fires-empty/*.json)
+  (glob_files fixtures/empty-write/versioned-fires-empty/*.json)
+  (glob_files fixtures/empty-write/empty-and-value/*.json)
   (glob_files fixtures/conditions-per-period/afdracht-botsing/*.json)
   (glob_files fixtures/conditions-per-period/afdracht-fijner/*.json)
   (glob_files fixtures/conditions-per-period/twee-schrijvers-gelijk/*.json)

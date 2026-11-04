@@ -3969,20 +3969,12 @@ let run_rule ?only env world (r : resolved_rule) =
                   else run_pro_rata ?periods env w self ~err ~form ~ot ~attr value
               | Some (Equation | Calculation) ->
                   let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
-                  (* ch. 7.8: on a standing target — and on a ch. 7.7
-                     desugaring-domain target, whose defaults reading ref
-                     replays natively — the rule decides like a default: a
-                     leeg evaluation writes nothing and gives back what the
-                     rule wrote before (the init/input decides); channel
-                     deposits of the evaluation
-                     persist as in any ordinary evaluation *)
-                  if
-                    v = Value.Empty
-                    && (List.mem (norm ot, norm member)
-                          (Ir_v0.Desugar.standing_targets env.doc)
-                       || List.mem (norm ot, norm member)
-                            (Ir_v0.Desugar.desugared_targets env.doc))
-                  then release ()
+                  (* a leeg evaluation decides nothing (ch. 3.11, 7.8): the rule
+                     gives back what it wrote before, so the target holds what
+                     another writer, an initialisation or the input put there,
+                     or stays leeg; channel deposits of the evaluation persist
+                     as in any evaluation *)
+                  if v = Value.Empty then release ()
                   else
                     World.write_attr_by w ~form ~label:self.label ~attr:member ~decl:(attr_decl env ~otype:ot ~attr) v
               | Some Initialisation ->

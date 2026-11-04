@@ -11765,8 +11765,8 @@ let () =
   in_every_order ~groups:[ group ] "WV-6.1-written-group-high" [ premium; count ]
     (case_of [ ("aantal getuigen", 60); ("meldingsgetal", 3) ] [ empty "spoedpremie"; value "wachtpremie" 9 ]);
   (* two writers (ch. 5.7, the golden jutterswet-twee-schrijvers-aan-fixpunt):
-     none decides at the fixpoint, so the input stands; one decides, also with
-     a leeg value *)
+     none decides at the fixpoint, so the input stands; one decides with its
+     value, and one that fires with a leeg value decides nothing (ch. 3.11) *)
   let two =
     [ premium;
       rule ~name:"spoedpremie bij veel meldingen" ~attribute:"spoedpremie" ~value:(own "boete")
@@ -11781,7 +11781,7 @@ let () =
   in_every_order "WV-6.1-written-two-one" two
     (case_of [ ("aantal getuigen", 30); ("meldingsgetal", 3); ("boete", 4) ] [ value "spoedpremie" 4 ]);
   in_every_order "WV-6.1-written-two-leeg" two
-    (case_of [ ("aantal getuigen", 30); ("meldingsgetal", 3); ("spoedpremie", 7) ] [ empty "spoedpremie" ]);
+    (case_of [ ("aantal getuigen", 30); ("meldingsgetal", 3); ("spoedpremie", 7) ] [ value "spoedpremie" 7 ]);
   (* the characteristic (ch. 5.3, the golden jutterswet-kenmerk-aan-fixpunt): it
      holds where an attribution decides at the fixpoint or the input sets it *)
   let chars =
@@ -12706,6 +12706,24 @@ let () =
     (fun (ident, d) -> plays ~ident ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
     [ ("WV-3.11-per-dag-invoer", "een-schrijver"); ("WV-3.11-per-dag-invoer-gelijk", "een-schrijver-gelijk");
       ("WV-3.11-per-dag-invoer-gat", "een-schrijver-gat"); ("WV-5.7-per-dag-twee-schrijvers-invoer", "twee-schrijvers") ]
+
+(* WV-3.11-leeg-beslist-niets: a writer that fires with a leeg value decides
+   nothing, on a scalar target as on a timeline target (RUNTIME-SEMANTICS
+   ch. 3.11, "Leeg in a write"), on the documents of
+   ref/test/fixtures/empty-write. A Vondst with taxatie 40 in the input:
+   beside a second writer that does not fire, the writer of "zijn opgave"
+   without an opgave leaves 40, with opgave 50 writes 50, and without the
+   input leaves leeg; a writer with the validity window "geldig vanaf 2020"
+   on 2025-07-01 reads the same; beside a writer of "zijn schatting" 50 the
+   writer without an opgave gives 50, no fault, with or without the input,
+   and where both read leeg the input 40 stands *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/empty-write/" in
+  List.iter
+    (fun (ident, d) -> plays ~ident ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
+    [ ("WV-3.11-leeg-beslist-niets", "one-fires-empty"); ("WV-3.11-leeg-beslist-niets-versie", "versioned-fires-empty");
+      ("WV-3.11-leeg-beslist-niets-naast-waarde", "empty-and-value") ]
 
 (* WV-5.12-voorwaarde-per-periode: a condition read per period has, at each of
    its nodes, the part of all time in which it holds, and the value of the rule
