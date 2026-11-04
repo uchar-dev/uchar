@@ -687,10 +687,9 @@ value faults with EF-036 (`OpenSegmentFault`, the attribute and the label of the
 whole-period qualifier reads an open segment of a value on the bucket that holds its finite bound and the one beside it
 inside the segment, which stand for every bucket the segment covers (ch. 3.1, 3.9; `ComputeHelpers.foldPart`), and a
 segment open on both sides on one bucket. An operand that
-the case gives as the asOfDate-bucket scalar faults in the reference interpreter's words. In a build with readings the
-nodes of such a value read unreached on a rule without a condition, as the reference interpreter's trace reads them;
-on a rule with a condition each node reads the timeline it reads or computes, a scalar its value, and the root the
-timeline the rule writes. Witnesses
+the case gives as the asOfDate-bucket scalar faults in the reference interpreter's words. In a build with readings,
+on a rule with or without a condition, each node of such a value reads the timeline it reads or computes, a scalar its
+value, and the root the timeline the rule writes, as the reference interpreter's trace reads them. Witnesses
 `TmsPeriodArithmeticWitnessTest`, `TmsPerDayArithmeticWitnessTest`, `PeriodArithmeticTest`, goldens
 `jutterswet-maandloon`, `jutterswet-rekenen-per-dag` and `anchor/jutterswet-verzuimrente-dagen`, red case
 `jutterswet-totaal-open-segment`.

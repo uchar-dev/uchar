@@ -77,6 +77,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *
  * <p><b>E, what the branch refuses by name</b>, each in the same sentence on both branches.
  *
+ * <p><b>F, the readings without a condition</b> (RUNTIME-SEMANTICS ch. 5.12): on the golden {@code jutterswet-maandloon}
+ * each node of a value of period arithmetic reads the timeline it reads or computes, a scalar its value, the root the
+ * timeline the rule writes, and the sum per period carries each member that has a timeline, with that timeline; the
+ * lines are those of the reference interpreter's {@code WV-5.12-maandloon}.
+ *
  * <p><b>Measured</b> 2026-11-03 on the documents of {@link #main}, A, B and the two plays of C: the verifier, the
  * reference interpreter's runner and the ASP runner pass all four. <b>Red</b> on 53ab929d5, before the period
  * arithmetic was carried: all eleven tests, A, B, the own total, the bucket scalars, the write boundary, D and E on the
@@ -406,6 +411,68 @@ class TmsPeriodArithmeticWitnessTest {
 
     static final String MAANDLOON_OF_STRANDLOON = computingRule("maandloon", "BEREKENING", "Jutter", "maandloon",
             binary("plus", ownRead("strandloon", "Jutter"), number("5")), "null");
+
+    // ---------------- F: the readings ----------------
+
+    private static final Path MAANDLOON_GOLDEN = Path.of("..", "..", "corpus", "golden", "jutterswet-maandloon");
+
+    /** The readings of the golden {@code jutterswet-maandloon}, whose six rules have no condition, line by line the
+     *  reference interpreter's trace ({@code WV-5.12-maandloon}): on case 1 and on case 1 with V2 without an opbrengst
+     *  (the fixture of that test), each node of a value of period arithmetic reads the timeline it reads or computes, a
+     *  scalar its value, and the sum per period carries each member that has a timeline with that timeline. */
+    @Test void the_readings_without_a_condition_are_those_of_the_reference_interpreter() throws Exception {
+        String r = "reading /rules/rules/";
+        String strandloon = "[[2024-01-01 2024-07-01 100]]", stormtoeslag = "[[2024-04-01 2024-10-01 30]]";
+        String maandloon = "[[- 2024-01-01 0], [2024-01-01 2024-04-01 100], [2024-04-01 2024-07-01 130],"
+                + " [2024-07-01 2024-10-01 30], [2024-10-01 - 0]]";
+        String v1 = "\"V1\" [[2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 60]] reached";
+        String v2 = "\"V2\" [[2024-02-01 2024-03-01 10], [2024-03-01 2024-04-01 10]] reached";
+        java.util.function.Function<List<String>, List<String>> withArithmetic = sums -> {
+            List<String> lines = new ArrayList<>(List.of(
+                    r + "0/versions/0 \"J1\" 0 Binary " + maandloon,
+                    r + "0/versions/0 \"J1\" 1 AttributeReference " + strandloon,
+                    r + "0/versions/0 \"J1\" 2 AttributeReference " + stormtoeslag,
+                    r + "0/versions/0 \"J1\" HOLDS",
+                    r + "1/versions/0 \"J1\" 0 Binary [[- 2024-01-01 0], [2024-01-01 2024-04-01 100],"
+                            + " [2024-04-01 2024-07-01 70], [2024-07-01 2024-10-01 -30], [2024-10-01 - 0]]",
+                    r + "1/versions/0 \"J1\" 1 AttributeReference " + strandloon,
+                    r + "1/versions/0 \"J1\" 2 AttributeReference " + stormtoeslag,
+                    r + "1/versions/0 \"J1\" HOLDS",
+                    r + "2/versions/0 \"J1\" 0 Binary [[- 2024-01-01 5], [2024-01-01 2024-07-01 105], [2024-07-01 - 5]]",
+                    r + "2/versions/0 \"J1\" 1 Literal 5",
+                    r + "2/versions/0 \"J1\" 2 AttributeReference " + strandloon,
+                    r + "2/versions/0 \"J1\" HOLDS"));
+            lines.addAll(sums);
+            lines.addAll(List.of(
+                    r + "4/versions/0 \"J1\" 2 Literal 0",
+                    r + "4/versions/0 \"J1\" HOLDS",
+                    r + "5/versions/0 \"J1\" 0 Aggregation 780",
+                    r + "5/versions/0 \"J1\" 1 AttributeReference " + maandloon,
+                    r + "5/versions/0 \"J1\" HOLDS"));
+            return lines;
+        };
+        List<String> case1 = new ArrayList<>(List.of("case case1-voorbeeld.json"));
+        case1.addAll(withArithmetic.apply(List.of(
+                r + "3/versions/0 \"J1\" 0 Aggregation [[2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 70],"
+                        + " [2024-03-01 2024-04-01 10]] contributors [" + v1 + "; " + v2 + "]",
+                r + "3/versions/0 \"J1\" HOLDS",
+                r + "4/versions/0 \"J1\" 0 Aggregation [[- 2024-01-01 0], [2024-01-01 2024-02-01 50],"
+                        + " [2024-02-01 2024-03-01 70], [2024-03-01 2024-04-01 10], [2024-04-01 - 0]]"
+                        + " contributors [" + v1 + "; " + v2 + "]")));
+        case1.add("READINGS 1");
+        TmsConditionPerPeriodWitnessTest.readings(MAANDLOON_GOLDEN.resolve("ir.json"),
+                MAANDLOON_GOLDEN.resolve("case1-voorbeeld.json"), case1);
+        List<String> withoutTimeline = new ArrayList<>(List.of("case case.json"));
+        withoutTimeline.addAll(withArithmetic.apply(List.of(
+                r + "3/versions/0 \"J1\" 0 Aggregation [[2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 60]]"
+                        + " contributors [" + v1 + "]",
+                r + "3/versions/0 \"J1\" HOLDS",
+                r + "4/versions/0 \"J1\" 0 Aggregation [[- 2024-01-01 0], [2024-01-01 2024-02-01 50],"
+                        + " [2024-02-01 2024-03-01 60], [2024-03-01 - 0]] contributors [" + v1 + "]")));
+        withoutTimeline.add("READINGS 1");
+        TmsConditionPerPeriodWitnessTest.readings(MAANDLOON_GOLDEN.resolve("ir.json"), Path.of("..", "..", "ref",
+                "test", "fixtures", "period-arithmetic", "sum-member-without-timeline", "case.json"), withoutTimeline);
+    }
 
     // ---------------- helpers ----------------
 

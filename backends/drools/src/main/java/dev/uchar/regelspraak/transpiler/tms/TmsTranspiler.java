@@ -2318,10 +2318,9 @@ public final class TmsTranspiler {
      * ({@link #periodCondition}), and the timeline is restricted to them before it is written (ch. 3.10, the clip
      * generalised); null for a rule whose condition gates it or that has none.
      *
-     * <p>In a build with readings each node of the value has the timeline it reads or computes, a scalar its value, as
-     * the reference interpreter's trace reads them for a rule with a condition; the root has the timeline the rule
-     * writes. Without a condition its trace reads the value through the producer of ch. 3.7, so none of these nodes is
-     * observed there, and they read unreached ({@link #unreached}).
+     * <p>In a build with readings each node of the value has the timeline it reads or computes, a scalar its value, with
+     * or without a condition, as the reference interpreter's trace reads them (RUNTIME-SEMANTICS ch. 5.12); the root has
+     * the timeline the rule writes.
      *
      * <p>Refused by name: a target that is no number, and as a limit of this branch a value whose unit needs a
      * restatement into the target's ({@link #periodUnit}).
@@ -2566,31 +2565,6 @@ public final class TmsTranspiler {
      *  as {@link #scalarOperand} admits it, as a value and not a timeline. */
     private Term scalarOperandValue(Expr e, Reads reads) {
         return ((Term.Call) scalarOperand(e, reads)).arguments().get(0);
-    }
-
-    /** Notes every node of the period arithmetic {@code value} as unreached in a build with readings, but the members
-     *  of a sum, which a fold evaluates per member and which have no reading of their own (RUNTIME-SEMANTICS ch. 5.12):
-     *  as the reference interpreter's trace reads them, whose reading evaluates the value of a temporal target through
-     *  the producer of ch. 3.7 and so observes none of them. A fresh term that no evaluation reaches is the note. */
-    private void unreached(Expr value) {
-        if (noted == null || memberwise > 0) return;
-        Set<Object> perMember = Collections.newSetFromMap(new IdentityHashMap<>());
-        perMember(value, perMember);
-        for (Object n : positions.subtree(value))
-            if (!perMember.contains(n)) {
-                noted.put(n, new Term.Const(null, null, null));
-                notedDerived.remove(n);
-            }
-    }
-
-    /** Adds the nodes of the members of every sum in the period arithmetic {@code e} to {@code out}. */
-    private void perMember(Expr e, Set<Object> out) {
-        if (e instanceof Expr.Rounding r) perMember(r.base(), out);
-        else if (e instanceof Expr.Binary b) {
-            perMember(b.left(), out);
-            perMember(b.right(), out);
-        } else if (e instanceof Expr.FunctionCall f && f.kind() == Expr.FunctionKind.SOM)
-            for (Expr a : f.arguments()) out.addAll(positions.subtree(a));
     }
 
     /**
@@ -2937,9 +2911,6 @@ public final class TmsTranspiler {
             }
             note(produced, value);
         }
-        // the reference interpreter's trace reads the value of period arithmetic without a condition through the
-        // producer of ch. 3.7, which observes none of its nodes
-        if (periodArithmetic && r.condition() == null) unreached(r.value());
         Noted noted = endReading();
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
@@ -5162,8 +5133,8 @@ public final class TmsTranspiler {
         if (node instanceof Expr e) notedUnits.put(node, eff.unitOf(e));
     }
 
-    /** Notes that {@code node} is not reached in a build with readings: a fresh term that no evaluation reaches, as
-     *  {@link #unreached} notes a node; nothing outside such a build. */
+    /** Notes that {@code node} is not reached in a build with readings: a fresh term that no evaluation reaches;
+     *  nothing outside such a build. */
     private void noteUnreached(Object node) {
         if (noted == null || memberwise > 0) return;
         noted.put(node, new Term.Const(null, null, null));
