@@ -323,6 +323,7 @@ EXPECTED_CHANNEL=(
   "jutterswet-muntketen|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Munt) has no bean field: the same many-to-many 'berging' as bootberging above — NOT the subtype landing it was written for, which the walk does carry (SourcePathChainWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
   "jutterswet-meldplichtspoor|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
   "jutterswet-meldtermijnen|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
+  "jutterswet-opgave-per-periode|EXCLUDE DROOLS-271|transpiler SKIP: the defaults group 'opgave boven berekening strandloon' on a timeline target, which RUNTIME-SEMANTICS ch. 7.11 reads per day and this branch writes as one value; both branches refuse it in this sentence. ref and clingo play the golden, so its pins are a ref = clingo pair until step B of card defaults-per-period-on-timeline lowers the stacks per period and the golden leaves this list"
   "jutterswet-penningbeschikking-catala|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
   "jutterswet-penningstaffel-catala|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-postenheffing|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
