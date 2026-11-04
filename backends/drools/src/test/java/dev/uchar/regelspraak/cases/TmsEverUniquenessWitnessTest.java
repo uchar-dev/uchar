@@ -49,19 +49,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * target on the year grid that only this rule writes. Its condition is read per period (RUNTIME-SEMANTICS ch. 3.10):
  * the gate holds on all time or none, and the qualifier in the years with a true day (ch. 3.9, per bucket), so the
  * count, 0 in every year without a true day over all time (ch. 3.8), is written in the years it counts, and the input
- * stands where it is cut to nothing or the gate is closed (ch. 7.8); and "De nummers van alle Vondsten moeten uniek
- * zijn" (eenmalig nummer). By hand, with code 1
+ * stands in every year the rule does not decide (ch. 3.11); and "De nummers van alle Vondsten moeten uniek zijn"
+ * (eenmalig nummer). By hand, with code 1
  * unless said otherwise: V1, bewaard on [2024-01-01, 2024-01-11), gets nummer 10 in 2024; V2, on [2025-03-01,
  * 2025-03-11), 10 in 2025; V3, on [2024-01-01, 2024-01-06), 5 in 2024; V4, nummer 5 in 2024 and 7 in 2025 as input
  * and no true period, keeps its input; V5, nummer 3 in 2024 and 3 in 2025 as input, keeps it and claims 3 once; V6,
- * on [2026-01-01, 2026-01-08) over the input 10 in 2023, gets 7 in 2026, which replaces the input whole; V7, on
- * [2027-01-01, 2027-01-03) over the input 3 in 2023, gets 2 in 2027; V8, code 0 and so not geregistreerd, on
- * [2024-01-01, 2024-01-11) over the input 4 in 2028, keeps its input. So 10 is claimed by V1 and V2, 5 by V3 and V4,
- * 7 by V4 and V6, and 3, 2 and 4 once each: eenmalig nummer is inconsistent at V1, V2, V3, V4 and V6, and only there.
+ * on [2026-01-01, 2026-01-08) over the input 10 in 2023, gets 7 in 2026 beside its input in 2023, a year the rule does
+ * not decide; V7, on [2027-01-01, 2027-01-03) over the input 3 in 2027, gets 2 in 2027, which displaces the input of
+ * that year; V8, code 0 and so not geregistreerd, on [2024-01-01, 2024-01-11) over the input 4 in 2028, keeps its
+ * input. So 10 is claimed by V1, V2 and V6, 5 by V3 and V4, 7 by V4 and V6, and 3, 2 and 4 once each: eenmalig nummer
+ * is inconsistent at V1, V2, V3, V4 and V6, and only there.
  * Both orders of the two rules; beside them the generated rules in a hundred sampled orders, where the channel at the
  * fixpoint is exactly those five, and in some order V5 was marked on the way, while V7 still held its input 3.
  *
- * <p><b>Measured</b> (2026-11-03, the document of {@link #main} in both orders, with the condition read per period): the
+ * <p><b>Measured</b> (2026-11-04, the document of {@link #main} in both orders, with the condition read per period): the
  * verifier passes both, and the reference interpreter's runner and the ASP runner pass the case in both, "PASS (13
  * expectations)". An expectation
  * "inconsistent" asks only that the channel carries the fact, so beside the case three probes add one that V5, V7 or
@@ -117,14 +118,14 @@ class TmsEverUniquenessWitnessTest {
                         vondst("V4", "1", null, null, List.of(year(2024, "5"), year(2025, "7"))),
                         vondst("V5", "1", null, null, List.of(year(2024, "3"), year(2025, "3"))),
                         vondst("V6", "1", "2026-01-01", "2026-01-08", List.of(year(2023, "10"))),
-                        vondst("V7", "1", "2027-01-01", "2027-01-03", List.of(year(2023, "3"))),
+                        vondst("V7", "1", "2027-01-01", "2027-01-03", List.of(year(2027, "3"))),
                         vondst("V8", "0", "2024-01-01", "2024-01-11", List.of(year(2028, "4")))),
                 List.of(expectedTimeline("V1", "nummer", List.of(year(2024, "10"))),
                         expectedTimeline("V2", "nummer", List.of(year(2025, "10"))),
                         expectedTimeline("V3", "nummer", List.of(year(2024, "5"))),
                         expectedTimeline("V4", "nummer", List.of(year(2024, "5"), year(2025, "7"))),
                         expectedTimeline("V5", "nummer", List.of(year(2024, "3"), year(2025, "3"))),
-                        expectedTimeline("V6", "nummer", List.of(year(2026, "7"))),
+                        expectedTimeline("V6", "nummer", List.of(year(2023, "10"), year(2026, "7"))),
                         expectedTimeline("V7", "nummer", List.of(year(2027, "2"))),
                         expectedTimeline("V8", "nummer", List.of(year(2028, "4"))),
                         inconsistent("eenmalig nummer", "V1"), inconsistent("eenmalig nummer", "V2"),
@@ -160,7 +161,7 @@ class TmsEverUniquenessWitnessTest {
                     {"V4", "1", null, null, new String[]{"2024", "5", "2025", "7"}},
                     {"V5", "1", null, null, new String[]{"2024", "3", "2025", "3"}},
                     {"V6", "1", "2026-01-01", "2026-01-08", new String[]{"2023", "10"}},
-                    {"V7", "1", "2027-01-01", "2027-01-03", new String[]{"2023", "3"}},
+                    {"V7", "1", "2027-01-01", "2027-01-03", new String[]{"2027", "3"}},
                     {"V8", "0", "2024-01-01", "2024-01-11", new String[]{"2028", "4"}}};
             for (Object[] o : input) {
                 Object v = TmsDocuments.beanObject(l, "Vondst", Map.of("code", (String) o[1]), List.of());

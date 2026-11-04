@@ -76,9 +76,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 2024 as input) keeps its input, J2 (score 10) gets 306 and 59, in both orders of the two rules.
  *
  * <p><b>C, the write-back.</b> A target never written is null on the bean (J2's jaardeel in A). A version with a bounded
- * validity, "geldig vanaf 1 januari 2020", is outside the standing domain (ch. 7.8 holds only version-free writers), so
- * where it computes the empty timeline it writes it (ch. 1.2g): J1, with jaardeel 4 in 2024 as input and no true period,
- * ends with an empty list on the bean, not null; J2, borgplichtig in March 2024, with jaardeel 31.
+ * validity, "geldig vanaf 1 januari 2020", decides the days of its segments as every writer of a timeline does
+ * (ch. 3.11): J1, with jaardeel 4 in 2024 as input and no true period, computes the empty timeline, which decides no
+ * day, and keeps its input on the bean; J2, borgplichtig in March 2024, with the same input, gets jaardeel 31 on 2024.
  *
  * <p><b>D, a clip over a characteristic on a timeline</b>, the worked example of ch. 3.6 verbatim: vergoeding 10 per
  * month through 2023 and 11 January–June 2024, wachtplichtig on [2023-07-01, 2024-02-01): "het totaal van zijn
@@ -106,16 +106,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * input) holds the condition only on the intermediate state where the teller is still its input; at the fixpoint the
  * teller is 10, so the jaardeel keeps its input. J2 (score 2, teller 8) gets 306 and 59. Both orders.
  *
- * <p><b>Measured</b> (2026-11-02, every document of {@link #main}, every order: 133 documents): the verifier passes all;
- * the reference interpreter's runner passes all, and the ASP runner passes all but C. On B2 both answer the fixpoint in
+ * <p><b>Measured</b> (2026-11-04, every document of {@link #main}, every order: 139 documents): the verifier, the
+ * reference interpreter's runner and the ASP runner pass all. On B2 both answer the fixpoint in
  * both orders, as this branch does: the reference interpreter gives back the timeline it wrote where the condition held
  * on the input teller (RUNTIME-SEMANTICS ch. 6.1, "A write is read at the fixpoint"), and this branch withdraws the
  * write. On B, the negated read, the reference interpreter passes both orders: it puts the reader of a negated
- * characteristic in a stratum above its writer (ch. 6.3), so it never sees the intermediate state. On C the ASP runner
- * refuses, "TRANSLATION FAULT: the case supplies input for computed target "jaardeel": ref (like v0) overwrites it,
- * which has no monotone encoding here (no corpus case)", and the reference interpreter passes: it writes the empty
- * timeline over the input. F (2026-11-03, its six orders): the verifier, the reference interpreter's runner and the
- * ASP runner pass all.
+ * characteristic in a stratum above its writer (ch. 6.3), so it never sees the intermediate state. On C both keep
+ * J1's input, as this branch does. F (its six orders) is among them.
  *
  * <p><b>Red</b> on b9f77aa7, the code before the change: all seven tests, each on the refusal of the member, "Excluded:
  * tms-transpiler SKIP: regel: jaardeel — het tijdsafhankelijke attribuut 'jaardeel' van Jutter: tijdlijnen zijn buiten
@@ -329,7 +326,7 @@ class TmsTimelineWitnessTest {
         assertEquals(expected, outcomes);
     }
 
-    // ---------------- C: an empty timeline written outside the standing domain ----------------
+    // ---------------- C: an empty timeline of a version decides no day ----------------
 
     static final String MODEL_C = TmsDocuments.model(List.of(objectType("Jutter", List.of(
             timeAttribute("jaartarief", WHOLE, "year"), timeAttribute("jaardeel", WHOLE, "year")),
@@ -347,12 +344,12 @@ class TmsTimelineWitnessTest {
                         instance("J1", "Jutter", Map.of("jaartarief", rate, "jaardeel", four), List.of(), Map.of(), Map.of()),
                         instance("J2", "Jutter", Map.of("jaartarief", rate, "jaardeel", four), List.of(),
                                 Map.of("borgplichtig", List.of(period("2024-03-01", "2024-04-01"))), Map.of())),
-                List.of(expectedTimeline("J1", "jaardeel", List.of()),
+                List.of(expectedTimeline("J1", "jaardeel", List.of(segment("2024-01-01", "2025-01-01", "4"))),
                         expectedTimeline("J2", "jaardeel", List.of(segment("2024-01-01", "2025-01-01", "31"))),
                         consistent()));
     }
 
-    @Test void outside_the_standing_domain_an_empty_calculation_writes_the_empty_timeline() throws Exception {
+    @Test void an_empty_calculation_of_a_version_decides_no_day_and_the_input_stays_on_the_bean() throws Exception {
         Path ir = TmsTimelineDocuments.document(MODEL_C, List.of(YEAR_PART_DATED), List.of());
         assertEquals("gespeeld", TmsFaultWitnessTest.play(ir, caseC(), DroolsBackend.Branch.EXEC_MODEL));
         DroolsBackend.Build b = DroolsBackend.build(ir, DroolsBackend.Branch.EXEC_MODEL);
@@ -363,7 +360,7 @@ class TmsTimelineWitnessTest {
                 TmsTimelineDocuments.beanSegment(b.beanLoader(), "2024-01-01", "2025-01-01", "4")));
         TmsDocuments.fire(b, b.execModelTranspiler().model().getRules(), List.of(j1),
                 session -> session.setGlobal("rekendatum", java.time.LocalDate.parse("2025-06-01")), session -> { });
-        assertEquals(List.of(), timelineOf(j1, "jaardeel"), "een lege lijst op de bean, niet null en niet de invoer");
+        assertEquals(List.of("[2024-01-01, 2025-01-01)=4"), timelineOf(j1, "jaardeel"), "de invoer op de bean");
     }
 
     // ---------------- D: the clip over a characteristic on a timeline, ch. 3.6 ----------------

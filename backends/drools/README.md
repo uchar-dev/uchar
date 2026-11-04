@@ -554,10 +554,10 @@ evaluates the form. Witnesses `TmsQuantifierFoldWitnessTest`, `TmsRoleCheckWitne
 `TmsUniquenessWitnessTest`.
 
 **Writers of one target.** A computing rule is an equation (RUNTIME-SEMANTICS ch. 5.1), and a target may have any
-number of them, the versions of one form among them. On a standing target (ch. 7.8, and the desugaring domain of ch.
-7.7, as `transpiler/core/StandingTargets` classifies it for both branches) a computed leeg inserts nothing; outside
-it the rule inserts a `Value` that carries leeg (ch. 1.2g), which takes the input standing away and is a value
-another writer can disagree with. Where two writers stand on one object with different values, a rule per attribute
+number of them, the versions of one form among them. On a standing scalar target (ch. 7.8, and the desugaring domain
+of ch. 7.7, as `transpiler/core/StandingTargets` classifies it for both branches) a computed leeg inserts nothing;
+outside it the rule inserts a `Value` that carries leeg (ch. 1.2g), which takes the input standing away and is a value
+another writer can disagree with; a timeline target is below, "Writers per day". Where two writers stand on one object with different values, a rule per attribute
 on which two can stand (two computing rules, or one outside the standing domain beside an initialisation; an
 accumulate over the attribute's `Value` facts on the object) inserts a logical
 `Fault` with a `WritersConflict`: "geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel
@@ -650,12 +650,12 @@ is over all time: the true days per bucket with a true day, one segment each, an
 one, open before the first and after the last (`PeriodArithmetic.dayCount`). Its condition is a check of an own
 characteristic on a timeline, or an `alle` composite of one and day-kind tests of the counted day, which count the true
 days the tests admit (`PeriodCondition.dayKind`); in a target with a unit it is days per unit of its bucket. A rule
-reads its producer through a variable whose body is its binder (`Let`). On a standing temporal target (ch. 7.8)
-an empty result, which a day count gives only where its rule's condition cuts it to nothing, writes nothing and leaves
-the input whole; elsewhere it writes the empty timeline (ch. 1.2g), which the write-back puts on the bean as an empty
-list, while a target never written stays null. A characteristic on a timeline is input only, read as its true
-periods, unless a rule writes it within a window (below, "A characteristic within a window"); the case reader refuses
-one given in the flat list of characteristics, for every branch. Witnesses
+reads its producer through a variable whose body is its binder (`Let`). A rule decides the days of the segments it
+writes, also where it is its target's only writer, and the input stands on the other days (RUNTIME-SEMANTICS ch. 3.11,
+below, "Writers per day"); an empty result, which a day count gives only where its rule's condition cuts it to
+nothing, inserts nothing, and a target no rule decides keeps its input on the bean, or null. A characteristic on a
+timeline is input only, read as its true periods, unless a rule writes it within a window (below, "A characteristic
+within a window"); the case reader refuses one given in the flat list of characteristics, for every branch. Witnesses
 `PeriodTest`, `TmsTimelineWitnessTest`, `TmsTimelineFoldWitnessTest`, `TmsEverUniquenessWitnessTest`, and for the
 refusals below `TmsTimelineRefusalWitnessTest`.
 
@@ -734,8 +734,8 @@ leeg or gevuld test and a quantifier fold in such a condition; and a timeline it
 target's (DROOLS-310, IR-SPEC WF-126). Witnesses `TmsConditionPerPeriodWitnessTest`, goldens `jutterswet-loon-per-periode`
 and `jutterswet-wachtmaanden`.
 
-**Two writers per day.** Two or more computing rules of one timeline target each decide the days of their own segments
-(RUNTIME-SEMANTICS ch. 5.7, "Two writers per day"): each inserts its timeline as a `Value` of its own, and the
+**Writers per day.** The computing rules of one timeline target, one or more, each decide the days of their own segments
+(RUNTIME-SEMANTICS ch. 3.11, ch. 5.7, "Two writers per day"): each inserts its timeline as a `Value` of its own, and the
 write-back puts their union on the bean, in the order of the document, a day an earlier writer decides left out of a
 later one's segment, with the target's input on the days none decides (`PeriodCondition.union`). Where two decide one
 day with different values, the rule of the writers' difference and the write-back fault with EF-016, naming the two of
@@ -743,8 +743,9 @@ the first such day in the order of the document with their values there (`Writer
 reads that union through the target's one standing, which two rules of its own build from the writers' values and the
 input as the write-back does (`TmsTranspiler.writersUnionRules`, `ComputeHelpers.writersUnion`), with no input timeline
 where the case gives the input as the asOfDate-bucket scalar. Witnesses `TmsConditionPerPeriodWitnessTest`,
-goldens `jutterswet-wachtdagen-twee-schrijvers` and `jutterswet-verzuimrente-30-360-afgerond`, red case
-`jutterswet-wachtdagen-botsing`.
+`TemporalFixpointWitnessTest` (the documents of `ref/test/fixtures/writers-per-day`), goldens
+`jutterswet-wachtdagen-twee-schrijvers`, `jutterswet-verzuimrente-30-360-afgerond` and the anchor `jutterswet-borgdeel`,
+red case `jutterswet-wachtdagen-botsing`.
 
 **A characteristic within a window.** A rule may write a time-dependent characteristic within a period window
 (RUNTIME-SEMANTICS ch. 3.10, 3.11): its condition, the window alone or a composite with the window among its members,

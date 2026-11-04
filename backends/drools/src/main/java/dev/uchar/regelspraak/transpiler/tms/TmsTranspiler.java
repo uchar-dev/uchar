@@ -1407,8 +1407,8 @@ public final class TmsTranspiler {
                 written.sort(WritersConflict.inDocumentOrder(documentOrder)
                         .thenComparing(w -> String.valueOf(w.value())));
                 Value earliest = written.get(0);
-                // the writers of a timeline target of two or more decide the days of their own segments, and differ
-                // only on a day both decide (RUNTIME-SEMANTICS ch. 5.7, "Two writers per day")
+                // the writers of a timeline target decide the days of their own segments, and differ only on a day
+                // two decide (RUNTIME-SEMANTICS ch. 3.11, 5.7, "Two writers per day")
                 boolean perDay = timelineWriters(earliest.attribute());
                 if (perDay ? PeriodCondition.clash(written) != null
                         : written.stream().anyMatch(w -> !equalValue(earliest.value(), w.value()))) {
@@ -1420,8 +1420,7 @@ public final class TmsTranspiler {
                 Member member = memberOf(earliest, earliest.attribute());
                 // a number goes onto the bean as a decimal, which a value of the unbounded form that does not terminate
                 // is not exactly (RUNTIME-SEMANTICS ch. 2.4); a timeline as the bean model's segments, which carry no
-                // value equality; the timeline of two or more writers their union, with the target's input on the days
-                // none of them decides
+                // value equality: the union of its writers, with the target's input on the days none of them decides
                 @SuppressWarnings("unchecked")
                 Object v = member.time() == null ? ComputeHelpers.collapse(earliest.value())
                         : Period.beans(perDay ? union(session, member, earliest.subject(), written)
@@ -1574,8 +1573,8 @@ public final class TmsTranspiler {
         return false;
     }
 
-    /** The timeline of the target {@code member} of {@code subject} that two or more rules write, each the days of its
-     *  own segments ({@link #timelineWriters}): the union of their timelines {@code written}, in the order of the
+    /** The timeline of the target {@code member} of {@code subject} that rules write, each the days of its own segments
+     *  ({@link #timelineWriters}): the union of their timelines {@code written}, in the order of the
      *  document, with the target's input on the days none of them decides ({@link PeriodCondition#union}, RUNTIME-SEMANTICS
      *  ch. 5.7). The input is the bean's, which holds the case input while the session fires, and none where the case
      *  gives it as the asOfDate-bucket scalar, which carries no period. */
@@ -2002,21 +2001,19 @@ public final class TmsTranspiler {
      * timeline at once, which a pro-rata part (ch. 3.7) or a day count (ch. 3.8) over the subject's own characteristic
      * produces ({@link #timelineValue}), or the period arithmetic of ch. 3.4 and 3.5 over all time
      * ({@link #periodArithmetic}), and inserts it as the {@link Value} of the target, an immutable
-     * {@code List<Period>}. On a standing temporal target ({@link StandingTargets#standingTemporal}: the target's one
-     * version-free writer, ch. 7.8) an empty result is the temporal leeg and writes nothing, so the input timeline of the
-     * target stands whole, and a result with a segment replaces it whole; elsewhere the rule writes the empty timeline
-     * as well (ch. 1.2g). The versions of one rule are one writer; a version that applies writes as such a rule does,
-     * and two that stand with different timelines are the fault of ch. 5.7 ({@link #differenceRule}).
+     * {@code List<Period>}; an empty result is the temporal leeg and inserts nothing. The rule decides the days of its
+     * segments, and the target is the union of its writers' segments with its input on the days none of them decides
+     * ({@link #timelineWriters}; ch. 3.11, ch. 5.7, "Two writers per day"), on a target of one writer as of two or more.
+     * The versions of one rule are one writer; a version that applies writes as such a rule does, and two that stand
+     * on a day with different values are the fault of ch. 5.7 ({@link #differenceRule}).
      *
      * <p>A condition that reads a timeline or holds a period window is read per period: the rule writes the timeline its
      * value produces, restricted to the periods of all time in which the condition holds ({@link #periodCondition},
-     * ch. 3.10, the clip generalised); a condition that reads none gates the rule as on a scalar target. Two or more computing rules of one
-     * target each decide the days of their own segments, and the target is their union per day
-     * ({@link #timelineWriters}, ch. 5.7, "Two writers per day").
+     * ch. 3.10, the clip generalised); a condition that reads none gates the rule as on a scalar target.
      *
      * <p>Refused by name, each with no golden that has cases: a writer of the target other than a computing rule beside
-     * another writer, an initialisation, a defaults group or an allocation, since ch. 7.8 keeps such a target fenced;
-     * and any other value,
+     * another writer, an initialisation, a defaults group or an allocation, which ch. 3.11 does not define on a timeline
+     * target; and any other value,
      * among them a power over timelines, which the reference interpreter refuses as well (RUNTIME-SEMANTICS ch. 3.4).
      */
     private List<RulePlan> timelineRule(ResolvedRule r, Expr.AttributeReference target) {
@@ -2033,7 +2030,7 @@ public final class TmsTranspiler {
                 || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN)))
             throw new Refusal(DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.reason("attribute", member.name(), "declarant", member.declarant().name, "snippet", r.value() == null ? DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.part("without-value")
                     : snippet(r.value().source())));
-        return writeRule(r, target.objectType(), member, null, Set.of(), !standingTargets.standingTemporal(target));
+        return writeRule(r, target.objectType(), member, null, Set.of(), false);
     }
 
     // ---------------- a condition read per period ----------------
@@ -2270,21 +2267,15 @@ public final class TmsTranspiler {
                 || e instanceof Expr.AttributeReference a && !navigationBindings.containsKey(a) && !anchored.contains(a);
     }
 
-    /** Whether two or more computing rules write the timeline target {@code key} on one object, read per concrete type as
-     *  WF-079 reads it: each then decides the days of its own segments (RUNTIME-SEMANTICS ch. 5.7, "Two writers per
-     *  day"), and the target is the union of their segments with its input on the days none decides, its standing
-     *  ({@link #writersUnionRules}) and its write-back ({@link #readFixpoint}). */
+    /** Whether computing rules write the timeline target {@code key}: each decides the days of its own segments, and the
+     *  target is the union of their segments with its input on the days none decides (RUNTIME-SEMANTICS ch. 3.11,
+     *  ch. 5.7, "Two writers per day"), its standing ({@link #writersUnionRules}) and its write-back
+     *  ({@link #readFixpoint}), for one writer as for two or more. */
     private boolean timelineWriters(ElementKey key) {
-        List<ResolvedRule> rules = computeRules.getOrDefault(key, List.of());
-        for (int i = 0; i < rules.size(); i++)
-            for (int j = i + 1; j < rules.size(); j++) {
-                Expr.AttributeReference a = writtenReference(rules.get(i).target()),
-                        b = writtenReference(rules.get(j).target());
-                // the versions of one rule are one writer
-                if (!ProducerConsumer.baseName(rules.get(i).name()).equals(ProducerConsumer.baseName(rules.get(j).name()))
-                        && related(a.objectType(), b.objectType()) && temporal(a.objectType(), a.attribute(), false))
-                    return true;
-            }
+        for (ResolvedRule r : computeRules.getOrDefault(key, List.of())) {
+            Expr.AttributeReference a = writtenReference(r.target());
+            if (temporal(a.objectType(), a.attribute(), false)) return true;
+        }
         return false;
     }
 
@@ -8824,7 +8815,7 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The two derivation rules of {@link #attributeStateRules} for a timeline target of two or more computing rules
+     * The two derivation rules of {@link #attributeStateRules} for a timeline target of computing rules
      * ({@link #timelineWriters}), whose rules {@code name} names: where a {@link Value} of the target stands on the
      * object, its {@link State} is the union of the timelines of every such value, in the order of the document, with the
      * target's input on the days none of them decides (RUNTIME-SEMANTICS ch. 5.7, "Two writers per day";

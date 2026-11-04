@@ -239,7 +239,7 @@ public final class PeriodCondition {
     }
 
     /**
-     * The timeline of a target of two or more writers (RUNTIME-SEMANTICS ch. 5.7, "Two writers per day"): every
+     * The timeline of a target that rules write (RUNTIME-SEMANTICS ch. 3.11, ch. 5.7, "Two writers per day"): every
      * writer's segments as it wrote them, {@code parts} in the order of the document, a day an earlier writer decides
      * left out of a later one's, so that a shared day of one value lies in the segment of the writer the document names
      * first; and on the days none of them decides, the target's input {@code input}, null where it has none. In the order

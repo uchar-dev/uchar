@@ -132,7 +132,7 @@ public enum Route {
     CONTRACT_BREACH(ComputeHelpers.class, "contractBreach"),
     /** The fault of writers that disagree, as the {@link Consequence.WritersConflict} plans it. */
     WRITERS_CONFLICT(ComputeHelpers.class, "writersConflict"),
-    /** The standing of a timeline target of two or more writers, as the {@link Consequence.WritersUnion} plans it. */
+    /** The standing of a timeline target that rules write, as the {@link Consequence.WritersUnion} plans it. */
     WRITERS_UNION(ComputeHelpers.class, "writersUnion"),
     /** The empty list, for a route that takes a list. */
     LIST0(ComputeHelpers.class, "list0"),

@@ -118,8 +118,8 @@ public sealed interface Consequence {
      * {@link Route#WRITERS_CONFLICT}.
      */
     /**
-     * The standing of the timeline target {@code attribute} that two or more rules write, each the days of its own
-     * segments (RUNTIME-SEMANTICS ch. 5.7, "Two writers per day"), on the object {@code subject} binds: the union of the
+     * The standing of the timeline target {@code attribute} that rules write, each the days of its own segments
+     * (RUNTIME-SEMANTICS ch. 3.11, ch. 5.7, "Two writers per day"), on the object {@code subject} binds: the union of the
      * timelines of the value facts the slot {@code values} holds, in the order of the document's rules
      * {@code documentOrder}, with the target's input, in the slot {@code input}, on the days none of them decides; -1 for
      * no input timeline, where the case gives the input as the asOfDate-bucket scalar. Made by the route

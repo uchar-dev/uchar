@@ -16,11 +16,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * THE target classification of RUNTIME-SEMANTICS ch. 7.8 (the standing norm, scalar and timeline arms) and
- * ch. 7.7 (the v0 desugaring domain) — the one derivation the analysis of both Drools branches reads. It is a port of
- * ref's {@code Desugar} ({@code standing_targets_gen}, {@code standing_targets}, {@code standing_temporal_targets},
- * {@code desugared_targets}), clause for clause, so a target is standing for the Drools backend exactly when it is
- * standing for ref.
+ * THE target classification of RUNTIME-SEMANTICS ch. 7.8 (the standing norm on a scalar target) and ch. 7.7 (the v0
+ * desugaring domain) — the one derivation the analysis of both Drools branches reads. It is a port of ref's
+ * {@code Desugar} ({@code standing_targets_gen}, {@code standing_targets}, {@code desugared_targets}), clause for
+ * clause, so a target is standing for the Drools backend exactly when it is standing for ref.
  *
  * <p>WHY it is one class and not two mirrored methods: a second implementation is a second chance to drift; the
  * DOMAIN is the whole content of the norm, since the norm's one visible act is deciding WHERE a leeg write
@@ -34,7 +33,6 @@ public final class StandingTargets {
     private final RegelSpraakModel model;
     private final List<PrioritizedDefaults> prioritizedDefaults;
 
-    private Set<String> temporal;
     private Set<String> scalar;
     private Set<String> desugared;
     private Map<String, Integer> writers;
@@ -50,16 +48,6 @@ public final class StandingTargets {
         return new StandingTargets(model, prioritizedDefaults);
     }
 
-    /** ch. 7.8, the TIMELINE arm: is {@code target} a standing temporal target, i.e. does an EMPTY result
-     *  decide nothing there, leaving the case-supplied input timeline standing whole? The domain holds only
-     *  ATTRIBUTE targets, but the key carries no member kind while WF-002 admits a kenmerk sharing an
-     *  attribute's name — a kenmerk write site must therefore NOT ask this (ref structurally cannot apply
-     *  the arm to a Kenmerktoekenning). No soort test is needed for the attribute sites: a target written by
-     *  an initialisatie BESIDE the computing rule has writer count 2 and is out of the domain already. */
-    public boolean standingTemporal(Expr target) {
-        return temporalTargets().contains(key(target));
-    }
-
     /** ch. 7.8, the SCALAR arm TOGETHER with the ch. 7.7 desugaring domain ref's scalar arm consults beside
      *  it: does a LEEG (null) computed value of {@code r} decide nothing, so that the case input — or, in the
      *  desugaring domain, the initialisatie — stands? Only a COMPUTING rule is in ref's arm: a
@@ -72,41 +60,13 @@ public final class StandingTargets {
         return scalarTargets().contains(k) || desugaredTargets().contains(k);
     }
 
-    /** RUNTIME-SEMANTICS ch. 7.8 (the timeline arm, decided 2026-08-21) — the STANDING TEMPORAL TARGET
-     *  domain, a port of ref's {@code Desugar.standing_temporal_targets} over {@code standing_targets_gen}:
-     *  a temporal attribute written by EXACTLY ONE version-free computing rule (GELIJKSTELLING/BEREKENING
-     *  carrying a value) whose value has the ch. 3.7 pro-rata / ch. 3.8 day-count shape (ref's
-     *  {@code executable} — the only temporal writers that execute), with NO other writer: no
-     *  prioritized-defaults group, no verdeling, no creation-time write on that attribute. Kenmerk targets
-     *  are outside the domain (ref excludes {@code Kenmerktoekenning} from both the writer count and
-     *  {@code is_computing}). Keys normalise like ref's {@code norm}, so the two domains coincide construct
-     *  for construct. */
-    public Set<String> temporalTargets() {
-        if (temporal != null) return temporal;
-        Map<String, Integer> count = writersPerTarget();
-        Set<String> out = new LinkedHashSet<>();
-        for (ResolvedRule r : model.resolvedRules) {
-            boolean executable = r.value() instanceof Expr.FunctionCall f
-                    && (f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN);
-            String k = key(r.target());
-            if (!isComputing(r) || !executable || k == null || count.getOrDefault(k, 0) != 1) continue;
-            Expr.AttributeReference d = written(r.target());
-            if (!temporalAttribute(d.objectType(), member(r.target()))) continue;   // ref's wanted_shape
-            if (otherWriter(d.objectType().name, member(r.target()))) continue;
-            out.add(k);
-        }
-        temporal = out;
-        return out;
-    }
-
     /** RUNTIME-SEMANTICS ch. 7.8 (the scalar norm, decided 2026-08-20) — the STANDING SCALAR TARGET domain,
      *  a port of ref's {@code Desugar.standing_targets} over {@code standing_targets_gen ~temporal:false}:
      *  a NON-temporal attribute written by EXACTLY ONE version-free computing rule with NO other writer —
-     *  no prioritized-defaults group, no verdeling, no creation-time write. Two clauses differ from the
-     *  temporal twin: ref's {@code executable} is vacuously true off the temporal path (every scalar value
-     *  shape executes, so the domain is NOT restricted to particular Functie kinds), and {@code wanted_shape}
-     *  demands the ABSENCE of a declared granulariteit. Kenmerk targets are outside the domain exactly as
-     *  there. */
+     *  no prioritized-defaults group, no verdeling, no creation-time write. Every scalar value shape
+     *  executes, so the domain is not restricted to particular Functie kinds (ref's {@code executable} is
+     *  vacuously true off the temporal path), and ref's {@code wanted_shape} demands the ABSENCE of a declared
+     *  granulariteit. Kenmerk targets are outside the domain exactly as there. */
     public Set<String> scalarTargets() {
         if (scalar != null) return scalar;
         Map<String, Integer> count = writersPerTarget();
