@@ -594,9 +594,9 @@ digits rounded half to even where it does not (the 1/3 above is
 values, and a value of that form that an object creation initialises
 stands exactly in its working memory too. It refuses by name a case value
 written as a rational (`1/6`), and a time-proportional part into a timeline
-of that form (ch. 3.7), since a segment of its timelines holds a decimal; a
-segment of the period arithmetic of ch. 3.4 into such a timeline whose value
-does not terminate faults by name.
+of that form (ch. 3.7), since a segment of its timelines holds a decimal; a segment of the period arithmetic of ch. 3.4 into such a timeline whose value
+does not terminate is a limit of that backend, which refuses the session by
+name where it stands at the fixpoint (DROOLS-312).
 
 Worked example — the exact value at rest (`ref/` test `WV-2.4-p`; the Drools
 backend's `RationalAtRestWitnessTest`): a Jutter with `begrensde opbrengst`,

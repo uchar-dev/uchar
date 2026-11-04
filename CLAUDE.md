@@ -255,25 +255,32 @@ missing line makes `make gates` exit non-zero. Current gates:
    empty case set is a failure, never silently green. Played is the
    default. A golden whose form the ASP encoding does not carry stands by
    name in the reason-carrying list `EXPECTED_CHANNEL` IN THE SCRIPT,
-   `<golden>|CLINGO-###|<reason>`, and refuses on every case with that
-   code at the head of the runner's report (`TRANSLATION FAULT:
-   CLINGO-032: …`, or `CLINGO-031: clingo: UNSATISFIABLE — …` for a guard
-   at solving), a code of `backends/clingo/codes.tsv` of the kind
-   `refusal` or `limit`; a `fallback` code is named by no pin, as in gate
-   8. The gate compares the code and fails by golden name on a golden
+   `<golden>|CLINGO-###[, CLINGO-###…]|<reason>`, and refuses on every
+   case with those codes at the head of the runner's report
+   (`TRANSLATION FAULT: CLINGO-032: …`, `CLINGO-031: clingo: UNSATISFIABLE
+   — …` for a guard at solving, `CLINGO-033, CLINGO-034: clingo: …` where
+   two guards fire), each a code of `backends/clingo/codes.tsv` of the kind
+   `refusal` or `limit`; a line names every code at the head, in any
+   order, and no other; a `fallback` code is named by no pin, as in gate
+   8. The gate compares the codes and fails by golden name on a golden
    that refuses without a line, on a line whose golden plays every case,
-   refuses with another code or has no case file (stale in both
+   refuses with other codes or has no case file (stale in both
    directions), and on a golden whose cases partly play and partly
    refuse. A case that fails without a register code at its head, with an
-   EF code, with two codes or with a mismatch fails whether or not its
-   golden is listed: only a refusal of the backend is listable. The list
-   refuses a golden named twice, a line without a reason and a code that
-   is no refusal or limit of the register, and the judge passes eighteen
-   rows of its own before it judges the corpus. The list has no floor: it
-   is name-carrying and held in both directions, and the count of
-   replayed cases is the case set gate 5 floors. It names
-   `anchor/jutterswet-verzuimrente-dagen` (CLINGO-032, the calendar total
-   outside a rounding, `backends/clingo/README.md` [V6]). It also runs the
+   EF code among its codes there or with a mismatch fails whether or not
+   its golden is listed: only a refusal of the backend is listable. The
+   list refuses a golden named twice, a line without a reason, a code
+   named twice in a line and a code that is no refusal or limit of the
+   register, and the judge passes twenty-two rows of its own before it
+   judges the corpus. The list has no floor: it is name-carrying and held
+   in both directions, and the count of replayed cases is the case set
+   gate 5 floors. It names the two verzuimrente anchors, whose exact
+   values the encoding does not hold: `anchor/jutterswet-verzuimrente-dagen`
+   (CLINGO-032, the calendar total outside a rounding,
+   `backends/clingo/README.md` [V6]) and `anchor/jutterswet-verzuimrente-30-360`
+   (CLINGO-033, the unbounded form held as a whole number, and CLINGO-034,
+   the range of the encoding's machine integers); their rounded sisters
+   play in every executor. It also runs the
    backend's own unit suite — the normalisation fault modes no corpus
    witness can exercise — demanding its check-count line and holding
    that count to a floor; an un-run or shrunken suite is a silent green,
