@@ -5130,7 +5130,7 @@ parameters, the clause that defines it and its witnesses.
   `stratum` and `depth` (EF-015), `rules`, `values`, `attribute`, `label`
   and `objectType` (EF-016), the parts of EF-032 (since 2026-10-22, as ref
   and the ASP backend), `factType` and `cycle` (EF-033), and `attribute`
-  and `label` (EF-036, and EF-037 since 2026-11-03, where it names `label`
+  and `label` (EF-036, and EF-037, where it names `label`
   only for the object whose input it is: an attribute read over a path names
   `attribute` alone), and no other.
   Gate 8 holds each executor's emitted keys to this column: a key outside the

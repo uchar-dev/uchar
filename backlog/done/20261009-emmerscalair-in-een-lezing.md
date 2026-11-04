@@ -37,3 +37,10 @@ Klein.
 
 May touch: `ref/`, `backends/clingo/`, `corpus/red/<nieuwe gevallen>/`, `spec/RUNTIME-SEMANTICS.md` (voorstel),
 kaartverplaatsing.
+
+## Result
+
+Opgelost door de fixronde `time-followups` (geland 2026-11-04, door de hoofdsessie gesloten): ref en clingo falen bij een knip,
+onder de gehele-periodekwalificator (ook over een pad) en op de andere plekken van ch. 8.4 met EF-037, zoals Drools; rode casussen
+`corpus/red/jutterswet-emmerscalair-per-periode`, `-knip` en `-gehele-jaar` pinnen de code in alle uitvoerders (gate 8). Verslag:
+`werk/time-followups/verslag.md`.

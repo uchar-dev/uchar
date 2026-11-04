@@ -555,7 +555,8 @@ missing line makes `make gates` exit non-zero. Current gates:
     so the twist table lost `AttribuutRef`, `ParameterRef`, `DimensieCel`
     and `BinderRef` (v0 names; since L5 `AttributeReference`,
     `ParameterReference`, `DimensionCellRead`) and `EXPECTED_MIN_TWISTS` was
-    re-measured (V15 (b)) —
+    re-measured (V15 (b)); a `percentageOf` is a derived position as
+    well (its right operand's unit, ch. 2.6 rule 7) —
     is deterministically twisted (a convertible
     sister unit, or decimals+1) and ref, clingo and BOTH Drools
     transpiler branches (the exec-model gate-12 path and, since

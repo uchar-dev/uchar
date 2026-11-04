@@ -1540,8 +1540,10 @@ declarations per period: a sum over the members keeps its attribute's unit
 (§4.6), not the integration of the §7.1 fold (`eff_unit ~per_period`). A form
 that reads a timeline whole — an own temporal attribute, the members of a
 sum, the tested attribute of a condition per period, the base of a pro-rata
-part — faults at translation where the case gives the asOfDate-bucket scalar
-(RUNTIME-SEMANTICS ch. 8.4), over every instance of the type. Each operator applies its ch. 1.2
+part, the compared timeline of a gedurende clip and the timeline of the
+whole-period qualifier, also at the end of a path — faults at translation
+with EF-037 where the case gives the asOfDate-bucket scalar
+(RUNTIME-SEMANTICS ch. 8.4, 5.7b), over every instance of the type. Each operator applies its ch. 1.2
 empty rule per period: plus, min, maal and percentage van coalesce a leeg
 operand to 0 (`…_z`, `not …_d`), verminderd met only its right; a division
 writes 0 where the dividend is leeg, and where it is filled over a leeg
