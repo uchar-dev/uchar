@@ -6629,7 +6629,9 @@ digits, `+12026-03-01`, `-0005-03-01` (ISO 8601's expanded form;
 2026-10-22*: the Drools backend writes it so, `ref` wrote `12026-03-01`
 and `-005-03-01` until then, and the golden `date-with-parts` reads one); a
 text and an enumeration value quoted, with `\`, `"` and the line breaks
-escaped; leeg as `empty`; a timeline as `[[<from> <to> <value>], …]`, with
+escaped; a constructor value (ch. 9.1) as its tag quoted and, for a unary
+constructor, its payload written as a value is, in parentheses:
+`"onbekend"`, `"waarde"(300)`; leeg as `empty`; a timeline as `[[<from> <to> <value>], …]`, with
 `empty` as the value of a period without one. After the value of an
 expression stands its unit, quoted, where it has one: of a number the unit
 of the node's effective type (ch. 2.10), the number restated into it where
@@ -9230,13 +9232,13 @@ the alternative skips the markers as leeg contributors without a filter
 in the source; this chapter takes the filter, the reading of the decision
 "wie leest, toetst eerst".
 
-**Executed.** In ref and the ASP backend: writing, testing, reading the
-value in arithmetic, comparisons and a fold over members, scalar and the
-write and the test per period. Not executed, refused by name in both: a
+**Executed.** In ref, the ASP backend and both branches of the Drools
+backend: writing, testing, reading the value in arithmetic, comparisons and
+a fold over members, scalar and the write and the test per period, with the
+readings of ch. 5.12. Not executed, refused by name in all three: a
 `PayloadAccess` of a timeline, whose test per period is a gevuld test per
-period without a reading (ch. 3.12 row 5); the ASP backend writes a
-sum-typed timeline from a constructor of a literal only. The Drools
-backend refuses the sum type at load.
+period without a reading (ch. 3.12 row 5). The ASP backend and the Drools
+backend write a sum-typed timeline from a constructor of a literal only.
 
 Worked examples (absolute; `ref/test/` verbatim, the golden
 `jutterswet-afwezigheidsmarkers` and its red twin
