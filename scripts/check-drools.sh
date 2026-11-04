@@ -302,6 +302,7 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-penningvintage|EXCLUDE DROOLS-023|loader Refusal: Expr:TemporalRead"
   "anchor/jutterswet-staffelvergoeding|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "anchor/jutterswet-toelagegronden|EXCLUDE DROOLS-054|bean name collision, refused before either branch lowers the document: the characteristic 'toelage' and the attribute 'toelage' of Jutter fall on one bean property, Jutter.toelage, which carries the attribute, and a defaults group writes the characteristic (v0 bean-model limit, not a defaults divergence). Until 2026-09-28 the transpiler's defaults fence refused it one phase later, on the same limit"
+  "anchor/jutterswet-verzuimrente-dagen|EXCLUDE DROOLS-042|case reader: the expected verzuimrente is the rational lexeme 10160/73 (case 2 4500/61), the exact total of the calendar in a target of the unbounded form, and the case reader carries no rational lexeme; a scalar of the unbounded form goes onto the bean as a decimal. ref plays the anchor; its rounded form, jutterswet-verzuimrente-dagen-afgerond, plays on both branches"
   "anchor/jutterswet-vondstdossier|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "closed-runtime-division-by-zero|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a red case until card zero-division-channel (2026-10-19), excluded in check-red.sh on the same refusal"
   "jutterswet-aanspraakherziening|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
@@ -1533,6 +1534,9 @@ EXPECTED_CHANNEL=(
 # whole segment, and total an absent timeline 0 on every route, a member of the per-element fold included
 # (RUNTIME-SEMANTICS ch. 3.6), so the five play again: jutterswet-getijdenwacht, jutterswet-kadetarief,
 # jutterswet-penningjaar, jutterswet-tempototaal and jutterswet-vast-startpunt, with PLAYED 1, 1, 1, 1 and 7.
+# 328 also after the card clingo-refusal-channel (2026-11-04): the anchor jutterswet-verzuimrente-dagen pins the exact
+# totals in the unbounded form and leaves the played channel (DROOLS-042, EXPECTED_CHANNEL), and the golden
+# jutterswet-verzuimrente-dagen-afgerond, the same casus rounded to the cent, plays on both with PLAYED 2.
 EXPECTED_PLAYED=328
 
 

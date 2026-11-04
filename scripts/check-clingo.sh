@@ -12,13 +12,15 @@
 #   1. backends/clingo builds (the OCaml workspace, scripts/lib/ocaml-build.sh);
 #   2. clingo is available;
 #   3. every corpus/golden/**/case*.json replays exactly through the
-#      translate → clingo → check pipeline; an empty case set is a
-#      failure, never silently green.
+#      translate → clingo → check pipeline, except the cases of a golden
+#      that EXPECTED_CHANNEL below names: those refuse, every one of them,
+#      by name with the register code the list pins; an empty case set is
+#      a failure, never silently green.
 #
 # The replays run on one process per two cores (scripts/lib/parallel.sh;
-# the measurement is below). The loop that judges them reads each case's
-# output and exit status in the order of the case list, so the report is
-# the one a replay case by case would give.
+# the measurement is below). The judge reads each case's output and exit
+# status in the order of the case list, so the report is the one a replay
+# case by case would give.
 #
 # The gate takes no arguments. One pair plays through the runner itself,
 # as backends/clingo/README.md shows:
@@ -97,7 +99,35 @@ if ! procs=$(parallel_jobs 2); then
     exit 1
 fi
 
-status=0
+# --- the refusal channel: which goldens clingo does not play, and why (fails in both directions) ---------
+# Entry: "<golden-relative-path>|CLINGO-###|<reason it is not played>", one per line. PLAYED IS THE DEFAULT:
+# a golden that no line names plays every case exactly. A golden a line names refuses on EVERY case, by name,
+# with the code the line pins: the code at the head of the runner's report (`TRANSLATION FAULT: CLINGO-032: …`,
+# or `CLINGO-031: clingo: UNSATISFIABLE — …` for a guard that fired at solving), a code of backends/clingo/codes.tsv
+# of the kind refusal or limit. A fallback code is the bottom arm of a dispatch and no pin names it (the fence of
+# gate 8). Only the code is compared; the reason is documentation and may be reworded without tripping the gate.
+#
+# Silence is excluded in every direction, each by golden name:
+#   - a golden that refuses with a code and stands in no line fails;
+#   - a line whose golden plays every case, or refuses with another code, fails — the list is stale;
+#   - a line whose golden has no case file under corpus/golden (gone, renamed) fails — likewise stale;
+#   - a golden whose cases partly play and partly refuse fails: a line covers every case of its golden;
+#   - a case that fails without a register code at its head, with an EF code, with two codes, a fallback
+#     code or a code the register does not hold, or with a mismatch or a load error, fails whether or not a
+#     line names its golden: it is no refusal of this backend, and only a refusal is listable.
+# The list's own guards: a golden named twice fails (the first line would silently win), and so does a line
+# without three fields, without a reason, or with a code that is no refusal or limit of the register.
+# The rules above are a function of the judge below; it first plays rows of its own through them (SELF_TEST,
+# one per guard, both directions of the stale guard among them), and a row that does not give its verdict
+# fails the gate.
+#
+# No floor on the list (maintainer decision 2026-09-09 asks a sentence where there is none): it is
+# name-carrying and held in both directions, so it cannot shrink or grow unseen, and its length is a count of
+# refusals, whose shrinking is progress; the count of replayed cases is the case set gate 5 floors.
+EXPECTED_CHANNEL='
+anchor/jutterswet-verzuimrente-dagen|CLINGO-032|the temporal total by the calendar outside a rounding (README [V6]): a day weighs 1/365 or 1/366 of its year, so the exact verzuimrente, 10160/73 and 4500/61, has a denominator that no decimal scale of this encoding holds, and the backend translates the total only as the base of a rounding. ref plays both cases; the rounded form, jutterswet-verzuimrente-dagen-afgerond, plays here
+'
+
 list=$(mktemp) || exit 2
 tasks=$(mktemp -d) || exit 2
 trap 'rm -f "$list"; rm -rf "$tasks"' EXIT
@@ -119,28 +149,179 @@ if ! parallel_run "$tasks" "$procs"; then
 fi
 
 # judge, in the order of the list
-n_cases=0
-while IFS= read -r case; do
-    n_cases=$((n_cases + 1))
-    ir=$(dirname "$case")/ir.json
-    if [ ! -f "$ir" ]; then
-        echo "FAIL: $case has no sibling ir.json" >&2
-        status=1
+python3 -I - "$list" "$tasks" backends/clingo/codes.tsv "$EXPECTED_CHANNEL" "$SUITE_CHECKS" "$EXPECTED_MIN_SUITE_CHECKS" <<'PYEOF'
+import os, re, sys
+
+list_path, tasks, codes_path, channel_text, suite_checks, suite_floor = sys.argv[1:7]
+PLAYED = "PLAYED"
+
+
+def read_codes(path):
+    """code -> kind, from the register of this backend (check-exec-codes.sh holds it to the sources)."""
+    rows = open(path, encoding="utf-8").read().split("\n")
+    kinds = {}
+    for row in rows[1:]:
+        if row:
+            cols = row.split("\t")
+            kinds[cols[0]] = cols[1]
+    return kinds
+
+
+def parse_channel(text, kinds):
+    """The lines of EXPECTED_CHANNEL: golden -> code, and the failures of the list's own guards."""
+    pins, failures = {}, []
+    for line in text.split("\n"):
+        if not line.strip():
+            continue
+        fields = line.split("|", 2)
+        if len(fields) != 3:
+            failures.append("malformed channel line '%s': want '<golden>|CLINGO-###|<reason>'" % line)
+            continue
+        golden, code, reason = fields
+        if not reason.strip():
+            failures.append("channel line without a reason: '%s' — every line is '<golden>|CLINGO-###|<why it is not played>'" % golden)
+        if golden in pins:
+            failures.append("duplicate channel line: '%s' is named more than once in EXPECTED_CHANNEL — the first line would silently win" % golden)
+            continue
+        if not re.fullmatch(r"CLINGO-[0-9]{3}", code):
+            failures.append("channel line '%s' pins '%s', which is no code CLINGO-### of this backend" % (golden, code))
+        elif code not in kinds:
+            failures.append("channel line '%s' pins %s, which %s does not hold" % (golden, code, codes_path))
+        elif kinds[code] not in ("refusal", "limit"):
+            failures.append("channel line '%s' pins %s of the kind %s: a fallback code is the bottom arm of a dispatch, and only a refusal or a limit is listable" % (golden, code, kinds[code]))
+        pins[golden] = code
+    return pins, failures
+
+
+HEAD_FAULT = re.compile(r"TRANSLATION FAULT: ([A-Z]+-[0-9]{3}): ")
+HEAD_SOLVE = re.compile(r"((?:[A-Z]+-[0-9]{3})(?:, [A-Z]+-[0-9]{3})*): clingo: ")
+
+
+def outcome(rc, out, kinds):
+    """PLAYED, the code of a refusal, or None with the reason this is no refusal."""
+    if rc == "0":
+        return PLAYED, None
+    if rc != "1":
+        return None, "exit status %s, a load error or no clingo" % rc
+    first = out.split("\n", 1)[0]
+    m = HEAD_FAULT.match(first) or HEAD_SOLVE.match(first)
+    if not m:
+        return None, "no register code at the head of the report"
+    codes = m.group(1).split(", ")
+    if len(codes) != 1:
+        return None, "%d codes at the head of the report (%s)" % (len(codes), m.group(1))
+    code = codes[0]
+    if not code.startswith("CLINGO-"):
+        return None, "%s at the head of the report, a fault where ref plays" % code
+    if code not in kinds:
+        return None, "%s, which %s does not hold" % (code, codes_path)
+    if kinds[code] not in ("refusal", "limit"):
+        return None, "%s, a %s code" % (code, kinds[code])
+    return code, None
+
+
+def judge(cases, channel_text, kinds):
+    """cases: (case path, exit status or None without an ir.json, output) in the order of the list. The
+    failures of the channel rule, and the counts of the report."""
+    pins, failures = parse_channel(channel_text, kinds)
+    goldens, order = {}, []
+    for path, rc, out in cases:
+        if rc is None:
+            failures.append("%s has no sibling ir.json" % path)
+            continue
+        golden = os.path.dirname(path)[len("corpus/golden/"):]
+        if golden not in goldens:
+            goldens[golden] = []
+            order.append(golden)
+        code, why = outcome(rc, out, kinds)
+        goldens[golden].append((path, code, why, out))
+    played_cases = refused_cases = 0
+    for golden in order:
+        rows = goldens[golden]
+        bad = [r for r in rows if r[1] is None]
+        for path, _, why, out in bad:
+            failures.append("%s does not replay through clingo (%s):\n%s" % (path, why, out.rstrip("\n")))
+        if bad:
+            continue
+        measured = set(r[1] for r in rows)
+        pinned = pins.get(golden, PLAYED)
+        if len(measured) > 1:
+            failures.append("%s: its cases play and refuse, or refuse with two codes (%s) — a line of EXPECTED_CHANNEL covers every case of its golden" % (golden, ", ".join("%s %s" % (os.path.basename(r[0]), r[1]) for r in rows)))
+            continue
+        measured = measured.pop()
+        if measured == pinned:
+            if measured == PLAYED:
+                played_cases += len(rows)
+            else:
+                refused_cases += len(rows)
+        elif pinned == PLAYED:
+            failures.append("%s refuses with %s on every case but stands in no line of EXPECTED_CHANNEL — make the backend carry the form, or pin it with its code and the reason:\n%s" % (golden, measured, rows[0][3].rstrip("\n")))
+        elif measured == PLAYED:
+            failures.append("stale channel line: %s is pinned %s but plays every case — remove the line" % (golden, pinned))
+        else:
+            failures.append("%s is pinned %s, but its cases refuse with %s:\n%s" % (golden, pinned, measured, rows[0][3].rstrip("\n")))
+    for golden, code in pins.items():
+        if golden not in goldens:
+            failures.append("stale channel line: %s is pinned %s, but no golden of that name has a case file under corpus/golden (gone, or renamed) — remove the line" % (golden, code))
+    return failures, played_cases, refused_cases, len(pins)
+
+
+SELF_KINDS = {"CLINGO-001": "limit", "CLINGO-002": "fallback", "CLINGO-005": "refusal", "CLINGO-031": "limit"}
+G = "corpus/golden/g/case1.json"
+G2 = "corpus/golden/g/case2.json"
+FAULT1 = "TRANSLATION FAULT: CLINGO-001: a scaled value out of range"
+FAULT5 = "TRANSLATION FAULT: CLINGO-005: a clamp bound that is no literal"
+SELF_TEST = [
+    # (row, channel text, cases, the fragment of the one failure it must give, or None for a pass)
+    ("a pinned golden that refuses with its code passes", "g|CLINGO-001|r", [(G, "1", FAULT1), (G2, "1", FAULT1)], None),
+    ("a refusal at solving is read off its head", "g|CLINGO-031|r", [(G, "1", "CLINGO-031: clingo: UNSATISFIABLE — a fail-fast guard fired: viol(...)")], None),
+    ("an unpinned golden that plays passes", "", [(G, "0", "clingo: PASS (2 expectations)")], None),
+    ("stale: a pinned golden that plays every case", "g|CLINGO-001|r", [(G, "0", "clingo: PASS (1 expectations)")], "stale channel line: g is pinned CLINGO-001 but plays"),
+    ("stale: a pinned golden that is gone", "h|CLINGO-001|r", [(G, "0", "clingo: PASS (1 expectations)")], "stale channel line: h is pinned CLINGO-001, but no golden"),
+    ("unpinned: a golden that refuses with a code and stands in no line", "", [(G, "1", FAULT1)], "g refuses with CLINGO-001 on every case but stands in no line"),
+    ("a pinned golden that refuses with another code", "g|CLINGO-001|r", [(G, "1", FAULT5)], "g is pinned CLINGO-001, but its cases refuse with CLINGO-005"),
+    ("a golden whose cases play and refuse", "g|CLINGO-001|r", [(G, "1", FAULT1), (G2, "0", "clingo: PASS (1 expectations)")], "a line of EXPECTED_CHANNEL covers every case"),
+    ("a report without a code at its head is no refusal", "g|CLINGO-001|r", [(G, "1", "TRANSLATION FAULT: an uncoded refusal")], "no register code at the head"),
+    ("an EF code at the head is no refusal", "g|CLINGO-001|r", [(G, "1", "EF-006: clingo: UNSATISFIABLE — a fail-fast guard fired")], "EF-006 at the head of the report"),
+    ("two codes at the head are no refusal", "g|CLINGO-001|r", [(G, "1", "CLINGO-001, CLINGO-031: clingo: UNSATISFIABLE — …")], "2 codes at the head"),
+    ("a fallback code at the head is no refusal", "", [(G, "1", "TRANSLATION FAULT: CLINGO-002: a text operand shape")], "CLINGO-002, a fallback code"),
+    ("a mismatch is no refusal", "g|CLINGO-001|r", [(G, "1", "MISMATCH: attribuut x: verwacht 1, werkelijk 2")], "no register code at the head"),
+    ("a load error is no refusal", "", [(G, "2", "CASE ERROR: a case without expectations")], "exit status 2"),
+    ("a golden named twice", "g|CLINGO-001|r\ng|CLINGO-001|r", [(G, "1", FAULT1)], "duplicate channel line: 'g'"),
+    ("a line without a reason", "g|CLINGO-001|", [(G, "1", FAULT1)], "channel line without a reason: 'g'"),
+    ("a line that pins a fallback code", "g|CLINGO-002|r", [(G, "1", FAULT1)], "pins CLINGO-002 of the kind fallback"),
+    ("a line that pins no code of this backend", "g|DROOLS-042|r", [(G, "1", FAULT1)], "pins 'DROOLS-042', which is no code CLINGO-###"),
+]
+for row, text, cases, want in SELF_TEST:
+    got = judge(cases, text, SELF_KINDS)[0]
+    if want is None:
+        ok = got == []
+    else:
+        ok = len(got) >= 1 and want in got[0]
+    if not ok:
+        sys.stderr.write("check-clingo: FAIL (self-test row '%s' of the channel rule: wanted %s, got %s)\n"
+                         % (row, "a pass" if want is None else "a failure with '%s' first" % want, got or "a pass"))
+        sys.exit(1)
+
+kinds = read_codes(codes_path)
+cases = []
+for n, path in enumerate(open(list_path, encoding="utf-8").read().split("\n")[:-1], 1):
+    rc_file = os.path.join(tasks, "%d.rc" % n)
+    if not os.path.exists(rc_file):
+        cases.append((path, None, ""))
         continue
-    fi
-    out=$(cat "$tasks/$n_cases.out")
-    if [ "$(cat "$tasks/$n_cases.rc")" != 0 ]; then
-        printf 'FAIL: %s does not replay through clingo:\n%s\n' "$case" "$out" >&2
-        status=1
-    fi
-done < "$list"
-
-if [ "$n_cases" -eq 0 ]; then
-    echo 'FAIL: no case files under corpus/golden — the differential has nothing to replay' >&2
-    exit 1
-fi
-
-if [ "$status" -eq 0 ]; then
-    echo "check-clingo: PASS (backend suite $SUITE_CHECKS checks, floor $EXPECTED_MIN_SUITE_CHECKS; $n_cases cases replay exactly through clingo — ref = clingo over the corpus)"
-fi
-exit "$status"
+    rc = open(rc_file, encoding="utf-8").read().strip()
+    out = open(os.path.join(tasks, "%d.out" % n), encoding="utf-8", errors="replace").read()
+    cases.append((path, rc, out))
+if not cases:
+    sys.stderr.write("FAIL: no case files under corpus/golden — the differential has nothing to replay\n")
+    sys.exit(1)
+failures, played_cases, refused_cases, n_pins = judge(cases, channel_text, kinds)
+for f in failures:
+    sys.stderr.write("FAIL: %s\n" % f)
+if failures:
+    sys.exit(1)
+print("check-clingo: PASS (backend suite %s checks, floor %s; %d cases replay exactly through clingo — ref = clingo over the corpus; "
+      "%d golden(s) in the refusal channel, by name, %d cases refused with the pinned code; the channel rule passes %d rows of its own)"
+      % (suite_checks, suite_floor, played_cases, n_pins, refused_cases, len(SELF_TEST)))
+PYEOF
