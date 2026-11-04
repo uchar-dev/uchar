@@ -1,0 +1,26 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "B1",
+        "objectType": "Baken",
+        "attributes": {
+          "peildatum": {
+            "date": "2026-03-10"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "actief"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-010",
+    "params": {}
+  }
+}

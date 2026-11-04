@@ -39,7 +39,7 @@ reading open until a source states what such a test means
 | executor | phase | pinned fragment |
 |---|---|---|
 | `ref` | evaluation | `a nested day-kind test on a date other than the bound day` |
-| clingo | translation | same, verbatim |
+| clingo | solving, a `viol/2` witness where the step walks a day on which the test is evaluated | same, verbatim |
 
 The Drools backend does not reach fire: its day-kind predicate compiler
 (`transpiler/kern/DayKinds`) now leaves the composition **uncompiled** when

@@ -34,7 +34,7 @@ with `vertrek` **absent** and the case carrying `asOfDate: null`.
 | executor | pinned fragment | does it pin the order? |
 |----------|-----------------|------------------------|
 | ref | `the evaluationDate context value needs an evaluation date` | **yes** — `van` is evaluated before `tot`, so the context value is reached before the barrier |
-| clingo | `the evaluationDate context value needs an evaluation date` | **no** — the ASP translation has no operand evaluation order at all; it refuses the dateless context value whichever operand it visits first |
+| clingo | `the evaluationDate context value needs an evaluation date` | **no** — the ASP translation has no operand evaluation order at all; its witness of the dateless context value fires where the duration is reached, whichever operand ref reads first |
 
 Measured: with ref's two `let`s swapped the case reports `EXPECTED FAULT
 DID NOT OCCUR: evaluation succeeded`, because the barrier fires first and

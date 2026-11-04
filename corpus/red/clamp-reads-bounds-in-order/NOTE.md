@@ -40,7 +40,7 @@ answer, and the order decides.
 | executor | code | what decides it |
 |----------|------|-----------------|
 | ref | EF-011 | the `minimum` is **evaluated** before the `maximum`, so the year is read before the barrier |
-| clingo | EF-011 | the translator **visits** the `minimum` before the `maximum`, so the year's translation fault comes before the refusal of a `maximum` bound that is not a ground literal (CLINGO-005) |
+| clingo | EF-011 | the translator **visits** the `minimum` before the `maximum`: the year, a context value without an evaluation date, faults where the clamp is reached (a `viol/2` witness at solving), and the clamp stops after it, so the `maximum`, a bound that is not a ground literal, is not refused (CLINGO-005) |
 | Drools (exec-model) | EF-011 | the `minimum` is evaluated before the `maximum`, as in ref |
 
 Under the reverse order ref would read the barrier first and quietly write

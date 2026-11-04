@@ -38,7 +38,7 @@ recorded as open; the runtime refusal is what this card measured and pinned.
 | executor | phase | pinned fragment |
 |---|---|---|
 | `ref` | evaluation | `the bound day of a day-kind definition` |
-| clingo | translation | same, verbatim |
+| clingo | solving, a `viol/2` witness where the evaluation reaches the read | same, verbatim |
 
 The two refuse in the SAME WORDS, which is the point: before this card
 `de dag` reached each executor's generic fall-through (`expression kind not

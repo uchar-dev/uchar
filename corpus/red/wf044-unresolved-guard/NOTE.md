@@ -21,8 +21,8 @@ Both executors that read every red form fault where they read the
 creation, and each names the position:
 
 - reference interpreter — `Unresolved condition reached in evaluation`;
-- ASP backend — `Unresolved condition reached in translation: this rule
-  fails observably`.
+- ASP backend — `Unresolved condition reached in evaluation`, a `viol/2`
+  witness that fires at solving where the evaluation reaches the condition.
 
 The Drools red run drives the exec-model branch, which derives with truth
 maintenance since the card `tms-omschakeling` (2026-10-10). It carries the

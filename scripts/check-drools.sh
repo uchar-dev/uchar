@@ -1550,7 +1550,10 @@ EXPECTED_CHANNEL=(
 # 331 since the card early-faults-and-sum-reading (2026-11-04): the golden jutterswet-gevolg-buiten-de-beurt-som, the
 # same consequence as the left operand of a sum, whose fault its reading carries at the operand (RUNTIME-SEMANTICS
 # ch. 5.12). It plays on both with PLAYED 1.
-EXPECTED_PLAYED=331
+# 334 since the same card: the goldens bound-day-behind-a-failing-condition, context-value-behind-a-failing-condition
+# and unresolved-behind-a-failing-condition, a fault kind behind a condition that does not hold, which raises no
+# fault (RUNTIME-SEMANTICS ch. 5.11). Each plays on both with PLAYED 1.
+EXPECTED_PLAYED=334
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

@@ -34,7 +34,8 @@ nooit met een standaardjaar en nooit met leeg.
 
 - `ref`: `EVALUATION FAULT: EF-011: the evaluationYear context value needs an evaluation date; the case carries
   asOfDate null`;
-- de ASP-backend: `TRANSLATION FAULT: EF-011: …`, dezelfde zin;
+- de ASP-backend, bij het oplossen (een `viol/2`-getuige waar de evaluatie de voorwaarde bereikt): `EF-011: clingo:
+  UNSATISFIABLE — …`, dezelfde zin;
 - de Drools-backend, in de rode run: `FAULT EF-011 {}: ComputeFault: error in the rule "defaults K:Vondst.oud": the
   evaluationYear context value needs an evaluation date; the case carries asOfDate null`.
 

@@ -5,8 +5,8 @@ inexpressibility marker, and it must never vanish silently. This
 document is verifier-clean — the marker itself is legal wire content —
 but the rule that carries it is *reached* by the case: the reference
 interpreter faults the evaluation (`Unresolved reached in evaluation: this
-rule fails observably`), and the ASP backend faults the translation
-(`Unresolved reached in translation: this rule fails observably`). A
+rule fails observably`), and the ASP backend faults at solving in the same
+sentence, a `viol/2` witness where the evaluation reaches the node. A
 harness in which this case stops failing has started guessing where the
 spec says "cannot express".
 

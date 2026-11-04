@@ -24,8 +24,9 @@ time to build the day kind's extension, read the missing binding as **empty**
 and carried on — shipping a confident table, and with it confident answers,
 built on a comparison that had silently become false. Measured before the fix:
 `ref` `parameter "openingsdatum" is unbound in this case`, clingo a PASS with
-a full set of values. Both now fault, and the fragment is one sentence shared
-by both.
+a full set of values. Both now fault, in one sentence shared by both: the
+table records the days on which the predicate reads the unbound parameter, and
+the ASP backend faults at solving where the step walks such a day.
 
 ## The green twin
 
