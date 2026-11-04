@@ -1,0 +1,3 @@
+Violates WF-126 (`spec/IR-SPEC.md` ch. 3.1): a timeline that the consequence of a default on a timeline target reads per day lies on a grid that does not fit the target's.
+
+The attribute `dagtoeslag` is declared for every day; the defaults group `wachtgeld uit de dagtoeslag` writes `wachtgeld`, declared for every month, with the default `zijn dagtoeslag` justified where he is kustwacht. A defaults group on a timeline target is read per day (RUNTIME-SEMANTICS ch. 7.11), so the consequence's timeline is read whole, and its values change inside a month, which a timeline for every month cannot carry.

@@ -1,0 +1,5 @@
+WF-126.value-grid
+operand=the attribute 'dagtoeslag'
+operandGrid=day
+target=wachtgeld
+targetGrid=month

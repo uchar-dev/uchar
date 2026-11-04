@@ -22,6 +22,21 @@
               "granularity": "month",
               "count": 1
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "basisloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
           }
         ],
         "characteristics": [
@@ -54,7 +69,7 @@
     "prioritizedDefaults": [
       {
         "node": "PrioritizedDefaults",
-        "name": "wachtgeld voor kustwachters",
+        "name": "wachtgeld uit het basisloon",
         "subject": "Jutter",
         "attribute": "wachtgeld",
         "defaults": [
@@ -69,18 +84,39 @@
               }
             },
             "consequence": {
-              "node": "Literal",
-              "value": {
-                "number": "30"
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "basisloon",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn basisloon"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "3"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "3"
+                }
               },
               "type": {
                 "node": "Number",
-                "whole": true,
+                "whole": false,
                 "decimals": 0,
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "30"
+                "snippet": "zijn basisloon gedeeld door 3"
               }
             }
           }

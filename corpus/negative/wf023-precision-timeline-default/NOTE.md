@@ -1,0 +1,3 @@
+Violates WF-023's precision gate (`spec/IR-SPEC.md` ch. 3.1; RUNTIME-SEMANTICS ch. 2.4 point 4) at the consequence of a default on a timeline target.
+
+The defaults group `wachtgeld uit het basisloon` writes `wachtgeld`, a whole number for every month, with the default `zijn basisloon gedeeld door 3` justified where he is kustwacht. A defaults group on a timeline target is read per day (RUNTIME-SEMANTICS ch. 7.11): the consequence's timeline is the value of the expression on each period, so its precision bound holds per segment, and a division by 3 has no finite bound. Written through an explicit rounding, or into the unbounded form, it passes.

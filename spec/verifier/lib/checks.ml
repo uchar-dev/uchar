@@ -10239,8 +10239,9 @@ let precision_gate at ~share (dt : datatype) (value : bounded option) =
    gate with its bound per segment (ch. 2.3), the value of every segment being the
    value of the expression on its period (ch. 3.4); the pro-rata write of ch. 3.7
    stands outside it: no executor carries a rounding around it, so the gate would
-   leave that write no form (RUNTIME-SEMANTICS ch. 2.8). The other three positions
-   write no timeline. *)
+   leave that write no form (RUNTIME-SEMANTICS ch. 2.8). A defaults consequence on a
+   target with a timeline stands in it the same way (ch. 7.11); an object creation
+   writes no timeline. *)
 let wf023_precision ctx =
   let value_gate at dt w = precision_gate at ~share:false dt (precision ctx ~env:[] w) in
   let scalar ot a = not (attr_temporal ot a) in
@@ -10282,11 +10283,13 @@ let wf023_precision ctx =
            match
              Option.bind l.pd_attribute (fun a ->
                  Option.bind (object_type ctx l.pd_subject) (fun ot ->
-                     if scalar ot a then attr_of ot a else None))
+                     Option.map (fun dt -> (dt, scalar ot a)) (Option.join (attr_of ot a))))
            with
-           | Some (Some dt) ->
+           | Some (dt, scalar_target) ->
                let rec walk prefix (d : default) =
-                 (match d.default_consequence with Some e -> value_gate (prefix ^ "/consequence") dt e | None -> [])
+                 (match d.default_consequence with
+                 | Some e when scalar_target || not (pro_rata e) -> value_gate (prefix ^ "/consequence") dt e
+                 | _ -> [])
                  @
                  match d.default_exceptions with
                  | Some egs ->
@@ -11249,34 +11252,27 @@ let wf067 ctx =
               else []))
          fds)
 
-(* WF-086: a PrioritizedDefaults group MUST NOT target a temporal attribute —
-   one carrying a declared granularity (attribuutGranulariteit), whether
-   anchor-only or on a named timeline. A defaults group is atemporal: it
-   decides once, at one fixpoint (RUNTIME-SEMANTICS ch. 7), and has no
-   timeline coordinate to write. The executors already refuse it — ref faults
-   on a temporal defaults write (eval.ml, kept as defense-in-depth), and the
-   Drools defaults service fences it as a reason-carrying Dekking.skip — so
-   this document-layer rule refuses it FIRST, at the PrioritizedDefaults node,
-   via the shared [attr_temporal] helper. Temporal defaults targets are not yet
-   scheduled (PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q12a, ratified 2026-08-29);
-   the fence lifts, with witnesses, when they are. *)
+(* WF-086: a PrioritizedDefaults group MUST NOT target a temporal
+   characteristic — one carrying a declared granularity (a `timeline` facet on
+   its Characteristic). A time-dependent characteristic holds in bounded
+   periods that a rule writes within a window (RUNTIME-SEMANTICS ch. 3.11), and
+   a decision that does not attribute has no such periods (ch. 3.12 row 7). The
+   reference interpreter faults on the same target as defense-in-depth. A
+   temporal attribute target is read per day (ch. 7.11) and needs no fence. *)
 let wf086 ctx =
   List.concat
     (List.mapi
        (fun i (l : prioritized_defaults) ->
          let at = Printf.sprintf "/prioritizedDefaults/%d" i in
-         match (l.pd_attribute, l.pd_characteristic, object_type ctx l.pd_subject) with
-         | Some a, _, Some ot when attr_temporal ot a ->
-             [ v ~params:[("attribute", a)] "WF-086.temporal-attribute-target" at
-                 ("defaults target '" ^ a
-                ^ "' is a temporal attribute (declared granularity) — a defaults group decides \
-                   at one fixpoint and cannot write a timeline (ch. 6)") ]
-         | _, Some k, Some ot
+         match (l.pd_characteristic, object_type ctx l.pd_subject) with
+         | Some k, Some ot
            when List.exists (fun (n, _) -> norm n = norm k) ot.characteristic_granularity ->
              [ v ~params:[("characteristic", k)] "WF-086.temporal-characteristic-target" at
                  ("defaults target '" ^ k
-                ^ "' is a temporal characteristic (declared granularity) — a defaults group \
-                   decides at one fixpoint and cannot write a timeline (ch. 6)") ]
+                ^ "' is a temporal characteristic (declared granularity) — a time-dependent \
+                   characteristic holds in bounded periods that a rule writes within a window, \
+                   and a defaults group has no reading that writes them (RUNTIME-SEMANTICS \
+                   ch. 3.12 row 7)") ]
          | _ -> [])
        ctx.doc.prioritized_defaults)
 
@@ -12396,7 +12392,9 @@ let wf125 ctx =
 (* WF-126 (IR-SPEC ch. 3.1): every timeline that the value or the condition of
    a rule on a timeline attribute target reads per period lies on a grid that
    fits the target's ([grid_fits]), so the target can carry each cut it makes
-   (RegelSpraak typeringen §3; spec/proposals/IMPLICIT-TIME.md VB 8.1). The
+   (RegelSpraak typeringen §3; spec/proposals/IMPLICIT-TIME.md VB 8.1), and so
+   does every timeline the consequence or the justification of a default on
+   such a target reads, which a defaults group reads per day as well. The
    timelines read per period: an own time-dependent attribute, the member
    attribute of a sum over a set and a time-dependent parameter in the value; a
    check of an own time-dependent characteristic and a compared own
@@ -12421,6 +12419,83 @@ let wf126 ctx =
     | _ -> None
   in
   let calendar g = (g, None) in
+  (* the judges of one form on the timeline target [a] of [ot], on the grid [target]:
+     its value and its condition, named in the message by [value_word] and
+     [condition_word] *)
+  let judges ~(ot : object_type) ~a ~target ~form ~value_word ~condition_word =
+    let judge kind at what operand =
+      match operand with
+      | Some operand when not (grid_fits ~operand ~target) ->
+          [ v
+              ~params:
+                [ ("operand", what); ("operandGrid", word (fst operand)); ("target", a);
+                  ("targetGrid", word (fst target)) ]
+              ("WF-126." ^ kind) at
+              (Printf.sprintf
+                 "%s, read per period by the %s of a %s on the timeline target '%s', lies on the %s \
+                  grid, which does not fit the %s grid of the target: the target cannot carry its cuts"
+                 what (if kind = "value-grid" then value_word else condition_word) form a (word (fst operand))
+                 (word (fst target))) ]
+      | _ -> []
+    in
+    let rec value at (e : expr) =
+      match e with
+      | Binary { left_side; right_side; _ } ->
+          Option.fold ~none:[] ~some:(value (at ^ "/left")) left_side
+          @ Option.fold ~none:[] ~some:(value (at ^ "/right")) right_side
+      | Attribute_reference { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ }
+        -> (
+          match object_type ctx botn with
+          | Some bot -> judge "value-grid" at (Printf.sprintf "the attribute '%s'" b) (attr_grid bot b)
+          | None -> [])
+      | Function_call
+          { kind = Sum_function; element_object_type = Some el;
+            call_arguments = [ Attribute_reference { attribute_ref = Some x; _ } ]; _ } -> (
+          match object_type ctx el with
+          | Some elt -> judge "value-grid" (at ^ "/arguments/0") (Printf.sprintf "the attribute '%s'" x) (attr_grid elt x)
+          | None -> [])
+      | Parameter_ref { parameter = Some p; _ } -> (
+          match find_ci ctx.doc.parameters p with
+          | Some { par_granularity = Some g; par_fixed_start_point; par_timeline_count; _ }
+            when Option.value par_timeline_count ~default:1 = 1 ->
+              judge "value-grid" at (Printf.sprintf "the parameter '%s'" p) (Some (g, par_fixed_start_point))
+          | _ -> [])
+      | Rounding { base_expr = Some b; _ } -> value (at ^ "/base") b
+      | _ -> []
+    in
+    let qualifier at (gp : entire_period) =
+      judge "condition-grid" at "the whole-period qualifier" (Some (calendar (if gp.gp_granularity then Year else Month)))
+    in
+    let rec condition at (c : condition_expr) =
+      match c with
+      | Characteristic_check { time_period = Some gp; _ } | Comparison { time_period = Some gp; _ }
+      | Predicate { time_period = Some gp; _ } ->
+          qualifier at gp
+      | Characteristic_check { characteristic = Some k; navigation_binding = None; _ } -> (
+          match find_ci ot.characteristic_granularity k with
+          | Some (Some g) -> judge "condition-grid" at (Printf.sprintf "the characteristic '%s'" k) (Some (calendar g))
+          | _ -> [])
+      | Comparison { left_side; right_side; _ } ->
+          let side key e =
+            match e with
+            | Some (Attribute_reference { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ })
+              -> (
+                match object_type ctx botn with
+                | Some bot -> judge "condition-grid" (at ^ key) (Printf.sprintf "the attribute '%s'" b) (attr_grid bot b)
+                | None -> [])
+            | _ -> []
+          in
+          side "/left" left_side @ side "/right" right_side
+      | Compound { components; _ } ->
+          List.concat (List.mapi (fun i c -> condition (Printf.sprintf "%s/parts/%d" at i) c) components)
+      | _ -> []
+    in
+    (value, condition)
+  in
+  let own_value value at = function
+    | Some (Function_call { kind = Time_proportional_part | Day_count; _ }) | None -> []
+    | Some e -> value at e
+  in
   List.concat_map
     (fun (r : resolved_rule) ->
       match (r.rr_presentation, r.objective) with
@@ -12432,79 +12507,46 @@ let wf126 ctx =
               match attr_grid ot a with
               | None -> []
               | Some target ->
-                  let judge kind at what operand =
-                    match operand with
-                    | Some operand when not (grid_fits ~operand ~target) ->
-                        [ v
-                            ~params:
-                              [ ("operand", what); ("operandGrid", word (fst operand)); ("target", a);
-                                ("targetGrid", word (fst target)) ]
-                            ("WF-126." ^ kind) at
-                            (Printf.sprintf
-                               "%s, read per period by the %s of a rule on the timeline target '%s', lies on the %s \
-                                grid, which does not fit the %s grid of the target: the target cannot carry its cuts"
-                               what (if kind = "value-grid" then "value" else "condition") a (word (fst operand))
-                               (word (fst target))) ]
-                    | _ -> []
+                  let value, condition =
+                    judges ~ot ~a ~target ~form:"rule" ~value_word:"value" ~condition_word:"condition"
                   in
-                  let rec value at (e : expr) =
-                    match e with
-                    | Binary { left_side; right_side; _ } ->
-                        Option.fold ~none:[] ~some:(value (at ^ "/left")) left_side
-                        @ Option.fold ~none:[] ~some:(value (at ^ "/right")) right_side
-                    | Attribute_reference { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ }
-                      -> (
-                        match object_type ctx botn with
-                        | Some bot -> judge "value-grid" at (Printf.sprintf "the attribute '%s'" b) (attr_grid bot b)
-                        | None -> [])
-                    | Function_call
-                        { kind = Sum_function; element_object_type = Some el;
-                          call_arguments = [ Attribute_reference { attribute_ref = Some x; _ } ]; _ } -> (
-                        match object_type ctx el with
-                        | Some elt -> judge "value-grid" (at ^ "/arguments/0") (Printf.sprintf "the attribute '%s'" x) (attr_grid elt x)
-                        | None -> [])
-                    | Parameter_ref { parameter = Some p; _ } -> (
-                        match find_ci ctx.doc.parameters p with
-                        | Some { par_granularity = Some g; par_fixed_start_point; par_timeline_count; _ }
-                          when Option.value par_timeline_count ~default:1 = 1 ->
-                            judge "value-grid" at (Printf.sprintf "the parameter '%s'" p) (Some (g, par_fixed_start_point))
-                        | _ -> [])
-                    | Rounding { base_expr = Some b; _ } -> value (at ^ "/base") b
-                    | _ -> []
-                  in
-                  let qualifier at (gp : entire_period) =
-                    judge "condition-grid" at "the whole-period qualifier" (Some (calendar (if gp.gp_granularity then Year else Month)))
-                  in
-                  let rec condition at (c : condition_expr) =
-                    match c with
-                    | Characteristic_check { time_period = Some gp; _ } | Comparison { time_period = Some gp; _ }
-                    | Predicate { time_period = Some gp; _ } ->
-                        qualifier at gp
-                    | Characteristic_check { characteristic = Some k; navigation_binding = None; _ } -> (
-                        match find_ci ot.characteristic_granularity k with
-                        | Some (Some g) -> judge "condition-grid" at (Printf.sprintf "the characteristic '%s'" k) (Some (calendar g))
-                        | _ -> [])
-                    | Comparison { left_side; right_side; _ } ->
-                        let side key e =
-                          match e with
-                          | Some (Attribute_reference { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ })
-                            -> (
-                              match object_type ctx botn with
-                              | Some bot -> judge "condition-grid" (at ^ key) (Printf.sprintf "the attribute '%s'" b) (attr_grid bot b)
-                              | None -> [])
-                          | _ -> []
-                        in
-                        side "/left" left_side @ side "/right" right_side
-                    | Compound { components; _ } ->
-                        List.concat (List.mapi (fun i c -> condition (Printf.sprintf "%s/parts/%d" at i) c) components)
-                    | _ -> []
-                  in
-                  (match r.value_node with
-                  | Some (Function_call { kind = Time_proportional_part | Day_count; _ }) | None -> []
-                  | Some e -> value (r.rr_pointer ^ "/value") e)
+                  own_value value (r.rr_pointer ^ "/value") r.value_node
                   @ Option.fold ~none:[] ~some:(condition (r.rr_pointer ^ "/condition")) r.rr_condition))
       | _ -> [])
     ctx.doc.resolved_rules
+  (* a defaults group on a timeline target reads its justifications and its
+     consequences per day (RUNTIME-SEMANTICS ch. 7.11), the exception groups'
+     with them *)
+  @ List.concat
+      (List.mapi
+         (fun i (l : prioritized_defaults) ->
+           match (l.pd_attribute, object_type ctx l.pd_subject) with
+           | Some a, Some ot -> (
+               match attr_grid ot a with
+               | None -> []
+               | Some target ->
+                   let value, condition =
+                     judges ~ot ~a ~target ~form:"default" ~value_word:"consequence" ~condition_word:"justification"
+                   in
+                   let rec walk prefix (d : default) =
+                     own_value value (prefix ^ "/consequence") d.default_consequence
+                     @ Option.fold ~none:[] ~some:(condition (prefix ^ "/justification")) d.default_justification
+                     @
+                     match d.default_exceptions with
+                     | Some egs ->
+                         List.concat
+                           (List.mapi
+                              (fun k (eg : exception_group) ->
+                                List.concat
+                                  (List.mapi
+                                     (fun m d -> walk (Printf.sprintf "%s/exceptions/members/%d/defaults/%d" prefix k m) d)
+                                     eg.eg_defaults))
+                              egs.egs_members)
+                     | None -> []
+                   in
+                   List.concat (List.mapi (fun j d -> walk (Printf.sprintf "/prioritizedDefaults/%d/defaults/%d" i j) d) l.defaults))
+           | _ -> [])
+         ctx.doc.prioritized_defaults)
 
 let all (doc : document) : violation list =
   let ctx = ctx_of doc in

@@ -1,0 +1,5 @@
+WF-126.condition-grid
+operand=the characteristic 'kustwacht'
+operandGrid=day
+target=wachtgeld
+targetGrid=month
