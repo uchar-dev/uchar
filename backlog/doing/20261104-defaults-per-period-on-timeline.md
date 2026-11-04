@@ -280,3 +280,232 @@ jar rc=0 3s drools-jar: rebuilt (4 source path(s) newer than the jar, e.g. front
 after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
 end 2026-11-04 15:07:31 419s red=0
 ```
+
+## Result: stap B (bouwer, 2026-11-04)
+
+*Niet gemerged, niet gepusht. Logs onder `werk/defaults-per-period-on-timeline/logs/` (`B*`), het mutatiescript onder
+`werk/defaults-per-period-on-timeline/scripts/mutationsB.py`.*
+
+### Commits
+
+| hash | inhoud |
+|---|---|
+| `544060d6c` | ref: de trace leest een default per dag (`reading.ml`); `Eval.input_empty_days` uit `run_defaults_timeline` gehaald; ref-tests `WV-5.12-default-per-dag` (vijf rijen) en `WV-7.11-gevolg-buiten-de-beurt`, `-fout`, `-deponering`, `-initialisatie-emmerscalair`; documenten `defaults-per-day/lazy-consequence` en `deposit`; cases `defaults-per-day-cases/{turn-on-no-day, justified-on-no-day, bucket-input, lazy-consequence-reached}` |
+| `e03b98cf7` | clingo-suite: het document `deposit` |
+| `1c6e05ce7` | drools: de stapel per dag (`PeriodDefaults`, `TmsTranspiler.dayStackRules`), de lezing per dag, `decisionsOf` weigert zo'n build; `TmsDefaultsPerDayWitnessTest`; README; drie corpustests (hieronder) |
+| `7711cc4fe` | `scripts/check-drools.sh` (beschermd, voorstel): de golden uit `EXPECTED_CHANNEL`, `EXPECTED_PLAYED` 328 → 329 |
+| `320612fee` | RUNTIME-SEMANTICS (beschermd, voorstel): ch. 5.12 "A default on a timeline target" met `WV-5.12-default-per-dag`, de statustabel, de artefacten; ch. 3.12 rij 10 weg (beslist); ch. 7.11 de evaluatie en vier uitgewerkte voorbeelden |
+| `799bb2f43` | case `defaults-per-day-cases/deposit-dropped` in ref, clingo en de Drools-witness |
+| `bb5cbbfd7` | RUNTIME-SEMANTICS (beschermd, voorstel): `WV-7.11-deponering-vervalt` genoemd |
+| (deze) | Result |
+
+### Wat er in Drools veranderde
+
+Geen tweede mechanisme: de stapel per dag gebruikt de controlefeiten van de algemene vorm en het schrijven per dag dat er
+al was.
+
+- **Uitkomst met dagen.** Elke default en elke verzoening van uitzonderingsgroepen zet een `Outcome` (`DECIDED`) met als
+  waarde een `PeriodDefaults.Days`: de beslissende segmenten met hun exacte waarde en per conflictsleutel de dagen waarop
+  de leden verschillen. Een default en zijn terugval zetten er elk een.
+- **De beurt per dag.** De regel van een default leest via accumulates (`Reads.outcomes`) de uitkomsten van de posities
+  boven hem in zijn keten en boven elke default waarvan zijn keten een uitzonderingsgroep is, en matcht alleen waar die
+  een dag overlaten (`DAYS_REACH`, toets `DAYS_AT_TURN`); de terugval leest daarnaast de uitkomsten van zijn eigen
+  uitzonderingsgroepen (`DAYS_LEFT`).
+- **Lui gevolg.** Het besluit is een `Let` per inperking (dagen van de beurt ∩ rechtvaardiging per periode, voor de
+  initialisatiedefault eerst ∩ de invoerloze dagen van de bean, `DAYS_INPUT_EMPTY`): een lege inperking geeft null, de
+  binder eindigt de `Let` met leeg, en het gevolg (periode-aritmetiek, `periodOperand`) wordt dan niet geëvalueerd. Fout en
+  deponering zijn die van `Consequence.Decision`; de deponering staat waar de default op een dag beslist.
+- **De wortel is één schrijver.** `…: eens wortel` verzoent de wortelgroepen per dag en schrijft een `Value` (writer =
+  stapelnaam) via `PERIOD_WRITTEN` (schrijfgrens per segment); `timelineWriters` kent `dayStackTargets`, dus de standing en
+  de write-back zetten de invoer op de andere dagen (`writersUnionRules`, `PeriodCondition.union`). Per mogelijke sleutel
+  (`targetForm` bij twee of meer wortelgroepen, `k.key()` bij twee of meer uitzonderingsgroepen) een regel
+  `…: verschil <sleutel>` met `Consequence.Inconsistency` (EF-027).
+- **Plan, geen nieuwe weergave.** Alleen nieuwe `StaticFunction`s (`DAYS_*`), twee `ReadKind`s (`OUTCOMES`,
+  `BUCKET_INPUTS`) en `DefaultsGroup.perDay`; beide branches renderen hetzelfde plan, geen nieuwe `Consequence`-soort.
+- **Weigeringen** met bestaande codes: een gevolg dat geen periode-aritmetiek is (DROOLS-105) en een doel dat geen getal is
+  (DROOLS-303). Geen nieuwe code; geen code naar `RETIRED` (DROOLS-271 blijft voor elke plek die één waarde houdt).
+- **`decisionsOf`** weigert een build met zo'n stapel (`DefaultsDecision` heeft één beslisser per object).
+
+### Wat er in de uitleg veranderde (ch. 5.12, gate 17)
+
+- **ref** (`reading.ml`): de lezing loopt de keten per dag zoals `run_defaults_timeline` (`Eval.reconcile_days`,
+  `settled_days`, `days_minus`), leest elke default ook waar zijn beurt leeg is, de rechtvaardiging via `cond_periods`, het
+  gevolg via `period_timeline` waar de rechtvaardiging op een dag geldt, en de wortel als `Timeline.clip` van de gevulde
+  segmenten op de periodes van de rechtvaardiging.
+- **Drools**: de leesregel van zo'n default heeft de accumulates en geen toets; `ReadingRule` draagt `turn` en
+  `inputDays`; `readingsOf` geeft `DISPLACED` waar de beurt leeg is en `DISPLACED` zonder knopen waar de invoer het doel elke
+  dag vult. Het gevolg in de lezing staat onder een `Choice` (niet bereikt waar de rechtvaardiging op geen dag geldt).
+- Gate 17 vergelijkt de golden nu op beide branches; vloeren onaangeroerd.
+
+### Rood eerst (letterlijk)
+
+- Drools op main `dd81d2ae1` (`B01-red-golden-drools.log`), beide branches en `--readings`: `EXCLUDE DROOLS-271: transpiler
+  SKIP: defaults: defaults A:Jutter.strandloon — the time-dependent attribute 'strandloon' of Jutter at a place that reads
+  or writes one value …`.
+- ref-trace op main: `reading /rules/prioritizedDefaults/0/defaults/0 "J2" 1 AttributeReference fault -` en elke default
+  `HOLDS`.
+- De nieuwe ref-tests tegen de bibliotheek van main (`B21-red-ref-tests.log`): `FAIL WV-5.12-default-per-dag`,
+  `-initialisatie`, `-verdrongen`, `-niet-gerechtvaardigd`, `-uitzonderingsgroepen` (5 failure(s)).
+- `TmsDefaultsPerDayWitnessTest` tegen main (`B21-red-drools-witness.log`): 4 tests, 2 failures, 2 errors, elk
+  `CaseRunner$Excluded: transpiler SKIP: defaults: defaults A:Jutter.strandloon — het tijdsafhankelijke attribuut
+  'strandloon' van Jutter op een plek die één waarde leest of schrijft …`.
+- Eigen rood onderweg: na de eerste verlaging las Drools `0/defaults/0 "J3" 1 Literal empty` waar ref `unreached` las (de
+  barrière van een `Let` noteert de knoop als bereikt en leeg) → `Choice`; de suite (`B06`) gaf
+  `RuleOriginCorpusWitnessTest`: "de rol is RECONCILE_AGREEMENT, het label in de naam zegt null" (`…: schrijven`) →
+  `eens wortel`/`verschil <sleutel>`, en drie corpustests `IllegalState decisionsOf leest per object en stapel één beslisser`
+  → overgeslagen (hieronder).
+
+### Groen
+
+ref-suite 2389 worked examples (was 2374); clingo-suite 2514 checks, 0 failures (was 2510); Drools-suite 1846 tests,
+0 failures, 0 errors, 0 skipped (was 1842; `B10`); frontend niet aangeraakt.
+
+### Mutaties (niet gecommit, `git worktree add --detach`, opgeruimd; logs `B20-mutation-*`)
+
+| mutatie | rood |
+|---|---|
+| D1 geen uitkomsten van hoger (beurt = alle tijd) | `the_documents_play…` (Excluded/EvaluationFaults), lezingen J6 |
+| D2 initialisatie leest de invoer niet | `the_documents_play…`: case5 |
+| D3 geen conflict per dag | `the_documents_play…`: `ongeordend`, `afwijking` |
+| D4 terugval over de hele beurt | `the_documents_play…`: `afwijking` |
+| D5 gevolg ook buiten de beurt geëvalueerd | `EvaluationFaults … reads the temporal attribute "kustloon" of "J1"` (`lazy-consequence`) |
+| D6 uitkomst zonder dag (deponering blijft) | eerst groen: `inconsistent` toetst alleen aanwezigheid; na de case `deposit-dropped`: `deposit-dropped/case.json exec-model case: verwacht consistent` |
+| D7 lezing zonder beurt | lezingen J6: `DISPLACED` verwacht |
+| D8 lezing zonder invoerloze dagen | lezingen J6: `…/1/defaults/2 "J6" DISPLACED` zonder knopen verwacht |
+| D9 lezing bereikt het gevolg altijd | lezingen J3: `1 Literal unreached` verwacht |
+| D10 `decisionsOf` weigert niet | `decisions_of_a_stack_per_day_are_refused`: "keten 0 … laat per object één uitkomst staan" |
+| D11 geen emmerscalair-fout | `a_default_faults…`: `expected: <FAULT> but was: <NOFAULT>` |
+| D12 geen conflictregels | `the_documents_play…`: `ongeordend`, `afwijking` |
+| D13 groep vervangt de invoer (`dayStackTargets` weg) | `the_documents_play…`: case4 en case5 |
+| R11 trace zonder beurt | `FAIL WV-5.12-default-per-dag-verdrongen` |
+| R12 trace leest een gevulde invoer | `FAIL WV-5.12-default-per-dag-verdrongen` |
+| R13 trace bereikt het gevolg altijd | `FAIL WV-5.12-default-per-dag-niet-gerechtvaardigd` |
+
+### Tests die de kaart verandert (oud → nieuw)
+
+- `DefaultsDecisionCorpusWitnessTest` en `StackCompositionCorpusWitnessTest.againstDecisions`: een golden met een stapel
+  per dag wordt niet getoetst (oud: zo'n golden speelde niet en viel er zo buiten; nieuw: `perDay(build)` slaat hem over,
+  want `decisionsOf` weigert hem). `ReadingsCorpusWitnessTest`: voor zo'n build `decisions = List.of()`, de toetsen van de
+  lezingen blijven. Vloeren ongewijzigd en gehaald.
+- `ReadingRule` kreeg twee componenten, `DefaultsGroup` één (`perDay`); geen test construeert ze.
+
+### De pins
+
+- Gate 12 (`scripts/check-drools.sh`, voorstel): de regel `jutterswet-opgave-per-periode|EXCLUDE DROOLS-271|…` uit
+  `EXPECTED_CHANNEL` (49 → 48 niet-gespeelde goldens bij naam); `EXPECTED_PLAYED` 328 → 329 (met regel in de
+  commentaargeschiedenis); DRL-tekst speelt 328 → 329.
+- Gate 17: geen vloer geraakt. Gemeten (stap A → B): 329 → 330 goldens, 933 → 938 case files, 7352 → 7387 lezingen,
+  24006 → 24081 knoopregels, 858 → 923 met een tijdlijn; 568 knoopregels van 231 verdrongen lezingen ongewijzigd (de golden
+  heeft geen `DISPLACED`; dat pinnen `WV-5.12-default-per-dag-verdrongen` en de Drools-witness).
+
+### Voorgestelde tekst (huidige stand)
+
+**RUNTIME-SEMANTICS**: in `320612fee` en `bb5cbbfd7` (ch. 5.12 "A default on a timeline target", `WV-5.12-default-per-dag`,
+de statustabel en de artefacten; ch. 3.12 rij 10 weg; ch. 7.11 "The evaluation" en `WV-7.11-gevolg-buiten-de-beurt`,
+`-fout`, `-deponering`, `-deponering-vervalt`, `-initialisatie-emmerscalair`).
+
+**CONSTRUCTS rij 8** (vervangt het voorstel van stap A):
+
+> **A defaults group on a timeline target decides per day (2026-11-04, card `defaults-per-period-on-timeline`,
+> RUNTIME-SEMANTICS ch. 7.11):** on every day the highest default that decides that day wins; a consequence that reads leeg
+> on a day falls through on that day, the initialisation default and the virtual input default read the input of that
+> day, and unordered members and exception groups reconcile per day, a conflict on a day writing nothing that day and
+> depositing one §9.5 fact per key × subject. The group is one writer of the target, so its input stands on the days it
+> does not decide. A default is evaluated where it is at its turn on some day, its consequence where its justification
+> holds on a day of its turn, and its deposit stands where it decides on some day. Its reading at the fixpoint is the
+> reading per day of ch. 5.12: its justification per period, its consequence where that holds on some day, `HOLDS` where
+> it is at its turn on some day and `DISPLACED` where on none. A time-dependent characteristic stays no target (WF-086).
+> In ref, clingo and both branches of the Drools backend (golden `jutterswet-opgave-per-periode`, documents
+> `ref/test/fixtures/defaults-per-day`, cases `ref/test/fixtures/defaults-per-day-cases`); the ASP backend faults while it
+> translates on a read of the asOfDate-bucket scalar in a consequence that ref and the Drools backend do not evaluate
+> (`lazy-consequence`). Delta against v0: WF-086's attribute arm, ratified 2026-08-29 (PRIORITIZED-DEFAULTS-EVOLUTIE §9
+> Q12a), is gone.
+
+**CONSTRUCTS rij 11**, de landing achteraan:
+
+> 2026-11-04, card `defaults-per-period-on-timeline` (step B): the Drools backend decides a defaults group on a timeline
+> target per day on both branches (`TmsTranspiler.dayStackRules`, `PeriodDefaults`); the golden
+> `jutterswet-opgave-per-periode` plays in gate 12 and its readings per day are compared in gate 17 (RUNTIME-SEMANTICS
+> ch. 5.12).
+
+**CLAUDE.md gate 12**, na de zinnen van `conditions-per-period` (stap B deel ii):
+
+> Since the card `defaults-per-period-on-timeline` (step B, 2026-11-04) a defaults group on a timeline target decides per
+> day on both branches (RUNTIME-SEMANTICS ch. 7.11; `TmsTranspiler.dayStackRules`, `PeriodDefaults`): every default and
+> every reconciliation of exception groups puts the days it decides or conflicts on in the value of its `Outcome`, a lower
+> default reads those of the defaults above it off an accumulate and decides only on the days they leave, its consequence
+> evaluated only where it can decide, and the root of the stack is one writer of the target, beside whose `Value` the input
+> stands on the other days (`Consequence.WritersUnion`); `decisionsOf` refuses a build with such a stack.
+
+**CLAUDE.md gate 17**, na de alinea van `readings-of-displaced-defaults`:
+
+> Since the card `defaults-per-period-on-timeline` (step B, 2026-11-04) a default of a group on a timeline target is read
+> per day on both sides (ch. 5.12, "A default on a timeline target"): its justification per period, its consequence where
+> that holds on some day, its root the filled segments within the justification's periods, the status `HOLDS` where it is
+> at its turn on some day and `DISPLACED` where on none; its lines are compared verbatim as every other, and no floor moved.
+
+**ASP-TRANSLATION / clingo README** (buiten mijn mandaat, niet aangeraakt): zie vraag 1.
+
+### Voorlopige besluiten
+
+- VB-B1: de statusregel van een default per dag noemt geen dagen: `HOLDS` waar hij op minstens één dag aan de beurt is,
+  `DISPLACED` waar op geen; de knopen over alle tijd, niet gesneden op de beurt. De dagen van de beurt volgen uit de
+  lezingen erboven; gate 17 leest de status als het laatste woord van de regel, en `scripts/` mag ik alleen in lijsten en
+  vloeren raken.
+- VB-B2: de wortel van het gevolg in de lezing is de gevulde tijdlijn binnen de periodes van de rechtvaardiging, exact,
+  zonder schrijfgrens: wat de default zou schrijven; de schrijfgrens geldt voor het schrijven van de groep.
+- VB-B3: een rechtvaardiging die faalt geeft `FAULTS` waar de default aan de beurt is en `DISPLACED` waar niet (de fout aan
+  de knopen); een fout van de invoer van de initialisatiedefault (EF-037) geeft `FAULTS` zonder knopen.
+- VB-B4: `decisionsOf` weigert een build met een stapel per dag (fail fast); de drie corpuswitnesses van `decisionsOf`
+  laten zo'n golden weg, `ReadingsCorpusWitnessTest` toetst zijn lezingen zonder beslisser.
+- VB-B5: hergebruik van `Outcome` met een `Days`-waarde, `Consequence.Decision`, `Consequence.Value` en
+  `Consequence.Inconsistency`; luiheid via `Term.Let` met een null-binder; de reconciliatie per dag in Java
+  (`PeriodDefaults.reconciled`) als spiegel van `Eval.reconcile_days`.
+- VB-B6: nieuwe map- en bestandsnamen Engels (`lazy-consequence`, `deposit`, `defaults-per-day-cases/*`), naast de
+  Nederlandse namen van stap A.
+
+### Vragen aan de hoofdsessie
+
+1. clingo faalt bij het vertalen (`TRANSLATION FAULT: EF-037 … "kustloon" …`) op `lazy-consequence`, waar ref en Drools het
+   gevolg niet evalueren (ch. 7.11: een gevolg buiten de beurt geeft geen fout); hetzelfde met een ongebonden
+   tijdsafhankelijke parameter (EF-014). `backends/clingo/README.md` zegt dat een fail-fast alleen vuurt waar ref zijn plek
+   evalueert. Een clingo-kaart (een fout als feit onder de beslissing), of een vastgelegde grens van het ASP-backend in
+   ASP-TRANSLATION? Nu staat het als feit in RS ch. 7.11 en in geen lijst; het document zit niet in de clingo-suite.
+2. `decisionsOf` per dag (een beslisser per periode) voor de uitleg van de distributie: mee met de toolchain-kaart voor
+   tijdsafhankelijke invoer?
+3. Moet de statusregel van een lezing per dag de dagen van de beurt dragen (VB-B1)? Dat vraagt een parser in gate 17 die
+   een status niet als laatste woord leest.
+
+### make gates
+
+Een run aan het eind in de worktree op `bb5cbbfd7` (`out/gates/20261104-160501/`); de commits daarna raken alleen deze
+kaart. (Een eerdere run op `320612fee`, `out/gates/20261104-155400/`, was ook groen.)
+
+```
+start 2026-11-04 16:05:01 bb5cbbfd7 card/defaults-per-period-on-timeline
+ocaml rc=0 0s ocaml-build: rebuilt (5 source path(s) newer than the stamp, e.g. backends/clingo/test/test_clingo.ml; 0s)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 2s drools-jar: rebuilt (1 source path(s) newer than the jar, e.g. backends/drools/src/test/java/dev/uchar/regelspraak/cases/TmsDefaultsPerDayWitnessTest.java; 2s)
+01-self-contained rc=0 3s
+02-ir-schema rc=0 292s
+04-case-schema rc=0 7s
+03-verifier rc=0 39s
+05-oracle rc=0 25s
+06-clingo rc=0 442s
+07-noop rc=0 13s
+08-red rc=0 182s
+09-catala rc=0 5s
+10-regelspraak rc=0 378s
+11-toka-parity rc=0 367s
+12-drools rc=0 563s
+13-reftype rc=0 507s
+14-flogic rc=0 1s
+15-graph rc=0 50s
+16-scenario rc=0 39s
+17-readings rc=0 358s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-04 16:14:27 565s red=0
+```
+
+Gate 12: `played 329`, DRL-tekst `played 329`. Gate 17: 330 goldens, 938 case files, 7387 lezingen, 24081 knoopregels,
+deviations 0.
