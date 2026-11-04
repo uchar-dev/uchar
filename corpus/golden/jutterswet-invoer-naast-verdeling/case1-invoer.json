@@ -18,6 +18,20 @@
         "characteristics": []
       },
       {
+        "label": "G2",
+        "objectType": "Berging",
+        "attributes": {
+          "opbrengst": {
+            "number": "50"
+          },
+          "onverdeelde rest": {
+            "number": "9"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
         "label": "B1",
         "objectType": "Berger",
         "attributes": {
@@ -107,6 +121,14 @@
       "attribute": "onverdeelde rest",
       "value": {
         "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G2",
+      "attribute": "onverdeelde rest",
+      "value": {
+        "number": "9"
       }
     },
     {

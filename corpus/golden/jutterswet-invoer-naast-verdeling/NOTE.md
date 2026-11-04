@@ -11,6 +11,7 @@ The opbrengst 101 over the two linked bergers B1 and B2 gives each **50** (⌊10
 | case | instance | input | outcome |
 |---|---|---|---|
 | case1-invoer | G1, opbrengst 101 | onverdeelde rest 9 | rest **1** (the allocation writes the rest over its input) |
+| | G2, opbrengst 50, no bergers | onverdeelde rest 9 | rest **9** (without recipients the allocation writes no rest; the input stands) |
 | | B1 linked, vast | bergingsaandeel 7 | **50** (the share; the rule fires with leeg) |
 | | B2 linked, vast, vaste aandeel 50 | bergingsaandeel 7 | **50** (share and rule agree) |
 | | B3 unlinked, vast, vaste aandeel 30 | bergingsaandeel 7 | **30** (the rule decides) |

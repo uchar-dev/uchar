@@ -272,8 +272,6 @@ public final class TmsTranspiler {
      *  fixpoint takes, of writers that agree, the value of the first ({@link WritersConflict#inDocumentOrder}). A
      *  list, so that a plan carries the order itself and a DRL text can spell it. */
     private final List<String> documentOrder = new ArrayList<>();
-    /** The members an allocation writes, its share target or its rest ({@link #allocationWriters}). */
-    private final Set<ElementKey> allocationTargets = new LinkedHashSet<>();
     /** The object types of the document in its order ({@link #types}), and at the same place the simple name of each
      *  one's bean class (the one {@link #beanClass} loads): a sentence names an object by its own type. By name, so
      *  that building it loads no class. */
@@ -3240,9 +3238,8 @@ public final class TmsTranspiler {
 
     /**
      * The rules of {@link #differenceRule}, one per attribute on which two writers can stand at the fixpoint on one
-     * object: two or more computing rules, or a computing rule and an allocation, writers of one rank of the target's
-     * stack (RUNTIME-SEMANTICS ch. 7.8). An initialisation beside them needs none: its guard keeps it from standing
-     * beside a writer's value, and a writer writes nothing for a computed leeg.
+     * object: two or more computing rules. An initialisation beside a computing rule needs none: its guard keeps it from
+     * standing beside the rule's value, and the rule writes nothing for a computed leeg.
      */
     private List<RulePlan> differenceRules() {
         List<RulePlan> out = new ArrayList<>();
@@ -3250,8 +3247,7 @@ public final class TmsTranspiler {
             Member member = derived.get(e.getKey());
             // no writer of the attribute was lowered: the manifest names the refused forms, and the build fails on them
             if (member == null) continue;
-            if (e.getValue().size() + (allocationTargets.contains(e.getKey()) ? 1 : 0) > 1)
-                out.add(differenceRule(member));
+            if (e.getValue().size() > 1) out.add(differenceRule(member));
         }
         return out;
     }
@@ -3823,10 +3819,10 @@ public final class TmsTranspiler {
      * sister subtype does not count. Another allocation, not a version of {@code v}, is ill-formed beside it (WF-026),
      * and so is a defaults group (WF-050). A rule beside it stands in the target's stack (RUNTIME-SEMANTICS ch. 7.8): a
      * computing rule is a writer of the allocation's rank, a second equation of the target whose value must agree at
-     * the fixpoint (ch. 5.7, {@link #differenceRule} over the {@link Value}s of both), and an initialisation is the
-     * lowest of the stack, whose guard reads the allocation's shares as it reads every other writer's value. The member
-     * value an object creation sets is no writer here: it is the input of the object it makes, which a share replaces.
-     * The member is recorded as written by an allocation ({@link #allocationTargets}).
+     * the fixpoint (ch. 5.7: the write-back faults where the {@link Value}s of the two differ), and an initialisation is
+     * the lowest of the stack, whose guard reads the allocation's shares as it reads every other writer's value. The
+     * member value an object creation sets is no writer here: it is the input of the object it makes, which a share
+     * replaces.
      */
     private void allocationWriters(ResolvedAllocation v, ObjectType type, Member member) {
         ElementKey el = member.key();
@@ -3851,7 +3847,6 @@ public final class TmsTranspiler {
         }
         if (!groups.isEmpty())
             throw new Refusal(DroolsCode.ALLOCATION_BESIDE_DEFAULTS_GROUP.reason("groups", String.join(", ", groups), "attribute", member.name(), "objectType", type.name));
-        allocationTargets.add(el);
     }
 
     /**
