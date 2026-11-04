@@ -188,6 +188,7 @@ public final class Resolver {
         checker.check(doc);
         designations.compose(checker.nameParts());
         designations.check();
+        AbsenceMarkers.check(model);
         reportUnresolved(model);
         return model;
     }

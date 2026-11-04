@@ -868,9 +868,22 @@ public final class SemanticTokens {
         for (int i = first; i <= last; i++) {
             Piece p = pieces.get(i);
             if (p.hidden() || claim[i] != null || !isWord(p.type())) continue;
-            claim(new int[]{i, i}, pieceText(i).equals("geen") ? Kind.KEYWORD : Kind.UNRESOLVED, false, null);
+            claim(new int[]{i, i}, pieceText(i).equals("geen") || markerWord(pieceText(i)) ? Kind.KEYWORD : Kind.UNRESOLVED,
+                    false, null);
         }
     }
+
+    /** A word of the absence markers ("onbekend", "niet van toepassing", "een waarde heeft"; grammar/DIVERGENCES.md,
+     *  "Afwezigheidsmarkeringen") in a document that declares them: the resolver reads it as a marker or as the test
+     *  of a value, which no name of the document stands for. */
+    private boolean markerWord(String word) {
+        if (!MARKER_WORDS.contains(word.toLowerCase(java.util.Locale.ROOT))) return false;
+        for (ObjectType t : model.objectTypes.values()) if (!t.attributeMarkers.isEmpty()) return true;
+        return false;
+    }
+
+    private static final java.util.Set<String> MARKER_WORDS = java.util.Set.of("onbekend", "niet", "van", "toepassing",
+            RegelSpraakModel.VALUE_CONSTRUCTOR);
 
     /** Whether {@code b} is the next step of the navigation {@code a} begins: only 'van' and an article or a quantifier
      *  stand between them ("de mast VAN DE post", "het gewicht VAN ALLE vondsten"). */

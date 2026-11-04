@@ -81,7 +81,24 @@ public final class RegelSpraakModel {
      *  after its base rule). Keyed as {@link #designatable()} spells the element; read it through
      *  {@link #generatedFrom}. */
     public final Map<Designatable, GeneratedFrom> generated = new LinkedHashMap<>();
+    /** The absence markers of RUNTIME-SEMANTICS ch. 9.5 that the resolver read in the rules (grammar/DIVERGENCES.md,
+     *  "Afwezigheidsmarkeringen"): per node, by identity, the attribute with markers it speaks of and the constructor
+     *  the emitter writes for it. A literal is a marker written or tested and becomes a Construct of that marker; an
+     *  attribute reference is a read of the value and becomes a PayloadAccess of {@link #VALUE_CONSTRUCTOR}; a
+     *  Predicate is a test whether the attribute holds a value. The emitter's one source for the lowering of a node
+     *  to the sum type; no transpiler reads it. Keyed by identity because two reads of one attribute in one rule are
+     *  equal records and need not be the same kind of read. */
+    public final java.util.IdentityHashMap<Object, AbsenceMarkerSite> absenceMarkerSites = new java.util.IdentityHashMap<>();
     public final List<Diagnostic> diagnostics = new ArrayList<>();
+
+    /** The constructor of the value of an attribute with absence markers, and the markers in their order: the sum type
+     *  such an attribute lowers to (RUNTIME-SEMANTICS ch. 9.5). */
+    public static final String VALUE_CONSTRUCTOR = "waarde";
+    public static final List<String> ABSENCE_MARKERS = List.of("onbekend", "niet van toepassing");
+
+    /** A node of {@link #absenceMarkerSites}: the type that declares the attribute with markers, the attribute and the
+     *  constructor of its sum type the node stands for. */
+    public record AbsenceMarkerSite(ObjectType declaringType, String attribute, String constructor) {}
 
     /** A copy of this model that holds every element of every collection (the elements are shared). The scoped IR
      *  document of the scenario lowering starts from it and drops only the forms its scope does not carry. The copy
@@ -926,6 +943,11 @@ public final class RegelSpraakModel {
          *  the calendar's own start point ("startend op dag 1 van maand 1") leaves it. The named form adopts the
          *  definition's, as it adopts the granularity and the count. */
         public final Map<String, String> attributeFixedStartPoint = new LinkedHashMap<>();
+        /** The absence markers an attribute admits ("(of onbekend of niet van toepassing)", grammar/DIVERGENCES.md,
+         *  "Afwezigheidsmarkeringen"), in the order of {@link RegelSpraakModel#ABSENCE_MARKERS}, keyed by its naam;
+         *  absent for an attribute without markers. The emitter writes such an attribute as a sum type
+         *  (RUNTIME-SEMANTICS ch. 9.5); the attribute's datatype here stays the datatype of its value. */
+        public final Map<String, List<String>> attributeMarkers = new LinkedHashMap<>();
         public final List<String> characteristics = new ArrayList<>();
         /** §13.3.6 the granularity of a temporal kenmerk's tijdlijn ("is duurzaam kenmerk voor elke dag"),
          *  keyed by its naam — the kenmerk analogue of {@link #attributeGranularity}. */
@@ -973,6 +995,19 @@ public final class RegelSpraakModel {
                 for (var e : m.entrySet())
                     if (e.getKey().equalsIgnoreCase(name)) return e.getValue();
             }
+            return null;
+        }
+
+        /** The absence markers of attribute {@code name} on this chain, or null for an attribute without them. */
+        public List<String> markersOf(String name) {
+            return onChain(t -> t.attributeMarkers, name);
+        }
+
+        /** The type of this chain that declares the absence markers of attribute {@code name}, or null. */
+        public ObjectType markerDeclaringType(String name) {
+            for (ObjectType t : chain())
+                for (String a : t.attributeMarkers.keySet())
+                    if (a.equalsIgnoreCase(name)) return t;
             return null;
         }
 

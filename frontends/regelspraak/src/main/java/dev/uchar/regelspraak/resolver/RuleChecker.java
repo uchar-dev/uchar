@@ -4827,6 +4827,13 @@ final class RuleChecker {
         // §13.2.14: the doel is the WRITE-TARGET context an enumeratiewaarde takes its domain from — the
         // same context the membership check below reads. Promoting BEFORE the ResolvedRule is built is
         // what puts the typed literal on the wire (ExpressionBuilder.enumAgainstContext).
+        // a marker written as the value (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"): a literal the emitter
+        // writes as a Construct of the marker; the typing below judges a value, which a marker is not
+        Expr.Literal marker = absenceMarkerValue(targetExpr, value);
+        if (marker != null) {
+            model.resolvedRules.add(new ResolvedRule(name, category, targetExpr, marker, condition, validity, currentSourceAnnotations));
+            return;
+        }
         Expr valueExpr = ExpressionBuilder.enumAgainstContext(builder.buildResult(value), targetExpr.type());
         model.resolvedRules.add(new ResolvedRule(name, category, targetExpr, valueExpr, condition, validity, currentSourceAnnotations));
         Datatype targetType = targetExpr.type(), valueType = valueExpr.type();
@@ -4854,6 +4861,21 @@ final class RuleChecker {
             error = gridFit((Expr.AttributeReference) targetExpr, valueExpr, condition);
         if (error == null) passedGates.add(new PassedGate(targetType, outside, valueExpr, report));
         else model.diagnostics.add(report.apply(error));
+    }
+
+    /** The marker {@code value} writes into {@code target} where the target is an attribute with absence markers and the
+     *  value is one of them as written ("moet gesteld worden op niet van toepassing"), recorded in
+     *  {@link RegelSpraakModel#absenceMarkerSites}; null otherwise. */
+    private Expr.Literal absenceMarkerValue(Expr target, ExpressieContext value) {
+        if (!(target instanceof Expr.AttributeReference a) || a.objectType() == null || value == null) return null;
+        java.util.List<String> markers = a.objectType().markersOf(a.attribute());
+        if (markers == null) return null;
+        String word = String.join(" ", src(value).trim().toLowerCase(java.util.Locale.ROOT).split("\\s+"));
+        if (!markers.contains(word)) return null;
+        ObjectType declaring = a.objectType().markerDeclaringType(a.attribute());
+        Expr.Literal marker = new Expr.Literal(word, a.type(), source(value));
+        model.absenceMarkerSites.put(marker, new AbsenceMarkerSite(declaring, declaring.attributeName(a.attribute()), word));
+        return marker;
     }
 
     /** The precision gate of every write it passed at registration, judged again over all writers: a temporal total of
@@ -6239,6 +6261,8 @@ final class RuleChecker {
      *  neither stays Unresolved (an honest marker), never a silently-true gate. */
     private Condition characteristicCheckPredicate(Expr lhs, KaleNaamContext nameCtx, boolean withIndefiniteArticle, boolean hasVerb,
                                       Condition.WholePeriod period, Source source) {
+        Condition marked = absenceMarkerTest(lhs, nameCtx, withIndefiniteArticle, hasVerb, period, source);
+        if (marked != null) return marked;
         Condition c = characteristicCheckPredicateBare(lhs, nameCtx, withIndefiniteArticle, hasVerb, source);
         if (period == null || c == null) return c;
         // §8.2 "is/heeft gedurende het gehele jaar een <kenmerk>" attaches the whole-period qualifier ONLY to a
@@ -6253,6 +6277,33 @@ final class RuleChecker {
                 // staat er omdat zij de weigering van DEZE route beschrijft; dat checkWholePeriod
                 // vervolgens harder ingrijpt is haar besluit, niet dat van deze plek. Gemeten 2026-09-19.
                 : new Condition.Unresolved(source, Msg.frontend("RGS-092.whole-period-role"));
+    }
+
+    /** A test of an attribute with absence markers (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"; RUNTIME-SEMANTICS
+     *  ch. 9.5), read where the grammar reads a characteristic check of an expression: "zijn taxatie onbekend is" and
+     *  "… niet van toepassing is" compare the attribute with the marker, "… een waarde heeft" tests that it holds a
+     *  value. The operand of the last is the read of the value the emitter writes as a PayloadAccess, and both nodes
+     *  are recorded in {@link RegelSpraakModel#absenceMarkerSites}. A marker the attribute does not declare, and a test
+     *  of a value under the whole-period qualifier, stay the unresolved check they are without the markers. Null for a
+     *  sentence that is no such test. */
+    private Condition absenceMarkerTest(Expr lhs, KaleNaamContext nameCtx, boolean een, boolean hasVerb,
+                                        Condition.WholePeriod period, Source source) {
+        if (!(lhs instanceof Expr.AttributeReference a) || a.objectType() == null || nameCtx == null) return null;
+        java.util.List<String> markers = a.objectType().markersOf(a.attribute());
+        if (markers == null) return null;
+        ObjectType declaring = a.objectType().markerDeclaringType(a.attribute());
+        String attribute = declaring.attributeName(a.attribute());
+        String word = String.join(" ", src(nameCtx).trim().toLowerCase(java.util.Locale.ROOT).split("\\s+"));
+        if (een && hasVerb && word.equals(RegelSpraakModel.VALUE_CONSTRUCTOR)) {
+            if (period != null) return null;
+            Condition.Predicate test = new Condition.Predicate(Condition.PredicateKind.GEVULD, a, null, source);
+            model.absenceMarkerSites.put(test, new AbsenceMarkerSite(declaring, attribute, RegelSpraakModel.VALUE_CONSTRUCTOR));
+            return test;
+        }
+        if (een || hasVerb || !markers.contains(word)) return null;
+        Expr.Literal marker = new Expr.Literal(word, a.type(), source(nameCtx));
+        model.absenceMarkerSites.put(marker, new AbsenceMarkerSite(declaring, attribute, word));
+        return new Condition.Comparison(Condition.Operator.GELIJK, a, marker, period, source);
     }
 
     /** Flip the negatie of a resolved kenmerk-/rolcheck (the §8.1.8.3 "is niet een &lt;k&gt;" negation). The positive

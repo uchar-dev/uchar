@@ -235,6 +235,8 @@ public final class IrEmitter {
 
         w.key("domains").beginArray();
         for (var entry : m.domains.entrySet()) domain(entry.getKey(), entry.getValue());
+        for (ObjectType ot : m.objectTypes.values())
+            for (String a : ot.attributeMarkers.keySet()) markerDomain(ot, a);
         w.endArray();
 
         w.key("unitSystems").beginArray();
@@ -337,10 +339,14 @@ public final class IrEmitter {
 
     // --- §4 prioritized defaults (extension) -------------------------------
 
+    /** The attribute target of the defaults group being emitted, which its consequences write; null elsewhere. */
+    private String currentDefaultsAttribute;
+
     private void prioritizedDefaults(PrioritizedDefaults p) {
         // the path of a default's own-attribute/characteristic read resolves against the group subject
         ObjectType previousSubject = currentSubject;
         currentSubject = m == null ? null : m.objectTypes.get(p.subject());
+        currentDefaultsAttribute = p.attribute();
         w.beginObject();
         w.key("node").value("PrioritizedDefaults");
         w.key("name").value(p.name());
@@ -356,6 +362,7 @@ public final class IrEmitter {
         originAndDesignations(RegelSpraakModel.Designatable.form(p.name()));
         w.endObject();
         currentSubject = previousSubject;
+        currentDefaultsAttribute = null;
     }
 
     // `default` is a Java keyword, so the emit method for a Default node is spelled dflt.
@@ -368,7 +375,9 @@ public final class IrEmitter {
         if (d.decision() != null) w.key("decision").value(d.decision().booleanValue());
         // absent on the initialisation default and on a group default (IR-SPEC ch. 6.1)
         if (d.condition() != null) { w.key("justification"); condition(d.condition()); }
-        if (d.consequence() != null) { w.key("consequence"); expr(d.consequence()); }  // attribute defaults only
+        if (d.consequence() != null) {   // attribute defaults only
+            w.key("consequence"); writtenValue(currentSubject, currentDefaultsAttribute, d.consequence());
+        }
         if (d.initialisation()) w.key("initialisation").value(true);
         if (d.exceptions() != null) {
             w.key("exceptions").beginObject();
@@ -416,7 +425,9 @@ public final class IrEmitter {
             w.beginObject();
             w.key("node").value("Attribute");
             w.key("name").value(a);
-            w.key("datatype"); datatype(entry.getValue(), true);
+            w.key("datatype");
+            if (ot.attributeMarkers.containsKey(a)) sumType(ot, a);
+            else datatype(entry.getValue(), true);
             String plural = ot.attributePlural.get(a);
             if (plural != null) w.key("plural").value(plural);
             List<String> dimensions = ot.attributeDimensions.get(a);
@@ -705,6 +716,72 @@ public final class IrEmitter {
     /** A datatype at a type annotation: the {@code type} of an expression node. */
     private void datatype(Datatype dt) { datatype(dt, false); }
 
+    // --- absence markers (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"; RUNTIME-SEMANTICS ch. 9.5) ------------
+
+    /** The domain an attribute with absence markers lowers to: one per attribute, so its markers never pass to
+     *  another attribute by the nominal identity of sum types (IR-SPEC WF-061). */
+    public static String markerDomainName(ObjectType declaring, String attribute) {
+        return attribute + " van een " + declaring.name;
+    }
+
+    /** The constructors of that domain: the value with the attribute's datatype as payload, then the markers. */
+    private void constructors(ObjectType declaring, String attribute) {
+        w.key("constructors").beginArray();
+        w.beginObject();
+        w.key("name").value(RegelSpraakModel.VALUE_CONSTRUCTOR);
+        w.key("payload"); datatype(declaring.attributes.get(attribute), true);
+        w.endObject();
+        for (String marker : declaring.attributeMarkers.get(attribute)) {
+            w.beginObject();
+            w.key("name").value(marker);
+            w.key("payload").valueNull();
+            w.endObject();
+        }
+        w.endArray();
+    }
+
+    /** The sum type at a use site: the attribute's datatype, a Construct's and a PayloadAccess's base. */
+    private void sumType(ObjectType declaring, String attribute) {
+        w.beginObject();
+        w.key("node").value("SumType");
+        w.key("domain").value(markerDomainName(declaring, attribute));
+        constructors(declaring, attribute);
+        w.endObject();
+    }
+
+    private void markerDomain(ObjectType declaring, String attribute) {
+        w.beginObject();
+        w.key("node").value("Domain");
+        w.key("name").value(markerDomainName(declaring, attribute));
+        w.key("datatype").beginObject();
+        w.key("node").value("SumType");
+        constructors(declaring, attribute);
+        w.endObject();
+        w.endObject();
+    }
+
+    /** The value of a write into {@code target}: where the target has absence markers, a marker is a Construct of it
+     *  and every other value a Construct of the value constructor, so a leeg value leaves the Construct leeg and
+     *  decides nothing (RUNTIME-SEMANTICS ch. 9.1, 9.5); elsewhere the value itself. */
+    private void writtenValue(ObjectType type, String attribute, Expr value) {
+        ObjectType declaring = type == null || attribute == null ? null : type.markerDeclaringType(attribute);
+        RegelSpraakModel.AbsenceMarkerSite site = m.absenceMarkerSites.get(value);
+        if (declaring == null) { expr(value); return; }
+        String name = declaring.attributeName(attribute);
+        w.beginObject();
+        w.key("node").value("Construct");
+        w.key("type"); sumType(declaring, name);
+        if (site != null && value instanceof Expr.Literal) {
+            w.key("constructor").value(site.constructor());
+            w.key("argument").valueNull();
+        } else {
+            w.key("constructor").value(RegelSpraakModel.VALUE_CONSTRUCTOR);
+            w.key("argument"); expr(value);
+        }
+        sourceReference(value.source().snippet());
+        w.endObject();
+    }
+
     /** IR-SPEC ch. 2.4. A number is a {@code Number}, its sign always written (a number declared without one is
      *  unspecified); a percentage is a {@code Number} whose unit is '%' — the built-in one when it has none — and at a
      *  {@code declaration} position (the datatype of an attribute, a parameter or a domain) it carries the presentation
@@ -873,6 +950,34 @@ public final class IrEmitter {
 
     private void expr(Expr e) {
         if (e == null) { w.valueNull(); return; }
+        RegelSpraakModel.AbsenceMarkerSite site = m == null ? null : m.absenceMarkerSites.get(e);
+        if (site != null && e instanceof Expr.Literal l) {
+            // a marker tested beside its attribute (RUNTIME-SEMANTICS ch. 9.3, 9.5)
+            w.beginObject();
+            w.key("node").value("Construct");
+            w.key("type"); sumType(site.declaringType(), site.attribute());
+            w.key("constructor").value(site.constructor());
+            w.key("argument").valueNull();
+            sourceReference(l.source().snippet());
+            w.endObject();
+            return;
+        }
+        if (site != null && e instanceof Expr.AttributeReference r) {
+            // a read of the value of an attribute with absence markers (RUNTIME-SEMANTICS ch. 9.5, IR-SPEC WF-127)
+            w.beginObject();
+            w.key("node").value("PayloadAccess");
+            w.key("type"); datatype(site.declaringType().attributes.get(site.attribute()));
+            w.key("base"); bareExpr(r);
+            w.key("constructor").value(site.constructor());
+            sourceReference(r.source().snippet());
+            w.endObject();
+            return;
+        }
+        bareExpr(e);
+    }
+
+    /** {@link #expr} without the lowering of the absence markers. */
+    private void bareExpr(Expr e) {
         w.beginObject();
         switch (e) {
             // IR-SPEC ch. 4.1: the value is the variant its type names (the value union of uchar-case-v0); the
@@ -1482,7 +1587,7 @@ public final class IrEmitter {
         w.beginObject();
         w.key("validity"); validity(r.validity());
         w.key("target"); expr(r.target());
-        w.key("value"); expr(r.value());
+        w.key("value"); writtenValue(d.objectType(), d.attribute(), r.value());
         if (r.condition() != null) { w.key("condition"); condition(r.condition()); }
         w.key("initialisation").value(r.kind() == ResolvedRule.Kind.INITIALISATIE);
         if (r.kind() == ResolvedRule.Kind.GELIJKSTELLING || r.kind() == ResolvedRule.Kind.BEREKENING)

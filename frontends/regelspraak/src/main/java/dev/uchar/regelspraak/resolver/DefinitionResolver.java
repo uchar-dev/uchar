@@ -506,6 +506,13 @@ public final class DefinitionResolver {
             reportCapitalCollision(ot, name, ot.attributes.keySet(), a.getStart().getLine());
             ot.attributes.put(name, withUnit(datatypeOf(a.datatype(), a.domeinNaam()), a, name));
             if (a.meervoudsvorm() != null) ot.attributePlural.put(name, src(a.meervoudsvorm())); // §3.3, for §8.1.6
+            // the absence markers (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"), in their canonical order
+            if (a.afwezigheidsmarkering() != null) {
+                AfwezigheidsmarkeringContext marking = a.afwezigheidsmarkering();
+                ot.attributeMarkers.put(name, marking.OF_ONBEKEND() != null ? List.of("onbekend")
+                        : marking.OF_NIET_VAN_TOEPASSING() != null ? List.of("niet van toepassing")
+                        : RegelSpraakModel.ABSENCE_MARKERS);
+            }
             // §13.3.7 "gedimensioneerd met <dimensie> (en <dimensie>)*": record the attribute's dimensions
             // in declared order so a reference / aggregation can range over their label sets (§3.6).
             if (!a.dimensieNaam().isEmpty())

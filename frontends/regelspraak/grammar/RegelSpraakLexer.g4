@@ -61,6 +61,13 @@ BIJVOEGLIJK : '(bijvoeglijk)' ; // §13.3.2.3
 // meaning. Inside a comment, an enumeration literal or a text literal it is never lexed at all. Inertness on the
 // sources inside and outside this repository is MEASURED, see DIVERGENCES.md §7.
 MAG_OPGEGEVEN_WORDEN : '(mag' WSP 'opgegeven' WSP 'worden)' ;
+// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"): the absence markers of an attribute,
+// the last element of its declaration in the place of the opgave marker. Whole tokens with their parentheses, as the
+// opgave marker: they reserve no name word, so 'of', 'onbekend', 'niet', 'van' and 'toepassing' keep lexing as before
+// everywhere else. The longest match takes the declaration of both markers.
+OF_ONBEKEND_OF_NIET_VAN_TOEPASSING : '(of' WSP 'onbekend' WSP 'of' WSP 'niet' WSP 'van' WSP 'toepassing)' ;
+OF_ONBEKEND                        : '(of' WSP 'onbekend)' ;
+OF_NIET_VAN_TOEPASSING             : '(of' WSP 'niet' WSP 'van' WSP 'toepassing)' ;
 MV_START    : '(mv:'          ; // §13.2.29 naamwoord plural opener
 // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Vocabulaires en benamingen"): the opener of a designation
 // '(<vocabulaire>: <benaming>)', and in a vocabulary head of its '(taal: <code>)'. A WHOLE token up to its colon, as

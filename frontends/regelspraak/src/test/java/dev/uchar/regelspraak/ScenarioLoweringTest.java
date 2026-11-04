@@ -386,6 +386,7 @@ class ScenarioLoweringTest {
             de aanvangsdatum Datum in dagen;
             de wachtdagen Numeriek (geheel getal) voor elke wachtjaar;
             de romplengte Numeriek (geheel getal);
+            de keurwaarde Numeriek (geheel getal) (of onbekend);
             is gekeurd kenmerk (bijvoeglijk);
             is gemeld kenmerk (bijvoeglijk);
 
@@ -411,6 +412,11 @@ class ScenarioLoweringTest {
         Regel romplengte
             geldig altijd
                 De romplengte van een Schuit moet gesteld worden op de vondstdrempel.
+
+        Regel keurwaarde
+            geldig altijd
+                De keurwaarde van een Schuit moet gesteld worden op onbekend
+                indien hij gemeld is.
 
         Regel keuring
             geldig altijd

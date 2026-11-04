@@ -2267,6 +2267,7 @@ final class ExpressionBuilder {
                 return c != null ? c : new Condition.Unresolved(source(p), null);
             }
             Condition filter = identityFilter(p);
+            if (filter == null) filter = elementValueTest(p, elem, arguments);
             if (filter == null) filter = elementCharacteristicCheckFilter(p, elem, true);
             // §5.6 getalpredicaat "die <op> <expr>" (e.g. "die kleiner zijn dan 18"): a comparison of the AGGREGATED
             // attribute (the LHS the operator folds) -> a Condition.Comparison the accumulate source pattern constrains.
@@ -2704,6 +2705,38 @@ final class ExpressionBuilder {
             return null;
         }
         return comparison(RuleChecker.toOperator(cmp), lhs, rhs, source(p));
+    }
+
+    /** "de som van de taxatie van alle vondsten van de Jutter die een waarde hebben" (grammar/DIVERGENCES.md,
+     *  "Afwezigheidsmarkeringen"): over an attribute with absence markers the subselectie "die een waarde hebben"
+     *  tests per element that the aggregated attribute holds a value, a test recorded in
+     *  {@link RegelSpraakModel#absenceMarkerSites} whose operand is a fresh read of the element's attribute, as
+     *  {@link #elementComparison} builds one. Null for any other predicaat or operand. */
+    private Condition elementValueTest(PredicaatContext p, ObjectType elem, List<Expr> arguments) {
+        if (arguments.size() != 1 || !(arguments.get(0) instanceof Expr.AttributeReference agg)
+                || agg.objectType() != elem || agg.navigationRole() != null || elem.markersOf(agg.attribute()) == null)
+            return null;
+        boolean een, has;
+        KaleNaamContext name;
+        if (p.toplevelOperator() != null && p.toplevelOperator().gehelePeriodevergelijking() == null) {
+            ToplevelOperatorContext o = p.toplevelOperator();
+            een = o.EEN() != null;
+            has = o.HEEFT() != null || o.HEBBEN() != null;
+            name = o.kaleNaam();
+        } else if (p.nonToplevelOperator() != null && p.nonToplevelOperator().gehelePeriodevergelijking() == null) {
+            NonToplevelOperatorContext o = p.nonToplevelOperator();
+            een = o.EEN() != null;
+            has = o.HEEFT() != null || o.HEBBEN() != null;
+            name = o.kaleNaam();
+        } else return null;
+        if (!een || !has || name == null
+                || !src(name).trim().equalsIgnoreCase(RegelSpraakModel.VALUE_CONSTRUCTOR)) return null;
+        ObjectType declaring = elem.markerDeclaringType(agg.attribute());
+        Expr lhs = new Expr.AttributeReference(agg.attribute(), elem, "", null, agg.type(), source(p));
+        Condition.Predicate test = new Condition.Predicate(Condition.PredicateKind.GEVULD, lhs, null, source(p));
+        model.absenceMarkerSites.put(test, new RegelSpraakModel.AbsenceMarkerSite(declaring,
+                declaring.attributeName(agg.attribute()), RegelSpraakModel.VALUE_CONSTRUCTOR));
+        return test;
     }
 
     /** §4.12-4.15: type-check the operand list of a value/date aggregation. min/max demand all
