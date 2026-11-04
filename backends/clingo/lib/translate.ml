@@ -8574,7 +8574,25 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
   let inwin = Printf.sprintf "dki%d" id in
   emit ctx "%s(%s) :- %s(%s,DKD,_), DKD >= %d, DKD <= %d." inwin subject fwd subject lo hi;
   emit ctx "%s(%s) :- %s(%s,DKD,_), DKD >= %d, DKD <= %d." inwin subject bwd subject lo hi;
-  let ia = String.concat ", " (Printf.sprintf "%s(%s)" inwin subject :: reach) in
+  (* a walk that reaches a day on which the condition faults stops there, as
+     ref's does, so no fence after it fires: [dkx] says it reaches one *)
+  let stopped =
+    if faults = [] then []
+    else begin
+      let x = Printf.sprintf "dkx%d" id in
+      List.iter
+        (fun (fp, _) ->
+          emit ctx
+            "%s(%s) :- %s(%s,DKD,DKM), %s(DKF), DKF > DKD, #count { DKX : %s(DKX,DKJ), DKX > DKD, DKX < DKF } < DKM."
+            x subject fwd subject fp tbl;
+          emit ctx
+            "%s(%s) :- %s(%s,DKD,DKM), %s(DKF), DKF < DKD, #count { DKX : %s(DKX,DKJ), DKX < DKD, DKX > DKF } < DKM."
+            x subject bwd subject fp tbl)
+        faults;
+      [ Printf.sprintf "not %s(%s)" x subject ]
+    end
+  in
+  let ia = String.concat ", " ((Printf.sprintf "%s(%s)" inwin subject :: reach) @ stopped) in
   (* the REACH fence, read off the table. Three ways it fires, and they are
      the three ways ref's walk hits it: no match within the reach of the
      start; a gap wider than the reach along the way; and — the one a table

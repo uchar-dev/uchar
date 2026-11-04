@@ -17831,6 +17831,16 @@ let () =
   faults_at_solving ~code:("EF-014", [ ("parameter", "grensdatum") ])
     ~name:"day-kind step: two days on, the walk reads a day that faults (dk-walk-2)" ~ir:step
     ~case_text:(case "2" [ pf_cons ]) ~needle:(pf_reason "grensdatum") ();
+  (* the walk stops at that day, so no fence after it fires *)
+  (let doc, c = load_pair ~ir:step ~case_text:(case "2" [ pf_cons ]) in
+   let name = "day-kind step: the walk that faults passes no reach fence (dk-walk-2)" in
+   match translate doc c with
+   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (translation fault: " ^ m ^ ")") false
+   | program ->
+       let ws = Solve.diagnostic program in
+       check
+         (name ^ " (" ^ String.concat "; " ws ^ ")")
+         (ws <> [] && not (List.exists (fun w -> Uchar_ref.Case.contains ~needle:"day-kind walk: no day of the kind" w) ws)));
   both_answer ~name:"day-kind step of 0 walks no day (dk-walk-0)" ~ir:step
     ~case_text:(case "0" [ uitkomst "2026-03-10"; pf_cons ]);
   let nevelsdagen =

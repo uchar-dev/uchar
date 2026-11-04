@@ -390,8 +390,11 @@ spec bug.
   each instance of the type the uniqueness keys (EF-024), so over a type
   without instances nothing. The ambiguous back-link of a creation
   (EF-018) faults in translation, where ref faults wherever the creation
-  is run. Where a walk reaches a day that faults, the reach fence of the
-  day kind can fire beside it, a second code at the head of the report.
+  is run. A walk that reaches a day that faults stops there, so no reach
+  fence or window limit of the step fires after it; where the walk would
+  pass the reach of 40 000 days without a day of the kind before it gets to
+  that day, ref faults on the reach fence (EF-009) and this backend on the
+  day, a limit no document of corpus or suite reaches.
 - Two or more computing rules on one target whose populations share a
   concrete type (on one type, or on a type and its subtype) would give
   the target two values in one model wherever two of them apply to one
