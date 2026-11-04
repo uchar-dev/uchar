@@ -47,8 +47,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code ref/bin/runner.exe} and {@code backends/clingo/bin/clingo_runner.exe}): ref gives terug 99, 7, 7, 7 and 5,
  * faults on the two rules in the sentence of ch. 5.7, the writers in the order of the document, and passes the sister
  * document in all six orders. clingo agrees on 7 without a writer, on 7 with the rule that computes leeg, on 5, on the
- * fault and on the sister document, and differs from ref on the made object where a writer meets the creation's value:
- * 106 with the standing rule and 12 with the initialisation.
+ * fault and on the sister document, and on the made object where a writer meets the creation's value: 99 with the
+ * standing rule and 7 with the initialisation (measured 2026-11-04 on the same forms written in RegelSpraak).
  *
  * <p><b>Red before the fix</b> (measured 2026-10-09 on {@code 1738bf61}, the tests unchanged): four of the seven
  * tests. The standing rule: "Schrijversconflict geen fixpunt: twee schrijvers van één doel geven verschillende waarden
