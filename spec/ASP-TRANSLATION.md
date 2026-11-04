@@ -1469,8 +1469,9 @@ date: the body is underivable, leeg for free. An uncovered *vintage*
 is the opposite — the shared `parameterset_check` fail-fast, run
 before emission (gate-8 witness
 `corpus/red/vintage-uncovered-date`). A point read needs the
-full timeline in the case; the asOfDate-bucket scalar cannot serve it
-and faults (the ch. 4.3a convention: executors fault, never guess).
+full timeline in the case (the ch. 4.3a convention: executors fault,
+never guess): the asOfDate-bucket scalar faults with EF-037 where the
+read is reached (below), an absent attribute at translation.
 
 **Pro-rata** (tijdsevenredig-deel, ch. 3.7): per fold N, the bucket
 calendar as data (`prN_b(bs,bn,days)` — every bucket in the span of the case's
@@ -1537,10 +1538,22 @@ declarations per period: a sum over the members keeps its attribute's unit
 (§4.6), not the integration of the §7.1 fold (`eff_unit ~per_period`). A form
 that reads a timeline whole — an own temporal attribute, the members of a
 sum, the tested attribute of a condition per period, the base of a pro-rata
-part, the compared timeline of a gedurende clip and the timeline of the
-whole-period qualifier, also at the end of a path — faults at translation
-with EF-037 where the case gives the asOfDate-bucket scalar
-(RUNTIME-SEMANTICS ch. 8.4, 5.7b), over every instance of the type. Each operator applies its ch. 1.2
+part, the value and the compared timeline of a gedurende clip, a member of
+a per-element total, a point read, the timeline of the whole-period
+qualifier, also at the end of a path, and the input of an initialisation
+default per day — faults with EF-037 where the case gives the
+asOfDate-bucket scalar (RUNTIME-SEMANTICS ch. 8.4, 5.7b), where ref
+evaluates the form: one `viol/2` witness per instance that gives the
+scalar, in ref's sentence and with the instance as its subject, whose body
+is the reach of the read — the condition that gates the rule, the reach of
+a default's consequence or of its justification and the initialisation
+default's input (S10), or inside a condition or a value the reach of the
+unbound-parameter guard (S5) — with the path or the set from the subject
+to the instance. An unbound parameter of the period arithmetic,
+time-dependent or a scalar operand, faults (EF-014) under the same reach.
+Where an atom of that reach hangs on the order of the members a creation
+adds, the fault is raised at translation, over every instance that gives
+the scalar. Each operator applies its ch. 1.2
 empty rule per period: plus, min, maal and percentage van coalesce a leeg
 operand to 0 (`…_z`, `not …_d`), verminderd met only its right; a division
 writes 0 where the dividend is leeg, and where it is filled over a leeg
@@ -1706,7 +1719,12 @@ initialisation default's justification is a period the input leaves
 empty (`grpG_in/3`). The decided periods outside a conflict are written
 in maximal runs as `tl/5` and as the group's `wtl/6`, so the case input
 stands on every other period (S9). A deposit of a default stands where
-it decides on some period.
+it decides on some period. A consequence is evaluated where its default
+is reached and justified on some period (`ndN_jrK/1`), a justification
+and the input the initialisation default reads where its default is
+reached on some period (`ndN_rchK/1`), and a fault in them fires only
+there (`corpus/golden/jutterswet-gevolg-buiten-de-beurt`,
+`corpus/red/jutterswet-emmerscalair-gevolg`).
 
 Witnesses: `jutterswet-hardheid` (the §4.1 hardship pattern),
 `jutterswet-toelagegronden`, `jutterswet-uitsluiting`,
