@@ -1,0 +1,84 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "toelage": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "5"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "kustwacht": [
+            {
+              "from": "2025-01-01",
+              "to": "2025-05-01"
+            }
+          ],
+          "stormwacht": [
+            {
+              "from": "2025-03-01",
+              "to": "2025-07-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "toelage",
+      "timeline": [
+        {
+          "from": "2025-01-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-05-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-05-01",
+          "to": "2025-07-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-07-01",
+          "to": "2026-01-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "Jutter.toelage",
+      "label": "J1"
+    }
+  ]
+}

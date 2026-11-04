@@ -12725,6 +12725,48 @@ let () =
     [ ("WV-3.11-leeg-beslist-niets", "one-fires-empty"); ("WV-3.11-leeg-beslist-niets-versie", "versioned-fires-empty");
       ("WV-3.11-leeg-beslist-niets-naast-waarde", "empty-and-value") ]
 
+(* WV-7.11-opgave-per-dag: a defaults group on a timeline target decides per
+   day: on every day the highest default that decides that day wins
+   (RUNTIME-SEMANTICS ch. 7.11), on the golden jutterswet-opgave-per-periode. The
+   strandloon for every month carries the marker "(mag opgegeven worden)", and
+   "het strandloon moet gesteld worden op 20 van dd. 01-03-2025 tot dd.
+   01-06-2025" computes it. The opgave 10 on every month of 2025: 10 on the
+   whole of 2025. The opgave 10 on January and February alone: 10 there, 20 in
+   March to May, leeg elsewhere. Without an opgave: 20 in March to May. Beside
+   the input 99 on the strandloon itself for 2025: 10, 20, and 99 from June,
+   where nothing above the virtual input default decides. The stormtoelage, 30
+   "gedurende de tijd dat hij stormwacht is" and initialised on 0: the
+   initialisation default decides every day the input leaves empty *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let g = "corpus/golden/jutterswet-opgave-per-periode/" in
+  List.iter
+    (fun (ident, c) -> plays ~ident ~ir:(read (g ^ "ir.json")) ~case_data:(read (g ^ c ^ ".json")) (fun _ -> ()))
+    [ ("WV-7.11-opgave-per-dag", "case1-opgave-heel-2025");
+      ("WV-7.11-opgave-per-dag-januari-februari", "case2-opgave-januari-februari");
+      ("WV-7.11-opgave-per-dag-zonder-opgave", "case3-zonder-opgave");
+      ("WV-7.11-opgave-per-dag-invoer-op-het-doel", "case4-invoer-op-het-doel");
+      ("WV-7.11-initialisatie-per-dag", "case5-stormtoelage-per-dag") ]
+
+(* WV-7.11-uitzondering, -ongeordend, -afwijking and -versie: the forms of the
+   dialect on a timeline target, read per day (RUNTIME-SEMANTICS ch. 7.11), on
+   the documents of ref/test/fixtures/defaults-per-day. An exception 30 while
+   kustwacht above "zijn basisloon": 10, 30, 10, and beside the input 7 where
+   there is no basisloon: 7, 30, 7. Two unordered members, 10 while kustwacht
+   (January to April) and 20 while stormwacht (March to June), over the input 5
+   on 2025: 10, the input 5 in March and April, where they differ, 20, 5, and
+   one fact Jutter.toelage. A form-a default 30 with unordered exception groups
+   40 and 50 above the base 5: 5, 30, 40, nothing in April, where the groups
+   differ and settle the default, 50, 30, 5, and one fact Jutter.strandloon/0. A
+   group "geldig vanaf 2025" on 2025-07-01: 5, 30, 5 *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/defaults-per-day/" in
+  List.iter
+    (fun (ident, d) -> plays ~ident ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
+    [ ("WV-7.11-uitzondering", "uitzondering"); ("WV-7.11-ongeordend", "ongeordend"); ("WV-7.11-afwijking", "afwijking");
+      ("WV-7.11-versie", "geldig-vanaf") ]
+
 (* WV-5.12-voorwaarde-per-periode: a condition read per period has, at each of
    its nodes, the part of all time in which it holds, and the value of the rule
    is the timeline it writes, cut to it; the nodes under the value read the

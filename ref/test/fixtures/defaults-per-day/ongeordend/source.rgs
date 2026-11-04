@@ -1,0 +1,14 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is kustwacht kenmerk (bijvoeglijk) voor elke maand;
+    is stormwacht kenmerk (bijvoeglijk) voor elke maand;
+    de toelage Numeriek (geheel getal) voor elke maand;
+
+Uitzonderingen ongeordend:
+Regel toelage voor kustwacht
+    geldig altijd
+        De toelage van een Jutter moet gesteld worden op 10
+        indien hij kustwacht is.
+Regel toelage voor stormwacht
+    geldig altijd
+        De toelage van een Jutter moet gesteld worden op 20
+        indien hij stormwacht is.

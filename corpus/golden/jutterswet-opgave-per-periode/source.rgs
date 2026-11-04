@@ -1,0 +1,16 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is stormwacht kenmerk (bijvoeglijk) voor elke maand;
+    het strandloon Numeriek (geheel getal) voor elke maand (mag opgegeven worden);
+    de stormtoelage Numeriek (geheel getal) voor elke maand (mag opgegeven worden);
+
+Regel strandloon in het voorjaar
+    geldig altijd
+        Het strandloon van een Jutter moet gesteld worden op 20 van dd. 01-03-2025 tot dd. 01-06-2025.
+
+Regel stormtoelage
+    geldig altijd
+        De stormtoelage van een Jutter moet gesteld worden op 30 gedurende de tijd dat hij stormwacht is.
+
+Regel geen stormtoelage
+    geldig altijd
+        De stormtoelage van een Jutter moet geïnitialiseerd worden op 0.

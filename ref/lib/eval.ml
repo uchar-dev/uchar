@@ -4341,6 +4341,182 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
 type defaults_decision = Char_dec of bool | Attr_dec of Value.t
 type chain_result = Decided of defaults_decision | Conflict of string | Undecided
 
+(* --- a defaults group on a timeline target, read per day (RUNTIME-SEMANTICS ch. 7.11) --- *)
+
+(* What a chain or a group of defaults decides per day: the segments of the days
+   it decides, with the decided value, and per conflict key the days on which
+   its deciding members differ (ch. 7.2, 7.9). The two sets of days are
+   disjoint. *)
+type day_decisions = { decided : Timeline.t; conflicted : (string * (int * int) list) list }
+
+let no_days = { decided = []; conflicted = [] }
+let spans (tl : Timeline.t) = List.map (fun (s : Timeline.segment) -> (s.s_from, s.s_to)) tl
+
+(* the days a chain settles: where it decides or conflicts (ch. 7.9) *)
+let settled_days r = Timeline.merge_periods (spans r.decided @ List.concat_map snd r.conflicted)
+
+(* the days of [reach] outside [ps] *)
+let days_minus reach ps = Timeline.merge_periods (Timeline.intersect_periods reach (Timeline.complement_all ps))
+
+(* two results on disjoint days as one *)
+let join_days a b =
+  let both = a.conflicted @ b.conflicted in
+  { decided = List.sort (fun (x : Timeline.segment) (y : Timeline.segment) -> compare x.s_from y.s_from) (a.decided @ b.decided);
+    conflicted =
+      List.map
+        (fun k -> (k, Timeline.merge_periods (List.concat_map (fun (k', ps) -> if k' = k then ps else []) both)))
+        (List.sort_uniq compare (List.map fst both)) }
+
+(* The members of a group reconciled per day as ch. 7.2 reconciles them once: on
+   a day on which a member conflicts, that conflict propagates (the first
+   member's, in the order of the group); otherwise the members that decide that
+   day agree, and that is the group's decision, or differ, and that is a
+   conflict keyed [key]. *)
+let reconcile_days ~key (results : day_decisions list) =
+  let bounds r = List.concat_map (fun (v, t) -> [ v; t ]) (spans r.decided @ List.concat_map snd r.conflicted) in
+  let rec pairs = function c1 :: (c2 :: _ as rest) -> (c1, c2) :: pairs rest | _ -> [] in
+  let holds d ps = List.exists (fun (v, t) -> v <= d && d < t) ps in
+  let r =
+    List.fold_left
+      (fun acc (c1, c2) ->
+        match
+          List.find_map (fun r -> List.find_map (fun (k, ps) -> if holds c1 ps then Some k else None) r.conflicted) results
+        with
+        | Some k -> join_days acc { no_days with conflicted = [ (k, [ (c1, c2) ]) ] }
+        | None -> (
+            match List.filter_map (fun r -> match Timeline.read r.decided c1 with Value.Empty -> None | v -> Some v) results with
+            | [] -> acc
+            | v :: rest when List.for_all (Arith.equal v) rest ->
+                join_days acc { no_days with decided = [ { Timeline.s_from = c1; s_to = c2; s_value = v } ] }
+            | _ -> join_days acc { no_days with conflicted = [ (key, [ (c1, c2) ]) ] }))
+      no_days
+      (pairs (Timeline.with_open_ends (List.concat_map bounds results)))
+  in
+  { r with decided = Timeline.coalesce r.decided }
+
+(* The defaults group of a timeline attribute target (ch. 7.11): the scalar
+   reading of ch. 7.1, 7.2, 7.3 and 7.9 on every day (ch. 3.3). A default is
+   justified on the periods of its justification (ch. 3.10), and its consequence
+   is a producer of ch. 3.11, its timeline over all time; it decides the days on
+   which it is reached, is justified and its consequence reads a value. The
+   initialisation default is justified on the days on which the input facts
+   leave the target empty. The group is one writer of the target (ch. 3.11): it
+   writes the days it decides, and on every other day the target holds what the
+   fact base holds, its input or leeg, which is the virtual input default of
+   ch. 7.8 read per day. A conflict on a day writes nothing on that day and
+   deposits one §9.5 fact for the rule × subject. A default's evaluation is the
+   evaluation of its producers over all time, and its deposits stand where it
+   decides on at least one day. A default is evaluated only where it is reached
+   on some day, and its consequence only where it is justified on one. *)
+let run_defaults_timeline ?only env world ~world0 ~owner ~form ~target_form
+    (members : (prioritized_defaults * string list) list) =
+  let l0 = fst (List.hd members) in
+  let env = { env with subj = Some l0.pd_subject } in
+  let a = req "defaults attribute" l0.pd_attribute in
+  let target = Timeline.attr_grid env.doc (object_type env owner) a in
+  let target_unit = unit_of_datatype (attr_decl env ~otype:owner ~attr:a) in
+  let path_key = function
+    | [] -> target_form
+    | path -> target_form ^ "/" ^ String.concat "/" (List.map string_of_int path)
+  in
+  over_subjects ~exact:true ?only env world ~form ~otype:owner ~rule:target_form (fun w self cond_err ->
+      let speculate f =
+        let buf = ref [] in
+        let r = f (fun m -> buf := m :: !buf) in
+        (r, fun () -> List.iter cond_err (List.rev !buf))
+      in
+      let input_empty =
+        lazy
+          (match SMap.find_opt self.label world0.World.instances with
+          | None -> Timeline.all_time
+          | Some (i0 : World.instance) -> (
+              match World.timeline i0 a with
+              | Some tl ->
+                  Timeline.complement_all (spans (List.filter (fun (s : Timeline.segment) -> s.s_value <> Value.Empty) tl))
+              | None ->
+                  if World.attr i0 a = Value.Empty then Timeline.all_time
+                  else
+                    bucket_scalar ~attr:a i0
+                      "the initialisation default of the timeline target %S reads the input per day; the case supplies \
+                       only the asOfDate-bucket scalar of %S, which carries no period"
+                      a i0.label))
+      in
+      let own_days env (r : default) ~reach =
+        let justified, flush_j =
+          speculate (fun err ->
+              let periods c = cond_periods env w self ~err ~target ~attr:a c in
+              if r.default_initialisation then
+                match Timeline.intersect_periods reach (Lazy.force input_empty) with
+                | [] -> []
+                | empty -> ( match r.default_justification with Some c -> Timeline.intersect_periods empty (periods c) | None -> empty)
+              else periods (req "default justification" r.default_justification))
+        in
+        match Timeline.merge_periods (Timeline.intersect_periods reach justified) with
+        | [] -> no_days
+        | days -> (
+            let c = req "default consequence" r.default_consequence in
+            if not (is_period_arithmetic c) then
+              Value.fault
+                "the consequence of a default on the timeline target %S is not period arithmetic of ch. 3.4/3.5 (an \
+                 operator of ch. 1.2 other than the power, the sum over a set, an own attribute, a parameter, a \
+                 literal, or a rounding of one); the time-proportional part and the day count are not executed in a \
+                 default (no corpus case)"
+                a;
+            let tl, flush_c = speculate (fun err -> period_timeline env w self ~err ~target ~attr:a ~target_unit ~root:true c) in
+            match Timeline.clip (List.filter (fun (s : Timeline.segment) -> s.s_value <> Value.Empty) tl) days with
+            | [] -> no_days
+            | decided ->
+                flush_j ();
+                flush_c ();
+                { no_days with decided })
+      in
+      (* a chain over the days of [reach], highest default first: each default
+         decides on the days no higher default settled, a default with exception
+         groups reconciles them first and falls back to its own content on the
+         days they leave (ch. 7.9) *)
+      let rec decide_days ~env_at ~reach ~path (defaults : default list) =
+        let rec go i reach acc = function
+          | [] -> acc
+          | _ when reach = [] -> acc
+          | (r : default) :: rest ->
+              let env = env_at i in
+              let res =
+                match r.default_exceptions with
+                | Some egs ->
+                    let sub_path = path @ [ i ] in
+                    let sub =
+                      reconcile_days ~key:(path_key sub_path)
+                        (List.map
+                           (fun (eg : exception_group) -> decide_days ~env_at:(fun _ -> env) ~reach ~path:sub_path eg.eg_defaults)
+                           egs.egs_members)
+                    in
+                    let left = days_minus reach (settled_days sub) in
+                    if (r.default_decision <> None || r.default_consequence <> None) && left <> [] then
+                      join_days sub (own_days env r ~reach:left)
+                    else sub
+                | None -> own_days env r ~reach
+              in
+              go (i + 1) (days_minus reach (settled_days res)) (join_days acc res) rest
+        in
+        go 0 reach no_days defaults
+      in
+      let group =
+        reconcile_days ~key:(path_key [])
+          (List.map
+             (fun ((l : prioritized_defaults), origins) ->
+               if not (applies env l.pd_validity) then no_days
+               else
+                 decide_days
+                   ~env_at:(fun i -> { env with subj = Some (List.nth origins i) })
+                   ~reach:Timeline.all_time ~path:[] l.defaults)
+             members)
+      in
+      let w, changed = write_produced env w self ~form ~ot:owner ~attr:a group.decided in
+      ( List.fold_left
+          (fun w (rule, _) -> World.insert_error w ~rule ~subject:self.label ~code:(Some "EF-027"))
+          w group.conflicted,
+        changed ))
+
 (* ch. 7.1/7.2, the defaults group on one target (a singleton group is
    the plain prioritized defaults): each member decides independently —
    highest default that decides wins, with fall-through and speculative
@@ -4383,11 +4559,6 @@ let run_defaults_group ?only env world ~world0 ~owner
       ~default:l0.pd_subject
   in
   let target_form = declarant ^ "." ^ target_name in
-  (match l0.pd_attribute with
-  | Some a when Ir_v0.Checks.attr_temporal (object_type env owner) a ->
-      Value.fault
-        "temporal attribute %S as a defaults target: temporal writes are not implemented" a
-  | _ -> ());
   (* the WF-086 characteristic arm's defense-in-depth: a temporal characteristic target would
      otherwise evaluate silently atemporally *)
   (match l0.pd_characteristic with
@@ -4400,6 +4571,10 @@ let run_defaults_group ?only env world ~world0 ~owner
   | _ -> ());
   (* an attribute and a characteristic can share a name, and then a target form *)
   let form = owner ^ (if l0.pd_characteristic <> None then " characteristic " else " attribute ") ^ target_form in
+  match l0.pd_attribute with
+  | Some a when Ir_v0.Checks.attr_temporal (object_type env owner) a ->
+      run_defaults_timeline ?only env world ~world0 ~owner ~form ~target_form members
+  | _ ->
   over_subjects ~exact:true ?only env world ~form ~otype:owner ~rule:target_form (fun w self cond_err ->
       let speculate f =
         let buf = ref [] in
