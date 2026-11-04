@@ -158,7 +158,7 @@ and walk_cond ~own ?(scope = []) acc (c : condition_expr) =
 let union_kinds =
   [ "Literal"; "TextComposition"; "Binary"; "Aggregation"; "BuiltinCall"; "Rounding"; "Clamp";
     "AttributeReference"; "DimensionCellRead"; "ParameterReference"; "VariableReference";
-    "ContextValue"; "BoundDay"; "Unresolved"; "TemporalRead"; "Construct"; "Match"; "BinderRef";
+    "ContextValue"; "BoundDay"; "Unresolved"; "TemporalRead"; "Construct"; "Match"; "BinderRef"; "PayloadAccess";
     "StructLiteral"; "FieldAccess"; "ListLiteral"; "Lambda"; "IfThenElse"; "Invoke"; "Fold";
     "MapList"; "FilterList"; "ListLength"; "Let"; "InstanceSetUnion"; "Comparison"; "Predicate";
     "CharacteristicCheck"; "RoleMembership"; "TimeWindow"; "Compound"; "QuantifierFold";
