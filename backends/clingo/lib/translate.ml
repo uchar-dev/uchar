@@ -11238,7 +11238,7 @@ let translate_day_count ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~k ~day
    is leeg, or its fallback, where every member is (ch. 3.5). The written
    segments are the maximal runs of equal values; a period whose value is leeg
    writes nothing, the gap of ch. 3.1. *)
-let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~a (value : expr) =
+let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ctx ~subject ~ot ~a (value : expr) =
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   let target = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) a in
   let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
@@ -11517,6 +11517,9 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
     end
   in
   emit ctx "%s_val(%s,X,Y,V) :- %s_per(%s,X,Y), %s(%s,X,V)." p subject p subject root subject;
+  (* without [write] the caller reads the value per period, p_val, itself (a
+     default's consequence, ch. 7.11) *)
+  if write then begin
   (* the maximal runs: a cut between two periods of one value joins them *)
   emit ctx "%s_join(%s,Y) :- %s_val(%s,X,Y,V), %s_val(%s,Y,Z,V)." p subject p subject p subject;
   emit ctx "%s_start(%s,X) :- %s_val(%s,X,_,_), not %s_join(%s,X)." p subject p subject p subject;
@@ -11539,6 +11542,8 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
       head_body ctx (Printf.sprintf "tl(%s,%s,%s,%s,V)" subject (str a) l h) b;
       Option.iter (fun i -> head_body ctx (Printf.sprintf "wtl(%s,%s,%s,%s,V,%d)" subject (str a) l h i) b) writer)
     heads
+  end;
+  p
 
 (* the writers of the attribute target (ot, a) beside a natively translated
    initialisation (translate_rule's Initialisatie arm): the initialisations
@@ -11680,8 +11685,8 @@ let writer_timeline_conflicts ctx (r : resolved_rule) ~ot ~a =
    target. A piece lies inside a writer's segment or outside all of them, since
    every bound of a writer's segment inside the input segment is a cut. A
    writer writes no leeg segment, so a day on which its timeline reads leeg is
-   no day it decides. Emitted where some computing rule writes a timeline
-   target; a program without one has no inputtl/5 *)
+   no day it decides. Emitted where some computing rule or a defaults group
+   writes a timeline target; a program without one has no inputtl/5 *)
 let timeline_input ctx =
   if
     List.exists
@@ -11690,6 +11695,10 @@ let timeline_input ctx =
         | Some (Calculation | Equation), Some (ot, a) -> attr_temporal ctx ~otype:ot ~attr:a
         | _ -> false)
       ctx.doc.resolved_rules
+    || List.exists
+         (fun (l : prioritized_defaults) ->
+           match l.pd_attribute with Some a -> attr_temporal ctx ~otype:l.pd_subject ~attr:a | None -> false)
+         ctx.doc.prioritized_defaults
   then begin
     emit ctx "#defined wtl/6.";
     emit ctx "incut(S,A,F,T,F) :- inputtl(S,A,F,T,_).";
@@ -11704,12 +11713,17 @@ let timeline_input ctx =
 
 (* Whether the case input of the time-dependent attribute [a] on an instance of
    the concrete type [ot] enters beside its writers ([timeline_input]): a
-   computing rule that applies on the case's date writes it there *)
+   computing rule that applies on the case's date writes it there, or a
+   defaults group of [ot]'s chain does (ch. 7.11) *)
 let written_timeline ctx ~ot ~a =
   attr_temporal ctx ~otype:ot ~attr:a
-  &&
-  let _, comps, _ = init_writers ctx ~ot ~a in
-  comps <> []
+  && ((let _, comps, _ = init_writers ctx ~ot ~a in
+       comps <> [])
+     || List.exists
+          (fun (l : prioritized_defaults) ->
+            (match l.pd_attribute with Some la -> norm la = norm a | None -> false)
+            && Ir_v0.Checks.subtype_of ctx.doc ~sub:ot ~super:l.pd_subject)
+          ctx.doc.prioritized_defaults)
 
 (* ch. 3.11: a time-dependent characteristic target within a period window
    (ch. 3.10) holds in the maximal periods of its condition, read per period
@@ -12004,7 +12018,7 @@ let translate_rule ctx (r : resolved_rule) =
                          day-kind tests of the counted day) or the period arithmetic of ch. 3.4/3.5; no \
                          corpus case for more")
               | Some v when Eval.is_period_arithmetic v ->
-                  translate_period_arithmetic ?periods ?writer ~cond ctx ~subject ~ot ~a v
+                  ignore (translate_period_arithmetic ?periods ?writer ~cond ctx ~subject ~ot ~a v)
               | _ ->
                   faultc "CLINGO-024"
                     "a temporal target takes only the ch. 3.7 pro-rata or ch. 3.8 day-count \
@@ -12694,6 +12708,250 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
     (String.concat ", " (Printf.sprintf "%s(%s)" diff subject :: outer_displaced));
   (out, cfl, any)
 
+(* The defaults group of a timeline attribute target, read per day
+   (RUNTIME-SEMANTICS ch. 7.11; ref's Eval.run_defaults_timeline): the chain and
+   the group of [translate_chain] and [translate_group] with every atom of a
+   decision, a settling, an outcome and a conflict carried per period (S,X,Y) of
+   the group's cut set [g]_per. That cut set holds every bound of a
+   justification's periods (period_condition), of a consequence's own cut set
+   (translate_period_arithmetic without its write) and of the input timeline,
+   so on each of its periods every justification holds or fails and every
+   consequence and the input read one value. A default decides a period where
+   it is reached there, its justification holds and its consequence reads a
+   value; the initialisation default's justification is a period the input
+   leaves empty ([has_input], per period). A default's justification is
+   translated where it is reached on some period, its consequence where it is
+   justified on one, and what both deposit stands where it decides on one
+   (ch. 7.11). [cuts] collects the cut-carrying predicates. *)
+let rec translate_chain_days ctx ~g ~cuts ~subject ~origins ~base ~path ~a ~target_form ~has_input
+    ~outer_displaced (defaults : default list) : string * string =
+  let ot_at n = List.nth origins n in
+  let tag = fresh ctx "nd" in
+  let out = tag ^ "_out" and cfl = tag ^ "_cfl" in
+  emit ctx "#defined %s/3." cfl;
+  let per = Printf.sprintf "%s_per(%s,X,Y)" g subject in
+  let stl n = Printf.sprintf "%s_stl%d" tag n in
+  let dec n = Printf.sprintf "%s_dec%d" tag n in
+  let conf n = Printf.sprintf "%s_conf%d" tag n in
+  let displaced n = outer_displaced @ List.init n (fun m -> Printf.sprintf "not %s(%s,X,Y)" (stl m) subject) in
+  let target = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx (ot_at 0)) a in
+  let emit_own_dec n (r : default) ~extra =
+    let reached = (base :: per :: displaced n) @ extra in
+    let rch = Printf.sprintf "%s_rch%d" tag n in
+    head_body ctx (Printf.sprintf "%s(%s)" rch subject) reached;
+    let decany = Printf.sprintf "%s_any%d" tag n in
+    emit ctx "#defined %s/1." decany;
+    let saved_r = ctx.param_reach and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
+    let saved_b = ctx.binders and saved_v = ctx.value_of in
+    let saved_name = ctx.rule_name and saved_d = ctx.deposit_guard in
+    ctx.rule_name <- target_form;
+    ctx.deposit_guard <- [ Printf.sprintf "%s(%s)" decany subject ];
+    ctx.let_needs <- [];
+    ctx.binders <- [];
+    ctx.value_of <- None;
+    let reach_at atoms =
+      ctx.rule_guard <- atoms;
+      ctx.param_reach <- (fun _ -> base :: atoms)
+    in
+    reach_at [ Printf.sprintf "%s(%s)" rch subject ];
+    let periods c =
+      let q = period_condition ~target ctx ~ot:(ot_at n) ~a c in
+      cuts := q :: !cuts;
+      [ Printf.sprintf "%s(%s,JF%d,JT%d)" q subject n n; Printf.sprintf "JF%d <= X" n; Printf.sprintf "Y <= JT%d" n ]
+    in
+    let justified =
+      if r.default_initialisation then
+        Printf.sprintf "not %s(%s,X,Y)" has_input subject
+        :: (match r.default_justification with Some c -> periods c | None -> [])
+      else periods (req "default justification" r.default_justification)
+    in
+    let jr = Printf.sprintf "%s_jr%d" tag n in
+    head_body ctx (Printf.sprintf "%s(%s)" jr subject) (reached @ justified);
+    let c = req "default consequence" r.default_consequence in
+    if not (Eval.is_period_arithmetic c) then
+      fault
+        "the consequence of a default on the timeline target %S is not period arithmetic of ch. 3.4/3.5 (an operator \
+         of ch. 1.2 other than the power, the sum over a set, an own attribute, a parameter, a literal, or a \
+         rounding of one); the time-proportional part and the day count are not translated in a default (no corpus \
+         case)"
+        a;
+    reach_at [ Printf.sprintf "%s(%s)" jr subject ];
+    let p =
+      translate_period_arithmetic ~cond:[ Printf.sprintf "%s(%s)" jr subject ] ~write:false ctx ~subject ~ot:(ot_at n)
+        ~a c
+    in
+    cuts := (p ^ "_cut") :: !cuts;
+    head_body ctx (Printf.sprintf "%s(%s,X,Y,V)" (dec n) subject)
+      ((reached @ justified)
+      @ [ Printf.sprintf "%s_val(%s,PX,PY,V)" p subject; "PX <= X"; "Y <= PY" ]);
+    emit ctx "%s(%s) :- %s(%s,_,_,_)." decany subject (dec n) subject;
+    ctx.param_reach <- saved_r;
+    ctx.rule_guard <- saved_g;
+    ctx.let_needs <- saved_n;
+    ctx.binders <- saved_b;
+    ctx.value_of <- saved_v;
+    ctx.rule_name <- saved_name;
+    ctx.deposit_guard <- saved_d
+  in
+  List.iteri
+    (fun n (r : default) ->
+      (match r.default_exceptions with
+      | None -> emit_own_dec n r ~extra:[]
+      | Some egs ->
+          let u_out, u_cfl, u_any =
+            translate_group_days ctx ~g ~cuts ~subject ~subject_ot:(ot_at n) ~base ~group_path:(path @ [ n ]) ~a
+              ~target_form ~has_input ~outer_displaced:(displaced n) egs
+          in
+          head_body ctx (Printf.sprintf "%s(%s,X,Y,V)" (dec n) subject) [ Printf.sprintf "%s(%s,X,Y,V)" u_out subject ];
+          head_body ctx (Printf.sprintf "%s(%s,X,Y)" (conf n) subject) [ Printf.sprintf "%s(%s,X,Y)" u_cfl subject ];
+          if r.default_consequence <> None then
+            emit_own_dec n r ~extra:[ Printf.sprintf "not %s(%s,X,Y)" u_any subject ]);
+      head_body ctx (Printf.sprintf "%s(%s,X,Y)" (stl n) subject) [ Printf.sprintf "%s(%s,X,Y,_)" (dec n) subject ];
+      if r.default_exceptions <> None then
+        head_body ctx (Printf.sprintf "%s(%s,X,Y)" (stl n) subject) [ Printf.sprintf "%s(%s,X,Y)" (conf n) subject ])
+    defaults;
+  List.iteri
+    (fun n (r : default) ->
+      let higher = List.init n (fun m -> Printf.sprintf "not %s(%s,X,Y)" (stl m) subject) in
+      head_body ctx (Printf.sprintf "%s(%s,X,Y,V)" out subject) (Printf.sprintf "%s(%s,X,Y,V)" (dec n) subject :: higher);
+      if r.default_exceptions <> None then
+        head_body ctx (Printf.sprintf "%s(%s,X,Y)" cfl subject) (Printf.sprintf "%s(%s,X,Y)" (conf n) subject :: higher))
+    defaults;
+  (out, cfl)
+
+and translate_group_days ctx ~g ~cuts ~subject ~subject_ot ~base ~group_path ~a ~target_form ~has_input
+    ~outer_displaced (egs : exception_groups) : string * string * string =
+  let tag = fresh ctx "ngd" in
+  let out = tag ^ "_out" and cfl = tag ^ "_cfl" and diff = tag ^ "_diff" and any = tag ^ "_any" in
+  emit ctx "#defined %s/3." diff;
+  let members =
+    List.map
+      (fun (eg : exception_group) ->
+        translate_chain_days ctx ~g ~cuts ~subject ~origins:(List.map (fun _ -> subject_ot) eg.eg_defaults) ~base
+          ~path:group_path ~a ~target_form ~has_input ~outer_displaced eg.eg_defaults)
+      egs.egs_members
+  in
+  let no_member_cfl = List.map (fun (_, mc) -> Printf.sprintf "not %s(%s,X,Y)" mc subject) members in
+  List.iteri
+    (fun i (oi, _) ->
+      List.iteri
+        (fun j (oj, _) ->
+          if i < j then
+            head_body ctx (Printf.sprintf "%s(%s,X,Y)" diff subject)
+              ([ Printf.sprintf "%s(%s,X,Y,V1)" oi subject; Printf.sprintf "%s(%s,X,Y,V2)" oj subject; "V1 != V2" ]
+              @ no_member_cfl))
+        members)
+    members;
+  List.iter (fun (_, mc) -> head_body ctx (Printf.sprintf "%s(%s,X,Y)" cfl subject) [ Printf.sprintf "%s(%s,X,Y)" mc subject ]) members;
+  head_body ctx (Printf.sprintf "%s(%s,X,Y)" cfl subject) [ Printf.sprintf "%s(%s,X,Y)" diff subject ];
+  List.iter
+    (fun (o, _) ->
+      head_body ctx (Printf.sprintf "%s(%s,X,Y,V)" out subject)
+        [ Printf.sprintf "%s(%s,X,Y,V)" o subject; Printf.sprintf "not %s(%s,X,Y)" cfl subject ])
+    members;
+  head_body ctx (Printf.sprintf "%s(%s,X,Y)" any subject) [ Printf.sprintf "%s(%s,X,Y,_)" out subject ];
+  head_body ctx (Printf.sprintf "%s(%s,X,Y)" any subject) [ Printf.sprintf "%s(%s,X,Y)" cfl subject ];
+  deposit ctx ~code:"EF-027" ~rule:(str (path_key target_form group_path)) ~subject
+    (String.concat ", " (Printf.sprintf "%s(%s,X,Y)" diff subject :: outer_displaced));
+  (out, cfl, any)
+
+(* The root of a defaults group on a timeline attribute target (ch. 7.11): the
+   members reconciled per period as ch. 7.2 reconciles them once, the decided
+   periods written as the group's segments, its maximal runs, which tl/5 holds
+   and wtl/6 holds as a writer's, so the case input (inputtl/5) stands on every
+   period the group does not decide ([timeline_input]) — the virtual input
+   default of ch. 7.8 read per period. A period on which the members conflict
+   writes nothing and deposits the one §9.5 fact of the rule × subject. A
+   bucket scalar of the target stands as it is (the rules' VB-3); the
+   initialisation default reads the input per period, so it refuses one. *)
+let translate_defaults_timeline ctx gidx ~owner ~base ~target_form ~a
+    (members : (prioritized_defaults * string list) list) =
+  let subject = "S" in
+  let g = Printf.sprintf "grp%d_d" gidx in
+  let cuts = ref [] in
+  let has_input = Printf.sprintf "grp%d_in" gidx in
+  let rec has_init (ds : default list) =
+    List.exists
+      (fun (d : default) ->
+        d.default_initialisation
+        || match d.default_exceptions with
+           | Some egs -> List.exists (fun (eg : exception_group) -> has_init eg.eg_defaults) egs.egs_members
+           | None -> false)
+      ds
+  in
+  if List.exists (fun ((l, _) : prioritized_defaults * string list) -> has_init l.defaults) members then
+    refuse_bucket_scalar ctx ~otype:owner ~attr:a
+      ~sentence:(read_whole_sentence ~reads:"the initialisation default of the timeline target reads the input" ~attr:a);
+  emit ctx "val(%s,%s,V) :- inputval(%s,%s,V), %s." subject (str a) subject (str a) base;
+  let per = Printf.sprintf "%s_per(%s,X,Y)" g subject in
+  head_body ctx (Printf.sprintf "%s(%s,X,Y)" has_input subject)
+    [ per; Printf.sprintf "inputtl(%s,%s,F,T,_)" subject (str a); "F <= X"; "Y <= T" ];
+  let member_info =
+    List.map
+      (fun ((l, origins) : prioritized_defaults * string list) ->
+        let out, cfl =
+          translate_chain_days ctx ~g ~cuts ~subject ~origins ~base ~path:[] ~a ~target_form ~has_input
+            ~outer_displaced:[] l.defaults
+        in
+        (out, cfl, List.exists (fun (r : default) -> r.default_exceptions <> None) l.defaults))
+      members
+  in
+  (* the cut set: both open ends, the input's bounds, and every bound the chain's
+     justifications and consequences carry *)
+  emit ctx "%s_cut(%s,#inf) :- %s." g subject base;
+  emit ctx "%s_cut(%s,#sup) :- %s." g subject base;
+  emit ctx "%s_cut(%s,X) :- %s, inputtl(%s,%s,X,_,_)." g subject base subject (str a);
+  emit ctx "%s_cut(%s,X) :- %s, inputtl(%s,%s,_,X,_)." g subject base subject (str a);
+  List.iter
+    (fun q ->
+      if String.ends_with ~suffix:"_cut" q then emit ctx "%s_cut(%s,X) :- %s, %s(%s,X)." g subject base q subject
+      else begin
+        emit ctx "%s_cut(%s,X) :- %s, %s(%s,X,_)." g subject base q subject;
+        emit ctx "%s_cut(%s,X) :- %s, %s(%s,_,X)." g subject base q subject
+      end)
+    (List.sort_uniq compare !cuts);
+  emit ctx "%s_per(%s,X,Y) :- %s_cut(%s,X), %s_cut(%s,Y), X < Y, #count { Z : %s_cut(%s,Z), X < Z, Z < Y } = 0." g
+    subject g subject g subject g subject;
+  let nested = List.exists (fun (_, _, c) -> c) member_info in
+  let root_cfl = Printf.sprintf "grp%d_conflict(%s,X,Y)" gidx subject in
+  let root_diff = Printf.sprintf "grp%d_diff(%s,X,Y)" gidx subject in
+  emit ctx "#defined grp%d_conflict/3." gidx;
+  if nested then
+    List.iter (fun (_, cfl, can) -> if can then head_body ctx root_cfl [ Printf.sprintf "%s(%s,X,Y)" cfl subject ]) member_info;
+  if List.length members >= 2 then begin
+    let no_member_cfl = List.map (fun (_, cfl, _) -> Printf.sprintf "not %s(%s,X,Y)" cfl subject) member_info in
+    List.iteri
+      (fun i (oi, _, _) ->
+        List.iteri
+          (fun j (oj, _, _) ->
+            if i < j then
+              head_body ctx root_diff
+                ([ Printf.sprintf "%s(%s,X,Y,V1)" oi subject; Printf.sprintf "%s(%s,X,Y,V2)" oj subject; "V1 != V2" ]
+                @ no_member_cfl))
+          member_info)
+      member_info;
+    head_body ctx root_cfl [ root_diff ];
+    deposit ctx ~code:"EF-027" ~rule:(str target_form) ~subject root_diff
+  end;
+  let v = Printf.sprintf "grp%d_v" gidx in
+  List.iter
+    (fun (out, _, _) ->
+      head_body ctx (Printf.sprintf "%s(%s,X,Y,V)" v subject)
+        [ Printf.sprintf "%s(%s,X,Y,V)" out subject; "not " ^ root_cfl; base ])
+    member_info;
+  (* the maximal runs of the decided periods, the group's segments *)
+  emit ctx "#defined %s/4." v;
+  emit ctx "%s_join(%s,Y) :- %s(%s,X,Y,V), %s(%s,Y,Z,V)." v subject v subject v subject;
+  emit ctx "%s_start(%s,X) :- %s(%s,X,_,_), not %s_join(%s,X)." v subject v subject v subject;
+  emit ctx "%s_end(%s,Y) :- %s(%s,_,Y,_), not %s_join(%s,Y)." v subject v subject v subject;
+  let run =
+    Printf.sprintf "%s_start(%s,X), %s(%s,X,_,V), %s_end(%s,Y), X < Y, #count { Z : %s_end(%s,Z), X < Z, Z < Y } = 0" v
+      subject v subject v subject v subject
+  in
+  emit ctx "tl(%s,%s,X,Y,V) :- %s." subject (str a) run;
+  emit ctx "#defined wtl/6.";
+  emit ctx "wtl(%s,%s,X,Y,V,%d) :- %s." subject (str a) (List.length ctx.doc.resolved_rules + gidx) run
+
 (* [owner] is the CONCRETE type whose effective stack these members are
    (RUNTIME-SEMANTICS ch. 7.10). It is the one place in this translator that
    reads the BASE relation is_a/2 rather than its closure isa/2: inheritance
@@ -12748,6 +13006,16 @@ let translate_defaults_group ctx gidx ~owner
       ~default:l0.pd_subject
     ^ "." ^ target_name
   in
+  if (not is_char) && attr_temporal ctx ~otype:owner ~attr:target_name then begin
+    (* ch. 7.7 desugars an initialisation beside a computation into a group; ref
+       replays those v0 forms natively, and on a timeline target no golden
+       carries them *)
+    if ctx.desugared_group then
+      fault "the ch. 7.7 desugaring of an initialisation on the timeline target %S is not translated (no corpus case)"
+        target_name;
+    translate_defaults_timeline ctx gidx ~owner ~base ~target_form ~a:target_name members
+  end
+  else
   (* the attribute arm's input scaffolding: the target scale, and the input
      predicate the initialisation default and the defeasible-input rule read *)
   let target_scale, has_input =

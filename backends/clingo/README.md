@@ -321,6 +321,22 @@ spec bug.
   and an empty result leaves the input standing whole. Two writers that
   decide one day with different values are a named `viol/2` witness
   (EF-016); with one value, see [V7].
+- A defaults group on a timeline attribute target decides per day
+  (RUNTIME-SEMANTICS ch. 7.11): the chain and group predicates of the
+  scalar lowering carry a period of the group's cut set, `grpG_d_per/3`,
+  which holds every bound of the justifications' periods
+  (`period_condition`), of the consequences' own cut sets (the period
+  arithmetic, read as `p_val/4` without its write) and of the input
+  timeline. A default decides a period where it is reached, its
+  justification holds and its consequence reads a value; the
+  initialisation default's justification is a period the input leaves
+  empty (`grpG_in/3`). The decided periods, outside a period on which
+  the members conflict, are written in maximal runs as `tl/5` and as
+  the group's `wtl/6`, so the input stands on every other period as
+  beside a rule. A deposit of a default stands where it decides on some
+  period. Refused by name: a consequence that is not period arithmetic
+  (the time-proportional part, the day count), and the ch. 7.7
+  desugaring of an initialisation on a timeline target.
 - A fail-fast or a §9.5 deposit fires only where ref evaluates its place at
   the fixpoint (RUNTIME-SEMANTICS ch. 5.7): under a default that is reached,
   under the guard of an initialisation, and a deposit of a declared default

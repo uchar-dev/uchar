@@ -17382,6 +17382,31 @@ let () =
   ref_matches ~name:"a leeg write decides nothing: a writer outside its window" ~ir ~case_text;
   clingo_matches ~name:"a leeg write decides nothing: a writer outside its window" ~ir ~case_text
 
+(* RUNTIME-SEMANTICS ch. 7.11: a defaults group on a timeline target decides per
+   day, the highest default that decides on a day winning that day; ref's
+   documents (ref/test/fixtures/defaults-per-day: an exception, an unordered
+   pair with its conflict per day, a form-a default with exception groups, a
+   group with a validity window), and the cases of the golden
+   jutterswet-opgave-per-periode, played in both executors *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let dir = "ref/test/fixtures/defaults-per-day/" in
+  List.iter
+    (fun f ->
+      let ir = read (dir ^ f ^ "/ir.json") and case_text = read (dir ^ f ^ "/case.json") in
+      ref_matches ~name:("defaults per day: " ^ f) ~ir ~case_text;
+      clingo_matches ~name:("defaults per day: " ^ f) ~ir ~case_text)
+    [ "uitzondering"; "ongeordend"; "afwijking"; "geldig-vanaf" ];
+  let g = "corpus/golden/jutterswet-opgave-per-periode/" in
+  let ir = read (g ^ "ir.json") in
+  List.iter
+    (fun c ->
+      let case_text = read (g ^ c ^ ".json") in
+      ref_matches ~name:("defaults per day, the opgave: " ^ c) ~ir ~case_text;
+      clingo_matches ~name:("defaults per day, the opgave: " ^ c) ~ir ~case_text)
+    [ "case1-opgave-heel-2025"; "case2-opgave-januari-februari"; "case3-zonder-opgave"; "case4-invoer-op-het-doel";
+      "case5-stormtoelage-per-dag" ]
+
 (* RUNTIME-SEMANTICS ch. 2.6 rule 7, ch. 3.4, 3.5 and 8.4 on ref's documents
    (ref/test/fixtures/period-units, bucket-scalar): a percentage of a value with
    a unit carries that unit, scalar and per period, also as the left factor of a
