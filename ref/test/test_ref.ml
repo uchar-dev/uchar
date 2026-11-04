@@ -12794,6 +12794,66 @@ let () =
   check "WV-5.12-rekenen-per-dag-eenheid" (got = expected);
   if got <> expected then List.iter (Printf.printf "  got: %s\n") got
 
+(* --- the canonical form of a timeline (RUNTIME-SEMANTICS ch. 3.1) and the
+   comparison of an expected timeline in it, on the documents of three
+   goldens with the cases of ref/test/fixtures/canonical-timeline, which the
+   ASP backend's suite and the Drools backend's suite replay as well ------- *)
+let () =
+  let seg s_from s_to s_value = { Timeline.s_from; s_to; s_value } in
+  let same a b =
+    List.length a = List.length b
+    && List.for_all2
+         (fun (x : Timeline.segment) (y : Timeline.segment) ->
+           x.s_from = y.s_from && x.s_to = y.s_to && Arith.equal x.s_value y.s_value)
+         a b
+  in
+  (* WV-3.1-canonical: 0 before 2024-02-01 in two segments, 12 in February and
+     12,00 in March, an explicit leeg April and 12 from May on: three runs, the
+     leeg April a gap between the two runs of 12 *)
+  let given =
+    [ seg Timeline.open_from (day "2024-01-01") (n "0"); seg (day "2024-01-01") (day "2024-02-01") (n "0");
+      seg (day "2024-02-01") (day "2024-03-01") (n "12"); seg (day "2024-03-01") (day "2024-04-01") (n "12.00");
+      seg (day "2024-04-01") (day "2024-05-01") Value.Empty; seg (day "2024-05-01") Timeline.open_to (n "12") ]
+  in
+  check "WV-3.1-canonical"
+    (same (Timeline.canonical given)
+       [ seg Timeline.open_from (day "2024-02-01") (n "0"); seg (day "2024-02-01") (day "2024-04-01") (n "12");
+         seg (day "2024-05-01") Timeline.open_to (n "12") ]);
+  check "WV-3.1-canonical-unequal-neighbours"
+    (same
+       (Timeline.canonical [ seg (day "2024-01-01") (day "2024-02-01") (n "50"); seg (day "2024-02-01") (day "2024-03-01") (n "70") ])
+       [ seg (day "2024-01-01") (day "2024-02-01") (n "50"); seg (day "2024-02-01") (day "2024-03-01") (n "70") ]);
+  check "WV-3.1-canonical-only-leeg" (Timeline.canonical [ seg (day "2024-04-01") (day "2024-05-01") Value.Empty ] = []);
+  check "WV-3.1-canonical-degenerate" (Timeline.canonical [ seg (day "2024-05-01") (day "2024-04-01") (n "1") ] = []);
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/canonical-timeline/" in
+  (* the expectation divides a run otherwise than the producer: twelve month
+     buckets of the pro-rata part as one segment, two counted buckets of the
+     day count as one and its open run of 0 in two, a segment of the period
+     arithmetic and both its open runs in two *)
+  List.iter
+    (fun (case_file, golden) ->
+      plays ~ident:("WV-3.1-canonical-expectation-" ^ case_file) ~ir:(read (golden ^ "/ir.json"))
+        ~case_data:(read (dir ^ case_file ^ ".json")) (fun _ -> ()))
+    [ ("pro-rata", "corpus/golden/anchor/jutterswet-borgdeel");
+      ("day-count", "corpus/golden/anchor/jutterswet-dagentelling");
+      ("period-arithmetic", "corpus/golden/jutterswet-maandloon") ];
+  (* and two that read otherwise on some day, which stay mismatches: a run
+     over a month without a value, and a run of unequal values *)
+  List.iter
+    (fun (case_file, expected_mismatch) ->
+      with_files ~ir:(read "corpus/golden/jutterswet-maandloon/ir.json") ~case_data:(read (dir ^ case_file ^ ".json"))
+        (fun _ c evaluate ->
+          let got = Case.check c (evaluate ()) in
+          check ("WV-3.1-canonical-mismatch-" ^ case_file ^ " (" ^ String.concat "; " got ^ ")")
+            (got = [ expected_mismatch ])))
+    [ ( "gap-not-bridged",
+        "J1.vondstopbrengst = [2024-01-01,2024-02-01)=40 [2024-03-01,2024-04-01)=40, expected \
+         [2024-01-01,2024-04-01)=40" );
+      ( "value-differs",
+        "J1.vondstopbrengst = [2024-01-01,2024-02-01)=50 [2024-02-01,2024-03-01)=70 [2024-03-01,2024-04-01)=10, \
+         expected [2024-01-01,2024-02-01)=50 [2024-02-01,2024-03-01)=60 [2024-03-01,2024-04-01)=10" ) ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

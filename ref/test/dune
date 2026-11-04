@@ -77,5 +77,10 @@
   (glob_files fixtures/bucket-scalar/condition/*.json)
   (glob_files fixtures/bucket-scalar/arithmetic/*.json)
   (glob_files fixtures/bucket-scalar/sum/*.json)
-  (glob_files fixtures/bucket-scalar/pro-rata/*.json))
+  (glob_files fixtures/bucket-scalar/pro-rata/*.json)
+  ; an expected timeline compared in the canonical form, on the documents of three goldens, the third
+  ; jutterswet-maandloon above
+  (glob_files fixtures/canonical-timeline/*.json)
+  ../../corpus/golden/anchor/jutterswet-borgdeel/ir.json
+  ../../corpus/golden/anchor/jutterswet-dagentelling/ir.json)
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

@@ -451,6 +451,15 @@ let coalesce (segs : t) : t =
     [] (normalise segs)
   |> List.rev
 
+(* The canonical form of ch. 3.1: the maximal runs of equal filled values,
+   gaps omitted, an open bound as it stands. A leeg segment reads as a gap
+   does, so it goes before the runs are merged and never joins its two
+   neighbours. Two well-formed timelines read alike on every day exactly when
+   their canonical forms are equal, which is why an expected timeline is
+   compared in this form (Case.check). *)
+let canonical (tl : t) : t =
+  coalesce (List.filter (fun s -> match s.s_value with Empty -> false | _ -> true) tl)
+
 (* --- ch. 3.4: cut-merge arithmetic (the period-coalescing rule) --------- *)
 
 (* the cut set with both open ends: the periods before the first cut and after

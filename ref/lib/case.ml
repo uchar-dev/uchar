@@ -1186,6 +1186,10 @@ let check (case : t) (final : World.t) : string list =
             Printf.sprintf "[%s,%s)=%s" (bound s.s_from) (bound s.s_to) (Value.to_string s.s_value)
           in
           let render l = if l = [] then "(empty)" else String.concat " " (List.map show l) in
+          (* both sides in the canonical form of ch. 3.1: the expectation pins
+             what the timeline reads on each day, not how a producer or the
+             case divides a run of equal values into segments *)
+          let tl = Timeline.canonical tl in
           match World.timeline (World.get final label) attr with
           | None when tl = [] ->
               (* a never-written temporal target and an explicitly empty
@@ -1195,6 +1199,7 @@ let check (case : t) (final : World.t) : string list =
           | None ->
               Some (Printf.sprintf "%s.%s carries no timeline, expected %s" label attr (render tl))
           | Some actual ->
+              let actual = Timeline.canonical actual in
               let same =
                 List.length actual = List.length tl
                 && List.for_all2
