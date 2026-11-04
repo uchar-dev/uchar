@@ -59,7 +59,10 @@ kaart (`werk/clingo-lazy-bucket-scalar-fault/scripts/`).*
 | `78dfd3979` | ASP-TRANSLATION (voorstel): S4, S6a, de periode-aritmetiek, S12 |
 | `ee5e87dc9` | suite: de controle op de bijdragers van het horizonhek breekt bij een vertaalfout niet af |
 | `a357be8e1` | clingo: een stap die een foutdag bereikt, passeert geen bereikhek (`dkx/1`); README |
-| (deze) | suite: dezelfde controle op het frame waarin elke dag faalt; Result |
+| `7f3ab8a7e` | suite: dezelfde controle op het frame waarin elke dag faalt; Result |
+| `e8a1b6a42` | clingo: de foutdagen van de tabel in een `Hashtbl` (de ontdubbeling met `List.mem` was kwadratisch in de ~80 000 dagen van een tabel waarin elke dag faalt: gate 6 liep 632 s, gate 8 304 s) |
+| `a8f2b44dd` | clingo: de wandeling naar een foutdag als rekensom met de rang van de start (`fp(D,M)`, M het aantal treffers vóór D) in plaats van een `#count` per foutdag; de suite 106 s → 46 s |
+| (deze) | Result: de samenvatting van `make gates` |
 
 ### Punt 1 — de twee frames van README [L1]
 
@@ -76,7 +79,8 @@ Wat er veranderde:
   code), zodat een lid na de stop op die dag niet faalt. Een stap faalt (`viol/2` in ref's zin, onder `rule_reach` van de
   knoop) waar hij zo'n dag bereikt voordat hij zijn aantal treffers heeft; een telling waar zo'n dag in haar interval ligt.
   Een wandeling die een foutdag bereikt, passeert daarna geen bereikhek of venstergrens (`dkx/1`; zonder die voorwaarde gaf
-  `day-kind-parameter-unbound` `CODE EF-014` én `CODE EF-009`).
+  `day-kind-parameter-unbound` `CODE EF-014` én `CODE EF-009`). Bij elke foutdag staat het aantal treffers ervoor
+  (`dke<i>_<k>(D,M)`), zodat "de wandeling bereikt D" een rekensom met de rang van de start is en geen aggregaat per dag.
 - README [L1] is weg; de twee frames heten nu `the horizon fence behind a condition that fails (hf-cond)` en `the day-kind
   table behind a condition that fails (dk-cond)` en zijn `both_answer`.
 
@@ -160,8 +164,8 @@ afgeleide knopen (voorwaarde per periode) blijven zoals ref ze leest; zie vraag 
 
 ### Groen
 
-clingo-suite `test_clingo: 2578 checks, 0 failures` (was 2548; `logs/22-suite.log`); ref-suite ongewijzigd (2391); de
-Drools-suite in gate 12: `JUnit 1847 tests` (was 1846), nul skips; `make gates` hieronder.
+clingo-suite `test_clingo: 2578 checks, 0 failures` (was 2548), 46 s (`logs/25-suite-timed.log`); ref-suite ongewijzigd
+(2391); de Drools-suite in gate 12: `JUnit 1847 tests` (was 1846), nul skips; `make gates` hieronder.
 
 ### Mutaties (niet gecommit; `git worktree add --detach`, opgeruimd; `logs/18-mutations/summary.txt`, `logs/23-mutation17`, `logs/19-drools-mutation.log`)
 
@@ -185,7 +189,8 @@ Per mutatie de clingo-suite en de negen corpuscasussen van de kaart door de runn
 | M14 arm CLINGO-035 weg | `EF-037, some order: …` |
 | M15 geen tweelingen | 26 frames (`cr-3-8`, `cr-8-3`, … en `EF-037, some order`) |
 | M16 EF-022 weer bij het vertalen | `nested day-kind test on a different day …`, `EF-022: … behind a condition that fails` |
-| M17 hekken na een foutdag | eerst niets rood (de controle zat op `dk-walk-2`, waar geen hek vuurt); na de controle op het frame waarin elke dag faalt: `unbound parameter in a day-kind condition: the walk passes no reach fence` (`logs/23-mutation17`) |
+| M17 hekken na een foutdag | eerst niets rood (de controle zat op `dk-walk-2`, waar geen hek vuurt); na de controle op het frame waarin elke dag faalt: `unbound parameter in a day-kind condition: the walk passes no reach fence` (`logs/23-mutation17`, en op `a8f2b44dd` `logs/26-mutations-walk`) |
+| M08b, M09b, M18 (op `a8f2b44dd`, de rekensom) | geen feiten `fp(D,M)`: 6 frames; de stap zonder rangvoorwaarde: `dk-walk-1`; `dkx` met een verkeerde grens: `… the walk passes no reach fence` (`logs/26-mutations-walk`) |
 | D1 Drools `raises` → `false` | `TmsDefaultsPerDayWitnessTest.a_fault_in_a_consequence_stands_at_the_node_that_raised_it` |
 
 ### Codes en pins (oud → nieuw)
@@ -284,3 +289,39 @@ EF-022), reads its composite in the order of ch. 5.10, and faults where a step o
 3. Buiten de EF-codes gevonden: de uniciteitsunie van `ever-unique-temporal-key-bucket-scalar` over een leeg type geeft in
    clingo `TRANSLATION FAULT: unscalable datatype in the ASP translation`, zonder code, waar ref speelt. Een kaart, of
    noteren?
+
+### make gates
+
+Een run aan het eind in de worktree op `a8f2b44dd` (`out/gates/20261104-200715/`, log `gates-5.log`); de commit daarna
+raakt alleen deze kaart. Vier runs ervoor waren ook groen (`gates-1` t/m `gates-4`), op tussenstanden; in `gates-3`
+liep gate 6 632 s en gate 8 304 s door de kwadratische ontdubbeling van `e8a1b6a42`.
+
+```
+start 2026-11-04 20:07:15 a8f2b44dd card/early-faults-and-sum-reading
+ocaml rc=0 0s ocaml-build: rebuilt (1 source path(s) newer than the stamp, e.g. backends/clingo/lib/translate.ml; 0s)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 0s drools-jar: fresh (jar newer than 560 source files)
+01-self-contained rc=0 2s
+02-ir-schema rc=0 134s
+04-case-schema rc=0 7s
+03-verifier rc=0 43s
+05-oracle rc=0 25s
+06-clingo rc=0 289s
+07-noop rc=0 15s
+08-red rc=0 177s
+09-catala rc=0 5s
+10-regelspraak rc=0 258s
+11-toka-parity rc=0 229s
+12-drools rc=0 363s
+13-reftype rc=0 342s
+14-flogic rc=0 2s
+15-graph rc=0 52s
+16-scenario rc=0 43s
+17-readings rc=0 274s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-04 20:13:18 363s red=0
+```
+
+Gate 5: ref-suite 2391, 1072 cases. Gate 6: clingo-suite 2578, 1068 cases. Gate 8: 71 rode cases (was 68), 37
+foutsoorten, Drools-been 54 met de code van de casus. Gate 12: JUnit 1847 tests, `played 334`, DRL-tekst `played 334`. Gate
+17: 335 goldens, 943 case files, 7406 lezingen, 24135 knoopregels, 3906 niet bereikt, deviations 0.
