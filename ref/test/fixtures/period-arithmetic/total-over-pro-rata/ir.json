@@ -215,19 +215,33 @@
               }
             },
             "value": {
-              "node": "Aggregation",
-              "kind": "total",
-              "arguments": [
-                {
-                  "node": "AttributeReference",
-                  "attribute": "maandloon",
-                  "subjectType": "Jutter",
-                  "source": {
-                    "snippet": "zijn maandloon"
+              "node": "Rounding",
+              "base": {
+                "node": "Aggregation",
+                "kind": "total",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "maandloon",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn maandloon"
+                    }
                   }
+                ],
+                "elementType": "Jutter",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het totaal van zijn maandloon"
                 }
-              ],
-              "elementType": "Jutter",
+              },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -235,7 +249,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "het totaal van zijn maandloon"
+                "snippet": "(het totaal van zijn maandloon) rekenkundig afgerond op 2 decimalen"
               }
             },
             "initialisation": false,

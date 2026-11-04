@@ -143,27 +143,41 @@
               }
             },
             "value": {
-              "node": "Aggregation",
-              "kind": "total",
-              "arguments": [
-                {
-                  "node": "AttributeReference",
-                  "attribute": "borgdeel",
-                  "subjectType": "Jutter",
-                  "source": {
-                    "snippet": "zijn borgdeel"
+              "node": "Rounding",
+              "base": {
+                "node": "Aggregation",
+                "kind": "total",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "borgdeel",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn borgdeel"
+                    }
                   }
-                }
-              ],
-              "elementType": "Jutter",
-              "filter": {
-                "node": "CharacteristicCheck",
-                "characteristic": "borgplichtig",
-                "negated": false,
+                ],
+                "elementType": "Jutter",
+                "filter": {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "borgplichtig",
+                  "negated": false,
+                  "source": {
+                    "snippet": "gedurende de tijd dat hij borgplichtig is"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "gedurende de tijd dat hij borgplichtig is"
+                  "snippet": "het totaal van zijn borgdeel gedurende de tijd dat hij borgplichtig is"
                 }
               },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -171,7 +185,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "het totaal van zijn borgdeel gedurende de tijd dat hij borgplichtig is"
+                "snippet": "(het totaal van zijn borgdeel gedurende de tijd dat hij borgplichtig is) rekenkundig afgerond op 2 decimalen"
               }
             },
             "initialisation": false,

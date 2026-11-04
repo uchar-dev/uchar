@@ -158,49 +158,63 @@
               }
             },
             "value": {
-              "node": "Aggregation",
-              "kind": "total",
-              "arguments": [
-                {
-                  "node": "AttributeReference",
-                  "attribute": "bedrag",
-                  "subjectType": "Jutter",
-                  "source": {
-                    "snippet": "zijn bedrag"
+              "node": "Rounding",
+              "base": {
+                "node": "Aggregation",
+                "kind": "total",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "bedrag",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn bedrag"
+                    }
                   }
-                }
-              ],
-              "elementType": "Jutter",
-              "filter": {
-                "node": "Comparison",
-                "op": "greater",
-                "left": {
-                  "node": "AttributeReference",
-                  "attribute": "borgdeel",
-                  "subjectType": "Jutter",
+                ],
+                "elementType": "Jutter",
+                "filter": {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "borgdeel",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn borgdeel"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "5.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "5.00"
+                    }
+                  },
                   "source": {
-                    "snippet": "zijn borgdeel"
+                    "snippet": "gedurende de tijd dat zijn borgdeel groter is dan 5"
                   }
                 },
-                "right": {
-                  "node": "Literal",
-                  "value": {
-                    "number": "5.00"
-                  },
-                  "type": {
-                    "node": "Number",
-                    "whole": false,
-                    "decimals": 2,
-                    "sign": "unspecified"
-                  },
-                  "source": {
-                    "snippet": "5.00"
-                  }
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
                 },
                 "source": {
-                  "snippet": "gedurende de tijd dat zijn borgdeel groter is dan 5"
+                  "snippet": "totaal van bedrag gedurende borgdeel>5"
                 }
               },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
               "type": {
                 "node": "Number",
                 "whole": false,
@@ -208,7 +222,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "totaal van bedrag gedurende borgdeel>5"
+                "snippet": "(totaal van bedrag gedurende borgdeel>5) rekenkundig afgerond op 2 decimalen"
               }
             },
             "initialisation": false,

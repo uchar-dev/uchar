@@ -136,19 +136,33 @@
               }
             },
             "value": {
-              "node": "Aggregation",
-              "kind": "total",
-              "arguments": [
-                {
-                  "node": "AttributeReference",
-                  "attribute": "opgehoogde strandloon",
-                  "subjectType": "Jutter",
-                  "source": {
-                    "snippet": "zijn opgehoogde strandloon"
+              "node": "Rounding",
+              "base": {
+                "node": "Aggregation",
+                "kind": "total",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "opgehoogde strandloon",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn opgehoogde strandloon"
+                    }
                   }
+                ],
+                "elementType": "Jutter",
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het totaal van zijn opgehoogde strandloon"
                 }
-              ],
-              "elementType": "Jutter",
+              },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
                 "whole": true,
@@ -156,7 +170,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "het totaal van zijn opgehoogde strandloon"
+                "snippet": "(het totaal van zijn opgehoogde strandloon) rekenkundig afgerond op 0 decimalen"
               }
             },
             "initialisation": false,

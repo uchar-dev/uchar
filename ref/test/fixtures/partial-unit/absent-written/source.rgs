@@ -2,7 +2,7 @@ Objecttype de Jutter (mv: Jutters) (bezield)
     de leeftijd Numeriek (geheel getal);
     het strandloon Numeriek (geheel getal) voor elke maand;
     het maandloon Numeriek (geheel getal) voor elke maand;
-    het jaarloon Numeriek (geheel getal);
+    het jaarloon Numeriek (getal);
 
 Regel maandloon van een jutter
     geldig altijd

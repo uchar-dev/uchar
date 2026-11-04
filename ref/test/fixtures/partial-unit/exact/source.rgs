@@ -1,9 +1,9 @@
 Objecttype de Jutter (mv: Jutters) (bezield)
     is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
     de wachtvergoeding Numeriek (geheel getal) voor elke maand;
-    de wachtsom Numeriek (geheel getal);
+    de wachtsom Numeriek (getal);
     de wachtpremie Numeriek (geheel getal) voor elke maand;
-    de premiesom Numeriek (geheel getal);
+    de premiesom Numeriek (getal);
 
 Regel wachtsom van een jutter
     geldig altijd

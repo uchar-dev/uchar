@@ -119,19 +119,33 @@
               }
             },
             "value": {
-              "node": "Aggregation",
-              "kind": "total",
-              "arguments": [
-                {
-                  "node": "AttributeReference",
-                  "attribute": "aanstellingspremie",
-                  "subjectType": "Jutter",
-                  "source": {
-                    "snippet": "zijn aanstellingspremie"
+              "node": "Rounding",
+              "base": {
+                "node": "Aggregation",
+                "kind": "total",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "aanstellingspremie",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn aanstellingspremie"
+                    }
                   }
+                ],
+                "elementType": "Jutter",
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het totaal van zijn aanstellingspremie"
                 }
-              ],
-              "elementType": "Jutter",
+              },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
                 "whole": true,
@@ -139,7 +153,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "het totaal van zijn aanstellingspremie"
+                "snippet": "(het totaal van zijn aanstellingspremie) rekenkundig afgerond op 0 decimalen"
               }
             },
             "initialisation": false,
