@@ -2401,8 +2401,9 @@ public final class TmsTranspiler {
                     + operand.name() + "\" of ", subjectType, "; the case supplies only the asOfDate-bucket scalar, which"
                     + " carries no period", operand.name(), true, source);
             // read whole, an absent timeline is the empty one, as the reference interpreter's trace reads it, in the unit
-            // of the attribute's declaration (RUNTIME-SEMANTICS ch. 5.12)
-            noteDerived(a, List.of(whole), x -> x.get(0) == null ? List.of() : x.get(0));
+            // of the attribute's declaration, and the fault of the bucket scalar is the read's own (RUNTIME-SEMANTICS
+            // ch. 5.12)
+            noteDerived(a, List.of(whole), x -> x.get(0) == null ? List.of() : x.get(0), true);
             if (noted != null && memberwise == 0) notedUnits.put(a, eff.unitOf(a));
             return whole;
         }
@@ -4872,9 +4873,10 @@ public final class TmsTranspiler {
      * The reading of a node that no term of the rule computes, and that follows from the outcomes of {@code inputs},
      * terms the rule evaluates, by {@code compute}: the part of a timeline in which a gedurende clause of a temporal
      * total holds (RUNTIME-SEMANTICS ch. 3.6, 5.12), where the clip computes only the timeline it leaves. The node is
-     * reached where every input is reached without a fault; it evaluates nothing of the session again.
+     * reached where every input is reached without a fault; it evaluates nothing of the session again. Where
+     * {@code raises}, the inputs are the node's own read, and a fault of one is the fault the node raised.
      */
-    private record Derived(List<Term> inputs, Function<List<Object>, Object> compute) {}
+    private record Derived(List<Term> inputs, Function<List<Object>, Object> compute, boolean raises) {}
 
     /** Starts noting the terms of the nodes the condition and the value of a form's own rule compile, in a build with
      *  readings; nothing in a build without. */
@@ -5257,11 +5259,16 @@ public final class TmsTranspiler {
     }
 
     /** The reading of the node of {@code s}, whose reading follows from the outcomes of its inputs in the evaluation
-     *  {@code rec} ({@link Derived}), on the object {@code o}: reached where every input was reached without a fault. */
+     *  {@code rec} ({@link Derived}), on the object {@code o}: reached where every input was reached without a fault;
+     *  where the inputs are the node's own read, reached with the fault of an input that faulted, which the node
+     *  raised (RUNTIME-SEMANTICS ch. 5.12). */
     private static ConditionReading.NodeReading derivedReading(Site s, RecordingRendering rec, Object o) {
         List<Object> values = new ArrayList<>();
         for (Term t : s.derived().inputs()) {
             RecordingRendering.Outcome oc = rec.outcome(t);
+            if (oc != null && oc.fault() != null && s.derived().raises())
+                return new ConditionReading.NodeReading(s.node(), s.kind(), true, null, s.unit(), oc.fault(), null,
+                        List.of());
             if (oc == null || oc.fault() != null)
                 return new ConditionReading.NodeReading(s.node(), s.kind(), false, null, s.unit(), null, null, List.of());
             values.add(oc.value());
@@ -5396,8 +5403,13 @@ public final class TmsTranspiler {
     /** Notes that the reading of {@code node}, a condition, follows from the outcomes of {@code inputs} by
      *  {@code compute} ({@link Derived}), as {@link #note} notes a term; nothing outside a build with readings. */
     private void noteDerived(Object node, List<Term> inputs, Function<List<Object>, Object> compute) {
+        noteDerived(node, inputs, compute, false);
+    }
+
+    /** As {@link #noteDerived(Object, List, Function)}; where {@code raises}, the inputs are the node's own read. */
+    private void noteDerived(Object node, List<Term> inputs, Function<List<Object>, Object> compute, boolean raises) {
         if (noted == null || memberwise > 0) return;
-        notedDerived.put(node, new Derived(List.copyOf(inputs), compute));
+        notedDerived.put(node, new Derived(List.copyOf(inputs), compute, raises));
     }
 
     /** A constant of the analysis, which an argument of a function of the plan takes ({@link Term.Const}). */

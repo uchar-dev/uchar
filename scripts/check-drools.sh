@@ -1547,7 +1547,10 @@ EXPECTED_CHANNEL=(
 # 330 since the card clingo-lazy-bucket-scalar-fault (2026-11-04): the golden jutterswet-gevolg-buiten-de-beurt, a
 # consequence that reads the asOfDate-bucket scalar and is not evaluated, so it raises no fault (RUNTIME-SEMANTICS
 # ch. 7.11). It plays on both with PLAYED 1.
-EXPECTED_PLAYED=330
+# 331 since the card early-faults-and-sum-reading (2026-11-04): the golden jutterswet-gevolg-buiten-de-beurt-som, the
+# same consequence as the left operand of a sum, whose fault its reading carries at the operand (RUNTIME-SEMANTICS
+# ch. 5.12). It plays on both with PLAYED 1.
+EXPECTED_PLAYED=331
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

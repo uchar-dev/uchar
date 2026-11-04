@@ -123,6 +123,41 @@ class TmsDefaultsPerDayWitnessTest {
                         a + "1 \"J3\" HOLDS", "READINGS 1"));
     }
 
+    /** A consequence the session does not evaluate is read where its justification holds on a day (ch. 5.12), and a
+     *  node carries the fault it raised or passed on: the read of the bucket scalar as the consequence's root, and as
+     *  the left operand of a sum, whose right operand is not reached after the fault (the goldens
+     *  {@code jutterswet-gevolg-buiten-de-beurt} and {@code -som}, the {@code ref/} tests
+     *  {@code WV-5.12-default-per-dag-gevolg-faalt} and {@code -som}). */
+    @Test void a_fault_in_a_consequence_stands_at_the_node_that_raised_it() {
+        String d = "reading /rules/prioritizedDefaults/0/defaults/";
+        Path plain = Path.of("..", "..", "corpus", "golden", "jutterswet-gevolg-buiten-de-beurt");
+        Path sum = Path.of("..", "..", "corpus", "golden", "jutterswet-gevolg-buiten-de-beurt-som");
+        List<String> head = List.of("case case1-buiten-de-beurt.json",
+                d + "0 \"J1\" 0 CharacteristicCheck []", d + "0 \"J1\" 1 Literal unreached", d + "0 \"J1\" HOLDS",
+                d + "0 \"J2\" 0 CharacteristicCheck [[2025-04-01 2025-05-01 empty]]",
+                d + "0 \"J2\" 1 Literal [[2025-04-01 2025-05-01 60]]", d + "0 \"J2\" HOLDS",
+                d + "1 \"J1\" 0 CharacteristicCheck []");
+        List<String> tail = List.of(d + "2 \"J1\" 0 Compound [[- - empty]]", d + "2 \"J1\" 1 Literal [[- - 5]]",
+                d + "2 \"J1\" HOLDS", d + "2 \"J2\" 0 Compound [[- - empty]]", d + "2 \"J2\" 1 Literal [[- - 5]]",
+                d + "2 \"J2\" HOLDS", "READINGS 1");
+        List<String> expected = new ArrayList<>(head);
+        expected.addAll(List.of(d + "1 \"J1\" 1 AttributeReference unreached", d + "1 \"J1\" HOLDS",
+                d + "1 \"J2\" 0 CharacteristicCheck [[2025-04-01 2025-05-01 empty]]",
+                d + "1 \"J2\" 1 AttributeReference fault EF-037", d + "1 \"J2\" HOLDS"));
+        expected.addAll(tail);
+        TmsConditionPerPeriodWitnessTest.readings(plain.resolve("ir.json"),
+                plain.resolve("case1-buiten-de-beurt.json"), expected);
+        expected = new ArrayList<>(head);
+        expected.addAll(List.of(d + "1 \"J1\" 1 Binary unreached", d + "1 \"J1\" 2 AttributeReference unreached",
+                d + "1 \"J1\" 3 Literal unreached", d + "1 \"J1\" HOLDS",
+                d + "1 \"J2\" 0 CharacteristicCheck [[2025-04-01 2025-05-01 empty]]",
+                d + "1 \"J2\" 1 Binary fault EF-037", d + "1 \"J2\" 2 AttributeReference fault EF-037",
+                d + "1 \"J2\" 3 Literal unreached", d + "1 \"J2\" HOLDS"));
+        expected.addAll(tail);
+        TmsConditionPerPeriodWitnessTest.readings(sum.resolve("ir.json"), sum.resolve("case1-buiten-de-beurt.json"),
+                expected);
+    }
+
     @Test void decisions_of_a_stack_per_day_are_refused() throws Exception {
         CaseRunner runner = CaseRunner.forMeasurement(GOLDEN.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
         JsonNode c = JSON.readTree(Files.readString(GOLDEN.resolve("case2-opgave-januari-februari.json")));
