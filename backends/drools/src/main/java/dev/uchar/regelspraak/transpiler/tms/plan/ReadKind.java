@@ -74,9 +74,6 @@ public enum ReadKind {
     LIST_PLACES,
     /** The least place a to-many step's member has in its list ({@code TmsTranspiler.place}). */
     LIST_PLACE,
-    /** The number of other writers of an initialisation's target that wrote leeg on the subject
-     *  ({@code TmsTranspiler.initialisationRule}). */
-    EMPTY_WRITERS,
     /** The value facts that the writers of one attribute put on the subject ({@code TmsTranspiler.differenceRule}). */
     VALUES,
     /** The value a writer put on the subject, off its {@code Value}: what the standing of a derived attribute carries

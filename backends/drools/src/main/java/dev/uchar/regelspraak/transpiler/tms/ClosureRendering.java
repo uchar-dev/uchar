@@ -425,7 +425,6 @@ final class ClosureRendering {
             case NIET -> x -> ComputeHelpers.not(x[0]);
             case BUCKET_SCALAR -> x -> ComputeHelpers.bucketScalar(x[0], (Boolean) x[1]);
             case OPEN_NONZERO -> x -> PeriodArithmetic.openNonZero(x[0]);
-            case TARGET_EMPTY -> x -> ComputeHelpers.targetEmpty(x[0], x[1]);
             case DIFFER -> x -> ComputeHelpers.differ(x[0]);
             case DUPLICATE -> x -> ComputeHelpers.duplicate(x[0]);
             case COLLIDES_WITH -> x -> ComputeHelpers.collidesWith(x[0], x[1]);

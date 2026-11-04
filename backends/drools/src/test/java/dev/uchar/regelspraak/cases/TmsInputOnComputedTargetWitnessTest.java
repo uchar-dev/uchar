@@ -38,8 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * derived value where there is one and the input otherwise; when the derived value arrives after the uitkering was
  * computed from the input, truth maintenance retracts the input standing and the uitkering computed from it. Both
  * orders of the two rules in the document, and a seeded sample of orders of the generated rules, at least one of which
- * must compute V1's uitkering from the input first. Off the standing domain the rule writes a computed leeg (ch. 1.2g),
- * which empties the target, input included.
+ * must compute V1's uitkering from the input first. Beside a conditional initialisation the computed leeg decides
+ * nothing as well (ch. 3.11), so the input stands there too.
  *
  * <p><b>Red before the lowering</b> (measured 2026-10-08 on the branch's first step): both rows on this branch were
  * refused, "tms-transpiler SKIP: regel: bergloon — een attribuutdoel (gelijkstelling van 'bergloon' van Vondst): de
@@ -77,21 +77,18 @@ class TmsInputOnComputedTargetWitnessTest {
     }
 
     /** "Het bergloon van een Vondst moet geïnitialiseerd worden op 0, indien zijn taxatie gevuld is" beside the bergloon
-     *  rule: a conditional initialisation is neither the plain one of RUNTIME-SEMANTICS ch. 7.7 nor absent, so the
-     *  target is off the standing domain, where a computed leeg empties the target instead of leaving the input (ch.
-     *  1.2g). Until step 3 of card tms-expressievormen-en-rekendatum the branch refused the rule there, since it wrote
-     *  nothing for a computed leeg; it now writes the leeg ({@code TmsWritersWitnessTest}). V1 (taxatie 30, bergloon
-     *  7 as input): 30, uitkering 35. V2 (bergloon 7 as input): the rule writes leeg over the input and the
-     *  initialisation's condition does not hold, so bergloon leeg and uitkering 5. Every order of the three rules. The
-     *  reference interpreter answers the same on this document (measured 2026-10-09, in the report of that step). */
-    @Test void outside_the_standing_domain_writes_the_computing_rule_empty() throws Exception {
+     *  rule: a conditional initialisation, outside the desugaring of RUNTIME-SEMANTICS ch. 7.7. A computed leeg decides
+     *  nothing there either (ch. 3.11). V1 (taxatie 30, bergloon 7 as input): 30, uitkering 35. V2 (bergloon 7 as
+     *  input): the rule computes leeg and writes nothing, the input blocks the initialisation, so bergloon 7 and
+     *  uitkering 12. Every order of the three rules. */
+    @Test void beside_a_conditional_initialisation_a_computed_leeg_leaves_the_input_standing() throws Exception {
         String initialisation = computingRule("standaardbergloon", "INITIALISATIE", "Vondst", "bergloon", number("0"),
                 predicate("filled", ownRead("taxatie", "Vondst")));
         JsonNode caseDocument = TmsDocuments.caseDocument(
                 List.of(instance("V1", "Vondst", Map.of("taxatie", "30", "bergloon", "7"), List.of(), Map.of()),
                         instance("V2", "Vondst", Map.of("bergloon", "7"), List.of(), Map.of())),
-                List.of(value("V1", "bergloon", "30"), value("V1", "uitkering", "35"), value("V2", "bergloon", null),
-                        value("V2", "uitkering", "5")));
+                List.of(value("V1", "bergloon", "30"), value("V1", "uitkering", "35"), value("V2", "bergloon", "7"),
+                        value("V2", "uitkering", "12")));
         int orders = 0;
         for (List<String> order : TmsDocuments.permutations(List.of(RULES.get(0), RULES.get(1), initialisation))) {
             List<String> names = names(order);

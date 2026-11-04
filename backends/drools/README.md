@@ -14,7 +14,7 @@ in tests.
   model, for the exec-model branch (below, "The exec-model branch"), and `DrlRendering`, DRL text,
   for the DRL-text branch (below, "The DRL-text branch").
 - `transpiler/core/` — parts of the lowering the analysis shares with the rest of the backend: names, the coverage manifest,
-  the classification of standing targets, units, day kinds, the plans of fold sources.
+  units, day kinds, the plans of fold sources.
 - `runtime/` — the production runtime (`RegelSpraakRuntime`, `Breuk`, `Accessors`, …). It
   lives **only here**; `ref/` and `spec/verifier/` share no code with it (gate 1's
   no-share tripwire enforces this).
@@ -394,9 +394,8 @@ where a stated fact takes over an equal logical one; equal logical facts merge i
 rule, which rests on the `equals` and `hashCode` of the fact classes, the subject compared by identity.
 
 **Initialisations, consistencies, defaults.** An initialisation fires where the target is empty in the input on the
-bean and no other writer holds a `Value` on it (beside a writer outside the standing domain, a written leeg leaves
-the target empty: below); its guard excludes its own write, since a guard that counted its own `Value` would undo the
-write it justified. A consistency inserts a logical `Inconsistency`, and "regelversie X is
+bean and no other writer holds a `Value` on it; its guard excludes its own write, since a guard that counted its own
+`Value` would undo the write it justified. A consistency inserts a logical `Inconsistency`, and "regelversie X is
 inconsistent" reads the total standing fact `ChannelState`. A defaults group decides with control facts (`ControlFact`).
 In the simple form, one chain without exception groups, a deciding default inserts `Decides` where a lower default
 has a rule, and every lower default carries `not Decides` over the ones above it. In the general form, with
@@ -410,9 +409,8 @@ fact stands under a displaced default.
 
 **The write-back.** After a fire that reached its fixpoint, `DroolsBackend.setDerivedValues(build, session)` puts
 the derivations on the beans: `setX(true)` per `HasCharacteristic`, the attribute's setter per `Value`. Input on a
-characteristic stands, since nothing writes false; a derived value replaces input on an attribute, a computed leeg
-of a standing writer writes nothing, so the input stands (ch. 7.1, 7.8), and a computed leeg of a writer outside the
-standing domain empties the attribute (ch. 1.2g). Two different values on one attribute of one object have no common
+characteristic stands, since nothing writes false; a derived value replaces input on an attribute, and a computed leeg
+writes nothing, so the input stands (ch. 3.11, 7.1, 7.8). Two different values on one attribute of one object have no common
 fixpoint: they stand as a fault (below), and the write-back never chooses. The replay passes the case labels to
 `setDerivedValues`, so that the fault names its object as the reference interpreter does, and `fixpointOf` takes the same
 labels; a consumer without labels gets the type and the identity. It writes what `DroolsBackend.fixpointOf` reads, a link a
@@ -554,12 +552,11 @@ evaluates the form. Witnesses `TmsQuantifierFoldWitnessTest`, `TmsRoleCheckWitne
 `TmsUniquenessWitnessTest`.
 
 **Writers of one target.** A computing rule is an equation (RUNTIME-SEMANTICS ch. 5.1), and a target may have any
-number of them, the versions of one form among them. On a standing scalar target (ch. 7.8, and the desugaring domain
-of ch. 7.7, as `transpiler/core/StandingTargets` classifies it for both branches) a computed leeg inserts nothing;
-outside it the rule inserts a `Value` that carries leeg (ch. 1.2g), which takes the input standing away and is a value
-another writer can disagree with; a timeline target is below, "Writers per day". Where two writers stand on one object with different values, a rule per attribute
-on which two can stand (two computing rules, or one outside the standing domain beside an initialisation; an
-accumulate over the attribute's `Value` facts on the object) inserts a logical
+number of them, the versions of one form among them. A computed leeg inserts nothing and decides nothing (ch. 3.11),
+so the target holds another writer's value, an initialisation's, its input or leeg; a timeline target is below,
+"Writers per day". Where two writers stand on one object with different values, a rule per attribute
+on which two can stand (two computing rules; an accumulate over the attribute's `Value` facts on the object) inserts a
+logical
 `Fault` with a `WritersConflict`: "geen fixpunt: twee schrijvers van één doel geven verschillende waarden — de regel
 "melding op vinddag" schrijft 2026-03-04 en de regel "melding op aanspoeldag" schrijft 2026-03-01 in het attribuut
 meldingsdatum van V, een Vondst; divergentie is een fout (RUNTIME-SEMANTICS ch. 5.7)", the writers in the order of the
@@ -569,10 +566,8 @@ intermediate state only is no fault. With three writers the sentence names every
 reference interpreter names the two its last passes saw change the attribute. The writers are keyed per object, so per
 concrete type (WF-079, ch. 7.10): rules on sister subtypes never meet, and a rule on a supertype meets one on a subtype
 on the subtype's instances. An initialisation's guard reads the target as the other writers leave it, as the
-reference interpreter's guard reads the running fact base: a value another writer places switches it off, and a leeg
-that a writer outside the standing domain writes leaves the target empty, input or not, so the initialisation fills it
-and the two writers disagree, where the reference interpreter faults on the pass budget with the same two writers.
-Witnesses `TmsWritersWitnessTest` and, for a member an object creation sets and a division in an initialisation
+reference interpreter's guard reads the running fact base: a value another writer places switches it off, and a
+computing rule that evaluates leeg places none, so the initialisation fills the target. Witnesses `TmsWritersWitnessTest` and, for a member an object creation sets and a division in an initialisation
 beside a writer on a sister subtype, `TmsCreationInputWitnessTest`.
 
 **Cells.** A cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c) is a member of its own, keyed as the rule
@@ -581,8 +576,7 @@ graph keys it, the attribute on its declaring type with the labels of the cell (
 declared spelling (`FactModelGenerator.cellKey`). A cell no form writes is input and is read off that map. A rule, an
 initialisation or an object creation's member with labels (IR-SPEC ch. 3.1, 3.3) writes one cell: its `Value` carries
 the cell's key, and the cell is read through a `State` of its own, the derived value or else the entry of the map. So
-everything this README says of a target holds per cell: the standing norm and the domain of ch. 7.7
-(`StandingTargets` keys a cell target on the cell, as the reference interpreter does), the guard of an initialisation,
+everything this README says of a target holds per cell: a computed leeg that decides nothing, the guard of an initialisation,
 which reads the cell's entry of the map, two writers that disagree, and the write boundary, whose fault names the cell
 (`j1.vondstgewicht[najaar]`, EF-006). A fold over the cells reads the map and every written cell through its standing,
 which takes the place of its entry in a copy of the map. The write-back puts a derived cell into the map on the bean,
@@ -826,8 +820,7 @@ its own output once the state that made it had passed, and its initialisations w
 ch. 5.5 evaluates them when the object is made. The attribute values an object creation sets are the input of the
 object it makes, as the reference interpreter reads them: they go on the new bean before it enters working memory, so
 no rule sees the object without them and no bean in the session changes; a writer of the member displaces them as it
-displaces case input, a leeg written outside the standing domain erases them, and an initialisation finds the member
-filled. So the creation rules sit in two agenda groups of their own,
+displaces case input, a computed leeg leaves them standing, and an initialisation finds the member filled. So the creation rules sit in two agenda groups of their own,
 `TmsTranspiler.FACT_CREATION` and `TmsTranspiler.OBJECT_CREATION`, and the driver `DroolsBackend.fire` fires the session
 in generations, outside the rules: the rule layer to rest, which leaves the creation rules pending; then, per
 evaluation stratum in ascending order (below), one phase per generation. A phase inserts a new `CreationPhase` with its

@@ -12,10 +12,9 @@ import java.util.Objects;
  * writer's value from its own write (RUNTIME-SEMANTICS ch. 5.4). The value is the one the write boundary leaves: on a
  * target that bounds its decimals a decimal that fits them, since a value that does not is a fault in its place
  * (ch. 2.4 point 1); on the unbounded form the exact value, a decimal where it terminates and an exact rational where
- * it does not (ch. 2.4 point 3), which the write-back puts on the bean as a decimal. It is null, leeg, only for a computing rule outside the standing domain,
- * which writes a computed leeg (ch. 1.2g): it empties the target, input included, and is a value that can differ from
- * another writer's (ch. 5.7). A standing writer writes nothing for a computed leeg (ch. 7.8), and an initialisation
- * that computes leeg writes nothing either, since its target is empty where it fires.
+ * it does not (ch. 2.4 point 3), which the write-back puts on the bean as a decimal. A computing rule that computes
+ * leeg writes nothing (ch. 3.11, 7.8), and an initialisation that computes leeg writes nothing either, since its target
+ * is empty where it fires.
  *
  * <p>Keyed and compared as {@link HasCharacteristic} is: the attribute on its declaring type, the subject by identity, and
  * the value and the writer by their own equality.

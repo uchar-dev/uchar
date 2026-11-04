@@ -24,15 +24,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The member values of an object creation are the input of the object it makes, as the reference interpreter reads
- * them (RUNTIME-SEMANTICS ch. 5.5, 1.2g, 7.8), and a division in an initialisation beside a writer counts that writer
+ * them (RUNTIME-SEMANTICS ch. 5.5, 3.11, 7.8), and a division in an initialisation beside a writer counts that writer
  * per concrete type (WF-079, ch. 7.10). Fix round 1 of step 3 of card tms-expressievormen-en-rekendatum.
  *
  * <p>The creation document: "Een Jutter heeft een melding (een Jutmelding, a subtype of Melding) met de waarde zijn
  * vangst", and "De terug van een Jutter moet berekend worden als de som van de waarde van al zijn meldingen, of 0",
  * through which the case reads the made object. J1 has vangst 7. Without a writer of the member the value of the
  * making stands: terug 7. A standing rule on the supertype, "De waarde van een Melding moet gesteld worden op 99",
- * displaces it as it displaces case input: 99. A rule on the created type itself is outside the standing domain (the
- * creation is another writer, ch. 7.8), and where it computes leeg it erases the value: 0. An initialisation on the
+ * displaces it as it displaces case input: 99. A rule on the created type itself that computes leeg decides nothing
+ * (ch. 3.11), so the value of the making stands: 7. An initialisation on the
  * member finds it filled: 7; where the creation's own value is leeg (it reads the bonus, which no case sets), the
  * initialisation fills it: 5. Two rules on the member that write 98 and 97 are the fault of ch. 5.7, the writers in the
  * order of the document, the object named as made by a creation. Every order of the rules in the document.
@@ -43,14 +43,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * consistent, in every order of the three rules. A writer on the supertype beside it writes the Drijfgoed too, and the
  * refusal that waits on card fout-op-tussenstand names it.
  *
- * <p><b>Measured</b> (2026-10-09, these documents in every order, written out with their cases and run through
- * {@code ref/bin/runner.exe} and {@code backends/clingo/bin/clingo_runner.exe}): ref gives terug 99, 7, 0, 7 and 5,
- * faults on the two rules, "two writers of one target disagree: rule "waarde volgens de vangst" writes 98 and rule
- * "waarde volgens het tarief" writes 97 to the attribute waarde of oc0::J1, a Jutmelding", the writers in the order of
- * the document, and passes the sister document in all six orders. clingo agrees on 7 without a writer, on 5, on the
+ * <p><b>Measured</b> (2026-11-04, the documents these tests play, written out with their cases and run through
+ * {@code ref/bin/runner.exe} and {@code backends/clingo/bin/clingo_runner.exe}): ref gives terug 99, 7, 7, 7 and 5,
+ * faults on the two rules in the sentence of ch. 5.7, the writers in the order of the document, and passes the sister
+ * document in all six orders. clingo agrees on 7 without a writer, on 7 with the rule that computes leeg, on 5, on the
  * fault and on the sister document, and differs from ref on the made object where a writer meets the creation's value:
- * 106 with the standing rule, 12 with the initialisation and 7 with the rule that computes leeg; the main session takes
- * the first to a card of its own.
+ * 106 with the standing rule and 12 with the initialisation.
  *
  * <p><b>Red before the fix</b> (measured 2026-10-09 on {@code 1738bf61}, the tests unchanged): four of the seven
  * tests. The standing rule: "Schrijversconflict geen fixpunt: twee schrijvers van één doel geven verschillende waarden
@@ -83,11 +81,11 @@ class TmsCreationInputWitnessTest {
                     TmsDocuments.sourceRole("jutmelding", "melding"), "null", number("0"), WHOLE,
                     "de som van de waarde van al zijn meldingen of 0"), "null");
 
-    /** On the supertype, so the creation does not take it out of the standing domain (ch. 7.8, "other writer"). */
+    /** On the supertype of the created type. */
     private static final String STANDING = computingRule("waarde van een melding", "GELIJKSTELLING", "Melding", "waarde",
             number("99"), "null");
 
-    /** On the created type itself, so outside the standing domain; the toeslag is never set, so it computes leeg. */
+    /** On the created type itself; the toeslag is never set, so it computes leeg. */
     private static final String LEEG = computingRule("waarde van een jutmelding", "GELIJKSTELLING", "Jutmelding", "waarde",
             ownRead("toeslag", "Jutmelding"), "null");
 
@@ -134,8 +132,8 @@ class TmsCreationInputWitnessTest {
         plays(List.of(REFUND), "vangst", "7");
     }
 
-    @Test void a_rule_outside_the_standing_domain_that_computes_empty_clears_the_value_of_the_creation() throws Exception {
-        plays(List.of(REFUND, LEEG), "vangst", "0");
+    @Test void a_rule_that_computes_empty_leaves_the_value_of_the_creation_standing() throws Exception {
+        plays(List.of(REFUND, LEEG), "vangst", "7");
     }
 
     @Test void an_initialisation_finds_the_member_of_the_creation_filled() throws Exception {

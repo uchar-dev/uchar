@@ -304,10 +304,6 @@ public enum StaticFunction {
     /** Whether a timeline has a segment with an open bound whose value is not 0, whose total has none (ch. 3.6): a
      *  part of a test a form composes itself. */
     OPEN_NONZERO(PeriodArithmetic.class, "openNonZero", false),
-    /** Whether the target of an initialisation is empty for its guard (RUNTIME-SEMANTICS ch. 5.4): another writer wrote
-     *  leeg on the subject, by a count of such writers, or the subject's input on the target, which the plan reads off
-     *  the bean ({@link Term.Input}), is leeg. A part of a test a form composes itself. */
-    TARGET_EMPTY(ComputeHelpers.class, "targetEmpty", false),
     /** Whether the value facts on one attribute of one object hold two different values, leeg among them, numbers by
      *  value (RUNTIME-SEMANTICS ch. 5.7). A test a form composes itself. */
     DIFFER(ComputeHelpers.class, "differ", false),

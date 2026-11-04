@@ -84,16 +84,16 @@ class TmsIndexWitnessTest {
 
     /** Step 1: the identity joins of a fact field that holds an object, the subject of a standing, a derivation, a
      *  control fact, a contribution or a fault, the object a creation made, and the source of an allocation, with the
-     *  object a variable binds. Two kinds of the step no golden lowers, so they are checked where they occur and not
-     *  demanded: "lege-schrijver-onderwerp" (a writer that writes leeg beside another) and "doelstand-doel" (the target
-     *  check of a fact creation on a derived characteristic); they go through the same helper. */
+     *  object a variable binds. One kind of the step no golden lowers, so it is checked where it occurs and not
+     *  demanded: "doelstand-doel" (the target check of a fact creation on a derived characteristic); it goes through the
+     *  same helper. */
     @Test
     void identityJoins() {
         indexed(Set.of("stand-onderwerp", "padstand-onderwerp", "stand-bereikt", "waarde-onderwerp",
                 "andere-schrijver-onderwerp", "afgeleid-onderwerp", "emmerinvoer-onderwerp", "uitkomst-onderwerp",
                 "hoger-uitkomst-onderwerp", "hoger-beslist-onderwerp", "vouw-onderwerp", "filterfout-onderwerp",
                 "filterdeponering-onderwerp", "lidfout-onderwerp", "eigen-fout-onderwerp", "gemaakt-onderwerp",
-                "nieuw-object", "herkomst", "ontvanger-bron"), Set.of("lege-schrijver-onderwerp", "doelstand-doel"));
+                "nieuw-object", "herkomst", "ontvanger-bron"), Set.of("doelstand-doel"));
     }
 
     /** Step 2: the bean-field joins of the one-step range of a fold and of an allocation, where the reference field of

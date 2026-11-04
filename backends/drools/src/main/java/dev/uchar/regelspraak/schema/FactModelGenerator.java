@@ -530,8 +530,7 @@ public final class FactModelGenerator {
      *
      * <p>It lives HERE for {@link #noJoinFieldReason}'s reason, one step on: a second implementation is a second
      * chance to drift, and the drift is invisible — two readers that resolve the same wire differently produce two
-     * different SETS, not an error. One derivation for every reader, as {@code StandingTargets} is for the ch. 7.8
-     * standing norm.
+     * different SETS, not an error. One derivation for every reader.
      *
      * <p><b>What this does NOT check, and why.</b> The FILLERS. A binding may resolve perfectly and still be
      * wrong for its use site — the bound role filled by the anchor's type instead of the created object's — and

@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * answer it. RUNTIME-SEMANTICS ch. 5.1 reads every rule as an equation; two equations that demand different values
  * for one target have no fixpoint, and ch. 5.7 makes that divergence a fault. Both Drools branches must report it as
  * such, naming the writers, the target and the values they write, and never a cycle the document does not contain.
- * Where only one condition holds, or both writers write the same value, or the conditions exclude each other, the
- * document plays. Every document here is authored in this class on Jutterswet material, each one measured form of the
+ * Where only one condition holds, or both writers write the same value, or the conditions exclude each other, or one
+ * writer computes leeg, which decides nothing (ch. 3.11), the document plays. Every document here is authored in this class on Jutterswet material, each one measured form of the
  * card's form space; {@code ref} faults on the same bodies and the ASP backend derives a named witness.
  *
  * <p><b>Red before the fix</b> (measured 2026-10-01 on the jar of the claim): the exec-model branch ran into its fire
@@ -116,20 +116,16 @@ class OverlappingWritersWitnessTest {
         }
     }
 
-    @Test void a_writer_that_computes_empty_opposite_one_that_writes_a_value() throws Exception {
-        // Both conditions read the vinddatum; the second writer's value, the aanspoeldatum, is leeg, and leeg over a
-        // value is a write (ch. 1.2g), so the two keep writing 04-03-2026 and leeg. ref faults; the ASP backend gave
-        // 04-03-2026 before the fix, because a leeg value derives no atom there.
+    @Test void a_writer_that_computes_empty_beside_one_that_writes_a_value_decides_nothing() throws Exception {
+        // Both conditions read the vinddatum; the second writer's value, the aanspoeldatum, is leeg, and a writer that
+        // fires with a leeg value decides nothing (ch. 3.11), so the first writer's 04-03-2026 stands, without a fault.
         String ir = document(objectType("Vondst", "Vondsten", null, "", DATES),
                 messageOn("melding op vinddag", "Vondst", "vinddatum"),
                 rule("melding op aanspoeldag", "Vondst", "meldingsdatum", read("Vondst", "aanspoeldatum"),
                         test("filled", "Vondst", "vinddatum"), "equation"));
         String caseDocument = caseDocument(List.of(vondst("V", "Vondst", "2026-03-04", null, null)),
                 dateExpected("V", "meldingsdatum", "2026-03-04"));
-        for (DroolsBackend.Branch drl : BRANCHES)
-            reportsWriters(play(ir, caseDocument, drl), branch(drl), "twee schrijvers van één doel geven verschillende waarden",
-                    "\"melding op vinddag\" schrijft 2026-03-04",
-                    "\"melding op aanspoeldag\" schrijft leeg", "in het attribuut meldingsdatum van V, een Vondst");
+        for (DroolsBackend.Branch drl : BRANCHES) assertNull(play(ir, caseDocument, drl), branch(drl));
     }
 
     @Test void an_equation_beside_a_calculation() throws Exception {

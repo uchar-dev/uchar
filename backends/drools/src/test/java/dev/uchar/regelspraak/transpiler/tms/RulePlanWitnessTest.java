@@ -65,9 +65,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *   <li>{@code jutterswet-voorwaardelijke-initialisatie}: an initialisation beside no other writer, guarded by the
  *       input on the target and the absence of another writer's value.</li>
  *   <li>The same document with two computing rules beside the initialisation
- *       ({@link #initialisationBesideEmptyWriter}), since no golden has one: outside the standing domain a computing
- *       rule writes leeg, so the guard counts the other writers that wrote leeg and, where none did, tests the input,
- *       which the test reads off the bean as a node of the plan with its member and its form of reading.</li>
+ *       ({@link #initialisationBesideComputingRules}), since no golden has one: a computing rule writes nothing for a
+ *       computed leeg, so the initialisation's guard is the one it has beside no other writer, and the two rules have
+ *       the rule that compares their values.</li>
  * </ul>
  *
  * <p><b>Red</b> before the step: the transpiler planned only the left-hand sides and built every rule itself, so there
@@ -264,7 +264,7 @@ class RulePlanWitnessTest {
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondstmelding,"
                         + " name=vensterheffing, characteristic=false], writer=vensterheffing in 2026,"
                         + " value=FIT_TARGET(RS_PLUS(Read 0, Const 25), Const 0, Const vensterheffing, Const null),"
-                        + " slots=[0], size=1, collapse=false, writesEmpty=true, deposit=null,"
+                        + " slots=[0], size=1, collapse=false, writesEmpty=false, deposit=null,"
                         + " fault=FaultName[form=vensterheffing in 2026, rule=vensterheffing in 2026],"
                         + " insertion=LOGICAL]",
                 "    value 0 Call source 'de meldwaarde van de Vondstmelding vermeerderd met 25'",
@@ -290,7 +290,7 @@ class RulePlanWitnessTest {
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondstmelding,"
                         + " name=overgangsheffing, characteristic=false], writer=overgangsheffing tot en met 2025,"
                         + " value=FIT_TARGET(RS_PLUS(Read 0, Const 40), Const 0, Const overgangsheffing, Const null),"
-                        + " slots=[0], size=1, collapse=false, writesEmpty=true, deposit=null,"
+                        + " slots=[0], size=1, collapse=false, writesEmpty=false, deposit=null,"
                         + " fault=FaultName[form=overgangsheffing tot en met 2025, rule=overgangsheffing tot en met"
                         + " 2025], insertion=LOGICAL]",
                 "    value 0 Call source 'de meldwaarde van de Vondstmelding vermeerderd met 40'",
@@ -335,7 +335,7 @@ class RulePlanWitnessTest {
                 "    test 0.1.2 Const String",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=bergingszaak, name=status,"
                         + " characteristic=false], writer=vrijgave zonder beletsel, value=Const vrijgegeven, slots=[],"
-                        + " size=2, collapse=false, writesEmpty=true, deposit=null, fault=FaultName[form=vrijgave"
+                        + " size=2, collapse=false, writesEmpty=false, deposit=null, fault=FaultName[form=vrijgave"
                         + " zonder beletsel, rule=vrijgave zonder beletsel], insertion=LOGICAL]",
                 "    value 0 Const String type Text[] source ''vrijgegeven''",
                 "rule aanhouding bij beletsel | form aanhouding bij beletsel | group null",
@@ -357,7 +357,7 @@ class RulePlanWitnessTest {
                 "    test 0.1.2 Const String",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=bergingszaak, name=status,"
                         + " characteristic=false], writer=aanhouding bij beletsel, value=Const aangehouden, slots=[],"
-                        + " size=2, collapse=false, writesEmpty=true, deposit=null, fault=FaultName[form=aanhouding"
+                        + " size=2, collapse=false, writesEmpty=false, deposit=null, fault=FaultName[form=aanhouding"
                         + " bij beletsel, rule=aanhouding bij beletsel], insertion=LOGICAL]",
                 "    value 0 Const String type Text[] source ''aangehouden''",
                 "rule schrijvers Bergingszaak.status: verschil | form null | group null",
@@ -433,13 +433,13 @@ class RulePlanWitnessTest {
                 rules(golden("jutterswet-voorwaardelijke-initialisatie")));
     }
 
-    @Test void an_initialisation_beside_a_writer_that_writes_empty() throws Exception {
+    @Test void an_initialisation_beside_two_computing_rules() throws Exception {
         assertEquals(List.of(
                 "rule standaardbergloon | form standaardbergloon | group null",
                 "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
-                        + " characteristic=false]), 1 EMPTY_WRITERS $lege_schrijvers (lege schrijvers), 2 SUBJECT"
-                        + " $onderwerp (onderwerp zelf)]",
-                "  subject Vondst $onderwerp alpha [] bind [$gewicht = [].gewicht VALUE]",
+                        + " characteristic=false])]",
+                "  subject Vondst $onderwerp alpha [doel-leeg-in-de-invoer_1: [bergloon LEEG]] bind [$gewicht ="
+                        + " [].gewicht VALUE]",
                 "  test voorwaarde_0 CONDITION probe -1 slots [0] size 1: RS_AGG_COMPARE(Read 0, Const 10,"
                         + " Const >)",
                 "    test 0 Call source 'zijn gewicht groter is dan 10'",
@@ -447,23 +447,12 @@ class RulePlanWitnessTest {
                 "    test 0.1 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '10'",
                 "    test 0.2 Const String",
-                "  not Value $andere_schrijver alpha [andere-schrijver_1: [attribute GELIJK"
+                "  not Value $andere_schrijver alpha [andere-schrijver_2: [attribute GELIJK"
                         + " ElementKey[objectType=vondst, name=bergloon, characteristic=false], writer NOT_EQUAL"
-                        + " standaardbergloon, value GEVULD]] join [andere-schrijver-onderwerp_2: subject ="
-                        + " $onderwerp] bind []",
-                "  accumulation Value $lege_schrijver alpha [lege-schrijver_3: [attribute GELIJK"
-                        + " ElementKey[objectType=vondst, name=bergloon, characteristic=false], writer NOT_EQUAL"
-                        + " standaardbergloon, value LEEG]] join [lege-schrijver-onderwerp_4: subject ="
-                        + " $onderwerp] bind [] functions [COUNT null -> $lege_schrijvers]",
-                "  test doel-leeg_5 VORM probe -1 slots [1, 2] size 3: TARGET_EMPTY(Read 1, Input Vondst.bergloon"
-                        + " VALUE (Read 2))",
-                "    test 0 Call",
-                "    test 0.0 SlotValue",
-                "    test 0.1 Input",
-                "    test 0.1.0 SlotValue",
+                        + " standaardbergloon]] join [andere-schrijver-onderwerp_3: subject = $onderwerp] bind []",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
                         + " characteristic=false], writer=standaardbergloon, value=FIT_TARGET(RS_TIMES(Const 2, Read"
-                        + " 0), Const 2, Const bergloon, Const null), slots=[0], size=3, collapse=false,"
+                        + " 0), Const 2, Const bergloon, Const null), slots=[0], size=1, collapse=false,"
                         + " writesEmpty=false, deposit=null, fault=FaultName[form=standaardbergloon,"
                         + " rule=standaardbergloon], insertion=LOGICAL]",
                 "    value 0 Call source '2 maal zijn gewicht'",
@@ -478,7 +467,7 @@ class RulePlanWitnessTest {
                 "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
                         + " characteristic=false])]",
                 "  subject Vondst $onderwerp alpha [] bind [$gewicht = [].gewicht VALUE]",
-                "  test voorwaarde_6 CONDITION probe -1 slots [0] size 1: RS_AGG_COMPARE(Read 0, Const 10,"
+                "  test voorwaarde_4 CONDITION probe -1 slots [0] size 1: RS_AGG_COMPARE(Read 0, Const 10,"
                         + " Const >)",
                 "    test 0 Call source 'zijn gewicht groter is dan 10'",
                 "    test 0.0 SlotValue source 'zijn gewicht'",
@@ -487,7 +476,7 @@ class RulePlanWitnessTest {
                 "    test 0.2 Const String",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
                         + " characteristic=false], writer=zwaar bergloon, value=FIT_TARGET(RS_TIMES(Const 2, Read 0),"
-                        + " Const 2, Const bergloon, Const null), slots=[0], size=1, collapse=false, writesEmpty=true,"
+                        + " Const 2, Const bergloon, Const null), slots=[0], size=1, collapse=false, writesEmpty=false,"
                         + " deposit=null, fault=FaultName[form=zwaar bergloon, rule=zwaar bergloon], insertion=LOGICAL]",
                 "    value 0 Call source '2 maal zijn gewicht'",
                 "    value 0.0 Call source '2 maal zijn gewicht'",
@@ -501,7 +490,7 @@ class RulePlanWitnessTest {
                 "  readings [0 INPUT $gewicht (eigen ElementKey[objectType=vondst, name=gewicht,"
                         + " characteristic=false])]",
                 "  subject Vondst $onderwerp alpha [] bind [$gewicht = [].gewicht VALUE]",
-                "  test voorwaarde_7 CONDITION probe -1 slots [0] size 1: RS_AGG_COMPARE(Read 0, Const 10,"
+                "  test voorwaarde_5 CONDITION probe -1 slots [0] size 1: RS_AGG_COMPARE(Read 0, Const 10,"
                         + " Const >)",
                 "    test 0 Call source 'zijn gewicht groter is dan 10'",
                 "    test 0.0 SlotValue source 'zijn gewicht'",
@@ -510,7 +499,7 @@ class RulePlanWitnessTest {
                 "    test 0.2 Const String",
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
                         + " characteristic=false], writer=licht bergloon, value=FIT_TARGET(RS_TIMES(Const 2, Read 0),"
-                        + " Const 2, Const bergloon, Const null), slots=[0], size=1, collapse=false, writesEmpty=true,"
+                        + " Const 2, Const bergloon, Const null), slots=[0], size=1, collapse=false, writesEmpty=false,"
                         + " deposit=null, fault=FaultName[form=licht bergloon, rule=licht bergloon], insertion=LOGICAL]",
                 "    value 0 Call source '2 maal zijn gewicht'",
                 "    value 0.0 Call source '2 maal zijn gewicht'",
@@ -523,24 +512,25 @@ class RulePlanWitnessTest {
                 "rule schrijvers Vondst.bergloon: verschil | form null | group null",
                 "  readings [0 VALUES $waarden (waarden)]",
                 "  subject Vondst $onderwerp alpha [] bind []",
-                "  accumulation Value $waarde alpha [waarde_8: [attribute GELIJK ElementKey[objectType=vondst,"
-                        + " name=bergloon, characteristic=false]]] join [waarde-onderwerp_9: subject = $onderwerp] bind []"
+                "  accumulation Value $waarde alpha [waarde_6: [attribute GELIJK ElementKey[objectType=vondst,"
+                        + " name=bergloon, characteristic=false]]] join [waarde-onderwerp_7: subject = $onderwerp] bind []"
                         + " functions [LIST null -> $waarden]",
-                "  test verschil_10 VORM probe -1 slots [0] size 1: DIFFER(Read 0)",
+                "  test verschil_8 VORM probe -1 slots [0] size 1: DIFFER(Read 0)",
                 "    test 0 Call",
                 "    test 0.0 SlotValue",
                 "  consequence WritersConflict [subject=$onderwerp, values=0,"
                         + " target=ElementKey[objectType=vondst, name=bergloon, characteristic=false],"
                         + " attribute=bergloon, documentOrder=[standaardbergloon, zwaar bergloon, licht"
                         + " bergloon], typeClasses=[Vondst], types=[Vondst], insertion=LOGICAL]"),
-                rules(initialisationBesideEmptyWriter()));
+                rules(initialisationBesideComputingRules()));
     }
 
     /** The golden {@code jutterswet-voorwaardelijke-initialisatie}, whose initialisation of the bergloon is the
      *  target's one writer, with two computing rules on the bergloon beside it, copies of the initialisation's version
-     *  that compute ({@code calculation}): two computing rules on one target are both outside the standing domain
-     *  (RUNTIME-SEMANTICS ch. 7.8), so each writes a computed leeg. Verifier-clean. */
-    static JsonNode initialisationBesideEmptyWriter() throws Exception {
+     *  that compute ({@code calculation}): a computed leeg writes nothing (RUNTIME-SEMANTICS ch. 3.11), so the
+     *  initialisation's guard is the one it has beside no other writer, and the two rules have the rule that compares
+     *  their values. Verifier-clean. */
+    static JsonNode initialisationBesideComputingRules() throws Exception {
         ObjectNode d = (ObjectNode) golden("jutterswet-voorwaardelijke-initialisatie");
         ArrayNode rules = (ArrayNode) d.path("rules").path("rules");
         ObjectNode initialisation = (ObjectNode) rules.get(0);

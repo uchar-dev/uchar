@@ -670,14 +670,6 @@ public final class ComputeHelpers {
         return (value instanceof BucketScalar) == desired;
     }
 
-    /** Whether the target of an initialisation is empty for its guard (RUNTIME-SEMANTICS ch. 5.4): {@code emptyWriterCount}, the
-     *  number of other writers that wrote leeg on the subject, is not 0, or {@code input}, the subject's input on
-     *  the target, which the plan reads ({@code plan.Term.Input}), is leeg. The read has no effect, so that it is
-     *  evaluated also where such a writer settles the guard changes nothing. */
-    public static boolean targetEmpty(Object emptyWriterCount, Object input) {
-        return ((Number) emptyWriterCount).longValue() != 0 || input == null;
-    }
-
     /** Whether the value facts in {@code waarden}, a list, hold two different values, leeg among them
      *  ({@link #equalValue}). */
     public static boolean differ(Object values) {

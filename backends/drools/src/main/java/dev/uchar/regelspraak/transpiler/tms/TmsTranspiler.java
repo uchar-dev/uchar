@@ -40,7 +40,6 @@ import dev.uchar.regelspraak.transpiler.core.UnitConflict;
 import dev.uchar.regelspraak.transpiler.core.Host;
 import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.core.Operators;
-import dev.uchar.regelspraak.transpiler.core.StandingTargets;
 import dev.uchar.regelspraak.transpiler.core.Timelines;
 import dev.uchar.regelspraak.transpiler.core.WindowPosition;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulation;
@@ -115,8 +114,7 @@ import java.util.function.Supplier;
  *
  * <p>What it lowers: a characteristic attribution; an assignment or a computation of an attribute of the subject, or of
  * a cell of a dimensioned one (RUNTIME-SEMANTICS ch. 5.8c), which
- * writes nothing for a computed leeg on a standing target (RUNTIME-SEMANTICS ch. 7.8, or beside one unconditional
- * initialisation, the desugaring domain of ch. 7.7) and writes the leeg elsewhere (ch. 1.2g), any number of them on one
+ * writes nothing for a computed leeg (RUNTIME-SEMANTICS ch. 3.11, 7.8), any number of them on one
  * target, two that stand on one object with different values being the fault of ch. 5.7 ({@link #differenceRule}); an
  * initialisation (ch. 5.4), of an attribute or a cell, the only one on its target per concrete type; a
  * consistency, whose violation is a logical §9.5 inconsistency; a uniqueness, over one source or more, whose
@@ -266,9 +264,6 @@ public final class TmsTranspiler {
     private final Set<ElementKey> defaultsTargets = new LinkedHashSet<>();
     /** The effective stacks of RUNTIME-SEMANTICS ch. 7.10 and the fold of ordinary rules into them. */
     private Stacks stacks;
-    /** The targets on which a computed leeg writes nothing (RUNTIME-SEMANTICS ch. 7.7 and 7.8), classified by the class
-     *  both branches share. */
-    private StandingTargets standingTargets;
     /** The names of the document's rules in its order, each once: the sentence of two writers that disagree names them
      *  in this order, as the reference interpreter's pass runs them (RUNTIME-SEMANTICS ch. 5.7), and the reader of the
      *  fixpoint takes, of writers that agree, the value of the first ({@link WritersConflict#inDocumentOrder}). A
@@ -1605,7 +1600,6 @@ public final class TmsTranspiler {
     private Modelplan run() {
         writers = ProducerConsumer.producerIndex(model, defaults);
         createdExactValues = createdExactValues(writers);
-        standingTargets = StandingTargets.of(model, defaults);
         for (ResolvedRule r : model.resolvedRules)
             if (r.name() != null && !documentOrder.contains(r.name())) documentOrder.add(r.name());
         for (ObjectType t : model.objectTypes.values()) {
@@ -1959,11 +1953,9 @@ public final class TmsTranspiler {
     /**
      * An assignment or a computation of an attribute of the subject: the left-hand side of a characteristic attribution,
      * and a consequence that computes the value from the values it binds and inserts a {@link Value} logically. A
-     * computed leeg writes nothing on a standing target, so the input on the target stands, or the initialisation beside
-     * the rule fills it (the standing norm of RUNTIME-SEMANTICS ch. 7.8 and the desugaring domain of ch. 7.7: the rule is
-     * its target's only computing writer, beside at most one unconditional initialisation). Outside that domain a
-     * computed leeg is a write (ch. 1.2g): the {@link Value} carries leeg, which takes the target's input standing away
-     * and is a value another writer can disagree with. A target may have more computing rules: each is an equation, and
+     * computed leeg writes nothing and decides nothing (RUNTIME-SEMANTICS ch. 3.11, 7.8), so the target holds what
+     * another writer's value, the initialisation beside the rule or the input puts there, or stays leeg. A target may
+     * have more computing rules: each is an equation, and
      * where two of them stand at the fixpoint on one object with different values the rule of {@link #differenceRule}
      * makes that the fault of ch. 5.7; where at most one condition holds, or they write the same value, the document
      * plays. They are keyed per object, so writers on sister subtypes never meet (WF-079 and ch. 7.10 read per concrete
@@ -1981,8 +1973,8 @@ public final class TmsTranspiler {
      * (RUNTIME-SEMANTICS ch. 5.7).
      *
      * <p>A member an object creation sets is the input of the object it makes ({@link #objectCreation}), so a rule on it
-     * displaces that value as it displaces case input, and outside the standing domain a computed leeg erases it, as in
-     * the reference interpreter, which overwrites the value the creation wrote at the making (ch. 5.5, 1.2g).
+     * displaces that value as it displaces case input, and a computed leeg leaves it standing, as in the reference
+     * interpreter, where a rule that evaluates leeg gives back only what it wrote itself (ch. 5.5, 3.11).
      *
      * <p>A rule whose target is a cell ({@code cell}, null for an attribute) writes that cell as a member of its own
      * (RUNTIME-SEMANTICS ch. 5.8c): its {@link Value} carries the cell's key, and everything above holds per cell.
@@ -1992,8 +1984,7 @@ public final class TmsTranspiler {
             return timelineRule(r, target);
         Member member = cell != null ? cell : member(target.objectType(), target.attribute(), false);
         Set<Class<?>> absorbed = absorbed(target, member);
-        boolean writesEmpty = !standingTargets.standingScalar(r);
-        return writeRule(r, target.objectType(), member, null, absorbed, writesEmpty);
+        return writeRule(r, target.objectType(), member, null, absorbed);
     }
 
     /**
@@ -2030,7 +2021,7 @@ public final class TmsTranspiler {
                 || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN)))
             throw new Refusal(DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.reason("attribute", member.name(), "declarant", member.declarant().name, "snippet", r.value() == null ? DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.part("without-value")
                     : snippet(r.value().source())));
-        return writeRule(r, target.objectType(), member, null, Set.of(), false);
+        return writeRule(r, target.objectType(), member, null, Set.of());
     }
 
     // ---------------- a condition read per period ----------------
@@ -2779,12 +2770,6 @@ public final class TmsTranspiler {
      * {@code jutterswet-initialisatievolgorde} on this branch), on several the session reached the fire cap (measured
      * 2026-10-08, {@code TmsInitialisationWitnessTest}).
      *
-     * <p>A computing rule beside it that is outside the standing domain writes a computed leeg (ch. 1.2g). The guard
-     * then reads the target as the other writers leave it, as the reference interpreter's guard reads the running fact
-     * base: a value another writer places switches it off, and a leeg another writer writes leaves the target empty,
-     * input or not, so the initialisation fills it and the two writers demand different values, the fault of ch. 5.7
-     * ({@link #differenceRule}).
-     *
      * <p>Two initialisations on one target are ill-formed, conditional or not (IR-SPEC WF-079): where both apply,
      * nothing ranks them. The backend runs no verifier, so this refuses the pair by name, read per concrete type as
      * WF-079 reads it: two initialisations on one type, or on a type and its ancestor, write one instance, and two on
@@ -2808,52 +2793,27 @@ public final class TmsTranspiler {
                 .filter(x -> related(writtenReference(x.target()).objectType(), target.objectType())).toList();
         if (writing.size() > 1)
             throw new Refusal(DroolsCode.MULTIPLE_INITIALISATIONS_ON_TARGET.reason("attribute", member.spelled(), "declarant", member.declarant().name, "rules", String.join(", ", writing.stream().map(x -> "\"" + x.name() + "\"").toList())));
-        // a computing rule outside the standing domain writes a computed leeg, which empties the target for the guard
-        boolean emptyBeside = computeRules.getOrDefault(key, List.of()).stream().anyMatch(x ->
-                !standingTargets.standingScalar(x) && related(writtenReference(x.target()).objectType(), target.objectType()));
         String name = r.name();
         Alpha.FieldTest ofTarget = new Alpha.FieldTest("attribute", Alpha.Comparator.GELIJK, key);
         Alpha.FieldTest ofOther = new Alpha.FieldTest("writer", Alpha.Comparator.NOT_EQUAL, name);
-        if (!emptyBeside)
-            return writeRule(r, target.objectType(), member, reads -> {
-                List<LhsItem> out = new ArrayList<>();
-                // the input of an attribute is a field of the bean, tested on the subject pattern; that of a cell is an
-                // entry of the map the bean holds, which a test reads where it evaluates
-                if (member.cell() == null)
-                    reads.addSubjectAlpha(new Alpha(id("doel-leeg-in-de-invoer"),
-                            List.of(new Alpha.FieldTest(member.name(), Alpha.Comparator.LEEG, null))));
-                Alpha another = new Alpha(id("andere-schrijver"), List.of(ofTarget, ofOther));
-                out.add(new Not(new FactPattern(Value.class, "$andere_schrijver", List.of(another),
-                        List.of(new Join(id("andere-schrijver-onderwerp"), "subject", SUBJECT)), List.of())));
-                if (member.cell() != null) {
-                    int subjectType = reads.member();
-                    out.add(new TestItem(id("doel-leeg-in-de-invoer"), TestItem.Role.VORM,
-                            new Term.Call(StaticFunction.EMPTY_TEST, List.of(inputOf(member, subjectType), constant(true)),
-                                    null), -1, List.of(subjectType), reads.size()));
-                }
-                return out;
-            }, absorbed, false);
         return writeRule(r, target.objectType(), member, reads -> {
-            Alpha another = new Alpha(id("andere-schrijver"),
-                    List.of(ofTarget, ofOther, new Alpha.FieldTest("value", Alpha.Comparator.GEVULD, null)));
-            Join otherOnSubject = new Join(id("andere-schrijver-onderwerp"), "subject", SUBJECT);
-            Alpha empty = new Alpha(id("lege-schrijver"),
-                    List.of(ofTarget, ofOther, new Alpha.FieldTest("value", Alpha.Comparator.LEEG, null)));
-            Join emptyOnSubject = new Join(id("lege-schrijver-onderwerp"), "subject", SUBJECT);
-            int emptyWriterCount = reads.emptyWriters();
-            int subjectType = reads.member();
-            // the target's input on the subject's bean, as it is, which the guard tests for leeg as the first variant's
-            // constraint does; read in the test, so the executable model binds no value of it
-            Term targetEmpty = new Term.Call(StaticFunction.TARGET_EMPTY, List.of(new Term.SlotValue(emptyWriterCount, null),
-                    inputOf(member, subjectType)), null);
-            return List.of(
-                    new Not(new FactPattern(Value.class, "$andere_schrijver", List.of(another), List.of(otherOnSubject),
-                            List.of())),
-                    new Accumulation(new FactPattern(Value.class, "$lege_schrijver", List.of(empty), List.of(emptyOnSubject),
-                            List.of()), List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, "$lege_schrijvers"))),
-                    new TestItem(id("doel-leeg"), TestItem.Role.VORM, targetEmpty, -1, List.of(emptyWriterCount, subjectType),
-                            reads.size()));
-        }, absorbed, false);
+            List<LhsItem> out = new ArrayList<>();
+            // the input of an attribute is a field of the bean, tested on the subject pattern; that of a cell is an
+            // entry of the map the bean holds, which a test reads where it evaluates
+            if (member.cell() == null)
+                reads.addSubjectAlpha(new Alpha(id("doel-leeg-in-de-invoer"),
+                        List.of(new Alpha.FieldTest(member.name(), Alpha.Comparator.LEEG, null))));
+            Alpha another = new Alpha(id("andere-schrijver"), List.of(ofTarget, ofOther));
+            out.add(new Not(new FactPattern(Value.class, "$andere_schrijver", List.of(another),
+                    List.of(new Join(id("andere-schrijver-onderwerp"), "subject", SUBJECT)), List.of())));
+            if (member.cell() != null) {
+                int subjectType = reads.member();
+                out.add(new TestItem(id("doel-leeg-in-de-invoer"), TestItem.Role.VORM,
+                        new Term.Call(StaticFunction.EMPTY_TEST, List.of(inputOf(member, subjectType), constant(true)),
+                                null), -1, List.of(subjectType), reads.size()));
+            }
+            return out;
+        }, absorbed);
     }
 
     /** The input of {@code member} on the bean of the object bound at slot {@code subject}, as a test that reads it where it
@@ -2870,15 +2830,14 @@ public final class TmsTranspiler {
      * its value bind there, the standing patterns of what it reads elsewhere, one test over every value the condition
      * reads, the {@code blockade} the form adds (null for none), and a consequence that computes the value from the
      * values it binds and inserts a {@link Value} logically, with the form's name as the writer, when the value is
-     * gevuld, or also when it is leeg where {@code writesEmpty} (a computing rule outside the standing domain, ch.
-     * 1.2g), beside the §6.5 deposit {@link #computeRule} describes. Where the value faults, the consequence inserts the
+     * gevuld (a leeg value decides nothing, RUNTIME-SEMANTICS ch. 3.11), beside the §6.5 deposit {@link #computeRule}
+     * describes. Where the value faults, the consequence inserts the
      * {@link Fault} instead, and neither the value nor a deposit. Objects of a class in {@code absorbed} do not
      * match: an effective stack writes the target there ({@link #absorbed}). Beside it, where the condition can
      * fault, the rule that inserts its fault ({@link #conditionFaultRule}).
      */
     private List<RulePlan> writeRule(ResolvedRule r, ObjectType subject, Member member,
-                                         Function<Reads, List<LhsItem>> blockade, Set<Class<?>> absorbed,
-                                         boolean writesEmpty) {
+                                         Function<Reads, List<LhsItem>> blockade, Set<Class<?>> absorbed) {
         ElementKey key = member.key();
         Supplier<Reads> fresh = () -> readings(subject, absorbed).valid(r.validity());
         Reads reads = fresh.get();
@@ -2920,7 +2879,7 @@ public final class TmsTranspiler {
         // the value stays exact in working memory, so a reader of the unbounded form computes with the value the form
         // wrote (ch. 2.1, 2.4 point 3); the write-back puts it on the bean as a decimal (readFixpoint)
         Consequence consequence = new Consequence.Value(SUBJECT, key, name, value, List.copyOf(use), reads.size(), false,
-                writesEmpty, depositFlag < 0 ? null : new Consequence.Deposit(depositFlag, name), new Consequence.FaultName(name, ruleName),
+                false, depositFlag < 0 ? null : new Consequence.Deposit(depositFlag, name), new Consequence.FaultName(name, ruleName),
                 Consequence.Insertion.LOGICAL);
         derived.put(key, member);
         reads.recorder();
@@ -2960,9 +2919,8 @@ public final class TmsTranspiler {
 
     /**
      * The rules of {@link #differenceRule}, one per attribute on which two writers can stand at the fixpoint on one
-     * object: two or more computing rules, or a computing rule outside the standing domain beside an initialisation,
-     * whose guard a written leeg leaves open (ch. 5.4). An initialisation beside a standing rule needs none: its guard
-     * keeps it from standing beside the rule's value, and the rule writes nothing for a computed leeg.
+     * object: two or more computing rules. An initialisation beside a computing rule needs none: its guard keeps it from
+     * standing beside the rule's value, and the rule writes nothing for a computed leeg.
      */
     private List<RulePlan> differenceRules() {
         List<RulePlan> out = new ArrayList<>();
@@ -2970,9 +2928,7 @@ public final class TmsTranspiler {
             Member member = derived.get(e.getKey());
             // no writer of the attribute was lowered: the manifest names the refused forms, and the build fails on them
             if (member == null) continue;
-            boolean emptyBesideInitialisation = e.getValue().stream().anyMatch(r -> !standingTargets.standingScalar(r))
-                    && !initialisations.getOrDefault(e.getKey(), List.of()).isEmpty();
-            if (e.getValue().size() > 1 || emptyBesideInitialisation) out.add(differenceRule(member));
+            if (e.getValue().size() > 1) out.add(differenceRule(member));
         }
         return out;
     }
@@ -7904,12 +7860,6 @@ public final class TmsTranspiler {
         /** Adds the constraint {@code a} on the subject bean to the subject pattern, after the ones before it. */
         void addSubjectAlpha(Alpha a) {
             subjectAlpha.add(a);
-        }
-
-        /** The number of the other writers of an initialisation's target that wrote leeg on the subject, bound off an
-         *  accumulate the form plans ({@link TmsTranspiler#initialisationRule}). */
-        int emptyWriters() {
-            return allocateSlot(ReadKind.EMPTY_WRITERS, "lege schrijvers", "$lege_schrijvers");
         }
 
         Set<Integer> follow() {

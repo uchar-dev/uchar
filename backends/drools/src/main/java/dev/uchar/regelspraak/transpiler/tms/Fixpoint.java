@@ -49,8 +49,7 @@ public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> ch
     /**
      * The value derived for attribute {@code attribute} of {@code object}, in the form its bean field takes it: a number
      * as a {@code BigDecimal}, a date, a text, a truth value, and a timeline as a list of the bean model's
-     * {@code Segment}s, made anew by every read. Null is leeg: a rule outside the standing domain that computed leeg,
-     * which empties the input (RUNTIME-SEMANTICS ch. 1.2g). An attribute without an entry keeps its input. Of a
+     * {@code Segment}s, made anew by every read. Null is leeg. An attribute without an entry keeps its input. Of a
      * dimensioned attribute the value is that of one cell (RUNTIME-SEMANTICS ch. 5.8c), whose labels {@code labels} are,
      * one per dimension in their declared spelling, the key of the cell in the map the bean field holds; null for every
      * other attribute. A cell without an entry keeps its input. A time-dependent characteristic that a rule writes within

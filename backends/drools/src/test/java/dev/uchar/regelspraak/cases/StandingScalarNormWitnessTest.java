@@ -9,32 +9,22 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * RUNTIME-SEMANTICS ch. 7.8 (the SCALAR standing norm) and the ch. 7.7 desugaring domain ref's scalar arm
- * consults beside it — witnessed through {@link CaseRunner#playCase} over corpus goldens' {@code ir.json}
- * with cases authored HERE (no corpus expectation is read, moved or touched).
+ * RUNTIME-SEMANTICS ch. 7.8 (the SCALAR standing norm: every computing rule decides like a default) and ch. 3.11
+ * ("Leeg in a write": a writer that fires with a leeg value decides nothing) — witnessed through
+ * {@link CaseRunner#playCase} over corpus goldens' {@code ir.json} with cases authored HERE (no corpus expectation is
+ * read, moved or touched), and over the documents of {@code ref/test/fixtures/empty-write} with their cases.
  *
- * <p>Both sides of the norm are pinned for both domains: a LEEG computed value decides nothing and what the
- * fact base holds stands (the input, or — in the desugaring domain — the initialisatie's value), while a
- * GEVULD one displaces it. A one-sided implementation (never write / always write) fails one of the two.
+ * <p>Both sides of the norm are pinned: a LEEG computed value decides nothing and what the fact base holds stands (the
+ * input, or the initialisatie's value), while a GEVULD one displaces it. A one-sided implementation (never write /
+ * always write) fails one of the two. The norm holds for a rule beside a second writer and for a rule with a validity
+ * window as for the only, version-free one, and each of those rows asserts the erased outcome observably false.
  *
- * <p>The third witness is the DOMAIN GATE itself: the same model with ONE EXTRA computing rule on the same
- * target leaves the standing domain (ref's writer count is 2), and there the v0 erase is still in force —
- * a leeg source DOES wipe the input. Verified against {@code ref/} on this exact model before it was pinned
- * here, so the two executors agree on the flank as well as on the norm. Without this witness a "skip every
- * null write" implementation would pass every other assertion in the gate set. Its twin is the VERSION
- * flank: a versioned computing rule is not version-free, so its target is in neither domain and the v0
- * erase stands there too — selection is temporal (ch. 7.4) and never defeasible.
- *
- * <p>DUAL-BRANCH since the drl-staande-waarden card (2026-09-18): every row below runs through BOTH Drools
- * transpiler branches ({@link BothBranches}). Until then the whole matrix ran through the exec-model branch
- * alone, and the DRL-text branch — which had no target classification at all — erased on an empty
- * computation what the norm preserves, on four corpus goldens, unwitnessed. The ONE exception is the
- * defaults row, and it is named rather than dropped: the DRL branch refuses a prioritizedDefaults document
- * as a whole (it has no defaults lowering), so that row asserts the refusal there instead of the outcome.
+ * <p>Every row runs through BOTH Drools transpiler branches ({@link BothBranches}).
  */
 class StandingScalarNormWitnessTest {
 
@@ -42,6 +32,7 @@ class StandingScalarNormWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up.
     private static final Path CORPUS = Path.of("..", "..", "corpus", "golden");
+    private static final Path EMPTY_WRITE = Path.of("..", "..", "ref", "test", "fixtures", "empty-write");
 
     // ---------------- 1. the standing scalar target (ch. 7.8): one computing rule, no initialisatie ----------------
 
@@ -95,61 +86,59 @@ class StandingScalarNormWitnessTest {
                 "a gevuld computed value displaces input and initialisatie alike");
     }
 
-    // ---------------- 3. the domain gate: a second writer takes the target OUT of the norm ----------------
+    // ---------------- 3. a second writer: the norm holds for every computing rule ----------------
 
-    @Test void two_rules_that_compute_on_a_target_clear_the_input_value_indeed() throws Exception {
-        // The waardestelling model plus ONE extra gelijkstelling on the same target: writer count 2, so
-        // NEITHER the standing domain (exactly one writer) NOR the desugaring domain (no initialisatie)
-        // holds it — the v0 erase is unretired there, and a leeg source wipes the input. ref agrees on this
-        // very model+case (checked before pinning); a domain-free "skip null writes" would fail here.
+    @Test void beside_a_second_rule_a_leeg_computation_leaves_the_input_value_standing() throws Exception {
+        // The waardestelling model plus ONE extra gelijkstelling on the same target, whose source is leeg as well: both
+        // rules fire, neither decides, so the input stands (RUNTIME-SEMANTICS ch. 3.11: a writer that fires with a leeg
+        // value decides nothing, on every target, beside a second writer too).
         Path ir = secondWriter();
         BothBranches.green(ir, JSON.readTree(
+                vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", value("77.00"))),
+                "beside a second writer a leeg source decides nothing: the input stands");
+
+        // and the same case with an empty expectation is a MISMATCH, so the assertion above is not passing on a
+        // comparator that ignores the value: the input is observably THERE.
+        BothBranches.red(ir, JSON.readTree(
                 vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"",
                         "{ \"kind\": \"attributeEmpty\", \"label\": \"v1\", \"attribute\": \"geschatte waarde\" }")),
-                "outside the domain the v0 erase still applies: the leeg source wipes the input");
-
-        // and the same case with the standing expectation is a MISMATCH, so the assertion above is not
-        // passing on a comparator that ignores absence. This is the row a classification "every null write
-        // is skipped" turns green in BOTH branches — the boundary, not the guard, is what is pinned here.
-        BothBranches.red(ir, JSON.readTree(
-                vondst("\"geschatte waarde\": { \"number\": \"77.00\" }", "\"gemeld\"", value("77.00"))),
-                "geschatte waarde", "the input must be observably GONE, not merely unasserted");
+                "verwacht leeg, werkelijk 77.00", "the input must observably stand, not merely go unasserted");
     }
 
-    // ---------------- 3b. the VERSION flank: a versioned rule is in no domain ----------------
+    // ---------------- 3b. the version flank: a versioned rule decides like any other ----------------
 
-    @Test void a_version_target_does_not_come_into_the_standing_domain() throws Exception {
-        // ref's is_computing demands a VERSION-FREE rule, so a target whose SOLE writer carries a geldigheids-
-        // window is in neither domain: version selection is temporal (ch. 7.4) and never defeasible, so the v0
-        // erase is unretired there. Same model as the standing rows, one clause different — the window — and
-        // the case's asOfDate sits inside it, so the rule fires, computes leeg, and WIPES the input 77.00.
-        // ref answers exactly this on this model+case (checked before pinning, `oracle: PASS`).
+    @Test void a_versioned_rule_that_computes_leeg_leaves_the_input_value_standing() throws Exception {
+        // Same model as the standing rows, one clause different — a geldigheidswindow on the rule — and the case's
+        // asOfDate sits inside it, so the rule fires and computes leeg: it decides nothing and the input 77.00 stands, as
+        // for a version-free rule (ch. 3.11).
         Path ir = versionWriter();
-        BothBranches.green(ir, JSON.readTree(versionCase(
-                "{ \"kind\": \"attributeEmpty\", \"label\": \"v1\", \"attribute\": \"geschatte waarde\" }")),
-                "a VERSIONED sole writer is outside the norm: its leeg result wipes the input");
+        BothBranches.green(ir, JSON.readTree(versionCase(value("77.00"))),
+                "a versioned writer that computes leeg decides nothing: the input stands");
 
-        // the standing outcome is observably NOT what happened, in both branches.
-        BothBranches.red(ir, JSON.readTree(versionCase(value("77.00"))),
-                "geschatte waarde", "a versioned target must not silently acquire the standing arm");
+        // the erased outcome is observably NOT what happened, in both branches.
+        BothBranches.red(ir, JSON.readTree(versionCase(
+                "{ \"kind\": \"attributeEmpty\", \"label\": \"v1\", \"attribute\": \"geschatte waarde\" }")),
+                "verwacht leeg, werkelijk 77.00", "a versioned writer must not erase the input");
     }
 
-    // ---------------- 4. the other_writer clause: a defaults group evicts the target ----------------
+    // ---------------- 3c. the documents of ref/test/fixtures/empty-write ----------------
 
-    @Test void a_defaults_group_gets_the_target_out_of_the_standing_domain() throws Exception {
-        // ref's other_writer clause, witnessed on its OBSERVABLE consequence: with a prioritizedDefaults
-        // group on the same target the RULE writer count stays 1, yet the target leaves the standing domain,
-        // so the leeg write is NOT suppressed — the group refills what the rule erases and BOTH executors
-        // diverge (ref on this exact model: "no fixpoint within 100 passes — divergence is a fault
-        // (ch. 5.7)"; verified before pinning). WITHOUT the clause the erase is suppressed and the group
-        // decides 12.00 unopposed — no oscillation, a quiet match with this very expectation — so the
-        // assertNotNull below is what catches the clause's removal (lens-proven red), while ref still
-        // diverges: a silent executor split no other check in the gate set can see.
-        // HONESTY NOTE: this model is WF-050-INVALID (a rule beside a defaults target — the verifier rejects
-        // it), which is exactly WHY the pd branch of other_writer is unreachable on valid IR; the witness
-        // pins the clause's mechanics on the one shape that makes it observable, outside the gated corpus
-        // zone. The verdeling/objectcreatie branches are legal but carry no corpus model (see the Result).
-        // The group node is copied off a PLAYED golden's wire (nestdiepte), so its shape is demonstrably
+    @Test void a_leeg_write_decides_nothing_beside_a_second_writer_and_in_a_window() throws Exception {
+        // the documents the reference interpreter and the ASP backend play as well (RUNTIME-SEMANTICS ch. 3.11, "Leeg in
+        // a write"): taxatie 40 in the input beside a writer of "zijn opgave" that fires without an opgave, next to a
+        // second writer that does not fire, under the window "geldig vanaf 2020", and next to a writer of 50
+        for (String d : List.of("one-fires-empty", "versioned-fires-empty", "empty-and-value")) {
+            Path dir = EMPTY_WRITE.resolve(d);
+            BothBranches.green(dir.resolve("ir.json"), JSON.readTree(Files.readString(dir.resolve("case.json"))), d);
+        }
+    }
+
+    // ---------------- 4. a defaults group beside the rule ----------------
+
+    @Test void a_rule_beside_a_defaults_group_on_its_target_is_refused() throws Exception {
+        // The waardestelling model with a prioritizedDefaults group on the same target and type: a target has one
+        // writer, the group or the rule, so the model is WF-050-invalid, and the analysis refuses it by name as the
+        // verifier does. The group node is copied off a PLAYED golden's wire (nestdiepte), so its shape is demonstrably
         // carried by loader and transpiler.
         ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(
                 CORPUS.resolve("anchor").resolve("jutterswet-waardestelling").resolve("ir.json")));
@@ -176,11 +165,6 @@ class StandingScalarNormWitnessTest {
         Path tmp = Files.createTempFile("other-writer-witness", ".json");
         try {
             Files.writeString(tmp, ir.toString());
-            // The destructive exec-model branch replayed the erase-refill oscillation and reported "geen fixpunt",
-            // as ref faults on this model (ch. 5.7). The analysis refuses the document by name, as the verifier does
-            // (WF-050): a target has one writer, the group or the rule; on both branches since card
-            // drl-teksttak-op-truth-maintenance, before which the DRL-text branch refused every prioritizedDefaults
-            // document whole ("… the DRL-text branch has no defaults lowering"), the one row that did not mirror.
             BothBranches.refused(tmp, JSON.readTree(vondst("\"geschatte waarde\": { \"number\": \"77.00\" }",
                     "\"gemeld\"", value("12.00"))), "een regel naast een defaultsgroep van hetzelfde type op hetzelfde"
                     + " doel ('geschatte waarde' van Vondst): een doel heeft één schrijver, de groep of de regel (WF-050)",
@@ -236,8 +220,8 @@ class StandingScalarNormWitnessTest {
                   "value": { "number": "%s" } }""".formatted(number);
     }
 
-    /** The version-flank case: an asOfDate INSIDE the window {@link #versionWriter} puts on the rule, a
-     *  standing input of 77.00, and a leeg taxatiewaarde — so the rule fires and computes leeg. */
+    /** The version-flank case: an asOfDate INSIDE the window {@link #versionWriter} puts on the rule, an input of
+     *  77.00, and a leeg taxatiewaarde — so the rule fires and computes leeg. */
     private static String versionCase(String expectedNode) {
         return """
                 { "format": "uchar-case-v0", "asOfDate": "2026-06-01",
@@ -250,9 +234,8 @@ class StandingScalarNormWitnessTest {
                 """.formatted(expectedNode);
     }
 
-    /** The waardestelling IR with a geldigheids-WINDOW on its single rule, written to a temp file: the same
-     *  model one clause past version-freedom, and therefore out of both domains. Derived from the golden, so
-     *  the two models differ in exactly that clause — the corpus file itself is only read. */
+    /** The waardestelling IR with a geldigheids-WINDOW on its single rule, written to a temp file. Derived from the
+     *  golden, so the two models differ in exactly that clause — the corpus file itself is only read. */
     private static Path versionWriter() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(CORPUS.resolve("anchor")
                 .resolve("jutterswet-waardestelling").resolve("ir.json").toFile());
@@ -265,8 +248,8 @@ class StandingScalarNormWitnessTest {
     }
 
     /** The waardestelling IR with a SECOND gelijkstelling on the same target (its own leeg-by-default source),
-     *  written to a temp file: the same model one writer past the standing domain. Derived from the golden so
-     *  the two models differ in exactly that one rule — the corpus file itself is only read. */
+     *  written to a temp file. Derived from the golden so the two models differ in exactly that one rule — the corpus
+     *  file itself is only read. */
     private static Path secondWriter() throws Exception {
         ObjectNode ir = (ObjectNode) JSON.readTree(CORPUS.resolve("anchor")
                 .resolve("jutterswet-waardestelling").resolve("ir.json").toFile());
