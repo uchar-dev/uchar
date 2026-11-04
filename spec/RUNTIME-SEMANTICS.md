@@ -1386,7 +1386,9 @@ condition of a rule follows its target: on a rule with a timeline target a
 condition that reads a timeline is read per period, and the rule writes in
 the periods in which it holds (ch. 3.10); on a scalar target a
 time-dependent characteristic or attribute in the condition is refused, and
-the whole-period qualifier folds (ch. 3.9).
+the whole-period qualifier folds (ch. 3.9). The justification and the
+consequence of a default follow the target of their group in the same way
+(ch. 7.11).
 
 **The point-in-time read.** `read(tl, d)` is a core IR node, `TemporalRead`
 (`IR-SPEC.md` ch. 4.3a, WF-049): a timeline operand and a date operand, the
@@ -3610,7 +3612,10 @@ producers:
 - for a time-dependent **characteristic**, the condition itself, read per
   period with a window among its members (ch. 3.10): the target holds exactly
   where the condition holds and is false elsewhere — the monotone reading; no
-  complement is seeded.
+  complement is seeded;
+- a **defaults group** on a timeline attribute target, which decides per day
+  (ch. 7.11); beside it no rule of the target's level writes (`IR-SPEC.md`
+  WF-050).
 
 A **time-dependent value in a scalar slot** is refused except through the
 collapses (ch. 3.3); that boundary is never crossed by silent coercion.
@@ -3786,9 +3791,10 @@ and in the READMEs of the backends.
 | 4 | **Operators and folds over timelines without a reading** | ch. 3.4, 3.4c, 3.5, 3.6 | The power over a timeline is refused; minimum, maximum, eerste and laatste over timelines are refused (v0: "the minimum of a timeline" is ambiguous between a fold per period over contributors and a fold over the periods of one timeline); a ranking or counting fold over a time-dependent member of a set — minimum, maximum, eerste, laatste, aantal, aantal gevulde (EF-021) — is refused, for want of a moment. Open: these readings. `spec/proposals/IMPLICIT-TIME.md` point 9 reads minimum, maximum, eerste and laatste per period over the operands, with no form over the time of one timeline, which also gives a fold over the members of a set a moment per period; this chapter does not state that rule. |
 | 5 | **Conditions over timelines without a reading** | ch. 3.9, 3.10 | Under the whole-period qualifier: a comparison over a timeline reached over a path, between two timelines or without a timeline, and a date-valued comparison. On a rule with a timeline target: a condition form outside the list of ch. 3.10 — a navigated or hosted check, a comparison of two timelines, a leeg or gevuld test, a quantifier fold. Open: their readings; the reading per day of ch. 3.3 is the candidate for the second group. |
 | 6 | **Day kinds outside the bound day** | ch. 3.8 | No meaning: a §9.8 test on a date other than the bound day (EF-022); the day-kind predicate as the condition of a rule (§8.1.5); the duration in whole days of a kind between two datum-tijden. Open: a source for what a test on another date means inside a definition about an arbitrary day; a classifier read inside the fixpoint of the rules; a rule for the part of a day at each end of an interval between instants. |
-| 7 | **A time-dependent characteristic outside a window** | ch. 3.3, 3.10, 3.11 | The write of a characteristic is defined within a window. No meaning: periods with an open bound (EF-023), so an unconditional characteristic and a negated check outside a window. Not defined: a write without a window, two rules on one characteristic, a case-supplied timeline of a characteristic a rule writes, a navigated characteristic in the condition of the write, and a time-dependent characteristic as the operand of the point read (the case format). Open: each of these. |
-| 8 | **The period window and the axis of versions** | ch. 3.10 | (a) A rule version's validity window on a temporal write mixes the selection of versions with the timeline axis; it belongs to the single-axis decision of ch. 8 (PLAN §9, decision 2), and no golden carries a validity window on a temporal rule. (b) A window in the `filter` of an `all` quantifier fold in a session without an evaluation date never matches, so the member is filtered out and the fold is vacuously waar; WF-112 is not widened to it (`corpus/golden/jutterswet-wachtvenster`, `bevoegd` in `case3-tijdvrij`). (c) A clip that cuts a bucket has no corpus carrier, because the case format pins every expected timeline to the declared grid; the alternative, a WF rule that demands bounds on the grid for a clip, is not taken. Open: (a), the reading of (b), and a case format that releases expected timelines from the grid. |
+| 7 | **A time-dependent characteristic outside a window** | ch. 3.3, 3.10, 3.11 | The write of a characteristic is defined within a window. No meaning: periods with an open bound (EF-023), so an unconditional characteristic and a negated check outside a window. Not defined: a write without a window, two rules on one characteristic, a case-supplied timeline of a characteristic a rule writes, a navigated characteristic in the condition of the write, and a time-dependent characteristic as the operand of the point read (the case format). A defaults group on a time-dependent characteristic is ill-formed (`IR-SPEC.md` WF-086). Open: each of these. |
+| 8 | **The period window and the axis of versions** | ch. 3.10 | (a) A rule version's validity window on a temporal write mixes the selection of versions with the timeline axis; it belongs to the single-axis decision of ch. 8 (PLAN §9, decision 2), and no golden carries a validity window on a temporal rule; a defaults group's validity on a timeline target gates by the evaluation date in the same way (ch. 7.11, `WV-7.11-versie`). (b) A window in the `filter` of an `all` quantifier fold in a session without an evaluation date never matches, so the member is filtered out and the fold is vacuously waar; WF-112 is not widened to it (`corpus/golden/jutterswet-wachtvenster`, `bevoegd` in `case3-tijdvrij`). (c) A clip that cuts a bucket has no corpus carrier, because the case format pins every expected timeline to the declared grid; the alternative, a WF rule that demands bounds on the grid for a clip, is not taken. Open: (a), the reading of (b), and a case format that releases expected timelines from the grid. |
 | 9 | **The subject's own total of a case-supplied timeline** | ch. 3.6, 8.4 | It reads the asOfDate bucket, one period of the grid that holds the evaluation date, while a timeline a rule writes is totalled whole, so the meaning of "het totaal van zijn X" depends on who wrote X. Open: whether the own total of a case timeline reads the whole timeline, as every other timeline is read over all time, which changes the case convention of ch. 8.4. |
+| 10 | **The reading of a default per day** | ch. 5.12, 7.11 | Ch. 5.12 reads a form per subject, a default at its turn or displaced; a default of a group on a timeline target is at its turn on some days and displaced on others. Open: its reading, the periods of its justification and the timeline of its consequence per day. |
 
 ---
 
@@ -7810,8 +7816,9 @@ desugaring is ch. 7.7, machine-checked by the
 natively, the ASP backend the desugared defaults — the gate-6
 differential witnesses the lowering). Rule-readability of the conflict
 fact is **closed** for v1 (ch. 7.2, decided 2026-08-20); the ch. 7.8
-standing norm executes on scalar targets through both executors
-(temporal targets stay fenced — recorded, scalar-first). Below-root
+standing norm holds on a scalar target and per day on a timeline target,
+and a defaults group on a timeline attribute target decides per day
+(ch. 7.11). Below-root
 exception branching is ch. 7.9 (Phase 5c): the `Default.exceptions` wire
 form and its well-formedness (WF-050 recursion, WF-051 unchanged,
 WF-075) land with this chapter; the anchors `jutterswet-nestuitzondering`
@@ -7885,6 +7892,12 @@ specialised by what the ASP hand-exercises established
   with toeslaggrond 100,00 and geschatte gewicht 30,00, decides 25/3; the
   rule "op 1,00" beneath it does not decide, and the session faults with
   the one fault EF-006, place V6.toeslag, value 25/3, decimals 2.
+- On a **timeline** attribute target every clause of this section holds
+  per day (ch. 3.3): on each day the highest default that decides that day
+  supplies the decision of that day, and a default whose consequence reads
+  leeg on a day falls through on that day (ch. 7.11). A time-dependent
+  characteristic is no target of a defaults group (`IR-SPEC.md` WF-086;
+  ch. 3.12 row 7).
 - If no default decides, the group **writes nothing**: the target keeps
   what the fact base holds — its input value, or leeg. A defaults group
   never writes leeg; consequently "deliberately assign leeg" is not
@@ -8067,6 +8080,10 @@ gevuld value; characteristic target: always — the boolean decision).
    group → **20 is the outcome iff it is the higher default** and no
    channel fact; the same group both writing 10 → **10**, no conflict
    (equal values).
+4. **Per day** on a timeline target: an opgave above a computation of 20 in
+   March to May 2025, the opgave 10 on January and February 2025 →
+   **10** on January and February, **20** in March to May, leeg elsewhere
+   (ch. 7.11, `WV-7.11-opgave-per-dag-januari-februari`).
 
 ### 7.7 The v0 desugaring
 
@@ -8155,7 +8172,9 @@ whose blocking default decides do-not-attribute over an input
 input default is a re-description of ch. 7.1's "the target keeps what
 the fact base holds" — every outcome of ch. 7.3 and 7.6.2 derives from
 "the highest default that decides wins" alone — and it generalises beyond
-declared defaults:
+declared defaults. On a timeline target it is read per day: it is
+justified on a day on which the input timeline reads a value, and its
+consequence is that day's value (ch. 7.11):
 
 **The standing norm.** A **scalar computing rule
 (Gelijkstelling/Berekening)** — its target's only writer or one of
@@ -8406,7 +8425,8 @@ exception carrying the same justification, which the block order then lets
 win exactly there and nowhere else.
 
 **The result is one effective stack per (concrete type, target), and the
-group runs on instances of exactly that type.** The extensional
+group runs on instances of exactly that type.** On a timeline target the
+effective stack decides per day (ch. 7.11), in the same block order. The extensional
 quantification of the defaults subject (ch. 2.2) is spent in the
 composition; reading the subject extensionally as well would put the
 supertype's stack and the subtype's on one instance, and they would write
@@ -8662,6 +8682,130 @@ Two further outcomes, on the first model, pin the extensional half:
   `Kustgemeente`, `uitkeringstotaal` is **30,00** and `registertal` is
   **2**. A non-extensional reading gives 10,00 and 1, so the case fails
   loudly against a flat implementation.
+
+### 7.11 A timeline target: the decision per day
+
+*Status: normative (maintainer decision 2026-11-04: Reading B per period).
+The anchor of the reading is the golden
+`corpus/golden/jutterswet-opgave-per-periode`, and the worked examples below
+are `ref/test/`'s verbatim.*
+
+**The rule.** On a timeline attribute target a defaults group is read per
+day (ch. 3.3): on every day its decision is the decision of ch. 7.1, 7.2,
+7.3 and 7.9 with every justification and every consequence read on that
+day. On every day the highest default that decides that day wins.
+
+- A default is **justified** on the periods of its justification, read per
+  period as the condition of a rule on a timeline target is (ch. 3.10); a
+  justification that reads no timeline holds on every day or on none. A
+  form that ch. 3.10 does not read per period has no reading here either
+  (ch. 3.12 row 5).
+- Its **consequence** is a producer of ch. 3.11, its timeline over all
+  time: a scalar holds on every day.
+- It **decides** a day on which it is reached — no strictly higher default
+  of its chain settled that day —, its justification holds and its
+  consequence reads a value. A consequence that reads leeg on a day falls
+  through on that day.
+- The **initialisation default** (ch. 7.3) is justified on the days on
+  which the input facts leave the target empty, the days its input
+  timeline reads no value, and, where ch. 7.10 folds a condition into it,
+  on those of them on which that condition holds.
+- The **virtual input default** (ch. 7.8) is justified on the days on which
+  the input timeline reads a value, and decides that value.
+- **Members reconcile per day** (ch. 7.2, 7.9): on a day on which the
+  deciding members of a declared-unordered group or of a default's
+  exception groups agree, that is the decision of the day; on a day on
+  which they differ, the group decides nothing that day and the conflict is
+  recorded under the key of ch. 7.2 or 7.9. A conflict of exception groups
+  on a day settles their default on that day and propagates to the root,
+  and a strictly higher default that settles on a day displaces the lower
+  defaults, their exception groups and their conflicts on that day. The
+  §9.5 channel carries one fact per key × subject (ch. 5.6), whatever the
+  number of days.
+
+**The write.** The group is one writer of the target (ch. 3.11): it decides
+the days on which it decides, and on every other day the target holds what
+the fact base holds, its input or leeg — the virtual input default read per
+day. The write boundary holds per segment (ch. 3.11): a segment that does
+not fit the target's decimals faults with EF-006, as a decision that does
+not fit does on a scalar target (ch. 7.1).
+
+**The evaluation.** A default's evaluation is the evaluation of its
+justification and its consequence over all time (ch. 3.11, "a whole timeline
+at once"); what it deposits on the §9.5 channel stands where it decides on at
+least one day (ch. 7.1, the speculative deposit).
+
+**The scalar target is the case of one segment.** A scalar is the timeline
+(−∞, +∞) (ch. 3.1), so on a scalar target the reading per day is the reading
+of ch. 7.1 to 7.10, unchanged. A group's validity window gates by the
+evaluation date on a timeline target as on a scalar one (ch. 3.12 row 8).
+
+*Well-formedness:* the timelines that a justification and a consequence read
+lie on a grid that fits the target's (`IR-SPEC.md` WF-126, the arms
+`justification-grid` and `consequence-grid`), and the precision gate of
+WF-023 bounds a consequence per segment. A time-dependent characteristic is
+no target of a defaults group (WF-086; ch. 3.12 row 7).
+
+Worked example `WV-7.11-opgave-per-dag` (absolute; `ref/test/` verbatim, the
+golden `jutterswet-opgave-per-periode`, the opgave marker of the RegelSpraak
+dialect, `frontends/regelspraak/grammar/DIVERGENCES.md` §7): a Jutter's
+`strandloon`, a whole number for every month, carries the marker
+"(mag opgegeven worden)", so the group on it puts the input attribute
+`opgegeven strandloon` above `berekende strandloon`, which the one rule "Het
+strandloon van een Jutter moet gesteld worden op 20 van dd. 01-03-2025 tot dd.
+01-06-2025" computes.
+
+- The opgave 10 on every month of 2025: the strandloon is **10** on
+  [2025-01-01, 2026-01-01). The opgave decides every day of 2025, and the
+  computation's 20 in spring is displaced.
+- The opgave 10 on January and February 2025 alone
+  (`WV-7.11-opgave-per-dag-januari-februari`): **10** on
+  [2025-01-01, 2025-03-01), **20** on [2025-03-01, 2025-06-01), leeg on every
+  other day.
+- No opgave (`-zonder-opgave`): **20** on [2025-03-01, 2025-06-01).
+- The opgave of January and February beside the input 99 on the strandloon
+  itself for 2025 (`-invoer-op-het-doel`): **10**, **20**, and **99** on
+  [2025-06-01, 2026-01-01), where neither the opgave nor the computation
+  decides and the virtual input default does.
+
+Worked example `WV-7.11-initialisatie-per-dag` (the same golden): the
+`stormtoelage`, a whole number for every month with the marker, computed as
+30 "gedurende de tijd dat hij stormwacht is" and initialised on 0. With
+stormwacht on [2025-10-01, 2026-01-01), the opgave 12 in November 2025 and
+the input 7 on January and February 2025, the stormtoelage is **0** on
+(−∞, 2025-01-01), **7** on [2025-01-01, 2025-03-01), **0** on
+[2025-03-01, 2025-10-01), **30** in October, **12** in November, **30** in
+December and **0** on [2026-01-01, +∞): the initialisation default is
+justified on the days the input leaves empty, and in January and February the
+input stands.
+
+Worked examples on the forms of the dialect (`ref/test/` verbatim, the
+documents of `ref/test/fixtures/defaults-per-day`, which the suite of the ASP
+backend plays as well), each a whole number for every month:
+
+- `WV-7.11-uitzondering`: "Het strandloon moet berekend worden als zijn
+  basisloon" with the exception "… gesteld worden op 30 indien hij kustwacht
+  is", kustwacht on [2025-03-01, 2025-06-01). The basisloon 10 on 2025:
+  **10**, **30** in spring, **10**. No basisloon and the input 7 on
+  [2024-01-01, 2026-01-01): **7**, **30**, **7** — the base reads leeg and
+  falls through outside spring.
+- `WV-7.11-ongeordend`: the unordered members 10 "indien hij kustwacht is"
+  (kustwacht on [2025-01-01, 2025-05-01)) and 20 "indien hij stormwacht is"
+  (stormwacht on [2025-03-01, 2025-07-01)), the input 5 on 2025: **10** on
+  [2025-01-01, 2025-03-01), the input **5** on [2025-03-01, 2025-05-01), where
+  the members differ, **20** on [2025-05-01, 2025-07-01) and **5** on
+  [2025-07-01, 2026-01-01); the channel carries one fact `Jutter.toelage`.
+- `WV-7.11-afwijking`: the base 5, above it 30 "indien hij kustwacht is" with
+  the unordered exception groups 40 "indien … stormwacht" and 50 "indien …
+  havenwacht"; kustwacht on [2025-01-01, 2025-07-01), stormwacht on
+  [2025-02-01, 2025-05-01), havenwacht on [2025-04-01, 2025-06-01): **5** on
+  (−∞, 2025-01-01), **30** in January, **40** in February and March, leeg in
+  April, where the exception groups differ and settle their default, **50**
+  in May, **30** in June and **5** on [2025-07-01, +∞); the channel carries
+  one fact `Jutter.strandloon/0`.
+- `WV-7.11-versie`: the base 5 and the exception 30 "indien hij kustwacht is",
+  both "geldig vanaf 2025", on 2025-07-01, kustwacht in spring: **5**, **30**,
+  **5**.
 
 ## 9. Sum types and match
 
