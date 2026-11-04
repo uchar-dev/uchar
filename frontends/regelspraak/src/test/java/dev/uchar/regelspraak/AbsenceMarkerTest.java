@@ -26,96 +26,15 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AbsenceMarkerTest {
 
-    /** The source of the golden corpus/golden/jutterswet-afwezigheidsmarkers, whose ir.json is its emission. */
-    static final String GOLDEN = """
-        Objecttype de Jutter (mv: Jutters)
-            het getaxeerd totaal Numeriek (getal met 2 decimalen);
+    /** The source of the golden corpus/golden/jutterswet-afwezigheidsmarkers; gate 10 holds its ir.json to the
+     *  emission of it. */
+    private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden", "jutterswet-afwezigheidsmarkers", "source.rgs");
 
-        Objecttype de Vondst (mv: Vondsten)
-            de taxatie Numeriek (getal met 2 decimalen) (of onbekend of niet van toepassing);
-            de schatting Numeriek (getal met 2 decimalen);
-            het vindloon Numeriek (getal met 2 decimalen);
-            de opslagkosten Numeriek (geheel getal) voor elke maand (of onbekend of niet van toepassing);
-            de opslagtoeslag Numeriek (geheel getal) voor elke maand;
-            is onleesbaar kenmerk (bijvoeglijk);
-            is drijfhout kenmerk (bijvoeglijk);
-            is kostbaar kenmerk (bijvoeglijk);
-            is verkocht kenmerk (bijvoeglijk) voor elke maand;
-
-        Feittype vangst
-            de jutter Jutter
-            de vondst Vondst
-            één jutter heeft meerdere vondsten
-
-        Regel taxatie uit schatting
-            geldig altijd
-                De taxatie van een Vondst moet gesteld worden op zijn schatting.
-
-        Regel taxatie onbekend
-            geldig altijd
-                De taxatie van een Vondst moet gesteld worden op onbekend
-                indien hij onleesbaar is.
-
-        Regel taxatie niet van toepassing
-            geldig altijd
-                De taxatie van een Vondst moet gesteld worden op niet van toepassing
-                indien hij drijfhout is.
-
-        Regel vindloon naar taxatie
-            geldig altijd
-                Het vindloon van een Vondst moet berekend worden als zijn taxatie gedeeld door 10 rekenkundig afgerond op 2 decimalen
-                indien zijn taxatie een waarde heeft.
-
-        Regel forfaitair vindloon
-            geldig altijd
-                Het vindloon van een Vondst moet gesteld worden op 25,00
-                indien zijn taxatie onbekend is.
-
-        Regel geen vindloon
-            geldig altijd
-                Het vindloon van een Vondst moet gesteld worden op 0,00
-                indien zijn taxatie niet van toepassing is.
-
-        Regel kostbare vondst
-            geldig altijd
-                Een Vondst is kostbaar
-                indien hij aan alle volgende voorwaarden voldoet:
-                - zijn taxatie heeft een waarde
-                - zijn taxatie is groter dan 1000,00.
-
-        Regel getaxeerd totaal
-            geldig altijd
-                Het getaxeerd totaal van een Jutter moet berekend worden als de som van de taxatie van alle vondsten van de Jutter die een waarde hebben.
-
-        Regel opslag onbekend in de winter
-            geldig altijd
-                De opslagkosten van een Vondst moet gesteld worden op onbekend van dd. 01-01-2025 tot dd. 01-03-2025.
-
-        Regel opslag niet van toepassing na verkoop
-            geldig altijd
-                De opslagkosten van een Vondst moet gesteld worden op niet van toepassing gedurende de tijd dat hij verkocht is.
-
-        Regel opslagtoeslag
-            geldig altijd
-                De opslagtoeslag van een Vondst moet gesteld worden op 7 gedurende de tijd dat zijn opslagkosten onbekend zijn.
-        """;
-
-    private static final Path GOLDEN_IR = Path.of("..", "..", "corpus", "golden", "jutterswet-afwezigheidsmarkers", "ir.json");
-
-    /** The guarantee gate 10 gives a golden with a source.rgs, for the one golden whose source the Drools backend
-     *  cannot read back yet: its ir.json is the frontend's emission of the source, byte for byte. */
-    @Test void the_golden_is_the_emission_of_its_source() throws Exception {
-        RegelSpraakModel m = Resolver.resolve(GOLDEN);
-        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
-        assertEquals(Files.readString(GOLDEN_IR, StandardCharsets.UTF_8), IrEmitter.emit(m));
-    }
-
-    /** Every word of the markers is a keyword of its own, so the semantic tokens of the golden leave none unresolved. */
-    @Test void the_words_of_the_markers_are_keywords() {
-        var files = List.of(new SemanticTokens.SourceFile("golden.rgs", GOLDEN));
+    /** The marking is one keyword span of its own; that no word of the golden stays unresolved is
+     *  SemanticTokensCorpusTest's, over every golden source. */
+    @Test void the_words_of_the_markers_are_keywords() throws Exception {
+        var files = List.of(new SemanticTokens.SourceFile("golden.rgs", Files.readString(GOLDEN, StandardCharsets.UTF_8)));
         SemanticTokens.Document d = Resolver.tokens(files);
-        for (SemanticTokens.Span s : d.files().get(0).spans())
-            assertNotEquals(SemanticTokens.Kind.UNRESOLVED, s.kind(), () -> "onopgelost: '" + s.text() + "' op regel " + s.line());
         assertTrue(d.files().get(0).spans().stream().anyMatch(s -> s.text().equals("(of onbekend of niet van toepassing)")
                 && s.kind() == SemanticTokens.Kind.KEYWORD), "de markering is een sleutelwoord");
     }

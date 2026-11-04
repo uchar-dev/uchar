@@ -2730,11 +2730,8 @@ document without markers emits what it emits without the extension.
 - The reading of a value per period is lowered but not executed: its test per period is a gevuld test per period,
   which has no reading (`spec/RUNTIME-SEMANTICS.md` ch. 3.12 row 5). The frontend writes "… berekend worden als zijn
   opslagkosten plus 1 gedurende de tijd dat zijn opslagkosten een waarde hebben" as a `PayloadAccess` under that test,
-  the verifier admits it, and ref and the ASP backend refuse it by name (measured 2026-11-04). A marker written per
-  period, the input per day and a test of a marker per period are lowered and executed.
-- The Drools backend refuses the sum type at load; the golden `jutterswet-afwezigheidsmarkers` carries no `source.rgs`
-  until it plays there, since the route leg of gate 15 reads every `source.rgs` back through that loader. Its source
-  is `AbsenceMarkerTest.GOLDEN`, held against the golden's `ir.json` byte for byte.
+  the verifier admits it, and ref, the ASP backend and the Drools backend refuse it by name (measured 2026-11-04). A
+  marker written per period, the input per day and a test of a marker per period are lowered and executed.
 - No negation of a test ("geen waarde heeft") and no marker in a decision table cell is lowered; a marker on a
   dimensioned attribute is not measured.
 - The ASP backend scales a number and a day-precision date into a constructor term; markers on an attribute of
@@ -2742,8 +2739,9 @@ document without markers emits what it emits without the extension.
 - The semantic tokens read the words of the markers as keywords in a document that declares markers.
 
 Golden: `jutterswet-afwezigheidsmarkers` (scalar and per month; ten cases), with the red twin
-`jutterswet-afwezigheidsmarkers-botsing` (EF-016, scalar and per day). Measured 2026-11-04: ref and clingo replay
-every case exactly; the Drools backend refuses both documents at load (`EXCLUDE DROOLS-010`).
+`jutterswet-afwezigheidsmarkers-botsing` (EF-016, scalar and per day); its source is the golden's `source.rgs`.
+Measured 2026-11-04: ref, clingo and both branches of the Drools backend replay every case exactly, and the red twin
+faults with EF-016 in each.
 
 ## Vocabulaires en benamingen — named vocabularies and designations
 

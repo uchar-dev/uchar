@@ -12,4 +12,4 @@ fixpoint, and the session faults with EF-016 (ch. 5.7), per day on a timeline.
   `onbekend` and "opslag niet van toepassing na verkoop" writes `niet van toepassing` into the opslagkosten: EF-016,
   attribute `opslagkosten`, label `V1`.
 
-The pins carry the attribute and the label, which ref and clingo both report.
+The pins carry the attribute and the label, which ref, clingo and the Drools backend each report.

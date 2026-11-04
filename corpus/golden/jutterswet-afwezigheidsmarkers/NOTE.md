@@ -7,16 +7,14 @@ declares
     de taxatie Numeriek (getal met 2 decimalen) (of onbekend of niet van toepassing);
     de opslagkosten Numeriek (geheel getal) voor elke maand (of onbekend of niet van toepassing);
 
-and `ir.json` is the frontend's emission of the source below, which the frontend's suite holds byte for byte
-(`AbsenceMarkerTest.the_golden_is_the_emission_of_its_source`). The source is not `source.rgs` here: the route leg
-of gate 15 reads every `source.rgs` back through the Drools loader, which refuses this document (below); it becomes
-`source.rgs` with the Drools carriage of sum types. Each of the two attributes is a sum type over a domain of
+and `ir.json` is the frontend's emission of `source.rgs` (gate 10). Each of the two attributes is a sum type over a
+domain of
 its own, `taxatie van een Vondst` and `opslagkosten van een Vondst`, with the constructors `waarde` (the payload is
 the declared datatype), `onbekend` and `niet van toepassing`. A marker written is a `Construct` of the marker, a
 number written a `Construct waarde(...)`; a marker tested is an equality with the `Construct`; "een waarde heeft" is a
 gevuld test of a `PayloadAccess`, and every read of the value is a `PayloadAccess` under that test (WF-127).
 
-The cases, with ref and clingo:
+The cases, with ref, clingo and both branches of the Drools backend:
 
 | case | input | taxatie | vindloon | other |
 |---|---|---|---|---|
@@ -33,79 +31,3 @@ The cases, with ref and clingo:
 
 A marker that meets a number, and two markers that meet on one day, are the fault of two writers (EF-016): the red
 twin `corpus/red/jutterswet-afwezigheidsmarkers-botsing` carries this document with those cases.
-
-The Drools backend refuses the document at load (`EXCLUDE DROOLS-010`, `Datatype:SumType`), so the golden is a
-ref = clingo pair until the Drools carriage of sum types.
-
-The source:
-
-    Objecttype de Jutter (mv: Jutters)
-        het getaxeerd totaal Numeriek (getal met 2 decimalen);
-
-    Objecttype de Vondst (mv: Vondsten)
-        de taxatie Numeriek (getal met 2 decimalen) (of onbekend of niet van toepassing);
-        de schatting Numeriek (getal met 2 decimalen);
-        het vindloon Numeriek (getal met 2 decimalen);
-        de opslagkosten Numeriek (geheel getal) voor elke maand (of onbekend of niet van toepassing);
-        de opslagtoeslag Numeriek (geheel getal) voor elke maand;
-        is onleesbaar kenmerk (bijvoeglijk);
-        is drijfhout kenmerk (bijvoeglijk);
-        is kostbaar kenmerk (bijvoeglijk);
-        is verkocht kenmerk (bijvoeglijk) voor elke maand;
-
-    Feittype vangst
-        de jutter Jutter
-        de vondst Vondst
-        één jutter heeft meerdere vondsten
-
-    Regel taxatie uit schatting
-        geldig altijd
-            De taxatie van een Vondst moet gesteld worden op zijn schatting.
-
-    Regel taxatie onbekend
-        geldig altijd
-            De taxatie van een Vondst moet gesteld worden op onbekend
-            indien hij onleesbaar is.
-
-    Regel taxatie niet van toepassing
-        geldig altijd
-            De taxatie van een Vondst moet gesteld worden op niet van toepassing
-            indien hij drijfhout is.
-
-    Regel vindloon naar taxatie
-        geldig altijd
-            Het vindloon van een Vondst moet berekend worden als zijn taxatie gedeeld door 10 rekenkundig afgerond op 2 decimalen
-            indien zijn taxatie een waarde heeft.
-
-    Regel forfaitair vindloon
-        geldig altijd
-            Het vindloon van een Vondst moet gesteld worden op 25,00
-            indien zijn taxatie onbekend is.
-
-    Regel geen vindloon
-        geldig altijd
-            Het vindloon van een Vondst moet gesteld worden op 0,00
-            indien zijn taxatie niet van toepassing is.
-
-    Regel kostbare vondst
-        geldig altijd
-            Een Vondst is kostbaar
-            indien hij aan alle volgende voorwaarden voldoet:
-            - zijn taxatie heeft een waarde
-            - zijn taxatie is groter dan 1000,00.
-
-    Regel getaxeerd totaal
-        geldig altijd
-            Het getaxeerd totaal van een Jutter moet berekend worden als de som van de taxatie van alle vondsten van de Jutter die een waarde hebben.
-
-    Regel opslag onbekend in de winter
-        geldig altijd
-            De opslagkosten van een Vondst moet gesteld worden op onbekend van dd. 01-01-2025 tot dd. 01-03-2025.
-
-    Regel opslag niet van toepassing na verkoop
-        geldig altijd
-            De opslagkosten van een Vondst moet gesteld worden op niet van toepassing gedurende de tijd dat hij verkocht is.
-
-    Regel opslagtoeslag
-        geldig altijd
-            De opslagtoeslag van een Vondst moet gesteld worden op 7 gedurende de tijd dat zijn opslagkosten onbekend zijn.
