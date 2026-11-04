@@ -613,10 +613,8 @@ at 16 digits, 0,6666666666666667, the product is 4567,500000000000228,
 which faults at the gate of the vrijgelaten inkomen and is greater than the
 grens.
 
-On a timeline target the gate holds per segment (ch. 3.7): a segment whose
-value does not fit the declared decimals is EF-006, with the parameters of
-a scalar write, and a segment that fits is written as the exact value it
-is.
+On a timeline target the write boundary of point 1 holds per segment
+(ch. 3.11).
 
 Worked example — the exact value 2/3 into a 2-decimal attribute: with
 `afgerond op 2 decimalen` rekenkundig → **0,67**; with `naar beneden` →
@@ -790,10 +788,10 @@ Per granularity bucket: result = base × days-true/days-in-bucket, as an
 exact fraction. Example: base 1200, 90 of 365 days → 1200 × 90/365 =
 21600/73 — non-terminating, and rounded only by an explicit rounding:
 afgerond op 2 rekenkundig = **295,89**. The assignment gate rounds nothing
-and holds per segment of a timeline target (ch. 2.4, 3.7): 21600/73 written
+and holds per segment of a timeline target (ch. 3.11): 21600/73 written
 unrounded into a target of 2 decimals is EF-006. The static gate of ch. 2.4
-point 4 leaves a timeline target alone: the part is the one computed write
-such a target takes, and no executor carries a rounding around it (ref
+point 4 leaves the pro-rata write into a timeline target alone, and no
+executor carries a rounding around it (ref
 faults on it, the ASP backend refuses it with CLINGO-024 and the Drools
 backend with DROOLS-105, measured 2026-11-02), so an unrounded part into a
 timeline of 2 decimals is well-formed (`anchor/jutterswet-borgdeel`) and the
@@ -1040,142 +1038,158 @@ the unit facet.
 
 ## 3. Timeline algebra
 
-A time-dependent member or parameter does not hold one value; it holds a
-**timeline**: a piecewise-constant partial function from days to values.
-This chapter specifies the timeline value itself, its period grids, the
-operations over it, and how rules produce it. Two different empty rules
-run through the algebra; ch. 1.2 recorded them, this chapter names them:
-the **period-coalescing rule** (§5.1.4 arithmetic, empty period = 0,
-ch. 3.4) and the **contributor-skipping rule** (§5.8.2 summation, empty
-contributors skipped, ch. 3.5). Everything here is v0 mirror with tracked
-deltas; the v0 refusals and the chapter's OPEN decisions are collected in
-ch. 3.12.
+A time-dependent attribute, characteristic or parameter does not hold one
+value; it holds a **timeline**: a function from days to values that is
+constant on each of finitely many periods. This chapter defines the
+timeline value and its grids, states the one principle by which an operator
+or a condition without a time semantics of its own reads timelines — the
+scalar rule, applied on each day — and defines the operations that have a
+time semantics of their own. It is organised by the role of each section:
+
+| Part | Sections |
+|---|---|
+| the value | ch. 3.1 the timeline value, `read`, open bounds, the canonical form |
+| grids and the calendar | ch. 3.2 grids, buckets, start points, the weighting and the calendar |
+| the principle | ch. 3.3 the reading per day, the periods of a condition, the clip, the scalar contexts |
+| producers of a timeline | ch. 3.4 arithmetic per day; ch. 3.5 the sum per period; ch. 3.7 the time-proportional part; ch. 3.8 the day count, with the calendar arithmetic of dates it rests on; ch. 3.10 a condition per period, the period window, and the characteristic a condition writes |
+| collapses to a scalar | ch. 3.6 the temporal total; ch. 3.9 the whole-period qualifier |
+| writing | ch. 3.11 the write of a timeline: replacement, the write boundary per segment, leeg, two writers, what 0 means |
+| folds over linked instances | ch. 3.4a–3.4d and ch. 3.9a: the scalar folds over a set of instances, which ch. 3.5, 3.6 and 3.9 apply per member |
+| open decisions | ch. 3.12 |
+
+Two empty rules run through the algebra, and ch. 1.2 records both: the
+**period-coalescing rule** of the arithmetic operators, read per day
+(§5.1.4, ch. 3.4), and the **contributor-skipping rule** of the sum (§5.8.2,
+ch. 3.5). Where the RegelSpraak specification is silent about time, the
+reading is ALEF's, the RegelSpraak toolchain of the Belastingdienst; the
+grounds of each reading are in `spec/proposals/IMPLICIT-TIME.md`, and every
+reading that departs from the mirrored v0 runtime is a tracked delta in
+`spec/CONSTRUCTS.md` row 11 (row 29 for the whole-period qualifier).
 
 ### 3.1 The timeline value
 
-A timeline value divides **all time** (maintainer decision 2026-11-03,
-`spec/proposals/IMPLICIT-TIME.md` point 2): it is a finite set of
-**segments**, and every day reads one value. Each segment is a half-open
-day interval `[van, tot)` — `van` inclusive, `tot` exclusive — carrying
-one constant value of the member's element type, or carrying **leeg**. A
-segment may have an **open bound**: an open `van` (written −∞) begins
-before every day, an open `tot` (written +∞) runs past every day; only the
-first segment can have an open `van` and only the last an open `tot`, and
-one segment may have both. Days covered by no segment (**gaps**, including
-all days before the first and after the last segment) also read as leeg: a
-gap is a leeg segment. The normative reading function:
+A timeline divides **all time**: it is a finite set of **segments**, and
+every day reads one value. A segment is a half-open interval of days
+`[van, tot)` — `van` inclusive, `tot` exclusive — that carries one value of
+the member's element type, or carries **leeg**. A segment may have an
+**open bound**: an open `van`, written −∞, lies before every day, and an
+open `tot`, written +∞, lies after every day. Only the first segment can
+have an open `van` and only the last an open `tot`; one segment may have
+both. A day that no segment covers (a **gap**, the days before the first
+segment and after the last included) reads leeg: a gap is a leeg segment.
+The reading function:
 
 ```
 read(tl, d) = the value of the segment with van ≤ d < tot,  if one exists
             = leeg,                                          otherwise
 ```
 
-where −∞ ≤ d and d < +∞ hold for every day d. A scalar value read as a
-timeline is the one segment (−∞, +∞) carrying it, and the empty timeline
-where it is leeg: a scalar holds on every day (§5.1.1, §5.1.4.1).
+where −∞ ≤ d and d < +∞ hold for every day d. A **scalar** read as a
+timeline is the one segment (−∞, +∞) that carries it, and a leeg scalar is
+the empty timeline: a scalar holds on every day (§5.1.1, §5.1.4.1).
 
-- A **boolean timeline** (a time-dependent characteristic) is represented
-  by its true-periods only: the segments are the periods where the
-  characteristic holds, days outside them read false. Its segments carry
-  no value payload.
-- Granularity and period count are properties of the *declaration* (the
+- A **boolean timeline** — a time-dependent characteristic — is its true
+  periods: the segments are the periods in which the characteristic holds,
+  and a day outside them reads false. Its segments carry no value. The true
+  periods of a characteristic carry no open bound: a case supplies none
+  (`characteristicTimelines`), and a rule whose condition would give it one
+  is refused with EF-023, a form this chapter leaves without a meaning
+  (ch. 3.10, 3.12).
+- Granularity and period count are properties of the **declaration** (the
   `TimelineFacet`, `IR-SPEC.md` ch. 2.2), never of the value: a segment
   does not know its grid.
-- Well-formed timeline values are sorted ascending by `van` and
-  non-overlapping. *v0 mirror note:* every v0 producer emits sorted,
-  non-overlapping segments, but v0 *reads* tolerate unsorted and
-  overlapping input (first covering segment wins) — the input invariant
-  is unstated there. **Delta (candidate WF rule, data plane):** overlap
-  and disorder in timeline data are ill-formed; `read` never depends on
-  segment order. Zero-length and reversed intervals (`tot` ≤ `van`)
-  contribute nothing anywhere in this chapter.
-- Two representations of "empty here" exist and are **observationally
-  equivalent** under `read`: a gap, and an explicit leeg-valued segment.
-  Semantics are defined over `read`; no *value-producing* operation in
-  this chapter may distinguish the two representations. (The
-  change-detection rule below is the one representation-sensitive
-  comparison — it compares segment lists, not read-functions; that is
-  what makes it a data-plane rule, not a semantics.) The case format
-  (`uchar-case-v0`) writes filled segments only: a segment carries a
-  value and omits `from` or `to` for an open bound. *v0 mirror note:*
-  v0's temporal total gives an absent timeline leeg and a
-  present-but-segmentless one 0; here both total 0 (ch. 3.6, a tracked
-  deviation).
-- The **canonical form** of a timeline is its maximal runs of equal
-  values with the gaps omitted: every leeg segment and every zero-length
-  or reversed one is dropped, then every two adjacent segments `[a, b)`
-  and `[b, c)` with equal values merge into `[a, c)` until no two do; an
-  open bound stays open. Values are equal as in the change-detection rule
-  below (numeric equality for a number, so 12 and 12,00 are one run). Two
-  well-formed timelines read alike on every day exactly when their
-  canonical forms are equal. How a producer divides a run of equal values
-  into segments is therefore representation, as the choice between a gap
-  and an explicit leeg segment is. An expected timeline of a case
-  (`uchar-case-v0`, `attributeTimeline`) is compared with the timeline the
-  evaluation gives in this form: both sides canonical, then segment for
-  segment, the bounds exactly and the values by that equality. Worked
-  example (`WV-3.1-canonical`; `ref/` tests verbatim): 0 on
-  (−∞, 2024-01-01) and on [2024-01-01, 2024-02-01), 12 on
-  [2024-02-01, 2024-03-01), 12,00 on [2024-03-01, 2024-04-01), an explicit
-  leeg segment [2024-04-01, 2024-05-01) and 12 on [2024-05-01, +∞) have
-  the canonical form (−∞, 2024-02-01) = 0, [2024-02-01, 2024-04-01) = 12,
-  [2024-05-01, +∞) = 12: April reads leeg, so the two runs of 12 stay
-  apart. The suite cases `ref/test/fixtures/canonical-timeline`, replayed
-  by `ref`, the ASP backend and both branches of the Drools backend, expect
-  a run divided otherwise than its producer writes it: the twelve months
-  of a time-proportional part as one segment (ch. 3.7), two counted
-  buckets of a day count as one and an open run of 0 as two (ch. 3.8), and
-  a segment and both open runs of period arithmetic as two each (ch. 3.4).
-- An open bound is a bound of the value, not of any grid: it sits on no
-  wall, and a fold that walks the buckets or the whole units of a period
-  (ch. 3.7, 3.8) has no end to reach in one, and such a walk is refused by
-  name; the temporal total of ch. 3.6 has a rule of its own. The
-  whole-period qualifier (ch. 3.9) asks a test of every bucket an open
-  segment touches, and every one of them that lies inside the segment reads
-  its value on every day, so it answers on the bucket beside the segment's
-  finite bound for all of them.
-- Segment-wise equality — same `van`, same `tot`, equal-or-both-leeg
-  value (numeric equality for numeric members; ch. 9.3 structural
-  equality for constructor-valued members) — is the change-detection
-  rule for timeline writes (the temporal analogue of the scalar rule in
-  ch. 1.2 Assignment; evaluation model: ch. 5).
+- A well-formed timeline value is sorted ascending by `van` and its
+  segments do not overlap. Overlap and disorder in timeline data are
+  ill-formed, a rule of the data plane, and `read` never depends on the
+  order of the segments. A zero-length or reversed interval (`tot` ≤ `van`)
+  contributes nothing anywhere in this chapter. *v0 mirror note:* the v0
+  producers emit sorted segments without overlap, while v0's reads accept
+  unsorted and overlapping input (the first covering segment wins); the
+  rule above is a tracked delta.
+- A gap and an explicit leeg segment are two representations of "leeg
+  here", and they are **observationally equivalent** under `read`. The
+  semantics is defined over `read`, so no value-producing operation in this
+  chapter distinguishes the two, and whether a producer writes an explicit
+  leeg segment is representation. The one comparison that sees the
+  representation is the change-detection rule below, which compares segment
+  lists; that makes it a rule of the data plane, not of the semantics. The
+  case format (`uchar-case-v0`) writes filled segments only, and leaves out
+  `from` or `to` for an open bound.
+- The **canonical form** of a timeline is its maximal runs of equal values
+  without the gaps: every leeg segment and every zero-length or reversed one
+  is dropped, then two adjacent segments `[a, b)` and `[b, c)` with equal
+  values merge into `[a, c)` until no two do; an open bound stays open.
+  Values are equal as in the change-detection rule (numeric equality for a
+  number, so 12 and 12,00 are one run). Two well-formed timelines read alike
+  on every day exactly when their canonical forms are equal, so how a
+  producer divides a run of equal values into segments is representation,
+  as the choice between a gap and an explicit leeg segment is. An expected
+  timeline of a case (`uchar-case-v0`, `attributeTimeline`) is compared with
+  the timeline the evaluation gives in this form: both sides canonical, then
+  segment by segment, the bounds exactly and the values by that equality.
+- An open bound is a bound of the value and lies on no wall of any grid. A
+  fold that walks the buckets or the whole units of a period (ch. 3.7, 3.8)
+  has no end to reach in an open segment, and such a walk is refused by
+  name; the temporal total has a rule of its own (ch. 3.6). Every bucket of
+  the whole-period qualifier (ch. 3.9) that lies inside an open segment reads
+  the segment's one value on each of its days, so all those buckets give one
+  verdict.
+- **Segment-wise equality** — the same `van`, the same `tot`, and values
+  that are equal or both leeg (numeric equality for a number; the structural
+  equality of ch. 9.3 for a constructor value) — is the change-detection
+  rule of a timeline write, the counterpart of the scalar rule of ch. 1.2,
+  Assignment (the evaluation model: ch. 5).
 
-### 3.2 Period grids, buckets, and variable starting points
+Worked example (`WV-3.1-canonical`; `ref/` tests verbatim): 0 on
+(−∞, 2024-01-01) and on [2024-01-01, 2024-02-01), 12 on
+[2024-02-01, 2024-03-01), 12,00 on [2024-03-01, 2024-04-01), an explicit
+leeg segment [2024-04-01, 2024-05-01) and 12 on [2024-05-01, +∞) have the
+canonical form (−∞, 2024-02-01) = 0, [2024-02-01, 2024-04-01) = 12,
+[2024-05-01, +∞) = 12: April reads leeg, so the two runs of 12 stay apart.
+The suite cases `ref/test/fixtures/canonical-timeline` expect runs divided
+otherwise than their producer writes them: the twelve months of a
+time-proportional part as one segment (ch. 3.7), two counted buckets of a
+day count as one and an open run of 0 as two (ch. 3.8), and a segment and
+both open runs of period arithmetic as two each (ch. 3.4).
 
-The five granularities (`day`, `week`, `month`, `quarter`, `year`) serve
-two distinct jobs, with different v0 support:
+### 3.2 Period grids, buckets, and start points
 
-1. **Weighting** (the temporal total, ch. 3.6) measures a span in units
-   of the grid: a day counts 1/len of the period of the grid that holds
-   it, len that period's length in days, so a period of the grid counts
-   one unit and a part of one its share of the days (maintainer decision
-   2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 12a). On the
-   calendar that period is the day, month, quarter or year of the
-   calendar, and a week counts seven days wherever it starts; a fixed
-   start point (below) lays the periods of its own grid. All five
-   granularities weight. A period between clamped walls is therefore one
-   unit. The whole units from the start of a span count the same periods
-   where the span starts on a wall: [van, tot) holds k whole months for
-   the greatest k with van + k months ≤ tot, the month step clamping to
-   the last valid day of the target month (ch. 3.8), k ÷ 3 whole quarters
-   and k ÷ 12 whole years; a week is seven days. This is the
-   date-plus-unit step, not the packed-month rule by which ch. 3.8 counts
-   a duration, and the two differ exactly where the end is a clamped
-   day.
-2. **Bucketing** (producers that emit one segment per calendar period:
-   ch. 3.7, 3.8, 3.9) uses calendar-aligned walls: a month bucket runs
-   from the first of the month to the first of the next; a year bucket
-   from 1 January to 1 January. Only **month and year buckets exist** on
-   the calendar — the source language's bucketing operators are
-   grammatically restricted to "de maand"/"het jaar", and v0 implements
-   exactly that. Calendar bucketing by day, week, or quarter is not
-   defined (ch. 3.12): a member declared on the calendar's day, week or
-   quarter grid has no bucket, and every reader of one refuses it. A case
-   timeline on the day grid needs none: every day sits on that grid, so its
-   segment boundaries are checked against nothing, and its total weighs its
-   days (ch. 3.6). A fixed
-   start point (below) lays periods of its own on a week, month, quarter or
-   year grid, and they are read where a bucket is read.
+A member's timeline lies on a **grid**: a sequence of periods of one
+granularity — `day`, `week`, `month`, `quarter` or `year` — and `count`
+units each. The grid is the **calendar grid** unless the timeline fixes a
+start point (below, fixed starting points) or takes one per object (below,
+variable starting points). The grid serves two jobs.
+
+1. **Weighting.** The temporal total (ch. 3.6) measures a span in units of
+   the grid: a day counts 1/len of the period of the grid that holds it, len
+   the length of that period in days, so a period of the grid counts one
+   unit and a part of one counts its share of the days. On the calendar the
+   period is the calendar day, month, quarter or year, and a week counts
+   seven days wherever it starts; a fixed start point lays the periods of
+   its own grid. All five granularities weight. A period between clamped
+   walls is therefore one unit. Counted from the start of a span that starts
+   on a wall, the whole units are the same periods: [van, tot) holds k whole
+   months for the greatest k with van + k months ≤ tot, the month step
+   clamping to the last valid day of the target month (ch. 3.8), k ÷ 3 whole
+   quarters and k ÷ 12 whole years; a week is seven days. This is the
+   date-plus-unit step, not the packed-month rule by which ch. 3.8 counts a
+   duration, and the two differ exactly where the end is a clamped day.
+2. **Bucketing.** A producer that writes one value per calendar period
+   (ch. 3.7, 3.8, 3.9) uses walls aligned to the calendar: a month bucket
+   runs from the first of a month to the first of the next, a year bucket
+   from 1 January to 1 January. Only **month and year buckets** exist on the
+   calendar: the source language's bucketing operators are restricted to
+   "de maand" and "het jaar". A calendar bucket of a day, a week or a
+   quarter is not defined (ch. 3.12): a member declared on the calendar's
+   day, week or quarter grid has no bucket, and every reader of such a
+   bucket refuses it. A case timeline on the day grid needs none: every day
+   lies on that grid, so its segment bounds are checked against nothing,
+   and its total weighs its days (ch. 3.6). A fixed start point lays periods
+   of its own on a week, month, quarter or year grid, and they are read
+   where a bucket is read.
+
+A bucket has its actual calendar length, leap-aware: February 2024 has 29
+days, 2025 has 365. There is no 360-day convention anywhere.
 
 Worked examples of the weighting (absolute; `ref/` tests verbatim):
 [2024-01-31, 2024-02-29) holds **1** whole month, where the duration from
@@ -1183,51 +1197,63 @@ Worked examples of the weighting (absolute; `ref/` tests verbatim):
 inverse"); [2024-11-30, 2025-02-28) holds **1** whole quarter;
 [2024-02-29, 2025-02-28) holds **1** whole year; [2024-01-31, 2024-02-28)
 holds **0** whole months. Measured on the grid, the same
-[2024-01-31, 2024-02-29) is **1** period of the `--01-31` month grid, and
-on the calendar's month grid the last day of January and 28 days of
-February, **1/31 + 28/29** of a month.
+[2024-01-31, 2024-02-29) is **1** period of the `--01-31` month grid, and on
+the calendar's month grid the last day of January and 28 days of February,
+**1/31 + 28/29** of a month.
 
-Bucket lengths are actual calendar lengths, leap-aware: February 2024 has
-29 days, 2025 has 365. There is no 360-day convention anywhere.
+**The calendar.** The time units fall into two families by the spelling
+table of ch. 3.8: the **day family**, dag and week, and the **month
+family**, maand, kwartaal and jaar. Within a family a factor is exact, and
+the factor the document declares governs (`jr = 12 mnd`, `wk = 7 dg`).
+Between the two families no factor is exact, because a month and a year
+have no fixed number of days (§7.3.1). A span measured in a unit of the
+other family than its grid's is measured by the **actual length of the
+calendar unit**: a day counts 1 dg and 1/7 wk, and 1/len of the calendar
+month, quarter or year that holds it, len its length in days (28 to 31, 90
+to 92, 365 or 366). A factor that a document declares between the two
+families (`jr = 365 dg`, `mnd = 30 dg`) would stand in for the calendar and
+is ill-formed (WF-009, `IR-SPEC.md` ch. 2.5; negative
+`wf009-calendar-family-factor`); an executor that meets one refuses it by
+name. A unit outside the spelling
+table, such as a `bm` declared canonically as a month, belongs to neither
+family and keeps the factor it declares (ch. 3.12). The temporal total
+integrates by this measure (ch. 3.6).
 
-**Multi-period grids** (`count` ≥ 2, "voor elke 3 maanden"): declared and
-carried in the model layer (WF-005), but **no operation over them is
-defined** — v0 refuses every read of and write to a multi-period timeline
-(the coverage-manifest family "multi-period temporal writes"; the refusal
-reason is that the producer semantics — how a value spreads over an
-N-unit period — are genuinely under-specified in the source language).
-**OPEN** (ch. 3.12): v1 either specifies the multi-period producers or
-restricts `count` to 1 at the type level.
+**Multi-period grids** (`count` ≥ 2, "voor elke 3 maanden") are declared and
+carried in the model layer (WF-005), and **no operation over them is
+defined**: every read of and write to a multi-period timeline is refused,
+because the source language leaves open how a value spreads over a period
+of N units (ch. 3.12). A parameter's facet has `count` 1 (WF-005,
+`IR-SPEC.md` ch. 2.10).
 
-**Variable starting points** (§9.9). A variable-start timeline buckets
-per object at its **anchor** — the value of the synthetic day-precision
-date attribute that the start-point determination names (`IR-SPEC.md`
-ch. 3.8) and that an ordinary rule writes. Anchored buckets are
+**Variable starting points** (§9.9). A timeline with a variable start lays
+its periods per object from its **anchor**: the value of the synthetic
+day-precision date attribute that the start-point determination names
+(`IR-SPEC.md` ch. 3.8) and that an ordinary rule writes. The anchored
+periods are
 
 ```
 [ anchor + k·unit,  anchor + (k+1)·unit )      for every integer k
 ```
 
-— periods exist before as well as after the anchor, and **every wall is
-computed directly from the anchor** (never by incrementing the previous
-wall), so a month-end anchor clamps consistently. Worked example: anchor
-2024-01-31, month grid → walls 2024-01-31, 2024-02-29 (leap clamp),
-2024-03-31, 2024-04-30, … — the third wall is the 31st again, which
-cursor-incrementing from the clamped 29th would have lost. Date-plus-unit
-arithmetic clamps to the last valid day of the target month (ch. 3.8).
+Periods exist before the anchor as well as after it, and **every wall is
+computed from the anchor directly**, never by stepping from the previous
+wall, so a month-end anchor clamps the same way at every wall. Worked
+example: anchor 2024-01-31, month grid → walls 2024-01-31, 2024-02-29 (the
+leap clamp), 2024-03-31, 2024-04-30, …; the third wall is the 31st again,
+which a step from the clamped 29th would have lost. The date-plus-unit step
+clamps to the last valid day of the target month (ch. 3.8).
 
-A missing start-point determination is ill-formed (WF-016/WF-032); an
-anchor that is *leeg at evaluation time* yields the empty timeline for
-every anchored producer, and the anchor rule's own §6.8 error surfaces on
-the §9.5 channel (v0 mirror: a companion rule raises it).
+A missing start-point determination is ill-formed (WF-016/WF-032). An anchor
+that is leeg at evaluation gives the empty timeline for every anchored
+producer, and the anchor rule's own §6.8 error reaches the §9.5 channel.
 
 **Fixed starting points** (§13.3.6.3–.7). A timeline may fix the point its
 periods start from (`IR-SPEC.md` ch. 2.8, `fixedStart`, WF-115), on its
 declaration or on a member's timeline facet. Its grid is the sequence of
-periods of `count` units from that point, and the same sequence back in
-time — periods exist before the start point as well as after it — with
-every wall computed directly from the start point, as from the variable
-anchor above:
+periods of `count` units from that point and the same sequence back in time,
+with every wall computed from the start point directly, as from a variable
+anchor:
 
 ```
 date start A (yyyy-mm-dd):     [ A + k·count·unit,  A + (k+1)·count·unit )   for every integer k
@@ -1235,34 +1261,32 @@ day-month start --mm-dd:       [ D + k·unit,        D + (k+1)·unit )         f
 ```
 
 `unit` is one day, seven days, or one, three or twelve months, the month
-arithmetic clamping as in ch. 3.8; `D` is day `dd` of month `mm` in any year
-that has that day (a leap year for `--02-29`), and every such year lays the
-same walls. On a month grid the walls fall on day `dd` of every month, on a
+step clamping as in ch. 3.8; `D` is day `dd` of month `mm` in any year that
+has that day (a leap year for `--02-29`), and every such year lays the same
+walls. On a month grid the walls fall on day `dd` of every month, on a
 quarter grid on day `dd` of month `mm` and of every third month from it, on
 a year grid on day `dd` of month `mm`; a month shorter than `dd` takes its
 last day. A timeline without a `fixedStart` and without a variable start
-lies on the calendar grid above.
+lies on the calendar grid.
 
-The grid is read where the calendar grid was read, from the member's facet:
-the boundaries of a case-supplied timeline sit on its walls, a scalar case
-value is the value of the period that contains the evaluation date
-(ch. 3.6) — on a week or quarter grid as on a month or year grid, since a
-fixed start point lays the period there where the calendar lays none —
-and the day count of ch. 3.8 into a month or year target of `count` 1
-buckets on the target's periods. The whole-period qualifier
-(ch. 3.9) does not read it: its buckets are the calendar month or year the
-qualifier names, whatever grid the tested member declares. Two things stay
-as they were. A multi-period grid (below) is defined by its date start and
-still carries no operation, a case input included. The pro-rata of ch. 3.7
-onto a fixed-start target or from a fixed-start base is fenced, as its
-anchored variant is: the base is constant across a bucket because its grid
-nests in the target's, and a start point off the calendar breaks that
-nesting, so every executor refuses the form loudly.
+The grid is read where the calendar grid is read, from the member's facet:
+the bounds of a case-supplied timeline lie on its walls; a scalar case value
+is the value of the period that holds the evaluation date (ch. 3.6), on a
+week or quarter grid as on a month or year grid, since a fixed start point
+lays a period there where the calendar lays none; and a day count into a
+month or year target of `count` 1 buckets on the target's periods (ch. 3.8).
+The whole-period qualifier (ch. 3.9) does not read it: its buckets are the
+calendar month or year the qualifier names, whatever grid the tested member
+declares. The time-proportional part (ch. 3.7) needs a base that is
+constant across a bucket, which holds because the base's grid nests in the
+target's; a start point off the calendar breaks that nesting, so the part
+onto a target or from a base on a fixed or variable start point is not
+defined, and is refused (ch. 3.12).
 
 Worked examples (absolute; `ref/` tests verbatim):
 
-- year grid `--10-01`: the period containing 2025-02-01 is
-  [2024-10-01, 2025-10-01), the one containing 2024-09-30 is
+- year grid `--10-01`: the period that holds 2025-02-01 is
+  [2024-10-01, 2025-10-01), the one that holds 2024-09-30 is
   [2023-10-01, 2024-10-01);
 - month grid `--01-31`: walls 2024-01-31, 2024-02-29, 2024-03-31,
   2024-04-30 — computed from the start point, the 31st returns in March;
@@ -1270,8 +1294,8 @@ Worked examples (absolute; `ref/` tests verbatim):
   2024-11-30, 2025-02-28;
 - year grid `--02-29`: walls 2024-02-29, 2025-02-28, 2026-02-28,
   2027-02-28, 2028-02-29;
-- week grid `2026-01-05`: the period containing 2026-01-04 is
-  [2025-12-29, 2026-01-05), the one containing 2026-01-05 is
+- week grid `2026-01-05`: the period that holds 2026-01-04 is
+  [2025-12-29, 2026-01-05), the one that holds 2026-01-05 is
   [2026-01-05, 2026-01-12);
 - the day count "het aantal dagen in het jaar dat hij wachtplichtig is"
   into a target on the `--10-01` year grid, the characteristic true on
@@ -1281,131 +1305,165 @@ Worked examples (absolute; `ref/` tests verbatim):
   case 1);
 - "voor elk jaar startend op dag 15 van maand 10" declares the periods
   15 October – 15 October, written `--10-15`: a case input over
-  [2024-10-15, 2025-10-15) sits on the grid, one over
-  [2025-01-01, 2026-01-01) is refused as off it.
+  [2024-10-15, 2025-10-15) lies on the grid, one over
+  [2025-01-01, 2026-01-01) is refused as off it;
 - the subject's own total over the asOfDate bucket, evaluation date
   2025-02-15: a member on the week grid `2024-09-30` with the scalar case
   value 7 reads the period [2025-02-10, 2025-02-17), one whole week →
   **7**; a member on the quarter grid `--05-31` with 30 reads
-  [2024-11-30, 2025-02-28), one whole quarter → **30**; the calendar's
-  week grid has no such period, and the total is refused.
+  [2024-11-30, 2025-02-28), one whole quarter → **30**; the calendar's week
+  grid has no such period, and the total is refused.
 
-*v0 mirror note:* v0 resolved the fixed start point in its model and had
-no wire field for it. Until the wire carried one, the RegelSpraak frontend
-refused a start point off the calendar grid at emission rather than drop
-it, since the timeline written without it lies on the calendar grid, and
-omitted without loss only the three start points that are the calendar's.
-**Delta (addition).**
+*v0 mirror note:* v0 resolves the fixed start point in its model and has no
+wire field for it; the wire field is a tracked addition.
 
-### 3.3 Reading a timeline — and the point-read gap
+### 3.3 The principle: the reading per day
 
-`read(tl, d)` (ch. 3.1) is the primitive every operation below is built
-from. But **v0 exposes no point-in-time read to the rule author**: a
-time-dependent attribute or parameter in a scalar context is refused (the
-"§8.2 list-in-scalar" marker family), and the evaluation date (rekendatum)
-only *gates* rules — version validity, the ch. 3.10 period condition — it
-never *indexes* a timeline to a value. The only ways a timeline becomes a
-scalar are the dedicated collapses: the temporal total (ch. 3.6) and the
-whole-period predicate (ch. 3.9). **The refusal ends exactly where those
-collapses begin:** a condition carrying the §8.2 whole-period qualifier is
-not a scalar context at all, and refusing it under this clause refuses the
-exit it names (ch. 3.9, "This qualifier is not a scalar context").
+**The rule.** For every operator and every condition without a time
+semantics of its own, the meaning over timelines is the scalar meaning on
+each day: the empty rules of ch. 1.2 per day, and the equation that a rule
+is (ch. 5.1) per day (§5.1.1, §5.1.4, §8.4.1, §10.3). For a scalar
+operation f over operands x₁ … xₙ,
 
-This is the recorded "op dat tijdstip" gap (`ASP-TRANSLATION.md` ch. 5,
-finding 4; `CONSTRUCTS.md` row 11): Jutterswet art. 1 needs the value of
-"erkend jutter of vast ingezetene" **at the child's birth** — a point
-read at an instant that is not the evaluation date. That is doubly
-inexpressible in v0: there is no point read at all, and no way to name a
-non-rekendatum instant. The algebra above already defines the needed
-primitive (`read(tl, d)` with `d` any date expression). **Decided
-(maintainer, 2026-08-16, row 11):** v1 exposes it as a core IR node — a
-temporal-read expression carrying a timeline operand and a date
-operand — on the principle that the IR must carry every source-language
-primitive; art. 1 and the ch. 8 vintage read (a parameter timeline read
-at the evaluation date) become expressible. The reconciliation with
-ch. 5.7's fail-fast vintage discipline is a division of labour: the
-read keeps its ch. 3.1 leeg-on-gap totality, and ch. 8's fail-fast
-lives in the data plane — the Parameterset must cover the evaluation
-window (an overlap is a load error, a coverage gap a session-start
-error — the ch. 8.4 phasing — both raised before any read). **Landed (2026-08-16):** the node is `IR-SPEC.md` ch. 4.3a
-(`TemporalRead`, WF-049), with the full-timeline case value variant in
-`uchar-case-v0`, the ref/ implementation on this chapter's `read`, and
-the Clingo translation as a segment-containment join; an empty date
-index reads to leeg (ch. 1.2 propagation). The anchor witness is
-`corpus/golden/anchor/jutterswet-aanmeldquotum`. The RegelSpraak
-surface follows spec-first via a pin bump; a temporal *characteristic*
-operand stays OPEN with the case format.
+```
+read(f(x₁, …, xₙ), d)  =  f(read(x₁, d), …, read(xₙ, d))      for every day d
+```
 
-**A condition on a rule with a timeline target is no scalar context
-either** (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md`
-point 3; RegelSpraak §10.3). There a condition that reads a timeline — a
-time-dependent characteristic or attribute as an operand, or a
-whole-period qualifier — is read per period, and the rule writes in the
-periods in which it holds (ch. 3.10, the clip generalised). The refusal
-above stays for every other position: on a scalar target a time-dependent
-characteristic or attribute in the condition is refused, and the
-whole-period qualifier folds (ch. 3.9).
+where an operand is a timeline, a scalar (the timeline (−∞, +∞) of
+ch. 3.1), or a time-dependent parameter (its supplied timeline). The result
+is constant between two consecutive bounds of the operands' segments, so it
+is computed once per period of their **cut set** (ch. 3.4). The operations
+with a time semantics of their own keep their own definition: the temporal
+total (ch. 3.6), the time-proportional part (ch. 3.7), the day count
+(ch. 3.8), the whole-period qualifier (ch. 3.9) and the period window
+(ch. 3.10). Of the arithmetic operators of ch. 1.2 the power alone is not
+read per day: a power over a timeline is refused (ch. 3.4).
 
-### 3.4 Cut-merge arithmetic — the period-coalescing rule (§5.1.4)
+**The periods of a condition.** A condition c read per day has a truth on
+every day, and its **periods** are the days on which it holds, gathered into
+maximal periods:
 
-Binary arithmetic over two timelines `a ⊕ b` is defined per period of
-**all time** over the **cut set** (knip): the sorted union of both
-operands' segment boundaries and the two open bounds. ⊕ is an operator of
-the arithmetic table of ch. 1.2 other than the power — plus, min,
-verminderd met, maal, gedeeld door in both variants, percentage van — and
-it is read **per day** with its own empty rule of that table (§5.1.1,
-§5.1.4; `spec/proposals/IMPLICIT-TIME.md` point 1, maintainer decision
-2026-11-03):
+```
+periods(c) = the maximal periods of { d : c holds on d }
+```
+
+Two adjacent periods in which c holds are one period, so periods(c) changes
+only where c changes. Ch. 3.10 gives periods(c) for each form of condition
+that reads a timeline.
+
+**The clip.** A producer of a timeline is restricted to the periods of the
+condition that governs it:
+
+```
+written(tl, c) = tl restricted to periods(c)
+```
+
+The restriction cuts segments and keeps their values: it is the restriction
+of a function to a smaller domain, so a segment that straddles a bound of
+periods(c) keeps the producer's value on the part inside, and that value is
+not recomputed for the shorter span (ch. 3.10). The condition of a rule
+with a timeline target restricts the rule's producer to periods(c)
+(ch. 3.10); the "gedurende" filter of the temporal total restricts the
+totalled timeline to them (ch. 3.6); and the time-proportional part and the
+day count count the days of periods(c) of their selecting condition
+(ch. 3.7, 3.8).
+
+Worked examples of the principle stand in the sections that apply it: an
+operator per day with a scalar operand (`WV-3.4-domein`, ch. 3.4), every
+operator per day (`WV-3.4-per-dag`, ch. 3.4), and a condition per period
+(`WV-3.10-voorwaarde-per-periode`, ch. 3.10).
+
+**Scalar contexts.** The reading per day applies where a timeline is read.
+A time-dependent attribute or parameter in a **scalar context** is
+refused (the "§8.2 list-in-scalar" marker family): the evaluation date only
+gates — a rule version's validity, the period window on a scalar target
+(ch. 3.10) — and never indexes a timeline to a value. The only ways from a
+timeline to a scalar are the two collapses, the temporal total (ch. 3.6) and
+the whole-period qualifier (ch. 3.9), and the point read below. A condition
+that carries the whole-period qualifier is not a scalar context: it is the
+second collapse (ch. 3.9, "This qualifier is not a scalar context"). The
+condition of a rule follows its target: on a rule with a timeline target a
+condition that reads a timeline is read per period, and the rule writes in
+the periods in which it holds (ch. 3.10); on a scalar target a
+time-dependent characteristic or attribute in the condition is refused, and
+the whole-period qualifier folds (ch. 3.9).
+
+**The point-in-time read.** `read(tl, d)` is a core IR node, `TemporalRead`
+(`IR-SPEC.md` ch. 4.3a, WF-049): a timeline operand and a date operand, the
+date any date expression. The IR carries every primitive of the source
+language, and the source needs this one: Jutterswet art. 1 needs the value
+of "erkend jutter of vast ingezetene" **at the child's birth**, a read at an
+instant that is not the evaluation date (`ASP-TRANSLATION.md` ch. 5,
+finding 4). The read keeps the totality of ch. 3.1 — a gap reads leeg — and
+a leeg date index reads leeg (ch. 1.2, propagation). The vintage read of
+ch. 8.3 is this node over a parameter's timeline with the evaluation date as
+its index. Its fail-fast discipline lives in the data plane: the
+Parameterset must cover the evaluation date, and an overlap is a load error
+and a coverage gap a session-start error, both raised before any read
+(ch. 8.4). The anchor witness is `corpus/golden/anchor/jutterswet-aanmeldquotum`.
+A time-dependent characteristic as the operand stays open with the case
+format (ch. 3.12).
+
+### 3.4 Arithmetic per day — the period-coalescing rule (§5.1.4)
+
+A binary arithmetic operator ⊕ over two timelines is the principle of
+ch. 3.3 for that operator. ⊕ is an operator of the arithmetic table of
+ch. 1.2 other than the power — plus, min, verminderd met, maal, gedeeld door
+in both variants, percentage van — and it is read **per day** with its own
+empty rule of that table (§5.1.1, §5.1.4). The result is computed per period
+of **all time** over the **cut set** (knip), the sorted union of both
+operands' segment bounds and the two open bounds:
 
 ```
 cuts(a, b)  =  sort ( { −∞, +∞ } ∪ { van, tot of every segment of a and of b } )
 (a ⊕ b) on [c_i, c_i+1)  =  read(a, c_i) ⊕ read(b, c_i)      ⊕ with its ch. 1.2 empty rule
 ```
 
-For plus and min the empty rule coalesces both operands, `coalesce(leeg) =
-0`; verminderd met propagates a leeg left operand and coalesces its right;
-maal and percentage van coalesce both; a division coalesces a leeg
-dividend to 0 before it reads the divisor, and a leeg or numeric-zero
-divisor under a filled dividend makes the period leeg and deposits on the
-§9.5 channel (EF-031, EF-005; ch. 1.2, 2.2, 5.6).
+The empty rules: plus and min coalesce both operands, `coalesce(leeg) = 0`;
+verminderd met propagates a leeg left operand and coalesces its right; maal
+and percentage van coalesce both; a division coalesces a leeg dividend to 0
+before it reads the divisor, and a leeg or numeric-zero divisor under a
+filled dividend makes the period leeg and deposits on the §9.5 channel
+(EF-031, EF-005; ch. 1.2, 2.2, 5.6).
 
-- The result divides all time (ch. 3.1; maintainer decision 2026-11-03,
-  `spec/proposals/IMPLICIT-TIME.md` point 2, following §5.1.4.1). Under
-  plus and min a period where both operands are leeg yields **0**, not
-  leeg — between two segments and before the first cut and after the last
-  one alike, so the result's first and last segments are open: that is the
-  **period-coalescing rule**, ch. 1.2's §5.1.4 row per day, and the exact
-  counterpart of the ch. 3.5 rule. Under the other operators a period
-  reads what their rule gives two leeg operands: 0 for maal, percentage
-  van and a division (a leeg dividend), leeg for verminderd met.
-- A **scalar operand** holds on every day: it is the timeline (−∞, +∞)
-  of ch. 3.1 and adds no cut (§5.1.1). A leeg scalar is the empty
-  timeline, which reads leeg on every day.
-- A **time-dependent parameter** is a timeline operand like a temporal
-  attribute (§3.8, §5.1.1; IMPLICIT-TIME VB 2.3): its timeline, the one
-  the Parameterset supplies, is read whole, and its boundaries are cuts. Its
-  timeline is its binding, so a session that supplies none faults as for an
-  unbound parameter (EF-014, ch. 5.7). The vintage read of ch. 8.3 is a
-  different reading of the same parameter and keeps its own rules.
-- A deposit of a division counts once: however many periods divide by a
-  leeg or numeric-zero divisor, the rule × subject that evaluates the
-  value carries one §9.5 fact, with each code once among its codes
-  (ch. 5.6). The period is no parameter of the fact (IMPLICIT-TIME VB 1.3).
-- How the result divides a run of equal values into segments is
-  representation (ch. 3.1, the canonical form).
-- Units follow ch. 2.6 per period: an additive operator computes in the
-  left operand's unit (each right operand restated by its exact factor), a
+- **All time.** The result divides all time (ch. 3.1; §5.1.4.1). Under plus
+  and min a period in which both operands are leeg gives **0**, not leeg —
+  between two segments, before the first cut and after the last alike — so
+  the result's first and last segments are open. That is the
+  **period-coalescing rule**: the §5.1.4 row of ch. 1.2 per day, and the
+  counterpart of the contributor-skipping rule of ch. 3.5. Under the other
+  operators such a period reads what their rule gives two leeg operands: 0
+  for maal, percentage van and a division (a leeg dividend), leeg for
+  verminderd met.
+- **A scalar operand** holds on every day: it is the timeline (−∞, +∞) of
+  ch. 3.1 and adds no cut (§5.1.1). A leeg scalar is the empty timeline,
+  which reads leeg on every day.
+- **A time-dependent parameter** is a timeline operand like a time-dependent
+  attribute (§3.8, §5.1.1): its timeline, the one the Parameterset supplies,
+  is read whole, and its bounds are cuts. Its timeline is its binding, so a
+  session that supplies none faults as for an unbound parameter (EF-014,
+  ch. 5.7). The vintage read of ch. 8.3 is another reading of the same
+  parameter and keeps its own rules.
+- **A deposit counts once.** However many periods divide by a leeg or
+  numeric-zero divisor, the rule × subject that evaluates the value carries
+  one §9.5 fact, with each code once among its codes (ch. 5.6). The period
+  is no parameter of the fact.
+- **Representation.** How the result divides a run of equal values into
+  segments is representation (ch. 3.1, the canonical form).
+- **Units** follow ch. 2.6 per period: an additive operator computes in the
+  left operand's unit (each right operand restated by its exact factor); a
   product and a quotient carry the unit their rule gives, in a period where
-  an operand is leeg as well: the empty rule decides the value of that
-  operand there, its declarations its unit (ch. 2.10), and the result is
-  restated **once** to the target's unit. The precision gate of ch. 2.4
-  bounds the value of every segment (IMPLICIT-TIME VB 1.4).
-- Granularity: every operand's grid must fit the target's — every wall of
-  the operand's grid a wall of the target's (`IR-SPEC.md` WF-126;
-  `spec/proposals/IMPLICIT-TIME.md` point 8, `WV-3.4-fijner-geweigerd`: a
-  dagrentevoet for every day in a maandrente for every month is
-  ill-formed); the result's segment boundaries are the cut set itself —
-  event-driven, not re-bucketed onto the target's calendar grid.
+  an operand is leeg as well — the empty rule decides that operand's value
+  there, its declarations its unit (ch. 2.10) — and the result is restated
+  **once**, to the target's unit. The precision bound of ch. 2.3 holds for
+  the value of every segment, and the precision gate of ch. 2.4 point 4
+  holds per segment (ch. 3.11).
+- **Granularity.** Every operand's grid must fit the target's: every wall of
+  the operand's grid is a wall of the target's (`IR-SPEC.md` WF-126;
+  negatives `wf126-value-grid`, `wf126-condition-grid` and
+  `wf126-whole-period-grid`, the last two for the condition, ch. 3.9, 3.10). The
+  result's segment bounds are the cut set itself; they follow the operands'
+  bounds and are not laid on the target's calendar grid.
 
 Worked examples (absolute; `ref/` tests verbatim) — `a` = 100 on
 [2024-01-01, 2024-07-01), `b` = 30 on [2024-04-01, 2024-10-01), `a + b`
@@ -1419,18 +1477,17 @@ Worked examples (absolute; `ref/` tests verbatim) — `a` = 100 on
 | [2024-07-01, 2024-10-01) | leeg→0 | 30 | 30 | −30 |
 | [2024-10-01, +∞) | leeg→0 | leeg→0 | 0 | 0 |
 
-Worked example (interior gap coalesces to 0, `WV-3.4-b`) — `a` = 1 on
-[jan, feb), `b` = 2 on [mrt, apr), `a + b`: (−∞, jan) = 0, [jan, feb) =
-1, **[feb, mrt) = 0** (both leeg, coalesced to 0 + 0), [mrt, apr) = 2,
+Worked example (an interior gap coalesces to 0, `WV-3.4-b`) — `a` = 1 on
+[jan, feb), `b` = 2 on [mrt, apr), `a + b`: (−∞, jan) = 0, [jan, feb) = 1,
+**[feb, mrt) = 0** (both leeg, coalesced to 0 + 0), [mrt, apr) = 2,
 [apr, +∞) = 0.
 
 Worked example (a scalar beside a timeline, `WV-3.4-domein`) — `a` as
 above, `5 + a`: (−∞, 2024-01-01) = 5, [2024-01-01, 2024-07-01) = 105,
 [2024-07-01, +∞) = 5.
 
-The corpus witness of all three, written by rules through the RegelSpraak
-frontend and replayed by `ref` and the ASP backend, is
-`corpus/golden/jutterswet-maandloon`.
+The corpus witness of these three, written by rules through the RegelSpraak
+frontend, is `corpus/golden/jutterswet-maandloon`.
 
 Worked example (every operator per day, `WV-3.4-per-dag`) — `a` and `b` of
 the first example, both without a unit:
@@ -1446,194 +1503,148 @@ the first example, both without a unit:
 In its canonical form (ch. 3.1) `a maal b` is 0 on (−∞, 2024-04-01), 3000
 on [2024-04-01, 2024-07-01) and 0 on [2024-07-01, +∞); `a gedeeld door
 (ABS) b` is `a gedeeld door b` with 3,33333 on the second quarter. The
-corpus witness of the five operators, written by rules on a day grid and
-replayed by `ref` and the ASP backend, is
-`corpus/golden/jutterswet-rekenen-per-dag` (with b = 25, so that every
-quotient is whole: the ASP backend holds the unbounded form as a whole
-number, ch. 2.4; its case 4 gives four operands with a unit a gap each; its cases 5 to 7 fold
-over a set as an operand, the 0 of a fold without a contributor in the unit
-of the fold); a
-time-dependent parameter as an operand,
-`corpus/golden/anchor/jutterswet-verzuimrente-dagen`: the verzuimrentevoet
-(0,04 /jr until 2026-02-01, 0,05 /jr from then, both bounds open) maal an
-afdrachtbedrag of 10 000 € is 400 €/jr on (−∞, 2026-02-01) and 500 €/jr on
-[2026-02-01, +∞).
+corpus witness of the five operators, written by rules on a day grid, is
+`corpus/golden/jutterswet-rekenen-per-dag`, with b = 25 so that every
+quotient is whole; its case 4 gives four operands with a unit a gap each,
+and its cases 5 to 7 fold over a set as an operand, the 0 of a fold without
+a contributor in the unit of the fold.
 
-*v0 mirror note (scope):* only **plus and min** exist as timeline
-arithmetic in v0. Verminderd-met, maal, division, and percentage-van over
-two timelines are refused (marker/skip). **Delta (tracked, `CONSTRUCTS.md`
-row 11):** v1 reads every operator of ch. 1.2 but the power per day, as the
-specification states it for every expression (§5.1.1, §5.1.4) and as ALEF
-computes it (`spec/proposals/IMPLICIT-TIME.md` point 1). A scalar operand
-and a time-dependent parameter are specified above: their time domain is
-all time.
+Worked example (a time-dependent parameter as an operand,
+`corpus/golden/anchor/jutterswet-verzuimrente-dagen`): the
+verzuimrentevoet, 0,04 /jr until 2026-02-01 and 0,05 /jr from then, both
+bounds open, maal an afdrachtbedrag of 10 000 € is 400 €/jr on
+(−∞, 2026-02-01) and 500 €/jr on [2026-02-01, +∞).
+
+Worked example (a finer operand, `WV-3.4-fijner-geweigerd`): a dagrentevoet
+for every day in a maandrente for every month is ill-formed (WF-126): the
+walls of the day grid are not all walls of the month grid.
+
+*v0 mirror note (scope):* v0 has only **plus and min** as timeline
+arithmetic, over the span of its operands, and refuses verminderd met, maal,
+division and percentage van over two timelines. Every operator of ch. 1.2 but
+the power read per day over all time, with a scalar and a time-dependent
+parameter among its operands, is a tracked delta (`CONSTRUCTS.md` row 11).
 
 ### 3.4a The die/dat subselection on instance folds
 
-**The contributors, before any filter: reach ∩ population.** An instance
-fold names two declarations, and they answer two different questions. The
-source relation (`sourceRole`, or the multi-step `sourcePath` of ch. 3.4b —
-since L2 every instance fold carries one of the two, B12; until L2 WF-048
-derived the role when neither was written) says which instances the
-fold REACHES from its subject. `elementType` says which instances the
-fold RANGES OVER, extensionally (`IR-SPEC.md` ch. 2.2): every instance
-whose type is ⊑ it. The contributors are the intersection — an instance the
-relation reaches whose type the element type does not cover is **not** a
-contributor, and contributes to neither a count nor a value fold.
-
-The two used to be the same set. WF-047 demanded the bound role's filler
-and `elementType` be the same name, so the relation could not reach
-anything the element type failed to cover; since ch. 2.6 made a role's
-declared filler an UPPER bound and widened "agree" to ⊑-compatibility, the
-filler may be a strict supertype and the two come apart. Where the filler
-is the element type or below — every document written before the chain
-existed — the intersection is the reach and nothing changes.
+**The contributors before any filter: reach ∩ population.** An instance
+fold names two declarations, and they answer two questions. The source
+relation — `sourceRole`, or the multi-step `sourcePath` of ch. 3.4b; every
+instance fold carries one of the two — says which instances the fold
+**reaches** from its subject. `elementType` says which instances the fold
+**ranges over**, extensionally (`IR-SPEC.md` ch. 2.2): every instance whose
+type is ⊑ it. The contributors are the intersection. An instance the
+relation reaches and whose type the element type does not cover is no
+contributor, and contributes to neither a count nor a value fold. A role's
+declared filler is an upper bound (`IR-SPEC.md` ch. 2.6), so the filler may
+be a strict supertype of the element type and the two sets differ; where the
+filler is the element type or a type below it, the intersection is the
+reach.
 
 This narrowing is **not** the die/dat filter below, and the difference is
-observable: the type narrowing happens first and cannot be written as a
-condition, since no condition can ask an instance for its type.
+observable: the type narrowing comes first, and no condition can express it,
+since no condition can ask an instance for its type.
 
-Worked example (the `golden/jutterswet-munttelling` golden, verbatim in
-gates 5, 6 and 12). `vondstaanmelding` relates Jutter to **Vondst**; both
-folds declare `elementType` **Munt**, and `Munt ⊑ Vondst` strictly.
-`J1` is linked to `V1` (a plain Vondst, gewicht 3,00), `M1` (a Munt, 7,00)
-and `M2` (a Munt, 5,00): the reach is all three, the population is {M1,
-M2}, so the count is **2** and the sum **12,00** — unfiltered they would
-read 3 and 15,00. `J2` is linked to exactly one instance, `V2` (a plain
-Vondst, 4,00): the reach is NOT empty and the contributors are, so the
-count is **0** and the sum falls to its `of 0` fallback — the empty-source
-rules of ch. 1.2 read the contributors, never the links. `J3` is linked to
-`M3`, a Munt with no gewicht: it IS a contributor, so the count is **1**,
-while the sum has a member and no value and reaches **0** by the same
-fallback — which is why both folds are pinned per jutter, since only the
+Worked example (golden `jutterswet-munttelling`). `vondstaanmelding` relates
+Jutter to **Vondst**; both folds declare `elementType` **Munt**, and
+`Munt ⊑ Vondst` strictly. `J1` is linked to `V1` (a plain Vondst, gewicht
+3,00), `M1` (a Munt, 7,00) and `M2` (a Munt, 5,00): the reach is all three,
+the population is {M1, M2}, so the count is **2** and the sum **12,00** —
+unfiltered they would read 3 and 15,00. `J2` is linked to exactly one
+instance, `V2` (a plain Vondst, 4,00): the reach is not empty and the
+contributors are, so the count is **0** and the sum falls to its `of 0`
+fallback — the empty-source rules of ch. 1.2 read the contributors, never the
+links. `J3` is linked to `M3`, a Munt with no gewicht: it is a contributor, so
+the count is **1**, while the sum has a member and no value and reaches **0**
+by the same fallback. Both folds are pinned per jutter because only the
 count tells J2's empty population from J3's empty value.
 
-The `filter` condition of an instance fold evaluates **per
-contributor**: the element instance is the condition's subject, never
-the outer fold subject. A contributor whose filter operand is leeg
-fails the condition (the ch. 1.2 comparison discipline) and drops out;
-a filter over a derived characteristic reads it on the element type,
-so the fold sits above that characteristic's writer in the strata
-(ch. 6.1). A filter that excludes every contributor leaves an empty
-source: the sum's declared fallback fires, a count reads 0 — exactly
-the empty-role outcome. The same wire field also carries the §7.1
-gedurende timeline clip (on the temporal total, whose element type is
-the subject itself); that form is a timeline operation and both
-executors refuse it until the clip lands — recorded, unwitnessed by a
-red case until that card.
+The `filter` condition of an instance fold is evaluated **per
+contributor**: the element instance is the condition's subject, never the
+outer fold subject. A contributor whose filter operand is leeg fails the
+condition (the comparison discipline of ch. 1.2) and drops out. A filter
+over a derived characteristic reads it on the element type, so the fold
+stands above that characteristic's writer in the strata (ch. 6.1). A filter
+that excludes every contributor leaves an empty source: the sum's declared
+fallback applies and a count reads 0, as for an empty role. The same wire
+field carries the §7.1 "gedurende" clip of the temporal total, whose element
+type is the subject itself (ch. 3.6).
 
-Worked example (the `jutterswet-strandgoed` emitter golden, verbatim
-in gates 5–6): vondsten of 3, 7, 12 and one with an empty gewicht;
-"die groter zijn dan 5" sums 7+12=19 (the empty one drops out); "die
-waardevol zijn" — waardevol derived as gewicht > 10 — counts 1; a
-jutter whose only vondst fails the filter reads the fallback 0 and
+Worked example (golden `jutterswet-strandgoed`): vondsten of 3, 7, 12 and one
+with an empty gewicht; "die groter zijn dan 5" sums 7+12=19 (the empty one
+drops out); "die waardevol zijn" — waardevol derived as gewicht > 10 — counts
+1; a jutter whose only vondst fails the filter reads the fallback 0 and
 count 0.
 
 **The count source: the range selects, the written name does not.** Under
-`count` the fold's one argument is the COUNT SOURCE. Since L2 a count over
-one source argument carries its range (`sourceRole`, one step — a
-`sourcePath` belongs to a value fold's set source alone, `IR-SPEC.md`
-WF-102 (c)), and the count folds the instances that range reaches from the
-subject, narrowed by `elementType` as above. The argument's
-`attribute` is the WRITTEN name of the bound role and selects nothing: it
-MUST denote the bound role by its declared name or its declared plural
-(`IR-SPEC.md` WF-047), and where the written form did not, the migration to
-the L2 wire and the emitter write the declared role name in its place (the
-L2 card, `backlog/done/20260923-l2-referentielaag.md`). A written name that
-matches roles on several fact types the subject reaches therefore decides
-nothing: `corpus/golden/ambiguous-fold-role-name` writes `vriend`, declared
-as a role on two fact types the Jutter reaches, and its count reads the one
-relation its `sourceRole` names (gates 5, 6 and 12). Until L2 the range of
-a count without a binding was derived from the written name, a name
-matching several reachable roles faulted in both executors, and that
-document was a red case.
+`count` the fold's one argument is the **count source**. A count over one
+source argument carries its range (`sourceRole`, one step; a `sourcePath`
+belongs to a value fold's set source alone, `IR-SPEC.md` WF-102 (c)), and the
+count folds the instances that range reaches from the subject, narrowed by
+`elementType` as above. The argument's `attribute` is the **written** name of
+the bound role and selects nothing: it denotes the bound role by its
+declared name or its declared plural (`IR-SPEC.md` WF-047). A written name
+that matches roles on several fact types the subject reaches therefore
+decides nothing: `corpus/golden/ambiguous-fold-role-name` writes `vriend`,
+declared as a role on two fact types the Jutter reaches, and its count reads
+the one relation its `sourceRole` names.
 
 **The count source is recognised at the source itself.** Its `attribute`
 names a role of the fold subject and no member of the element type
 (`IR-SPEC.md` WF-093, in both directions: such a source is the source of
-`count` and of nothing else, and `count` reads nothing but such a
-source). Since L2 no field on the node records which reading applies, so a
-collision of names is decided by the declarations: a count whose written
-name is also a member of the element type (an attribute or a
-characteristic) is no count source — it reads as that member, and a count
-over a member is refused (WF-093 (b); `ref` and the ASP backend fault
-with the verifier's sentence, `the source of this count aggregation reads
-'…', a member of the element type '…': a count folds INSTANCES, …`). A role
+`count` and of nothing else, and `count` reads nothing but such a source). No
+field on the node records which reading applies, so the declarations decide a
+collision of names: a count whose written name is also a member of the
+element type (an attribute or a characteristic) is no count source — it reads
+as that member, and a count over a member is refused (WF-093 (b)). A role
 whose declared name and declared plural both name members of the element
 type, or whose name does while it declares no plural, therefore cannot be
 counted; where only one of the two spellings collides, the count is written
-with the other. Until L2 the recognition
-keyed on the unknown-type sentinel on the source's own `type` (B13, B16).
+with the other.
 
-**The self-denoting written form is a plain count source.** The written
-form "het aantal `<rol>` van de `<onderwerp>`" may name the fold subject by
-its own role name ("het aantal vondsten van de aanmelder", evaluated on the
-Jutter who *is* the aanmelder). The wire carries nothing of that written
-role: the count carries its range and reads the subject's own linked
-instances of the element type, anchored on the subject like every count
-source (`IR-SPEC.md` WF-083 (c)); no hop happens. Until L2 the written role
-stood in the source argument's `navigatieRol`, as presentation and not
-navigation, and the executors tested that it denoted the subject.
+**The self-denoting written form is a plain count source.** The written form
+"het aantal `<rol>` van de `<onderwerp>`" may name the fold subject by its own
+role name ("het aantal vondsten van de aanmelder", evaluated on the Jutter
+who *is* the aanmelder). The wire carries nothing of that written role: the
+count carries its range and reads the subject's own linked instances of the
+element type, anchored on the subject like every count source (`IR-SPEC.md`
+WF-083 (c)); no hop happens.
 
-Worked example (the `jutterswet-aanmeldertelling` emitter golden, verbatim
-in gates 5–6 and as WV-3.4a-telbron in `ref/` tests; on the wire the count
-binds `vondstaanmelding`/`vondst` and its argument names `vondsten`, the
-role's declared plural): a Jutter linked to two Vondsten — one with
-gewicht 2,50 kg, one whose gewicht is leeg — counts **2**: a count folds
-instances, not values, so a leeg element attribute still counts (the
-aggregation row of ch. 1.2: a count, never empty). A Jutter with zero
-linked Vondsten counts **0**, never leeg. A count without its range does
-not load, and `ref` faults on one handed to it directly
-(WV-3.4a-telbron-zonder-bereik).
+Worked example (golden `jutterswet-aanmeldertelling`; `ref/` tests
+`WV-3.4a-telbron`; on the wire the count binds `vondstaanmelding`/`vondst`
+and its argument names `vondsten`, the role's declared plural): a Jutter
+linked to two Vondsten — one with gewicht 2,50 kg, one whose gewicht is leeg
+— counts **2**: a count folds instances, not values, so a leeg element
+attribute still counts (the aggregation row of ch. 1.2: a count, never
+empty). A Jutter with no linked Vondst counts **0**, never leeg. A count
+without its range does not load, and handed to the reference interpreter
+directly it faults (`WV-3.4a-telbron-zonder-bereik`).
 
-*History until L2 — the type-pair fallback for the fold-source role name
-(WF-034).* A written fold-source name that resolved to no declared role
-(ci, declared name or declared plural) folded over the **unique connecting
-role** derived from the type pair: exactly one fact type connecting the
-fold subject type to the element type, and not a self-typed two-role fact
-type, whose two roles were both candidates and so blocked the derivation
-(the ch. 4.1 type-pair block); zero or multiple connecting roles, or a
-name matching several reachable roles, kept the loud fault, and uniqueness
-was counted in candidate roles, not fact types. Since L2 (B12) a count
-carries its range, so nothing is derived and nothing falls back. The
-migration derived the missing ranges once, with this derivation, and
-refused the documents where it found zero or several candidates
-(`wf034-ambigu-typenpaar`, removed at L2 on that ground,
-`corpus/negative/README.md`).
+Worked example (golden `jutterswet-kaveltelling`; `ref/` tests
+`WV-3.4a-typenpaar`). The role `duinkavel` (kaveltoewijzing) declares no
+plural, so the written source "het aantal duinkavels van de Jutter" denotes
+no role by its written form; the count binds `kaveltoewijzing`/`duinkavel`
+and its argument names `duinkavel`, the declared role name: a Jutter linked
+to three Duinkavels counts **3**. The written singular "het aantal vat van de
+Jutter" names the role `vat` (vatberging, declared plural `vaten`) by its
+declared name and binds `vatberging`/`vat`: that Jutter's two Vaten count
+**2**. A Jutter with no links counts **0** and **0**. With a second fact type
+that connects Jutter to Duinkavel the count still reads the relation its
+binding names and counts **3** (`WV-3.4a-typenpaar-tweede-feittype-bindt`).
 
-Worked example (the `jutterswet-kaveltelling` golden, verbatim in gates
-5–6 and as WV-3.4a-typenpaar in `ref/` tests), in its L2 form. The role
-`duinkavel` (kaveltoewijzing) declares no plural, so the written source
-"het aantal duinkavels van de Jutter" denotes no role; until L2 this was
-the type-pair fallback's example. Since L2 the count binds
-`kaveltoewijzing`/`duinkavel` and its argument names `duinkavel`, the
-declared role name the migration wrote in place of the written plural (see
-above): a Jutter linked to three Duinkavels counts **3**. The written
-singular "het aantal vat van de Jutter" names the role `vat` (vatberging,
-declared plural `vaten`) by its declared name and binds `vatberging`/`vat`:
-that Jutter's two Vaten count **2**. A Jutter with no links counts **0**
-and **0**. In the ASP backend both counts key the bound role's canonical
-name (`duinkavel`, `vaten`), never the written lexeme, which as a raw
-`role/3` key silently counted 0. With a second fact type connecting Jutter
-to Duinkavel the count still reads the relation its binding names and
-counts **3** (WV-3.4a-typenpaar-tweede-feittype-bindt); until L2 the
-bindingless written form faulted loudly there.
-
-**The form anchor: the form subject in a filter** *(voorlopig besluit
-2026-10-23, card `subselection-reads-subject`; `IR-SPEC.md` ch. 4.1a,
-WF-122)*. In the `filter` of an instance fold with a range, and in the
+**The form anchor: the form subject in a filter** (`IR-SPEC.md` ch. 4.1a,
+WF-122). In the `filter` of an instance fold with a range, and in the
 `filter` and the `test` of a quantifier fold (ch. 3.9a), the subject is the
 member. A node there that carries `anchor: "form"` is evaluated with the
 **form subject** as its subject, as if it stood in the form's own condition
 or value: the object the form runs on (ch. 5.12, *Which forms, which
 objects*), whichever fold and filter it stands in, at any depth. Everything
-about such a node is what it is in the form's own condition: an anchored
-own read reads the form subject's attribute (ch. 5.8 rule 4), an anchored
+about such a node is what it is in the form's own condition: an anchored own
+read reads the form subject's attribute (ch. 5.8 rule 4), an anchored
 navigated read walks from the form subject (ch. 5.8 rules 1–3), an anchored
 characteristic check reads the form subject's characteristic, an anchored
 fold ranges from the form subject, and the fold's own filter has the fold's
-member as its subject again. A node without the anchor reads the member, as
-before.
+member as its subject again. A node without the anchor reads the member.
 
 The **identity check** (`IdentityCheck`, `IR-SPEC.md` ch. 4.5) is **waar**
 iff the member is the form subject, the same object (ch. 5.8, *Identity*),
@@ -1655,8 +1666,8 @@ the fold runs over no contributor: a maximum reads leeg, a sum its fallback,
 a count 0, a quantifier `all` waar (ch. 3.9a, the vacuous case), `atLeast` 1
 onwaar. In a quantifier's test the same comparison fails the matrix for every
 contributor: `all` over at least one contributor is onwaar. This is the one
-reading a filter operand has (ch. 1.2, 3.4a above). A `Let` that bound the
-form subject's value before the fold would make the whole `Let` leeg instead
+reading a filter operand has (ch. 1.2, and above). A `Let` that bound the form
+subject's value before the fold would make the whole `Let` leeg instead
 (ch. 10.6, clause 2): one sentence, two answers, which is why the IR carries
 the read as an anchor and not as a binding (`IR-SPEC.md` ch. 4.1a).
 
@@ -1673,15 +1684,15 @@ that computes the node where no member reaches it — over an empty range, or
 at a member whose filter stopped before the node (ch. 5.10) — must not raise
 its fault or make its deposit there.
 
-Worked example (the golden `anchor-once-per-member`, verbatim in gates 5, 6
-and 12 and as `WV-3.4a-anchor-once-*` in `ref/` tests). On the model of the
-worked example below, with a `teller` (a whole number) and the derived
-`hoogste tarief boven eigen teller` on the Vergunning: "de maximale waarde van
-het tarief van alle vergunningen van het register van de Vergunning die aan
-alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn
-tarief gedeeld door de teller van de Vergunning zelf is groter dan 1". The
-anchored teller is the divisor, and a teller of 0 makes the division a §9.5
-deposit of kind EF-005 (ch. 1.4 point 4) on the rule × the form subject.
+Worked example (golden `anchor-once-per-member`; `ref/` tests
+`WV-3.4a-anchor-once-*`). On the model of the worked example below, with a
+`teller` (a whole number) and the derived `hoogste tarief boven eigen teller`
+on the Vergunning: "de maximale waarde van het tarief van alle vergunningen
+van het register van de Vergunning die aan alle volgende voorwaarden voldoen:
+hij is niet de Vergunning zelf; zijn tarief gedeeld door de teller van de
+Vergunning zelf is groter dan 1". The anchored teller is the divisor, and a
+teller of 0 makes the division a §9.5 deposit of kind EF-005 (ch. 1.4 point 4)
+on the rule × the form subject.
 
 | case | registers, Vergunningen (tarief, teller) | hoogste tarief boven eigen teller | channel |
 |---|---|---|---|
@@ -1709,15 +1720,15 @@ value at every member (`IR-SPEC.md` ch. 4.1a): every member the range reaches
 from the form subject S over a role links back to S over the opposite role.
 Their dependency edges differ (ch. 6.1); their answers do not.
 
-Worked example (the golden `jutterswet-registervoorrang`, verbatim in gates
-5, 6 and 12 and as `WV-3.4a-anchor-*` in `ref/` tests). A `Register` holds
-`Vergunningen` through the fact type `registerinschrijving` (roles `register`,
-filled by Register, to-one, and `vergunning`, plural `vergunningen`, filled by
-Vergunning, to-many). A Vergunning has an `ingangsdag` (a date), a `tarief`
-(a whole number) and the derived `hoogste latere tarief`, and the
-characteristic `voorrang`. Both rules range over `sourcePath
-[registerinschrijving/register, registerinschrijving/vergunning]` from the
-Vergunning, a range that reaches the Vergunning itself:
+Worked example (golden `jutterswet-registervoorrang`; `ref/` tests
+`WV-3.4a-anchor-*`). A `Register` holds `Vergunningen` through the fact type
+`registerinschrijving` (roles `register`, filled by Register, to-one, and
+`vergunning`, plural `vergunningen`, filled by Vergunning, to-many). A
+Vergunning has an `ingangsdag` (a date), a `tarief` (a whole number) and the
+derived `hoogste latere tarief`, and the characteristic `voorrang`. Both rules
+range over `sourcePath [registerinschrijving/register,
+registerinschrijving/vergunning]` from the Vergunning, a range that reaches
+the Vergunning itself:
 
 - **hoogste latere tarief** — "de maximale waarde van het tarief van alle
   vergunningen van het register van de Vergunning die aan alle volgende
@@ -1732,10 +1743,10 @@ Vergunning, a range that reaches the Vergunning itself:
   test.
 
 The identity check is redundant beside a strict `later` in the value fold (no
-member starts later than itself); it is written there so that both forms of
-the card's sentence, the exclusion and the comparison, stand in one filter. In
-the quantifier it is not redundant: without it the Vergunning would be its own
-contributor and its test, `later` than itself, would fail.
+member starts later than itself); it stands there so that both parts of the
+sentence, the exclusion and the comparison, stand in one filter. In the
+quantifier it is not redundant: without it the Vergunning would be its own
+contributor, and its test, `later` than itself, would fail.
 
 | case | register, Vergunningen (ingangsdag, tarief) | hoogste latere tarief | voorrang |
 |---|---|---|---|
@@ -1749,22 +1760,23 @@ contributor and its test, `later` than itself, would fail.
 
 Read per case. **three**: each Vergunning gets a different answer from the
 same rules; V3, the latest, has no later member (leeg), and V2 and V3 have V1,
-which starts earlier, among their contributors (onwaar). **alone**: the range reaches V4 alone, the identity check drops it,
-so the maximum has no contributor (leeg) and `all` is waar over none. **two
-registers**: the range is the register's, so V3 (2026-02-01, in R2) does not
-count for V1 (2026-01-01, in R1) although it starts later; V3 is alone in R2.
-**empty subject**: V1's ingangsdag is leeg, so the anchored operand is leeg at
-every member of V1's folds: the comparison fails for V2 and V3, V1's maximum
-has no contributor (leeg), and V2 and V3 are contributors of V1's quantifier
-whose test fails (onwaar); for V2, V1 is a member with a leeg ingangsdag,
-which drops out of V2's maximum, so V2 folds V3 alone (15), and fails V2's
-test (onwaar). **empty member**: V2's ingangsdag is leeg, so V2 drops out of V1's
+which starts earlier, among their contributors (onwaar). **alone**: the range
+reaches V4 alone, the identity check drops it, so the maximum has no
+contributor (leeg) and `all` is waar over none. **two registers**: the range
+is the register's, so V3 (2026-02-01, in R2) does not count for V1
+(2026-01-01, in R1) although it starts later; V3 is alone in R2. **empty
+subject**: V1's ingangsdag is leeg, so the anchored operand is leeg at every
+member of V1's folds: the comparison fails for V2 and V3, V1's maximum has no
+contributor (leeg), and V2 and V3 are contributors of V1's quantifier whose
+test fails (onwaar); for V2, V1 is a member with a leeg ingangsdag, which
+drops out of V2's maximum, so V2 folds V3 alone (15), and fails V2's test
+(onwaar). **empty member**: V2's ingangsdag is leeg, so V2 drops out of V1's
 value fold, which folds V3 alone (15), while in V1's quantifier V2 passes the
 filter and fails the test (onwaar); V3 has no later member. **same day**: a
-strict `later` counts no member of the same day, in either direction: V1 and V2
-each fold V3 alone (5, where a comparison that admitted the same day would give
-20 and 10), and V2 fails V1's test (onwaar, where such a comparison would hold).
-**earlier elsewhere**: V1's one member V2 starts earlier than V1 (leeg,
+strict `later` counts no member of the same day, in either direction: V1 and
+V2 each fold V3 alone (5, where a comparison that admitted the same day would
+give 20 and 10), and V2 fails V1's test (onwaar, where such a comparison would
+hold). **earlier elsewhere**: V1's one member V2 starts earlier than V1 (leeg,
 onwaar), V2's one member V1 starts later than V2 (10, waar), and V3 is alone
 in R2. The test compares each member with the form subject, not with any
 Vergunning: V2 starts later than V3, so a reading that compared it with V3
@@ -1774,189 +1786,149 @@ evaluates nothing does not pass them (gate 7).
 
 ### 3.4b The multi-step fold source — the flat union (WF-102)
 
-A set fold source may describe its range with a PATH of relations rather
-than one (`IR-SPEC.md` ch. 4.3, `sourcePath`; two or more steps, the
-one-step range stays `sourceRole`). The folded set is the **flat union**:
-start at the fold subject, take step 1's linked instances, take step 2's
-linked instances from each of those, and so on; the instances the last step
-reaches are the fold's REACH, which `elementType` narrows to the
-contributors exactly as in the one-step form (ch. 3.4a — the intermediate
-steps are not narrowed, only the landing). It is a SET — an element reachable through
-more than one intermediate instance contributes **once** — and everything
-downstream is unchanged: the element's attribute is read at the
-`elementType` exactly as in the one-step form, a leeg element
-attribute drops out of a value fold (ch. 1.2), the die/dat subselection
-(ch. 3.4a) still evaluates per contributor with the element as its subject,
-and the empty-source rules (ch. 1.2) apply to the union, not to any
-intermediate step.
+A set fold source may describe its range with a **path** of relations rather
+than one (`IR-SPEC.md` ch. 4.3, `sourcePath`; two or more steps, the one-step
+range stays `sourceRole`). The folded set is the **flat union**: start at the
+fold subject, take step 1's linked instances, take step 2's linked instances
+from each of those, and so on; the instances the last step reaches are the
+fold's reach, which `elementType` narrows to the contributors exactly as in
+the one-step form (ch. 3.4a — the intermediate steps are not narrowed, only
+the landing). It is a **set** — an element reachable through more than one
+intermediate instance contributes **once** — and everything downstream is
+unchanged: the element's attribute is read at the `elementType` as in the
+one-step form, a leeg element attribute drops out of a value fold (ch. 1.2),
+the die/dat subselection (ch. 3.4a) is evaluated per contributor with the
+element as its subject, and the empty-source rules (ch. 1.2) apply to the
+union, not to any intermediate step.
 
-Three consequences of "the union, not any intermediate step", each worth
-stating because the nested reading answers differently:
+Three consequences of "the union, not any intermediate step", each stated
+because the nested reading answers differently:
 
-1. An intermediate instance that reaches nothing simply contributes
-   nothing. It never produces an empty inner result for the outer fold to
-   absorb, so `minimum`/`maximum`/`first`/`last` — which have no
-   fallback — never have to decide what to do with one.
-2. A count over the union counts ELEMENTS, never intermediate instances.
-   (Named here and pinned nowhere, and since 2026-09-19 for a reason
-   stronger than "no carrier": under `count` a multi-step range is not
-   EXPRESSIBLE. Since L2 one clause says so directly: a `sourcePath` is
-   admissible only as the range of a VALUE fold's set source, and a count
-   source's range is one step (`IR-SPEC.md` WF-102 (c)); every executor
-   refuses a count that carries a `sourcePath`, by name. Until L2 two
-   fences met at this NODE — a `sourcePath` only on the SET source
-   (WF-102 (c)), and no set source under a count (WF-096, maintainer
-   decision 2026-09-19) — so neither spelling of a counting FOLD over a
-   union survived the wire. The claim is the fold's and not the IR's: another node that
-   counts over a range answers to its own rule, and nothing here is evidence
-   about it. What prompted the
-   decision was this clause read the other way round: measured 2026-09-19,
-   `ref` counted the FILLED VALUES of a set source where the Drools backend
-   counted the MEMBERS — 2 against 3 on one document as soon as a member's
-   attribute was leeg — while the ASP backend refused the kind. Since ch. 1.2e
-   and ch. 3.4a already say a count folds the CONTRIBUTORS, one of those two
-   readings was not a variant but an error, and the form had no producer
-   route at all; the maintainer took option (ii) of
-   `backlog/done/20260909-eerste-laatste-setvouw-kloof.md` §6 and refused the
-   wire form rather than amend a clause to fit an executor. So this clause's
-   own word, ELEMENTS, stands unchanged, and since 2026-09-20 it HAS its
-   carrier: the separately defined operation arrived as the filled count
-   (ch. 3.4c), which reads a value per contributor and therefore takes the
-   set source a path needs. Counted over a union it counts ELEMENTS — an
-   element reachable along two intermediate instances contributes once —
-   which is this clause's claim, pinned in ch. 3.4c's last worked example
-   rather than asserted here. What stays unexpressible is a counting FOLD
-   over a union under `count`, and that was never this clause's subject.
-   Its two siblings left the asymmetry
-   the other way on the same day: `first`/`last` over a set source are
-   carried by both OCaml executors, witness `jutterswet-vondstvenster`.)
-3. A sum's `emptyFallback` fires at most ONCE, for a subject whose whole
-   range is empty — never once per empty intermediate instance. (With a
-   zero fallback the two readings agree numerically; with any other they do
-   not, and the executors carry only the zero fallback today, so the
-   divergence is named here and pinned nowhere.)
+1. An intermediate instance that reaches nothing contributes nothing. It
+   never produces an empty inner result for the outer fold to absorb, so
+   `minimum`, `maximum`, `first` and `last`, which have no fallback, never
+   decide what to do with one.
+2. A count over the union counts **elements**, never intermediate
+   instances. A counting fold under `count` cannot range over a union: a
+   `sourcePath` is admissible only as the range of a value fold's set source,
+   and a count source's range is one step (`IR-SPEC.md` WF-102 (c)); every
+   executor refuses a count that carries a `sourcePath`, by name. The
+   operation that counts over a union is the filled count (ch. 3.4c), which
+   reads a value per contributor and therefore takes the set source a path
+   needs; ch. 3.4c's last worked example pins that it counts elements.
+3. A sum's `emptyFallback` applies at most **once**, for a subject whose
+   whole range is empty — never once per empty intermediate instance. With a
+   zero fallback the two readings agree in value; with any other they do not.
 
-A step through a to-ONE role is an ordinary step: it contributes its
-zero-or-one linked instance to the union. Multiplicity is a declaration
-fact and does not enter this reading.
+A step through a to-one role is an ordinary step: it contributes its zero or
+one linked instance to the union. Multiplicity is a fact of the declaration
+and does not enter this reading.
 
-Worked example (the `anchor/jutterswet-bootberging` golden, verbatim in
-gates 5–6 and as WV-3.4b-vlakke-unie / WV-3.4b-gedeeld in `ref/` tests).
-The model: a Jutter sails `gevoerde boten`, a Boot salvages `geborgen
-vondsten`, a Vondst fills `ingepakte kisten`. Three rules on one Jutter —
-the minimum `gewicht` over the two-step range, the sum of the same with an
-`of 0` fallback, and the minimum `inhoudsgewicht` over the THREE-step range.
+Worked example (golden `anchor/jutterswet-bootberging`; `ref/` tests
+`WV-3.4b-vlakke-unie` and `WV-3.4b-gedeeld`). The model: a Jutter sails
+`gevoerde boten`, a Boot salvages `geborgen vondsten`, a Vondst fills
+`ingepakte kisten`. Three rules on one Jutter — the minimum `gewicht` over the
+two-step range, the sum of the same with an `of 0` fallback, and the minimum
+`inhoudsgewicht` over the three-step range.
 
-*Case 1 — the range spread over two intermediate instances.* `J1` sails
-`B1` and `B2`; `B1` salvages `V1` (3,00) and `V2` (7,00); `B2` salvages
-`V3` (5,00). The union is {V1, V2, V3}, so the minimum is **3,00** — it
-sits on `B1` while `B2` contributes 5,00, which is what makes the answer a
-proof that both intermediate instances are walked — and the sum is
-**15,00**. `V1` holds `K1` (2,50), `V2` holds `K2` (1,25) and `K3` (4,00),
-`V3` holds none: the three-step union is {K1, K2, K3} and the minimum is
-**1,25**. `J2` sails one boat salvaging `V4` (9,00) and `V5` (no gewicht):
-the leeg element drops out of both value folds, so the minimum is **9,00**
-and the sum **9,00**, while the three-step range reaches only `K4` (6,00)
-→ **6,00**. `J3` sails a boat that salvages nothing and `J4` sails no boat
-at all: both ranges are empty, so both minima are **leeg** (no fallback
-exists) and both sums are **0** (the fallback, fired once) — the empty
-range at the LAST step and at the FIRST step answer alike.
+*Case 1 — the range spread over two intermediate instances.* `J1` sails `B1`
+and `B2`; `B1` salvages `V1` (3,00) and `V2` (7,00); `B2` salvages `V3`
+(5,00). The union is {V1, V2, V3}, so the minimum is **3,00** — it lies on
+`B1` while `B2` contributes 5,00, which makes the answer a proof that both
+intermediate instances are walked — and the sum is **15,00**. `V1` holds `K1`
+(2,50), `V2` holds `K2` (1,25) and `K3` (4,00), `V3` holds none: the
+three-step union is {K1, K2, K3} and the minimum is **1,25**. `J2` sails one
+boat salvaging `V4` (9,00) and `V5` (no gewicht): the leeg element drops out
+of both value folds, so the minimum is **9,00** and the sum **9,00**, while
+the three-step range reaches only `K4` (6,00) → **6,00**. `J3` sails a boat
+that salvages nothing and `J4` sails no boat at all: both ranges are empty,
+so both minima are **leeg** (no fallback exists) and both sums are **0** (the
+fallback, applied once) — the empty range at the last step and at the first
+step answer alike.
 
-*Case 2 — the shared element.* `J1` sails `B1` and `B2`; `B1` salvages
-`V1` (3,00) and `V2` (7,00); `B2` salvages `V1` again and `V3` (5,00).
-`V1` is reachable along two intermediate instances and contributes once,
-so the sum is **15,00** and not 18,00; the minimum is **3,00** either way,
-which is why the sum is the witness. The same holds one step deeper: `V1`
-and `V3` both hold `K1` (2,50) while `V2` holds `K2` (1,25), so the
-three-step union is {K1, K2} and the minimum is **1,25**.
+*Case 2 — the shared element.* `J1` sails `B1` and `B2`; `B1` salvages `V1`
+(3,00) and `V2` (7,00); `B2` salvages `V1` again and `V3` (5,00). `V1` is
+reachable along two intermediate instances and contributes once, so the sum
+is **15,00** and not 18,00; the minimum is **3,00** either way, which is why
+the sum is the witness. The same holds one step deeper: `V1` and `V3` both
+hold `K1` (2,50) while `V2` holds `K2` (1,25), so the three-step union is
+{K1, K2} and the minimum is **1,25**.
 
 ### 3.4c The filled-value count
 
-*(Maintainer decisions G1–G8, 2026-09-19; landed 2026-09-20. Wire form and
-well-formedness: `IR-SPEC.md` ch. 4.3, "The filled count".)*
+(Wire form and well-formedness: `IR-SPEC.md` ch. 4.3, "The filled count".)
 
-One aggregation kind folds the contributors' VALUES by PRESENCE:
+One aggregation kind folds the contributors' values by **presence**:
 `filledCount` counts the contributors whose value is not leeg. It is an
-instance fold and it reads a value per contributor, so it takes a SET source
-(`IR-SPEC.md` ch. 4.3: since L2 the single argument of a fold that carries a
-range, `sourceRole` or `sourcePath`; until L2 the argument marked
-`set: true`), and that is required rather than optional. It has no listed form: the source language has no spelling for the
-operation at all, so there is no articulated operand list to admit.
+instance fold and it reads a value per contributor, so it takes a **set**
+source — the single argument of a fold that carries a range, `sourceRole` or
+`sourcePath` (`IR-SPEC.md` ch. 4.3) — and that source is required. It has no
+listed form: the source language has no spelling for the operation, so there
+is no articulated operand list to admit.
 
-The contributor set is ch. 3.4a's, unchanged: reach ∩ population, narrowed
-further by the `filter` per contributor. FILLED is the ordinary ch. 1.2
-emptiness test — the one the source language's `is gevuld` predicate applies
-— so a contributor whose value is leeg is not filled and every other value
-is, **whatever its type**. The test asks for presence, not for a number: a
-text, a date, an enumeration value and a boolean all count as filled, and
-so does a boolean whose value is FALSE. False is a value; leeg is the
-absence of one. An instance that is not a contributor never reaches the
-test at all.
+The contributor set is ch. 3.4a's: reach ∩ population, narrowed further by
+the `filter` per contributor. **Filled** is the ordinary emptiness test of
+ch. 1.2 — the one the source language's `is gevuld` predicate applies — so a
+contributor whose value is leeg is not filled and every other value is,
+**whatever its type**. The test asks for presence, not for a number: a text, a
+date, an enumeration value and a boolean all count as filled, and so does a
+boolean whose value is false. False is a value; leeg is the absence of one. An
+instance that is not a contributor never reaches the test.
 
-`filledCount` over a source with no filled values is **0**, never leeg —
-a count is a cardinality and the empty collection has one, exactly as
-ch. 1.2e's count row says, and ch. 1.3 keeps that 0 apart from coalescing:
-it is the identity element of a rule over SETS, not an empty value dressed
-as a number. That ground belongs to every count and not to the kind
-`count`. It carries no `emptyFallback`: there is no empty to fall back
-from, and WF-037's "sum only" clause already excludes it.
+`filledCount` over a source with no filled values is **0**, never leeg — a
+count is a cardinality and the empty collection has one, as the count row of
+ch. 1.2 says, and ch. 1.3 keeps that 0 apart from coalescing: it is the
+identity element of a rule over sets, not an empty value read as a number.
+That ground belongs to every count, not to the kind `count`. It carries no
+`emptyFallback`: there is no empty to fall back from, and WF-037's "sum only"
+clause excludes it.
 
 The result is a whole, unitless number whatever unit the folded attribute
 carries, so a filled count has no rounding question and no unit derivation.
-It is the result type the instance count has, reached by a different fold.
-That type is DERIVED and not declared, so a wire annotation saying anything
-else is ill-formed rather than believed (`IR-SPEC.md` WF-091; negative
+It has the result type of the instance count, reached by another fold. That
+type is derived and not declared, so a wire annotation that says anything else
+is ill-formed rather than believed (`IR-SPEC.md` WF-091; negative
 `wf091-filled-count-unit`).
 
-**One exclusion, and it is normative rather than a note: the folded
-attribute is NOT time-dependent.** "Whatever its type" is about the value
-domain — number, text, date, enumeration, boolean — and not about the
-temporal axis. A set read of a TEMPORAL attribute folds twice (ch. 3.6,
-§7.1): each member's own timeline collapses over time first, and only those
-scalars fold over the set. That first collapse is defined for the som and
-the totaal and for nothing else, because only they integrate; a count has no
-defined MOMENT at which to ask a timeline whether it is filled, and picking
-one would be this chapter inventing a reading rather than stating one. A
-filled count over a time-dependent attribute therefore fails observably,
-naming the attribute AND the fold, and never reads a value the timeline does
-not have at an instant (`ref` and the ASP backend, word for word: *the
-temporal attribute … of a set has no moment at which a filled count can ask
-a timeline whether it is filled*; worked example WV-3.4c-temporeel-faalt,
-red case `filled-count-temporal-set-source`). Naming the FOLD is part of the
-clause and not presentation: the ranking folds are refused at the same
-position on the same ground, so a refusal that named only the position would
-be one sentence for five constructs and would identify none of them.
-The door is closed and not locked: a later card with a real casus may give
-the filled count its own moment rule, and it would be a clause here rather
-than an executor's choice.
+**One exclusion: the folded attribute is not time-dependent.** "Whatever its
+type" is about the value domain — number, text, date, enumeration, boolean —
+and not about the time axis. A set read of a time-dependent attribute folds
+twice (ch. 3.6, §7.1): each member's own timeline collapses over time first,
+and only those scalars fold over the set. That first collapse is defined for
+the som and the totaal and for nothing else, because only they integrate; a
+count has no defined moment at which to ask a timeline whether it is filled,
+and this chapter states no such moment. A filled count over a time-dependent
+attribute therefore fails observably with EF-021, a form without a meaning
+(ch. 3.12), naming the attribute and the fold, and never reads a value the
+timeline does not have at an instant (worked example
+`WV-3.4c-temporeel-faalt`, red case `filled-count-temporal-set-source`).
+Naming the fold is part of the clause: the ranking folds are refused at the
+same position on the same ground, so a refusal that named only the position
+would be one sentence for five constructs and would identify none of them.
 
 **The instance count and the filled count answer different questions, and it
 takes both to tell the two kinds of empty apart.** Over a source whose
 contributors are all leeg the filled count is 0 while the instance count is
-not; over a source with no contributors at all both are 0. ch. 3.4a's
-observation — that only a count separates an empty population from an empty
-value — is now sharper: the INSTANCE count separates them, the FILLED count
+not; over a source with no contributors both are 0. The instance count
+separates an empty population from an empty value (ch. 3.4a), the filled count
 does not, and a document that needs the distinction writes both.
 
-**What this does NOT give.** There is no average. `sum ÷ filledCount` is
-the hand-spelled form and it is the author's to write; over a wholly empty
-source it divides by zero, and the outcome is observable and deliberate
-(maintainer decision G1): the quotient is leeg and the division deposits a
-§9.5 fact of kind EF-005 on the rule × subject (ch. 1.4 point 4; until
-that move was executed, 2026-10-19, the division faulted). Worked example
-(the golden `filled-count-unguarded-division`, gates 5, 6 and 12): a
-Jutter without vondsten has `aantal gevulde` 0 and a som of 0 by its
-fallback, so `gemiddelde vondstwaarde` = 0 ÷ 0 is **leeg**, with one
-§9.5 fact of kind EF-005 from the rule `gemiddelde vondstwaarde` on that
-Jutter. What the kind does give the author is the GUARD
-that makes it avoidable: a filled count is an ordinary expression, so
-"indien het aantal gevulde … groter is dan 0" is writable in a rule's
-condition, where `count` could not serve — an instance count is 1 for a
-member without a value and would let the division through.
+**What this does NOT give.** There is no average. `sum ÷ filledCount` is the
+form an author writes out; over a wholly empty source it divides by zero: the
+quotient is leeg and the division deposits a §9.5 fact of kind EF-005 on the
+rule × subject (ch. 1.4 point 4). Worked example (golden
+`filled-count-unguarded-division`): a Jutter without vondsten has `aantal
+gevulde` 0 and a som of 0 by its fallback, so `gemiddelde vondstwaarde` =
+0 ÷ 0 is **leeg**, with one §9.5 fact of kind EF-005 from the rule
+`gemiddelde vondstwaarde` on that Jutter. What the kind does give the author
+is the guard that avoids it: a filled count is an ordinary expression, so
+"indien het aantal gevulde … groter is dan 0" can stand in a rule's condition,
+where `count` could not serve — an instance count is 1 for a member without a
+value and would let the division through.
 
-**Worked examples (absolute; `ref/` tests verbatim, WV-3.4c-*).** The
-Jutterswet model: a Jutter aanmeldt Vondsten; a Vondst declares `gewicht`
-(kg, two decimals), `vindplaats` (tekst), `vondstdag` (datum), `kustvak`
+**Worked examples (absolute; `ref/` tests verbatim, `WV-3.4c-*`).** The
+Jutterswet model: a Jutter aanmeldt Vondsten; a Vondst declares `gewicht` (kg,
+two decimals), `vindplaats` (tekst), `vondstdag` (datum), `kustvak`
 (enumeratie noord/zuid) and `geborgen` (booleaan).
 
 *The source shapes.* The `gewicht` fold over "alle vondsten van de Jutter",
@@ -1973,8 +1945,8 @@ per jutter, beside the instance count over the same population:
 The third and fourth rows are where the two counts part: a member with no
 value is a member. The fifth pins the empty source at 0 rather than leeg.
 
-*The typelessness of the test.* The same three contributors — two carrying
-values, one carrying none — folded once per declared type:
+*The test does not depend on the type.* The same three contributors — two
+carrying values, one carrying none — folded once per declared type:
 
 | folded attribute | the three values | aantal gevulde |
 |---|---|---|
@@ -1984,9 +1956,9 @@ values, one carrying none — folded once per declared type:
 | `kustvak` (enumeratie) | noord; zuid; leeg | **2** |
 | `geborgen` (booleaan) | waar; onwaar; leeg | **2** |
 
-The last row carries the sharpest half of it: `onwaar` is filled. The fold
-neither compares nor adds, so the operand family the ordering folds demand
-(`IR-SPEC.md` ch. 2.4) has no bearing here.
+In the last row `onwaar` is filled. The fold neither compares nor adds, so the
+operand family the ordering folds demand (`IR-SPEC.md` ch. 2.4) has no bearing
+here.
 
 *The filter narrows the contributors first.* Over the jutter whose vondsten
 weigh 2,50, 1,25 and leeg:
@@ -1997,152 +1969,147 @@ weigh 2,50, 1,25 and leeg:
 | die zwaarder zijn dan 2,00 kg | 1 | **1** |
 | die zwaarder zijn dan 10,00 kg | 0 | **0** |
 
-The leeg member fails the comparison (ch. 1.2d) and drops out before the
+The leeg member fails the comparison (ch. 1.2) and drops out before the
 presence test, which is why the middle row's two counts agree: one
 contributor, and it has a value.
 
-*The multi-step range counts ELEMENTS (ch. 3.4b).* A Jutter sails boten, a
+*The multi-step range counts elements (ch. 3.4b).* A Jutter sails boten, a
 Boot salvages vondsten. `J1` sails `B1` and `B2`; `B1` salvages `V1` (3,00)
 and `V2` (no gewicht); `B2` salvages `V3` (5,00). The union is {V1, V2, V3}
-and the filled count is **2**. With `B2` salvaging `V1` as well, the union
-is unchanged and the filled count is still **2**: an element reachable along
-two intermediate instances contributes once. This is the example ch. 3.4b's
-word ELEMENTS waited for; under `count` the shape has no wire form at all
-(`IR-SPEC.md` WF-102 (c): a count source's range is one step; until L2
-WF-096 and WF-102 met at that node), and the filled count is the operation
-that can carry it.
+and the filled count is **2**. With `B2` salvaging `V1` as well, the union is
+unchanged and the filled count is still **2**: an element reachable along two
+intermediate instances contributes once. Under `count` this shape has no wire
+form (`IR-SPEC.md` WF-102 (c): a count source's range is one step), and the
+filled count is the operation that carries it.
 
 ### 3.4d The instance-set union — the §5.7 concatenation
 
-*(Maintainer decision 2026-09-20. Wire form and well-formedness:
-`IR-SPEC.md` ch. 4.3, "The instance-set union", WF-110.)*
+(Wire form and well-formedness: `IR-SPEC.md` ch. 4.3, "The instance-set
+union", WF-110.)
 
-A count may range over a CONCATENATION of subject expressions — "het aantal
-aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter" — and
-the source language defines that as joining the instance sets the selections
-yield into ONE NEW SET (§5.7); its typing document
-adds that the count operator admits such a concatenation, unbounded in
-number, and takes subject expressions only (§4.11). On the wire the
-selections are an `InstanceSetUnion` under the count, one
-`InstanceSetBranch` each.
+A count may range over a **concatenation** of subject expressions — "het
+aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter" —
+and the source language defines that as joining the instance sets the
+selections yield into one new set (§5.7); its typing document adds that the
+count operator admits such a concatenation, unbounded in number, and takes
+subject expressions only (§4.11). On the wire the selections are an
+`InstanceSetUnion` under the count, one `InstanceSetBranch` each.
 
-**The members.** Each selection has its own contributors, computed exactly
-as ch. 3.4a computes a fold's: the reach — the instances its `sourceRole`
-links the count's SUBJECT to — intersected with the population its
-`elementType` names extensionally, narrowed further by its own `filter`,
-which evaluates PER CONTRIBUTOR with the element as the condition's subject.
-The union's members are the union of those sets.
+**The members.** Each selection has its own contributors, computed as
+ch. 3.4a computes a fold's: the reach — the instances its `sourceRole` links
+the count's subject to — intersected with the population its `elementType`
+names extensionally, narrowed further by its own `filter`, which is evaluated
+per contributor with the element as the condition's subject. The union's
+members are the union of those sets.
 
-**Deduplication is on INSTANCE IDENTITY, and it is the whole operation.** An
-instance that satisfies two selections is one instance and contributes ONCE,
+**Deduplication is on instance identity, and it is the whole operation.** An
+instance that satisfies two selections is one instance and contributes once,
 so the count is |A ∪ B| and never |A| + |B|. This is ch. 3.4b's rule for the
 flat union of a multi-step range, stated across selections instead of across
-intermediate steps, and for the same reason: a set has no multiplicities.
-The three consequences carry over unchanged — a selection that reaches
-nothing simply contributes nothing (it never produces an empty inner result
-for the count to absorb), the count counts ELEMENTS, and the empty-source
-rules of ch. 1.2 apply to the UNION and never to a selection.
+intermediate steps, and for the same reason: a set has no multiplicities. The
+three consequences carry over unchanged — a selection that reaches nothing
+contributes nothing (it never produces an empty inner result for the count to
+absorb), the count counts elements, and the empty-source rules of ch. 1.2
+apply to the union and never to a selection.
 
 **Empty.** A union none of whose selections contributes anything counts
-**0**, never leeg — the ch. 1.2e count row, which belongs to every count and
+**0**, never leeg — the count row of ch. 1.2, which belongs to every count and
 not to any particular source shape. A count carries no `emptyFallback` and
 has no empty to fall back from.
 
 **Two selections describing the same thing.** A union whose selections name
-the same relation and the same filter is well-formed and counts that
-selection once: the dedup rule doing its job, not a defect. The verifier
-does not refuse it, because refusing it would mean comparing conditions
-structurally to forbid a document that already answers correctly.
+the same relation and the same filter is well-formed and counts that selection
+once: the deduplication rule doing its job, not a defect. The verifier does not
+refuse it, because refusing it would mean comparing conditions structurally to
+forbid a document that already answers correctly.
 
-**Where a union count stands.** WF-110 (a) restricts the UNION node to one
-position — the count's single argument. The COUNT over it is an ordinary whole,
-unitless number and stands wherever any other count stands: as a rule value, in
-a `condition`, on either side of a comparison. Worked example below
+**Where a union count stands.** WF-110 (a) restricts the union node to one
+position — the count's single argument. The count over it is an ordinary
+whole, unitless number and stands wherever any other count stands: as a rule
+value, in a `condition`, on either side of a comparison. Worked example below
 (`jutterswet-unievoorwaarde`).
 
 **One population.** Every selection of one union names the same element type
-(WF-110 (d)), so "instance identity" needs no reading across a subtype
-lattice here: the members are instances of one declared population. That is
-a wire restriction and not a semantic simplification — see `IR-SPEC.md` for
-why the multi-population union is a separate question.
+(WF-110 (d)), so "instance identity" needs no reading across a subtype lattice
+here: the members are instances of one declared population. That is a wire
+restriction and not a semantic simplification — see `IR-SPEC.md` for why the
+union over several populations is a separate question.
 
-**Worked examples (absolute; `ref/` tests verbatim, WV-3.4d-\*; golden
-`jutterswet-vondstunie` and `jutterswet-keurunie`, replayed by gates 5, 6
-and 12).** The Jutterswet model: a Jutter `meldt` aangemelde vondsten
-(`vondstaanmelding`) and `bergt` geborgen vondsten (`vondstberging`); a
-Vondst carries the characteristics `gemerkt` and `gekeurd`.
+**Worked examples (absolute; `ref/` tests verbatim, `WV-3.4d-*`; goldens
+`jutterswet-vondstunie` and `jutterswet-keurunie`).** The Jutterswet model: a
+Jutter `meldt` aangemelde vondsten (`vondstaanmelding`) and `bergt` geborgen
+vondsten (`vondstberging`); a Vondst carries the characteristics `gemerkt` and
+`gekeurd`.
 
-*Two selections over DIFFERENT relations — the dedup witness.* `J1` meldt
-`V1`, `V2` and `V3` aan, and bergt `V3` and `V4`. The selections are
-{V1, V2, V3} and {V3, V4}; `V3` sits in both and counts once, so the union
-is {V1, V2, V3, V4} and the count is **4** — the sum of the parts is 5, so
-the answer discriminates. `J2` meldt `V5` aan and bergt `V5` as well: both
-selections are {V5}, the union is {V5} and the count is **1**, not 2.
-`J3` meldt nothing and bergt `V6`: one empty selection, so the count is
-**1** — an empty selection contributes nothing rather than emptying the
-union. `J4` meldt nothing and bergt nothing: **0**, never leeg.
+*Two selections over different relations — the deduplication witness.* `J1`
+meldt `V1`, `V2` and `V3` aan, and bergt `V3` and `V4`. The selections are
+{V1, V2, V3} and {V3, V4}; `V3` lies in both and counts once, so the union is
+{V1, V2, V3, V4} and the count is **4** — the sum of the parts is 5, so the
+answer discriminates. `J2` meldt `V5` aan and bergt `V5` as well: both
+selections are {V5}, the union is {V5} and the count is **1**, not 2. `J3`
+meldt nothing and bergt `V6`: one empty selection, so the count is **1** — an
+empty selection contributes nothing rather than emptying the union. `J4` meldt
+nothing and bergt nothing: **0**, never leeg.
 
-*Two selections over ONE relation with overlapping filters.* Over `J1`'s
-aangemelde vondsten, `V1` is gemerkt, `V2` is gekeurd and `V3` is BOTH: the
-selections are {V1, V3} and {V2, V3}, the union is {V1, V2, V3} and the
-count is **3** where the sum of the parts is 4. `J2` meldt one vondst that
-is neither: both selections are empty and the count is **0**.
+*Two selections over one relation with overlapping filters.* Over `J1`'s
+aangemelde vondsten, `V1` is gemerkt, `V2` is gekeurd and `V3` is both: the
+selections are {V1, V3} and {V2, V3}, the union is {V1, V2, V3} and the count
+is **3** where the sum of the parts is 4. `J2` meldt one vondst that is
+neither: both selections are empty and the count is **0**.
 
 *The union count in a `condition`.* "Een Jutter is ruim voorzien indien het
 aantal aangemelde vondsten van de Jutter en geborgen vondsten van de Jutter
 groter is dan 2." `J1` meldt `V1`, `V2`, `V3` aan en bergt `V3` en `V4`: the
-union is 4, so the characteristic HOLDS. `J2` meldt `V5` en `V6` aan en bergt
-dezelfde twee: the union is **2** and the characteristic does NOT hold — where
-the sum of the parts is 4 and would have made it hold, which is what makes this
-row a dedup witness and not only a position witness. `J3` reaches one element
-(1) and `J4` none (0); neither holds.
+union is 4, so the characteristic holds. `J2` meldt `V5` en `V6` aan en bergt
+dezelfde twee: the union is **2** and the characteristic does not hold — where
+the sum of the parts is 4 and would have made it hold, which makes this row a
+deduplication witness and not only a witness of the position. `J3` reaches one
+element (1) and `J4` none (0); neither holds.
 
-*A filtered selection beside an UNFILTERED one.* Over `J1`'s three
-aangemelde vondsten, "die gemerkt zijn" selects {V1, V3} and the bare
-selection selects all three: the union is the bare selection's set and the
-count is **3**. The form is carried rather than refused, deliberately — see
-`IR-SPEC.md`, where the v0 toolchain's marker for it is shown to be a
-property of its lowering mechanism and not of the operation.
+*A filtered selection beside an unfiltered one.* Over `J1`'s three aangemelde
+vondsten, "die gemerkt zijn" selects {V1, V3} and the bare selection selects
+all three: the union is the bare selection's set and the count is **3**. The
+form is carried rather than refused — see `IR-SPEC.md`, where the v0
+toolchain's marker for it is shown to be a property of its lowering mechanism
+and not of the operation.
 
-### 3.5 Temporal summation — the contributor-skipping rule (§5.8.2)
+### 3.5 The sum per period — the contributor-skipping rule (§5.8.2)
 
-The temporal sum over N timeline contributors (the operands of a temporal
-som, or the element timelines of a to-many navigation) folds per period
-over the cut set of **all** contributors:
+The temporal sum over N timeline contributors — the operands of a temporal
+som, or the element timelines of a to-many navigation — is the som rule of
+ch. 1.2 read per day (ch. 3.3). It is computed per period over the cut set of
+**all** contributors:
 
 ```
 som(t_1 … t_N) on [c_i, c_i+1)
-  = Σ { read(t_k, c_i) | read(t_k, c_i) ≠ leeg }   if ≥ 1 contributor non-leeg
-  = leeg                                            if all N are leeg — unless
+  = Σ { read(t_k, c_i) | read(t_k, c_i) ≠ leeg }   if ≥ 1 contributor is not leeg there
+  = leeg                                            if all N are leeg there — unless
     the declared fallback clause ("… of 0 als die er niet zijn")
     substitutes 0
 ```
 
-This is the **contributor-skipping rule**: a leeg contributor is
-skipped, never counted as 0 — the timeline instance of the ch. 1.2
-aggregation discipline, and the named opposite of ch. 3.4's
-period-coalescing rule. Further clauses:
+This is the **contributor-skipping rule**: a leeg contributor is skipped,
+never counted as 0 — the aggregation discipline of ch. 1.2 per day, and the
+opposite of the period-coalescing rule of ch. 3.4.
 
-- **All time** (ch. 3.1). Before the first and after the last boundary of
-  the contributors every contributor is leeg, so the sum is leeg there,
-  and the fallback clause fills it with 0: the result's first and last
-  segments are then open. With **zero contributors** (an empty to-many
-  set) every day is all-leeg too: the result is the **empty timeline**
-  without the fallback clause and the one segment (−∞, +∞) = 0 with it,
-  the per-day reading of ch. 1.2's som row.
-- An all-leeg period that the fallback does not fill reads leeg. Whether
-  it is a gap or an explicit leeg segment, and how the sum divides a run
-  of equal values into segments, is representation (ch. 3.1, the
-  canonical form).
-- Each contributor is restated **before** the fold (exact factors,
-  ch. 2.6): into the target's unit where the sum is the value of the rule,
-  into its attribute's unit where it is an operand of an operator, since
-  only the value of the rule is restated to the target's (ch. 3.4). A
-  unitless fallback adopts that unit.
-- The operand is a Number — WF-091 (`IR-SPEC.md` ch. 4.1): a contributor
+- **All time** (ch. 3.1). Before the first and after the last bound of the
+  contributors every contributor is leeg, so the sum is leeg there, and the
+  fallback clause fills it with 0: the result's first and last segments are
+  then open. With **zero contributors** (an empty to-many set) every day is
+  all-leeg too: the result is the **empty timeline** without the fallback
+  clause, and the one segment (−∞, +∞) = 0 with it.
+- An all-leeg period that the fallback does not fill reads leeg. Whether it
+  is a gap or an explicit leeg segment, and how the sum divides a run of
+  equal values into segments, is representation (ch. 3.1).
+- Each contributor is restated **before** the fold, by its exact factor
+  (ch. 2.6): into the target's unit where the sum is the value of the rule,
+  into its attribute's unit where it is an operand of an operator, since only
+  the value of the rule is restated to the target's (ch. 3.4). A unitless
+  fallback adopts that unit.
+- The operand is a Number (WF-091, `IR-SPEC.md` ch. 4.1): a contributor
   declared as any other type makes the document ill-formed.
 
-Worked examples (absolute; the staggered-contributor set): contributor
+Worked examples (absolute; `ref/` tests verbatim): contributor
 p1 = {jan: 50, feb: 60}, p2 = {feb: 10, mrt: 10}, per month:
 
 | month | p1 | p2 | som |
@@ -2151,95 +2118,25 @@ p1 = {jan: 50, feb: 60}, p2 = {feb: 10, mrt: 10}, per month:
 | feb | 60 | 10 | 70 |
 | mrt | leeg (skipped) | 10 | 10 |
 
-With p1 = {jan: 40}, p2 = {mrt: 20}: jan = 40, **feb = leeg**, mrt = 20,
-and leeg before jan and from apr on (`WV-3.5-b`); the same with the
-fallback clause: (−∞, jan) = 0, jan = 40, **feb = 0**, mrt = 20,
-[apr, +∞) = 0 (`WV-3.5-b-fallback`). With no contributors at all: the
-empty timeline (`WV-3.5-c-empty-set`), and with the fallback clause
-(−∞, +∞) = 0 (`WV-3.5-c-empty-set-fallback`). The sum over the members
-of a set, written by a rule, is witnessed by
-`corpus/golden/jutterswet-maandloon` (the first two examples, with and
-without the fallback clause, and the empty set). Cross-unit:
-contributors in €/mnd summed into a €/jr target, jan p1 = 50, p2 = 10 →
-each contributor restated before the fold: 50×12 + 10×12 = **720**.
+With p1 = {jan: 40}, p2 = {mrt: 20}: jan = 40, **feb = leeg**, mrt = 20, and
+leeg before jan and from apr on (`WV-3.5-b`); the same with the fallback
+clause: (−∞, jan) = 0, jan = 40, **feb = 0**, mrt = 20, [apr, +∞) = 0
+(`WV-3.5-b-fallback`). With no contributors at all: the empty timeline
+(`WV-3.5-c-empty-set`), and with the fallback clause (−∞, +∞) = 0
+(`WV-3.5-c-empty-set-fallback`). The sum over the members of a set, written
+by a rule, is witnessed by `corpus/golden/jutterswet-maandloon` (the first two
+examples, with and without the fallback clause, and the empty set).
+Cross-unit: contributors in €/mnd summed into a €/jr target, jan p1 = 50,
+p2 = 10 → each contributor restated before the fold: 50×12 + 10×12 =
+**720**.
 
-*v0 mirror note (scope):* only **som** and the scalar-collapsing totaal
-(ch. 3.6) exist over timelines. Minimum, maximum, eerste, and laatste
-over a timeline are refused in v0 — the recorded refusal reason is that
-"the minimum of a timeline" is ambiguous between a per-period fold over
-contributors and an over-time fold over one timeline's periods. **OPEN**
-(ch. 3.12): v1 must either define both readings apart or keep the
-refusal; it may not inherit the ambiguity.
+*v0 mirror note (scope):* of the aggregations, v0 has only **som** and the
+totaal (ch. 3.6) over timelines; minimum, maximum, eerste and laatste over a
+timeline are refused, because "the minimum of a timeline" is ambiguous
+between a fold per period over contributors and a fold over the periods of
+one timeline (ch. 3.12).
 
-### 3.6 Collapse to a scalar — the temporal total
-
-**The gedurende clip (landed 2026-08-19, WF-055).** A filter on the
-temporal total clips the value timeline BEFORE the total: intersect
-each value segment with the condition's true-periods (half-open
-interval intersection; the condition's own values are ignored), then
-total each RAW clipped fragment over its length in units of the grid
-(below), never coalesced: a part of a unit counts by its days, so a
-per-year value clipped to five days of 2024 contributes 5/366 of it,
-and two adjacent condition periods that split one unit count its two
-parts, together the whole unit (`jutterswet-getijdenwacht` J4: 10). The
-pinned runtime floored whole units per fragment and gave both parts 0;
-counting the part by its days is a tracked deviation
-(`spec/proposals/IMPLICIT-TIME.md` point 12a). The condition's true-periods come from an own temporal
-characteristic (its case-supplied periods; a gap means the
-characteristic does not hold and clips away; negation takes the
-complement within the value segments) or from a per-segment comparison
-of an own temporal attribute against a scalar bound
-(piecewise-constant, never per day). Both readings are about **the
-subject** and about the **whole span** of the timeline being clipped,
-and WF-097 (`IR-SPEC.md` ch. 4.5) holds the wire to it: a clip member
-carrying an owner or a whole-period qualifier — the negated qualifier
-included — is ill-formed, and both executors fault on it by name rather
-than answer the unqualified question the fields were silently reduced
-to before 2026-09-09. The rule covers all THREE clips — this chapter's
-temporal total, ch. 3.7's pro-rata fold and ch. 3.8's day count — and
-each executor implements the fence once, shared between them. The two
-fault with the same words but not at the same moment: this interpreter
-is lazy and the ASP translation eager, so a violation behind a false
-rule condition is refused there and never reached here. That split is
-inherited from WF-055, and the verifier bounds it by rejecting the
-document either way. A fully clipped-away — or
-absent — value timeline totals 0, never leeg, as the unfiltered total
-does (below). The operand is a Number — WF-091
-(`IR-SPEC.md` ch. 4.1) — so this 0 always lands in a numeric slot. Worked
-example (the `jutterswet-getijdenwacht` emitter golden, verbatim in gates
-5–6):
-10/month through 2023 and 11/month January–June 2024, clipped to
-[2023-07-01, 2024-02-01) → 6×10 + 1×11 = 71; the comparison clip
-"> 10" keeps the 11-segment → 6×11 = 66; a carrier without periods, and
-one without a timeline, both total 0.
-
-**The composite clip (landed 2026-08-21).** A **flat** composite `all`
-condition under gedurende clips to the **intersection** of its
-members' true-periods: the pinned runtime nests the per-member clips
-over exactly such flat characteristic lists, and interval
-intersection is associative, so member order never matters. Members
-are own-temporal-characteristic checks. The v0 boundary, stated
-precisely: v0 partitions a **static** (non-temporal) comparison
-member out as a value-side *guard* before its clip ever runs (an AND
-gate under `all`), and markers a temporal-attribute comparison member
-and a **nested** composite bullet as Onopgelost — v1 narrows
-composite members to the characteristic checks both executors carry;
-the static-guard form and the nested bullet are recorded loud flanks
-(WF-055 admits neither), not silent rewrites. A member
-without any true period empties the intersection: the total is 0 by
-the clip-presence rule above. Worked example (the
-`jutterswet-dubbelwacht` anchor, absolute, gates 5–6): 10/month
-through 2024; borgplichtig January–July and aangesteld April–January
-intersect to April–July → 3×10 = 30; disjoint members → 0; one member
-without periods → 0; split periods (January–March + June–September
-against February–August) → (February–March) + (June–August) = 3
-months → 30. *Executed-note:* a **negated member** clips through its
-complement, exactly like the single negated clip. Both executors carry
-the shape since 2026-09-09; `corpus/golden/jutterswet-tegenwacht` pins
-both forms differentially (gates 5–6), including the ch. 3.6 negated
-worked example below. The **ten-minste-1 union** (v0 clips to the union
-of member regions) stays a loud, recorded flank in both executors, and
-WF-055 does not admit it until an executor carries it with an anchor.
+### 3.6 The temporal total — collapse to a scalar
 
 "Het totaal van" a timeline over time collapses it to one scalar:
 
@@ -2247,270 +2144,269 @@ WF-055 does not admit it until an executor carries it with an anchor.
 totaal(tl) = Σ over segments s of tl:  value(s) × length(van_s, tot_s)
 ```
 
-where `length` measures the segment in units of the timeline's grid
-(ch. 3.2 job 1: all five granularities): a day counts 1/len of the
-period of the grid that holds it, len that period's length in days, so a
-whole period counts 1 and a part of one its share of the days
-(maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point
-12a; ALEF's `partialLength`, the days of a part over the days of the
-unit that holds it). On the calendar the period is the calendar day,
-month, quarter or year, and a week counts seven days wherever it
-starts; a fixed start point lays the periods of its own grid, so a part
-of a storm year from 1 October counts its days over that storm year's
-365 or 366. The length is additive: two fragments that split a period
-count the period. Clauses:
+where `length` measures the segment in units of the timeline's grid, by the
+weighting of ch. 3.2: a day counts 1/len of the period of the grid that holds
+it, len that period's length in days, so a whole period counts 1 and a part
+of one its share of the days (ALEF's `partialLength`). On the calendar the
+period is the calendar day, month, quarter or year, and a week counts seven
+days wherever it starts; a fixed start point lays the periods of its own
+grid, so a part of a storm year from 1 October counts its days over that
+storm year's 365 or 366. The length is additive: two fragments that split a
+period count the period. *v0 mirror note:* v0 counts whole units per clipped
+fragment, so a part of a unit counts 0 and two fragments that split a unit
+count 0 together; counting a part by its days is a tracked delta.
 
-- A leeg-valued segment contributes 0 (a dedicated rule of this collapse,
-  in the family of ch. 1.2's totaal row — the collapse is a total, not a
-  som). A segment shorter than one unit contributes its share.
-- A segment with an **open bound** (ch. 3.1) holds unboundedly many
-  units. With the value 0 it contributes 0; with any other value the
-  total has no value and the session faults (**EF-036**, ch. 5.7b; the
-  parameters are the totalled `attribute` and the `label` of the object
-  whose timeline it is), whichever route reaches it: the subject's own
-  total, the gedurende clip (whose fragment of an open segment keeps its
-  open bound) and the §7.1 per-element fold. This is the warning of §7.1
-  that a total without a bounding condition can have unboundedly many
-  values, made a fault (`spec/proposals/IMPLICIT-TIME.md` VB 2.4).
-- The **subject's own total of a timeline a rule writes by ch. 3.4 or
-  3.5** totals that written timeline whole: such a timeline divides all
-  time, so no asOfDate bucket enters. The convention of a case-supplied
-  timeline below is unchanged.
-- An existing but **segmentless** timeline totals to **0** (the identity
-  of a sum over nothing), in the unit the total carries by its declarations
-  (ch. 2.10), and so does an **absent** timeline (the member itself
-  leeg): it is leeg on every day (ch. 3.1), and the total counts a leeg
-  value as 0 and is 0 where every value is leeg (spec typ. §4.20;
-  `spec/proposals/IMPLICIT-TIME.md` point 12c). This holds on every
-  route: the clip, the timeline a rule writes, the asOfDate bucket, and
-  each member of the per-element fold below. *v0 mirror note:* the
-  pinned runtime totals an absent timeline leeg; here it is 0, a tracked
-  deviation.
-- **Period selection ("gedurende …")** is clipping, not re-bucketing: the
-  value timeline is intersected with the selecting condition's
-  true-periods (a boolean timeline: a characteristic's true-periods, its
-  complement under negation, or the true-periods of a comparison over a
-  timeline), and the clipped timeline is then totalled.
-- **Units, the plain operand.** The rate obligation of WF-038 is satisfied
-  *structurally* here: a plain value reads per unit of the grid, so a
-  plain `€`-valued per-month timeline totals to `€` by value × its length
-  in months, a part of a month by its days (maintainer decision
-  2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 12b). The
-  specification and ALEF ask the operand of the total for a unit per time
-  unit (§7.1, typ. §4.20); keeping the plain operand is a tracked
-  deviation, and with the length above it gives the number ALEF gives for
-  a denominator equal to the grid unit. An explicit rate unit (`€/mnd`)
-  is what the *non-temporal* totaal operand requires; the temporal
-  collapse must not be misread as requiring it.
-- **Units, the explicit rate operand.** When the timeline's value *does*
-  carry a rate unit, the collapse is an **integration**, and the
-  length is not a bare number but a **duration stated in the
-  grid's own unit**: `value × duration` cancels the negative factor of the
-  grid's class by one power (ch. 2.6, rule 8) — `€/mnd` over a per-month
-  timeline totals to `€`, `€/m/mnd` to `€/m`. This is the one collapse that changes the unit,
-  and it is the runtime half of the §4.20 Tabel-30 result type (row 2,
-  `Eenheid1`), so a `€`-declared target accepts the total without any
-  restatement.
-  The grid's unit is the one the document's declared unit systems spell
-  for this granularity (ch. 3.8 spelling table), resolved **once per
-  fold**. The integration is then **exact over every denominator the
-  declarations connect to it**, through those declared factors and
-  nothing else: `€/mnd` on a per-month grid cancels one-for-one; `€/jr`
-  on a per-month grid cancels too where the document declares
-  `jr = 12 mnd` — twelve months *are* one year, so `10 €/jr` over 2024 is
-  **10 €**, not 120; and a month-sized unit that is not a calendar
-  spelling at all (`€/bm` with `bm` canonically a month) cancels by its
-  declared factor, the spelling table never entering. Three things are
-  refused **loudly**, never guessed: a unit none of whose negative factors the
-  declarations connect to a grid-sized unit and none of which the calendar
-  integrates (below; `€/kg`, `€/kg/m`; the refusal NAMES
-  both the value's unit and the grid's), a document that declares **no** unit for this grid,
-  and a document that declares **several** grid units with different
-  canonical chains. A value unit **without** a denominator keeps the
-  plain rule above, and a unitless value keeps a unitless total — those
-  two need no grid unit at all, so they total in a document that declares
-  none.
-  Within one collapse, per-segment products are summed by the ordinary
-  ch. 2.6 addition: a segment in a **convertible** sister unit is
-  restated exactly (120 € + 500 ct = 125 €), a **foreign** one is refused
-  loudly, and only a **unitless** side adopts silently. The case format
-  cannot reach a mixed-unit timeline — the loader attaches the
-  declaration's one unit to every segment — so this rule governs
-  computed timelines alone.
-- **The calendar** (maintainer decision 2026-11-03,
-  `spec/proposals/IMPLICIT-TIME.md` point 11). The time units fall into two
-  families by the spelling table of ch. 3.8: the **day family**, dag and
-  week, and the **month family**, maand, kwartaal and jaar. Within a family
-  a factor is exact and the declared one governs, as above (`jr = 12 mnd`,
-  `wk = 7 dg`). Between the two no factor is: a month or a year has no fixed
-  number of days (§7.3.1). Where the value's denominator is a unit the table
-  names of the other family than the grid's, the collapse integrates by the
-  **actual length of the calendar unit**: the segment is measured in the
-  denominator's unit, a day counting 1 dg and 1/7 wk, and 1/len of the
-  calendar month, quarter or year it lies in, len its actual length in
-  days (28 to 31, 90 to 92, 365 or 366). The negative factor
-  rises as above, so `€/jr` over a day grid totals to `€`. A declared factor
-  between the two families (`jr = 365 dg`, `mnd = 30 dg`) would stand in for
-  the calendar and is ill-formed (WF-009, `IR-SPEC.md` ch. 2.5); an executor
-  that meets one in this integration refuses it by name. A unit outside the
-  table (`bm`) belongs to neither family and keeps its declared factor.
-  This is ALEF's integration (`partialLength`, the days of a part over the
-  days of the calendar unit that holds it), a part of a grid unit
-  included.
-  *Executor note (2026-09-04):* the number the collapse produces is not
-  always the bare whole-unit count. Where the denominator is the grid
-  unit itself the two coincide, but a convertible foreign denominator
-  scales by the declared factor. The Drools backend weights unit-blind,
-  so it carries a negative factor that is the grid's own unit and refuses
-  every other by name (`€/jr` on a per-month timeline), and the ASP backend
-  refuses a factor other than 1 by name as well. Under the calendar the ASP
-  backend lays the weights of the whole units over the least common
-  multiple D of the lengths the case's span meets, and carries the total at
-  the scale of its value times D, which only a rounding of the total divides
-  away (`ASP-TRANSLATION.md` S9); elsewhere it refuses that total by name.
-  A part of a grid unit gives the weights of the spans a denominator as
-  well: the ASP backend lays them over the least common multiple D of
-  their denominators and divides D away, under a rounding as above, and
-  elsewhere exactly where D divides the total, refusing at solving by name
-  a total D does not divide (`backends/clingo/README.md` [V8]).
-  Both Drools branches integrate by the calendar on every route of the
-  subject's own total (the asOfDate bucket, a timeline the period
-  arithmetic writes, the clip) and refuse it by name in the per-element fold
-  over a set (DROOLS-228). On every route, the per-element fold included,
-  they measure a segment in units of its grid, a part of a unit by its days
-  on the calendar or from a fixed start point, and total an absent timeline
-  0.
-- **The per-element fold over a set (§7.1).** `het totaal van <temporal
-  attribute> van alle <set>` folds **twice**: each set member's own
-  timeline collapses over time first — by the rule above, at that
-  attribute's own granularity — and only the resulting scalars fold over
-  the set. The outer fold is the ordinary ch. 1.2e aggregation: a member
-  without a timeline contributes **0**, the total of its absent timeline
-  (above), and for `het totaal van` an empty set totals **0** in the unit
-  the total carries by its declarations (ch. 2.10); `de som van` over the
-  same shape folds identically inside and keeps the som's leeg rule
-  outside, for the empty set. Every other
-  aggregation over a temporal set member — min, max, eerste, laatste,
-  aantal — is **refused**: there is no defined moment of the timeline for
-  it to rank or count, and silently reading the segment list instead of a
-  value is the error this rule exists to prevent.
-  On the wire the two routes differ by their range. The per-element fold
-  carries one (`sourceRole` or `sourcePath`, the relation of its set
-  source). The subject's own collapse carries none: of the
-  single-argument aggregations that carry an `elementType`,
-  `total` alone may omit its range (since L2, `IR-SPEC.md` ch. 4.3), and
-  it then reads the subject itself, so its `elementType` and its
-  argument's `subjectType` both name the subject type (WF-083 (c)).
-  The two temporal-total routes carry **opposite** input conventions, and
-  the asymmetry is deliberate (ch. 8.4 keeps the two case conventions
-  strictly apart):
-  - the **subject's own** collapse takes the asOfDate-bucket scalar: the
-    session date *is* the horizon, so one bucket of the subject's grid
-    carries the total;
-  - the **per-element** fold requires every member to bring its **own**
-    horizon, because the integration runs once per member and there is no
-    single bucket to borrow. The case format's full-timeline variant is
-    the one self-describing form (it states each segment's bounds); a
-    member carrying the horizonless bucket scalar is refused loudly,
-    naming that member — the exact "needs the one, finds the other" case
-    of ch. 8.4. An **absent** member contributes 0, and horizon-carrying
-    members mix freely.
+- A **leeg** segment contributes 0 — a rule of this collapse, in the family
+  of the totaal row of ch. 1.2: the collapse is a total, not a som. A segment
+  shorter than one unit contributes its share.
+- A segment with an **open bound** (ch. 3.1) holds unboundedly many units.
+  With the value 0 it contributes 0; with any other value the total has no
+  value and the session faults with **EF-036** (ch. 5.7b; the parameters
+  are the totalled `attribute` and the `label` of the object whose timeline
+  it is), whichever route reaches it: the subject's own total, the
+  "gedurende" clip (whose fragment of an open segment keeps its open bound)
+  and the per-element fold of §7.1. This is the warning of §7.1 — a total
+  without a bounding condition can have unboundedly many values — made a
+  fault.
+- A **segmentless** timeline totals **0**, the identity of a sum over
+  nothing, in the unit the total carries by its declarations (ch. 2.10), and
+  so does an **absent** timeline (the member itself leeg): it reads leeg on
+  every day (ch. 3.1), the total counts a leeg value as 0, and it is 0 where
+  every value is leeg (typ. §4.20). This holds on every route: the clip, the
+  timeline a rule writes, the asOfDate bucket, and each member of the
+  per-element fold. *v0 mirror note:* v0 totals an absent timeline leeg and a
+  segmentless one 0; 0 for both is a tracked delta.
+- **Which timeline the subject's own total reads.** A timeline that a rule
+  writes by ch. 3.4 or 3.5 divides all time, and the subject's own total
+  totals it whole. For the own total without a clip, a case supplies the
+  subject's timeline as the asOfDate-bucket scalar, the value of the period
+  of its grid that holds the evaluation date, and the total counts that one
+  period; a full timeline there is refused, and a session without an
+  evaluation date has no such period, so the total faults (the two input
+  conventions, below and ch. 8.4; ch. 3.12).
 
-Worked examples (absolute, `ref/` tests verbatim; per-month timeline):
+**The "gedurende" clip (§7.1, WF-055).** A filter on the temporal total
+restricts the totalled timeline to the periods of its condition before the
+total (ch. 3.3):
 
-- segments 2023-01-01..2024-01-01 = 10,00 and 2024-01-01..2024-07-01 =
-  11,00 → totaal = 12×10 + 6×11 = **186,00**.
-- degenerate segments (zero-length or reversed) are skipped: only a
-  6-month segment of 10 remains → **60,00**, never a negative count.
+```
+totaal(tl gedurende c) = totaal(tl restricted to periods(c))
+```
+
+Each raw clipped fragment is totalled over its length, never coalesced, so a
+part of a unit counts by its days: a per-year value clipped to five days of
+2024 contributes 5/366 of it, and two adjacent condition periods that split
+one unit count its two parts, together the whole unit (golden
+`jutterswet-getijdenwacht`, J4: **10**). The condition's periods (ch. 3.10)
+come from:
+
+- a check of an own time-dependent characteristic — its true periods; a gap
+  means the characteristic does not hold and clips away; a negated check
+  takes the complement; the condition's own values are ignored;
+- a flat `all` composite of such checks — the **intersection** of their
+  periods, so the order of the members never matters; a negated member clips
+  through its complement; a member without any true period empties the
+  intersection, and the total is 0;
+- a comparison of an own time-dependent attribute against a scalar bound —
+  the days on which the comparison of ch. 1.2 holds, read per day: a gap in
+  the compared timeline and a leeg bound are leeg sides, so "ongelijk aan"
+  holds on a gap day against a filled bound.
+
+The clip is about the **subject** and about the **whole span** of the
+clipped timeline: a clip member that carries an owner or a whole-period
+qualifier — the negated qualifier included — is ill-formed (WF-097,
+`IR-SPEC.md` ch. 4.5), and an executor that meets one faults by name. The
+same rule covers the three clips: this total's, the time-proportional part's
+(ch. 3.7) and the day count's (ch. 3.8). WF-055 admits no other condition:
+v0 reads a static (non-temporal) comparison member as a guard on the value
+and clips an at-least-one composite to the union of its members' periods,
+and v1 admits neither, nor a nested composite (a tracked narrowing). A
+fully clipped-away or absent value timeline totals 0, never leeg, as the
+unfiltered total does. The operand is a Number (WF-091, `IR-SPEC.md`
+ch. 4.1), so this 0 always lands in a numeric slot.
+
+**Units, the plain operand.** The rate obligation of WF-038 is met by the
+structure of this collapse: a plain value reads per unit of the grid, so a
+plain `€`-valued timeline per month totals to `€` by value × its length in
+months, a part of a month by its days. The specification and ALEF ask the
+operand of the total for a unit per time unit (§7.1, typ. §4.20); keeping the
+plain operand is a tracked delta, and with the length above it gives the
+number ALEF gives for a denominator equal to the grid unit. An explicit rate
+unit (`€/mnd`) is what the non-temporal totaal operand requires; the
+temporal collapse does not require it.
+
+**Units, the explicit rate operand.** When the timeline's value carries a
+rate unit, the collapse is an **integration**, and the length is a
+**duration in the grid's own unit**: `value × duration` cancels the negative
+factor of the grid's class by one power (ch. 2.6, rule 8) — `€/mnd` over a
+timeline per month totals to `€`, `€/m/mnd` to `€/m`. This is the one
+collapse that changes the unit, and it is the runtime half of the §4.20
+Tabel-30 result type (row 2, `Eenheid1`), so a `€`-declared target accepts the
+total without a restatement (`ref/` tests `WV-3.6-g*`, `WV-3.6-h*`).
+
+- The grid's unit is the one the document's declared unit systems spell for
+  this granularity (the spelling table of ch. 3.8), resolved **once per
+  fold**. The integration is **exact over every denominator the declarations
+  connect to it**, through those declared factors and nothing else: `€/mnd`
+  on a grid per month cancels one for one; `€/jr` on a grid per month cancels
+  too where the document declares `jr = 12 mnd` — twelve months are one year,
+  so `10 €/jr` over 2024 is **10 €**, not 120; and a month-sized unit that is
+  not a calendar spelling (`€/bm` with `bm` canonically a month) cancels by
+  its declared factor, the spelling table not entering.
+- **The calendar** (ch. 3.2). Where the value's denominator is a unit of the
+  spelling table of the other family than the grid's, the collapse
+  integrates by the actual length of the calendar unit: the segment is
+  measured in the denominator's unit as ch. 3.2 measures a span, and the
+  negative factor rises as above, so `€/jr` over a day grid totals to `€`, a
+  day weighing 1/365 or 1/366. This is ALEF's integration, a part of a grid
+  unit included.
+- Three things are refused **by name**, never guessed: a unit none of whose
+  negative factors the declarations connect to a grid-sized unit and none of
+  which the calendar integrates (`€/kg`, `€/kg/m`; the refusal names both the
+  value's unit and the grid's), a document that declares **no** unit for the
+  grid, and a document that declares **several** grid units with different
+  canonical chains. A value unit **without** a denominator keeps the plain
+  rule above, and a unitless value keeps a unitless total — those two need no
+  grid unit, so they total in a document that declares none.
+- Within one collapse the products per segment are summed by the ordinary
+  addition of ch. 2.6: a segment in a **convertible** sister unit is restated
+  exactly (120 € + 500 ct = 125 €), a **foreign** one is refused by name, and
+  only a **unitless** side adopts the other unit. The case format cannot
+  reach a timeline of mixed units — the loader gives every segment the
+  declaration's one unit — so this rule governs computed timelines alone.
+
+**The per-element fold over a set (§7.1).** `het totaal van <temporal
+attribute> van alle <set>` folds **twice**: each member's own timeline
+collapses over time first — by the rule above, at that attribute's own
+granularity — and only the resulting scalars fold over the set. The outer
+fold is the ordinary aggregation of ch. 1.2: a member without a timeline
+contributes **0**, the total of its absent timeline, and for `het totaal van`
+an empty set totals **0** in the unit the total carries by its declarations
+(ch. 2.10); `de som van` over the same shape folds alike inside and keeps the
+som's leeg rule outside, for the empty set. Every other aggregation over a
+time-dependent member of a set — minimum, maximum, eerste, laatste, aantal,
+aantal gevulde — is **refused**: there is no defined moment of the timeline
+for it to rank or count (ch. 3.4c, 3.12), and reading the segment list
+instead of a value is the error this rule prevents.
+
+On the wire the two routes differ by their range. The per-element fold
+carries one (`sourceRole` or `sourcePath`, the relation of its set source).
+The subject's own collapse carries none: of the single-argument aggregations
+that carry an `elementType`, `total` alone may omit its range (`IR-SPEC.md`
+ch. 4.3), and it then reads the subject itself, so its `elementType` and its
+argument's `subjectType` both name the subject type (WF-083 (c)).
+
+The two routes read **opposite** input conventions, and the asymmetry is
+deliberate (ch. 8.4 keeps the two case conventions apart):
+
+- the **subject's own** collapse of a case-supplied timeline takes the
+  asOfDate-bucket scalar: the session date is the horizon, so one period of
+  the subject's grid carries the total;
+- the **per-element** fold requires every member to bring its **own**
+  horizon, because the integration runs once per member and there is no
+  single bucket to borrow. The full-timeline variant of the case format is
+  the one form that states its own bounds; a member that carries the bucket
+  scalar is refused by name, naming that member — the "needs the one, finds
+  the other" case of ch. 8.4. An **absent** member contributes 0, and members
+  that carry their horizon mix freely.
+
+Worked examples (absolute, `ref/` tests verbatim; a timeline per month):
+
+- segments 2023-01-01..2024-01-01 = 10,00 and 2024-01-01..2024-07-01 = 11,00
+  → totaal = 12×10 + 6×11 = **186,00**.
+- degenerate segments (zero-length or reversed) are skipped: only a 6-month
+  segment of 10 remains → **60,00**, never a negative count.
 - open segments (`WV-3.6-open-zero`, `WV-3.6-open-nonzero`): the total of
-  `a + b` of ch. 3.4's first example — 0 on (−∞, 2024-01-01), 100, 130,
-  30, 0 on [2024-10-01, +∞) — is 3×100 + 3×130 + 3×30 = **780**; the
-  total of `5 + a` (5 on both open segments) faults with EF-036. In the
-  corpus: `jutterswet-maandloon` totals its `maandloon` (780 in case 1,
-  3 in case 2, 0 in case 3, whose one segment (−∞, +∞) carries 0), and
+  `a + b` of ch. 3.4's first example — 0 on (−∞, 2024-01-01), 100, 130, 30,
+  0 on [2024-10-01, +∞) — is 3×100 + 3×130 + 3×30 = **780**; the total of
+  `5 + a` (5 on both open segments) faults with EF-036. In the corpus:
+  `jutterswet-maandloon` totals its `maandloon` (780 in case 1, 3 in case 2,
+  0 in case 3, whose one segment (−∞, +∞) carries 0), and
   `corpus/red/jutterswet-totaal-open-segment` totals `5 + a`.
-- gedurende "> 1000" over value timeline {3 mnd: 1200, 2 mnd: 800}:
+- the clip (golden `jutterswet-getijdenwacht`): 10/month through 2023 and
+  11/month January–June 2024, clipped to [2023-07-01, 2024-02-01) →
+  6×10 + 1×11 = **71**; the comparison clip "> 10" keeps the 11-segment →
+  6×11 = **66**; a carrier without periods, and one without a timeline, both
+  total **0**.
+- gedurende "> 1000" over the value timeline {3 mnd: 1200, 2 mnd: 800}:
   clipped to the 1200-months → 1200×3 = **3600,00** (not 5200).
 - value timeline 10 on [2023-01-01, 2024-01-01) and 11 on
-  [2024-01-01, 2024-07-01); characteristic true on
-  [2023-07-01, 2024-02-01). gedurende the characteristic → 6×10 (jul–dec
-  2023) + 1×11 (jan 2024) = **71,00**; the negated form (complement,
-  within the value timeline's span) → 6×10 (jan–jun 2023) + 5×11
-  (feb–jun 2024) = **115,00**.
-- a part of a unit (`WV-3.6-naar-rato`, `spec/proposals/IMPLICIT-TIME.md`
-  point 12a; with the floor per fragment each gave **0**): ALEF's own
-  case, `400 €/jr` until 2021-05-15 and `500 €/jr` after, on a year grid,
-  clipped to [2021-04-01, 2021-07-21) → 44 × 400/365 + 67 × 500/365 =
-  **140 €**; `120 €/jr` on 2024 clipped to [2024-09-28, 2024-10-03) →
-  120 × 5/366 = **100/61 €**; `100 €/mnd` in January 2024 clipped in
-  [2024-01-01, 2024-01-15) and [2024-01-15, 2024-02-01) → 100 × 14/31 +
-  100 × 17/31 = **100 €**, and the same with a plain 100 → **100**
-  (point 12b). On the storm-year grid from 1 October, 100 on
-  [2023-10-01, 2025-10-01) clipped to [2024-09-28, 2024-10-03) →
+  [2024-01-01, 2024-07-01); characteristic true on [2023-07-01, 2024-02-01).
+  Gedurende the characteristic → 6×10 (jul–dec 2023) + 1×11 (jan 2024) =
+  **71,00**; the negated form (the complement, within the value timeline's
+  span) → 6×10 (jan–jun 2023) + 5×11 (feb–jun 2024) = **115,00**.
+- the composite clip (anchor `jutterswet-dubbelwacht`): 10/month through
+  2024; borgplichtig January–July and aangesteld April–January intersect to
+  April–July → 3×10 = **30**; disjoint members → **0**; one member without
+  periods → **0**; split periods (January–March + June–September against
+  February–August) → (February–March) + (June–August) = 3 months → **30**.
+  The golden `jutterswet-tegenwacht` pins the negated member and the negated
+  single clip.
+- a part of a unit (`WV-3.6-naar-rato`; counted in whole units each gave
+  **0**): ALEF's own case, `400 €/jr` until 2021-05-15 and `500 €/jr` after,
+  on a year grid, clipped to [2021-04-01, 2021-07-21) → 44 × 400/365 +
+  67 × 500/365 = **140 €**; `120 €/jr` on 2024 clipped to
+  [2024-09-28, 2024-10-03) → 120 × 5/366 = **100/61 €**; `100 €/mnd` in
+  January 2024 clipped in [2024-01-01, 2024-01-15) and
+  [2024-01-15, 2024-02-01) → 100 × 14/31 + 100 × 17/31 = **100 €**, and the
+  same with a plain 100 → **100**. On the storm-year grid from 1 October,
+  100 on [2023-10-01, 2025-10-01) clipped to [2024-09-28, 2024-10-03) →
   100 × 3/366 + 100 × 2/365 = **6090/4453** (the storm year before
   2024-10-01 holds 29 February; `corpus/golden/jutterswet-vast-startpunt`
-  case 1 rounds it to 1,37). End to end (suite fixtures `partial-unit`):
-  30 per month over April to June clipped to [2024-04-16, 2024-06-01) →
-  30 × (15/30 + 1) = **45**, and the total of a timeline a rule writes,
-  30 indien hij wachtplichtig is, over the same period → **45**.
+  case 1 rounds it to 1,37). End to end (suite fixtures `partial-unit`): 30
+  per month over April to June clipped to [2024-04-16, 2024-06-01) →
+  30 × (15/30 + 1) = **45**, and the total of a timeline a rule writes, 30
+  indien hij wachtplichtig is, over the same period → **45**.
 - gedurende "≠ 1000" where the tested timeline has leeg periods: leeg
-  **satisfies** ≠ against a filled bound (the ch. 1.2 inequality
-  asymmetry, applied per period): value 100 on [2024-01-01, 2024-07-01);
-  tested timeline 1000 on [2024-01-01, 2024-02-01), leeg elsewhere → ≠
-  1000 holds feb–jun → 5×100 = **500,00**.
-- explicit rate unit: `10 €/mnd` on [2024-01-01, 2025-01-01) → 12 months
-  × 10 €/mnd = **120 €** — the denominator cancels, so a `€`-declared
-  target takes it unchanged.
-- the same timeline declared `€/jr`, in a document declaring
-  `jr = 12 mnd` → the 12 months are one year → **10 €**. Declared
-  `€/bm` with `bm` canonically a month (factor 1) → **120 €**, and over
-  one month bucket → **10 €**.
-- the same `10 €/mnd` value on a per-**quarter** grid across 2024 → 4
+  **satisfies** ≠ against a filled bound (the inequality row of ch. 1.2, per
+  day): value 100 on [2024-01-01, 2024-07-01); tested timeline 1000 on
+  [2024-01-01, 2024-02-01), leeg elsewhere → ≠ 1000 holds feb–jun → 5×100 =
+  **500,00**.
+- an explicit rate unit: `10 €/mnd` on [2024-01-01, 2025-01-01) → 12 months
+  × 10 €/mnd = **120 €** — the denominator cancels, so a `€`-declared target
+  takes it unchanged.
+- the same timeline declared `€/jr`, in a document that declares
+  `jr = 12 mnd` → the 12 months are one year → **10 €**. Declared `€/bm` with
+  `bm` canonically a month (factor 1) → **120 €**, and over one month bucket
+  → **10 €**.
+- the same `10 €/mnd` value on a grid per **quarter** across 2024 → 4
   quarters × 3 months × 10 = **120 €**: a coarser grid gives the same
   number, because the conversion is exact.
-- `10 €/dg` on a per-month grid across 2024 → the calendar: the twelve
-  months hold 366 days, so **3660 €** (`WV-3.6-g-vreemde-noemer`). A
-  document that declares `mnd = 30 dg` is ill-formed (WF-009); with that
-  factor the same timeline would have integrated to 12 × 30 × 10 = 3600 €.
-- `7 €/wk` over February 2024 on a per-month grid → 29 days, 29/7 weeks →
+- `10 €/dg` on a grid per month across 2024 → the calendar: the twelve
+  months hold 366 days, so **3660 €** (`WV-3.6-g-vreemde-noemer`). A document
+  that declares `mnd = 30 dg` is ill-formed (WF-009); with that factor the
+  same timeline would have integrated to 12 × 30 × 10 = 3600 €.
+- `7 €/wk` over February 2024 on a grid per month → 29 days, 29/7 weeks →
   **29 €** (`WV-3.6-kalender-week-over-maanden`); `31 €/mnd` over the 31
-  days of January on a day grid → **31 €**, `91 €/kw` over the 91 days of
-  the first quarter of 2024 → **91 €**.
+  days of January on a day grid → **31 €**, `91 €/kw` over the 91 days of the
+  first quarter of 2024 → **91 €**.
 - the calendar across a turn of the year: `366 €/jr` on a day grid over
   [2027-12-31, 2028-01-02) → 366/365 + 366/366 = **731/365 €**
   (`WV-3.6-kalender-jaargrens`).
 - formulation B of the anchor casus (`WV-3.6-kalender`, the anchor
-  `corpus/golden/anchor/jutterswet-verzuimrente-dagen`): `500 €/jr` on the
-  54 days [2028-02-11, 2028-04-05) of the leap year 2028 → 500 × 54/366 =
+  `corpus/golden/anchor/jutterswet-verzuimrente-dagen`): `500 €/jr` on the 54
+  days [2028-02-11, 2028-04-05) of the leap year 2028 → 500 × 54/366 =
   **73 47/61 €** (with `jr = 365 dg` it would be 73 71/73 €); `400 €/jr` on
   77 days and `500 €/jr` on 40 days of 2025 and 2026 → 400 × 77/365 +
-  500 × 40/365 = **139 13/73 €** (`WV-3.6-kalender-geval-1`). The anchor pins both exactly, in targets of the unbounded form; the golden `corpus/golden/jutterswet-verzuimrente-dagen-afgerond` rounds them to the cent, 139,18 € and 73,77 €.
-- the §7.1 per-element fold, three set members with per-month `€/mnd`
-  **timelines**: `10` over [2024-01-01, 2025-01-01) → 120 €, `5` over
-  [2024-01-01, 2024-07-01) → 30 €, and a member without a timeline →
-  0 €. Total **150 €**. Replace any one member's timeline
-  by the asOfDate-bucket scalar and the fold is **refused**, naming that
-  member; all members absent → **0**, under `de som van` too; an empty
-  set → **0** (and `de som van` → leeg).
+  500 × 40/365 = **139 13/73 €** (`WV-3.6-kalender-geval-1`). The anchor pins
+  both exactly, in targets of the unbounded form; the golden
+  `corpus/golden/jutterswet-verzuimrente-dagen-afgerond` rounds them to the
+  cent, 139,18 € and 73,77 €.
+- the per-element fold of §7.1, three members of a set with `€/mnd`
+  **timelines** per month: `10` over [2024-01-01, 2025-01-01) → 120 €, `5`
+  over [2024-01-01, 2024-07-01) → 30 €, and a member without a timeline →
+  0 €. Total **150 €**. Replace any one member's timeline by the
+  asOfDate-bucket scalar and the fold is **refused**, naming that member; all
+  members absent → **0**, under `de som van` too; an empty set → **0** (and
+  `de som van` → leeg).
 
-*v0 mirror note:* the totaal of a multi-period timeline is refused with
-the grid (ch. 3.2), never mis-weighted as single-period.
+*v0 mirror note:* the totaal of a multi-period timeline is refused with the
+grid (ch. 3.2), never weighted as though its periods were single units.
 
-*Coverage note (2026-09-04):* the §4.20 Tabel-30 row-2 typing and this
-integration are meant to be the same statement — the frontend types the
-result `Eenheid1`, this rule produces it — but that identity is **not**
-covered end to end. No `uchar-case-v0` case can carry it today: the ASP
-backend translates neither the §7.1 set fold nor a write whose target
-unit differs from the value unit, so no golden of this shape can replay
-in both executors (gate 6 has no refusal channel). The rule is pinned at
-`ref/` unit level (`WV-3.6-g*`, `WV-3.6-h*`); the end-to-end claim stays
-prose until a backend carries the form.
+### 3.7 The time-proportional part (tijdsevenredig deel)
 
-### 3.7 Pro-rata — the time-proportional part
-
-Ch. 2.8 gave the equation; the full algebra, per bucket of the target's
-grid (month or year, ch. 3.2 — anchored buckets for a variable-start
-target, ch. 3.2):
+Ch. 2.8 gives the equation; per bucket of the target's grid (month or year,
+ch. 3.2):
 
 ```
 deel on bucket B = read(base, start(B)) × trueDays(B) / days(B)
@@ -2518,123 +2414,103 @@ deel on bucket B = read(base, start(B)) × trueDays(B) / days(B)
 
 - `days(B)` = the bucket's actual calendar day count (leap-aware: 28, 29,
   365, 366 — never 360).
-- `trueDays(B)` = the day count of the intersection of the selecting
-  condition's true-periods with `B`, half-open, summed over all true
-  intervals touching `B`.
+- `trueDays(B)` = the number of days of `B` in the periods of the selecting
+  condition (ch. 3.3), half-open, summed over every true interval that
+  touches `B`. The condition is a check of an own time-dependent
+  characteristic (WF-056), fenced as the clip of ch. 3.6 is (WF-097).
 - `read(base, start(B))` — the base must be constant across the bucket,
-  guaranteed by requiring the base's granularity coarser-or-equal to the
-  target's. A base that is **leeg at the bucket start emits no segment**
-  for that bucket (a gap, not a 0); a bucket with `trueDays` = 0 emits
-  nothing. The base is a Number — WF-091 (`IR-SPEC.md` ch. 4.1).
-- A rate-unit base is restated **first**, by its exact factor
-  (`€/jr` base for a per-month target: ÷ 12 exactly), then prorated.
-  *Delta (tracked, `CONSTRUCTS.md` row on the date builtins):* the rate
-  restatement and the anchored-bucket variant are FENCED in both
-  executors until a corpus case lands — a unit-carrying base or target
-  faults loudly, never prorates factor-free.
-- The fraction is exact and is **never auto-rounded** to the target's
-  declared decimals — rounding happens only at an explicit rounding. The
-  assignment gate (ch. 2.4 point 1) holds per segment: a segment whose
-  value does not fit the target's declared decimals is EF-006, with the
-  place of the attribute, the exact value and the decimals as for a scalar
-  write, and the rule writes no timeline; a segment that fits is written
-  as the exact value it is, and the unbounded form has no ceiling. The ASP
-  translation derives only outcomes exact at the target scale and fences
-  a remainder with the witness of EF-006, which names no parameter, and
-  holds the unbounded form as a whole number (ch. 2.4); the Drools backend
-  computes the part exactly and refuses by name a part into a timeline of
-  the unbounded form, whose segment holds a decimal. *v0 mirror note:* v0
-  stores a non-terminating pro-rata at 16 significant digits (DECIMAL64).
+  which the rule that the base's grid is coarser than or equal to the
+  target's guarantees. A base that is **leeg at the start of the bucket
+  writes no segment** for that bucket (a gap, not a 0), and a bucket with
+  `trueDays` = 0 writes nothing. The base is a Number (WF-091, `IR-SPEC.md`
+  ch. 4.1).
+- A base with a rate unit is restated **first**, by its exact factor (a
+  `€/jr` base for a target per month: ÷ 12 exactly), then prorated.
+- A base or a target on a fixed or variable start point is not defined
+  (ch. 3.2, 3.12).
+- The fraction is exact and is **never rounded** to the target's declared
+  decimals on its own: rounding happens only at an explicit rounding. The
+  part into a timeline target stands outside the precision gate of ch. 2.4
+  point 4, and the write boundary holds per segment (ch. 3.11, with the
+  worked example `WV-3.7-schrijfgrens-*`). *v0 mirror note:* v0 stores a
+  part that does not terminate at 16 significant digits (DECIMAL64); the
+  exact fraction is normative.
 
 Worked examples (absolute): base per year €12 (2024) / €18 (2025),
 condition true [2024-01-01, 2025-02-08), monthly target: twelve months of
-€12, jan 2025 = €18, **feb 2025 = 18 × 7/28 = 4,50** (7 true days of 28;
-2025 is no leap year), nothing from March on; in the canonical form of
-ch. 3.1 the twelve months of 2024 are the one segment
-[2024-01-01, 2025-01-01) = 12, since whether the part writes them as one
-segment or as twelve is representation. Yearly target, base €18, 38 true
-days in 2025 → 18 × 38/365 = **684/365** exact (≈ 1,873972…, only an
-explicit rounding collapses it). Rate base 120 €/jr into a monthly target
-→ 10 €/mnd; 5 €/jr → **5/12 €/mnd** exact (v0: 0,4166666666666667 at its
-16-digit store — the exact division by 12, never a pre-rounded ×0,0833
-reciprocal).
+€12, jan 2025 = €18, **feb 2025 = 18 × 7/28 = 4,50** (7 true days of 28; 2025
+is no leap year), nothing from March on; in the canonical form of ch. 3.1 the
+twelve months of 2024 are the one segment [2024-01-01, 2025-01-01) = 12, since
+whether the part writes them as one segment or as twelve is representation.
+Yearly target, base €18, 38 true days in 2025 → 18 × 38/365 = **684/365**
+exact (≈ 1,873972…, only an explicit rounding collapses it). Rate base
+120 €/jr into a monthly target → 10 €/mnd; 5 €/jr → **5/12 €/mnd** exact (v0:
+0,4166666666666667 at its 16-digit store — the exact division by 12, never a
+pre-rounded ×0,0833 reciprocal).
 
-Worked example — the gate per segment (absolute; `ref/` tests
-`WV-3.7-schrijfgrens-maand`, `-jaar` and `-onbegrensd`): a Jutter with a
-`borgtarief` of 18 per year and `borgplichtig` from 2025-01-01 up to
-2025-02-08, and "het borgdeel moet berekend worden als het tijdsevenredig
-deel van zijn borgtarief gedurende de tijd dat hij borgplichtig is". Into a
-monthly `borgdeel` of 2 decimals the segments are **18** in January and
-18 × 7/28 = **4,50** in February, which fit. Into a yearly `borgdeel` of 2
-decimals the one segment is 18 × 38/365 = 684/365, which does not fit:
-**EF-006**, place `J1.borgdeel`, value 684/365, decimals 2. Into a yearly
-`borgdeel` of the unbounded form it is **684/365**. The red case
-`corpus/red/jutterswet-tijdsevenredig-past-niet` pins the fault in the three
-executors.
+### 3.8 Day counting and the calendar arithmetic of dates
 
-### 3.8 Day counting and day-kind durations
+**The day count: "aantal dagen in (de maand / het jaar)".** The day count
+buckets the periods of its condition (ch. 3.3) on the target's grid — the
+calendar grid, or the grid a fixed start point lays (ch. 3.2) — and gives
+every day of a bucket the number of days of that bucket on which the
+condition holds:
 
-**aantal dagen in (de maand / het jaar).** Buckets a condition's
-true-periods on the target's grid — the calendar grid, or the grid a fixed
-start point lays (ch. 3.2) — and gives every day of a bucket `B` with a
-true day the true-day count in `B` (multiple true intervals in one bucket
-sum), and **0 to every day of a bucket without a true day, over all time**
-(maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` 7a;
-RegelSpraak typeringen §4.21): the 0 reaches before the first bucket with
-a true day and past the last, and where no bucket has one the count is 0
-on (−∞, +∞). How the count divides a run of equal values into segments is
-representation (ch. 3.1, the canonical form). The operator's stated bucket
-("de maand"/"het jaar") must equal the target's granularity. Worked
-example (absolute): true on [2024-01-01, 2024-01-02) and
-[2024-01-10, 2024-02-14) → **0** until 2024-01-01, **jan = 1 + 22 = 23**,
-**feb = 13**, **0** from 2024-03-01, four segments in the canonical form.
+```
+read(dagentelling(c), d) = | { e ∈ B : c holds on e } |      B the bucket that holds d
+```
+
+Several true intervals in one bucket add up, and a bucket without a true day
+reads **0**, over all time (typ. §4.21): the 0 reaches before the first
+bucket with a true day and past the last, and where no bucket has one the
+count is 0 on (−∞, +∞). How the count divides a run of equal values into
+segments is representation (ch. 3.1). The operator's stated bucket ("de
+maand"/"het jaar") must equal the target's granularity. Worked example
+(absolute): true on [2024-01-01, 2024-01-02) and [2024-01-10, 2024-02-14) →
+**0** until 2024-01-01, **jan = 1 + 22 = 23**, **feb = 13**, **0** from
+2024-03-01, four segments in the canonical form.
 
 *The condition* is a check of an own time-dependent characteristic, or an
 `all` composite of one such check and day-kind tests of the counted day
-(`IR-SPEC.md` WF-058; IMPLICIT-TIME 7b, decided without a norm question:
-the specification says nothing of the day in the condition, and ALEF admits
-the test). In the condition of a day count the bound day (`BoundDay`, the
-day-kind forms below) is the counted day: a day the tests reject is not
-counted. A day-kind test names a declared day kind, which is a function of
-the day alone (WF-031), where ALEF admits only its own standard kinds.
+(`IR-SPEC.md` WF-058). In the condition of a day count the bound day
+(`BoundDay`, the day-kind forms below) is the counted day: a day the tests
+reject is not counted. A day-kind test names a declared day kind, which is a
+function of the day alone (WF-031); ALEF admits only its own standard kinds
+here.
 
-*The unit* (IMPLICIT-TIME VB 7.2; RegelSpraak §7.2, typeringen §4.21): the
-count is days per unit of its bucket, dg/mnd or dg/jr, where its target
-declares a unit, which MUST be a day unit over the unit of the bucket
-(WF-058); in a target without a unit it is the bare number.
+*The unit* (§7.2, typ. §4.21): the count is days per unit of its bucket,
+dg/mnd or dg/jr, where its target declares a unit, which MUST be a day unit
+over the unit of the bucket (WF-058); in a target without a unit it is the
+bare number.
 
 Worked example `WV-3.8-nul-en-dagsoort` (absolute; `ref/` tests verbatim,
-the fixture `ref/test/fixtures/conditions-per-period/nul-en-dagsoort`,
-shared by the ASP backend's suite). `rentedragend` holds on
-[2028-02-11, 2028-04-05); the day kind `schrikkeldag` is day 29 of month 2;
-"het aantal dagen in de maand dat er aan alle volgende voorwaarden wordt
-voldaan: hij is rentedragend, de dag is geen schrikkeldag" in a target with
-the unit dg/mnd: **0** until 2028-02-01, **18** on [2028-02-01,
-2028-03-01), **31** on [2028-03-01, 2028-04-01), **4** on [2028-04-01,
-2028-05-01), **0** from 2028-05-01, each in dg/mnd. Without the day-kind
-test February is **19**.
+the fixture `ref/test/fixtures/conditions-per-period/nul-en-dagsoort`).
+`rentedragend` holds on [2028-02-11, 2028-04-05); the day kind `schrikkeldag`
+is day 29 of month 2; "het aantal dagen in de maand dat er aan alle volgende
+voorwaarden wordt voldaan: hij is rentedragend, de dag is geen schrikkeldag"
+in a target with the unit dg/mnd: **0** until 2028-02-01, **18** on
+[2028-02-01, 2028-03-01), **31** on [2028-03-01, 2028-04-01), **4** on
+[2028-04-01, 2028-05-01), **0** from 2028-05-01, each in dg/mnd. Without the
+day-kind test February is **19**. The anchor `jutterswet-dagentelling`
+carries the first worked example verbatim plus the split at a year
+boundary; the golden `jutterswet-verzuimrente-30-360-afgerond` carries the
+day-kind test and the unit, and its anchor
+`anchor/jutterswet-verzuimrente-30-360` the exact maandrente. A count over
+all time decides on every day; what that means for a write is ch. 3.11.
 
-**Executed** by `ref` and the ASP backend, the 0 over all time, the
-day-kind test and the unit since 2026-11-03 (card `conditions-per-period`);
-anchor `jutterswet-dagentelling` carries the worked example above verbatim
-plus the year-boundary split, and `anchor/jutterswet-verzuimrente-30-360`
-the day-kind test and the unit. A condition of another shape, or over more
-than one characteristic, is refused by name in both. The ch. 7.8 timeline
-arm applies where the count decides nothing: a count cut to no period by its
-rule's condition (ch. 3.10) leaves a case-supplied input timeline standing
-whole on a standing target; a count over all time decides on every day. The
-anchored (variable-startpunt) form stays unexecuted, loud. Both Drools branches count over all time, with the day-kind test and the unit, since step B part ii of the same card.
+*v0 mirror note:* v0's day count writes no segment in a bucket without a
+true day; the 0 over all time, the day-kind test and the unit are tracked
+deltas.
 
-**tijdsduur van A tot B** counts *whole* declared units between two
-dates, signed (negative when B < A); any leeg operand → leeg, never 0
-(ch. 1.2). A is **evaluated** before B, in the order the phrase names
-them (ch. 5.11). The absolute variant drops the sign. "hele" in the surface
-phrase only types the *result* as a whole number — the count is always
-whole units, written "hele" or not. The calendar is the **proleptic
-Gregorian calendar in zoneless civil time**: no time zones, no DST, no
-leap seconds — a date is a civil (y, m, d) triple, bijective with its
-epoch day number (days since 1970-01-01). The whole-unit definition is
-the **packed-month rule** (v0 mirror, exact):
+**tijdsduur van A tot B** counts *whole* declared units between two dates,
+signed (negative when B < A); any leeg operand → leeg, never 0 (ch. 1.2). A
+is **evaluated** before B, in the order the phrase names them (ch. 5.11). The
+absolute variant drops the sign. "hele" in the surface phrase only types the
+*result* as a whole number — the count is always whole units, written "hele"
+or not. The calendar is the **proleptic Gregorian calendar in zoneless civil
+time**: no time zones, no DST, no leap seconds — a date is a civil (y, m, d)
+triple, bijective with its epoch day number (days since 1970-01-01). The
+whole-unit definition is the **packed-month rule** (v0 mirror, exact):
 
 ```
 epoch(D)  = civil days since 1970-01-01
@@ -2647,28 +2523,30 @@ kwartalen = maanden quot 3
 jaren     = maanden quot 12
 ```
 
-`quot` is integer division truncating **toward zero**, so a negative
-span truncates toward zero, never toward −∞. Worked examples
-(absolute, pinned):
+`quot` is integer division truncating **toward zero**, so a negative span
+truncates toward zero, never toward −∞. Worked examples (absolute, pinned):
 
-- **Leap child:** 29-02-2004 tot 28-02-2026 = **21** whole years
-  (packed difference 8447, quot 32 = 263 months, quot 12 = 21);
-  29-02-2004 tot 01-03-2026 = **22** (8452 quot 32 = 264 months).
+- **Leap child:** 29-02-2004 tot 28-02-2026 = **21** whole years (packed
+  difference 8447, quot 32 = 263 months, quot 12 = 21); 29-02-2004 tot
+  01-03-2026 = **22** (8452 quot 32 = 264 months).
 - **Clamp, not inverse:** 31-01-2024 + 1 maand = 29-02-2024 (the clamp
-  below), yet tijdsduur van 31-01-2024 tot 29-02-2024 = **0** whole
-  months (packed difference 30 < 32): whole-unit counting is *not* the
-  inverse of date-plus-unit arithmetic.
-- **Signed truncation:** 10-03-2025 tot 10-08-2024 = −7 whole months;
-  in whole quarters −7 quot 3 = **−2** (toward zero); in whole years
-  **0**; the absolute variant reads 7 months.
+  below), yet tijdsduur van 31-01-2024 tot 29-02-2024 = **0** whole months
+  (packed difference 30 < 32): counting whole units is *not* the inverse of
+  date-plus-unit arithmetic.
+- **Signed truncation:** 10-03-2025 tot 10-08-2024 = −7 whole months; in
+  whole quarters −7 quot 3 = **−2** (toward zero); in whole years **0**; the
+  absolute variant reads 7 months.
+
+The anchor `jutterswet-jutleeftijd` carries these three examples verbatim,
+with the leeg corner.
 
 **The time-unit spelling table (normative).** A duration's unit is the
 declared unit of its static type — for date ± duration the duration
-operand's type, for tijdsduur the node's own result type — recognised
-by SPELLING, case-insensitive, keyed on the unit's written
-abbreviation. Declared conversion factors and the declaring system are
-irrelevant to calendar arithmetic (a unit may name no system): a year is
-a calendar year, never a second count. Nine units:
+operand's type, for tijdsduur the node's own result type — recognised by
+**spelling**, case-insensitive, keyed on the unit's written abbreviation.
+Declared conversion factors and the declaring system play no part in
+calendar arithmetic (a unit may name no system): a year is a calendar year,
+never a count of seconds. Nine units:
 
 | Unit | Recognised spellings |
 |---|---|
@@ -2682,403 +2560,298 @@ a calendar year, never a second count. Nine units:
 | seconde | seconde, sec, s, seconden, secondes |
 | milliseconde | milliseconde, ms, milliseconden, millisecondes |
 
-The first five are day-precision units; the last four are sub-day units
-and demand millisecond-precision (datum-tijd) operands. A spelling
-outside the table is a declared day kind (the day-kind forms above) or
-ill-formed (WF-035/WF-038).
+The first five are day-precision units; the last four are sub-day units and
+demand millisecond-precision (datum-tijd) operands. A spelling outside the
+table is a declared day kind (the day-kind forms below) or ill-formed
+(WF-035/WF-038). The day family and the month family of the calendar
+(ch. 3.2) are the first five, by this table.
 
-**Thirty spellings, and every one of them is a calendar unit.** The
-table is read as a whole: nine units, thirty spellings, and no spelling
-in it is available for anything else. Three of the thirty are worth
-naming because they are easy to read past. `s` is a spelling of the
-second, one character long. `secondes` and `millisecondes` are SECOND
-PLURAL FORMS, standing beside `seconden` and `milliseconden` rather
-than replacing them — they are not abbreviations, and a reader who
-sorts the thirty into "singulars, plurals and abbreviations" will lose
-exactly those two. The ten abbreviations (`jr`, `mnd`, `kw`, `wk`,
-`dg`, `u`, `min`, `sec`, `s`, `ms`) plus those two are the twelve that
-are neither the singular nor the `-en` plural, and **WF-017 refuses all
-thirty equally** as a day-kind spelling — as a day kind's `name` and as
-its `plural` alike (`IR-SPEC.md` ch. 2.9;
-maintainer decision 2026-09-19). The twelve stay ordinary calendar
-units wherever a unit is written; golden `jutterswet-vervaltermijn`
-carries `wk`, `mnd` and `kw` that way.
+**Thirty spellings, and every one of them is a calendar unit.** The table is
+read as a whole: nine units, thirty spellings, and no spelling in it is
+available for anything else. Three of the thirty are easy to read past. `s` is
+a spelling of the second, one character long. `secondes` and `millisecondes`
+are second plural forms, beside `seconden` and `milliseconden`; they are not
+abbreviations, and a reader who sorts the thirty into "singulars, plurals and
+abbreviations" loses exactly those two. The ten abbreviations (`jr`, `mnd`,
+`kw`, `wk`, `dg`, `u`, `min`, `sec`, `s`, `ms`) plus those two are the twelve
+that are neither the singular nor the `-en` plural, and **WF-017 refuses all
+thirty alike** as a day-kind spelling — as a day kind's `name` and as its
+`plural` (`IR-SPEC.md` ch. 2.9). The twelve stay ordinary calendar units
+wherever a unit is written; golden `jutterswet-vervaltermijn` carries `wk`,
+`mnd` and `kw` that way.
 
-**The lookup ORDER is normative, and it is this table first.** "Outside
-the table" is a test on the table, so a consumer resolving a duration's
-unit spelling consults THIS table first and the declared day kinds'
-spellings (their `name` and `plural`, `IR-SPEC.md` ch. 2.9) only where the
-table has nothing. Every executor
-reads it in that order — the verifier's WF-035/WF-038 clauses, the
-reference interpreter, the ASP backend and both Drools branches. The
-two Drools branches asked the registry first until 2026-09-20, at all
-four of their day-kind positions, and on a document that registered a
-calendar spelling as a day-kind unit the executors therefore answered
-differently: measured on `jutterswet-bergingsklok` with its unit
-spelled `wk` and `wk` registered beside it, the reference interpreter
-stepped ± 3 weeks and counted whole weeks (2026-03-31, 2026-02-17, 5,
-5) while both Drools branches walked the day kind (2026-04-15,
-2026-02-01, 3, 3). WF-017 refuses that document since the same day, so
-the wire no longer carries the contradiction; the order is what keeps
-a consumer from acting on it either way.
+**The lookup order is normative: this table first.** "Outside the table" is a
+test on the table, so a consumer that resolves a duration's unit spelling
+consults this table first, and the spellings of the declared day kinds (their
+`name` and `plural`, `IR-SPEC.md` ch. 2.9) only where the table has nothing.
+A consumer that asked the day kinds first would, on a document that
+registered a calendar spelling as a day-kind unit, walk a day kind where the
+table steps in calendar units; WF-017 refuses such a document, and the order
+keeps a consumer from acting on one either way.
 
-*And "case-insensitive" is read as written.* The same day closed a
-second way the executors could part on this table, with no day kind
-involved at all: both Drools branches lower-cased only the nine `-en`
-plurals, because those are the spellings their plural reducer replaced
-while every other one fell through it in its original case. Measured
-2026-09-20 on `jutterswet-bergingsklok` with its unit respelled `WK`
-and nothing registered — a verifier-clean document — the verifier,
-`ref` and the ASP backend reckoned in weeks while both Drools branches
-refused the rule as an unknown time unit. That split was LOUD, never
-silent, and it cost no corpus verdict; it was still two executors
-answering a question the other three answered. A spelling is now
-trimmed and lower-cased before the lookup in every reader, which is
-the ch. 2.1 identity this table has always been compared under.
+**"Case-insensitive" is read as written.** A spelling is trimmed and
+lower-cased before the lookup, in every reader — the identity of ch. 2.1
+under which this table is compared. `WK` is the week.
 
-**Operand order and precision.** The date stands on the **left** of
-both plus and min — a duration-left operand (duration + date, duration
-− date) is ill-formed, as is date ± date (WF-035): v0's typing opens
-its date branch only for a date-left operand, so plus does *not*
-commute. tijdsduur's two operands must be dates of one
-precision (WF-038); mixed precision is ill-formed. A fractional
-duration count **truncates toward zero** before the calendar step (1,9
-maanden steps 1 month; −1,9 truncates to −1). The RegelSpraak frontend
-refuses a source sentence whose duration count can carry a fraction by
-its form, and names this truncation and the forms that write it out
-(`frontends/regelspraak/grammar/DIVERGENCES.md`, "A date plus or min a
-duration that can carry a fraction", 2026-10-01); the wire keeps the
-truncation, and golden `jutterswet-vervaltermijn`, written as IR, pins it. Empty rules: ch. 1.2 —
-a leeg date propagates; a leeg duration counts as 0 (the date passes
-unchanged); a leeg tijdsduur operand propagates, never 0.
-
-**Executed (2026-08-25, both executors; WF-035/WF-038):** the
-day-precision family — tijdsduur and absolute tijdsduur in dagen,
-weken, maanden, kwartalen and jaren, and date ± duration in those
-units — runs in ref and clingo. Anchor `jutterswet-jutleeftijd`
-carries the three worked examples above verbatim (plus the leeg
-corner); golden `jutterswet-vervaltermijn` pins the month-end clamp,
-the empty-duration standstill, the quarter step and the
-fractional truncation. The day-kind (dagsoort-as-unit) forms are their
-own section below and run since 2026-09-19. The datum-tijd
-millisecond layer is executed in ref per the paragraph below and,
-since the pair-term encoding landed (2026-08-28, lifting the
-2026-08-25 embargo), in the ASP backend as well —
-`spec/ASP-TRANSLATION.md` S6a; corpus golden
-`jutterswet-getijdenpaar` pins it through both executors, the borrow
-corner included.
+**Operand order and precision.** The date stands on the **left** of both plus
+and min — a duration-left operand (duration + date, duration − date) is
+ill-formed, as is date ± date (WF-035): v0's typing opens its date branch
+only for a date-left operand, so plus does *not* commute. tijdsduur's two
+operands must be dates of one precision (WF-038); mixed precision is
+ill-formed. A fractional duration count **truncates toward zero** before the
+calendar step (1,9 maanden steps 1 month; −1,9 truncates to −1); the wire
+keeps the truncation, and golden `jutterswet-vervaltermijn` pins it, with the
+month-end clamp, the standstill on a leeg duration and the quarter step. Empty
+rules: ch. 1.2 — a leeg date propagates; a leeg duration counts as 0 (the date
+passes unchanged); a leeg tijdsduur operand propagates, never 0.
 
 #### The day-kind duration forms (§6.10, §6.11)
 
-A **day kind** is not a unit on the spelling table above: it is a
-declared predicate over a calendar day (`IR-SPEC.md` ch. 2.9, ch. 3.7).
-Written where a duration unit is written, it names *which days count*,
-and both duration forms then have to WALK the calendar — there is no
-closed formula, because there is no arithmetic that knows which days are
-salvage days.
+A **day kind** is not a unit on the spelling table: it is a declared
+predicate over a calendar day (`IR-SPEC.md` ch. 2.9, ch. 3.7). Written where a
+duration unit is written, it names *which days count*, and both duration forms
+then walk the calendar — there is no closed formula, because no arithmetic
+knows which days are salvage days.
 
-**Resolution — spelling to predicate.** The duration's unit spelling is
-looked up among the declared day kinds' spellings — each day kind's `name`
-and `plural` — **trimmed and case-insensitive**; one day kind carries it
-(WF-001 and WF-017 keep the spellings of two day kinds apart), and its name selects
-its single `DayKindDefinition` (case-insensitive again; WF-031 keeps the
-definition unique, so there is nothing to disambiguate). A spelling the
-calendar table does not know and no day kind carries is ill-formed
-(WF-035/WF-038), and so is a unit of more than one factor or with an exponent:
-only a declared unit has a spelling to look up. The definition's `validity` is **not consulted**: it
-MUST be always, neither bound written (WF-031), so there is no window to read.
+**Resolution — spelling to predicate.** The duration's unit spelling is looked
+up among the spellings of the declared day kinds — each day kind's `name` and
+`plural` — **trimmed and case-insensitive**; one day kind carries it (WF-001
+and WF-017 keep the spellings of two day kinds apart), and its name selects its
+single `DayKindDefinition` (case-insensitive again; WF-031 keeps the
+definition unique). A spelling that the calendar table does not know and no
+day kind carries is ill-formed (WF-035/WF-038), and so is a unit of more than
+one factor or with an exponent: only a declared unit has a spelling to look
+up. The definition's `validity` is **not consulted**: it MUST be always,
+neither bound written (WF-031).
 
 **Evaluation — the predicate of one day.** `P_k(d)` is the definition's
-`condition`, evaluated with **the bound day set to d** and nothing else
-in scope. That binding IS the runtime meaning of the `BoundDay` node
-(`IR-SPEC.md` ch. 4.1; until L4 the context value `de dag`): it is not a
-session value — ch. 8.2's evaluation date is — but the arbitrary day the
-definition is about, and, in the condition of a day count, the counted day
-(above); it denotes nothing anywhere else. An executor that
-meets the bound day outside those two **faults**, naming the form; it never reads as leeg and never
-falls back on the evaluation date (red case
-`context-value-de-dag-outside-day-kind` pins both executors).
+`condition`, evaluated with **the bound day set to d** and nothing else in
+scope. That binding is the runtime meaning of the `BoundDay` node
+(`IR-SPEC.md` ch. 4.1): it is no session value — ch. 8.2's evaluation date is
+— but the arbitrary day the definition is about and, in the condition of a
+day count, the counted day (above); it denotes nothing anywhere else. An
+executor that meets the bound day outside those two **faults**, naming the
+form; it never reads it as leeg and never falls back on the evaluation date
+(red case `context-value-de-dag-outside-day-kind`).
 
-`P_k` is a function of **the day alone**. WF-031's purity clause is what
-makes that true: the condition reaches no fact base, and — the position
-arm, landed with this chapter — no session value either, so the same
-document classifies the same calendar day identically in every session.
-A definition may reference other day kinds (`P_k` calls `P_j` on the same
-bound day, the §9.8 composition); the reference graph is acyclic
-(WF-085), and an executor that meets a cycle anyway faults rather than
-looping. The composition is carried **on the bound day only**: a nested
-test on some OTHER date ("… indien 15-03-2026 een ankerdag is") is a
-recognised, unexecuted form, refused by name in all three executors
-(red case `day-kind-reference-other-day`). The narrow route is
-deliberate and was measured: before 2026-09-19 `ref` and the Drools
-day-kind compiler answered that shape while the ASP backend refused it,
-and one executor computing what another refuses is not a semantics. The
-carrying reading is open, not decided against — it needs a source for
-what such a test MEANS inside a definition about an arbitrary day.
+`P_k` is a function of **the day alone**. WF-031's purity clause makes that
+true: the condition reaches no fact base and, by its position arm, no session
+value, so the same document classifies the same calendar day alike in every
+session. A definition may reference other day kinds (`P_k` calls `P_j` on the
+same bound day, the §9.8 composition); the reference graph is acyclic
+(WF-085), and an executor that meets a cycle faults rather than loop. The
+composition is defined **on the bound day only**, the narrow route: a nested
+test on another date ("… indien 15-03-2026 een ankerdag is") is a form without a meaning,
+EF-022 (red case `day-kind-reference-other-day`; ch. 3.12). Its reading needs
+a source for what such a test means inside a definition about an arbitrary
+day. The day-kind predicate is evaluated inside a day-kind definition, on the
+bound day, and in the condition of a day count, on the counted day; as the
+condition of another rule ("… is een werkdag", §8.1.5) it has no meaning here
+(ch. 3.12): a day kind is consulted as a classifier of stratum 0, never as a
+derived read inside the fixpoint of the rules (ch. 5.4).
 
-**§6.10 — the count.** "de tijdsduur van A tot B in hele werkdagen"
-counts the days d with `A < d ≤ B` — **start exclusive, end inclusive**
-(the "A itself does not count" rule, taken from §6.11's explicit reading,
-since §6.10 says nothing about a day kind at all) — that satisfy `P_k`;
-signed by operand order, the absolute variant dropping the sign; any leeg
-operand → leeg, never 0. The interval bounds the work, so this form
-carries **no fence**, and an unsatisfiable day kind counts **0** here: a
-count over an empty set is an answer, where a step to a day that does not
-exist is not.
+**§6.10 — the count.** "de tijdsduur van A tot B in hele werkdagen" counts the
+days d with `A < d ≤ B` — **start exclusive, end inclusive** (the "A itself
+does not count" rule, taken from §6.11's explicit reading, since §6.10 says
+nothing about a day kind) — that satisfy `P_k`; signed by operand order, the
+absolute variant dropping the sign; any leeg operand → leeg, never 0. The
+interval bounds the work, so this form has **no fence**, and a day kind no
+day satisfies counts **0** here: a count over an empty set is an answer,
+where a step to a day that does not exist is not.
 
 Worked examples (absolute; day kind = 25/26 December; each a `ref/` test
 verbatim): 20-12-2024 tot 31-12-2024 → **2**; 25-12-2024 tot 26-12-2024 →
-**1** (the 25th is the excluded start); reversed, 31-12-2024 tot
-20-12-2024 → **−2**, absolute variant **+2**; equal dates → **0**; leeg
-tot 31-12-2024 → **leeg**; with an unsatisfiable day kind, 20-12-2024 tot
-31-12-2024 → **0**.
+**1** (the 25th is the excluded start); reversed, 31-12-2024 tot 20-12-2024 →
+**−2**, absolute variant **+2**; equal dates → **0**; leeg tot 31-12-2024 →
+**leeg**; with a day kind no day satisfies, 20-12-2024 tot 31-12-2024 → **0**.
 
-**§6.11 — the step.** "datum plus N werkdagen" steps one calendar day at
-a time and counts only the days satisfying `P_k`; the result is the Nth
-such day, and is therefore always itself a day of the kind. The **start
-date never counts**, in either direction, even when it is itself a day of
-the kind. `N = 0` — and a leeg N, which coalesces to 0 (ch. 1.2) —
-returns the start date **unchanged**, even when that date is not a day of
-the kind: the source's general zero rule wins over its "the result is
-always such a day" sentence, which is about the stepping case. A
-fractional N truncates toward zero before the walk. A negative N (or the
-`min` operator) walks backward — the mirror image, which the source leaves
-unwritten. A leeg date propagates.
+**§6.11 — the step.** "datum plus N werkdagen" steps one calendar day at a
+time and counts only the days that satisfy `P_k`; the result is the Nth such
+day, and is therefore itself a day of the kind. The **start date never
+counts**, in either direction, even when it is itself a day of the kind.
+`N = 0` — and a leeg N, which coalesces to 0 (ch. 1.2) — returns the start
+date **unchanged**, even when that date is not a day of the kind: the source's
+general zero rule wins over its "the result is always such a day" sentence,
+which is about the stepping case. A fractional N truncates toward zero before
+the walk. A negative N (or the `min` operator) walks backward — the mirror
+image, which the source leaves unwritten. A leeg date propagates. The reach
+fence below and the backward step are v1 additions: the source gives neither.
 
 **The reach fence (normative).** A step that passes **40 000 consecutive
-calendar days** — a little over 109 years — without finding a day of the
-kind is a **fault**, never an endless walk. It is a fence on the GAP, not
-on the total: "datum plus 5 000 werkdagen" walks some nineteen years and
-is answerable, while a day kind no calendar day satisfies faults after
-40 000 days. Red case `day-kind-unsatisfiable-walk` pins the fault in
-all three executors.
+calendar days** — a little over 109 years — without finding a day of the kind
+is a **fault** (EF-009), never an endless walk. It is a fence on the gap, not
+on the total: "datum plus 5 000 werkdagen" walks some nineteen years and is
+answerable, while a day kind no calendar day satisfies faults after 40 000
+days (red case `day-kind-unsatisfiable-walk`).
 
-**What the fence claims, and what it does not.** It is a limit of REACH:
-the walk looks a bounded distance ahead and reports that it did not get
-there. It is **not a satisfiability test**, and neither the rule nor the
-fault text says the definition is unsatisfiable — a wording chosen
-deliberately, because the two are not the same thing and a reader who
-takes the fault as a diagnosis will hunt for a defect that may not exist.
-Two bars set the number. The longest recurrence gap a Gregorian day kind
-can have is the century-skipped leap day (2096-02-29 to 2104-02-29 is
-2 921 days); but a day kind may also be bound to a YEAR or to a
-PARAMETER — "the 1st or the 15th of 2040" is a well-formed, pure,
-perfectly satisfiable definition — and such a kind lies whole decades
-past any date a case is likely to carry. A ten-year reach refused those
-and was raised for exactly that reason (maintainer decision 2026-09-19).
+**What the fence claims, and what it does not.** It is a limit of reach: the
+walk looks a bounded distance ahead and reports that it did not get there. It
+is **not a satisfiability test**, and neither the rule nor the fault says the
+definition is unsatisfiable: the two are not the same thing, and a reader who
+takes the fault as a diagnosis will look for a defect that may not exist. Two
+bounds set the number. The longest recurrence gap a Gregorian day kind can
+have is the leap day a century skips (2096-02-29 to 2104-02-29 is 2 921 days);
+but a day kind may also be bound to a year or to a parameter — "the 1st or the
+15th of 2040" is a well-formed, pure, satisfiable definition — and such a kind
+lies whole decades past any date a case is likely to carry. A reach of ten
+years refused those.
 
-**The accepted residual cost, stated rather than hidden.** A satisfiable
-day kind whose next occurrence lies beyond the reach is refused although
-it exists: "the 1st of January 2200" stepped from 2026 faults, and no
-amount of correctness in the definition changes that. Three properties
-are what make the trade acceptable. **The refusal of a step beyond the
-reach is a FAULT and never a value** — this rule admits no arm that
-answers leeg, and each executor is held to that by red case
-`day-kind-scope-outside-table`, which exists because an early ASP
-lowering did answer leeg there in silence. **The fence itself is the same
-distance in every executor**, so how far a model may reach is a property
-of the language and not of an engine. And **the distance is written
-here**, so a model that needs more knows what it is asking for; raising
-the number is a spec change, not a configuration knob.
+**The accepted residual cost.** A satisfiable day kind whose next occurrence
+lies beyond the reach is refused although it exists: "the 1st of January 2200"
+stepped from 2026 faults, however correct the definition. Three properties
+make the trade acceptable. **The refusal of a step beyond the reach is a fault
+and never a value**: no arm of this rule answers leeg, and red case
+`day-kind-scope-outside-table` holds every executor to that. **The fence is
+the same distance in every executor**, so how far a model may reach is a
+property of the language and not of an engine. And **the distance is written
+here**, so a model that needs more knows what it asks for; raising the number
+is a change of this specification, not a setting.
 
-What those three properties are about is the FENCE, and they do not claim
-that every executor evaluates every well-formed day-kind condition. Each executor
-states its own carried set and refuses the rest **by name** — the ASP
-backend, which evaluates the predicate rather than walking it, carries a
-named subset of WF-031's admission list (`spec/ASP-TRANSLATION.md`), and
-a condition outside it is refused there and computed in `ref`. That is a
-loud, per-form boundary and an extensible one; it is not a second fence
-and not a silent one.
+Those three properties are about the fence; they do not claim that every
+executor evaluates every well-formed day-kind condition. An executor that
+does not carry a condition WF-031 admits refuses it by name, per form; it
+never answers it otherwise.
 
 Worked examples (absolute; day kind = 25/26 December; each a `ref/` test
-verbatim): 20-12-2024 + 2 → **26-12-2024**; 25-12-2024 + 1 →
-**26-12-2024** (the start is of the kind and still does not count);
-26-12-2024 + 1 → **25-12-2025**; 20-12-2024 + 0 → **20-12-2024** (not
-itself of the kind); 20-12-2024 + leeg → **20-12-2024**; leeg + 2 →
-**leeg**; 27-12-2024 − 1 → **26-12-2024**; 25-12-2024 − 1 →
-**26-12-2023**; with an unsatisfiable day kind, 20-12-2024 + 1 →
-**fault**.
+verbatim): 20-12-2024 + 2 → **26-12-2024**; 25-12-2024 + 1 → **26-12-2024**
+(the start is of the kind and still does not count); 26-12-2024 + 1 →
+**25-12-2025**; 20-12-2024 + 0 → **20-12-2024** (not itself of the kind);
+20-12-2024 + leeg → **20-12-2024**; leeg + 2 → **leeg**; 27-12-2024 − 1 →
+**26-12-2024**; 25-12-2024 − 1 → **26-12-2023**; with a day kind no day
+satisfies, 20-12-2024 + 1 → **fault**. Golden `jutterswet-bergingsklok`
+carries the step forward and backward, the zero and leeg counts, and the
+signed and absolute counts.
 
-**The datum-tijd layer (maintainer decision 2026-09-19), and it SPLITS.**
-The two forms are not in the same position over millisecond-precision
-operands, so they are not decided together.
+**The datum-tijd layer.** The two forms are not in the same position over
+millisecond-precision operands.
 
-- **`datum-tijd ± N <dagsoort>` is carried.** The day kind is judged on
-  the **civil day part alone**, and after the Nth matching day is found
-  the **original local clock time rides through unchanged**. Zero, leeg,
+- **`datum-tijd ± N <dagsoort>` is defined.** The day kind is judged on the
+  **civil day part alone**, and after the Nth matching day is found the
+  **original local clock time rides through unchanged**. Zero, leeg,
   negative and the reach fence follow the day-precision rules without
-  exception — including the leeg-count arm, which returns the datetime
-  with its clock time, exactly as it returns the date. Worked examples
-  (day kind = 25/26 December; each a `ref/` test verbatim):
-  2024-12-20T09:15:30 + 2 → **2024-12-26T09:15:30**;
-  2024-12-25T23:59:59 + 1 → **2024-12-26T23:59:59** (the start is of the
-  kind and still does not count, and 23:59:59 is preserved across the day
-  step); 2024-12-26T09:15:30 − 1 → **2024-12-25T09:15:30**;
-  2024-12-20T09:15:30 + 0 → **unchanged**; + leeg → **unchanged**;
-  leeg + 2 → **leeg**.
-- **`tijdsduur van A tot B in hele <dagsoort>` over two datum-tijden is
-  REFUSED**, and stays refused until partial days and boundary instants
-  are settled in their own right: counting whole days of a kind between
-  two INSTANTS needs a rule for the part-day at each end, and this
-  chapter fixes none. The refusal is by name in both OCaml executors, and
-  its **precision test runs before the empty rules** — a leeg operand
-  gets the refusal that names the form, not the leeg rule of a form that
-  is not carried, so the same document cannot answer leeg or fault
-  depending on which operand a case happens to fill.
+  exception — including the leeg count, which returns the datetime with its
+  clock time, as it returns the date. Worked examples (day kind = 25/26
+  December; each a `ref/` test verbatim): 2024-12-20T09:15:30 + 2 →
+  **2024-12-26T09:15:30**; 2024-12-25T23:59:59 + 1 → **2024-12-26T23:59:59**
+  (the start is of the kind and still does not count, and 23:59:59 is kept
+  across the day step); 2024-12-26T09:15:30 − 1 → **2024-12-25T09:15:30**;
+  2024-12-20T09:15:30 + 0 → **unchanged**; + leeg → **unchanged**; leeg + 2 →
+  **leeg**. Golden `jutterswet-getijklok` carries the step, the clock time
+  kept.
+- **`tijdsduur van A tot B in hele <dagsoort>` over two datum-tijden has no
+  meaning here** (ch. 3.12): counting whole days of a kind between two
+  instants needs a rule for the part of a day at each end, and this chapter
+  fixes none. An executor refuses it by name, and the **precision test runs
+  before the empty rules** — a leeg operand gets the refusal that names the
+  form, not the leeg rule of a form without a meaning, so the same document
+  cannot answer leeg or fault depending on which operand a case fills.
 
-**Executed (2026-09-19, ref and clingo; the Drools backend plays the same
-values).** Golden `jutterswet-bergingsklok` closes the square on
-hand-computed day-precision values — the step forward and backward, the
-zero and leeg counts, the signed and absolute counts — and golden
-`jutterswet-getijklok` closes it on the datum-tijd step, clock-time
-preservation and all. The three red cases pin the three refusals
-(`day-kind-unsatisfiable-walk`, `context-value-de-dag-outside-day-kind`,
-`day-kind-reference-other-day`).
+**Date ± whole calendar units** clamps to the month end: date + n maanden
+advances the proleptic month (12·year + month − 1) by n and clamps the day to
+the target month's length — 2024-01-31 + 1 maand = **2024-02-29** (leap),
+2025-01-31 + 1 maand = **2025-02-28**; a quarter is three months, a year
+twelve (so a leap birthday clamps the same way); a day or week count is linear
+(+n / +7·n epoch days). A fractional count truncates toward zero. (Empty rules:
+ch. 1.2 — a leeg date propagates, a leeg duration counts as 0.)
 
-**How the ASP backend answers without walking.** A 40 000-day reach makes
-a ground per-day walk impossible, so the backend does not build one: it
-uses the same purity clause this section opens with. `P_k` is a function
-of the day, of literals and of parameters, and the ASP translation is per
-case, so the backend EVALUATES the predicate at translation time over a
-window and ships the day kind's **extension** — its matching days, each
-with its rank. The count is then one aggregate over that table, and the
-step is a rank lookup, because "the Nth day of the kind after A" IS "the
-day whose rank is rank(A) + N"; the reach fence is read off the same
-table. One limit is the backend's own and loud, the S6a pattern: the
-window covers the case's dates extended by the reach on both sides, and a
-query that leaves it is refused there where ref computes it — never
-answered from a table that does not reach.
-
-**Date ± whole calendar units** clamps to the month end: date + n
-maanden advances the proleptic month (12·year + month − 1) by n and
-clamps the day to the target month's length — 2024-01-31 + 1 maand =
-**2024-02-29** (leap), 2025-01-31 + 1 maand = **2025-02-28**; a quarter
-is three months, a year twelve (so a leap birthday clamps the same
-way); a day or week count is linear (+n / +7·n epoch days). A
-fractional count truncates toward zero. (Empty rules: ch. 1.2 — a leeg
-date propagates, a leeg duration counts as 0.)
-
-**The datum-tijd millisecond layer.** A millisecond-precision date is
-its millisecond count since 1970-01-01T00:00:00 in the same zoneless
-civil time — no time zones, no DST, no leap seconds, so every civil
-day is exactly 86 400 000 ms. Its civil day and its time-of-day split
-by floor division: the time-of-day is always 0 ≤ msod < 86 400 000,
-also left of the epoch. Datetime ± duration follows the date rules
-above, refined per unit family:
+**The datum-tijd millisecond layer.** A millisecond-precision date is its
+millisecond count since 1970-01-01T00:00:00 in the same zoneless civil time —
+no time zones, no DST, no leap seconds, so every civil day is exactly
+86 400 000 ms. Its civil day and its time of day split by floor division: the
+time of day is always 0 ≤ msod < 86 400 000, also left of the epoch. Datetime ±
+duration follows the date rules above, per unit family:
 
 - **Sub-day units are linear on the ms value**: datetime ± n
-  uur/minuut/seconde/milliseconde moves n·3 600 000 / n·60 000 /
-  n·1 000 / n·1 ms, rolling freely across day boundaries.
-- **Calendar units act on the civil day part, preserving the
-  time-of-day**: datetime ± n dagen/weken/maanden/kwartalen/jaren
-  steps the day part exactly as a day-precision date (linear days and
-  weeks; the month-end clamp) and reattaches the time-of-day
-  unchanged.
+  uur/minuut/seconde/milliseconde moves n·3 600 000 / n·60 000 / n·1 000 /
+  n·1 ms, across day boundaries freely.
+- **Calendar units act on the civil day part, keeping the time of day**:
+  datetime ± n dagen/weken/maanden/kwartalen/jaren steps the day part exactly
+  as a day-precision date (linear days and weeks; the month-end clamp) and
+  attaches the time of day again unchanged.
 
-tijdsduur van A tot B over two datetimes (one precision, WF-038)
-counts whole units:
+tijdsduur van A tot B over two datetimes (one precision, WF-038) counts whole
+units:
 
-- in a **sub-day unit**: the ms difference quot the unit's ms size —
-  linear, signed, truncating toward zero;
-- in a **day-based unit**: the **borrow rule**, the classic
-  silent-error corner: when B's civil day lies ahead of A's but B's
-  time-of-day lies *strictly* before A's, the last day is not yet
+- in a **sub-day unit**: the ms difference quot the unit's ms size — linear,
+  signed, truncating toward zero;
+- in a **day-based unit**: the **borrow rule**: when B's civil day lies ahead
+  of A's but B's time of day lies *strictly* before A's, the last day is not
   complete — one day is borrowed back off B's day part before the
-  day-precision whole-unit count above (epoch days, packed months,
-  quot); mirrored on the negative side (B's day behind A's, B's
-  time-of-day strictly after A's: one day forward). Equal
-  times-of-day borrow nothing.
+  day-precision whole-unit count above (epoch days, packed months, quot);
+  mirrored on the negative side (B's day behind A's, B's time of day strictly
+  after A's: one day forward). Equal times of day borrow nothing.
 
-Empty rules are ch. 1.2 unchanged: a leeg datetime propagates; a leeg
-duration counts as 0 (the datetime unchanged); a leeg tijdsduur
-operand propagates, never 0. A fractional duration count truncates
-toward zero before the step, as at day precision. A step that leaves
-the representable millisecond range is a fault, never a silent
-wrap-around (the range and the order of the checks below). Worked
-examples (absolute, pinned; each becomes a `ref/` test verbatim):
+Empty rules are those of ch. 1.2: a leeg datetime propagates; a leeg duration
+counts as 0 (the datetime unchanged); a leeg tijdsduur operand propagates,
+never 0. A fractional duration count truncates toward zero before the step, as
+at day precision. A step that leaves the representable millisecond range is a
+fault, never a silent wrap-around (the range and the order of the checks
+below). Worked examples (absolute, pinned; each a `ref/` test verbatim):
 
 - **Sub-day linearity:** 2024-02-28T23:30:00 + 26 uur =
-  **2024-03-01T01:30:00** (across the leap day); 2024-03-01T00:15:00
-  − 30 minuten = **2024-02-29T23:45:00**; 2024-01-01T00:00:00 +
-  1500 milliseconden = **2024-01-01T00:00:01.500**.
-- **Time-of-day preservation with the clamp:** 2024-01-31T09:30:00 +
-  1 maand = **2024-02-29T09:30:00**; 2024-02-28T23:30:00 + 1 maand =
+  **2024-03-01T01:30:00** (across the leap day); 2024-03-01T00:15:00 −
+  30 minuten = **2024-02-29T23:45:00**; 2024-01-01T00:00:00 + 1500
+  milliseconden = **2024-01-01T00:00:01.500**.
+- **The time of day kept with the clamp:** 2024-01-31T09:30:00 + 1 maand =
+  **2024-02-29T09:30:00**; 2024-02-28T23:30:00 + 1 maand =
   **2024-03-28T23:30:00**, and + 2 weken = **2024-03-13T23:30:00**.
 - **The borrow corner:** tijdsduur van 2024-02-28T23:30:00 tot
-  2024-03-01T10:15:00 in hele uren = **34** (48 h − 13 h 15 min =
-  34 h 45 min, whole 34); in hele dagen = **1**, not 2 — B's 10:15
-  lies before A's 23:30, so the second day is incomplete. Counting
-  the bare day parts would read 2: the silent error the borrow rule
-  pins.
-- **Borrow across a month count:** tijdsduur van 2024-01-31T10:00:00
-  tot 2024-03-31T09:59:00 in hele maanden = **1** (the borrow steps B
-  back to 2024-03-30; packed difference 63, quot 32 = 1); one minute
-  later, tot 2024-03-31T10:00:00, = **2** (equal times-of-day, no
-  borrow; packed difference 64).
+  2024-03-01T10:15:00 in hele uren = **34** (48 h − 13 h 15 min = 34 h 45 min,
+  whole 34); in hele dagen = **1**, not 2 — B's 10:15 lies before A's 23:30, so
+  the second day is incomplete. Counting the bare day parts would read 2: the
+  silent error the borrow rule pins.
+- **Borrow across a month count:** tijdsduur van 2024-01-31T10:00:00 tot
+  2024-03-31T09:59:00 in hele maanden = **1** (the borrow steps B back to
+  2024-03-30; packed difference 63, quot 32 = 1); one minute later, tot
+  2024-03-31T10:00:00, = **2** (equal times of day, no borrow; packed
+  difference 64).
 - **A negative span:** tijdsduur van 2024-03-01T10:15:00 tot
-  2024-02-28T23:30:00 in hele uren = **−34**; in hele dagen = **−1**
-  (the mirrored borrow); the absolute variant reads 34 and 1.
-- **Empty rules:** leeg + 26 uur = leeg; 2024-02-28T23:30:00 + leeg
-  uur = 2024-02-28T23:30:00; tijdsduur van leeg tot
-  2024-03-01T10:15:00 in hele uren = leeg.
-- **Out of range:** 2024-01-01T00:00:00 ± 2 000 000 000 000 uur =
-  **fault**, and + 60 000 000 000 dagen = **fault** — the step leaves
-  the ms range; a wrap-around never masquerades as a datetime.
+  2024-02-28T23:30:00 in hele uren = **−34**; in hele dagen = **−1** (the
+  mirrored borrow); the absolute variant reads 34 and 1.
+- **Empty rules:** leeg + 26 uur = leeg; 2024-02-28T23:30:00 + leeg uur =
+  2024-02-28T23:30:00; tijdsduur van leeg tot 2024-03-01T10:15:00 in hele uren
+  = leeg.
+- **Out of range:** 2024-01-01T00:00:00 ± 2 000 000 000 000 uur = **fault**,
+  and + 60 000 000 000 dagen = **fault** — the step leaves the ms range; a
+  wrap-around never stands in for a datetime.
 
-**The representable millisecond range (normative; 2026-10-09, card
-`drools-datumstap-buiten-bereik`).** A datum-tijd value is a whole
-number of milliseconds since 1970-01-01T00:00:00 in the closed interval
+Golden `jutterswet-getijdenpaar` carries the borrow corner.
+
+**The representable millisecond range (normative).** A datum-tijd value is a
+whole number of milliseconds since 1970-01-01T00:00:00 in the closed interval
 [−2⁶², 2⁶² − 1], that is −4 611 686 018 427 387 904 to
 4 611 686 018 427 387 903 ms: from −146136543-09-08T08:23:32.096 to
-146140482-04-24T15:36:27.903 in the proleptic Gregorian calendar, about
-146 million years either side of the epoch. The bound belongs to the
-language, not to an engine: an executor with wider integers still
-faults outside it, and one with narrower integers refuses loudly where
-it cannot follow (the ASP backend refuses a count beyond its 32-bit
-integers at translation, `spec/ASP-TRANSLATION.md` S6a). A datum-tijd
-step is checked before it is taken and faults, never wraps around, when
-the duration's whole count (after truncation toward zero) lies outside
-the interval; in a sub-day unit, when the step itself (the count times
-the unit's length in milliseconds) or the instant it reaches lies
-outside it; in a calendar unit, when the instant it reaches lies above
-the interval or the midnight of the civil day it lands on lies below
-it. A date construction faults the same way when the instant its parts
-name lies outside the interval ("Date construction" below). Until
-2026-10-09 this chapter gave no number and said that v0's
-`LocalDateTime.plus` raises `DateTimeException` past the range; it does
-not, since `java.time` reaches years ±999 999 999.
+146140482-04-24T15:36:27.903 in the proleptic Gregorian calendar, about 146
+million years either side of the epoch. The bound belongs to the language,
+not to an engine: an executor with wider integers still faults outside it, and
+one with narrower integers refuses by name where it cannot follow. A datum-tijd
+step is checked before it is taken and faults (EF-007), never wraps around,
+when the duration's whole count (after truncation toward zero) lies outside
+the interval; in a sub-day unit, when the step itself (the count times the
+unit's length in milliseconds) or the instant it reaches lies outside it; in a
+calendar unit, when the instant it reaches lies above the interval or the
+midnight of the civil day it lands on lies below it. A date construction faults
+the same way when the instant its parts name lies outside the interval ("Date
+construction" below).
 
 Worked example (absolute; `ref/` tests `WV-3.8-dt-bereik-grens`,
 `WV-3.8-dt-bereik-grens-plus-een` and `WV-3.8-dt-bereik-telling`):
-2024-01-01T00:00:00 + 1 281 023 420 655 uur =
-**146140482-04-24T15:00:00**, and one hour more = **fault**; the same
-instant + 18 446 744 073 709 551 617 dagen (2⁶⁴ + 1) = **fault**: the
-count itself is out of range and never wraps to 1.
-
-**Executed in both executors (ref 2026-08-25, WF-035/WF-038; ASP
-2026-08-28):** the datum-tijd layer runs in `ref/`, pinned by the
-worked examples above as unit tests, and in the ASP backend through
-the pair-term encoding `dt(civil day, ms-of-day)` — a datetime's ms
-value never enters clingo's integer range whole
-(`spec/ASP-TRANSLATION.md` S6a; the 2026-08-25 embargo is lifted, its
-record kept in S19). Corpus golden `jutterswet-getijdenpaar` replays
-through both. One loud asymmetry stands, documented in S6a: a sub-day
-span beyond the int31 fence (~23 civil days in uren-counts) faults in
-clingo where ref computes it — fail-fast, a corpus constraint, never
-a silent divergence.
+2024-01-01T00:00:00 + 1 281 023 420 655 uur = **146140482-04-24T15:00:00**,
+and one hour more = **fault**; the same instant + 18 446 744 073 709 551 617
+dagen (2⁶⁴ + 1) = **fault**: the count itself is out of range and never wraps
+to 1.
 
 **Date-part extraction and the Easter builtin.** Year, month and day
-extraction ("het jaar / de maand / de dag uit") read the **civil
-components of the proleptic Gregorian calendar in zoneless civil
-time** — the same (y, m, d) triple the whole-unit definition above is
-built on; no time zones, no DST — from a day-precision date, each as a
-**unitless whole number**: the year as written, the month **1..12**,
-the day of month 1..the month's length. A leeg date propagates
-(ch. 1.2b: jaar/maand/dag uit leeg = leeg). "De eerste paasdag van" a
-**whole, unitless** year (WF-038) is Easter Sunday of that year per
-the Gauss/Anonymous algorithm, normative verbatim (`quot` and `mod`
-are integer division truncating toward zero and its remainder, as in
-the packed-month rule above):
+extraction ("het jaar / de maand / de dag uit") read the **civil components
+of the proleptic Gregorian calendar in zoneless civil time** — the same
+(y, m, d) triple the whole-unit definition above is built on — from a
+day-precision date, each as a **unitless whole number**: the year as written,
+the month **1..12**, the day of month 1..the month's length. A leeg date
+propagates (ch. 1.2: jaar/maand/dag uit leeg = leeg). "De eerste paasdag van"
+a **whole, unitless** year (WF-038) is Easter Sunday of that year by the
+Gauss/Anonymous algorithm, normative verbatim (`quot` and `mod` are integer
+division truncating toward zero and its remainder, as in the packed-month rule
+above):
 
 ```
 a = j mod 19,   b = j quot 100,  c = j mod 100
@@ -3092,190 +2865,180 @@ maand = (h + l − 7·m + 114) quot 31
 dag   = ((h + l − 7·m + 114) mod 31) + 1
 ```
 
-The result is the day-precision civil date (j, maand, dag). A leeg
-year propagates; a non-whole or unit-carrying year value is a fault,
-and so is a whole year outside the executor's machine-integer range —
-never a silent truncation to whole, never a silent wrap-around (one
-tracked delta, both cells: v0 narrows the year to a machine int
-silently; the verifier makes the non-whole/unit-carrying static shape
-ill-formed, while the out-of-range fault is runtime-only — no static
-check can bound a computed year). Worked examples (absolute, pinned; each
-becomes a `ref/` test verbatim): jaar uit 2026-11-03 = **2026**; maand
-uit 2026-11-03 = **11**; dag uit 2026-11-03 = **3**; eerste paasdag
-van 2024 = **2024-03-31**, van 2026 = **2026-04-05**, van 2027 =
-**2027-03-28**, van 2038 = **2038-04-25**. **Executed (2026-08-25,
-both executors; WF-038):** the day-precision extractors and the Easter
-builtin run in ref and clingo — golden `jutterswet-paasvondst`
-(a maand-uit disjunction, an eerste-paasdag∘jaar-uit date equality, a
-jaar-uit/dag-uit Gelijkstelling pair, the leeg corner) carries the
-class differentially. Datum-tijd operands and the sub-day extractors
-stay unexecuted, loud.
+The result is the day-precision civil date (j, maand, dag). A leeg year
+propagates; a non-whole or unit-carrying year value is a fault, and so is a
+whole year outside the executor's machine-integer range — never a silent
+truncation to whole, never a silent wrap-around. *v0 mirror note:* v0 narrows
+the year to a machine int silently; the verifier makes the non-whole or
+unit-carrying static shape ill-formed, and the fault out of range is a runtime
+fault only, since no static check can bound a computed year (a tracked delta).
+Worked examples (absolute, pinned; each a `ref/` test verbatim): jaar uit
+2026-11-03 = **2026**; maand uit 2026-11-03 = **11**; dag uit 2026-11-03 =
+**3**; eerste paasdag van 2024 = **2024-03-31**, van 2026 = **2026-04-05**, van
+2027 = **2027-03-28**, van 2038 = **2038-04-25**. Golden `jutterswet-paasvondst`
+carries the class: a maand-uit disjunction, an eerste-paasdag∘jaar-uit date
+equality, a jaar-uit/dag-uit Gelijkstelling pair, and the leeg corner.
+Datum-tijd operands of the extractors and the sub-day extractors are not
+defined.
 
-**Date construction (proposal 2026-10-22, card
-`date-with-in-ref-and-clingo`; the rule for parts that name no day is a
-provisional decision of that card's builder).** "De datum met jaar: …,
-maand: … en dag: …" (`dateWith`) takes three parts, year, month and day,
-in that order; "de datumtijd met jaar: …, maand: …, dag: …, uur: …,
-minuut: …, seconde: … en milliseconde: …" (`dateTimeWith`) takes seven,
-the hour, minute, second and millisecond after them. Every part is
-evaluated, in argument order (ch. 5.11), before a leeg part makes the
-result **leeg** (ch. 1.2). Each part is a **whole, unitless** number: a
-non-whole or unit-carrying part is a fault, never a truncation, as for the
-Easter year. The result is the civil date (year, month, day) of the
-proleptic Gregorian calendar in zoneless civil time — the triple the part
-extractors above read — when the parts name one: the month 1..12 and the
-day 1..the month's length (28, 29 in a leap year, 30 or 31); for
-`dateTimeWith` also the hour 0..23, the minute 0..59, the second 0..59 (no
-leap second) and the millisecond 0..999, and the instant, that day's
-midnight plus the clock time, lies in the representable millisecond range
-above. **Parts that name no calendar day or no clock time are a fault**:
-never a roll-over into the next month (31 April is not 1 May), never a
-clamp to the month's end (31 April is not 30 April either — the month-end
-clamp belongs to date ± duration, a step, not to the construction), and
-never leeg. A whole year outside the executor's machine-integer range is a
-fault, never a wrap-around, as for the Easter year. Parts that name no
-day or no clock time are the fault kind EF-032, with the parts as its
-parameters; an instant outside the representable millisecond range is the
-range's own kind, EF-007 (ch. 5.7b). Worked examples (absolute,
-pinned; each a `ref/` test verbatim): datum met jaar 2026, maand 3, dag 1
-= **2026-03-01**; 2024, 2, 29 = **2024-02-29**; 2000, 2, 29 =
-**2000-02-29**; 2026, 2, 29 = **fault** (2026 is no leap year); 1900, 2,
-29 = **fault** (1900 is divisible by 100 and not by 400); 2026, 4, 31 =
-**fault**; 2026, 13, 1 = **fault**; 2026, 0, 1 = **fault**; 2026, 3, 0 =
-**fault**; maand 2,5 = **fault**; jaar 2026 jr = **fault**; jaar leeg =
-**leeg**; 2026, 13, leeg = **leeg** (the leeg test comes before the
-calendar); datumtijd met 2026, 3, 1, 6, 30, 0, 0 =
+**Date construction.** "De datum met jaar: …, maand: … en dag: …" (`dateWith`)
+takes three parts, year, month and day, in that order; "de datumtijd met jaar:
+…, maand: …, dag: …, uur: …, minuut: …, seconde: … en milliseconde: …"
+(`dateTimeWith`) takes seven, the hour, minute, second and millisecond after
+them. Every part is evaluated, in argument order (ch. 5.11), before a leeg part
+makes the result **leeg** (ch. 1.2). Each part is a **whole, unitless** number:
+a non-whole or unit-carrying part is a fault, never a truncation, as for the
+Easter year. The result is the civil date (year, month, day) of the proleptic
+Gregorian calendar in zoneless civil time — the triple the part extractors
+above read — when the parts name one: the month 1..12 and the day 1..the
+month's length (28, 29 in a leap year, 30 or 31); for `dateTimeWith` also the
+hour 0..23, the minute 0..59, the second 0..59 (no leap second) and the
+millisecond 0..999, and the instant, that day's midnight plus the clock time,
+lies in the representable millisecond range above. **Parts that name no
+calendar day or no clock time are a fault**: never a roll-over into the next
+month (31 April is not 1 May), never a clamp to the month's end (31 April is
+not 30 April either — the month-end clamp belongs to date ± duration, a step,
+not to the construction), and never leeg. A whole year outside the executor's
+machine-integer range is a fault, never a wrap-around, as for the Easter year.
+Parts that name no day or no clock time are the fault kind EF-032, with the
+parts as its parameters; an instant outside the representable millisecond
+range is the range's own kind, EF-007 (ch. 5.7b). The rule for parts that name
+no day is a provisional decision. Worked examples (absolute, pinned; each a
+`ref/` test verbatim): datum met jaar 2026, maand 3, dag 1 = **2026-03-01**;
+2024, 2, 29 = **2024-02-29**; 2000, 2, 29 = **2000-02-29**; 2026, 2, 29 =
+**fault** (2026 is no leap year); 1900, 2, 29 = **fault** (1900 is divisible
+by 100 and not by 400); 2026, 4, 31 = **fault**; 2026, 13, 1 = **fault**;
+2026, 0, 1 = **fault**; 2026, 3, 0 = **fault**; maand 2,5 = **fault**; jaar
+2026 jr = **fault**; jaar leeg = **leeg**; 2026, 13, leeg = **leeg** (the leeg
+test comes before the calendar); datumtijd met 2026, 3, 1, 6, 30, 0, 0 =
 **2026-03-01T06:30:00**; 2026, 12, 31, 23, 59, 59, 999 =
 **2026-12-31T23:59:59.999**; uur 24, seconde 60 or milliseconde 1000 =
 **fault**; jaar 146140482, maand 1, dag 1, 0:00 = **146140482-01-01T00:00:00**
-and jaar 200000000 = **fault** (EF-007); the two ends of the range to
-the millisecond, 146140482-04-24T15:36:27.903 and
-−146136543-09-08T08:23:32.096, are instants, and one millisecond past
-either is **fault** (EF-007). **Executed (2026-10-22, all three
-executors):** golden `date-with-parts` (the witness 15-03-2026 →
-01-03-2026, a datum-tijd, two leap years and the leeg corner), red cases
-`date-with-no-calendar-day` (EF-032) and `date-time-with-outside-range`
-(EF-007). The ASP backend carries years 1 to 5 000 000 and refuses the
-rest loudly with its own code, CLINGO-029 (`spec/ASP-TRANSLATION.md` S6a),
-so it refuses every instant outside the millisecond range before the range
-is reached; gate 8 lists it there. Until 2026-10-22 the Drools backend
-faulted on these parts without a code and answered a datum-tijd beyond the
-range (jaar 200000000 → +200000000-03-01T00:00).
+and jaar 200000000 = **fault** (EF-007); the two ends of the range to the
+millisecond, 146140482-04-24T15:36:27.903 and −146136543-09-08T08:23:32.096,
+are instants, and one millisecond past either is **fault** (EF-007). Golden
+`date-with-parts` (the witness 15-03-2026 → 01-03-2026, a datum-tijd, two leap
+years and the leeg corner), red cases `date-with-no-calendar-day` (EF-032) and
+`date-time-with-outside-range` (EF-007).
 
 ### 3.9 The whole-period qualifier (§8.2)
 
-"gedurende de gehele maand / het gehele jaar" turns a per-instant
-condition into a per-bucket one. In a condition of a rule with a timeline
-target it is a truth per bucket (below, "Per bucket on a timeline
-target"); everywhere else it folds to a single boolean:
+"gedurende de gehele maand / het gehele jaar" turns a condition per day into
+a condition per bucket: a bucket satisfies it when the condition holds on
+every day of the bucket. The qualifier has two readings, and the target of the
+rule decides between them. In the condition of a rule with a timeline target,
+which is read per period (ch. 3.10), it is a truth **per bucket** (below,
+"Per bucket on a timeline target"). Everywhere else it **folds** to one
+boolean:
 
 ```
 geheel(tl, grid, toets) = for EVERY bucket B touched by tl:
                             satisfied-days(B, toets) ≥ days(B)
 ```
 
-- A value test (ordering, equality, filled, characteristic-holds) demands
-  satisfaction on **every day of each touched bucket** — "at every moment
-  of the whole period" is literal. A gap day and a day under an explicit
-  leeg segment read leeg (ch. 3.1): such a day fails an ordering, the
-  gevuld test and the characteristic-holds test, so a partial-coverage
-  bucket fails those, while a comparison reads it with ch. 1.2 (the leeg
-  day in a comparison, below).
-- The **leeg test** is the one test a leeg day satisfies: a gap day and
-  a day under an explicit leeg segment both read leeg (ch. 3.1), so a
-  timeline leeg throughout its touched buckets passes. Its threshold is
-  days(B), as for every other test (decided 2026-09-26; the leeg and
-  gevuld tests below). Until that date this bullet gave the leeg test a
-  threshold of its own, the touched days of B. Because a gap day
-  satisfies the leeg test, demanding every day of B demands exactly the
-  days a segment covers, so the two formulations give the same verdict on
-  every timeline.
-- A timeline with **no segments at all touches no bucket and passes
-  vacuously** (the qualifier's negation then fails). A leeg comparison
-  bound is a leeg side of the comparison on every day, read with ch. 1.2
-  as a leeg day is (below), never a fault. Negation complements the
-  folded result.
-- A failed **to-one** navigation contributes a null timeline, which passes
-  vacuously (the ch. 1.2 leeg-navigation discipline, lifted).
-- Over a **to-many** range the fold is conjunctive — every member's
-  timeline must pass — and an **empty set passes vacuously**. *(Re-scoped
-  2026-09-16.)* That reading is right and it is **not** an implicit
-  reading of a set-valued operand: the wire shape it used to describe —
-  an `AttributeReference` with `set: true` standing in a condition — was
-  ill-formed under WF-096 until L2 and cannot be written since (the flag
-  left the wire with B11, and a to-many hop in a condition is WF-053's),
-  and it could not distinguish "alle" from "geen van de" even where it
-  was written, since the set flag recorded that a quantifier was written
-  and never which one. The conjunctive lift is
-  therefore stated where the quantifier is: **ch. 3.9a**, the quantifier
-  fold, whose matrix is this qualifier applied per member. Counted when
-  the clause was re-scoped: **zero** documents in the four zones carried
-  the shape it described, so the bullet had never had a witness.
-- The **grid is the qualifier's own** — "de gehele maand" or "het gehele
-  jaar" — never the tested member's declared granularity. The two are
-  independent: a month-granular characteristic tested "gedurende het
-  gehele jaar" folds over year buckets, and its true-periods stay
-  day-precise either way (ch. 3.1; the pro-rata's whole point, ch. 3.7).
-- Date-valued whole-period comparisons (eerder/later over a date
-  timeline) are refused in v0 — recorded, not specified (ch. 3.12).
+**The test per day.** `satisfied-days(B, toets)` is the number of days of B on
+which the test holds, the test read per day by ch. 1.2. A day on which the
+tested timeline reads leeg — a gap day, or a day under an explicit leeg
+segment (ch. 3.1) — has a leeg side, and so has every day where the bound of a
+comparison is leeg; a leeg bound is never a fault (§8.2 with typ. §5.3 and
+§5.6):
 
-**This qualifier is not a scalar context, and ch. 3.3's refusal does not
-reach it** (clarified 2026-09-11). ch. 3.3 refuses a time-dependent
-member "in a scalar context" and names its two exits in the same
-sentence: "the only ways a timeline becomes a scalar are the dedicated
-collapses: the temporal total (ch. 3.6) and the whole-period predicate
-(ch. 3.9)". ch. 8.2 states it as the indexing rule ("the only bridges
-from a timeline to a scalar are the dedicated collapses") and ch. 3.11 as
-the write boundary ("a temporal value in a scalar slot is refused
-**except** through the specified collapses"). A condition carrying the
-qualifier **is** the second collapse; refusing it as scalar refuses the
-exit for being the door. The reading is normative for every executor: a
-qualified condition is answered by the fold above, and dropping the
-qualifier to answer the unqualified condition instead is a defect, not an
-executor's choice of scope.
+- an **ordering** (`<`, `≤`, `>`, `≥`, eerder, later) is onwaar on a leeg
+  side; "gelijk aan" between numbers holds on two leeg sides and is onwaar on
+  one; "ongelijk aan" holds on exactly one; a date takes the date row of
+  ch. 1.2, where two leeg dates are not equal;
+- the **gevuld** test holds on the days the timeline reads a value, the
+  **leeg** test on the days it reads leeg;
+- the **characteristic-holds** test holds on the days of the characteristic's
+  true periods;
+- the **inner negation** (`negated`) is per day, as everywhere (ch. 1.2): it
+  complements the satisfied days and leaves the touched buckets as they are.
+  Under the qualifier the negated leeg test is therefore the gevuld test and
+  the negated gevuld test is the leeg test: the same touched buckets, the same
+  threshold, the complementary days.
 
-Two consequences follow for the **characteristic-holds** test, and both
-were executor gaps until 2026-09-11:
+The threshold is days(B), the bucket's calendar length, for every test.
+Where the temporal side of a comparison stands on the right ("40 is kleiner
+dan zijn dagvergoeding gedurende het gehele jaar") the operator is
+**reversed**, never negated. On totally ordered filled values the two
+coincide; on a leeg operand they do not, because ch. 1.2 makes both orderings
+false there, so a reader that negated instead of reversing would turn every
+leeg day into a satisfying one.
 
-- The characteristic's truth is its true-period timeline (the ch. 8.2
-  apartness: a time-dependent characteristic is delivered as periods and
-  nothing else), so the fold reads that timeline. A characteristic with
-  no periods at all is the "no segments" case above and passes
-  vacuously — it is not the same thing as the characteristic being false.
-- Under the qualifier a failed to-one navigation passes vacuously, as the
-  fourth bullet says. This **diverges deliberately** from the unqualified
-  navigated characteristic check, whose mirrored v0 asymmetry answers
-  false for the positive and the negated form alike (ch. 5.8): there the
-  absent link decides the check, here the qualifier lifts it to the
-  ch. 1.2 leeg-navigation discipline. An executor that answers the
-  unqualified asymmetry under a qualifier answers the opposite of this
-  clause.
+**The buckets.** The grid is the **qualifier's own** — "de gehele maand" or
+"het gehele jaar" — never the tested member's declared granularity: a
+characteristic per month tested "gedurende het gehele jaar" folds over year
+buckets, and its true periods stay precise to the day either way (ch. 3.1).
+A bucket is **touched** when the tested timeline reads a value — for a
+characteristic, holds — on at least one of its days. The touched buckets are
+the timeline's, not those of the satisfying days: a value of 30 across the
+whole of 2026, tested `> 40`, has no satisfying day, and a fold that took its
+buckets from the satisfying days would touch no bucket and pass — the opposite
+of the answer. An explicit leeg segment reads as a gap for every test, the
+comparisons included: it touches no bucket, and its days read leeg as gap days
+do; whether a producer writes such a segment is representation (ch. 3.1), and
+a case input carries none.
 
-Worked examples (absolute; value timeline per year, tested ≥ 10):
-value 12 on the whole of 2024 → all 366 days of the touched bucket
-satisfy → **waar**. Value 12 on [2024-01-01, 2024-07-01) only → the 2024
-bucket is touched for 182 days but has 366 → **onwaar** (a July moment
-carries no value); the negated form → waar. Same half-year timeline
-under the **leeg** test → every day of the touched bucket must read leeg,
-but 182 of them carry 12 → **onwaar**.
+**The fold** (a scalar target, and every position other than the condition of
+a rule with a timeline target):
 
-**Where the buckets come from, on a VALUE timeline** (stated apart
-because it is the one place the formula can be implemented backwards and
-still look right). The touched buckets are the ones the **value**
-timeline touches — not the ones the satisfying days touch. On a
-characteristic the two coincide, because a characteristic's timeline IS
-its true-periods, which is why the distinction never had to be drawn
-before the value test was built. On a value timeline they come apart at
-exactly the case that matters: a value of 30 across the whole of 2026,
-tested `> 40`, has **no** satisfying day, so a fold that took its buckets
-from the satisfying days would touch no bucket and pass vacuously — the
-opposite of the answer. The buckets are the timeline's; the satisfied
-days are the predicate's; the threshold is the bucket's calendar length.
+- A timeline that reads a value on no day — no segments at all, an absent
+  member, a characteristic without true periods — **touches no bucket and
+  passes every test vacuously**, and the qualifier's negation fails on it. A
+  characteristic with no periods at all passes; that is not the same thing as
+  the characteristic being false.
+- A failed **to-one** navigation contributes the null timeline, which passes
+  vacuously: the leeg-navigation discipline of ch. 1.2, lifted. This
+  **departs deliberately** from the unqualified navigated characteristic
+  check, whose mirrored v0 asymmetry answers false for the positive and the
+  negated form alike (ch. 5.8): there the absent link decides the check, here
+  the qualifier lifts it to the leeg-navigation discipline.
+- Over a **to-many** range the condition is a quantifier fold (ch. 3.9a),
+  whose matrix is this qualifier applied per member: conjunctive under `all`,
+  and an empty set passes.
+- The qualifier's negation (`WholePeriod.negated`, "niet gedurende …")
+  complements the folded result, for every test.
+- **The operands.** A comparison tests a time-dependent attribute of the
+  subject against a scalar bound, the temporal side on the left or on the
+  right (reversed, above). The operand of the leeg and the gevuld test is a
+  time-dependent attribute of the subject, one reached over to-one hops
+  (ch. 5.8), or a time-dependent parameter (WF-043). The characteristic-holds
+  test reads a characteristic of the subject or one reached over to-one hops
+  (the navigated worked examples below). A hop that reaches nothing
+  contributes the null timeline, which passes.
+- A comparison over a timeline reached over a path, between two timelines or
+  without a timeline, and a **date-valued** whole-period comparison
+  (eerder/later over a timeline of dates), have no reading here (ch. 3.12).
+- **Source.** RegelSpraak writes the leeg and the gevuld test under the
+  qualifier, with and without the qualifier's "niet". It has no spelling for
+  the inner negation of either test, so a document that carries
+  `negated: true` on them under the qualifier is written on the wire only,
+  and its reading is the one above.
+
+**This qualifier is not a scalar context, and the refusal of ch. 3.3 does not
+reach it.** Ch. 3.3 refuses a time-dependent member in a scalar context and
+names the exits in the same place: the temporal total (ch. 3.6) and this
+qualifier. Ch. 8.2 states it as the rule of indexing ("the only bridges from a
+timeline to a scalar are the dedicated collapses") and ch. 3.11 as the
+boundary of a write. A condition that carries the qualifier **is** the second
+collapse; refusing it as a scalar context would refuse the exit for being one.
+The reading is normative for every executor: a qualified condition is answered
+by the fold above, and dropping the qualifier to answer the unqualified
+condition instead is a defect, not a choice of scope. For the
+characteristic-holds test the fold reads the characteristic's true-period
+timeline, since a time-dependent characteristic is delivered as periods and
+nothing else (ch. 8.4).
+
+Worked examples (absolute; a value timeline per year, tested ≥ 10): value 12
+on the whole of 2024 → all 366 days of the touched bucket satisfy → **waar**.
+Value 12 on [2024-01-01, 2024-07-01) only → the 2024 bucket is touched for 182
+days but has 366 → **onwaar** (a July day carries no value); the negated form
+→ waar. The same half-year timeline under the **leeg** test → every day of the
+touched bucket must read leeg, but 182 of them carry 12 → **onwaar**.
 
 Worked examples — the **ordering** test over a value timeline (absolute;
-`ref/` tests and the ASP backend's suite verbatim; month-granular
-attribute `dagvergoeding`, qualifier "gedurende het gehele jaar",
-tested `> 40`):
+`ref/` tests verbatim; attribute `dagvergoeding` per month, qualifier
+"gedurende het gehele jaar", tested `> 40`):
 
 | # | value timeline | fold | verdict |
 |---|---|---|---|
@@ -3286,106 +3049,76 @@ tested `> 40`):
 | e | 40 on [2026-01-01, 2027-01-01) | strictly greater: 0 of 365 | **onwaar** |
 | f | as e, tested `≥ 40` | 365 of 365 | **waar** |
 
-Row e is the operator, not the fold: `>` is strict, and the clause says
-so here because the whole point of the whole-period reading is that it
-changes WHEN the test is asked, never WHAT it asks. The qualifier's own
-negation complements each verdict — a → onwaar, b → onwaar, d → **waar**
-— and under the **month** grid row d passes (January through June are
-each touched in full) while a value on [2026-01-15, 2026-03-01) fails it
-(January is touched for 17 of 31 days). A **leeg** segment inside the
-period gives days that read leeg, and no ordering holds on a leeg side:
-50 on the first half of 2026 and explicit leeg on the second reads
-**onwaar** under `> 40`, never a fault (ch. 1.2d — an ordering against
-leeg is false).
+Row e is the operator, not the fold: `>` is strict, and the whole-period
+reading changes *when* the test is asked, never *what* it asks. The
+qualifier's own negation complements each verdict — a → onwaar, b → onwaar,
+d → **waar** — and under the **month** grid row d passes (January through June
+are each touched in full) while a value on [2026-01-15, 2026-03-01) fails it
+(January is touched for 17 of 31 days). A **leeg** segment inside the period
+gives days that read leeg, and no ordering holds on a leeg side: 50 on the
+first half of 2026 and explicit leeg on the second reads **onwaar** under
+`> 40`, never a fault (ch. 1.2 — an ordering against leeg is false).
 
-An explicit leeg segment reads as a gap for every test, the comparisons
-included (ch. 3.1; decided 2026-09-26): it touches no bucket, and its
-days read leeg as gap days do, so a comparison holds on them exactly
-where it holds on a gap day (the next paragraph). Worked examples
-(absolute; `ref/` tests verbatim, tested under the year grid): 50 on
-2025, explicit leeg on 2026 and 50 on 2027 → `> 40` **waar** and `≠ 40`
-**waar**, for 2026 is not touched; 50 on the first half of 2026 and
-explicit leeg on the second → `≠ 40` **waar** (181 days 50 and 184 leeg
-days, 365 of 365) and `> 40` **onwaar** (181 of 365); explicit leeg on
-2026 alone → `> 40` **waar**, no bucket touched. Only the Drools backend
-writes such a segment to a member (the temporal sum of ch. 3.5); a case
-input cannot carry one.
+Worked examples of the explicit leeg segment (absolute; `ref/` tests
+verbatim, under the year grid): 50 on 2025, explicit leeg on 2026 and 50 on
+2027 → `> 40` **waar** and `≠ 40` **waar**, for 2026 is not touched; 50 on the
+first half of 2026 and explicit leeg on the second → `≠ 40` **waar** (181 days
+50 and 184 leeg days, 365 of 365) and `> 40` **onwaar** (181 of 365); explicit
+leeg on 2026 alone → `> 40` **waar**, no bucket touched.
 
-**A leeg day in a comparison** (decided by the owner 2026-11-03, point
-4b of `spec/proposals/IMPLICIT-TIME.md`; RegelSpraak §8.2 with typeringen
-§5.3 and §5.6). Each day of a touched bucket asks the comparison of
-ch. 1.2, and a day has a leeg side where the tested timeline reads leeg
-on it — a gap day or a day under an explicit leeg segment — and on every
-day where the bound is leeg. An ordering is onwaar on a leeg side;
-"gelijk aan" between numbers holds on two leeg sides and is onwaar on
-one; "ongelijk aan" holds on exactly one; a date takes the date row of
-ch. 1.2, where two leeg dates are not equal. satisfied-days(B, toets)
-counts a leeg day on which the comparison holds, as any other day. Every
-touched bucket holds a filled day, which no leeg bound equals, so
-"gelijk aan" against a leeg bound fails every touched bucket, and the
-date row and the numeric row give the same verdicts here. The clip of
-ch. 3.6 reads a leeg period of the same comparison in the same way, so
-"gedurende de tijd dat" and "gedurende het gehele" read a leeg day
-alike. The touched buckets do not change (they are the timeline's,
-above), nor do the leeg and gevuld tests.
-Worked examples (absolute; `ref/` tests and the ASP backend's suite
-verbatim, year grid; 2026 has 365 days): 50 on [2026-01-01, 2026-07-01)
-tested `≠ 40` → 181 days 50 and 184 gap days, 365 of 365 → **waar**, and
-under "niet gedurende …" **onwaar**; tested `≠ 50` → 184 of 365 →
-**onwaar**; tested `= 50` → 181 of 365 → **onwaar**. Against a leeg
-bound: 50 on the whole of 2026 → `≠` 365 of 365 **waar**, `=` 0 of 365
-**onwaar**; 50 on [2026-01-01, 2026-07-01) → `≠` 181 of 365 **onwaar**
-(a gap day and the bound are both leeg), `=` 184 of 365 **onwaar**.
-`corpus/golden/jutterswet-gehele-jaar-lege-grens` carries both bounds,
-both gaps and the qualifier's negation.
+Worked examples of the leeg day in a comparison (absolute; `ref/` tests
+verbatim, year grid; 2026 has 365 days): 50 on [2026-01-01, 2026-07-01) tested
+`≠ 40` → 181 days 50 and 184 gap days, 365 of 365 → **waar**, and under "niet
+gedurende …" **onwaar**; tested `≠ 50` → 184 of 365 → **onwaar**; tested
+`= 50` → 181 of 365 → **onwaar**. Against a leeg bound: 50 on the whole of
+2026 → `≠` 365 of 365 **waar**, `=` 0 of 365 **onwaar**; 50 on
+[2026-01-01, 2026-07-01) → `≠` 181 of 365 **onwaar** (a gap day and the bound
+are both leeg), `=` 184 of 365 **onwaar**. Every touched bucket holds a filled
+day, which no leeg bound equals, so "gelijk aan" against a leeg bound fails
+every touched bucket, and the date row and the numeric row give the same
+verdicts here. The clip of ch. 3.6 reads a leeg day of the same comparison in
+the same way, so "gedurende de tijd dat" and "gedurende het gehele" read a
+leeg day alike. `corpus/golden/jutterswet-gehele-jaar-lege-grens` carries both
+bounds, both gaps and the qualifier's negation.
 
 Worked example `WV-3.9-lege-dag` (absolute; the `ref/` tests
-`WV-3.9-lege-dag-*` verbatim). A month-granular attribute `peilstand`, a
-scalar `drempelstand`, "gedurende het gehele jaar" over 2024 (366 days):
+`WV-3.9-lege-dag-*` verbatim). An attribute `peilstand` per month, a scalar
+`drempelstand`, "gedurende het gehele jaar" over 2024 (366 days):
 
 | # | `peilstand` | `drempelstand` | "ongelijk aan" | "gelijk aan" |
 |---|---|---|---|---|
 | K1 | 7 on [2024-01-01, 2024-02-01) | 5 | **waar**: 31 days 7 ≠ 5 and 335 gap days leeg ≠ 5, 366 of 366 | onwaar: 0 of 366 |
 | K2 | 7 on [2024-01-01, 2025-01-01) | leeg | **waar**: 366 days 7 ≠ leeg | onwaar: 0 of 366 |
 
-When the temporal side stands on the RIGHT ("40 is kleiner dan zijn
-dagvergoeding gedurende het gehele jaar") the operator is **reversed**,
-never negated. On totally ordered filled values the two coincide; on a
-leeg operand they do not, because ch. 1.2d makes BOTH orderings false
-there, so a reader that negated instead of reversing would turn every
-leeg day into a satisfying one.
-
 Worked examples — the **characteristic-holds** test over a *navigated*
-characteristic (absolute; `ref/` tests and the ASP backend's suite
-verbatim). Document: a Schuit reaches one Werf over the to-one role
-`werf`; `bedrijvig` is a month-granular characteristic of Werf; the rule
-is *de toeslag van een Schuit is de lengte van de Schuit indien de werf
-van de Schuit gedurende het gehele jaar bedrijvig is*. Session:
-evaluation date 2026-03-15, S1.lengte 8.
+characteristic (absolute; `ref/` tests verbatim). Document: a Schuit reaches
+one Werf over the to-one role `werf`; `bedrijvig` is a characteristic of Werf
+per month; the rule is *de toeslag van een Schuit is de lengte van de Schuit
+indien de werf van de Schuit gedurende het gehele jaar bedrijvig is*.
+Session: evaluation date 2026-03-15, S1.lengte 8.
 
-| # | link | `bedrijvig` true-periods | fold | toeslag |
+| # | link | `bedrijvig` true periods | fold | toeslag |
 |---|---|---|---|---|
 | a | none written | — | null timeline, no bucket touched → **waar** | 8 |
 | b | W1 | none | no segments, no bucket touched → **waar** | 8 |
 | c | W1 | [2026-01-01, 2027-01-01) | bucket 2026: 365 of 365 → **waar** | 8 |
 | d | W1 | [2026-01-01, 2026-07-01) | bucket 2026: 181 of 365 → **onwaar** | leeg |
 
-The same document under the qualifier's own negation ("**niet** gedurende
-het gehele jaar bedrijvig") complements each verdict: a → onwaar, b →
-onwaar, c → onwaar, d → **waar** (8). Under the inner negation
-("gedurende het gehele jaar **niet** bedrijvig") the touched buckets are
-unchanged and the satisfying days are their complement: a → waar, b →
-waar, c → onwaar (bucket 2026 satisfies 0 of 365), d → onwaar (184 of
-365). Under the **month** grid ("gedurende de gehele maand bedrijvig")
-row d passes — January through June are each touched in full, 181 of 181
-days — while a true-period of [2026-01-15, 2026-03-01) fails it (January
-is touched for 17 of 31 days).
+The same document under the qualifier's own negation ("**niet** gedurende het
+gehele jaar bedrijvig") complements each verdict: a → onwaar, b → onwaar, c →
+onwaar, d → **waar** (8). Under the inner negation ("gedurende het gehele jaar
+**niet** bedrijvig") the touched buckets are unchanged and the satisfying days
+are their complement: a → waar, b → waar, c → onwaar (bucket 2026 satisfies 0
+of 365), d → onwaar (184 of 365). Under the **month** grid ("gedurende de
+gehele maand bedrijvig") row d passes — January through June are each touched
+in full, 181 of 181 days — while a true period of [2026-01-15, 2026-03-01)
+fails it (January is touched for 17 of 31 days).
 
-**The leeg and gevuld tests** (decided 2026-09-26; until then specified
-in part and executed by no executor). "De bemanning van de Schuit is
-gedurende het gehele jaar leeg" holds when the timeline reads leeg on
-every day of every bucket it touches; "… gevuld" holds when it reads a
-value on every such day. In the formula above:
+Worked examples — the **leeg** and **gevuld** tests ("De bemanning van de
+Schuit is gedurende het gehele jaar leeg / gevuld"; absolute; `ref/` tests
+verbatim, and the rows of `corpus/golden/jutterswet-gehele-periode-leeg`;
+attribute `bemanning` per month, qualifier "gedurende het gehele jaar"; 2025
+and 2026 have 365 days each). In the formula above:
 
 ```
 satisfied-days(B, gevuld) = the days of B on which tl reads a value
@@ -3393,47 +3126,11 @@ satisfied-days(B, leeg)   = the days of B on which tl reads leeg
                           = days(B) − satisfied-days(B, gevuld)
 ```
 
-- **Touched**, for these two tests, is read off `read` (ch. 3.1): a
-  bucket is touched when the timeline reads a value on at least one of
-  its days. An explicit leeg
-  segment reads as a gap and touches no bucket by itself; ch. 3.1 forbids
-  telling the two apart. Only the contributor-skipping rule of ch. 3.5
-  writes such a segment; a case input cannot carry one.
-- The **leeg test** therefore comes down to "the timeline reads a value
-  on no day at all": every day that reads a value lies in a bucket the
-  timeline touches, and that bucket then holds a day that is not leeg.
-  The grid does not change its verdict.
-- A timeline that reads a value on no day **touches no bucket** and
-  passes both tests, the gevuld test vacuously, as a timeline with no
-  segments passes every test (the third bullet above). An absent member
-  is "gedurende het gehele jaar leeg" and "gedurende het gehele jaar
-  gevuld" at once, and the qualifier's negation fails on it both ways.
-- The **inner negation** (`negated`) is per day, as everywhere (ch. 1.2):
-  "niet leeg" holds on the days the timeline reads a value, "niet gevuld"
-  on the days it reads leeg. Under the qualifier the negated leeg test is
-  therefore the gevuld test and the negated gevuld test is the leeg test:
-  the same touched buckets, the same threshold, the complementary days.
-  It has no threshold of its own. Until 2026-09-26, when the leeg test
-  still had one, which threshold the negated leeg test takes was an open
-  point (ch. 1.2).
-- The **qualifier's negation** (`WholePeriod.negated`, "niet gedurende
-  …") complements the folded result, as for every test.
-- The **operand** is a time-dependent attribute of the subject, or one
-  reached over to-one hops (ch. 5.8); a hop that reaches nothing
-  contributes the null timeline, which passes (the fourth bullet above).
-  A time-dependent **parameter** as the operand passes WF-043 and is
-  folded by no executor: all three refuse it by name, in one sentence
-  (ch. 3.12).
-- **Source.** RegelSpraak writes both tests under the qualifier, with and
-  without the qualifier's "niet". It has no spelling for the inner
-  negation of either test, so a document carrying `negated: true` on them
-  under the qualifier is written on the wire only, and its reading is
-  this paragraph's.
-
-Worked examples (absolute; `ref/` tests and the ASP backend's suite
-verbatim, and the rows of `corpus/golden/jutterswet-gehele-periode-leeg`;
-month-granular attribute `bemanning`, qualifier "gedurende het gehele
-jaar"; 2025 and 2026 have 365 days each):
+so the leeg test comes down to "the timeline reads a value on no day at all":
+every day that reads a value lies in a touched bucket, which then holds a day
+that is not leeg, and the grid does not change the verdict. An absent member
+is "gedurende het gehele jaar leeg" and "gedurende het gehele jaar gevuld" at
+once, and the qualifier's negation fails on it both ways.
 
 | # | `bemanning` timeline | leeg | gevuld | niet leeg | niet gevuld | niet gedurende … leeg |
 |---|---|---|---|---|---|---|
@@ -3442,63 +3139,54 @@ jaar"; 2025 and 2026 have 365 days each):
 | c | 4 on [2025-01-01, 2025-07-01) | onwaar | onwaar (181 of 365) | onwaar | onwaar | **waar** |
 | d | 4 on [2025-01-01, 2025-07-01), 5 on [2025-07-01, 2027-01-01) | onwaar | **waar** (365 of 365 in 2025 and in 2026) | **waar** | onwaar | **waar** |
 
-Row c is where the inner negation and the qualifier's negation give
-different answers: "niet leeg" asks for a value on every day of 2025 and
-fails on the second half, while "niet gedurende het gehele jaar leeg"
-asks only that some day holds one. Under the **month** grid the gevuld
-test passes on row c — January through June 2025 each read a value on
-all their days — and on 4 on [2025-07-01, 2026-07-01), which fails it
-under the year grid (184 of 365 in 2025, 181 of 365 in 2026), while 4 on
-[2025-01-15, 2025-03-01) fails it under both grids (January holds 17 of
-31) and fails the leeg test under both; that timeline lies off the
-attribute's declared month grid, where no case input may lie, so it is
-pinned in `ref/`'s suite alone. An **explicit leeg segment**
-changes no verdict: leeg on [2025-01-01, 2026-01-01) alone touches no
-bucket and reads as row a, and 4 on [2025-01-01, 2025-07-01) followed by
-leeg on [2025-07-01, 2026-01-01) reads as row c. Those two rows are
-pinned in `ref/`'s suite and on the Drools runtime's fold, not in the ASP
-suite, whose encoding writes leeg as absence and has no second
-representation to tell apart.
+Row c is where the inner negation and the qualifier's negation give different
+answers: "niet leeg" asks for a value on every day of 2025 and fails on the
+second half, while "niet gedurende het gehele jaar leeg" asks only that some
+day holds one. Under the **month** grid the gevuld test passes on row c —
+January through June 2025 each read a value on all their days — and on 4 on
+[2025-07-01, 2026-07-01), which fails it under the year grid (184 of 365 in
+2025, 181 of 365 in 2026), while 4 on [2025-01-15, 2025-03-01) fails it under
+both grids (January holds 17 of 31) and fails the leeg test under both; that
+timeline lies off the attribute's declared month grid, where no case input may
+lie, so it is pinned in `ref/`'s suite alone. An **explicit leeg segment**
+changes no verdict: leeg on [2025-01-01, 2026-01-01) alone touches no bucket
+and reads as row a, and 4 on [2025-01-01, 2025-07-01) followed by leeg on
+[2025-07-01, 2026-01-01) reads as row c (`ref/` tests).
 
-**Per bucket on a timeline target** (maintainer decision 2026-11-03,
-`spec/proposals/IMPLICIT-TIME.md` point 4). In the condition of a rule
-with a timeline target, which is read per period (ch. 3.10), the qualifier
-is a truth per bucket of its own grid, the calendar month or year it names:
-it holds in every bucket B every day of which satisfies the test, the days
-of ch. 1.2 above included, and its negation ("niet gedurende …") in every
-other bucket of all time — also in a bucket in which no day satisfies the
-test. The notion of a touched bucket does not enter: each bucket of all
-time is judged, and outside the periods of the tested timeline every
-bucket reads the same. The inner negation is per day, as above. A
-whole-period qualifier MUST lie on a grid that fits the target's
-(`IR-SPEC.md` WF-126): "gedurende de gehele maand" on a target for every
-year is ill-formed. On a scalar target the fold above stays (golden
-`synth-gehelejaarkenmerk`, `jutterswet-ploegpremie`).
+**Per bucket on a timeline target.** In the condition of a rule with a
+timeline target, which is read per period (ch. 3.10), the qualifier is a truth
+per bucket of its own grid, the calendar month or year it names: it holds in
+every bucket B every day of which satisfies the test, the leeg days of ch. 1.2
+above included, and its negation ("niet gedurende …") holds in every other
+bucket of all time — also in a bucket in which no day satisfies the test. The
+notion of a touched bucket does not enter: each bucket of all time is judged,
+and outside the periods of the tested timeline every bucket reads the same.
+The inner negation is per day, as above. A whole-period qualifier MUST lie on
+a grid that fits the target's (`IR-SPEC.md` WF-126): "gedurende de gehele
+maand" on a target for every year is ill-formed. On a scalar target the fold
+above stays (goldens `synth-gehelejaarkenmerk`, `jutterswet-ploegpremie`).
 
 Worked example `WV-3.9-per-emmer` (absolute; `ref/` tests verbatim, the
-fixture `ref/test/fixtures/conditions-per-period/afdracht`, shared by the
-ASP backend's suite). `rentedragend` holds on [2025-11-16, 2026-03-13).
-"Gedurende de gehele maand rentedragend" per bucket holds on
-[2025-12-01, 2026-03-01) — December 2025, January and February 2026 — and
-its negation on (−∞, 2025-12-01) and [2026-03-01, +∞). The rule "de
-toetsdagen moet berekend worden als (het aantal dagen in de maand dat hij
-rentedragend is) gedurende de tijd dat hij niet gedurende de gehele maand
+fixture `ref/test/fixtures/conditions-per-period/afdracht`). `rentedragend`
+holds on [2025-11-16, 2026-03-13). "Gedurende de gehele maand rentedragend"
+per bucket holds on [2025-12-01, 2026-03-01) — December 2025, January and
+February 2026 — and its negation on (−∞, 2025-12-01) and [2026-03-01, +∞). The
+rule "de toetsdagen moet berekend worden als (het aantal dagen in de maand dat
+hij rentedragend is) gedurende de tijd dat hij niet gedurende de gehele maand
 rentedragend is" writes **0** until 2025-11-01, **15** on
 [2025-11-01, 2025-12-01), **12** on [2026-03-01, 2026-04-01) and **0** from
-2026-04-01: the day count is 0 in a month without a true day (ch. 3.8), and
-the negation of the qualifier holds there. The fold would have read the
-qualifier once, false for this timeline, and written all five months 15, 31,
-31, 28 and 12.
-The corpus witness, written by rules through the RegelSpraak frontend and
-replayed by `ref` and the ASP backend, is `corpus/golden/jutterswet-wachtmaanden`
-(a month qualifier on a characteristic for every day, both polarities, and
-a year qualifier on a comparison).
+2026-04-01: the day count is 0 in a month without a true day (ch. 3.8), and the
+negation of the qualifier holds there. The fold would have read the qualifier
+once, false for this timeline, and written all five months 15, 31, 31, 28 and
+12. The corpus witness, written by rules through the RegelSpraak frontend, is
+`corpus/golden/jutterswet-wachtmaanden` (a month qualifier on a characteristic
+for every day, both polarities, and a year qualifier on a comparison).
 
 ### 3.9a The quantifier fold — a condition over a linked set
 
 A **quantifier fold** (`IR-SPEC.md` ch. 4.5, wire `QuantifierFold`, v0
-`Kwantorvouw`; WF-108)
-asks one condition of every member of a linked instance set:
+`Kwantorvouw`; WF-108) asks one condition of every member of a linked
+instance set:
 
 ```
 contributors = { m : m ∈ reach ∩ population,  filter(m) }
@@ -3512,99 +3200,87 @@ atMost n       =  count ≤ n
 exactly n      =  count = n
 ```
 
-`reach ∩ population` and `filter` are **ch. 3.4a's**, unchanged and
-shared: the range (`sourceRole`, or the multi-step `sourcePath` of
-ch. 3.4b — since L2 exactly one of the two, B12; until L2 the derived
-connecting role when neither was written) says which instances the
-quantifier reaches; `elementType` says which it
-ranges over, extensionally (`IR-SPEC.md` ch. 2.2) — every instance whose
-type is ⊑ it; and the die/dat `filter` drops contributors, evaluated per
-contributor with the element as subject. There is one definition of
-"which members", not two, and one implementation of it per artifact.
+`reach ∩ population` and `filter` are **ch. 3.4a's**, unchanged and shared:
+the range (`sourceRole`, or the multi-step `sourcePath` of ch. 3.4b, exactly
+one of the two) says which instances the quantifier reaches; `elementType`
+says which it ranges over, extensionally (`IR-SPEC.md` ch. 2.2) — every
+instance whose type is ⊑ it; and the die/dat `filter` drops contributors,
+evaluated per contributor with the element as subject. There is one
+definition of "which members", not two.
 
 `test` is evaluated the same way — **per contributor, the element as the
 condition's subject**. That is the whole difference between the two
-condition fields: `filter` says which members the sentence is about,
-`test` says what it claims about them. In both, a node with the form anchor
-reads the form subject and an identity check compares the member with it
-(ch. 3.4a, *The form anchor*); the worked example there carries a quantifier
-`all` whose filter excludes the form subject and whose test compares each
-member's ingangsdag with the form subject's (`voorrang`).
+condition fields: `filter` says which members the sentence is about, `test`
+says what it claims about them. In both, a node with the form anchor reads the
+form subject and an identity check compares the member with it (ch. 3.4a,
+*The form anchor*); the worked example there carries a quantifier `all` whose
+filter excludes the form subject and whose test compares each member's
+ingangsdag with the form subject's (`voorrang`).
 
-**`none` is the per-MEMBER complement, never the fold's.** `not (all)` and
-`none` are different conditions and the difference shows on exactly the
-members whose test is false for a *temporal* reason: a member whose
-timeline does not cover the period fails the matrix, so it does not block
-`all`'s failure and it does not block `none` either.
+**`none` is the complement per member, never the fold's.** `not (all)` and
+`none` are different conditions, and the difference shows on exactly the
+members whose test is false for a reason of time: a member whose timeline
+does not cover the period fails the matrix, so it does not block `all`'s
+failure and it does not block `none` either.
 
-**Order and short circuit** — two disciplines meet, each taken from the
-node it belongs to, and neither is invented here. The **contributors are
-settled in full first**, filter included, exactly as an instance fold
-settles them (ch. 3.4a): the subselection decides what the sentence is
-about, and that question is not short-circuited by its answer, so a
-filter that faults on a later member faults whether or not an earlier
-member has already decided the verdict. The **matrix then short
-circuits**, exactly as a composite condition does (ch. 5.10): evaluation
-stops at the first contributor whose verdict settles the fold, in the
-contributors' own order (ch. 5.11), and a member never reached produces
-no fault and no §9.5 channel fact.
+**Order and short circuit** — two disciplines meet, each taken from the node
+it belongs to. The **contributors are settled in full first**, filter
+included, as an instance fold settles them (ch. 3.4a): the subselection
+decides what the sentence is about, and that question is not short-circuited
+by its answer, so a filter that faults on a later member faults whether or not
+an earlier member has already decided the verdict. The **matrix then short
+circuits**, as a composite condition does (ch. 5.10): evaluation stops at the
+first contributor whose verdict settles the fold, in the contributors' own
+order (ch. 5.11), and a member never reached produces no fault and no §9.5
+channel fact.
 
-**The vacuous case is stated, not inherited.** An empty contributor set
-reads **waar** under both quantifiers. It is the empty conjunction, and
-it is the same answer the empty set gets everywhere else a universal
-appears in this document (ch. 3.9's empty to-many range, ch. 5.10's
-`all` composite over no parts) — but it is written down here because it
-is the one rule of this node that a reader is most likely to supply from
-intuition and get backwards, and because the corpus pins it.
+**The vacuous case.** An empty contributor set reads **waar** under both
+quantifiers. It is the empty conjunction, and it is the answer the empty set
+gets everywhere else a universal appears in this document (ch. 3.9's empty
+to-many range, ch. 5.10's `all` composite over no parts); it is written down
+here because it is the rule of this node a reader is most likely to supply
+from intuition and get backwards, and because the corpus pins it.
 
-**The counting quantifiers count the CONTRIBUTORS the matrix holds of**
-(`IR-SPEC.md` ch. 4.5, WF-108 (e); the threshold is `Compound`'s field
-under `Compound`'s rule, WF-041: at least 1). They are not a second kind
-of fold: `all` is `count = |contributors|` and `none` is `count = 0`
-written the other way round, so **one** rule of evaluation covers all
-five, and it is ch. 5.10's — the contributors are settled in full first,
-the matrix is then read in the contributors' own order (ch. 5.11) and
-stops at the first one after which the outcome stands, with ch. 5.10's
-trigger table applied verbatim, the contributors as its members. Two of
-its rows fire on the **empty prefix** here as they do there and are the
-sharper for ranging over a set rather than a written list: `atLeast` *n*
-and `exactly` *n* over fewer than *n* contributors are **onwaar** having
-read nothing, and `atMost` *n* over at most *n* contributors is **waar**
-having read nothing.
+**The counting quantifiers count the contributors the matrix holds of**
+(`IR-SPEC.md` ch. 4.5, WF-108 (e); the threshold is `Compound`'s field under
+`Compound`'s rule, WF-041: at least 1). They are not a second kind of fold:
+`all` is `count = |contributors|` and `none` is `count = 0`, so **one** rule
+of evaluation covers all five, and it is ch. 5.10's — the contributors are
+settled in full first, the matrix is then read in the contributors' own order
+(ch. 5.11) and stops at the first one after which the outcome stands, with
+ch. 5.10's trigger table applied verbatim, the contributors as its members.
+Two of its rows fire on the **empty prefix** here as they do there:
+`atLeast` *n* and `exactly` *n* over fewer than *n* contributors are
+**onwaar** having read nothing, and `atMost` *n* over at most *n*
+contributors is **waar** having read nothing.
 
-**The empty set needs no separate principle under these three.** A count
-of 0 answers each of them by itself — `atLeast` *n* (n ≥ 1) onwaar,
-`atMost` *n* waar, `exactly` *n* onwaar — so the paragraph above is a rule
-about `all` and `none` and is not extended to them. Those two would come
-out the same way from the count; they are stated separately because that
-is where the intuition slips, and the counting arms are stated here
-because a reader might expect a vacuum rule and there is none to apply.
+**The empty set needs no separate principle under these three.** A count of 0
+answers each of them by itself — `atLeast` *n* (n ≥ 1) onwaar, `atMost` *n*
+waar, `exactly` *n* onwaar — so the vacuous case above is a rule about `all`
+and `none` and is not extended to them.
 
-**A NIET prefix on the matrix lands on the COUNT, because a threshold
-cannot be flipped.** ch. 3.9's "niet gedurende …" qualifies the outer
-comparison, so under `all` and `none` an executor may fold it by
-flipping the quantifier (∀c.¬P = ¬∃c.P) — and two of the three do. No
-such move exists for `atLeast` 2: there is no quantifier it turns into.
-The negation is therefore read where it is written, per contributor, and
-what it changes is the count: `count(¬P) = |contributors| − count(P)`,
-an equality and not an approximation, because the whole-period predicate
-is total — every contributor either satisfies it or does not, the member
-with no timeline at all included (it passes vacuously, so it counts on
-the POSITIVE side; ch. 3.9's rule, unchanged). The empty set stays
-0 − 0 = 0 and does not become "everything denied". Witness
-`corpus/golden/jutterswet-sleepvloot`, whose cells are chosen so that
-counting P instead of ¬P gives the other verdict in four of them.
+**A NIET prefix on the matrix lands on the count, because a threshold cannot
+be flipped.** Ch. 3.9's "niet gedurende …" qualifies the outer comparison, so
+under `all` and `none` an executor may fold it by flipping the quantifier
+(∀c.¬P = ¬∃c.P). No such move exists for `atLeast` 2: there is no quantifier
+it turns into. The negation is therefore read where it is written, per
+contributor, and what it changes is the count: `count(¬P) = |contributors| −
+count(P)`, an equality and not an approximation, because the whole-period
+predicate is total — every contributor satisfies it or does not, the member
+with no timeline at all included (it passes vacuously, so it counts on the
+positive side; ch. 3.9). The empty set stays 0 − 0 = 0. Witness
+`corpus/golden/jutterswet-sleepvloot`, whose cells are chosen so that counting
+P instead of ¬P gives the other verdict in four of them.
 
-**Worked examples — the §8.2 form (absolute; `ref/` tests, the ASP
-backend's suite and `corpus/golden/jutterswet-ploegpremie` verbatim).**
-Document: a `Bergingsploeg` reaches its `bergers` over the to-many role
-of `ploegindeling`; `dagvergoeding` is a month-granular attribute of
-`Berger`; the rule is *een Bergingsploeg is premiegerechtigd indien de
-dagvergoeding van alle bergers van de Bergingsploeg gedurende het gehele
-jaar groter is dan 40*. The matrix is therefore ch. 3.9's ordering test,
-asked of each berger's own timeline.
+**Worked examples — the §8.2 form (absolute; `ref/` tests and
+`corpus/golden/jutterswet-ploegpremie` verbatim).** Document: a
+`Bergingsploeg` reaches its `bergers` over the to-many role of
+`ploegindeling`; `dagvergoeding` is an attribute of `Berger` per month; the
+rule is *een Bergingsploeg is premiegerechtigd indien de dagvergoeding van
+alle bergers van de Bergingsploeg gedurende het gehele jaar groter is dan 40*.
+The matrix is ch. 3.9's ordering test, asked of each berger's own timeline.
 
-| # | the ploeg's bergers | per-member verdict | fold |
+| # | the ploeg's bergers | verdict per member | fold |
 |---|---|---|---|
 | 1 | 50 and 60, each the whole of 2026 | waar, waar | **waar** |
 | 2 | 50 and 30, each the whole of 2026 | waar, onwaar | **onwaar** |
@@ -3614,53 +3290,45 @@ asked of each berger's own timeline.
 | 6 | 50 the whole year; one berger with no timeline at all | waar, waar (no bucket touched) | **waar** |
 | 7 | one berger, no timeline at all | waar (no bucket touched) | **waar** |
 
-Row 3 is the gap and row 4 the empty set; together they are the two ends
-the fold is most often got wrong at, and they disagree on purpose — a
-member the relation reaches but whose timeline does not cover the period
-**fails**, while a set the relation does not reach at all **passes**.
-A member with **no timeline at all** is the third case and sides with
-row 4, not row 3: it touches no bucket, so ch. 3.9 passes it vacuously
-and the fold does not stumble over it. That is ch. 3.9's rule applied
-unchanged rather than a rule of this chapter, and it is pinned so that an
-executor which collapses "absent" into "gap" fails by name.
+Row 3 is the gap and row 4 the empty set: a member the relation reaches but
+whose timeline does not cover the period **fails**, while a set the relation
+does not reach at all **passes**. A member with **no timeline at all** is the
+third case and sides with row 4, not row 3: it touches no bucket, so ch. 3.9
+passes it vacuously. That is ch. 3.9's rule applied unchanged, and it is
+pinned so that an executor which collapses "absent" into "gap" fails by name.
 
 **Under `none` that same member changes the sign, and the two vacuous
-readings part company.** An absent timeline makes the member SATISFY its
-matrix vacuously, so it satisfies what `none` says nobody satisfies: a
-ploeg whose single berger has no `dagvergoeding` at all reads
-premiegerechtigd **waar** and wisselvallig **onwaar**, while a ploeg with
-no bergers reads **waar** on both. Vacuous-at-the-member and
-vacuous-at-the-set are different vacua and only one of them is the empty
-conjunction of this chapter; row 4's rule is about the SET, and nothing
-about an empty set follows from a member that happens to be empty. The
-corpus pins the pair side by side for that reason.
+readings part.** An absent timeline makes the member satisfy its matrix
+vacuously, so it satisfies what `none` says nobody satisfies: a ploeg whose
+single berger has no `dagvergoeding` at all reads premiegerechtigd **waar**
+and wisselvallig **onwaar**, while a ploeg with no bergers reads **waar** on
+both. Vacuous at the member and vacuous at the set are different, and only the
+second is the empty conjunction of this section; nothing about an empty set
+follows from a member that happens to be empty. The corpus pins the pair side
+by side.
 
-Under **`none`**, on the same document: bergers at 30 and 20 the whole year
-→ **waar** (no member is above 40); 30 and 50 → **onwaar**; no bergers →
-**waar**; a single berger at 50 on the first half of 2026 only →
-**waar**, because he does not have more than 40 *gedurende het gehele
-jaar* either. Rows 6 and 7 are where `none` turns over: both read
-**onwaar**, because a member with no timeline satisfies the matrix
-vacuously and `none` denies exactly that. Row 7 is the one that has to be
-pinned on its own — in row 6 the berger at 50 already decides `none`, so
-that row cannot tell the empty member from the full one.
+Under **`none`**, on the same document: bergers at 30 and 20 the whole year →
+**waar** (no member is above 40); 30 and 50 → **onwaar**; no bergers →
+**waar**; a single berger at 50 on the first half of 2026 only → **waar**,
+because he does not have more than 40 *gedurende het gehele jaar* either.
+Rows 6 and 7 are where `none` turns over: both read **onwaar**, because a
+member with no timeline satisfies the matrix vacuously and `none` denies
+exactly that. Row 7 is pinned on its own — in row 6 the berger at 50 already
+decides `none`, so that row cannot tell the empty member from the full one.
 
-With a die/dat subselection — *alle bergers die een dagvergoeding van
-meer dan 10 hebben* — a berger at 5 the whole year is not a contributor,
-so a ploeg of one berger at 50 and one at 5 reads **waar**, and a ploeg
-whose only berger is at 5 reads **waar** vacuously.
+With a die/dat subselection — *alle bergers die een dagvergoeding van meer dan
+10 hebben* — a berger at 5 the whole year is no contributor, so a ploeg of one
+berger at 50 and one at 5 reads **waar**, and a ploeg whose only berger is at 5
+reads **waar** vacuously.
 
-**Worked examples — a NON-temporal matrix** (absolute;
+**Worked examples — a non-temporal matrix** (absolute;
 `corpus/golden/jutterswet-schouwploeg` verbatim). `test` is an ordinary
-condition, so it need not be temporal at all, and until 2026-09-16 the
-three executors disagreed about exactly that. They agree now, each by
-executing the sentence above rather than by recognising one matrix shape.
-Document: a `Schouwploeg` reaches its `wachten` over the to-many role of
-`schouwindeling`; `dienstjaren` is a plain attribute of `Strandwacht` and
-`gediplomeerd` a characteristic of it. Four folds in one document:
-*ervaren* = `all` over `dienstjaren > 5`, *onervaren* = `none` over the
-same, *bevoegd* = `all` over `gediplomeerd`, *sluitend* = `none` over
-`niet gediplomeerd`.
+condition, so it need not read a timeline at all. Document: a `Schouwploeg`
+reaches its `wachten` over the to-many role of `schouwindeling`; `dienstjaren`
+is a plain attribute of `Strandwacht` and `gediplomeerd` a characteristic of
+it. Four folds in one document: *ervaren* = `all` over `dienstjaren > 5`,
+*onervaren* = `none` over the same, *bevoegd* = `all` over `gediplomeerd`,
+*sluitend* = `none` over `niet gediplomeerd`.
 
 | # | ploeg | the ploeg's wachten (dienstjaren, diploma) | ervaren | onervaren | bevoegd | sluitend |
 |---|---|---|---|---|---|---|
@@ -3671,43 +3339,39 @@ same, *bevoegd* = `all` over `gediplomeerd`, *sluitend* = `none` over
 | 4 | S1 | none | **waar** | **waar** | **waar** | **waar** |
 | 5 | S1 | leeg ja, 3 ja | onwaar | **waar** | **waar** | **waar** |
 
-Row 2 is `none` ≠ `not (all)` again, now with no temporal reason in the
-matrix at all: one member above the bound and one below leaves both folds
-false. It also holds a SECOND ploeg in the same case, and that row is the
-RANGE: S2's single wacht is above the bound, so S2 reads *ervaren* while
-S1 does not, on one run over one population. An executor that quantified
-over every `Strandwacht` rather than over the ploeg's own `wachten` would
-drag S1's wacht at 3 into S2's fold and read S2 the other way — which is
-the failure mode any implementation that reifies the matrix into a helper
-defined for EVERY element has to avoid. Row 3 pins the strict bound, row 4
-the vacuous set under both quantifiers. Row 5 is the **leeg** member, and
-it is the counterpart of
-row 7 above: an ordering comparison over leeg is onwaar (ch. 1.2d), so the
-member FAILS its matrix — it breaks `all` and is no witness for `none` —
-whereas an absent TIMELINE PASSES its whole-period matrix vacuously and
-therefore breaks `none`. Nothing but the matrix decides which of the two
-readings applies, which is why both are pinned.
+Row 2 is `none` ≠ `not (all)` again, with no reason of time in the matrix: one
+member above the bound and one below leaves both folds false. It also holds a
+second ploeg in the same case, and that row is the **range**: S2's single
+wacht is above the bound, so S2 reads *ervaren* while S1 does not, in one run
+over one population. An executor that quantified over every `Strandwacht`
+rather than over the ploeg's own `wachten` would draw S1's wacht at 3 into
+S2's fold and read S2 the other way. Row 3 pins the strict bound, row 4 the
+vacuous set under both quantifiers. Row 5 is the **leeg** member, the
+counterpart of row 7 above: an ordering comparison over leeg is onwaar
+(ch. 1.2), so the member **fails** its matrix — it breaks `all` and is no
+witness for `none` — whereas an absent **timeline** passes its whole-period
+matrix vacuously and therefore breaks `none`. Nothing but the matrix decides
+which of the two readings applies, which is why both are pinned.
 
-*sluitend* is the **negated matrix**, and it answers what *bevoegd*
-answers in every row. On a non-temporal matrix the "niet" is part of the
-condition and is read per member, so the quantifier is untouched — unlike
-ch. 3.9's "niet gedurende …", which qualifies the outer comparison and
-which an executor may therefore fold by flipping `all` into `none`
-(∀c.¬P = ¬∃c.P). Both are the same verdict; stating where the negation
-lives is what keeps an executor from applying that flip twice.
+*sluitend* is the **negated matrix**, and it answers what *bevoegd* answers in
+every row. On a non-temporal matrix the "niet" is part of the condition and is
+read per member, so the quantifier is untouched — unlike ch. 3.9's "niet
+gedurende …", which qualifies the outer comparison and which an executor may
+therefore fold by flipping `all` into `none` (∀c.¬P = ¬∃c.P). Both give the
+same verdict; stating where the negation stands keeps an executor from
+applying that flip twice.
 
 **Worked examples — the counting quantifiers** (absolute;
 `corpus/golden/jutterswet-reddingsvloot` verbatim). Document: a
 `Reddingsvloot` reaches its `sloepen` over the to-many role of
-`vlootindeling`; `vaartijd` is a month-granular attribute of
-`Reddingssloep` and `gekeurd` a characteristic of it. One matrix — the
-ch. 3.9 whole-period test *vaartijd > 20 gedurende het gehele jaar* —
-under three quantifiers, plus a fourth fold that adds a die/dat
-subselection to the same matrix: *inzetbaar* = `atLeast` 2,
-*krap* = `atMost` 1, *paraat* = `exactly` 1, *geschikt* =
-`atLeast` 2 over the sloepen *die gekeurd zijn*. `sloeptal` is the
-plain instance fold beside them, so every row also states how large the
-unfiltered range is.
+`vlootindeling`; `vaartijd` is an attribute of `Reddingssloep` per month and
+`gekeurd` a characteristic of it. One matrix — the ch. 3.9 whole-period test
+*vaartijd > 20 gedurende het gehele jaar* — under three quantifiers, plus a
+fourth fold that adds a die/dat subselection to the same matrix: *inzetbaar* =
+`atLeast` 2, *krap* = `atMost` 1, *paraat* = `exactly` 1, *geschikt* =
+`atLeast` 2 over the sloepen *die gekeurd zijn*. `sloeptal` is the plain
+instance fold beside them, so every row also states how large the unfiltered
+range is.
 
 | # | vloot | the vloot's sloepen (vaartijd, keuring) | sloeptal | count | inzetbaar (≥2) | krap (≤1) | paraat (=1) | geschikt (≥2, gekeurd) |
 |---|---|---|---|---|---|---|---|---|
@@ -3719,142 +3383,117 @@ unfiltered range is.
 | 5 | V2 | 30 gekeurd | 1 | 1 | onwaar | **waar** | **waar** | onwaar |
 | 6 | V1 | 25 NIET gekeurd, 30 NIET gekeurd | 2 | 2 | **waar** | onwaar | onwaar | onwaar |
 
-The `count` column is the count of the formula — over the UNFILTERED
-contributors, which is what the first three folds range over; *geschikt*
-counts over the `gekeurd` survivors and its own counts are 2, 1, 0, 1, 1,
-1 and 0 in the seven rows.
+The `count` column is the count of the formula — over the unfiltered
+contributors, which the first three folds range over; *geschikt* counts over
+the `gekeurd` survivors, and its own counts are 2, 1, 0, 1, 1, 1 and 0 in the
+seven rows.
 
-Rows 1 and 2 pin each threshold **from both sides at once**, which is
-what one shared matrix buys: a count of 2 satisfies `atLeast` 2 exactly
-at its threshold and breaks `atMost` 1 by exactly one, and a count of 1
-turns both of those over while satisfying `exactly` 1. Row 3 is the empty
-set under all three — and it is the paragraph above made observable: a
-count of 0 decides each quantifier without any vacuum rule, so *krap* is
-**waar** where *inzetbaar* and *paraat* are **onwaar**, which no single
-"empty means true" principle would give. Row 4 is ch. 3.9's gap, reused
-unchanged: the member with the half-year timeline fails the matrix, so it
-simply does not count.
+Rows 1 and 2 pin each threshold **from both sides at once**, which one shared
+matrix gives: a count of 2 satisfies `atLeast` 2 exactly at its threshold and
+breaks `atMost` 1 by exactly one, and a count of 1 turns both of those over
+while it satisfies `exactly` 1. Row 3 is the empty set under all three, and it
+makes the paragraph above observable: a count of 0 decides each quantifier
+without any vacuum rule, so *krap* is **waar** where *inzetbaar* and *paraat*
+are **onwaar**, which no single "empty means true" principle would give. Row 4
+is ch. 3.9's gap, reused unchanged: the member with the half-year timeline
+fails the matrix, so it does not count.
 
-Row 5 carries TWO vloten and both of them earn their place. V1 is the
-cell **the filter alone decides**: *inzetbaar* and *geschikt* ask the same
-question of the same matrix and part company here, because the sloep at
-30 is not `gekeurd` and the surviving pair holds only one satisfier.
-Removing the `filter` from the wire makes *geschikt* read **waar** and
-nothing else in the document moves. V2 pins the **range** the way
-`jutterswet-schouwploeg` row 2 does — it reads *krap* and *paraat* in the
-same run in which V1 reads neither, so an executor quantifying over every
-`Reddingssloep` rather than over the vloot's own sloepen answers it the
-other way — and it is also where ch. 5.10's **empty-prefix** triggers
-fire: over one contributor, `atLeast` 2 is out of reach before the
-matrix is read once, and `atMost` 1 can no longer be exceeded, so both
-answer having read nothing. Row 6 is the empty SELECTION beside a filled
-range: two satisfying sloepen, neither `gekeurd`, so *inzetbaar* is
-**waar** on a count of 2 while *geschikt* counts over ∅ and is **onwaar**
-— the counting mirror of the vacuous cell, and the one place where an
-executor that dropped the filter and one that dropped the empty-set
-reading would answer differently.
+Row 5 carries two vloten. V1 is the cell **the filter alone decides**:
+*inzetbaar* and *geschikt* ask the same question of the same matrix and part
+here, because the sloep at 30 is not `gekeurd` and the surviving pair holds
+only one satisfier. Removing the `filter` from the wire makes *geschikt* read
+**waar** and moves nothing else in the document. V2 pins the **range** as
+`jutterswet-schouwploeg` row 2 does — it reads *krap* and *paraat* in the same
+run in which V1 reads neither, so an executor that quantified over every
+`Reddingssloep` rather than over the vloot's own sloepen answers it the other
+way — and it is also where ch. 5.10's **empty-prefix** triggers fire: over one
+contributor, `atLeast` 2 is out of reach before the matrix is read once, and
+`atMost` 1 can no longer be exceeded, so both answer having read nothing. Row
+6 is the empty **selection** beside a filled range: two satisfying sloepen,
+neither `gekeurd`, so *inzetbaar* is **waar** on a count of 2 while *geschikt*
+counts over ∅ and is **onwaar** — the counting mirror of the vacuous cell, and
+the one place where an executor that dropped the filter and one that dropped
+the reading of the empty set would answer differently.
 
 ### 3.10 Period conditions and the §8.4.3 clip
 
-A **period condition** (`TimeWindow`, `IR-SPEC.md` ch. 4.5) restricts a
-rule to a date window. Two cases:
+A **period window** (`TimeWindow`, `IR-SPEC.md` ch. 4.5) holds on the days
+from its `from` up to its `to`: `from` inclusive, `to` exclusive, and
+inclusive where the source wrote "tot en met" (`toInclusive`), so that the
+window then ends the day after `to`. An absent bound is open. `from` is
+evaluated before `to` (ch. 5.11), and a bound that evaluates to leeg puts no
+day in the window. *Well-formedness* (§8.4.3): a bound is a day-precise date
+expression over the subject, the parameters and literals — a literal, an own
+scalar date attribute, a scalar date parameter, and the operators and builtins
+over those, such as "zijn vervaldatum plus 1 dg" (`IR-SPEC.md` WF-111); a bound
+that reads a timeline, navigates a role, folds a set or is a datum-tijd is
+ill-formed (negatives `wf111-computed-bound-navigated-read`,
+`wf111-period-boundary-time-dependent-parameter`, `wf111-date-time-bound-*`).
+The window never stands under `none` or a counting quantifier (WF-112;
+negative `wf112-time-window-counting-quantifier`): the window gates the rule,
+and no reading is defined for its complemented or counted verdict; the rule
+covers a quantifier fold's `filter` and `test` too. The window has two
+readings, and the target decides between them.
 
-**Scalar target — the evaluation-date gate (v0 behaviour, mirrored).**
-The rule applies iff the evaluation date lies in the window: `from`
-inclusive, `to` exclusive, inclusive where the source wrote "tot en met"
-(`toInclusive`); an absent bound is
-open; an unset evaluation date never matches; a leeg bound never matches.
-Worked example: window [2024-01-01, 2025-01-01), evaluation date
-2024-12-31 → applies; 2025-01-01 → does not; the "tot en met 2024-12-31"
-form still applies on 2024-12-31. *Well-formedness (maintainer decision
-2026-09-23; widened by `spec/proposals/IMPLICIT-TIME.md` VB 6.1, RegelSpraak
-§8.4.3):* a bound is a day-precise date expression over the subject, the
-parameters and literals — a literal, an own scalar date attribute, a scalar
-date parameter, and the operators and builtins over those, such as "zijn
-vervaldatum plus 1 dg" (`IR-SPEC.md` WF-111; the precision clause closes a
-measured split: a LEEG datum-tijd bound played in `ref`, which refused only
-a filled instant, while the ASP backend refused the bound statically), and
-the window never sits under `none` or a counting quantifier (WF-112). `from`
-is evaluated before `to` (ch. 5.11), and a bound that evaluates to leeg puts
-no day in the window. The second rule promotes what used to be a v0 mirror
-note about backend maturity: v0's backends refuse the condition under
-counting quantifiers, while v0's IR admits any date expression (WF-042).
-**Executed since 2026-09-20** by all four executors — the six clauses and
-this worked example are pinned case by case in
-`corpus/golden/jutterswet-premievenster`, and the example runs verbatim in
-each OCaml executor's own suite. Per WIRE POSITION, because the mirror
-note's two bounds land on different ones and a single "executed" would
-hide that:
+**Scalar target — the evaluation-date gate.** The rule applies iff the
+evaluation date lies in the window; an unset evaluation date never matches,
+and a leeg bound never matches. Worked example: window
+[2024-01-01, 2025-01-01), evaluation date 2024-12-31 → applies; 2025-01-01 →
+does not; the "tot en met 2024-12-31" form still applies on 2024-12-31. The
+window stands as a rule's whole condition, as a member of an `all` or `the`
+composite, in a consistency assertion as its whole criterion or as an `all`
+member, and in the `test` or the `filter` of an `all` quantifier fold or the
+die/dat `filter` of an aggregation; in the last two positions the member is
+the window's subject, so a bound that is an attribute is read on each member.
+`corpus/golden/jutterswet-premievenster` pins the six clauses and this
+example case by case, and `corpus/golden/jutterswet-wachtvenster` the fold
+and aggregation positions, each ploeg carrying a date of the same name that a
+reading on the fold's subject would take. *v0 mirror note:* v0's IR admits any
+date expression as a bound (WF-042), and v0's backends refuse the condition
+under counting quantifiers; WF-111 and WF-112 are the v1 rules.
 
-| the window sits | status |
-|---|---|
-| as a rule's whole condition | executed by all four (five rules in the golden, one per spelling) |
-| as a member of an `all` or `the` composite | executed by all four (the golden's `borgpremie`). In a consistency assertion, as its whole criterion or an `all` member, executed by all four since 2026-09-23: both Drools branches refused it until card `drools-venster-vouwtoets` (witness `WindowAssertionWitnessTest` in the Drools backend; no golden) |
-| in the `test` or the `filter` of an `all` quantifier fold, or in the die/dat `filter` of an aggregation | executed by all four since 2026-09-23, the member as the window's subject: a bound that is an attribute is read on each member. The Drools exec-model branch refused all three positions until card `drools-venster-vouwtoets`; golden `corpus/golden/jutterswet-wachtvenster` pins them, each ploeg carrying a same-named date of its own that a reading on the fold's subject would take |
-| under `none` or a counting quantifier | ill-formed since 2026-09-23 (WF-112; negative `wf112-time-window-counting-quantifier`). Before that all four executors refused it, and their refusals remain as fail-fast checks — both Drools branches' by name since card `drools-venster-vouwtoets`, at every position that holds a condition: a rule condition, a quantifier fold's `filter` and `test`, an aggregation filter, a consistency assertion and a fact-creation guard. The rule reaches into a quantifier fold's `filter` and `test` too: measured that day, the Drools DRL-text branch answered the fold under all five quantifiers, the complement included |
-
-Every bound WF-111 admits is executed by `ref` and the ASP backend since
-2026-11-03; until then the rule admitted a date literal and the subject's
-own scalar date attribute alone, which all four executors carry. A bound
-that reads a timeline, navigates a role or folds a set is ill-formed
-(negatives `wf111-computed-bound-navigated-read` and
-`wf111-period-boundary-time-dependent-parameter`); the two OCaml executors
-keep their refusal by name, with the phase in the sentence, as a fail-fast
-check on input that has not been verified.
-
-**Temporal target — the clip (v1 semantics, delta).** When the rule's
-target is time-dependent, gating all-or-nothing on the evaluation date is
-the wrong axis: the window speaks about the *timeline*, not about the
-evaluation moment. v1 specifies the **clip**: the produced timeline is
-intersected with the window,
+**Timeline target — the window clips.** When the rule's target is
+time-dependent, the window speaks about the timeline, not about the moment of
+evaluation, and its days are the periods of the clip of ch. 3.3:
 
 ```
 written(tl, window) = tl restricted to [from, to)
 ```
 
-and the write proceeds with the clipped timeline. Worked example: the
-rule computes {2024: 10, 2025: 12} yearly; window [2025-01-01, open) →
-written value {2025: 12}; days in 2024 stay whatever another version or
-producer gives them — a gap, absent other writers. **Delta (tracked,
-`CONSTRUCTS.md` rows 11/29):** v0 refuses this case outright (the
-manifest family "period-comparison clipping, §8.4.3"); v1 supplies the
-clip semantics above, and `ref/` implemented them first.
-
-The clip's clauses. `corpus/golden/jutterswet-pachtvenster` pins every one
-whose case lies on the declared grid. The one it cannot hold, a bound
-inside a bucket, is pinned in the two OCaml executors' own suites (`ref`
-`WV-3.10-clip-knipt-segment-houdt-waarde` and the day-count example below
-verbatim; the ASP backend reading its `tl/5` atoms), because the case
-format pins every expected timeline to the grid (ch. 3.12, OPEN):
+Worked example: the rule computes {2024: 10, 2025: 12} per year; window
+[2025-01-01, open) → written value {2025: 12}; the days in 2024 keep what
+another version or producer gives them — a gap, absent other writers.
 
 - **The window is the rule's whole condition, and the evaluation date plays
   no part.** The window says which days of the timeline are written, so the
   write happens with an unset evaluation date and with one outside the
-  window alike. The scalar gate's clause "an unset evaluation date never
-  matches" is about the evaluation moment and has no counterpart here.
-- **The bounds read as the gate's do:** `from` inclusive, `to` exclusive,
-  "tot en met" (`toInclusive`) inclusive (the window then ends the day
-  after), an absent
-  bound open, bound shapes per `IR-SPEC.md` WF-111. A bound that is the
-  subject's own attribute is read per subject.
-- **The restriction cuts SEGMENTS, never values.** A segment that straddles
-  a bound keeps its value on the part inside the window: `tl restricted to`
-  is the restriction of a function to a smaller domain, so the producer's
-  value is not recomputed for the shorter span. A monthly day count of 31
-  cut at the fifth of the month still reads 31 on the days that remain.
-  *Suite-pinned only* (see above).
+  window alike. The gate's clause "an unset evaluation date never matches" is
+  about the moment of evaluation and has no counterpart here.
+- **The bounds read as the gate's do**: `from` inclusive, `to` exclusive,
+  "tot en met" inclusive, an absent bound open, the shapes of WF-111. A bound
+  that is the subject's own attribute is read per subject.
+- **The restriction cuts segments, never values.** A segment that straddles
+  a bound keeps its value on the part inside the window: the producer's value
+  is not recomputed for the shorter span. A monthly day count of 31 cut at the
+  fifth of the month still reads 31 on the days that remain
+  (`WV-3.10-clip-knipt-segment-houdt-waarde`; the case format pins every
+  expected timeline to the grid, so this clause is pinned in the executors'
+  suites, ch. 3.12).
 - **An empty window writes an empty timeline.** A leeg bound puts no day in
-  the window (the gate's "a leeg bound never matches", read per day), and a
-  window whose `from` lies after its `to` has no days either. A window
-  that misses the produced timeline leaves nothing of it. The clipped result
-  is then the temporal leeg, and on a standing temporal target it writes
-  nothing (ch. 7.8), as for any producer.
+  the window, and a window whose `from` lies after its `to` has no days
+  either. A window that misses the produced timeline leaves nothing of it.
+  The clipped result is then the empty timeline, which a standing target
+  does not write (ch. 3.11, ch. 7.8), as for any producer.
 
-**Any condition that reads a timeline — the clip generalised**
-(maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 3;
-RegelSpraak §10.3, §8.4.1). On a rule with a timeline target, a condition
-that reads a timeline or holds a window restricts the produced timeline to
-the periods of all time in which it holds, as the window does:
+`corpus/golden/jutterswet-pachtvenster` pins every clause whose case lies on
+the declared grid. *v0 mirror note:* v0 refuses the window on a temporal
+target (the manifest family "period-comparison clipping, §8.4.3"); the clip is
+a tracked delta.
+
+**The periods of a condition — the clip generalised.** On a rule with a
+timeline target, a condition
+that reads a timeline or holds a window restricts the produced timeline to its
+periods, by the clip of ch. 3.3 (§10.3, §8.4.1):
 
 ```
 written(tl, c) = tl restricted to periods(c)
@@ -3866,39 +3505,34 @@ periods of a condition, read per day:
 - a check of a time-dependent characteristic of the subject holds in its
   true periods, a negated check outside them, over all time (ch. 3.1);
 - a comparison of a time-dependent attribute of the subject with a scalar
-  bound holds on every day on which the comparison of ch. 1.2 holds; a gap
-  day reads leeg, so "ongelijk aan" holds on it against a filled bound;
+  bound holds on every day on which the comparison of ch. 1.2 holds; a gap day
+  reads leeg, so "ongelijk aan" holds on it against a filled bound;
 - a whole-period qualifier holds in its buckets (ch. 3.9, per bucket);
-- a period window holds on its days, from `from` up to `to`, or the day
-  after `to` where the source wrote "tot en met", its bounds read per
-  subject; a leeg bound puts no day in it (IMPLICIT-TIME point 6);
-- a composite holds on every day on which its quantifier holds of the
-  members that hold that day. Every member is read: the short circuit of
-  ch. 5.10 orders the members of one verdict, and here each day has its
-  own;
+- a period window holds on its days, from `from` up to `to`, or to the day
+  after `to` where the source wrote "tot en met", its bounds read per subject;
+  a leeg bound puts no day in it;
+- a composite holds on every day on which its quantifier holds of the members
+  that hold that day. Every member is read: the short circuit of ch. 5.10
+  orders the members of one verdict, and here each day has its own;
 - a node that reads no timeline holds on every day or on none.
 
-The periods are maximal: two adjacent periods in which the condition holds
-are one, so the restriction cuts a segment only where the condition
-changes. A condition that reads no timeline holds on every day or on none,
-and it gates the rule as on a scalar target (ch. 3.3): where it fails the
-rule does not decide, and the difference between an absent and a
-segmentless timeline (ch. 3.6) stays where it was. Every timeline the
-condition reads lies on a grid that fits the target's (`IR-SPEC.md`
-WF-126). A form not in this list that reads a timeline — a navigated or
-hosted check, a comparison of two timelines, a leeg or gevuld test, a
-quantifier fold — is refused by name in both OCaml executors.
-`RegelSpraak` writes the condition as "gedurende de tijd dat …" or as
-"indien …"; the reading follows the target, not the word
-(IMPLICIT-TIME VB 3.1).
+The periods are maximal (ch. 3.3), so the restriction cuts a segment only
+where the condition changes. A condition that reads no timeline holds on every
+day or on none, and it gates the rule as on a scalar target: where it fails,
+the rule does not decide. Every timeline the condition reads lies on a grid
+that fits the target's (`IR-SPEC.md` WF-126). A form not in this list that
+reads a timeline — a navigated or hosted check, a comparison of two timelines,
+a leeg or gevuld test, a quantifier fold — has no periods defined here
+(ch. 3.12). RegelSpraak writes the condition as "gedurende de tijd dat …" or
+as "indien …"; the reading follows the target, not the word, and the wire
+carries no field for the word.
 
 Worked example `WV-3.10-voorwaarde-per-periode` (absolute; `ref/` tests
-verbatim, the fixture `ref/test/fixtures/conditions-per-period/afdracht`,
-shared by the ASP backend's suite). An Afdracht of 10 000 € is
-`rentedragend` (a characteristic for every day) on [2025-11-16, 2026-03-13)
-and `verzuimd` (for every month) on [2025-12-01, 2026-02-01); the
-verzuimrentevoet is 0,04 /jr on (−∞, 2026-02-01) and 0,05 /jr on
-[2026-02-01, +∞).
+verbatim, the fixture `ref/test/fixtures/conditions-per-period/afdracht`). An
+Afdracht of 10 000 € is `rentedragend` (a characteristic for every day) on
+[2025-11-16, 2026-03-13) and `verzuimd` (for every month) on
+[2025-12-01, 2026-02-01); the verzuimrentevoet is 0,04 /jr on
+(−∞, 2026-02-01) and 0,05 /jr on [2026-02-01, +∞).
 
 - "De minimumdagen (voor elke maand) moet berekend worden als (het aantal
   dagen in de maand dat hij rentedragend is) gedurende de tijd dat hij
@@ -3909,193 +3543,221 @@ verzuimrentevoet is 0,04 /jr on (−∞, 2026-02-01) and 0,05 /jr on
   rentedragend is": **400** on [2025-11-16, 2026-02-01) and **500** on
   [2026-02-01, 2026-03-13), nothing outside them.
 
-The corpus witness, written by rules through the RegelSpraak frontend and
-replayed by `ref` and the ASP backend, is
-`corpus/golden/jutterswet-loon-per-periode`: a characteristic, its
-negation, a comparison per day, a composite, a scalar as the whole value
-(ch. 3.11), a day count, and the gate of a condition without a timeline.
+The corpus witness, written by rules through the RegelSpraak frontend, is
+`corpus/golden/jutterswet-loon-per-periode`: a characteristic, its negation, a
+comparison per day, a composite, a scalar as the whole value (ch. 3.11), a day
+count, and the gate of a condition without a timeline. The window as a member
+of such a condition and as the condition of the period arithmetic are the
+`ref/` tests `WV-3.10-venster-als-lid` and `WV-3.10-venster-rekenen` (the
+fixtures `venster-als-lid` and `venster-rekenen`).
 
-**A time-dependent characteristic within a window** (RegelSpraak §10.3,
-§8.4.3, §9.2; IMPLICIT-TIME point 6, decided: the specification speaks). The
+**A time-dependent characteristic within a window** (§10.3, §8.4.3, §9.2). The
 target of a rule may be a time-dependent characteristic, whose timeline the
 condition is (ch. 3.11): it holds in the periods of the window, cut by the
-periods of the rest of the condition read per period (IMPLICIT-TIME VB 6.2).
-"Time-dependent" is asked of BOTH declaration tables, the attribute's
-granularity and the characteristic's: an executor that read only the first
-applied the scalar gate to a timeline (measured 2026-09-20 in the ASP
-backend, on the document that is now
-`corpus/golden/time-window-timeline-characteristic`).
+periods of the rest of the condition read per period. "Time-dependent" is
+asked of both declaration tables, the attribute's granularity and the
+characteristic's: a target whose characteristic is time-dependent is a
+timeline target, and the scalar gate does not apply to it
+(`corpus/golden/time-window-timeline-characteristic`). Where the periods of
+the condition have an open bound, the characteristic has no true periods to
+hold (ch. 3.1): EF-023, a form without a meaning (ch. 3.12; red case
+`time-window-timeline-characteristic-open`).
 
-Worked example `WV-3.10-kenmerk-venster` (absolute; `ref/` tests verbatim,
-the fixture `ref/test/fixtures/conditions-per-period/kenmerk-venster`,
-shared by the ASP backend's suite). "Een Afdracht is rentedragend van zijn
-vervaldatum plus 1 dg tot en met zijn betaaldatum." Geval 1 (verval
-2025-11-15, betaald 2026-03-12): rentedragend on **[2025-11-16,
-2026-03-13)**. Geval 2 (verval 2028-02-10, betaald 2028-04-04): on
-**[2028-02-11, 2028-04-05)**. A leeg betaaldatum: rentedragend **nowhere**.
-The anchor `corpus/golden/anchor/jutterswet-verzuimrente-30-360` is
-formulation A of IMPLICIT-TIME §4 on this characteristic.
+Worked example `WV-3.10-kenmerk-venster` (absolute; `ref/` tests verbatim, the
+fixture `ref/test/fixtures/conditions-per-period/kenmerk-venster`). "Een
+Afdracht is rentedragend van zijn vervaldatum plus 1 dg tot en met zijn
+betaaldatum." Geval 1 (verval 2025-11-15, betaald 2026-03-12): rentedragend on
+**[2025-11-16, 2026-03-13)**. Geval 2 (verval 2028-02-10, betaald 2028-04-04):
+on **[2028-02-11, 2028-04-05)**. A leeg betaaldatum: rentedragend
+**nowhere**. Formulation A of `spec/proposals/IMPLICIT-TIME.md` §4 stands on
+this characteristic: the golden `jutterswet-verzuimrente-30-360-afgerond`, and
+its anchor `corpus/golden/anchor/jutterswet-verzuimrente-30-360` with the
+exact values.
 
-**Executed since 2026-09-23** by `ref` and the ASP backend on the attribute
-targets whose producers they carry (the ch. 3.7 pro-rata part and the
-ch. 3.8 day count), and since 2026-11-03 for every condition that reads a
-timeline or holds a window, on those producers and on the period arithmetic
-of ch. 3.4 and 3.5, the window as a member of a composite and a
-time-dependent characteristic target included (card `conditions-per-period`;
-witnesses the golden above, the anchor, and the suite fixtures
-`venster-als-lid` and `venster-rekenen`, `ref` `WV-3.10-venster-als-lid` and
-`WV-3.10-venster-rekenen`). Both Drools branches carry the generalised clip
-since step B of the same card, refusing by name a form they do not read per
-period (DROOLS-309) and a grid that does not fit (DROOLS-310); and since step B part ii the window on a timeline target and the time-dependent characteristic target within a window, which they refuse by name without a window (DROOLS-102). A
-time-dependent characteristic is refused by name in both OCaml executors
-without a window, by two rules, over a case-supplied timeline of it, and
-where its periods have an open bound (ch. 3.11).
-
-The analogous interaction with a rule *version's* validity window is **not**
-decided here: a validity window on a temporal write mixes the
-version-selection axis with the timeline axis, and belongs to the
-single-axis decision of ch. 8 (PLAN §9, decision 2), which is OPEN there
-and recorded in ch. 3.12. The golden carries no validity window on its
-temporal rules for that reason.
+The interaction of the window with a rule **version's** validity window on a
+temporal write is not defined here (ch. 3.12).
 
 ### 3.11 Temporal writes
 
-A rule with a time-dependent target writes a **whole timeline at once**,
-per subject: the periodization comes from the value expression's
-producer, never from evaluating a scalar rule "once per period". The
-producers, each specified above: the per-bucket counters (ch. 3.8), the
-pro-rata (ch. 3.7), cut-merge arithmetic (ch. 3.4), the temporal sum
-(ch. 3.5) — and, for a time-dependent **characteristic**, the condition
-itself: the written value is the condition's true-period timeline (the
-target holds exactly where the condition holds, false elsewhere — the
-monotone reading; no complement is seeded), the condition read per period
-with a window among its members (ch. 3.10, "A time-dependent characteristic
-within a window"). A write replaces the target's
-previous timeline; whether that is a change is decided by segment-wise
-equality (ch. 3.1), which is what makes rewriting to a fixpoint
-idempotent (ch. 5).
+A rule with a time-dependent target writes a **whole timeline at once**, per
+subject. Its value is the timeline of the producer that its value expression
+is, restricted to the periods of its condition where the condition reads a
+timeline and gated by the condition where it reads none (ch. 3.3, 3.10); the
+value is never computed by evaluating a scalar rule once per period. The
+producers:
 
-- **Period arithmetic as the value** (ch. 3.4, 3.5): an operator of
-  ch. 1.2 other than the power (plus, min, verminderd met, maal, gedeeld
-  door in both variants, percentage van), whose operands are such an
-  operator again or a rounding of one, the sum of a temporal attribute over the members of a set
-  (without a die/dat subselection), an own temporal attribute, a
-  time-dependent parameter, or a scalar operand (a literal, an own scalar
-  attribute, a scalar parameter), or a rounding of such a value, which rounds
-  it per day (ch. 2.5), writes the timeline of the value over all
-  time, open segments included (ch. 3.1). A
-  die/dat subselection on the sum is refused by name. A condition on such a
-  rule restricts the timeline to its periods where it reads a timeline, and
-  gates the rule where it reads none (ch. 3.10). Executed by `ref` and the
-  ASP backend and both branches of the Drools backend; witnesses
+- the **day count** (ch. 3.8) and the **time-proportional part** (ch. 3.7);
+- **period arithmetic** (ch. 3.4, 3.5): an operator of ch. 1.2 other than the
+  power (plus, min, verminderd met, maal, gedeeld door in both variants,
+  percentage van) whose operands are such an operator again or a rounding of
+  one, the sum of a time-dependent attribute over the members of a set, an
+  own time-dependent attribute, a time-dependent parameter, or a scalar
+  operand (a literal, an own scalar attribute, a scalar parameter), or a
+  rounding of such a value, which rounds it per day (ch. 2.5). It writes the
+  timeline of the value over all time, open segments included (ch. 3.1). A
+  die/dat subselection on the sum is refused by name. Witnesses
   `corpus/golden/jutterswet-maandloon` (plus, min, the sum),
   `corpus/golden/jutterswet-rekenen-per-dag` (the other five operators) and
-  `corpus/golden/jutterswet-verzuimrente-dagen-afgerond` (a time-dependent parameter; the anchor `anchor/jutterswet-verzuimrente-dagen` pins its exact totals, played by `ref`).
-- An operand of the period arithmetic standing alone is a whole value as
-  well: a **scalar** holds on every day, the one segment (−∞, +∞) of
-  ch. 3.1, an own time-dependent attribute or a time-dependent parameter
-  is read whole, and the rule's condition cuts it (ch. 3.10). "De
-  aanstellingspremie moet gesteld worden op 25 gedurende de tijd dat hij
+  `corpus/golden/jutterswet-verzuimrente-dagen-afgerond` (a time-dependent
+  parameter; the anchor `anchor/jutterswet-verzuimrente-dagen` pins its exact
+  totals);
+- an **operand alone** as the whole value: a scalar holds on every day, the
+  one segment (−∞, +∞) of ch. 3.1, an own time-dependent attribute or a
+  time-dependent parameter is read whole, and the rule's condition cuts it.
+  "De aanstellingspremie moet gesteld worden op 25 gedurende de tijd dat hij
   aangesteld is" writes 25 on the periods in which he is aangesteld
-  (`corpus/golden/jutterswet-loon-per-periode`). A **temporal value in a
-  scalar slot** is refused except through the specified collapses
-  (ch. 3.3); that boundary is never crossed by silent coercion.
-- **Two or more writers** of one timeline target each decide the days of
-  their own segments, and the target is their union per day (ch. 5.7,
+  (`corpus/golden/jutterswet-loon-per-periode`);
+- for a time-dependent **characteristic**, the condition itself, read per
+  period with a window among its members (ch. 3.10): the target holds exactly
+  where the condition holds and is false elsewhere — the monotone reading; no
+  complement is seeded.
+
+A **time-dependent value in a scalar slot** is refused except through the
+collapses (ch. 3.3); that boundary is never crossed by silent coercion.
+
+**Replacement and change.** A write replaces the target's previous timeline;
+whether that is a change is decided by segment-wise equality (ch. 3.1), which
+makes rewriting to a fixpoint idempotent (ch. 5).
+
+**The write boundary per segment.** The write boundary of ch. 2.4 point 1
+holds per segment of a timeline target: a segment whose value does not fit
+the target's declared decimals is EF-006, with the place of the attribute,
+the exact value and the decimals as for a scalar write, and the rule writes no
+timeline; a segment that fits is written as the exact value it is, and the
+unbounded form has no ceiling. The static precision gate (WF-023) bounds every
+segment of a rule's timeline target before the rule runs, and leaves the
+time-proportional part alone, behind which this boundary stands (ch. 2.4
+point 4, ch. 2.8).
+
+Worked example — the write boundary per segment (absolute; `ref/` tests
+`WV-3.7-schrijfgrens-maand`, `-jaar` and `-onbegrensd`): a Jutter with a
+`borgtarief` of 18 per year and `borgplichtig` from 2025-01-01 up to
+2025-02-08, and "het borgdeel moet berekend worden als het tijdsevenredig deel
+van zijn borgtarief gedurende de tijd dat hij borgplichtig is". Into a monthly
+`borgdeel` of 2 decimals the segments are **18** in January and 18 × 7/28 =
+**4,50** in February, which fit. Into a yearly `borgdeel` of 2 decimals the
+one segment is 18 × 38/365 = 684/365, which does not fit: **EF-006**, place
+`J1.borgdeel`, value 684/365, decimals 2. Into a yearly `borgdeel` of the
+unbounded form it is **684/365**. The red case
+`corpus/red/jutterswet-tijdsevenredig-past-niet` pins the fault.
+
+**Leeg in a write.** What a leeg value does depends on the kind of target, and
+three rules stand side by side:
+
+- On a **scalar** target a writer that fires with a leeg value writes leeg
+  (ch. 1.2, Assignment; ch. 5.7), except a standing writer, which writes
+  nothing on leeg (ch. 7.8).
+- On a **timeline** target of **one** writer the timeline it writes replaces
+  what the target held, its leeg days included (ch. 5.7). A standing writer
+  (ch. 7.8) decides only where its result reads a value on at least one day:
+  an empty result writes nothing and a case-supplied input timeline stands
+  whole, while a result with a value displaces the input timeline entirely,
+  so input and computed segments never interleave.
+- On a timeline target of **two or more** writers a writer decides only the
+  days on which its timeline reads a value; on a day none decides, the target
+  holds what it held before any of them wrote, its input or leeg (ch. 5.7,
   "Two writers per day").
-- **Temporal characteristic, refused cases (v0):** the manifest family
-  "temporal kenmerktoekenning with indeterminate write-producer". Since
-  2026-11-03 `ref` and the ASP backend write a temporal characteristic within
-  a window (ch. 3.10) and refuse the rest by name, before any subject is
-  taken: no window, two rules on one characteristic, a case-supplied
-  timeline of it, and periods with an open bound, which no reader of a
-  characteristic's buckets could walk (ch. 3.1); both Drools branches write it within a window as well and refuse it without one (DROOLS-102) and over two rules (DROOLS-103); a case-supplied timeline of it and an open bound fault there too (EF-023). Of the v0 cases,
-  (a) an *unconditional* temporal characteristic: "always true" is the
-  one segment (−∞, +∞) since the time domain of ch. 3.1, which is an open
-  bound, so the form stays **OPEN**; (b) a non-`altijd`
-  validity window: the ch. 3.10 axis question, OPEN with it; (c) a
-  condition whose true-periods v0 cannot bound — a negated or navigated
-  characteristic, or a compound containing one; the v0-lowered set is
-  the conjunctive and at-least-one compounds of *own single-period*
-  characteristics (intersection and union of true-period sets — a pure
-  at-least-one disjunction lowers in v0 already; no delta there). Of
-  the refused cases, v1 supplies semantics for exactly one — **delta
-  (promotion of a refusal into semantics)**: the true-periods of a
-  **negated** characteristic are the complement of its true-periods
-  **within the span the write is clipped to** (ch. 3.10's clip); an
-  unbounded complement hits the same time-domain obstacle as (a) and
-  stays OPEN outside a clip, and the *navigated* case stays OPEN with
-  no semantics claimed. *That last clause is about this section's
-  subject — a condition whose true-periods become a WRITTEN timeline —
-  and says nothing about READING a navigated temporal characteristic,
-  which ch. 3.9's whole-period qualifier specifies and both OCaml
-  executors carry: the qualifier folds the reached timeline to a
-  boolean and produces no timeline at all, so it needs no time domain
-  and meets no part of this obstacle.*
+
+A scalar is the timeline (−∞, +∞) (ch. 3.1), so one leeg value writes leeg
+into a scalar target and decides no day of a timeline target beside a second
+writer; whether one rule should govern the three is open (ch. 3.12).
+
+**Two writers per day.** Two or more writers of one timeline target each
+decide the days of their own segments, and the target is their union per day;
+on a day two decide with different values the session faults with EF-016
+(ch. 5.7, "Two writers per day", with the worked example `WV-5.7-per-dag`).
+
+**What 0 means.** 0 is a value, and a producer that writes 0 on a day decides
+that day. The day count writes 0 in every bucket without a true day (ch. 3.8);
+plus and min write 0 on a day no operand fills, as maal, percentage van and a
+division with a leeg dividend do (ch. 3.4); and the sum with its fallback
+clause writes 0 on a day every contributor is leeg (ch. 3.5). The
+time-proportional part writes nothing in a bucket without a true day or with a
+leeg base (ch. 3.7), the sum without the fallback writes leeg on an all-leeg
+day, and verminderd met writes leeg where its left operand is leeg. A producer
+that writes a value on every day of all time has three consequences:
+
+1. **No vacuous truth.** A whole-period test of such a timeline always finds
+   a touched bucket, so it never passes vacuously (ch. 3.9): the gevuld test
+   holds in every bucket, and every other test is judged on the values,
+   0 included. Worked example (`corpus/golden/jutterswet-vast-startpunt`,
+   case 4): a Jutter without a wachtplichtig period has both day counts 0 on
+   (−∞, +∞); `stormpremie`, 50 "indien zijn stormwachtdagen gedurende het
+   gehele jaar gevuld is", is **50**, and `maandpremie`, 20 "indien zijn
+   maandwachtdagen gedurende de gehele maand groter is dan 0", is **leeg**: 0
+   is not greater than 0 in any month. A count without segments would touch no
+   bucket, pass both tests vacuously and give `maandpremie` 20.
+2. **Standing.** A standing target (ch. 7.8) that such a producer writes is
+   decided on every day, and its input timeline stands only where the rule's
+   condition cuts the producer to no period at all (ch. 3.10).
+3. **Beside a second writer.** Such a producer decides every day of the
+   periods of its rule's condition, so it stands beside another writer of the
+   same target without EF-016 only where the two have disjoint periods or
+   write the same value on the days they share (ch. 5.7). In `WV-5.7-per-dag`
+   the day count stands beside the writer of 30 because their conditions are
+   each other's complement per bucket; without the day count's condition both
+   decide December 2025, with 30 and 31, and the session faults.
+
+**Anchored targets.** A producer on a target with a variable start point
+buckets on the anchored grid (ch. 3.2). The temporal sum over a set onto such
+a target is not defined: it would fold timelines whose grids are laid per
+object (ch. 3.12).
+
+**What a characteristic write does not cover.** The write of a time-dependent
+characteristic is defined within a window (ch. 3.10). A negated check in its
+condition holds on the complement of its true periods **within the periods of
+the window**, which bound it. An unconditional characteristic would hold on
+(−∞, +∞), and a negated check outside a window on the unbounded complement of
+finite periods: both are open periods, which a characteristic's true periods
+do not carry (ch. 3.1). Those forms, a write without a window, two rules that
+write one characteristic, a case-supplied timeline of a characteristic that a
+rule writes, and a navigated characteristic in the condition of such a write
+are not defined here (ch. 3.12). This is about a condition whose periods
+become a **written** timeline; reading a navigated time-dependent
+characteristic under the whole-period qualifier is defined (ch. 3.9), since
+the qualifier folds the reached timeline to a boolean and writes no timeline.
+*v0 mirror note:* v0 refuses a time-dependent characteristic target whose
+write producer it cannot determine (the manifest family "temporal
+kenmerktoekenning with indeterminate write-producer"), and lowers a
+conjunctive or at-least-one compound of own characteristics to the
+intersection or the union of their true periods; the write within a window and
+its negated check are tracked deltas.
 
 Worked examples (`ref/` tests verbatim):
 
-- *Monotone characteristic write.* Condition: the subject's
-  characteristic `recht` holds on [2024-03-01, 2024-09-01). Written
-  target characteristic: holds on exactly [2024-03-01, 2024-09-01),
-  false everywhere else — no complement is seeded.
-- *Negated characteristic under a clip (the delta).* Window
-  [2024-01-01, 2025-01-01), `recht` as above, condition "niet recht" →
-  written true-periods [2024-01-01, 2024-03-01) ∪
-  [2024-09-01, 2025-01-01).
-- *Idempotence.* The target already holds {[2024-03-01, 2024-09-01)}
-  and the rule computes the same segment list → segment-wise equal → the
-  write is a no-op; computing {[2024-03-01, 2024-10-01)} instead → not
-  equal → a real write (the fixpoint machinery of ch. 5 sees a change).
-- **Anchored targets** compose with the producers via the anchored grid
-  (ch. 3.2); v0 additionally refuses the temporal-sum-over-a-set producer
-  on an anchored target (a set fold across per-object grids) — recorded,
-  OPEN.
+- *Monotone characteristic write.* Condition: the subject's characteristic
+  `recht` holds on [2024-03-01, 2024-09-01). Written target characteristic:
+  holds on exactly [2024-03-01, 2024-09-01), false everywhere else — no
+  complement is seeded.
+- *A negated characteristic under a clip.* Window [2024-01-01, 2025-01-01),
+  `recht` as above, condition "niet recht" → written true periods
+  [2024-01-01, 2024-03-01) ∪ [2024-09-01, 2025-01-01).
+- *Idempotence.* The target already holds {[2024-03-01, 2024-09-01)} and the
+  rule computes the same segment list → segment-wise equal → the write is a
+  no-op; computing {[2024-03-01, 2024-10-01)} instead → not equal → a real
+  write (the fixpoint of ch. 5 sees a change).
 
-### 3.12 v0 refusals and open decisions (summary)
+### 3.12 Open decisions
 
-The chapter's tracked debt, in one place. "Refused (mirrored)" = v0
-markers/skips it and this spec records the refusal; "OPEN" = v1 must
-decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
+The decisions this chapter leaves open. A form listed here as without a
+meaning is refused by name by every executor; where it has a fault kind, the
+kind is `declined` (ch. 5.7b): EF-021, EF-022, EF-023. What each executor
+carries of this chapter, and what it refuses by name beyond this list, is
+recorded in `spec/CONSTRUCTS.md` rows 11 and 29, in `spec/ASP-TRANSLATION.md`
+and in the READMEs of the backends.
 
-| Subject | Status |
-|---|---|
-| Multi-period grids (`count` ≥ 2): all reads and writes | refused (mirrored); OPEN — specify producers or restrict `count` = 1. A parameter's facet is restricted to `count` = 1 since L3 (`IR-SPEC.md` ch. 2.10, WF-005), because no executor evaluates a parameter's count |
-| Calendar bucketing by day/week/quarter | absent (mirrored); OPEN with the grid decision. A fixed start point lays week and quarter periods of its own (ch. 3.2), and the case loader and the asOfDate bucket read them in all three executors. A case timeline on the day grid needs no bucket: since 2026-11-03 (card `timeline-arithmetic-per-period`) the case loaders of `ref` and the ASP backend read it, every day sitting on the grid |
-| Fixed start point off the calendar grid (§13.3.6.3–.7) | **landed (v1 addition)**: `fixedStart` on a timeline and on its facets (`IR-SPEC.md` ch. 2.8, WF-115), the grid in ch. 3.2; read by a case input, the asOfDate bucket and the day count; the pro-rata over a fixed-start grid fenced; the calendar start point is written without one |
-| Point-in-time read (the "op dat tijdstip" node) | **landed (v1 extension)**: `read(tl, d)` is `IR-SPEC.md` ch. 4.3a (`TemporalRead`, WF-049; ch. 3.3, row 11), anchor-witnessed and replayed by both executors |
-| Timeline arithmetic beyond `plus`/`minus` (plus/min): `reducedBy` (verminderd-met), `times` (maal), `dividedBy` and `dividedByAbs` (division), `percentageOf` (percentage) | **specified (delta) and executed**, ch. 3.4: each operator read per day with its ch. 1.2 empty rule (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 1), a division's deposit once per rule × subject × code. `ref` and the ASP backend, witness `corpus/golden/jutterswet-rekenen-per-dag`; and both Drools branches. The power stays refused |
-| Plus, min and the sum per period (ch. 3.4, 3.5) as the value of a rule on a temporal attribute target | **specified and executed** over all time (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 2): `ref` and the ASP backend, witness `corpus/golden/jutterswet-maandloon` (ch. 3.11), and both Drools branches. A time-dependent parameter as an operand is executed since the same day (IMPLICIT-TIME VB 2.3; witness `corpus/golden/jutterswet-verzuimrente-dagen-afgerond`). A condition on such a rule is executed by `ref` and the ASP backend since the same day (the row below), and by both Drools branches; a die/dat subselection on the sum is refused by name in every executor |
-| A condition on a rule with a timeline target that reads a timeline (ch. 3.10, the clip generalised), the whole-period qualifier in it per bucket (ch. 3.9) | **specified (delta) and executed** (maintainer decisions 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` points 3 and 4): `ref` and the ASP backend on every producer of ch. 3.4–3.8, witnesses `corpus/golden/jutterswet-loon-per-periode` and `corpus/golden/jutterswet-wachtmaanden`, and both Drools branches. A condition that reads no timeline gates the rule. Refused by name in every executor (in Drools DROOLS-309): a navigated or hosted check, a comparison of two timelines, a leeg or gevuld test and a quantifier fold in such a condition. A window is read per period as a member of such a condition and as the condition of the period arithmetic since 2026-11-03 (point 6; `ref` and the ASP backend, suite fixtures `venster-als-lid` and `venster-rekenen`; and both Drools branches). The total of a timeline written under such a condition is executed by `ref` and both Drools branches, and by the ASP backend where every bound of the timeline is a bound of the case or a wall of its grid, a segment between other bounds refused by name there |
-| Two or more writers of one timeline target (ch. 5.7, per day) | **specified (delta) and executed** (`spec/proposals/IMPLICIT-TIME.md` point 5): `ref` and the ASP backend, witness `corpus/golden/jutterswet-wachtdagen-twee-schrijvers`, red case `corpus/red/jutterswet-wachtdagen-botsing` (EF-016), and both Drools branches, a read of such a target included. Two writers that decide one day with one value hold together; the ASP backend refuses that day by name ([V7]). A case input on such a target is refused by name in the ASP backend, and `ref` keeps it on the days no writer decides |
-| A timeline read per period on a finer grid than the target's | **ill-formed (WF-126**, maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 8): negatives `wf126-value-grid`, `wf126-condition-grid`, `wf126-whole-period-grid`; the RegelSpraak frontend refuses it (RGS-374), `ref` and the ASP backend fail fast in the verifier's terms |
-| The temporal total across the day and the month family of time units (ch. 3.6) | **specified (delta) and executed**: the calendar (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 11), the actual length of the month, quarter or year; a declared factor between the two families is ill-formed (WF-009, negative `wf009-calendar-family-factor`). `ref` in every route of the total; the ASP backend under a rounding of the gedurende-clipped total, refusing it by name elsewhere (CLINGO-032); both Drools branches on every route of the subject's own total, refusing it by name in the per-element fold (DROOLS-228). Witnesses `corpus/golden/jutterswet-verzuimrente-dagen-afgerond` (every executor) and the anchor `corpus/golden/anchor/jutterswet-verzuimrente-dagen`, the exact totals (`ref`) |
-| The temporal total over a part of a unit of its grid, a plain operand, an absent timeline (ch. 3.6) | **specified (delta) and executed** (maintainer decisions 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 12): a part of a unit counts by its days over the days of the period of the grid that holds it, per clipped fragment (12a, where the pinned runtime floors whole units per fragment); a plain operand reads per unit of the grid (12b, where §7.1 asks a unit per time unit); an absent timeline totals 0 on every route (12c, spec typ. §4.20). `ref` on every route; the ASP backend over a denominator it divides away, under a rounding or exactly where it divides the total, refusing at solving by name a total it does not divide (`backends/clingo/README.md` [V8]). Witnesses `corpus/golden/jutterswet-getijdenwacht` (J4), `corpus/golden/jutterswet-vast-startpunt` (case 1 under a rounding, cases 4 and 6) and the absent totals of `jutterswet-kadetarief`, `jutterswet-penningjaar` and `jutterswet-tempototaal`; suite fixtures `partial-unit`. Both Drools branches on every route, exactly (a decimal or a rational). The precision bound of ch. 2.3 is ∞ for a total that can count a part of a period (ch. 2.3, "A part of a period": every total except one over the day grid, one without a clip of a timeline no rule writes, and one clipped by a comparison of such a timeline on a fitting calendar grid); WF-023 refuses such a total into a bounded target without a rounding (negatives `wf023-precision-partial-unit-*`), and the RegelSpraak frontend with RGS-370 |
-| Open segments (ch. 3.1) | **specified**: a timeline divides all time, a segment may have an open bound, the case format omits `from` or `to` for one (`uchar-case-v0`); the total of ch. 3.6 counts an open segment of 0 as 0 and faults on any other value (EF-036, red case `jutterswet-totaal-open-segment`); a fold that walks the buckets of an open period (ch. 3.7, 3.8) is refused by name, and the whole-period qualifier answers on the bucket beside an open segment's finite bound (ch. 3.1, 3.9; since 2026-11-03, when the day count of ch. 3.8 became 0 over all time and the qualifier over it met open segments, `jutterswet-vast-startpunt`). A characteristic's true-periods (`characteristicTimelines`, and those a rule writes) carry no open bound |
-| Scalar operand of timeline arithmetic / unconditional temporal characteristic | the scalar operand of every operator is **specified and executed**, ch. 3.4 (one segment (−∞, +∞)), and since 2026-11-03 a scalar as the whole value of a timeline target as well (ch. 3.11); the unconditional temporal characteristic has the time domain since then and stays OPEN: a temporal characteristic is written within a window since 2026-11-03 (ch. 3.10, 3.11), and "always true" would hold on an open period |
-| `minimum`/`maximum`/`first`/`last` (min/max/eerste/laatste) over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
-| §8.4.3 period condition on a **scalar** target | **specified and executed, ch. 3.10** — all four executors since 2026-09-20, witness `corpus/golden/jutterswet-premievenster` (six clauses; as a rule's whole condition and as an `all`/`the` composite member) |
-| §8.4.3 period condition under `none` or a counting quantifier | **ill-formed (WF-112, maintainer decision 2026-09-23)**: the window gates the rule, and no reading is specified for its complemented or counted verdict (the time-free session is where the two readings part). Covers a quantifier fold's `filter` and `test` too. Negatief `wf112-time-window-counting-quantifier`; the executors' refusals remain as fail-fast checks, both Drools branches' by name since card `drools-venster-vouwtoets` |
-| §8.4.3 period condition on a temporal target | **specified (delta) and executed: the clip, ch. 3.10** — `ref` and the ASP backend since 2026-09-23, on attribute targets with the ch. 3.7/3.8 producers, and generalised to every condition that reads a timeline since 2026-11-03 (the row on a condition on a timeline target). Corpus-pinned by `corpus/golden/jutterswet-pachtvenster` wherever the case lies on the grid (the evaluation date ignored — unset and outside every window alike —, a leeg or empty window writing the empty timeline); the SEGMENT-CUTTING clause is suite-pinned only, in both OCaml executors. Both Drools branches carry it since step B part ii. Since 2026-11-03 the window is also read per period as a MEMBER of a composite on a temporal target and as the condition of the period arithmetic, and on a time-dependent CHARACTERISTIC target it bounds the periods the characteristic holds in (`corpus/golden/time-window-timeline-characteristic`, `corpus/golden/anchor/jutterswet-verzuimrente-30-360`), in `ref` and the ASP backend; and both Drools branches |
-| A corpus carrier for a clipped (off-grid) bucket | **OPEN** — a corpus carrier for a cut bucket needs the case schema (`uchar-case-v0`, `timelineValue`) to release EXPECTED timelines from the declared grid; until then the clause lives in the executors' suites. The alternative, a WF rule demanding on-grid bounds for a clip, is not taken |
-| A time window inside the `filter` of an `all` quantifier fold, in a time-free session | **OPEN, no WF-112 widening** (maintainer decision 2026-09-23): `ref`, the ASP backend and the Drools DRL-text branch answer consistently — the window never matches, the member is filtered out, the fold is vacuously true — so there is no unnamed complement reading and no ground for refusal. Since 2026-09-23 (card `drools-venster-vouwtoets`) the Drools exec-model branch carries it too, so all four executors answer it alike; `corpus/golden/jutterswet-wachtvenster` pins the vacuous reading in all four (`bevoegd` in `case3-tijdvrij`) |
-| A period-condition bound other than a literal or an own scalar attribute | **specified and executed** since 2026-11-03 (`spec/proposals/IMPLICIT-TIME.md` VB 6.1; RegelSpraak §8.4.3): a bound is a day-precise date expression over the subject, the parameters and literals, "zijn vervaldatum plus 1 dg" (`ref` and the ASP backend; anchor `jutterswet-verzuimrente-30-360`). A bound that reads a timeline, navigates a role or folds a set stays ill-formed (WF-111; negatives `wf111-computed-bound-navigated-read`, `wf111-period-boundary-time-dependent-parameter`); a datum-tijd bound likewise (`wf111-date-time-bound-*`). Both Drools branches carry the bound of a scalar target in its two former shapes only, and refuse the window on a temporal target by name |
-| The day count over all time, its day-kind test, its unit (ch. 3.8) | **specified and executed** since 2026-11-03 (`spec/proposals/IMPLICIT-TIME.md` 7a, 7b, 7c): 0 in every bucket without a true day, over all time (maintainer decision 2026-11-03); a day-kind test of the counted day in an `all` composite with one own characteristic (WF-058); days per unit of the bucket in a target that declares a unit (WF-058). `ref` and the ASP backend; witnesses the goldens with a day count and `anchor/jutterswet-verzuimrente-30-360`. Both Drools branches since step B part ii |
-| Negated temporal-characteristic condition | **specified (delta) within a clipped span, ch. 3.11**; unbounded complement OPEN; the navigated case stays refused/OPEN — as a WRITE producer only; the navigated whole-period READ is the row below |
-| Version-validity window on a temporal write | OPEN — the ch. 8 axis decision |
-| Date-valued whole-period comparison | refused (mirrored) |
-| Whole-period qualifier, the **characteristic-holds** test (own and navigated, both grids, the qualifier's negation) | **specified and executed, ch. 3.9** — all three executors, witnessed by `corpus/golden/synth-gehelejaarkenmerk`; the two OCaml ones carry it since 2026-09-11, the Drools backend carried it already |
-| Whole-period qualifier over a characteristic, the **inner** negation ("gedurende … NIET") | specified (ch. 3.9's formula), executed by the two OCaml executors; the Drools backend refuses it by name in both branches, so it stays suite-pinned and out of the corpus |
-| Whole-period qualifier, the **ordering/equality** test over a value timeline | **specified and executed, ch. 3.9** — the reference interpreter and the ASP backend built it 2026-09-16 (the heelperiode-forall card), the Drools backend carried it already; witnessed by `corpus/golden/jutterswet-ploegpremie` and by each executor's own suite. The **date-valued** form stays refused (its own row above), and the navigated form is untouched |
-| Whole-period qualifier, the **leeg/gevuld** tests | **specified and executed, ch. 3.9** (decided 2026-09-26: one threshold, days(B), for every test; the inner negation per day, so the negated leeg test is the gevuld test and the negated gevuld test the leeg test) — all three executors, both branches of the Drools backend included, over an own operand and one reached over one to-one hop, both grids and both negations; witnessed by `corpus/golden/jutterswet-gehele-periode-leeg`. Until that date all three refused the form by name, and four red cases held the refusals (`leegtest-heel-tijdvak`, `leegnegatie-heel-tijdvak`, `gevuldtest-heel-tijdvak`, `gevuldnegatie-heel-tijdvak`); they left the red zone with them. An operand reached over a CHAIN of to-one hops is executed by all three executors, both branches of the Drools backend included since 2026-09-26; the three suites pin it on one document (`ref`, the ASP backend, and the Drools backend's `WholePeriodChainWitnessTest`), and no golden carries it. Until then both Drools branches declined it with a reason that named no form, because they lowered one hop only; a whole-period comparison over a chain stays declined in both, as `ref` folds no navigated comparison. A time-dependent PARAMETER as the operand passes WF-043 and is executed by no executor: all three refuse it by name in one sentence, the Drools backend in its loader for both branches |
-| **Quantifier fold** over a linked instance set (ch. 3.9a) | **specified and executed** — `all` and `none` in all three executors, over a WHOLE-PERIOD matrix (witness `corpus/golden/jutterswet-ploegpremie`) and, since 2026-09-16, over a NON-temporal one (witness `corpus/golden/jutterswet-schouwploeg`: five cases carrying six verdict rows — two ploegen share one of them, which is what pins the RANGE — both quantifiers, two matrix shapes and a negated matrix). The executor asymmetry this row used to record is **gone**: the ASP backend REIFIES the matrix into a helper predicate and negates that one atom (negation-as-failure over a reified conjunction is an ordinary ASP body, where the complement of an arbitrary conjunction of atoms is not), and both Drools branches ask the matrix through their ordinary per-subject condition lowering with the element as subject — the exec branch collecting the contributors, the DRL-text branch denying the failure witness with a `not` pattern. What stays bounded is which matrix FORMS each executor's condition translation carries: a form outside it is refused by name, per form, never silently. **All five quantifiers are executed since 2026-09-16**: the counting three — the named extension point this row used to record — are built in all three executors over BOTH matrix routes, each of them reading the SIZE of the satisfier set where `all` and `none` read a witness (the ASP backend a `#count` with the range join INSIDE the aggregate, the Drools exec branch a counting twin of the ch. 3.9 fold helpers and a count over the collected contributors, the DRL-text branch a count accumulate over the element pattern). Witnesses `corpus/golden/jutterswet-reddingsvloot` (the §8.2 matrix, seven verdict rows), `corpus/golden/jutterswet-vuurtoren` (a non-temporal one, six) and `corpus/golden/jutterswet-sleepvloot` (the NIET prefix, which under a threshold lands on the COUNT because there is no quantifier to flip into — three rows, four of whose cells invert if `count(P)` is read for `count(¬P)`). What is left on the quantifier field is `the`, refused by name by WF-108 (a); all matrix routes of this node are executed by all four executors since 2026-09-18; what stays bounded is which matrix FORMS each executor's condition translation carries, per form and by name. Since 2026-09-19 the node also has a SOURCE language: `corpus/golden/jutterswet-vuurtoren-flogic` is the F-logic-emitted twin of the hand-written `jutterswet-vuurtoren`, over the same five case files byte for byte, played by all four executors |
-| **Day-kind duration forms** (§6.10 count, §6.11 step) over day-precision operands | **specified and executed, ch. 3.8** — ref and clingo since 2026-09-19, the Drools backend playing the same values (golden `jutterswet-bergingsklok`; red case `day-kind-unsatisfiable-walk`). The reach fence and the backward step are DELTAS: the source gives neither, and the source's N = 0 sentence contradicts its own "always a day of the kind" sentence, which ch. 3.8 resolves in favour of the zero rule |
-| **`datum-tijd ± N <dagsoort>`** | **specified and executed, ch. 3.8** (maintainer decision 2026-09-19): the day kind is judged on the civil day part and the original clock time rides through unchanged; golden `jutterswet-getijklok` closes the square. The DELTA is the rule itself — the source admits datum-tijd operands and settles nothing about the time of day |
-| **`duration` (tijdsduur) in a day kind over datum-tijd operands** | **refused by name** in both OCaml executors, no corpus case (maintainer decision 2026-09-19, split from the row above): counting whole days of a kind between two INSTANTS needs a rule for the part-day at each end, and none is fixed. OPEN — it is the partial-day/boundary-instant question, not the day-kind question. The Drools backend counts over the bare date parts, a reading this spec has not adopted |
-| The day-kind **predicate as a rule condition** (§8.1.5, "… is een werkdag") | refused by name in both OCaml executors (ch. 5.4's framing: a day kind is consulted as a stratum-0 classifier, never as a derived read inside the rule fixpoint). It IS evaluated inside a day-kind condition, where the nested reference is the §9.8 composition — that arm is executed, **on the bound day only** |
-| The §9.8 composition **on a date other than the bound day** | **refused by name in all three executors** since 2026-09-19 (red case `day-kind-reference-other-day`); the narrow route, taken because ref and the Drools compiler answered it while the ASP backend refused. OPEN — the carrying reading needs a source for what the test MEANS inside a definition about an arbitrary day |
-| Sorted/non-overlapping input invariant | delta candidate (WF rule, data plane), ch. 3.1 |
-| Non-terminating pro-rata stored at 16 digits | v0 residual (normative: exact fraction), ch. 3.7 |
+| # | Open decision | Where | What holds now |
+|---|---|---|---|
+| 1 | **Multi-period grids** (`count` ≥ 2) | ch. 3.2 | Declared and carried in the model layer (WF-005); no operation is defined, a case input included, and every read and write is refused. A parameter's facet has `count` 1 (`IR-SPEC.md` ch. 2.10). Open: specify how a value spreads over a period of N units, or restrict `count` to 1 at the type level. |
+| 2 | **The calendar beyond month and year** | ch. 3.2 | The calendar lays month and year buckets only; a member on the calendar's day, week or quarter grid has no bucket (a fixed start point lays week and quarter periods of its own, and a case timeline on the day grid needs none). A unit outside the spelling table, such as `bm`, belongs to neither family and keeps its declared factor. Open: calendar buckets of a day, a week and a quarter; whether a unit outside the table that a document declares as a fixed number of days and uses as a month reopens the fixed factor between the families that WF-009 refuses on `mnd = 30 dg`, and if so whether it is intended (a bank month) or refused. |
+| 3 | **Producers across start points and grids** | ch. 3.2, 3.7, 3.11 | The time-proportional part onto a target or from a base on a fixed or variable start point is not defined; its base must be as coarse as the bucket or coarser; the temporal sum over a set onto a target with a variable start is not defined. Open: the part across start points; a base finer than the bucket, which ALEF reads as the average of the base weighted by days (`spec/proposals/IMPLICIT-TIME.md` point 8b); the sum across grids laid per object. |
+| 4 | **Operators and folds over timelines without a reading** | ch. 3.4, 3.4c, 3.5, 3.6 | The power over a timeline is refused; minimum, maximum, eerste and laatste over timelines are refused (v0: "the minimum of a timeline" is ambiguous between a fold per period over contributors and a fold over the periods of one timeline); a ranking or counting fold over a time-dependent member of a set — minimum, maximum, eerste, laatste, aantal, aantal gevulde (EF-021) — is refused, for want of a moment. Open: these readings. `spec/proposals/IMPLICIT-TIME.md` point 9 reads minimum, maximum, eerste and laatste per period over the operands, with no form over the time of one timeline, which also gives a fold over the members of a set a moment per period; this chapter does not state that rule. |
+| 5 | **Conditions over timelines without a reading** | ch. 3.9, 3.10 | Under the whole-period qualifier: a comparison over a timeline reached over a path, between two timelines or without a timeline, and a date-valued comparison. On a rule with a timeline target: a condition form outside the list of ch. 3.10 — a navigated or hosted check, a comparison of two timelines, a leeg or gevuld test, a quantifier fold. Open: their readings; the reading per day of ch. 3.3 is the candidate for the second group. |
+| 6 | **Day kinds outside the bound day** | ch. 3.8 | No meaning: a §9.8 test on a date other than the bound day (EF-022); the day-kind predicate as the condition of a rule (§8.1.5); the duration in whole days of a kind between two datum-tijden. Open: a source for what a test on another date means inside a definition about an arbitrary day; a classifier read inside the fixpoint of the rules; a rule for the part of a day at each end of an interval between instants. |
+| 7 | **A time-dependent characteristic outside a window** | ch. 3.3, 3.10, 3.11 | The write of a characteristic is defined within a window. No meaning: periods with an open bound (EF-023), so an unconditional characteristic and a negated check outside a window. Not defined: a write without a window, two rules on one characteristic, a case-supplied timeline of a characteristic a rule writes, a navigated characteristic in the condition of the write, and a time-dependent characteristic as the operand of the point read (the case format). Open: each of these. |
+| 8 | **The period window and the axis of versions** | ch. 3.10 | (a) A rule version's validity window on a temporal write mixes the selection of versions with the timeline axis; it belongs to the single-axis decision of ch. 8 (PLAN §9, decision 2), and no golden carries a validity window on a temporal rule. (b) A window in the `filter` of an `all` quantifier fold in a session without an evaluation date never matches, so the member is filtered out and the fold is vacuously waar; WF-112 is not widened to it (`corpus/golden/jutterswet-wachtvenster`, `bevoegd` in `case3-tijdvrij`). (c) A clip that cuts a bucket has no corpus carrier, because the case format pins every expected timeline to the declared grid; the alternative, a WF rule that demands bounds on the grid for a clip, is not taken. Open: (a), the reading of (b), and a case format that releases expected timelines from the grid. |
+| 9 | **The subject's own total of a case-supplied timeline** | ch. 3.6, 8.4 | It reads the asOfDate bucket, one period of the grid that holds the evaluation date, while a timeline a rule writes is totalled whole, so the meaning of "het totaal van zijn X" depends on who wrote X. Open: whether the own total of a case timeline reads the whole timeline, as every other timeline is read over all time, which changes the case convention of ch. 8.4. |
+| 10 | **Leeg in a write across target kinds** | ch. 3.11, 5.7, 7.8 | A leeg value writes leeg into a scalar target (a standing writer writes nothing); a sole writer's timeline replaces a timeline target whole, its leeg days included (a standing writer with an empty result writes nothing); beside a second writer a day a writer reads leeg is not decided, and the input stands there. Open: whether one rule governs the three, since a day of a timeline target reads the input or leeg depending on whether a second writer exists. |
 
 ---
 
