@@ -8910,7 +8910,8 @@ and the Drools backend play as well, the ASP backend all but
   on (−∞, 2025-04-01), **10** on [2025-04-01, 2025-06-01), **5** on
   [2025-06-01, +∞), and one fact `Jutter.strandloon` of EF-005 — the default
   decides April and May, and its division by 0 deposits; kustwacht in March
-  alone: **5** on all time and no fact — it decides no day.
+  alone: **5** on all time and no fact — it decides no day
+  (`WV-7.11-deponering-vervalt`).
 
 Worked example `WV-7.11-initialisatie-emmerscalair` (the golden
 `jutterswet-opgave-per-periode`): the case gives the stormtoelage as the
