@@ -730,7 +730,7 @@ missing line makes `make gates` exit non-zero. Current gates:
     `EXPECTED_MIN_COMPARED_GOLDENS=261`, `EXPECTED_MIN_COMPARED_CASES=706`,
     `EXPECTED_MIN_READINGS=3826`, `EXPECTED_MIN_NODE_LINES=13971`,
     `EXPECTED_MIN_UNREACHED=3118`, `EXPECTED_MIN_CONTRIBUTOR_LINES=314`
-    and `EXPECTED_MIN_TIMELINE_LINES=76` (measured 2026-10-21), and
+    and `EXPECTED_MIN_TIMELINE_LINES=850` (measured 2026-11-04, card `ref-trace-period-arithmetic`; first set 2026-10-21), and
     `EXPECTED_MIN_UNREACHED_CONTRIBUTORS=106` (contributors of the trace
     not reached, measured 2026-10-21, card `fold-contributor-verdicts`).
     Since the card `reading-read-objects` (2026-10-27) a node that reads
