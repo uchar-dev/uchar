@@ -4965,7 +4965,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-034 | the labels of a cell of the case input name no cell of its attribute | case input | `label`, `attribute`, `labels` | ch. 5.8c | `corpus/red/jutterswet-cel-onbekend-label` |
 | EF-035 | the case input names one cell of an attribute twice | case input | `label`, `attribute`, `labels` | ch. 5.8c | `corpus/red/jutterswet-cel-dubbel` |
 | EF-036 | a temporal total meets a segment with an open bound whose value is not 0 | fault | `attribute`, `label` | ch. 3.6 | `corpus/red/jutterswet-totaal-open-segment` |
-| EF-037 | a form that reads the full timeline of a time-dependent attribute finds the asOfDate-bucket scalar | fault | `attribute`, `label` | ch. 8.4; ch. 3.3; ch. 3.4; ch. 3.5; ch. 3.6; ch. 3.7; ch. 3.9; ch. 3.10 | `corpus/red/jutterswet-emmerscalair-per-periode`, `corpus/red/jutterswet-emmerscalair-knip`, `corpus/red/jutterswet-emmerscalair-gehele-jaar` |
+| EF-037 | a form that reads the full timeline of a time-dependent attribute finds the asOfDate-bucket scalar | fault | `attribute`, `label` | ch. 8.4; ch. 3.3; ch. 3.4; ch. 3.5; ch. 3.6; ch. 3.7; ch. 3.9; ch. 3.10 | `corpus/red/jutterswet-emmerscalair-per-periode`, `corpus/red/jutterswet-emmerscalair-knip`, `corpus/red/jutterswet-emmerscalair-gehele-jaar`, `corpus/red/jutterswet-emmerscalair-gevolg` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified
@@ -8861,8 +8861,7 @@ input stands.
 
 Worked examples on the forms of the dialect (`ref/test/` verbatim, the
 documents of `ref/test/fixtures/defaults-per-day`, which the suites of the ASP
-and the Drools backend play as well, the ASP backend all but
-`lazy-consequence`, below), each a whole number for every month:
+and the Drools backend play as well), each a whole number for every month:
 
 - `WV-7.11-uitzondering`: "Het strandloon moet berekend worden als zijn
   basisloon" with the exception "… gesteld worden op 30 indien hij kustwacht
@@ -8899,10 +8898,10 @@ and the Drools backend play as well, the ASP backend all but
   on 2025-07-01. Without kustwacht: **5** on all time; with kustwacht and
   winterwacht in April 2025: **5**, **60** in April, **5**, and no fault — the
   consequence is not evaluated, since its justification holds on no day of its
-  turn. With kustwacht from June to August 2025 it is, and faults: **EF-037**,
-  attribute `kustloon`, label `J1` (`WV-7.11-gevolg-buiten-de-beurt-fout`).
-  The ASP backend reads the bucket scalar while it translates the document,
-  and faults with EF-037 on both cases.
+  turn (the golden `corpus/golden/jutterswet-gevolg-buiten-de-beurt`). With
+  kustwacht from June to August 2025 it is, and faults: **EF-037**, attribute
+  `kustloon`, label `J1` (`WV-7.11-gevolg-buiten-de-beurt-fout`,
+  `corpus/red/jutterswet-emmerscalair-gevolg`).
 - `WV-7.11-deponering`: the base 5 and above it "… berekend worden als (zijn
   basisloon gedeeld door zijn deler) naar beneden afgerond op 0 decimalen
   indien hij kustwacht is", the basisloon 20 on 2025 and the deler 0 up to
