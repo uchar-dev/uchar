@@ -12,6 +12,23 @@ op commit `872b859` in alef-bridge (kaart `backlog/doing/20261104-empty-kinds-in
 bronnotities staan in het onderzoeksrapport buiten de repo (`research/flavours-of-empty/`); de programma's van §6 staan
 hier letterlijk.*
 
+**Besluiten van de eigenaar (2026-11-04).**
+
+- **N1:** de IR houdt één leeg, de afwezigheid: nog niet afgeleid of niet aangeleverd; een schrijver die leeg oplevert, beslist niets.
+  Daarnaast komen twee **markers**, gevulde waarden zonder getal: **onbekend** (er is een waarde, maar die is niet vast te stellen;
+  Codd's A-mark) en **niet van toepassing** (er bestaat geen waarde; Codd's I-mark). Meer soorten (zoals HL7's nullFlavor) niet: een
+  reden waarom iets onbekend is, is domeinkennis en staat in een eigen attribuut of enumeratie.
+- **Een marker beslist, leeg niet.** Een schrijver die een marker schrijft, beslist zoals een getal: hij verdringt de invoer (lezing A),
+  wijkt voor een opgave (lezing B), botst met een andere waarde (EF-016), per dag op een tijdlijn. Wie een attribuut leest dat een marker
+  kan bevatten, toetst eerst of het een waarde is; de verifier dwingt dat af, zodat niets stil doorrekent.
+- **Per attribuut aan te zetten, voor elk datatype** (ook een tijdlijn, per periode), met één of beide markers; niet altijd aan, en niet
+  op een kenmerk (N6: wie drie standen wil, neemt een Boolean-attribuut).
+- **N2:** een regel schrijft nooit leeg; bewust "geen waarde" schrijft hij als marker.
+- **N3:** het caseformaat krijgt geen `null`; wel de markers als waarde.
+- **N4 en N5:** de bronvorm is dialectsuiker in RegelSpraak die naar het somtype van de IR verlaagt (kaart
+  `20261104-absence-markers`); het standpatroon (§6.1, een enumeratie naast de waarde) blijft de draagbare vorm voor wie ook in ALEF wil
+  draaien.
+
 ## 0. Markeringen
 
 - **[Q]** een letterlijk citaat — van uchar's eigen tekst of van een externe bron die geen RegelSpraak-specificatie is;
