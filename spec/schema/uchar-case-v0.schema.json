@@ -223,7 +223,7 @@
             "label": { "type": "string", "minLength": 1 },
             "attribute": { "type": "string", "minLength": 1 },
             "timeline": {
-              "description": "The expected full timeline of a temporal target, segment-exact over all time (an empty array pins an empty timeline): its filled segments, open segments included, where a segment without 'from' or 'to' has an open bound as in timelineValue; ordering, non-overlap and grid alignment are the ref loader's cross-checks.",
+              "description": "The expected full timeline of a temporal target over all time (an empty array pins an empty timeline): its filled segments, open segments included, where a segment without 'from' or 'to' has an open bound as in timelineValue; ordering, non-overlap and grid alignment are the ref loader's cross-checks. It pins what the target reads on each day, not how a run of equal values is divided into segments: an executor compares it with the timeline the evaluation gives in the canonical form of RUNTIME-SEMANTICS ch. 3.1 (the maximal runs of equal values, gaps omitted, open bounds as they stand), so two adjacent segments with equal values and the one segment over both are the same expectation.",
               "type": "array",
               "items": {
                 "type": "object", "additionalProperties": false,

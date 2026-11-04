@@ -1090,19 +1090,42 @@ where it is leeg: a scalar holds on every day (§5.1.1, §5.1.4.1).
   segment order. Zero-length and reversed intervals (`tot` ≤ `van`)
   contribute nothing anywhere in this chapter.
 - Two representations of "empty here" exist and are **observationally
-  equivalent** under `read`: a gap, and an explicit leeg-valued segment
-  (only the contributor-skipping rule of ch. 3.5 emits the latter).
+  equivalent** under `read`: a gap, and an explicit leeg-valued segment.
   Semantics are defined over `read`; no *value-producing* operation in
   this chapter may distinguish the two representations. (The
   change-detection rule below is the one representation-sensitive
   comparison — it compares segment lists, not read-functions; that is
-  what makes it a data-plane rule, not a semantics.) A timeline that a
-  rule writes by ch. 3.4 or 3.5 holds its filled segments only — a leeg
-  period is written as a gap — and so does the case format
-  (`uchar-case-v0`, where a segment carries a value and omits `from` or
-  `to` for an open bound). *v0 mirror note:* v0's temporal total
-  gives an absent timeline leeg and a present-but-segmentless one 0;
-  here both total 0 (ch. 3.6, a tracked deviation).
+  what makes it a data-plane rule, not a semantics.) The case format
+  (`uchar-case-v0`) writes filled segments only: a segment carries a
+  value and omits `from` or `to` for an open bound. *v0 mirror note:*
+  v0's temporal total gives an absent timeline leeg and a
+  present-but-segmentless one 0; here both total 0 (ch. 3.6, a tracked
+  deviation).
+- The **canonical form** of a timeline is its maximal runs of equal
+  values with the gaps omitted: every leeg segment and every zero-length
+  or reversed one is dropped, then every two adjacent segments `[a, b)`
+  and `[b, c)` with equal values merge into `[a, c)` until no two do; an
+  open bound stays open. Values are equal as in the change-detection rule
+  below (numeric equality for a number, so 12 and 12,00 are one run). Two
+  well-formed timelines read alike on every day exactly when their
+  canonical forms are equal. How a producer divides a run of equal values
+  into segments is therefore representation, as the choice between a gap
+  and an explicit leeg segment is. An expected timeline of a case
+  (`uchar-case-v0`, `attributeTimeline`) is compared with the timeline the
+  evaluation gives in this form: both sides canonical, then segment for
+  segment, the bounds exactly and the values by that equality. Worked
+  example (`WV-3.1-canonical`; `ref/` tests verbatim): 0 on
+  (−∞, 2024-01-01) and on [2024-01-01, 2024-02-01), 12 on
+  [2024-02-01, 2024-03-01), 12,00 on [2024-03-01, 2024-04-01), an explicit
+  leeg segment [2024-04-01, 2024-05-01) and 12 on [2024-05-01, +∞) have
+  the canonical form (−∞, 2024-02-01) = 0, [2024-02-01, 2024-04-01) = 12,
+  [2024-05-01, +∞) = 12: April reads leeg, so the two runs of 12 stay
+  apart. The suite cases `ref/test/fixtures/canonical-timeline`, replayed
+  by `ref`, the ASP backend and both branches of the Drools backend, expect
+  a run divided otherwise than its producer writes it: the twelve months
+  of a time-proportional part as one segment (ch. 3.7), two counted
+  buckets of a day count as one and an open run of 0 as two (ch. 3.8), and
+  a segment and both open runs of period arithmetic as two each (ch. 3.4).
 - An open bound is a bound of the value, not of any grid: it sits on no
   wall, and a fold that walks the buckets or the whole units of a period
   (ch. 3.7, 3.8) has no end to reach in one, and such a walk is refused by
@@ -1368,7 +1391,8 @@ divisor under a filled dividend makes the period leeg and deposits on the
   leeg or numeric-zero divisor, the rule × subject that evaluates the
   value carries one §9.5 fact, with each code once among its codes
   (ch. 5.6). The period is no parameter of the fact (IMPLICIT-TIME VB 1.3).
-- Adjacent result segments with equal values are coalesced into one.
+- How the result divides a run of equal values into segments is
+  representation (ch. 3.1, the canonical form).
 - Units follow ch. 2.6 per period: an additive operator computes in the
   left operand's unit (each right operand restated by its exact factor), a
   product and a quotient carry the unit their rule gives, in a period where
@@ -1419,7 +1443,7 @@ the first example, both without a unit:
 | [2024-07-01, 2024-10-01) | 0 | leeg | 0 | 0 |
 | [2024-10-01, +∞) | 0 | leeg | 0 | 0 |
 
-After equal neighbours coalesce, `a maal b` is 0 on (−∞, 2024-04-01), 3000
+In its canonical form (ch. 3.1) `a maal b` is 0 on (−∞, 2024-04-01), 3000
 on [2024-04-01, 2024-07-01) and 0 on [2024-07-01, +∞); `a gedeeld door
 (ABS) b` is `a gedeeld door b` with 3,33333 on the second quarter. The
 corpus witness of the five operators, written by rules on a day grid and
@@ -2106,10 +2130,10 @@ period-coalescing rule. Further clauses:
   set) every day is all-leeg too: the result is the **empty timeline**
   without the fallback clause and the one segment (−∞, +∞) = 0 with it,
   the per-day reading of ch. 1.2's som row.
-- All-leeg periods that the fallback does not fill are emitted as
-  explicit leeg segments (the one producer that does, ch. 3.1); adjacent
-  equal segments — equal-leeg included — coalesce. A rule that writes the
-  sum writes those periods as gaps (ch. 3.1).
+- An all-leeg period that the fallback does not fill reads leeg. Whether
+  it is a gap or an explicit leeg segment, and how the sum divides a run
+  of equal values into segments, is representation (ch. 3.1, the
+  canonical form).
 - Each contributor is restated **before** the fold (exact factors,
   ch. 2.6): into the target's unit where the sum is the value of the rule,
   into its attribute's unit where it is an operand of an operator, since
@@ -2525,14 +2549,15 @@ deel on bucket B = read(base, start(B)) × trueDays(B) / days(B)
 Worked examples (absolute): base per year €12 (2024) / €18 (2025),
 condition true [2024-01-01, 2025-02-08), monthly target: twelve months of
 €12, jan 2025 = €18, **feb 2025 = 18 × 7/28 = 4,50** (7 true days of 28;
-2025 is no leap year), nothing from March on — and the twelve 2024
-buckets stay twelve separate segments: bucketing producers do **not**
-coalesce adjacent equal buckets (ch. 3.1 normalisation asymmetry,
-mirrored). Yearly target, base €18, 38 true days in 2025 → 18 × 38/365 =
-**684/365** exact (≈ 1,873972…, only an explicit rounding collapses it).
-Rate base 120 €/jr into a monthly target → 10 €/mnd; 5 €/jr → **5/12
-€/mnd** exact (v0: 0,4166666666666667 at its 16-digit store — the exact
-division by 12, never a pre-rounded ×0,0833 reciprocal).
+2025 is no leap year), nothing from March on; in the canonical form of
+ch. 3.1 the twelve months of 2024 are the one segment
+[2024-01-01, 2025-01-01) = 12, since whether the part writes them as one
+segment or as twelve is representation. Yearly target, base €18, 38 true
+days in 2025 → 18 × 38/365 = **684/365** exact (≈ 1,873972…, only an
+explicit rounding collapses it). Rate base 120 €/jr into a monthly target
+→ 10 €/mnd; 5 €/jr → **5/12 €/mnd** exact (v0: 0,4166666666666667 at its
+16-digit store — the exact division by 12, never a pre-rounded ×0,0833
+reciprocal).
 
 Worked example — the gate per segment (absolute; `ref/` tests
 `WV-3.7-schrijfgrens-maand`, `-jaar` and `-onbegrensd`): a Jutter with a
@@ -2551,18 +2576,18 @@ executors.
 
 **aantal dagen in (de maand / het jaar).** Buckets a condition's
 true-periods on the target's grid — the calendar grid, or the grid a fixed
-start point lays (ch. 3.2) — and emits, per bucket with a true day, one
-segment `[start(B), next(B))` whose value is the true-day count in `B`
-(multiple true intervals in one bucket sum), and **0 in every bucket
-without a true day, over all time** (maintainer decision 2026-11-03,
-`spec/proposals/IMPLICIT-TIME.md` 7a; RegelSpraak typeringen §4.21): each
-run of such buckets one segment, open where it reaches before the first
-bucket with a true day or past the last, and one segment (−∞, +∞) where no
-bucket has one. The operator's stated bucket ("de maand"/"het jaar") must
-equal the target's granularity. Worked example (absolute): true on
-[2024-01-01, 2024-01-02) and [2024-01-10, 2024-02-14) → **0** until
-2024-01-01, **jan = 1 + 22 = 23**, **feb = 13**, **0** from 2024-03-01, four
-segments.
+start point lays (ch. 3.2) — and gives every day of a bucket `B` with a
+true day the true-day count in `B` (multiple true intervals in one bucket
+sum), and **0 to every day of a bucket without a true day, over all time**
+(maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` 7a;
+RegelSpraak typeringen §4.21): the 0 reaches before the first bucket with
+a true day and past the last, and where no bucket has one the count is 0
+on (−∞, +∞). How the count divides a run of equal values into segments is
+representation (ch. 3.1, the canonical form). The operator's stated bucket
+("de maand"/"het jaar") must equal the target's granularity. Worked
+example (absolute): true on [2024-01-01, 2024-01-02) and
+[2024-01-10, 2024-02-14) → **0** until 2024-01-01, **jan = 1 + 22 = 23**,
+**feb = 13**, **0** from 2024-03-01, four segments in the canonical form.
 
 *The condition* is a check of an own time-dependent characteristic, or an
 `all` composite of one such check and day-kind tests of the counted day
@@ -3958,7 +3983,7 @@ idempotent (ch. 5).
   time-dependent parameter, or a scalar operand (a literal, an own scalar
   attribute, a scalar parameter), or a rounding of such a value, which rounds
   it per day (ch. 2.5), writes the timeline of the value over all
-  time, open segments included, with its leeg periods as gaps (ch. 3.1). A
+  time, open segments included (ch. 3.1). A
   die/dat subselection on the sum is refused by name. A condition on such a
   rule restricts the timeline to its periods where it reads a timeline, and
   gates the rule where it reads none (ch. 3.10). Executed by `ref` and the
