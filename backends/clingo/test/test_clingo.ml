@@ -15457,11 +15457,22 @@ let () =
     ~needle:
       "a division into a number declared without decimals is not whole, and this encoding holds the \
        unbounded form as a whole number";
-  check "a defaults consequence into the unbounded form: the witness has no fault kind"
+  check "a defaults consequence into the unbounded form: the witness has no fault kind, the limit CLINGO-033"
     (Translate.viol_code
        "viol(\"result of jutter.toeslag is not a whole number, and this encoding holds a number declared \
         without decimals (the unbounded form) as a whole number\",\"J1\")"
-    = None);
+    = Some ("CLINGO-033", []));
+  check "a division into the unbounded form held whole: the limit CLINGO-033"
+    (Translate.viol_code (Printf.sprintf "viol(\"%s\",\"J1\")" Translate.unbounded_non_whole_division)
+    = Some ("CLINGO-033", []));
+  check "a pro-rata part into the unbounded form held whole: the limit CLINGO-033"
+    (Translate.viol_code
+       "viol(\"a pro-rata part into a number declared without decimals is not whole, and this encoding holds \
+        the unbounded form as a whole number\",l1)"
+    = Some ("CLINGO-033", []));
+  check "a term past the machine integers: the limit CLINGO-034"
+    (Translate.viol_code "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",\"A1\")"
+    = Some ("CLINGO-034", []));
   let rate =
     pf_doc
       ~object_types:[ pf_ot [ ("inkomen", pf_n0); ("heffing", unbounded) ] ]

@@ -905,15 +905,15 @@ no_status() {   # <golden> <leg> <executor> <line>
 }
 
 # clingo on a changed copy gives the answer it gives on the untouched ir.json. That answer is exit 0 where
-# gate 6 pins the golden as played. For a golden in gate 6's refusal channel it is a refusal with a register
-# code at the head of the report (`TRANSLATION FAULT: CLINGO-032: …`, `CLINGO-031: clingo: …`), and the copy
-# must give that report byte for byte. An untouched run that ends in anything else is no answer to
+# gate 6 pins the golden as played. For a golden in gate 6's refusal channel it is a refusal with register
+# codes at the head of the report (`TRANSLATION FAULT: CLINGO-032: …`, `CLINGO-031: clingo: …`,
+# `CLINGO-033, CLINGO-034: clingo: …`), and the copy must give that report byte for byte. An untouched run that ends in anything else is no answer to
 # reproduce (two runs that both crashed would compare equal), so the copy then fails as a non-zero exit.
 clingo_same() {   # <untouched ir.json> <changed copy> <case>; the copy's report in $report_line
     report_line=$("$RUNNER_CLINGO" "$2" "$3" 2>&1) && return 0
     untouched=$("$RUNNER_CLINGO" "$1" "$3" 2>&1) && return 1
     case $untouched in
-        "TRANSLATION FAULT: CLINGO-"[0-9][0-9][0-9]": "*|"CLINGO-"[0-9][0-9][0-9]": clingo: "*) ;;
+        "TRANSLATION FAULT: CLINGO-"[0-9][0-9][0-9]": "*|"CLINGO-"[0-9][0-9][0-9]": clingo: "*|"CLINGO-"[0-9][0-9][0-9]", CLINGO-"*": clingo: "*) ;;
         *) return 1 ;;
     esac
     [ "$untouched" = "$report_line" ]

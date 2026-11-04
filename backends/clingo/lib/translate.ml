@@ -250,6 +250,15 @@ let nested_non_exact_division =
   "non-exact division inside a value (this encoding computes a quotient at the scale of the write, \
    and the value it is part of may fit where the quotient does not)"
 
+(* the viol/2 reason of a bare division written into the unbounded form whose
+   quotient is not whole: this encoding holds that form as a whole number, where
+   ref writes the exact value (RUNTIME-SEMANTICS ch. 2.4 point 3), so it is a
+   limit of the encoding (CLINGO-033), as the reasons of a pro-rata part and of a
+   result into that form are ([viol_code]) *)
+let unbounded_non_whole_division =
+  "a division into a number declared without decimals is not whole, and this encoding holds the \
+   unbounded form as a whole number"
+
 (* the viol/2 reason of a pro-rata part that does not fit the target scale of
    its segment (EF-006, RUNTIME-SEMANTICS ch. 2.4, 3.7) *)
 let pro_rata_misfit =
@@ -785,10 +794,7 @@ let open_total_guard ctx ~witness ~body ~bounds:(v, t) ~value ~attr =
 (* a bare division's non-exact viol/2: inside the write of the unbounded form
    it names that form, since the spec mandates no rounding there *)
 let non_exact_division ctx =
-  if ctx.write_unbounded then
-    "a division into a number declared without decimals is not whole, and this encoding holds the \
-     unbounded form as a whole number"
-  else non_exact_division_bounded
+  if ctx.write_unbounded then unbounded_non_whole_division else non_exact_division_bounded
 
 (* [s] cut at every occurrence of [sep] *)
 let split_on_string sep s =
@@ -810,10 +816,12 @@ let split_on_string sep s =
    write, up to its first interpolation, and reads its parameters out of the
    same sentence (a viol/2 atom has no other room for them); the subject, a
    label as a quoted string, is the `label` of the kinds that name one. A
-   parameter the sentence does not carry is not emitted. A reason no arm names
-   has no code: a guard of this backend's own limits ("arithmetic range exceeded
-   …"), the unbounded form it holds as a whole number, or a kind no red case
-   witnesses yet. *)
+   parameter the sentence does not carry is not emitted. Two guards of this
+   backend's own limits carry a register code and no parameter: a value
+   written into the unbounded form that is not whole, which this encoding holds
+   as a whole number (CLINGO-033), and a term past the range of clingo's
+   machine integers (CLINGO-034). A reason no arm names has no code: a kind no
+   red case witnesses yet. *)
 (* the parts a date-construction witness carries after its sentence,
    `viol(("…",2026,4,31),"S1")`, named in order *)
 let date_parts witness names =
@@ -859,6 +867,17 @@ let viol_code witness =
   else if opens (pro_rata_misfit ^ "\"") then Some ("EF-006", [])
   else if opens (period_arithmetic_misfit ^ "\"") then Some ("EF-006", [])
   else if opens (nested_non_exact_division ^ "\"") then Some ("CLINGO-031", [])
+  else if
+    opens (unbounded_non_whole_division ^ "\"")
+    || opens
+         "a pro-rata part into a number declared without decimals is not whole, and this encoding \
+          holds the unbounded form as a whole number\""
+    || opens "result of "
+       && holds
+            " is not a whole number, and this encoding holds a number declared without decimals (the \
+             unbounded form) as a whole number\""
+  then Some ("CLINGO-033", [])
+  else if opens "arithmetic range exceeded (clingo grounds in machine integers)\"" then Some ("CLINGO-034", [])
   else if opens "result of " && holds " does not fit its declared decimals\"" then
     Some ("EF-006", found "place" (between "result of " " does not fit its declared decimals"))
   else if opens "day-kind walk: no day of the kind within " then
@@ -11312,8 +11331,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
             let reason =
               if e != value then nested_non_exact_division
               else if unbounded_datatype (attr_datatype ctx ~otype:ot ~attr:a) then
-                "a division into a number declared without decimals is not whole, and this encoding holds \
-                 the unbounded form as a whole number"
+                unbounded_non_whole_division
               else non_exact_division_bounded
             in
             emit ctx "viol(\"%s\",%s) :- %s, (%s) \\ (%s) != 0." reason subject

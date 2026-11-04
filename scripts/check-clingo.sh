@@ -100,23 +100,27 @@ if ! procs=$(parallel_jobs 2); then
 fi
 
 # --- the refusal channel: which goldens clingo does not play, and why (fails in both directions) ---------
-# Entry: "<golden-relative-path>|CLINGO-###|<reason it is not played>", one per line. PLAYED IS THE DEFAULT:
-# a golden that no line names plays every case exactly. A golden a line names refuses on EVERY case, by name,
-# with the code the line pins: the code at the head of the runner's report (`TRANSLATION FAULT: CLINGO-032: …`,
-# or `CLINGO-031: clingo: UNSATISFIABLE — …` for a guard that fired at solving), a code of backends/clingo/codes.tsv
-# of the kind refusal or limit. A fallback code is the bottom arm of a dispatch and no pin names it (the fence of
-# gate 8). Only the code is compared; the reason is documentation and may be reworded without tripping the gate.
+# Entry: "<golden-relative-path>|CLINGO-###[, CLINGO-###…]|<reason it is not played>", one per line. PLAYED IS THE
+# DEFAULT: a golden that no line names plays every case exactly. A golden a line names refuses on EVERY case, by name,
+# with the codes the line pins: the codes at the head of the runner's report (`TRANSLATION FAULT: CLINGO-032: …`,
+# or `CLINGO-031: clingo: UNSATISFIABLE — …` for a guard that fired at solving, `CLINGO-033, CLINGO-034: clingo: …`
+# where two guards fired), each a code of backends/clingo/codes.tsv of the kind refusal or limit. The line names
+# every code at the head, in any order, and no other: a head with two codes is two limits of the encoding, and a line
+# that named one of them would hide the other. A fallback code is the bottom arm of a dispatch and no pin names it
+# (the fence of gate 8). Only the codes are compared; the reason is documentation and may be reworded without
+# tripping the gate.
 #
 # Silence is excluded in every direction, each by golden name:
 #   - a golden that refuses with a code and stands in no line fails;
-#   - a line whose golden plays every case, or refuses with another code, fails — the list is stale;
+#   - a line whose golden plays every case, or refuses with other codes, fails — the list is stale;
 #   - a line whose golden has no case file under corpus/golden (gone, renamed) fails — likewise stale;
 #   - a golden whose cases partly play and partly refuse fails: a line covers every case of its golden;
-#   - a case that fails without a register code at its head, with an EF code, with two codes, a fallback
+#   - a case that fails without a register code at its head, with an EF code among the codes there, a fallback
 #     code or a code the register does not hold, or with a mismatch or a load error, fails whether or not a
 #     line names its golden: it is no refusal of this backend, and only a refusal is listable.
 # The list's own guards: a golden named twice fails (the first line would silently win), and so does a line
-# without three fields, without a reason, or with a code that is no refusal or limit of the register.
+# without three fields, without a reason, with a code named twice, or with a code that is no refusal or limit of
+# the register.
 # The rules above are a function of the judge below; it first plays rows of its own through them (SELF_TEST,
 # one per guard, both directions of the stale guard among them), and a row that does not give its verdict
 # fails the gate.
@@ -168,28 +172,33 @@ def read_codes(path):
 
 
 def parse_channel(text, kinds):
-    """The lines of EXPECTED_CHANNEL: golden -> code, and the failures of the list's own guards."""
+    """The lines of EXPECTED_CHANNEL: golden -> its codes in ascending order, and the failures of the list's own
+    guards."""
     pins, failures = {}, []
     for line in text.split("\n"):
         if not line.strip():
             continue
         fields = line.split("|", 2)
         if len(fields) != 3:
-            failures.append("malformed channel line '%s': want '<golden>|CLINGO-###|<reason>'" % line)
+            failures.append("malformed channel line '%s': want '<golden>|CLINGO-###[, CLINGO-###…]|<reason>'" % line)
             continue
-        golden, code, reason = fields
+        golden, field, reason = fields
         if not reason.strip():
             failures.append("channel line without a reason: '%s' — every line is '<golden>|CLINGO-###|<why it is not played>'" % golden)
         if golden in pins:
             failures.append("duplicate channel line: '%s' is named more than once in EXPECTED_CHANNEL — the first line would silently win" % golden)
             continue
-        if not re.fullmatch(r"CLINGO-[0-9]{3}", code):
-            failures.append("channel line '%s' pins '%s', which is no code CLINGO-### of this backend" % (golden, code))
-        elif code not in kinds:
-            failures.append("channel line '%s' pins %s, which %s does not hold" % (golden, code, codes_path))
-        elif kinds[code] not in ("refusal", "limit"):
-            failures.append("channel line '%s' pins %s of the kind %s: a fallback code is the bottom arm of a dispatch, and only a refusal or a limit is listable" % (golden, code, kinds[code]))
-        pins[golden] = code
+        codes = field.split(", ")
+        for code in codes:
+            if not re.fullmatch(r"CLINGO-[0-9]{3}", code):
+                failures.append("channel line '%s' pins '%s', which is no code CLINGO-### of this backend" % (golden, code))
+            elif code not in kinds:
+                failures.append("channel line '%s' pins %s, which %s does not hold" % (golden, code, codes_path))
+            elif kinds[code] not in ("refusal", "limit"):
+                failures.append("channel line '%s' pins %s of the kind %s: a fallback code is the bottom arm of a dispatch, and only a refusal or a limit is listable" % (golden, code, kinds[code]))
+        if len(set(codes)) != len(codes):
+            failures.append("channel line '%s' names a code twice: '%s'" % (golden, field))
+        pins[golden] = tuple(sorted(set(codes)))
     return pins, failures
 
 
@@ -198,7 +207,7 @@ HEAD_SOLVE = re.compile(r"((?:[A-Z]+-[0-9]{3})(?:, [A-Z]+-[0-9]{3})*): clingo: "
 
 
 def outcome(rc, out, kinds):
-    """PLAYED, the code of a refusal, or None with the reason this is no refusal."""
+    """PLAYED, the codes of a refusal in ascending order, or None with the reason this is no refusal."""
     if rc == "0":
         return PLAYED, None
     if rc != "1":
@@ -208,16 +217,19 @@ def outcome(rc, out, kinds):
     if not m:
         return None, "no register code at the head of the report"
     codes = m.group(1).split(", ")
-    if len(codes) != 1:
-        return None, "%d codes at the head of the report (%s)" % (len(codes), m.group(1))
-    code = codes[0]
-    if not code.startswith("CLINGO-"):
-        return None, "%s at the head of the report, a fault where ref plays" % code
-    if code not in kinds:
-        return None, "%s, which %s does not hold" % (code, codes_path)
-    if kinds[code] not in ("refusal", "limit"):
-        return None, "%s, a %s code" % (code, kinds[code])
-    return code, None
+    for code in codes:
+        if not code.startswith("CLINGO-"):
+            return None, "%s at the head of the report, a fault where ref plays" % code
+        if code not in kinds:
+            return None, "%s, which %s does not hold" % (code, codes_path)
+        if kinds[code] not in ("refusal", "limit"):
+            return None, "%s, a %s code" % (code, kinds[code])
+    return tuple(sorted(set(codes))), None
+
+
+def named(codes):
+    """PLAYED, or the codes of a refusal as a line of EXPECTED_CHANNEL writes them."""
+    return codes if codes == PLAYED else ", ".join(codes)
 
 
 def judge(cases, channel_text, kinds):
@@ -246,7 +258,7 @@ def judge(cases, channel_text, kinds):
         measured = set(r[1] for r in rows)
         pinned = pins.get(golden, PLAYED)
         if len(measured) > 1:
-            failures.append("%s: its cases play and refuse, or refuse with two codes (%s) — a line of EXPECTED_CHANNEL covers every case of its golden" % (golden, ", ".join("%s %s" % (os.path.basename(r[0]), r[1]) for r in rows)))
+            failures.append("%s: its cases play and refuse, or refuse with other codes (%s) — a line of EXPECTED_CHANNEL covers every case of its golden" % (golden, "; ".join("%s %s" % (os.path.basename(r[0]), named(r[1])) for r in rows)))
             continue
         measured = measured.pop()
         if measured == pinned:
@@ -255,14 +267,14 @@ def judge(cases, channel_text, kinds):
             else:
                 refused_cases += len(rows)
         elif pinned == PLAYED:
-            failures.append("%s refuses with %s on every case but stands in no line of EXPECTED_CHANNEL — make the backend carry the form, or pin it with its code and the reason:\n%s" % (golden, measured, rows[0][3].rstrip("\n")))
+            failures.append("%s refuses with %s on every case but stands in no line of EXPECTED_CHANNEL — make the backend carry the form, or pin it with its codes and the reason:\n%s" % (golden, named(measured), rows[0][3].rstrip("\n")))
         elif measured == PLAYED:
-            failures.append("stale channel line: %s is pinned %s but plays every case — remove the line" % (golden, pinned))
+            failures.append("stale channel line: %s is pinned %s but plays every case — remove the line" % (golden, named(pinned)))
         else:
-            failures.append("%s is pinned %s, but its cases refuse with %s:\n%s" % (golden, pinned, measured, rows[0][3].rstrip("\n")))
-    for golden, code in pins.items():
+            failures.append("%s is pinned %s, but its cases refuse with %s:\n%s" % (golden, named(pinned), named(measured), rows[0][3].rstrip("\n")))
+    for golden, codes in pins.items():
         if golden not in goldens:
-            failures.append("stale channel line: %s is pinned %s, but no golden of that name has a case file under corpus/golden (gone, or renamed) — remove the line" % (golden, code))
+            failures.append("stale channel line: %s is pinned %s, but no golden of that name has a case file under corpus/golden (gone, or renamed) — remove the line" % (golden, named(codes)))
     return failures, played_cases, refused_cases, len(pins)
 
 
@@ -283,7 +295,11 @@ SELF_TEST = [
     ("a golden whose cases play and refuse", "g|CLINGO-001|r", [(G, "1", FAULT1), (G2, "0", "clingo: PASS (1 expectations)")], "a line of EXPECTED_CHANNEL covers every case"),
     ("a report without a code at its head is no refusal", "g|CLINGO-001|r", [(G, "1", "TRANSLATION FAULT: an uncoded refusal")], "no register code at the head"),
     ("an EF code at the head is no refusal", "g|CLINGO-001|r", [(G, "1", "EF-006: clingo: UNSATISFIABLE — a fail-fast guard fired")], "EF-006 at the head of the report"),
-    ("two codes at the head are no refusal", "g|CLINGO-001|r", [(G, "1", "CLINGO-001, CLINGO-031: clingo: UNSATISFIABLE — …")], "2 codes at the head"),
+    ("a line that pins both codes of a head with two passes", "g|CLINGO-031, CLINGO-001|r", [(G, "1", "CLINGO-001, CLINGO-031: clingo: UNSATISFIABLE — …")], None),
+    ("a line that pins one code of a head with two", "g|CLINGO-001|r", [(G, "1", "CLINGO-001, CLINGO-031: clingo: UNSATISFIABLE — …")], "g is pinned CLINGO-001, but its cases refuse with CLINGO-001, CLINGO-031"),
+    ("a line that pins two codes of a head with one", "g|CLINGO-001, CLINGO-031|r", [(G, "1", FAULT1)], "g is pinned CLINGO-001, CLINGO-031, but its cases refuse with CLINGO-001"),
+    ("an EF code beside a register code at the head is no refusal", "g|CLINGO-001|r", [(G, "1", "CLINGO-001, EF-006: clingo: UNSATISFIABLE — …")], "EF-006 at the head of the report"),
+    ("a line that names a code twice", "g|CLINGO-001, CLINGO-001|r", [(G, "1", FAULT1)], "names a code twice"),
     ("a fallback code at the head is no refusal", "", [(G, "1", "TRANSLATION FAULT: CLINGO-002: a text operand shape")], "CLINGO-002, a fallback code"),
     ("a mismatch is no refusal", "g|CLINGO-001|r", [(G, "1", "MISMATCH: attribuut x: verwacht 1, werkelijk 2")], "no register code at the head"),
     ("a load error is no refusal", "", [(G, "2", "CASE ERROR: a case without expectations")], "exit status 2"),
@@ -322,6 +338,6 @@ for f in failures:
 if failures:
     sys.exit(1)
 print("check-clingo: PASS (backend suite %s checks, floor %s; %d cases replay exactly through clingo — ref = clingo over the corpus; "
-      "%d golden(s) in the refusal channel, by name, %d cases refused with the pinned code; the channel rule passes %d rows of its own)"
+      "%d golden(s) in the refusal channel, by name, %d cases refused with the pinned codes; the channel rule passes %d rows of its own)"
       % (suite_checks, suite_floor, played_cases, n_pins, refused_cases, len(SELF_TEST)))
 PYEOF
