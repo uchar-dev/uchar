@@ -366,6 +366,17 @@ final class ClosureRendering {
             case PERIOD_ROUNDED -> x -> PeriodArithmetic.rounded(x[0], (Integer) x[1], (RoundingMode) x[2]);
             case PERIOD_WINDOW -> x -> PeriodCondition.window(x[0], (Boolean) x[1], x[2], (Boolean) x[3], (Boolean) x[4]);
             case PERIOD_CHARACTERISTIC -> x -> PeriodCondition.characteristicPeriods(x[0], x[1], (String) x[2], x[3]);
+            case DAYS_JOINED -> x -> PeriodDefaults.joined(x[0], x[1]);
+            case DAYS_REACH -> x -> PeriodDefaults.reach(x[0]);
+            case DAYS_LEFT -> x -> PeriodDefaults.left(x[0], x[1]);
+            case DAYS_AT_TURN -> x -> PeriodDefaults.atTurn(x[0]);
+            case DAYS_WITHIN -> x -> PeriodDefaults.within(x[0], x[1]);
+            case DAYS_DECIDED -> x -> PeriodDefaults.decided(x[0], x[1]);
+            case DAYS_FILLED_WITHIN -> x -> PeriodDefaults.filledWithin(x[0], x[1]);
+            case DAYS_INPUT_EMPTY -> x -> PeriodDefaults.inputEmpty(x[0], x[1], (String) x[2], x[3]);
+            case DAYS_RECONCILED -> x -> PeriodDefaults.reconciled((String) x[0], x[1]);
+            case DAYS_DECIDED_OF -> x -> PeriodDefaults.decidedOf(x[0]);
+            case DAYS_CONFLICTED -> x -> PeriodDefaults.conflicted(x[0], (String) x[1]);
             case DIVIDED -> x -> ComputeHelpers.divided(x[0], x[1], x[2]);
             case DIVIDED_ABS -> x -> ComputeHelpers.dividedAbs(x[0], x[1], x[2]);
             case RADICAND -> x -> ComputeHelpers.radicand(x[0], x[1]);

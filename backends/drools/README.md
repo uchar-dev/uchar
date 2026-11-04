@@ -407,6 +407,25 @@ reference interpreter reaches the exception groups of a default only where that 
 exception group below a displaced default settles no `Outcome` and raises no fault at the fixpoint, so no control
 fact stands under a displaced default.
 
+**A defaults group on a timeline target** decides per day (RUNTIME-SEMANTICS ch. 7.11), on the control facts of the
+general form (`TmsTranspiler.dayStackRules`, `PeriodDefaults`): every default and every reconciliation of exception
+groups settles some days, and its `Outcome` carries them as its value, the days it decides with their values and per
+conflict key the days on which its members differ. A default's rule reads, off accumulates, the outcomes of the
+positions above it in its chain and above each default whose exception group its chain is, and matches only where
+they leave a day of its turn; its consequence decides the days of its turn on which its justification, read per
+period, holds, and for the initialisation default those on which the input on the bean leaves the target empty, each
+narrowing a `Let` whose empty binder ends the evaluation, so that its consequence, the period arithmetic of ch. 3.4
+and 3.5, is evaluated only where it can decide. A fault and a deposit of the default are its decision's, and a
+deposit stands where it decides on some day. The root of the stack reconciles its groups per day and is one writer
+of the target: its `Value` is the timeline of the days it decides, each segment under the write boundary, and the
+target's input stands on every other day, as beside a computing rule (below, "Writers per day"); a conflict deposits
+one EF-027 fact per key on the subject. In a build with readings each default reads its justification per period and
+its consequence where that holds on some day, and is `HOLDS` where it is at its turn on some day and `DISPLACED`
+where on none (ch. 5.12). `decisionsOf` refuses a build with such a stack, which has no record per object. Refused
+by name: a consequence that is no period arithmetic (DROOLS-105) and a target that is no number (DROOLS-303).
+Witnesses `TmsDefaultsPerDayWitnessTest` (the documents of `ref/test/fixtures/defaults-per-day` and the cases of
+`ref/test/fixtures/defaults-per-day-cases`), golden `jutterswet-opgave-per-periode`.
+
 **The write-back.** After a fire that reached its fixpoint, `DroolsBackend.setDerivedValues(build, session)` puts
 the derivations on the beans: `setX(true)` per `HasCharacteristic`, the attribute's setter per `Value`. Input on a
 characteristic stands, since nothing writes false; a derived value replaces input on an attribute, and a computed leeg

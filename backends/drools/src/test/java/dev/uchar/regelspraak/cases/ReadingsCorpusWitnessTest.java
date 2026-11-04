@@ -50,7 +50,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       a condition holds wherever it is at its turn (card readings-of-unconditional-forms); a consistency
  *       holds where its object has no violation of it (EF-025); an object creation holds where it made an object for
  *       its subject; the default that decided ({@code DroolsBackend.decisionsOf}) holds, and where no default decided
- *       none holds with a decision;</li>
+ *       none holds with a decision, where a stack decides one value: a stack on a timeline target decides per day
+ *       (RUNTIME-SEMANTICS ch. 7.11) and has no record;</li>
  *   <li>every operand that reads a member, an attribute read the evaluation reached, has the value the fixpoint gives
  *       that member on the object the read reaches ({@code DroolsBackend.reached}), the derived value or else the
  *       input, and every cell read the value of its cell in the input there; and every check of a characteristic of the
@@ -183,7 +184,10 @@ class ReadingsCorpusWitnessTest {
         labels.forEach((l, o) -> label.put(o, l));
         Fixpoint fp = DroolsBackend.fixpointOf(build, session, label::get);
         List<ConditionReading> readings = DroolsBackend.readingsOf(build, session);
-        List<DefaultsDecision> decisions = DroolsBackend.decisionsOf(build, session);
+        // a stack on a timeline target decides per day and has no record (RUNTIME-SEMANTICS ch. 7.11): its readings are
+        // held below as every other reading is, without the decider
+        List<DefaultsDecision> decisions = DefaultsDecisionCorpusWitnessTest.perDay(build) ? List.of()
+                : DroolsBackend.decisionsOf(build, session);
         Map<String, ConditionReading> byKey = new HashMap<>();
         for (ConditionReading r : readings) byKey.put(r.form() + " " + System.identityHashCode(r.object()), r);
         List<Value> values = new ArrayList<>();

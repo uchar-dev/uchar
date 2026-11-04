@@ -94,5 +94,11 @@ public enum ReadKind {
     DECISION,
     /** The key of the first conflicting member chain of a reconciliation of a defaults stack, off its
      *  {@code Outcome}, which passes on unchanged ({@code TmsTranspiler.reconciliation}). */
-    CONFLICT_KEY
+    CONFLICT_KEY,
+    /** The outcomes of the defaults of a stack on a timeline target that settle days above a default, in its exception
+     *  groups or at the root, off an accumulate ({@code TmsTranspiler.dayStackRules}). */
+    OUTCOMES,
+    /** The number of {@code BucketInput} facts of a timeline target on the subject, off an accumulate: where the case
+     *  gives its input as the asOfDate-bucket scalar ({@code TmsTranspiler.dayStackRules}). */
+    BUCKET_INPUTS
 }

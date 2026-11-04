@@ -5,6 +5,7 @@ import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
 import dev.uchar.regelspraak.transpiler.tms.Period;
 import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
 import dev.uchar.regelspraak.transpiler.tms.PeriodCondition;
+import dev.uchar.regelspraak.transpiler.tms.PeriodDefaults;
 
 /**
  * A static function a {@link Term} calls, by its class and its name: a helper of the runtime, which the other branch
@@ -157,6 +158,32 @@ public enum StaticFunction {
      *  condition, the characteristic's input on the subject's bean, its name, a {@code String} constant, and the
      *  subject: the fault of an open bound (EF-023) or of supplied true periods. */
     PERIOD_CHARACTERISTIC(PeriodCondition.class, "characteristicPeriods", true),
+    /** Two lists of outcomes of a defaults stack on a timeline target as one (ch. 7.11). */
+    DAYS_JOINED(PeriodDefaults.class, "joined", false),
+    /** The days of all time that the outcomes above a default did not settle: the days of its turn (ch. 7.11). */
+    DAYS_REACH(PeriodDefaults.class, "reach", false),
+    /** The days of a turn that the outcomes of a default's exception groups did not settle: the turn of its content. */
+    DAYS_LEFT(PeriodDefaults.class, "left", false),
+    /** Whether a turn holds a day. */
+    DAYS_AT_TURN(PeriodDefaults.class, "atTurn", false),
+    /** The days two sets of periods share, null where none, which ends a {@code Let} with leeg. */
+    DAYS_WITHIN(PeriodDefaults.class, "within", false),
+    /** What a default decides on some days from the timeline of its consequence, null where it decides none. */
+    DAYS_DECIDED(PeriodDefaults.class, "decided", false),
+    /** The filled segments of a consequence's timeline within the periods of a justification, all time where they are
+     *  null: the timeline a default would write. */
+    DAYS_FILLED_WITHIN(PeriodDefaults.class, "filledWithin", false),
+    /** The days on which the input leaves a timeline target empty, from the input on the bean, the number of its
+     *  {@code BucketInput} facts, the attribute, a {@code String} constant, and the subject: the fault of the
+     *  asOfDate-bucket scalar (EF-037). */
+    DAYS_INPUT_EMPTY(PeriodDefaults.class, "inputEmpty", true),
+    /** The reconciliation per day of the outcomes of member chains under a conflict key, a {@code String} constant
+     *  (ch. 7.2, 7.9, 7.11), null where it settles no day. */
+    DAYS_RECONCILED(PeriodDefaults.class, "reconciled", false),
+    /** The segments a reconciliation decides. */
+    DAYS_DECIDED_OF(PeriodDefaults.class, "decidedOf", false),
+    /** Whether a reconciliation conflicts under a key, a {@code String} constant, on some day. */
+    DAYS_CONFLICTED(PeriodDefaults.class, "conflicted", false),
     /** A division (ch. 1.4, 1.2): a leeg dividend 0, a leeg divisor leeg with the §6.5 deposit to the probe, a numeric
      *  zero leeg with the deposit of ch. 1.4 point 4 to the probe; the exact quotient. The function of a
      *  {@link Term.Division}. It does not fault (card zero-division-channel), and counts as one that can: the plans of every form with a division are built on that, and changing it is a card of its own. */

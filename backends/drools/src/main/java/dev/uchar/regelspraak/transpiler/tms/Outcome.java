@@ -20,6 +20,12 @@ import java.util.Objects;
  * as positive and negated patterns on this fact. A lower default with exception groups is displaced with its conflict
  * (ch. 7.9): its rules, and those of its exception groups, are under the {@code not} of the higher one.
  *
+ * <p>On a timeline target a default settles per day (RUNTIME-SEMANTICS ch. 7.11): its outcome is {@code DECIDED} with
+ * the days it settled as its value, a {@link PeriodDefaults.Days} that holds the days it decides with their values and
+ * per conflict key the days on which its members differ; a default and its fall-back each insert one, and a lower
+ * default of the chain reads the days they settle off an accumulate instead of their absence
+ * ({@code TmsTranspiler.dayStackRules}).
+ *
  * <p>Compared by value, the subject by identity, and a decided number by {@code compareTo}, so that two members that
  * decide 10.0 and 10.00 merge into one fact, as the reconciliation reads them as one decision; a characteristic's
  * decision is {@code value} as a Boolean.

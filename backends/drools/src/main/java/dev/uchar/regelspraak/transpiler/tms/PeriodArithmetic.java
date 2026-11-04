@@ -383,7 +383,7 @@ public final class PeriodArithmetic {
 
     /** {@code segments} with adjacent segments of one value joined into one, the value of the first kept; two values
      *  are one where they are equal as exact numbers, as {@link Period#equals} compares them. */
-    private static List<Exact> coalesced(List<Exact> segments) {
+    static List<Exact> coalesced(List<Exact> segments) {
         List<Exact> out = new ArrayList<>();
         for (Exact s : segments) {
             Exact last = out.isEmpty() ? null : out.get(out.size() - 1);
@@ -394,13 +394,13 @@ public final class PeriodArithmetic {
         return List.copyOf(out);
     }
 
-    private static boolean sameValue(Object a, Object b) {
+    static boolean sameValue(Object a, Object b) {
         return a == null ? b == null : b != null && Breuk.van(a).compareTo(Breuk.van(b)) == 0;
     }
 
     /** {@code t} as exact segments: a timeline of working memory ({@link Period}), one an operator returned, or an
      *  absent one (null), the empty one. */
-    private static List<Exact> pieces(Object t) {
+    static List<Exact> pieces(Object t) {
         if (t == null) return List.of();
         List<Exact> out = new ArrayList<>();
         for (Object o : (List<?>) t)

@@ -277,14 +277,14 @@ public final class PeriodCondition {
     }
 
     /** The segments of {@code timeline} as periods, each without a value; none for an absent timeline. */
-    private static List<Period> periodsOf(Object timeline) {
+    static List<Period> periodsOf(Object timeline) {
         List<Period> out = new ArrayList<>();
         for (Period p : segmentsOf(timeline)) out.add(new Period(p.from(), p.to(), null));
         return out;
     }
 
     /** {@code periods} sorted, with overlapping and touching periods joined: the maximal periods. */
-    private static List<Period> merged(List<Period> periods) {
+    static List<Period> merged(List<Period> periods) {
         List<Period> sorted = new ArrayList<>();
         for (Period p : periods) if (p.from().isBefore(p.to())) sorted.add(p);
         sorted.sort(Comparator.comparing(Period::from).thenComparing(Period::to));
@@ -299,7 +299,7 @@ public final class PeriodCondition {
     }
 
     /** The periods of all time outside the maximal periods {@code merged}. */
-    private static List<Period> complement(List<Period> merged) {
+    static List<Period> complement(List<Period> merged) {
         List<Period> out = new ArrayList<>();
         LocalDate at = Period.OPEN_FROM;
         for (Period p : merged) {
@@ -308,6 +308,17 @@ public final class PeriodCondition {
         }
         if (at.isBefore(Period.OPEN_TO)) out.add(new Period(at, Period.OPEN_TO, null));
         return List.copyOf(out);
+    }
+
+    /** The days the periods {@code a} and {@code b} share, as maximal periods. */
+    static List<Period> intersection(List<Period> a, List<Period> b) {
+        List<Period> out = new ArrayList<>();
+        for (Period x : a)
+            for (Period y : b) {
+                LocalDate from = later(x.from(), y.from()), to = earlier(x.to(), y.to());
+                if (from.isBefore(to)) out.add(new Period(from, to, null));
+            }
+        return merged(out);
     }
 
     /** The bounds of every segment of {@code timelines} and the two open ends, ordered. */

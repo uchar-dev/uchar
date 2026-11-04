@@ -262,6 +262,9 @@ public final class TmsTranspiler {
     private final Map<ElementKey, List<ResolvedRule>> initialisations = new LinkedHashMap<>();
     /** The members a defaults group writes, on their declaring type. */
     private final Set<ElementKey> defaultsTargets = new LinkedHashSet<>();
+    /** The attributes on a timeline that a defaults stack writes, deciding per day (RUNTIME-SEMANTICS ch. 7.11): the
+     *  stack is one writer of the target, beside its input ({@link #timelineWriters}). */
+    private final Set<ElementKey> dayStackTargets = new LinkedHashSet<>();
     /** The effective stacks of RUNTIME-SEMANTICS ch. 7.10 and the fold of ordinary rules into them. */
     private Stacks stacks;
     /** The names of the document's rules in its order, each once: the sentence of two writers that disagree names them
@@ -811,10 +814,12 @@ public final class TmsTranspiler {
     /**
      * The size of the lowering of one effective defaults stack, counted when it is built: {@code name} as the manifest
      * and the control facts name it, whether it took the general form (exception groups, or more than one group at the
-     * root) or the simple one, the number of Drools rules it consists of, and the kinds of control fact those rules
-     * insert ({@link ControlFact}). The standing rules of the target are shared with every other reader and not counted.
+     * root) or the simple one, the number of Drools rules it consists of, the kinds of control fact those rules
+     * insert ({@link ControlFact}), and whether it decides per day, on a timeline target (RUNTIME-SEMANTICS ch. 7.11),
+     * which takes the general form and has no record of {@link #decisionsOf}. The standing rules of the target are
+     * shared with every other reader and not counted.
      */
-    public record DefaultsGroup(String name, boolean general, int rules, List<String> controlFacts) {}
+    public record DefaultsGroup(String name, boolean general, int rules, List<String> controlFacts, boolean perDay) {}
 
     /** One entry per effective stack the branch lowered, in the order of the model. */
     public List<DefaultsGroup> defaultsGroups() { return List.copyOf(defaultsGroups); }
@@ -1021,6 +1026,12 @@ public final class TmsTranspiler {
      */
     public List<DefaultsDecision> decisionsOf(KieSession session) {
         requireFixpoint(session);
+        // a record names one default per object and stack, and a stack on a timeline target decides per day: it has no
+        // such record (RUNTIME-SEMANTICS ch. 7.11)
+        for (Map.Entry<String, StackLayout> e : layouts.entrySet())
+            if (e.getValue().perDay())
+                throw new IllegalStateException("decisionsOf leest per object en stapel één beslisser, en de stapel "
+                        + e.getKey() + " op een tijdlijndoel beslist per dag (RUNTIME-SEMANTICS ch. 7.11)");
         // a stack runs on instances of exactly its owner (ch. 7.10), so the stacks of an object are those of its class
         Map<Class<?>, List<String>> stacksOf = new HashMap<>();
         layouts.forEach((name, s) -> stacksOf.computeIfAbsent(s.javaClass(), k -> new ArrayList<>()).add(name));
@@ -1075,10 +1086,11 @@ public final class TmsTranspiler {
     }
 
     /** The lowered form of one effective stack: its target, its bare conflict key (the target on the type that declares
-     *  it), whether it took the general form, the knots of its chains at the root, and the bean class of its owner, the
-     *  type it runs on ({@link StackBuild#javaClass}). */
+     *  it), whether it took the general form, the knots of its chains at the root, the bean class of its owner, the
+     *  type it runs on ({@link StackBuild#javaClass}), and whether it decides per day, on a timeline target
+     *  ({@link #dayStackRules}). */
     private record StackLayout(Member member, String targetForm, boolean general, List<List<Node>> roots,
-                               Class<?> javaClass) {}
+                               Class<?> javaClass, boolean perDay) {}
 
     /** How a chain or a reconciliation came out: a default that decided, or a conflict. */
     private record Settling(DefaultsDecision.Decider decider, DefaultsDecision.Conflict conflict) {}
@@ -2258,11 +2270,12 @@ public final class TmsTranspiler {
                 || e instanceof Expr.AttributeReference a && !navigationBindings.containsKey(a) && !anchored.contains(a);
     }
 
-    /** Whether computing rules write the timeline target {@code key}: each decides the days of its own segments, and the
-     *  target is the union of their segments with its input on the days none decides (RUNTIME-SEMANTICS ch. 3.11,
-     *  ch. 5.7, "Two writers per day"), its standing ({@link #writersUnionRules}) and its write-back
-     *  ({@link #readFixpoint}), for one writer as for two or more. */
+    /** Whether computing rules or a defaults stack write the timeline target {@code key}: each decides the days of its
+     *  own segments, and the target is the union of their segments with its input on the days none decides
+     *  (RUNTIME-SEMANTICS ch. 3.11, ch. 5.7, "Two writers per day", ch. 7.11), its standing ({@link #writersUnionRules})
+     *  and its write-back ({@link #readFixpoint}), for one writer as for two or more. */
     private boolean timelineWriters(ElementKey key) {
+        if (dayStackTargets.contains(key)) return true;
         for (ResolvedRule r : computeRules.getOrDefault(key, List.of())) {
             Expr.AttributeReference a = writtenReference(r.target());
             if (temporal(a.objectType(), a.attribute(), false)) return true;
@@ -4043,7 +4056,8 @@ public final class TmsTranspiler {
         final String name;
         final Member member;
         final boolean characteristic;
-        /** The bean class of the stack's owner: the stack runs on instances of exactly that type (ch. 7.10). */
+        /** The stack's owner, and its bean class: the stack runs on instances of exactly that type (ch. 7.10). */
+        final ObjectType owner;
         final Class<?> javaClass;
         /** The bare ch. 7.2 conflict key, the target on the type that declares it. */
         final String targetForm;
@@ -4053,10 +4067,12 @@ public final class TmsTranspiler {
         final Set<String> controlFacts = new LinkedHashSet<>();
         int nextChain;
 
-        StackBuild(String name, Member member, boolean characteristic, Class<?> javaClass, String targetForm, int rootChains) {
+        StackBuild(String name, Member member, boolean characteristic, ObjectType owner, Class<?> javaClass,
+                   String targetForm, int rootChains) {
             this.name = name;
             this.member = member;
             this.characteristic = characteristic;
+            this.owner = owner;
             this.javaClass = javaClass;
             this.targetForm = targetForm;
             this.nextChain = rootChains;
@@ -4070,12 +4086,13 @@ public final class TmsTranspiler {
      * takes the simple form ({@link #simpleForm}); exception groups, or more than one group at the root, the
      * general form ({@link #generalForm}). A deciding default writes the target: a {@link Value} with the stack as the
      * writer, which replaces the input on an attribute, or a {@link HasCharacteristic} for an attribution, beside which the
-     * input on a characteristic stands; a conflict writes nothing and deposits the §9.5 inconsistency under its key.
+     * input on a characteristic stands; a conflict writes nothing and deposits the §9.5 inconsistency under its key. A
+     * stack on an attribute on a timeline decides per day ({@link #dayStackRules}, ch. 7.11).
      *
      * <p>Refused by name: a characteristic target that shares its name with
      * an attribute, a group with a dated validity, an initialisation default on a characteristic, a deciding default
-     * without a justification; a target on a timeline or with dimensions through {@link #member}; a root anywhere in a
-     * default ({@link #verifyDefault}).
+     * without a justification; a characteristic on a timeline and a target with dimensions through {@link #member}; a
+     * root anywhere in a default ({@link #verifyDefault}).
      */
     private List<RulePlan> stackRules(Stacks.Stack st) {
         PrioritizedDefaults l0 = st.members().get(0);
@@ -4084,9 +4101,13 @@ public final class TmsTranspiler {
         String target = l0.target();
         if (characteristic && owner.attribute(target) != null)
             throw new Refusal(DroolsCode.CHARACTERISTIC_TARGET_NAME_CLASH.reason("attribute", target, "objectType", owner.name));
-        Member member = member(owner, target, characteristic);
+        // a group on an attribute on a timeline decides per day (RUNTIME-SEMANTICS ch. 7.11); on a characteristic on a
+        // timeline it is ill-formed (WF-086), and member refuses it as a place that holds one value
+        boolean perDay = !characteristic && temporal(owner, target, false);
+        Member member = perDay ? timeMember(owner, target, false, Msg.drools("PART.desc.time-dependent-target"))
+                : member(owner, target, characteristic);
         ObjectType declarant = owner.declarantOf(target);
-        StackBuild b = new StackBuild(stackName(st), member, characteristic, beanClass(owner),
+        StackBuild b = new StackBuild(stackName(st), member, characteristic, owner, beanClass(owner),
                 (declarant != null ? declarant.name : l0.subject()) + "." + target, st.members().size());
         List<List<Node>> squareRoot = new ArrayList<>();
         // a group with a dated validity gates its own chain, the exception groups below its defaults included: where
@@ -4095,7 +4116,8 @@ public final class TmsTranspiler {
             squareRoot.add(chain(b, st.members().get(m).defaults(), m, null, owner, List.of(),
                     st.members().size() == 1 ? "" : m + ":", st.members().get(m).validity()));
         boolean general = squareRoot.size() > 1 || squareRoot.stream().flatMap(List::stream).anyMatch(Node::hasMembers);
-        List<RulePlan> rules = new ArrayList<>(general ? generalForm(b, squareRoot) : simpleForm(b, squareRoot.get(0)));
+        List<RulePlan> rules = new ArrayList<>(perDay ? dayStackRules(b, squareRoot)
+                : general ? generalForm(b, squareRoot) : simpleForm(b, squareRoot.get(0)));
         if (st.members().stream().anyMatch(l -> l.validity() != null && !l.validity().always()))
             rules.add(stackValidityFault(b));
         // registered only once every default of the stack lowered, as a single rule registers its reads
@@ -4118,8 +4140,10 @@ public final class TmsTranspiler {
                 throw new IllegalStateException("de regel '" + rule + "' van de stapel " + b.name + " verlaagt"
                         + " geen default en niet de stapel zelf");
         derived.put(member.key(), member);
-        defaultsGroups.add(new DefaultsGroup(b.name, general, rules.size(), List.copyOf(b.controlFacts)));
-        layouts.put(b.name, new StackLayout(member, b.targetForm, general, squareRoot, b.javaClass));
+        if (perDay) dayStackTargets.add(member.key());
+        defaultsGroups.add(new DefaultsGroup(b.name, general || perDay, rules.size(), List.copyOf(b.controlFacts),
+                perDay));
+        layouts.put(b.name, new StackLayout(member, b.targetForm, general || perDay, squareRoot, b.javaClass, perDay));
         return rules;
     }
 
@@ -4597,6 +4621,246 @@ public final class TmsTranspiler {
         throw new IllegalStateException("een besluit zonder het feit dat het besluit noemt: " + facts);
     }
 
+    // ---------------- a defaults stack on a timeline target, per day ----------------
+
+    /**
+     * The rules of an effective stack on an attribute on a timeline, which decides per day (RUNTIME-SEMANTICS ch. 7.11),
+     * on the control facts of the general form ({@link #generalForm}): every default and every reconciliation of
+     * exception groups settles some days, and its {@link Outcome} carries them as its value ({@link PeriodDefaults.Days}).
+     * A default's rule reads the outcomes of the positions above it in its chain and above each default whose exception
+     * group its chain is ({@code above}), and matches only where they leave a day of its turn; the group at the root
+     * reconciles its members per day and is one writer of the target: its {@link Value} is the timeline of the days it
+     * decides, and the target's input stands on every other day ({@link #writersUnionRules}, ch. 3.11). A conflict
+     * writes nothing on its days and deposits one §9.5 fact per key on the subject, whatever the number of days.
+     */
+    private List<RulePlan> dayStackRules(StackBuild b, List<List<Node>> roots) {
+        List<RulePlan> out = new ArrayList<>();
+        b.controlFacts.add("Uitkomst " + Outcome.Kind.DECIDED);
+        for (List<Node> chain : roots) dayChainRules(b, chain, List.of(), out);
+        // the keys a conflict can stand under: the bare key where the root has two groups or more, and the key of every
+        // default whose exception groups are two or more; a conflict below passes on to the root unchanged (ch. 7.9)
+        List<String> keys = new ArrayList<>();
+        if (roots.size() > 1) keys.add(b.targetForm);
+        for (List<Node> chain : roots) conflictKeys(chain, keys);
+        int first = out.size();
+        out.add(as(RuleOrigin.Role.RECONCILE_AGREEMENT, dayRootRule(b, roots.size(), null)));
+        for (String key : keys) out.add(as(RuleOrigin.Role.RECONCILE_DIFFERENCE, dayRootRule(b, roots.size(), key)));
+        for (RulePlan r : out.subList(first, out.size())) stackOwnRules.add(r.name());
+        return out;
+    }
+
+    /** The keys of the defaults of {@code chain}, and of the chains of their exception groups, whose exception groups are
+     *  two or more: their members can differ on a day. */
+    private static void conflictKeys(List<Node> chain, List<String> out) {
+        for (Node k : chain) {
+            if (!k.hasMembers()) continue;
+            if (k.members().size() > 1) out.add(k.key());
+            for (List<Node> member : k.members()) conflictKeys(member, out);
+        }
+    }
+
+    /**
+     * The rules of {@code chain} and of the chains of their exception groups, per day: a default without exception
+     * groups decides on the days of its turn ({@link #dayOwnRule}); a default with them lays the rules of their chains,
+     * each on the days of its own turn, reconciles their outcomes per day into its outcome ({@link #dayReconciliation}),
+     * and, with content of its own, falls back to it on the days of its turn that none of them settles. {@code above}
+     * names the outcomes above the chain, as triples of the chains {@code [from, to)} and the position below which an
+     * outcome lies above (-1: any position).
+     */
+    private void dayChainRules(StackBuild b, List<Node> chain, List<int[]> above, List<RulePlan> out) {
+        String name = b.name;
+        for (Node k : chain) {
+            List<int[]> higher = new ArrayList<>(above);
+            if (k.position() > 0) higher.add(new int[]{k.chain(), k.chain() + 1, k.position()});
+            if (!k.hasMembers()) {
+                if (decidesSelf(b, k.d()))
+                    out.addAll(dayOwnRule(b, k, RuleOrigin.Role.OWN, name + ": default " + k.label(), higher, null));
+                continue;
+            }
+            for (List<Node> member : k.members()) dayChainRules(b, member, higher, out);
+            int first = k.firstMember(), to = first + k.members().size();
+            RulePlan reconciliation = as(RuleOrigin.Role.RECONCILE_AGREEMENT, dayReconciliation(b, k, first, to));
+            defaultOfRule.put(reconciliation.name(), k.d());
+            out.add(reconciliation);
+            if (decidesSelf(b, k.d()))
+                out.addAll(dayOwnRule(b, k, RuleOrigin.Role.FALLBACK, name + ": terugval " + k.label(), higher,
+                        new int[]{first, to, -1}));
+        }
+    }
+
+    /** The term of the days of the turn of a default whose rule binds {@code reads}: the days of all time that the
+     *  outcomes {@code above} leave, and of them, where {@code members} names its exception groups (null: none), those
+     *  their outcomes leave ({@link PeriodDefaults#reach}, {@link PeriodDefaults#left}). */
+    private Term dayTurn(StackBuild b, Reads reads, List<int[]> above, int[] members) {
+        Term outcomes = null;
+        for (int[] a : above) {
+            Term t = new Term.SlotValue(reads.outcomes(b.name, a[0], a[1], a[2]), null);
+            outcomes = outcomes == null ? t : new Term.Call(StaticFunction.DAYS_JOINED, List.of(outcomes, t), null);
+        }
+        Term turn = new Term.Call(StaticFunction.DAYS_REACH, List.of(outcomes == null ? constant(null) : outcomes), null);
+        if (members == null) return turn;
+        return new Term.Call(StaticFunction.DAYS_LEFT, List.of(turn,
+                new Term.SlotValue(reads.outcomes(b.name, members[0], members[1], members[2]), null)), null);
+    }
+
+    /** A {@code Let} of {@code value} under the binder {@code name} in a fresh slot of {@code reads}, with the body
+     *  {@code body} makes of the read of that binder: a value that is null ends it with leeg, so that what the body
+     *  reads after the binder is not evaluated (ch. 10.6). */
+    private static Term dayLet(Reads reads, String name, Term value, Function<Term, Term> body) {
+        int slot = reads.binder();
+        Term b = body.apply(new Term.Binder(slot, name, null));
+        return new Term.Let(slot, name, value, b, Boolean.TRUE.equals(readsFirst(b, slot)), null);
+    }
+
+    /** The rules of {@link #dayOwnRule}, built while {@link #lowering} is the default. */
+    private List<RulePlan> dayOwnRule(StackBuild b, Node k, RuleOrigin.Role role, String ruleName, List<int[]> above,
+                                      int[] members) {
+        lowering = k.d();
+        try {
+            List<RulePlan> out = lowerDayOwnRule(b, k, role, ruleName, above, members);
+            for (RulePlan r : out) defaultOfRule.put(r.name(), k.d());
+            return out;
+        } finally {
+            lowering = null;
+        }
+    }
+
+    /**
+     * The rule of a default's own decision per day (RUNTIME-SEMANTICS ch. 7.11): the subject pattern on the default's
+     * level, restricted to the stack's owner, the reads of its justification and its consequence, the outcomes above it
+     * ({@link #dayTurn}), and the test that they leave a day of its turn. Its consequence decides the days of its turn on
+     * which its justification, read per period ({@link #periodCondition}), holds, and the initialisation default those
+     * on which the input leaves the target empty ({@link PeriodDefaults#inputEmpty}), each a {@code Let} whose binder
+     * ends the evaluation where no day is left, so that the consequence is evaluated only where it can decide; and of
+     * those days the ones on which the timeline of its consequence, the period arithmetic of ch. 3.4 and 3.5 over all
+     * time, reads a value ({@link PeriodDefaults#decided}). What it decides is the value of its {@link Outcome}; where it
+     * decides no day it inserts none. A fault of its justification or its consequence is the decision's
+     * ({@link Consequence.Decision}), and so is what they deposit, which stands where it decides on some day.
+     *
+     * <p>In a build with readings its reading rule has the same left-hand side without the test: its justification has
+     * the periods in which it holds, its consequence, where those hold a day, the timelines it reads and computes, the
+     * root the filled segments within them ({@link PeriodDefaults#filledWithin}); and its turn tells whether it was at
+     * its turn on some day (ch. 5.12).
+     *
+     * <p>Refused by name, as limits of this branch: a consequence that is no period arithmetic, and a target that is no
+     * number.
+     */
+    private List<RulePlan> lowerDayOwnRule(StackBuild b, Node k, RuleOrigin.Role role, String ruleName,
+                                           List<int[]> above, int[] members) {
+        Default d = k.d();
+        Expr consequence = d.consequence();
+        if (!isPeriodArithmetic(consequence))
+            throw new Refusal(DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.reason("attribute", b.member.name(), "declarant",
+                    b.member.declarant().name, "snippet", snippet(consequence.source())));
+        if (!b.member.datatype().isNumberLike())
+            throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(consequence.source())));
+        Reads reads = new Reads(k.levelOf());
+        reads.addSubjectAlpha(concreteType(b.javaClass));
+        reads.valid(k.validity());
+        Set<Integer> read = reads.follow();
+        Term test = new Term.Call(StaticFunction.DAYS_AT_TURN, List.of(dayTurn(b, reads, above, members)), null);
+        reads.stop();
+        Set<Integer> use = reads.follow();
+        Term turn = dayTurn(b, reads, above, members);
+        Term empty = null;
+        if (d.initialisation()) {
+            int input = reads.dayInput(b.member), bucket = reads.bucketInputs(b.member), subject = reads.member();
+            empty = new Term.Call(StaticFunction.DAYS_INPUT_EMPTY, List.of(new Term.SlotValue(input, null),
+                    new Term.SlotValue(bucket, null), constant(b.member.name()), new Term.SlotValue(subject, null)), null);
+        }
+        beginReading();
+        Term periods = d.condition() == null ? null : periodCondition(d.condition(), b.member, reads);
+        Term timeline = periodOperand(consequence, b.member, k.levelOf(), reads);
+        periodUnit(periodUnitOf(consequence), unitCarrier(consequence), b.member.datatype().unitOf());
+        // the days it may decide, each narrowing a Let whose empty binder ends the evaluation (ch. 7.11)
+        Term value;
+        Term within = periods;
+        if (empty != null) {
+            Term input = empty;
+            value = dayLet(reads, "invoerloze dagen", new Term.Call(StaticFunction.DAYS_WITHIN, List.of(turn, input), null),
+                    e -> within == null ? new Term.Call(StaticFunction.DAYS_DECIDED, List.of(e, timeline), null)
+                            : dayLet(reads, "gerechtvaardigde dagen", new Term.Call(StaticFunction.DAYS_WITHIN,
+                                    List.of(e, within), null),
+                                    j -> new Term.Call(StaticFunction.DAYS_DECIDED, List.of(j, timeline), null)));
+        } else if (periods != null) {
+            value = dayLet(reads, "gerechtvaardigde dagen", new Term.Call(StaticFunction.DAYS_WITHIN, List.of(turn, periods),
+                    null), j -> new Term.Call(StaticFunction.DAYS_DECIDED, List.of(j, timeline), null));
+        } else {
+            value = new Term.Call(StaticFunction.DAYS_DECIDED, List.of(turn, timeline), null);
+        }
+        // the reading: the consequence where the justification holds on some day, and else not reached, its root the
+        // timeline it would write
+        Term root = new Term.Call(StaticFunction.DAYS_FILLED_WITHIN, List.of(periods == null ? constant(null) : periods,
+                timeline), null);
+        Term reading = periods == null ? root : new Term.Choice(new Term.Call(StaticFunction.DAYS_AT_TURN,
+                List.of(periods), null), root, constant(null), null);
+        note(consequence, root);
+        Noted noted = endReading();
+        reads.stop();
+        String name = b.name;
+        int depositFlag = reads.depositFlagSlot();
+        List<LhsItem> items = reads.plan(TestItem.Role.CONDITION, test, read);
+        Consequence decision = new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), false,
+                new Consequence.FaultName(name, name),
+                depositFlag < 0 ? null : new Consequence.Deposit(depositFlag, b.targetForm),
+                List.of(new Consequence.StackFact.Outcome(name, k.chain(), k.position(), Outcome.Kind.DECIDED)),
+                Consequence.Insertion.LOGICAL);
+        b.readings.add(reads);
+        b.defaultOf.put(reads, d);
+        List<RulePlan> out = new ArrayList<>();
+        out.add(as(role, reads.rulePlan(ruleName, items, decision)));
+        // a default without a justification, and an ordinary rule without a condition that the fold of ch. 7.10 took
+        // in, has no condition to read: the reading of its consequence
+        ResolvedRule madeFrom = stacks.ruleOf(d);
+        boolean unconditional = periods == null || (madeFrom != null && madeFrom.condition() == null);
+        if (noted != null)
+            readingRule(ruleName, pointerOf(d), reads, reads.readingPlan(List.of(), false), null, null,
+                    unconditional ? null : periods, reading, unconditional ? null : d.condition(), consequence, noted,
+                    k.validity(), false, empty == null ? turn
+                            : new Term.Call(StaticFunction.DAYS_WITHIN, List.of(turn, empty), null), empty);
+        return out;
+    }
+
+    /** The reconciliation per day of the outcomes of the member chains {@code [first, to)} of default {@code k}, under
+     *  its key (RUNTIME-SEMANTICS ch. 7.9, 7.11): the outcome of {@code k} on the days its exception groups settle, a
+     *  conflict among them included, which passes on to the root ({@link PeriodDefaults#reconciled}). */
+    private RulePlan dayReconciliation(StackBuild b, Node k, int first, int to) {
+        Reads reads = new Reads(k.levelOf());
+        reads.addSubjectAlpha(concreteType(b.javaClass));
+        Set<Integer> use = reads.follow();
+        Term members = new Term.SlotValue(reads.outcomes(b.name, first, to, -1), null);
+        reads.stop();
+        Term value = new Term.Call(StaticFunction.DAYS_RECONCILED, List.of(constant(k.key()), members), null);
+        return reads.rulePlan(b.name + ": eens " + k.label(), reads.plan(TestItem.Role.CONDITION, null, Set.of()),
+                new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), false, null,
+                        List.of(new Consequence.StackFact.Outcome(b.name, k.chain(), k.position(), Outcome.Kind.DECIDED)),
+                        Consequence.Insertion.LOGICAL));
+    }
+
+    /** A rule of the root of the stack: the reconciliation per day of the outcomes of its {@code chains} groups under the
+     *  bare key; with {@code key} null its write, the {@link Value} of the target over the days it decides, each segment
+     *  under the write boundary of the target's decimals (ch. 3.11, 7.11), and with a key the §9.5 inconsistency of a
+     *  conflict under that key, where one stands on some day. */
+    private RulePlan dayRootRule(StackBuild b, int chains, String key) {
+        Reads reads = new Reads(b.owner);
+        reads.addSubjectAlpha(concreteType(b.javaClass));
+        Set<Integer> use = reads.follow();
+        Term roots = new Term.SlotValue(reads.outcomes(b.name, 0, chains, -1), null);
+        reads.stop();
+        Term reconciled = new Term.Call(StaticFunction.DAYS_RECONCILED, List.of(constant(b.targetForm), roots), null);
+        if (key == null)
+            return reads.rulePlan(b.name + ": eens wortel", reads.plan(TestItem.Role.CONDITION, null, Set.of()),
+                    new Consequence.Value(SUBJECT, b.member.key(), b.name, new Term.Call(StaticFunction.PERIOD_WRITTEN,
+                            List.of(new Term.Call(StaticFunction.DAYS_DECIDED_OF, List.of(reconciled), null),
+                                    constant(ceiling(b.member.datatype())), constant(b.member.spelled())), null),
+                            List.copyOf(use), reads.size(), false, false, null, new Consequence.FaultName(b.name, b.name),
+                            Consequence.Insertion.LOGICAL));
+        Term conflicted = new Term.Call(StaticFunction.DAYS_CONFLICTED, List.of(reconciled, constant(key)), null);
+        return reads.rulePlan(b.name + ": verschil " + key, reads.plan(TestItem.Role.CONDITION, conflicted, use),
+                new Consequence.Inconsistency(SUBJECT, key, Consequence.StackFact.Inconsistency.CODES,
+                        Consequence.Insertion.LOGICAL));
+    }
+
     // ---------------- the readings of a build with readings ----------------
 
     /** What the analysis noted while the condition and the value of one form's own rule compiled ({@link #note}): the
@@ -4665,12 +4929,15 @@ public final class TmsTranspiler {
      * an object creation), the planned condition and value of the form's own rule, the very terms its test and its
      * consequence evaluate, the condition null for a form without one and for one whose condition is read per period,
      * whose term of periods the value reads ({@code periods}, null for every other form), and the nodes of the reading in their order, a
-     * node evaluated per member of a fold left out; and for a default whose turn the control facts of its stack guard,
+     * node evaluated per member of a fold left out; for a default whose turn the control facts of its stack guard,
      * its speculative reading rule, the same left-hand side without those control facts ({@link Reading.Kind}), null
-     * for every other form.
+     * for every other form; and for a default of a stack on a timeline target, which decides per day, the term of the
+     * days of its turn ({@code turn}) and, for its initialisation default, of the days on which the input leaves the
+     * target empty ({@code inputDays}), each null for every other form (RUNTIME-SEMANTICS ch. 5.12, 7.11).
      */
     private record ReadingRule(RulePlan plan, RulePlan speculative, String ownRule, String pointer, Validity validity,
-                               boolean guarded, Term condition, Term periods, Term value, List<Site> sites) {
+                               boolean guarded, Term condition, Term periods, Term value, List<Site> sites, Term turn,
+                               Term inputDays) {
 
         /** The subject pattern of the reading rule. */
         Subject subject() {
@@ -4722,6 +4989,18 @@ public final class TmsTranspiler {
     private void readingRule(String ruleName, String pointer, Reads reads, List<LhsItem> items,
                              List<LhsItem> speculativeItems, Term condition, Term periods, Term value,
                              Condition irCondition, Expr irValue, Noted noted, Validity validity, boolean guarded) {
+        readingRule(ruleName, pointer, reads, items, speculativeItems, condition, periods, value, irCondition, irValue,
+                noted, validity, guarded, null, null);
+    }
+
+    /** As {@link #readingRule(String, String, Reads, List, List, Term, Term, Term, Condition, Expr, Noted, Validity,
+     *  boolean)}, for a default of a stack on a timeline target: {@code turn} the term of the days of its turn, and
+     *  {@code inputDays} of the days on which the input leaves its target empty, null but for its initialisation
+     *  default ({@link ReadingRule}). */
+    private void readingRule(String ruleName, String pointer, Reads reads, List<LhsItem> items,
+                             List<LhsItem> speculativeItems, Term condition, Term periods, Term value,
+                             Condition irCondition, Expr irValue, Noted noted, Validity validity, boolean guarded,
+                             Term turn, Term inputDays) {
         if (pointer == null)
             throw new IllegalStateException("de vorm van de regel " + ruleName + " staat niet in het document dat de lader"
                     + " las: een lezing noemt haar vorm naar haar plaats");
@@ -4764,7 +5043,7 @@ public final class TmsTranspiler {
                     n instanceof Condition.QuantifierFold q ? q : null, derived, object == null ? -1 : object));
         }
         readingRules.add(new ReadingRule(plan, speculative, ruleName, pointer, validity, guarded, condition, periods, value,
-                sites));
+                sites, turn, inputDays));
     }
 
     /** The variables the top level of {@code lhs} declares, which a consequence can name: the variable of each pattern
@@ -4912,6 +5191,15 @@ public final class TmsTranspiler {
         for (dev.uchar.regelspraak.transpiler.tms.plan.Read l : slots)
             if (l.kind() == ReadKind.DEPOSIT_FLAG) w[l.slot()] = ComputeHelpers.depositFlag();
         RecordingRendering rec = new RecordingRendering();
+        // the initialisation default of a stack on a timeline target whose input fills the target on every day is not
+        // at its turn on any, and has no nodes (RUNTIME-SEMANTICS ch. 5.12, 7.11)
+        if (r.inputDays() != null) try {
+            if (ComputeHelpers.isEmpty(new RecordingRendering().value(r.inputDays(), w)))
+                return new ConditionReading(o, r.pointer(), ConditionReading.Status.DISPLACED, List.of());
+        } catch (RuntimeException e) {
+            if (!ComputeHelpers.isEvaluationFault(e)) throw e;
+            return new ConditionReading(o, r.pointer(), ConditionReading.Status.FAULTS, List.of());
+        }
         ConditionReading.Status status;
         // a condition read per period gates nothing, so the form holds, and a fault of it fails the reading before the
         // value is read (RUNTIME-SEMANTICS ch. 3.10, 5.12)
@@ -4954,6 +5242,8 @@ public final class TmsTranspiler {
                     oc == null ? null : oc.fault(), !found ? null : s.navigates() ? w[s.objectSlot()] : own(s, o),
                     contributors));
         }
+        // a default of a stack on a timeline target is at its turn where the days of its turn hold one (ch. 7.11)
+        if (r.turn() != null && ComputeHelpers.isEmpty(new RecordingRendering().value(r.turn(), w))) displaced = true;
         return new ConditionReading(o, r.pointer(), displaced ? ConditionReading.Status.DISPLACED : status, nodes);
     }
 
@@ -8051,6 +8341,56 @@ public final class TmsTranspiler {
                     List.of(new Join(id("ontvanger-bron"), "source", SUBJECT)), List.of()),
                     List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, list))));
             return allocateSlot(ReadKind.RECIPIENTS, key, list);
+        }
+
+        /** The {@link Outcome} facts of the stack {@code stack} on this rule's subject in the chains {@code [from, to)}
+         *  at a position below {@code below} (-1: at any position), bound as a list off an accumulate, which over no fact
+         *  binds the empty list: what settles days above a default of a stack on a timeline target, or in its exception
+         *  groups, and what a reconciliation per day reconciles ({@link TmsTranspiler#dayStackRules}). */
+        int outcomes(String stack, int from, int to, int below) {
+            String key = "uitkomsten " + stack + " " + from + " " + to + " " + below;
+            int known = existing(key);
+            if (known >= 0) return known;
+            String o = "$uitkomst_" + id("dagen");
+            String list = "$uitkomsten_" + id("dagen");
+            List<Alpha.FieldTest> tests = new ArrayList<>(List.of(
+                    new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, stack),
+                    new Alpha.FieldTest("chain", Alpha.Comparator.AT_LEAST, from),
+                    new Alpha.FieldTest("chain", Alpha.Comparator.UNDER, to)));
+            if (below >= 0) tests.add(new Alpha.FieldTest("position", Alpha.Comparator.UNDER, below));
+            states(new Accumulation(new FactPattern(Outcome.class, o, List.of(new Alpha(id("dagen"), tests)),
+                    List.of(onSubjectHere(id("dagen-onderwerp"))), List.of()),
+                    List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, list))));
+            return allocateSlot(ReadKind.OUTCOMES, key, list);
+        }
+
+        /** The input on the bean of this rule's subject of {@code member}, an attribute on a timeline that a stack
+         *  writes, as its segments ({@link Period#list}), null where it has none: the bean holds the case input while the
+         *  session fires, and no form reads it through the target's standing, which the stack writes itself. */
+        int dayInput(Member member) {
+            notAtForm(member.name());
+            String key = "invoer per dag " + member.key();
+            int known = existing(key);
+            if (known >= 0) return known;
+            String w = readName(member.name() + " invoer");
+            bindSubject(new Binding(w, List.of(), new Binding.Field(member.javaClass(), member.name()),
+                    Binding.ReadForm.PERIODS, null));
+            return allocateSlot(ReadKind.INPUT, key, w);
+        }
+
+        /** The number of {@link BucketInput} facts of {@code member} on this rule's subject, off an accumulate: above 0
+         *  where the case gives its input as the asOfDate-bucket scalar (RUNTIME-SEMANTICS ch. 8.4). */
+        int bucketInputs(Member member) {
+            notAtForm(member.name());
+            String key = "emmerinvoer " + member.key();
+            int known = existing(key);
+            if (known >= 0) return known;
+            String b = "$emmerinvoer_" + id("dagen");
+            String count = "$emmerinvoeren_" + id("dagen");
+            states(new Accumulation(new FactPattern(BucketInput.class, b, List.of(equal(id("emmerinvoer"), "attribute",
+                    member.key())), List.of(onSubjectHere(id("emmerinvoer-onderwerp"))), List.of()),
+                    List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, count))));
+            return allocateSlot(ReadKind.BUCKET_INPUTS, key, count);
         }
 
         int origin() {
