@@ -4938,8 +4938,8 @@ parameters, the clause that defines it and its witnesses.
 | EF-007 | a datum-tijd step or construction leaves the representable millisecond range | fault | — | ch. 3.8 | `corpus/red/day-kind-step-outside-range`, `corpus/red/date-time-step-outside-range`, `corpus/red/date-time-with-outside-range` |
 | EF-008 | a duration count is out of range | fault | `count` | ch. 3.8 | `corpus/red/date-time-step-outside-range` |
 | EF-009 | a day-kind walk passes the reach fence without a day of the kind | fault | `from`, `reach` | ch. 3.8 | `corpus/red/day-kind-unsatisfiable-walk`, `corpus/red/day-kind-scope-outside-table` |
-| EF-010 | the bound day is read outside a day-kind evaluation | fault | — | ch. 3.8 | `corpus/red/context-value-de-dag-outside-day-kind` |
-| EF-011 | a context value needs an evaluation date the case does not carry | fault | `contextValue` | ch. 8.2 | `corpus/red/evaluation-year-without-evaluation-date`, `corpus/red/duration-reads-van-before-tot` |
+| EF-010 | the bound day is read outside a day-kind evaluation | fault | — | ch. 3.8 | `corpus/red/context-value-de-dag-outside-day-kind`, `corpus/red/bound-day-behind-a-holding-condition` |
+| EF-011 | a context value needs an evaluation date the case does not carry | fault | `contextValue` | ch. 8.2 | `corpus/red/evaluation-year-without-evaluation-date`, `corpus/red/duration-reads-van-before-tot`, `corpus/red/context-value-behind-a-holding-condition` |
 | EF-012 | a validity-bounded form in a session without an evaluation date | fault | — | ch. 8.1 | `corpus/red/jutterswet-uitsluiting-zonder-rekendatum` |
 | EF-013 | the Parameterset timeline of a parameter does not cover the evaluation date | fault | `parameter`, `date` | ch. 8.4 | `corpus/red/vintage-uncovered-date` |
 | EF-014 | a parameter the case does not bind is read | fault | `parameter` | ch. 5.7 step 2 | `corpus/red/aanvoergeld-parameter-unbound`, `corpus/red/day-kind-parameter-unbound` |
@@ -4947,7 +4947,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-016 | two writers of one target disagree | fault | `rules`, `values`, `attribute`, `label`, `objectType` | ch. 5.7 | `corpus/red/jutterswet-dubbele-melding` |
 | EF-017 | a to-one role gets a second filler | fault | `role`, `label`, `filler` | ch. 5.5 | `corpus/red/to-one-second-filler` |
 | EF-018 | the back-link of a created object is ambiguous | fault | `objectType`, `createdType` | ch. 5.5 | `corpus/red/ambiguous-backlink` |
-| EF-019 | an `Unresolved` node is reached, at an expression or a condition position | fault | `position` | ch. 5.7; WF-044 | `corpus/red/wf044-unresolved-guard`, `corpus/red/wf044-unresolved-reached` |
+| EF-019 | an `Unresolved` node is reached, at an expression or a condition position | fault | `position` | ch. 5.7; WF-044 | `corpus/red/wf044-unresolved-guard`, `corpus/red/wf044-unresolved-reached`, `corpus/red/unresolved-behind-a-holding-condition` |
 | EF-020 | a temporal key component is supplied as a scalar | fault | `key`, `label` | ch. 5.9 | `corpus/red/uniqueness-temporal-key-scalar`, `corpus/red/ever-unique-temporal-key-scalar`, `corpus/red/ever-unique-temporal-key-bucket-scalar` |
 | EF-021 | a filled count over a temporal attribute of a set | declined | `attribute` | ch. 3.4c | `corpus/red/filled-count-temporal-set-source` |
 | EF-022 | a nested day-kind test on a date other than the bound day | declined | — | ch. 3.8; ch. 3.12 | `corpus/red/day-kind-reference-other-day` |
@@ -4977,8 +4977,9 @@ Worked example (`corpus/red/clamp-reads-bounds-in-order`, replayed by gate
 pins none). The reference interpreter reports the code beside its message
 where it evaluates the minimum of the clamp, "the evaluationYear context
 value needs an evaluation date; the case carries asOfDate null"; the ASP
-backend reports it beside the same sentence where it translates that
-minimum; the Drools backend's red run reports `FAULT EF-011 {}:
+backend reports it beside the same sentence when it solves, from the witness
+of that minimum, which fires where the evaluation reaches it; the Drools
+backend's red run reports `FAULT EF-011 {}:
 ComputeFault: error in the rule "begrenswaarde van een jutter": the
 evaluationYear context value needs an evaluation date; …`. Two moments,
 three texts, one code. (Until 2026-10-19 this example was
@@ -6442,7 +6443,9 @@ asOfDate-bucket scalar, faults: `0 CharacteristicCheck [[2025-04-01
 evaluation raises nothing (`WV-5.12-default-per-dag-gevolg-faalt`). With the
 consequence "zijn kustloon plus 1" the sum passes the fault on and its right
 operand is not reached: `1 Binary fault EF-037`, `2 AttributeReference fault
-EF-037`, `3 Literal unreached` (`-som`).
+EF-037`, `3 Literal unreached` (`-som`; the golden
+`jutterswet-gevolg-buiten-de-beurt-som`, whose readings gate 17 holds on both
+branches of the Drools backend).
 
 **A reading deposits nothing and writes nothing.** A §9.5 deposit the
 evaluation makes is dropped, a value it computes is written nowhere, and no
@@ -7016,13 +7019,13 @@ golden `jutterswet-keurtermijn` (card
 `clingo-day-kind-walk-after-fold-stop`, 2026-10-21) reads `"W2" fault
 EF-009 unreached` and `"W3" fault EF-009 unreached` on both sides, the
 day-kind walk of a member after the stop. The other kinds stay outside
-it: measured 2026-10-21, no golden with such a fault passes gates 6 and
-17, since the ASP backend raises the faults of an evaluation date the case
-does not carry (EF-011) and of an `Unresolved` node (EF-019) while it
-translates the document, and the Drools backend reads a parameter the
-case does not bind (EF-014) as leeg, so its reading would carry a verdict
-where ref's carries the fault. Those arms are pinned by the executors' own
-tests above. And a verdict of a
+it: no golden carries such a fault after the stop. The ASP backend raises
+the faults of an evaluation date the case does not carry (EF-011) and of an
+`Unresolved` node (EF-019) where the evaluation reaches their node, as ref
+does (card `early-faults-and-sum-reading`, 2026-11-04), and the Drools
+backend reads a parameter the case does not bind (EF-014) as leeg, so its
+reading would carry a verdict where ref's carries the fault. Those arms are
+pinned by the executors' own tests above. And a verdict of a
 contributor the session did not reach may rest on a deposit the reading
 dropped, as W2 in case 1 and W3 in case 3 of the second example do: a
 consumer that reads the table reads a verdict the session would have
