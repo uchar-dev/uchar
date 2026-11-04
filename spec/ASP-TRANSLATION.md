@@ -202,11 +202,12 @@ refused — milliseconds since epoch exceed clingo's integer range.
 The standing-target routing is the one semantic decision made at
 input time (RS ch. 7.8; S10 carries the detail): if the target attribute of
 a defeasible producer — a defaults target, or a bare single-writer
-version-free computing rule (the standing norm) — receives case
-input, that input enters as `inputval/3` (scalar) or `inputtl/5`
-(timeline) instead of `val/3`/`tl/5`, so the producer can defeat it;
-everything else enters as plain facts. Case input on a *non-standing*
-computed target is refused loudly (ref overwrites; a monotone
+version-free scalar computing rule (the standing norm) — receives case
+input, that input enters as `inputval/3` instead of `val/3`, so the
+producer can defeat it. The input timeline of a timeline target that a
+computing rule writes enters as `inputtl/5` and stands on the days no
+writer decides (RS ch. 3.11). Everything else enters as plain facts.
+Case input on a *non-standing* computed scalar target is refused loudly (ref overwrites; a monotone
 encoding would union — the hunted superset model of ch. 6d), except on
 a target of two or more co-writers (S3): there it enters as
 `inputval/3` and stands where none of them fires (RS ch. 5.7,
@@ -217,8 +218,8 @@ every input instance gets `depth(L,0)` under the creation budget.
 
 Witnesses: every golden case exercises this section (gate 6);
 standing routing by the defaults anchors, `jutterswet-waardestelling`
-(the scalar standing norm) and `jutterswet-borgdeel` (the temporal
-arm); vintages by `jutterswet-aanmeldquotum`,
+(the scalar standing norm) and `jutterswet-borgdeel` (a timeline
+writer beside its input); vintages by `jutterswet-aanmeldquotum`,
 `jutterswet-penningvintage` and `corpus/red/vintage-uncovered-date`;
 the symbolic carriage by `jutterswet-vondstetiket` (text),
 `jutterswet-keurstaat` (enum, including the case2 norm-insensitive
@@ -1508,15 +1509,11 @@ shared; the 366-headroom bound differs per producer — pro-rata
 fences the weight |W|, the day count fences the target's decimal
 scale (a compile-time fault).
 
-Both producers carry the ch. 7.8 **standing arm** (S10): a per-fold
-effectiveness atom (`prN_eff`/`adgN_eff`) with the full bucket body —
-for pro-rata including its exactness guard; the day count has no
-quotient, so its eff body is the plain bucket body — and the
-defeasible input rule
-`tl(S,a,F,T,V) :- inputtl(S,a,F,T,V), is_a(S,ot), not prN_eff(S).`
-An empty fold derives no effectiveness and the input timeline stands
-**whole**, never mixed per bucket (the maintainer-ratified
-whole-timeline reading, RS ch. 7.8).
+Both producers write their segments also as the writer's `wtl/6`,
+beside which the case input timeline (`inputtl/5`) stands on the days
+no writer decides: each input segment is cut at the writers' bounds
+inside it (`incut/5`), and a piece (`inpiece/6`) no writer covers
+(`indecided/4`) is a `tl/5` segment (RS ch. 3.11).
 
 **Period arithmetic** (an operator of ch. 1.2 other than the power, read
 per day, and the sum per period, ch. 3.4/3.5, as the value of a rule on a
@@ -1702,13 +1699,12 @@ condition *and* value bindings, so a producer that fires but derives
 nothing (an empty defaults outcome, an empty computing rule) leaves the
 input standing — ref's no-write-on-empty. A condition-only body
 would encode v0's erase instead. The standing norm extends this to
-bare single-writer version-free computing rules (S3) and to the
-temporal producers (S9, whole-timeline).
+bare single-writer version-free scalar computing rules (S3).
 
 Witnesses: `jutterswet-hardheid` (the §4.1 hardship pattern),
 `jutterswet-toelagegronden`, `jutterswet-uitsluiting`,
 `jutterswet-vondstwaardering` (conflict), `jutterswet-waardestelling`
-(scalar standing), `jutterswet-borgdeel` (temporal standing); the
+(scalar standing); the
 WF-050/051 negatiefs pin defaults well-formedness; gate 7's
 reason-carrying no-op survivors pin exactly the cases where standing
 input must survive an ineffective producer.
@@ -4106,7 +4102,7 @@ input timeline enters as `inputtl/5`, standing **whole** by NAF
 against the fold's per-bucket effectiveness atom (`prN_eff` carries
 the full bucket body incl. the exactness guard, so an empty fold
 derives no eff and the input stands — ref's no-write on an empty
-result, whole-timeline reading). The adoption round also found and
+result, whole-timeline reading; per day since 2026-11-04, RS ch. 3.11). The adoption round also found and
 closed the neighbouring gap this section missed: an allocation
 `doelAttribuut` supplied by the case was **unfenced** — the case
 `val/3` fact and the allocation's own head unioned into a superset

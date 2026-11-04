@@ -450,16 +450,17 @@ missing line makes `make gates` exit non-zero. Current gates:
     Since the card `conditions-per-period` (step B, 2026-11-03) a condition
     that reads a timeline on a rule with a timeline target is read per period
     in the rule's consequence (`PeriodCondition`), the producer's timeline
-    cut to its periods, the whole-period qualifier there per bucket; two or
-    more computing rules of one timeline target each write their own
-    `Value`, and the write-back puts their union with the target's input on
-    the bean (EF-016 on a day two decide differently). Since step B part ii
+    cut to its periods, the whole-period qualifier there per bucket; the
+    computing rules of one timeline target, one or more, each write their
+    own `Value`, and the write-back puts their union with the target's input
+    on the bean (EF-016 on a day two decide differently; since the card
+    `writers-per-day-beside-input`, 2026-11-04, also for a sole writer). Since step B part ii
     of the same card both branches write the day count over all time, read a
     period window per period, its bound a day-precise date expression, and
     write a time-dependent characteristic within a window as a standing of
     its true periods (`PeriodCondition`, `CharacteristicPeriodsFault`, EF-023
-    on an open bound); the standing of a timeline target of two writers is
-    their union with its input (`Consequence.WritersUnion`). A golden whose forms the loader+transpiler carry
+    on an open bound); the standing of a timeline target that rules write is
+    the union of its writers with its input (`Consequence.WritersUnion`). A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
     (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
     over the corpus). Not-carried forms never vanish silently: per-form

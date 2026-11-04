@@ -161,7 +161,7 @@ let document (doc : document) : document =
    a leeg evaluation writes nothing and a case-supplied input value
    stands. Shared by ref/ (the no-write on leeg) and the ASP backend
    (the defeasible inputval/3 entry), so the domain has one definition. *)
-let standing_targets_gen ~temporal (doc : document) : (string * string) list =
+let standing_targets (doc : document) : (string * string) list =
   let key (ot, a) = (norm ot, norm a) in
   let written_by_rules =
     List.fold_left
@@ -195,37 +195,24 @@ let standing_targets_gen ~temporal (doc : document) : (string * string) list =
                 o.assignments)
          doc.object_creations
   in
-  let wanted_shape (ot, a) =
+  (* a timeline target is no standing target: each of its writers decides
+     the days its timeline reads a value, beside the input (ch. 3.11) *)
+  let scalar (ot, a) =
     match List.find_opt (fun (n, _) -> norm n = norm ot) doc.object_types with
-    | Some (_, decl) -> Checks.attr_temporal decl a = temporal
+    | Some (_, decl) -> not (Checks.attr_temporal decl a)
     | None -> false
-  in
-  (* the temporal domain is additionally shape-exact: only the ch. 3.7
-     pro-rata fold executes as a temporal writer today, and a
-     shape-agnostic domain would skip the backend's input fence for
-     rules that then merely shape-fault — keep the fence in charge
-     there instead *)
-  let executable (r : resolved_rule) =
-    (not temporal)
-    ||
-    match r.value_node with
-    | Some (Function_call { kind = Time_proportional_part | Day_count; _ }) -> true
-    | _ -> false
   in
   List.filter_map
     (fun r ->
       match target_of r with
       | Some t
         when is_computing r
-             && executable r
              && count (key t) = 1
-             && wanted_shape t
+             && scalar t
              && not (other_writer t) ->
           Some (key t)
       | _ -> None)
     doc.resolved_rules
-
-let standing_targets = standing_targets_gen ~temporal:false
 
 (* --- inheritance: the effective defaults stack per type (RUNTIME-SEMANTICS
    ch. 7.10) ---------------------------------------------------------------
@@ -591,14 +578,3 @@ let absorbed_on (doc : document) ~otype ~attr : string list =
       let v = absorbed_uncached doc ~otype ~attr in
       Hashtbl.add tbl k v;
       v
-
-
-(* The temporal standing domain (RS ch. 7.8, the timeline arm): a
-   temporal target carried by exactly one version-free computing rule
-   (in practice the ch. 3.7 pro-rata fold) as its only writer. The rule
-   decides only when its result timeline is filled (>= 1 segment) — an
-   empty result is the temporal leeg (empty == never-written, ch. 3.1) and
-   writes nothing, so a case-supplied input timeline stands whole: the
-   defaults reading is per target, never per bucket (a default decides once;
-   ref's write_timeline replaces whole). *)
-let standing_temporal_targets = standing_targets_gen ~temporal:true
