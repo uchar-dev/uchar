@@ -12754,7 +12754,7 @@ let () =
       (4, "0 Aggregation [[- 2024-01-01 0], [2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 70], [2024-03-01 2024-04-01 10], [2024-04-01 - 0]]"
           ^ vondsten);
       (4, "2 Literal 0"); (4, "HOLDS");
-      (5, "0 Aggregation 780"); (5, "1 AttributeReference " ^ maandloon); (5, "HOLDS") ];
+      (5, "0 Rounding 780"); (5, "1 Aggregation 780"); (5, "2 AttributeReference " ^ maandloon); (5, "HOLDS") ];
   let v1 = " contributors [\"V1\" [[2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 60]] reached]" in
   rows ~case_dir:"ref/test/fixtures/period-arithmetic/sum-member-without-timeline/" "case.json"
     [ (0, "0 Binary " ^ maandloon); (0, "1 AttributeReference " ^ strandloon);
@@ -12766,14 +12766,14 @@ let () =
       (3, "0 Aggregation [[2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 60]]" ^ v1); (3, "HOLDS");
       (4, "0 Aggregation [[- 2024-01-01 0], [2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 60], [2024-03-01 - 0]]" ^ v1);
       (4, "2 Literal 0"); (4, "HOLDS");
-      (5, "0 Aggregation 780"); (5, "1 AttributeReference " ^ maandloon); (5, "HOLDS") ];
+      (5, "0 Rounding 780"); (5, "1 Aggregation 780"); (5, "2 AttributeReference " ^ maandloon); (5, "HOLDS") ];
   rows "case3-zonder-tijdlijnen.json"
     [ (0, "0 Binary [[- - 0]]"); (0, "1 AttributeReference []"); (0, "2 AttributeReference []"); (0, "HOLDS");
       (1, "0 Binary [[- - 0]]"); (1, "1 AttributeReference []"); (1, "2 AttributeReference []"); (1, "HOLDS");
       (2, "0 Binary [[- - 5]]"); (2, "1 Literal 5"); (2, "2 AttributeReference []"); (2, "HOLDS");
       (3, "0 Aggregation []"); (3, "HOLDS");
       (4, "0 Aggregation [[- - 0]]"); (4, "2 Literal 0"); (4, "HOLDS");
-      (5, "0 Aggregation 0"); (5, "1 AttributeReference [[- - 0]]"); (5, "HOLDS") ]
+      (5, "0 Rounding 0"); (5, "1 Aggregation 0"); (5, "2 AttributeReference [[- - 0]]"); (5, "HOLDS") ]
 
 let () =
   if !failures > 0 then begin

@@ -446,8 +446,9 @@ class TmsPeriodArithmeticWitnessTest {
             lines.addAll(List.of(
                     r + "4/versions/0 \"J1\" 2 Literal 0",
                     r + "4/versions/0 \"J1\" HOLDS",
-                    r + "5/versions/0 \"J1\" 0 Aggregation 780",
-                    r + "5/versions/0 \"J1\" 1 AttributeReference " + maandloon,
+                    r + "5/versions/0 \"J1\" 0 Rounding 780",
+                    r + "5/versions/0 \"J1\" 1 Aggregation 780",
+                    r + "5/versions/0 \"J1\" 2 AttributeReference " + maandloon,
                     r + "5/versions/0 \"J1\" HOLDS"));
             return lines;
         };
