@@ -1,0 +1,95 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "basisloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "strandloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "strandloon uit het basisloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "strandloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het strandloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "basisloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "zijn basisloon"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

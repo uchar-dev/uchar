@@ -12688,6 +12688,25 @@ let () =
   let w, _ = World.release_timeline_part w ~form:"second" ~label:"J1" ~attr:"a" in
   check "WV-5.7-per-dag-invoer-geen-schrijver" (tl w = [ seg "2024-01-01" "2025-01-01" "7" ])
 
+(* WV-3.11-per-dag-invoer: a writer of a timeline target, also its only one,
+   decides the days on which its timeline reads a value, and on every other day
+   the target holds its input or leeg (RUNTIME-SEMANTICS ch. 3.11, "Leeg in a
+   write"), on the documents of ref/test/fixtures/writers-per-day. Input 10 on
+   2025 and "het strandloon moet gesteld worden op 20 van dd. 01-03-2025 tot
+   dd. 01-06-2025": 10 on [2025-01-01, 2025-03-01), 20 on [2025-03-01,
+   2025-06-01), 10 on [2025-06-01, 2026-01-01); without input 20 on the window
+   alone. The writer of 10 leaves 10 on the whole year. The writer "berekend
+   als zijn basisloon", the basisloon 20 on the window and a gap elsewhere,
+   decides the window only. Two writers beside the input, 20 in spring and 30
+   in autumn: 10, 20, 10, 30, 10 *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/writers-per-day/" in
+  List.iter
+    (fun (ident, d) -> plays ~ident ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
+    [ ("WV-3.11-per-dag-invoer", "een-schrijver"); ("WV-3.11-per-dag-invoer-gelijk", "een-schrijver-gelijk");
+      ("WV-3.11-per-dag-invoer-gat", "een-schrijver-gat"); ("WV-5.7-per-dag-twee-schrijvers-invoer", "twee-schrijvers") ]
+
 (* WV-5.12-voorwaarde-per-periode: a condition read per period has, at each of
    its nodes, the part of all time in which it holds, and the value of the rule
    is the timeline it writes, cut to it; the nodes under the value read the

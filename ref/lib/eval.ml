@@ -3188,8 +3188,8 @@ let over_subjects ?(exact = false) ?(except = []) ?read ?(only = fun _ -> true) 
    corpus shape; everything else faults). The base must be as coarse as
    or coarser than the bucket, and the target's declared granularity
    must equal the node's. An absent base timeline or a condition
-   without true periods writes the EMPTY timeline (v0: a null base
-   yields the empty list — the target exists, with no segments). *)
+   without true periods gives the EMPTY timeline, which decides no
+   day (ch. 3.11). *)
 (* --- a condition per period (RUNTIME-SEMANTICS ch. 3.10, the clip generalised) --- *)
 
 (* WF-126, fail-fast behind the verifier: a timeline that a rule of a timeline
@@ -3375,8 +3375,8 @@ let rec cond_periods env w (self : World.instance) ~err ~(target : Timeline.grid
 let clip_periods periods result = match periods with None -> result | Some ps -> Timeline.clip result ps
 
 (* The rules that compute the timeline target (ot, attr), in the order of the
-   document. With two or more, each writer decides its own segments, and the
-   target is their union per day (ch. 5.7). *)
+   document. Each writer decides its own segments, and the target is their
+   union per day (ch. 3.11, 5.7). *)
 let timeline_writers env ~ot ~attr =
   List.filter
     (fun (r : resolved_rule) ->
@@ -3388,56 +3388,52 @@ let timeline_writers env ~ot ~attr =
       | _ -> false)
     env.doc.resolved_rules
 
-(* The write of a producer's timeline [result] on (self, attr) by [form]. On a
-   target of one writer the timeline replaces what the target held, the ch. 7.8
-   arm on a standing target. On a target of two or more, [result] is the part
-   [form] decides; two writers that decide one day with different values have
-   no fixpoint (ch. 5.1), and the fault names them in the order of the
-   document with their values on the first such day (IMPLICIT-TIME VB 5.2). *)
+(* The write of a producer's timeline [result] on (self, attr) by [form]:
+   [result] is the part [form] decides, and on a day no writer decides the
+   target keeps what it held before any of them wrote, its input or leeg — on a
+   target of one writer as of two or more (ch. 3.11, 5.7). Two writers that
+   decide one day with different values have no fixpoint (ch. 5.1), and the
+   fault names them in the order of the document with their values on the
+   first such day (IMPLICIT-TIME VB 5.2). *)
 let write_produced env w (self : World.instance) ~form ~ot ~attr result =
   let decl = attr_decl env ~otype:ot ~attr in
-  match timeline_writers env ~ot ~attr with
-  | _ :: _ :: _ as writers ->
-      let rank_of f =
-        Option.value ~default:max_int (List.find_index (fun (r : resolved_rule) -> r.rr_pointer = f) writers)
-      in
-      let name_of f =
-        match List.find_opt (fun (r : resolved_rule) -> r.rr_pointer = f) writers with Some r -> rule_name r | None -> f
-      in
-      let clashes =
+  let writers = timeline_writers env ~ot ~attr in
+  let rank_of f =
+    Option.value ~default:max_int (List.find_index (fun (r : resolved_rule) -> r.rr_pointer = f) writers)
+  in
+  let name_of f =
+    match List.find_opt (fun (r : resolved_rule) -> r.rr_pointer = f) writers with Some r -> rule_name r | None -> f
+  in
+  let clashes =
+    List.concat_map
+      (fun (_, f', tl') ->
         List.concat_map
-          (fun (_, f', tl') ->
-            List.concat_map
-              (fun (s : Timeline.segment) ->
-                List.filter_map
-                  (fun (s' : Timeline.segment) ->
-                    if s.s_from < s'.s_to && s'.s_from < s.s_to && not (Arith.equal s.s_value s'.s_value) then
-                      Some (max s.s_from s'.s_from, f', s.s_value, s'.s_value)
-                    else None)
-                  tl')
-              result)
-          (World.timeline_parts_but w ~form ~label:self.label ~attr)
+          (fun (s : Timeline.segment) ->
+            List.filter_map
+              (fun (s' : Timeline.segment) ->
+                if s.s_from < s'.s_to && s'.s_from < s.s_to && not (Arith.equal s.s_value s'.s_value) then
+                  Some (max s.s_from s'.s_from, f', s.s_value, s'.s_value)
+                else None)
+              tl')
+          result)
+      (World.timeline_parts_but w ~form ~label:self.label ~attr)
+  in
+  match List.sort (fun (a, _, _, _) (b, _, _, _) -> compare a b) clashes with
+  | (day, f', v, v') :: _ ->
+      let pair =
+        List.sort (fun (a, _, _) (b, _, _) -> compare a b) [ (rank_of form, name_of form, v); (rank_of f', name_of f', v') ]
       in
-      (match List.sort (fun (a, _, _, _) (b, _, _, _) -> compare a b) clashes with
-      | (day, f', v, v') :: _ ->
-          let pair =
-            List.sort (fun (a, _, _) (b, _, _) -> compare a b) [ (rank_of form, name_of form, v); (rank_of f', name_of f', v') ]
-          in
-          let day = if day = Timeline.open_from then "every day before the first bound" else Value.iso_of_date day in
-          Value.faultc
-            ~params:
-              [ ("rules", String.concat ", " (List.map (fun (_, n, _) -> n) pair));
-                ("values", String.concat ", " (List.map (fun (_, _, v) -> Value.to_string v) pair));
-                ("attribute", attr); ("label", self.label); ("objectType", self.otype) ]
-            "EF-016" "two writers of one target disagree on %s: %s to the attribute %s of %s, a %s" day
-            (String.concat " and "
-               (List.map (fun (_, n, v) -> Printf.sprintf "rule \"%s\" writes %s" n (Value.to_string v)) pair))
-            attr self.label self.otype
-      | [] -> World.write_timeline_part w ~form ~rank:(rank_of form) ~label:self.label ~attr ~decl result)
-  | _ ->
-      if result = [] && List.mem (norm ot, norm attr) (Ir_v0.Desugar.standing_temporal_targets env.doc) then
-        World.release w ~form ~label:self.label ~attr
-      else World.write_timeline_by w ~form ~label:self.label ~attr ~decl result
+      let day = if day = Timeline.open_from then "every day before the first bound" else Value.iso_of_date day in
+      Value.faultc
+        ~params:
+          [ ("rules", String.concat ", " (List.map (fun (_, n, _) -> n) pair));
+            ("values", String.concat ", " (List.map (fun (_, _, v) -> Value.to_string v) pair));
+            ("attribute", attr); ("label", self.label); ("objectType", self.otype) ]
+        "EF-016" "two writers of one target disagree on %s: %s to the attribute %s of %s, a %s" day
+        (String.concat " and "
+           (List.map (fun (_, n, v) -> Printf.sprintf "rule \"%s\" writes %s" n (Value.to_string v)) pair))
+        attr self.label self.otype
+  | [] -> World.write_timeline_part w ~form ~rank:(rank_of form) ~label:self.label ~attr ~decl result
 
 (* ch. 3.4 and 3.5 as the value of a rule on a temporal attribute target: the
    timeline of [e] over all time (ch. 3.1). A binary operator cuts and merges
@@ -3707,10 +3703,8 @@ let run_pro_rata ?periods env w (self : World.instance) ~err ~form ~ot ~attr val
       let base_expr = Option.value (World.timeline self b) ~default:[] in
       let result = clip_periods periods (Timeline.pro_rata g base_expr true_periods) in
       read_whole value_node (Some result);
-      (* ch. 7.8, the timeline arm: on a standing temporal target the
-         fold decides only when its result is gevuld — an empty result
-         (the temporal leeg) writes nothing and a case-supplied input
-         timeline stands whole *)
+      (* the fold decides the buckets it writes; a bucket without a true day
+         or with a leeg base it does not decide (ch. 3.11) *)
       write_produced env w self ~form ~ot ~attr result
   | Function_call
       { kind = Day_count; call_arguments = [];
@@ -3749,7 +3743,6 @@ let run_pro_rata ?periods env w (self : World.instance) ~err ~form ~ot ~attr val
         clip_periods periods (Timeline.day_count ~unit (Timeline.attr_grid env.doc ot_decl attr) true_periods)
       in
       read_whole value_node (Some result);
-      (* the ch. 7.8 timeline arm, as for pro-rata *)
       write_produced env w self ~form ~ot ~attr result
   | _ ->
       Value.faultc "REF-011"
@@ -3904,7 +3897,6 @@ let run_rule ?only env world (r : resolved_rule) =
         let per_period =
           temporal_target && Option.fold ~none:false ~some:(read_per_period env.doc ~ot) r.rr_condition
         in
-        let several = temporal_target && List.length (timeline_writers env ~ot ~attr) >= 2 in
         (* SUBTYPING §4.1 rules 1 and 4: where inheritance brings a defaults
            stack to this target, this rule is that stack's BASE and is
            written by the group, not here. The exclusion is per CONCRETE
@@ -3924,7 +3916,8 @@ let run_rule ?only env world (r : resolved_rule) =
               | Some Characteristic_attribution when temporal_characteristic ->
                   World.release_char_timeline w ~form ~label:self.label ~char:attr
               | Some Characteristic_attribution -> World.release_char w ~form ~label:self.label ~char:attr
-              | _ when several -> World.release_timeline_part w ~form ~label:self.label ~attr
+              | Some (Equation | Calculation) when temporal_target ->
+                  World.release_timeline_part w ~form ~label:self.label ~attr
               | _ -> World.release w ~form ~label:self.label ~attr:member
             in
             (* an initialisation whose guard blocks it does not decide, so neither

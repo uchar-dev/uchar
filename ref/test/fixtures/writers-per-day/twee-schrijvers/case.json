@@ -1,0 +1,75 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "strandloon": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "strandloon",
+      "timeline": [
+        {
+          "from": "2025-01-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "to": "2025-09-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-09-01",
+          "to": "2025-11-01",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2025-11-01",
+          "to": "2026-01-01",
+          "value": {
+            "number": "10"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

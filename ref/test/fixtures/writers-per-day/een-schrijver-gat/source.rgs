@@ -1,0 +1,7 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het basisloon Numeriek (geheel getal) voor elke maand;
+    het strandloon Numeriek (geheel getal) voor elke maand;
+
+Regel strandloon uit het basisloon
+    geldig altijd
+        Het strandloon van een Jutter moet berekend worden als zijn basisloon.

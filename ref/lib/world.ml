@@ -57,7 +57,7 @@ end)
 
 (* What a target held before any form wrote it: its value in the input world, or
    what the creation that made the object gave it *)
-type held = Held_value of Value.t | Held_timeline of Timeline.t option
+type held = Held_value of Value.t
 
 (* The form whose write a target's current value is (RUNTIME-SEMANTICS ch. 5.2,
    6.1). Where that form does not decide on its next evaluation the target gets
@@ -91,11 +91,10 @@ type t = {
       (* by (label, norm characteristic), for a time-dependent characteristic:
          the form whose write its true periods are *)
   parts : (Timeline.t option * (int * string * Timeline.t) list) Key.t;
-      (* by (label, norm attribute), for a timeline target of two or more
-         writers: what it held before any of them wrote, and per writer the
-         segments it decides. Its timeline is their union, and on a day no
-         writer decides, what it held before (RUNTIME-SEMANTICS ch. 5.7 per
-         day) *)
+      (* by (label, norm attribute), for a timeline target that rules write:
+         what it held before any of them wrote, and per writer the segments it
+         decides. Its timeline is their union, and on a day no writer decides,
+         what it held before (RUNTIME-SEMANTICS ch. 3.11, 5.7 per day) *)
 }
 
 let empty =
@@ -244,9 +243,9 @@ let write_attr_init w ~form ~label ~attr:name ~decl v =
   in
   ({ w with owners }, changed)
 
-(* a timeline store (ch. 3.11, the pro-rata target): the segments land
-   exactly as computed; idempotence compares segment lists exactly — same
-   bounds, value-equal payloads. *)
+(* a timeline store (ch. 3.11): the segments land exactly as computed;
+   idempotence compares segment lists exactly — same bounds, value-equal
+   payloads. *)
 let write_timeline w ~label ~attr:name (tl : Timeline.t) =
   let i = get w label in
   let same (a : Timeline.t) (b : Timeline.t) =
@@ -259,18 +258,6 @@ let write_timeline w ~label ~attr:name (tl : Timeline.t) =
   match SMap.find_opt (norm name) i.tls with
   | Some old when same old tl -> (w, false)
   | _ -> (update w { i with tls = SMap.add (norm name) tl i.tls }, true)
-
-(* the timeline write of [form], held as [write_attr_by] holds a value: the
-   write boundary holds per segment (ch. 2.4, 3.7) — a segment whose value
-   does not fit the declared decimals faults as a scalar write does, before
-   anything is stored. [release] restores what the target held before, which
-   no form wrote, without it. *)
-let write_timeline_by w ~form ~label ~attr:name ~decl (tl : Timeline.t) =
-  List.iter (fun (sg : Timeline.segment) -> ignore (collapse ~at:(label ^ "." ^ name) decl sg.s_value)) tl;
-  let key = (label, norm name) in
-  let base = base_of w key ~now:(Held_timeline (timeline (get w label) name)) in
-  let w, changed = write_timeline w ~label ~attr:name tl in
-  ({ w with owners = Key.add key { owner_form = form; initialisation = false; base } w.owners }, changed)
 
 (* [form] does not decide on [label]: where the target carries its write, the
    target gets back what it held before any form wrote it (RUNTIME-SEMANTICS
@@ -286,14 +273,10 @@ let release w ~form ~label ~attr:name =
       match base with
       | Held_value v ->
           if Arith.equal (attr i name) v then (w, false)
-          else (update w { i with attrs = SMap.add (norm name) v i.attrs }, true)
-      | Held_timeline (Some before) -> write_timeline w ~label ~attr:name before
-      | Held_timeline None ->
-          if timeline i name = None then (w, false)
-          else (update w { i with tls = SMap.remove (norm name) i.tls }, true))
+          else (update w { i with attrs = SMap.add (norm name) v i.attrs }, true))
   | _ -> (w, false)
 
-(* --- a timeline target of two or more writers (RUNTIME-SEMANTICS ch. 5.7 per day) --- *)
+(* --- a timeline target that rules write (RUNTIME-SEMANTICS ch. 3.11, 5.7 per day) --- *)
 
 (* the segments each writer of (label, attribute) decides, but [form]'s, as
    (rank, form, segments): [rank] is the writer's place in the document *)
@@ -339,8 +322,9 @@ let store_parts w ~label ~attr:name ~before parts =
       write_timeline { w with parts = Key.add key (before, parts) w.parts } ~label ~attr:name tl
 
 (* [form], the writer at [rank] in the document, decides the segments [tl] of
-   the target (none: it decides no day); the write boundary holds per segment,
-   as for [write_timeline_by] *)
+   the target (none: it decides no day); the write boundary holds per segment
+   (ch. 2.4, 3.11) — a segment whose value does not fit the declared decimals
+   faults as a scalar write does, before anything is stored *)
 let write_timeline_part w ~form ~rank ~label ~attr:name ~decl (tl : Timeline.t) =
   List.iter (fun (sg : Timeline.segment) -> ignore (collapse ~at:(label ^ "." ^ name) decl sg.s_value)) tl;
   let key = (label, norm name) in

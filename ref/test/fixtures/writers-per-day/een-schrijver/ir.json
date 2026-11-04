@@ -1,0 +1,120 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "strandloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "strandloon in het voorjaar",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "strandloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het strandloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "20"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "20"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-03-2025"
+                }
+              },
+              "to": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-06-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-06-2025"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "van dd. 01-03-2025 tot dd. 01-06-2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
