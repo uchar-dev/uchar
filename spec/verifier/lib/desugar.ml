@@ -68,7 +68,7 @@ let chosen_targets (doc : document) =
     let inits = List.filter (fun r -> r.rr_presentation = Some Initialisation) rs in
     let comps = List.filter is_computing rs in
     (* exactly one initialisation: the init default is what the desugaring
-       exists for — the bare computation stays structurally outside the
+       exists for — a computation without one stays structurally outside the
        desugaring and carries the defaults reading directly through the
        ch. 7.8 standing norm (standing_targets below) *)
     List.length rs = List.length inits + List.length comps
@@ -77,14 +77,6 @@ let chosen_targets (doc : document) =
     && List.length comps <= 1
   in
   List.filter desugarable targets
-
-(* The ch. 7.7 desugaring domain as target keys — shared with ref/,
-   whose native replay gives these targets the same fall-through the
-   desugared defaults carry (RS ch. 7.7/7.8: a computing rule that
-   evaluates leeg writes nothing, so the init/input decides and the
-   fire-but-leeg corner is defined instead of divergent). *)
-let desugared_targets (doc : document) : (string * string) list =
-  List.map (fun (_, ((ot, a), _)) -> (norm ot, norm a)) (chosen_targets doc)
 
 (* Desugar every target carried entirely by domain forms; leave every
    other rule untouched. Returns the rewritten document. A cell is a target
@@ -153,25 +145,29 @@ let document (doc : document) : document =
       prioritized_defaults = doc.prioritized_defaults @ List.map defaults_of chosen;
     }
 
-(* The standing domain of RUNTIME-SEMANTICS ch. 7.8: the bare scalar
-   computing target — one version-free Gelijkstelling/Berekening as its
-   target's only writer (no initialisation beside it: that pair is the
-   ch. 7.7 desugaring's domain above; no prioritized defaults, allocation, or
-   creation-time write). On these targets the rule decides like a default —
-   a leeg evaluation writes nothing and a case-supplied input value
-   stands. Shared by ref/ (the no-write on leeg) and the ASP backend
-   (the defeasible inputval/3 entry), so the domain has one definition. *)
+(* The standing domain of RUNTIME-SEMANTICS ch. 7.8: a scalar target that
+   only computing rules write — one Gelijkstelling/Berekening or more, with or
+   without a validity window, and no initialisation (the pair of one
+   computation and one initialisation is the ch. 7.7 desugaring's domain
+   above), prioritized defaults, allocation or creation-time write beside
+   them. Every computing rule decides like a default: a leeg evaluation
+   writes nothing (ch. 3.11). On these targets the case-supplied input value
+   stands where no writer decides, which the ASP backend encodes by entering
+   it defeasibly (inputval/3); beside the other kinds of writer it has no
+   such entry. *)
 let standing_targets (doc : document) : (string * string) list =
   let key (ot, a) = (norm ot, norm a) in
-  let written_by_rules =
-    List.fold_left
-      (fun acc r ->
+  let initialised =
+    List.filter_map
+      (fun r ->
         match target_of r with
-        | Some t when r.rr_presentation <> Some Characteristic_attribution -> key t :: acc
-        | _ -> acc)
-      [] doc.resolved_rules
+        | Some t when r.rr_presentation = Some Initialisation -> Some (key t)
+        | _ -> None)
+      doc.resolved_rules
   in
-  let count k = List.length (List.filter (( = ) k) written_by_rules) in
+  let computing (r : resolved_rule) =
+    (match r.rr_presentation with Some (Equation | Calculation) -> true | _ -> false) && r.value_node <> None
+  in
   let other_writer (ot, a) =
     List.exists
       (fun (l : prioritized_defaults) ->
@@ -202,17 +198,18 @@ let standing_targets (doc : document) : (string * string) list =
     | Some (_, decl) -> not (Checks.attr_temporal decl a)
     | None -> false
   in
-  List.filter_map
-    (fun r ->
+  List.fold_left
+    (fun acc r ->
       match target_of r with
       | Some t
-        when is_computing r
-             && count (key t) = 1
+        when computing r
              && scalar t
-             && not (other_writer t) ->
-          Some (key t)
-      | _ -> None)
-    doc.resolved_rules
+             && (not (List.mem (key t) initialised))
+             && (not (other_writer t))
+             && not (List.mem (key t) acc) ->
+          acc @ [ key t ]
+      | _ -> acc)
+    [] doc.resolved_rules
 
 (* --- inheritance: the effective defaults stack per type (RUNTIME-SEMANTICS
    ch. 7.10) ---------------------------------------------------------------

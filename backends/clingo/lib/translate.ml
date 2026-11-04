@@ -11613,25 +11613,19 @@ let init_writers ctx ~ot ~a =
   in
   (inits, comps, other)
 
-(* Two or more computing rules on one target whose populations overlap (the
-   co-writers of [init_writers]) diverge wherever two of them apply to one
-   instance and write different values: ref overwrites the one with the
-   other on every pass and faults on its budget (RUNTIME-SEMANTICS ch. 5.1,
-   5.7), while a val/3 head per writer would give the target two values in
-   one model. Such a writer therefore also derives its value under its own
-   index in the document (wval/4) and its firing, condition held, under the
-   same index (wvuurt/3); [writer_conflicts] closes every pair with a named
-   viol/2. A leeg value derives no wval, so a writer that fires without one
-   writes leeg, as ref's write does (ch. 1.2g), unless it is standing
-   (ch. 7.8): a writer on its own type of a chain is the only one of its key,
-   and a standing writer writes nothing on leeg. The index of a rule that is
-   no such co-writer is None. *)
-let co_writer ctx (r : resolved_rule) ~ot ~a =
+(* A computing rule derives its value under its index in the document as well
+   (wval/4). A leeg value derives none, so a writer that fires with a leeg
+   value decides nothing (RUNTIME-SEMANTICS ch. 3.11): the case input stands
+   where no writer's wval holds (translate_rule), and two or more computing
+   rules on one target whose populations overlap (the co-writers of
+   [init_writers]) diverge only where two of them derive different values on
+   one instance, which [writer_conflicts] closes with a named viol/2 — ref
+   overwrites the one with the other on every pass and faults on its budget
+   (ch. 5.1, 5.7), while a val/3 head per writer would give the target two
+   values in one model. The index of a rule that computes nothing is None. *)
+let writer_index ctx (r : resolved_rule) =
   match r.rr_presentation with
-  | Some (Calculation | Equation) ->
-      let _, comps, _ = init_writers ctx ~ot ~a in
-      if List.length comps >= 2 then List.find_index (fun r' -> r' == r) ctx.doc.resolved_rules
-      else None
+  | Some (Calculation | Equation) -> List.find_index (fun r' -> r' == r) ctx.doc.resolved_rules
   | _ -> None
 
 (* The computing rules of a timeline target (ot, a) decide their own segments
@@ -11771,12 +11765,9 @@ let translate_characteristic_timeline ctx (r : resolved_rule) ~ot ~k =
 let translate_rule ctx (r : resolved_rule) =
   (* the ch. 8.2 validity gate: an excluded rule does not apply — nothing
      is emitted, so its target's case input stands untouched as the plain
-     val/3 fact. No inputval machinery waits on it: a windowed rule is in
-     neither the ch. 7.7 desugaring domain nor the ch. 7.8 standing domain
-     (both demand version-free forms), so the defeasible-input entry never
-     keys on a windowed rule's target. An in-window rule translates as any
-     version-free rule — including the ch. 6d fence when the case supplies
-     its (never-standing) computed target. *)
+     val/3 fact. No inputval machinery waits on it: translate_case enters
+     an input defeasibly only for a computing rule that applies. An in-window
+     rule translates as any version-free rule. *)
   if applies ctx r.rr_validity then begin
       let objective = req "RuleVersion.target" r.objective in
       ctx.rule_name <- Option.value r.rr_name ~default:"?";
@@ -11865,19 +11856,14 @@ let translate_rule ctx (r : resolved_rule) =
                 ctx.rule_guard <- [];
                 atoms
           in
-          (* the val head, and on a target with co-writers the writer's own
-             value beside it ([co_writer]) *)
-          let writer = co_writer ctx r ~ot ~a in
+          (* the val head, and the writer's own value beside it ([writer_index]) *)
+          let writer = writer_index ctx r in
           let write_head term body =
             head_body ctx (Printf.sprintf "val(%s,%s,%s)" subject (str a) term) body;
             match writer with
             | Some i -> head_body ctx (Printf.sprintf "wval(%s,%s,%s,%d)" subject (str a) term i) body
             | None -> ()
           in
-          (match writer with
-          | Some i when not target_timeline ->
-              head_body ctx (Printf.sprintf "wfires(%s,%s,%d)" subject (str a) i) (base :: cond)
-          | _ -> ());
           (match r.rr_presentation with
           | Some Characteristic_attribution ->
               (match r.value_node with
@@ -12025,16 +12011,17 @@ let translate_rule ctx (r : resolved_rule) =
                      shape (a gedurende condition over an own temporal characteristic) or the \
                      period arithmetic of ch. 3.4/3.5; no corpus case for more")
           | Some (Calculation | Equation) ->
+              (* on a target that only computing rules write (ch. 7.8) the case
+                 input enters as inputval/3 (translate_case) and stands where no
+                 writer decides; beside an initialisation, an allocation or a
+                 creation-time write it has no such entry *)
               let standing =
                 List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc)
               in
-              (* beside co-writers the case input enters defeasibly as well, and
-                 stands where none of them fires ([co_input_stands]) *)
-              let co_input_stands = (not standing) && writer <> None in
-              if (not standing) && (not co_input_stands) && case_supplies ctx ~otype:ot ~attr:a then
+              if (not standing) && case_supplies ctx ~otype:ot ~attr:a then
                 fault
-                  "the case supplies input for computed target %S: ref (like v0) overwrites it, \
-                   which has no monotone encoding here (no corpus case)"
+                  "the case supplies input for computed target %S, which an initialisation, an allocation \
+                   or an object creation writes as well: not encoded here (no corpus case)"
                   a;
               let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
               units_identical_ok
@@ -12055,32 +12042,11 @@ let translate_rule ctx (r : resolved_rule) =
               ctx.write_scale <- 1;
               ctx.write_unbounded <- false;
               ctx.write_value <- None;
-              (* ch. 7.8 standing target: the rule decides like a default. The
-                 effectiveness atom carries the SAME body as each val head —
-                 condition and value bindings — so a leeg evaluation derives
-                 neither, and the case input (entered as inputval/3) stands by
-                 negation-as-failure. With a Let-nested IfThenElse the value is
-                 several mutually-exclusive branches; the rule decides if ANY
-                 branch fires, so eff is emitted per branch and the input-stands
-                 rule once. *)
-              let eff =
-                if standing then begin
-                  let sidx =
-                    let rec find i = function
-                      | [] -> fault "standing target %S not in its own domain" a
-                      | k :: tl -> if k = (norm ot, norm a) then i else find (i + 1) tl
-                    in
-                    find 0 (Ir_v0.Desugar.standing_targets ctx.doc)
-                  in
-                  Some (Printf.sprintf "state%d_eff(%s)" sidx subject)
-                end
-                else None
-              in
               (* beside an initialisation (ch. 5.4) the initialisation arm
-                 reads when this rule decides — the computed value wins — and
-                 when it fires without deciding, the leeg evaluation v0 turns
-                 into a divergence. The decision atom carries the val head's
-                 body, as the standing effectiveness atom does *)
+                 reads when this rule decides — the computed value wins. The
+                 decision atom carries the val head's body, so a leeg
+                 evaluation derives neither and the initialisation fills the
+                 target *)
               let beside_init =
                 let inits, _, _ = init_writers ctx ~ot ~a in
                 inits <> []
@@ -12093,49 +12059,25 @@ let translate_rule ctx (r : resolved_rule) =
                   if beside_init then
                     head_body ctx
                       (Printf.sprintf "comp_decides(%s,%s)" subject (str a))
-                      (body @ fit_guards);
-                  match eff with Some e -> head_body ctx e (body @ fit_guards) | None -> ())
+                      (body @ fit_guards))
                 branches;
-              if beside_init then
-                head_body ctx (Printf.sprintf "comp_fires(%s,%s)" subject (str a)) (base :: cond);
-              (* the input stands where no writer of the subject decides: a
-                 standing co-writer on another type of the chain (its own
-                 key, so standing too) displaces it as this rule does *)
-              let co_eff =
-                match writer with
-                | None -> []
-                | Some _ ->
-                    let _, comps, _ = init_writers ctx ~ot ~a in
-                    List.filter_map
-                      (fun (r' : resolved_rule) ->
-                        match Ir_v0.Desugar.target_of r' with
-                        | Some (ot', a') when r' != r ->
-                            Option.map
-                              (fun k -> Printf.sprintf "not state%d_eff(%s)" k subject)
-                              (List.find_index (( = ) (norm ot', norm a'))
-                                 (Ir_v0.Desugar.standing_targets ctx.doc))
-                        | _ -> None)
-                      comps
-              in
-              (match eff with
-              | Some e ->
+              (* the value at the fixpoint is that of the writers that decide
+                 there (RUNTIME-SEMANTICS ch. 5.7), each with the val head's body
+                 under its own index, so the case input stands where none
+                 decides, a writer on another type of the chain included; with
+                 a Let-nested IfThenElse the rule decides where ANY branch
+                 does *)
+              Option.iter
+                (fun i ->
                   head_body ctx
-                    (Printf.sprintf "val(%s,%s,V)" subject (str a))
-                    ([ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base; "not " ^ e ] @ co_eff)
-              | None -> ());
-              (* two or more writers of one target: the value at the fixpoint is
-                 that of the writers that fire there (RUNTIME-SEMANTICS ch. 5.7),
-                 so the case input stands where none fires; one that fires with a
-                 leeg value writes leeg ([writer_conflicts]) *)
-              if co_input_stands then begin
+                    (Printf.sprintf "wdecides(%s,%s)" subject (str a))
+                    [ Printf.sprintf "wval(%s,%s,_,%d)" subject (str a) i ])
+                writer;
+              if standing then
                 head_body ctx
                   (Printf.sprintf "val(%s,%s,V)" subject (str a))
                   [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base;
-                    Printf.sprintf "not wfired(%s,%s)" subject (str a) ];
-                head_body ctx
-                  (Printf.sprintf "wfired(%s,%s)" subject (str a))
-                  [ Printf.sprintf "wfires(%s,%s,_)" subject (str a) ]
-              end
+                    Printf.sprintf "not wdecides(%s,%s)" subject (str a) ]
           | Some Initialisation ->
               (* RUNTIME-SEMANTICS ch. 5.4, natively: an initialisation
                  reaches this arm only outside the ch. 7.7 desugaring domain
@@ -12149,11 +12091,9 @@ let translate_rule ctx (r : resolved_rule) =
                  one computing rule the computed value wins whichever fires
                  first, so that rule's decision atom guards the head too (a
                  case input on that target stays fenced by the computing
-                 arm). Where the rule fires and evaluates leeg, v0 erases
-                 what this writes and this writes it again, and ref faults on
-                 its pass budget (ch. 5.7): the same body derives a viol/2
-                 witness, so clingo refuses there as well instead of
-                 answering. Every other writer beside it is refused by name. *)
+                 arm). Where the rule fires and evaluates leeg it decides
+                 nothing (ch. 3.11), so this writes. Every other writer beside
+                 it is refused by name. *)
               let inits, comps, other = init_writers ctx ~ot ~a in
               (match inits with
               | _ :: _ :: _ ->
@@ -12186,18 +12126,8 @@ let translate_rule ctx (r : resolved_rule) =
                      date, and only those are translated here (no corpus case)"
                     a);
               let beside = comps <> [] in
-              (* a STANDING computing rule (ch. 7.8; beside this arm only
-                 when it is declared on another type of the chain) writes
-                 nothing on a leeg evaluation, so ref's initialisation then
-                 writes and nothing diverges *)
-              let divergent =
-                match List.map Ir_v0.Desugar.target_of comps with
-                | [ Some (cot, _) ] ->
-                    not (List.mem (norm cot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc))
-                | _ -> false
-              in
               emit ctx "#defined inputfilled/2.";
-              if beside then emit ctx "#defined comp_decides/2. #defined comp_fires/2.";
+              if beside then emit ctx "#defined comp_decides/2.";
               let guard = init_guard in
               let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
               units_identical_ok
@@ -12222,15 +12152,7 @@ let translate_rule ctx (r : resolved_rule) =
                   let term, fit_guards = fitted ~unbounded ctx ~subject ~what:a ~body term scale target_scale in
                   head_body ctx
                     (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
-                    (body @ fit_guards);
-                  if divergent then
-                    head_body ctx
-                      (Printf.sprintf
-                         "viol(\"no fixpoint: a computing rule evaluating leeg erases what the \
-                          initialisation of %s writes, and the initialisation writes it again \
-                          (ch. 5.7)\",%s)"
-                         (norm a) subject)
-                      (body @ fit_guards @ [ Printf.sprintf "comp_fires(%s,%s)" subject (str a) ]))
+                    (body @ fit_guards))
                 branches
           | _ -> faultc "CLINGO-025" "rule kind not translated")
       | None -> faultc "CLINGO-026" "unsupported rule target")
@@ -13500,11 +13422,11 @@ let reify_list ctx ~one_member ~element (xs : Value.t list) =
 
 let translate_case ctx (case : Case.t) =
   let doc = ctx.doc in
-  (* attribute-defaults targets — the ch. 7.8 standing targets (the bare
-     scalar computing rule) and the allocation targets (S12, the verdeling
-     whose fence translate_allocation has already cleared) — take their
-     input values defeasibly (inputval/3), standing unless the
-     defaults/rule/verdeling decides *)
+  (* attribute-defaults targets — the ch. 7.8 standing targets (a scalar
+     target that only computing rules write) and the allocation targets
+     (S12, the verdeling whose fence translate_allocation has already
+     cleared) — take their input values defeasibly (inputval/3), standing
+     unless the defaults/rule/verdeling decides *)
   let standing = Ir_v0.Desugar.standing_targets doc in
   (* [otype] is the instance's CONCRETE type; a writer declared on any of
      its supertypes reaches it (ch. 2.2), so the defeasible carriage of a
@@ -13519,19 +13441,19 @@ let translate_case ctx (case : Case.t) =
         | Some a -> inherits otype l.pd_subject && norm a = norm aname
         | None -> false)
       doc.prioritized_defaults
-    || List.exists (fun (t, a) -> a = norm aname && inherits otype t) standing
-    (* a scalar target of two or more co-writers that are not standing: the
-       input stands where none of them fires (translate_rule); a timeline
-       target's input is its timeline ([timeline_input]) *)
+    (* a standing target that a computing rule which applies writes: the
+       input stands where none of them decides (translate_rule); one whose
+       rules all lie outside their windows writes nothing, and the input is a
+       plain fact. A timeline target's input is its timeline
+       ([timeline_input]) *)
     || List.exists
          (fun (r : resolved_rule) ->
            match Ir_v0.Desugar.target_of r with
            | Some (t, a) ->
                norm a = norm aname && inherits otype t
                && applies ctx r.rr_validity
-               && co_writer ctx r ~ot:t ~a <> None
-               && (not (attr_temporal ctx ~otype:t ~attr:a))
-               && not (List.mem (norm t, norm a) standing)
+               && writer_index ctx r <> None
+               && List.mem (norm t, norm a) standing
            | None -> false)
          doc.resolved_rules
     || List.exists
@@ -13708,35 +13630,26 @@ let translate_case ctx (case : Case.t) =
 
 (* --- the program --------------------------------------------------------- *)
 
-(* The pairs of [co_writer]: per writer what it writes on a subject, v(V)
-   for a value and leeg where it fires without one, and per pair of writers
-   that share a concrete type one viol/2 where the two differ on a subject.
-   The pair is named in document order, with the lower of the two target
-   types (the first concrete type both write, as WF-079 reports it). *)
+(* The pairs of [writer_index] on a scalar target: per pair of writers that
+   share a concrete type one viol/2 where the two derive different values on
+   a subject; a writer whose value is leeg derives none and decides nothing
+   (RUNTIME-SEMANTICS ch. 3.11). The pair is named in document order, with
+   the lower of the two target types (the first concrete type both write, as
+   WF-079 reports it). The writers of a timeline target are judged per day
+   ([writer_timeline_conflicts]). *)
 let writer_conflicts ctx =
   let writers =
     List.filter_map
       (fun (i, (r : resolved_rule)) ->
         match Ir_v0.Desugar.target_of r with
-        | Some (ot, a) when applies ctx r.rr_validity && co_writer ctx r ~ot ~a <> None -> Some (i, r, ot, a)
+        | Some (ot, a)
+          when applies ctx r.rr_validity && writer_index ctx r <> None && not (attr_temporal ctx ~otype:ot ~attr:a) ->
+            Some (i, r, ot, a)
         | _ -> None)
       (List.mapi (fun i r -> (i, r)) ctx.doc.resolved_rules)
   in
   if writers <> [] then begin
-    emit ctx "#defined wval/4. #defined wfires/3.";
-    List.iter
-      (fun (i, _, ot, a) ->
-        emit ctx "wwrites(S,%s,v(V),%d) :- wval(S,%s,V,%d)." (str a) i (str a) i;
-        (* a standing writer (ch. 7.8: the only computing rule of its own
-           key, here a type of the chain) writes nothing where its value is
-           leeg, in ref as here, so only a writer that is not standing
-           writes leeg *)
-        if not (List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc)) then begin
-          emit ctx "wfilled(S,%s,%d) :- wval(S,%s,_,%d)." (str a) i (str a) i;
-          emit ctx "wwrites(S,%s,empty,%d) :- wfires(S,%s,%d), not wfilled(S,%s,%d)." (str a) i (str a) i
-            (str a) i
-        end)
-      writers;
+    emit ctx "#defined wval/4.";
     List.iter
       (fun (i, (ri : resolved_rule), oti, a) ->
         let _, comps, _ = init_writers ctx ~ot:oti ~a in
@@ -13745,7 +13658,7 @@ let writer_conflicts ctx =
             if i < j && List.memq rj comps then begin
               let lower = if Ir_v0.Checks.subtype_of ctx.doc ~sub:otj ~super:oti then otj else oti in
               let name (r : resolved_rule) = "\"" ^ Option.value r.rr_name ~default:"<naamloos>" ^ "\"" in
-              emit ctx "viol(%s,S) :- wwrites(S,%s,X,%d), wwrites(S,%s,Y,%d), X != Y."
+              emit ctx "viol(%s,S) :- wval(S,%s,X,%d), wval(S,%s,Y,%d), X != Y."
                 (quote
                    (Printf.sprintf
                       "two writers of one target disagree: rules %s and %s write different values to the \

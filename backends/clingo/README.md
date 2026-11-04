@@ -296,17 +296,19 @@ spec bug.
   the input value of a defaults target enters as `inputval/3`, standing
   defeasibly (`val :- inputval, not decided`) exactly where ref/'s
   write overwrites it; the initialisation default's justification is the
-  absence of that input. The ch. 7.8 **standing targets** (a bare
-  scalar computing rule as its target's only writer,
-  `Ir_v0.Desugar.standing_targets`) take the same entry: the rule's
-  effectiveness atom (`stateN_eff`) carries the full val-head body —
-  condition AND value bindings — so a leeg evaluation derives neither
-  and the input stands (`val :- inputval, not stateN_eff`), matching
-  ref/'s no-write-on-leeg. The ch. 6d computed-target fence does not
-  apply to standing targets, nor beside co-writers (below); it applies
-  to a scalar computing target outside the standing domain that is its
-  target's only computing rule, and an allocation `doelAttribuut`
-  supplied by the case is fenced the same way.
+  absence of that input. The ch. 7.8 **standing targets** (a scalar
+  target that only computing rules write, one or more, with or without
+  a validity window, `Ir_v0.Desugar.standing_targets`) take the same
+  entry where a computing rule on them applies: each such rule derives
+  its value under its index in the document as well (`wval/4`), with
+  the full val-head body — condition AND value bindings — so a leeg
+  evaluation derives neither and decides nothing (RS ch. 3.11), and the
+  input stands where no writer decides (`val :- inputval, not
+  wdecides`). The ch. 6d computed-target fence applies to a scalar
+  computing target outside the standing domain, beside an
+  initialisation, an allocation or a creation-time write, and an
+  allocation `doelAttribuut` supplied by the case is fenced the same
+  way.
 - A writer of a timeline target, also its only one, decides the days of
   the segments it writes (RUNTIME-SEMANTICS ch. 3.11, 5.7 per day). Each
   writer writes its segments as `tl/5` and also as `wtl/6`, under its
@@ -328,25 +330,21 @@ spec bug.
   concrete type (on one type, or on a type and its subtype) would give
   the target two values in one model wherever two of them apply to one
   subject and differ, where ref faults on its pass budget (ch. 5.1,
-  5.7). Each such writer therefore also derives its value under its own
-  index (`wval/4`) and its firing (`wfires/3`); a writer that fires
-  without a value writes leeg, unless it is standing (ch. 7.8: on a
-  type chain each writer is the only one of its own key, and a standing
-  writer writes nothing on leeg). Every pair of writers that share a
-  concrete type gets one named witness, `viol("two writers of one target
-  disagree: rules "A" and "B" write different values to the attribute a
-  of a T — no fixpoint, divergence is a fault (ch. 5.7)", S)`, so the
-  program is UNSAT and never a second value. Writers whose conditions
-  exclude each other, or that write the same value, derive no witness
+  5.7). Each writer derives its value under its own index (`wval/4`), a
+  writer that fires without a value derives none and decides nothing
+  (RS ch. 3.11), and every pair of writers that share a concrete type
+  gets one named witness on two different `wval/4` values,
+  `viol("two writers of one target disagree: rules "A" and "B" write
+  different values to the attribute a of a T — no fixpoint, divergence
+  is a fault (ch. 5.7)", S)`, so the program is UNSAT and never a second
+  value. Writers whose conditions exclude each other, that write the
+  same value, or of which one reads leeg, derive no witness
   (`corpus/golden/jutterswet-melding-naar-aard`,
-  `corpus/red/jutterswet-dubbele-melding`). On a standing target the
-  case input stands only where no writer of the subject decides, a
-  standing writer on another type of the chain included. Beside writers
-  that are not standing the case input enters as `inputval/3` as well
-  and stands only where none of them fires (`wfired/2`): the value at the
-  fixpoint is that of the writers that decide there, a leeg one included
-  (`corpus/golden/jutterswet-twee-schrijvers-aan-fixpunt`). Writers of a
-  timeline target are compared per day, by the item above.
+  `corpus/red/jutterswet-dubbele-melding`). The case input stands only
+  where no writer of the subject decides, a writer on another type of
+  the chain included: the value at the fixpoint is that of the writers
+  that decide there (`corpus/golden/jutterswet-twee-schrijvers-aan-fixpunt`).
+  Writers of a timeline target are compared per day, by the item above.
 - An initialisation outside the desugaring domain — a conditional one,
   which ch. 7.7 excludes, or a windowed one — translates natively, as
   ref replays it (RS ch. 5.4): its `val` head needs the condition and
@@ -355,11 +353,8 @@ spec bug.
   that writes a concrete type of its chain as a rule too, the head also
   needs `not comp_decides(S,a)`, which that rule derives with its own
   val body: the computed value wins. Where the rule fires and evaluates
-  leeg (`comp_fires` without `comp_decides`), v0 erases what the
-  initialisation writes and the initialisation writes it again; ref
-  faults on its pass budget, and a `viol/2` witness makes clingo refuse
-  too, unless the rule is a ch. 7.8 standing one, which writes nothing on
-  leeg. Two initialisations that write one concrete type as rules
+  leeg it decides nothing (RS ch. 3.11), so the initialisation writes.
+  Two initialisations that write one concrete type as rules
   (WF-079 refuses them first), two computing rules on one target, an
   allocation, a creation-time write or a defaults group of its own level
   (WF-050's) beside it, and a target that is no number or date are

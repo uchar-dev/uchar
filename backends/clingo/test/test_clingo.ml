@@ -9524,36 +9524,11 @@ let () =
     ~case_text:(v1 [ num "gewicht" "8.00"; num "lengte" "2.00" ] [ empty_value; pf_cons ]);
   both_answer ~name:"initialisation beside a computation that evaluates leeg, the initialisation silent"
     ~ir:beside ~case_text:(v1 [ num "gewicht" "12.00"; num "lengte" "2.00" ] [ empty_value; pf_cons ]);
-  (* the v0 divergence: the computation fires and evaluates leeg, the
-     initialisation fires and writes 25,00 *)
-  (let name = "initialisation beside a computation that evaluates leeg: no fixpoint" in
-   let doc, case =
-     load_pair ~ir:beside ~case_text:(v1 [ num "gewicht" "12.00"; num "lengte" "5.00" ] [ empty_value; pf_cons ])
-   in
-   (match ref_report doc case with
-   | _ -> check (name ^ ": ref faults (it evaluated)") false
-   | exception Uchar_ref.Value.Fault { text = m; _ } ->
-       check (name ^ ": ref faults (" ^ m ^ ")")
-         (Uchar_ref.Case.contains ~needle:"no fixpoint within 100 passes" m));
-   let label = name ^ ": clingo's fence fires" in
-   match translate doc case with
-   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (label ^ " (translation fault: " ^ m ^ ")") false
-   | program -> (
-       match Solve.run_clingo program with
-       | _, Unix.WEXITED 20 ->
-           let ws = Solve.diagnostic program in
-           check
-             (label ^ " (" ^ String.concat "; " ws ^ ")")
-             (List.exists
-                (fun w ->
-                  Uchar_ref.Case.contains
-                    ~needle:
-                      "no fixpoint: a computing rule evaluating leeg erases what the \
-                       initialisation of bergloon writes"
-                    w)
-                ws)
-       | _, Unix.WEXITED c -> check (label ^ Printf.sprintf " (clingo exited %d: no refusal)" c) false
-       | _, _ -> check (label ^ " (clingo killed)") false));
+  (* the computation fires and evaluates leeg, which decides nothing
+     (RUNTIME-SEMANTICS ch. 3.11), so the initialisation fires and writes
+     25,00 *)
+  both_answer ~name:"initialisation beside a computation that evaluates leeg: the initialisation fills the target"
+    ~ir:beside ~case_text:(v1 [ num "gewicht" "12.00"; num "lengte" "5.00" ] [ is "25.00"; pf_cons ]);
   (* a type chain (ch. 2.2): a writer declared on another type of the chain
      writes the instances the two types share, so there it is the
      initialisation's co-writer. Measured with the co-writers matched on the
@@ -17136,9 +17111,8 @@ let () =
    with Uchar_ref.Case.Error { text; _ } -> check ("the pair on one cell (case refused: " ^ text ^ ")") false);
   (* outside the ch. 7.7 domain, an initialisation with a condition, the pair
      on a cell reads natively, as on an attribute: where the computing rule
-     evaluates leeg and the initialisation writes, the two writers disagree
-     and the session has no fixpoint, in ref (EF-016) and here (the no-fixpoint
-     witness) *)
+     evaluates leeg it decides nothing (ch. 3.11) and the initialisation
+     writes *)
   let conditional =
     doc
       [ ("najaarskopie", version ~initialisation:false (cell [ "najaar" ]) (cell [ "voorjaar" ]));
@@ -17157,22 +17131,10 @@ let () =
      let case_text = one_case [ ("voorjaar", "2.00") ] (Printf.sprintf {|"expected": [%s, {"kind": "consistent"}]|} (najaar "J1" "2.00")) in
      ref_matches ~name ~ir:conditional ~case_text;
      clingo_matches ~name ~ir:conditional ~case_text;
-     let label = name ^ ": no fixpoint where the computed value is leeg" in
-     let doc, case = load_pair ~ir:conditional ~case_text:(one_case [ ("zomer", "2.00") ] {|"expectedFault": {"code": "EF-016", "params": {}}|}) in
-     let env =
-       { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
-         locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None; form = None }
-     in
-     (match Uchar_ref.Eval.evaluate env case.world with
-      | _ -> check (label ^ " (ref answered)") false
-      | exception Uchar_ref.Value.Fault { code; _ } -> check (label ^ ": ref faults with EF-016") (code = Some "EF-016"));
-     match Solve.run_clingo (translate doc case) with
-     | _, Unix.WEXITED 20 ->
-         check (label ^ ": clingo's witness fires")
-           (List.exists
-              (fun w -> Uchar_ref.Case.contains ~needle:"no fixpoint: a computing rule evaluating leeg erases what the initialisation of vondstgewicht[najaar] writes" w)
-              (Solve.diagnostic (translate doc case)))
-     | _, _ -> check (label ^ ": clingo answered") false
+     let name = name ^ ": the initialisation writes where the computed value is leeg" in
+     let case_text = one_case [ ("zomer", "2.00") ] (Printf.sprintf {|"expected": [%s, {"kind": "consistent"}]|} (najaar "J1" "0.00")) in
+     ref_matches ~name ~ir:conditional ~case_text;
+     clingo_matches ~name ~ir:conditional ~case_text
    with
    | Uchar_ref.Case.Error { text; _ } -> check ("the conditional pair on one cell (case refused: " ^ text ^ ")") false
    | Uchar_ref.Value.Fault { text; _ } -> check ("the conditional pair on one cell (translation fault: " ^ text ^ ")") false);
@@ -17395,6 +17357,30 @@ let () =
       ref_matches ~name:("writers per day beside the input: " ^ f) ~ir ~case_text;
       clingo_matches ~name:("writers per day beside the input: " ^ f) ~ir ~case_text)
     [ "een-schrijver"; "een-schrijver-gelijk"; "een-schrijver-gat"; "twee-schrijvers" ]
+
+(* RUNTIME-SEMANTICS ch. 3.11, "Leeg in a write": a writer that fires with a
+   leeg value decides nothing on a scalar target, so its input stands beside a
+   writer that does not fire and under a validity window, and beside a writer
+   of 50 the target is 50 without a fault; ref's documents
+   (ref/test/fixtures/empty-write), its worked example WV-3.11-leeg-beslist-niets,
+   played in both executors *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let dir = "ref/test/fixtures/empty-write/" in
+  List.iter
+    (fun f ->
+      let ir = read (dir ^ f ^ "/ir.json") and case_text = read (dir ^ f ^ "/case.json") in
+      ref_matches ~name:("a leeg write decides nothing: " ^ f) ~ir ~case_text;
+      clingo_matches ~name:("a leeg write decides nothing: " ^ f) ~ir ~case_text)
+    [ "one-fires-empty"; "versioned-fires-empty"; "empty-and-value" ];
+  (* the windowed writer outside its window writes nothing, so its target's
+     input enters as a plain fact and stands *)
+  let ir = read (dir ^ "versioned-fires-empty/ir.json") in
+  let case_text =
+    {|{"format": "uchar-case-v0", "asOfDate": "2019-07-01", "input": {"instances": [{"label": "V1", "objectType": "Vondst", "attributes": {"taxatie": {"number": "40"}, "opgave": {"number": "50"}}, "roles": {}, "characteristics": []}], "parameters": {}}, "expected": [{"kind": "attributeValue", "label": "V1", "attribute": "taxatie", "value": {"number": "40"}}, {"kind": "consistent"}]}|}
+  in
+  ref_matches ~name:"a leeg write decides nothing: a writer outside its window" ~ir ~case_text;
+  clingo_matches ~name:"a leeg write decides nothing: a writer outside its window" ~ir ~case_text
 
 (* RUNTIME-SEMANTICS ch. 2.6 rule 7, ch. 3.4, 3.5 and 8.4 on ref's documents
    (ref/test/fixtures/period-units, bucket-scalar): a percentage of a value with
