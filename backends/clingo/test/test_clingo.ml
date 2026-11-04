@@ -17381,6 +17381,21 @@ let () =
              (List.exists (fun w -> Uchar_ref.Case.contains ~needle w) ws)
        | _, _ -> check (name ^ ": clingo refuses (it found a model)") false))
 
+(* RUNTIME-SEMANTICS ch. 3.11 and 5.7: a writer of a timeline target, also its
+   only one, decides the days on which its timeline reads a value, and on every
+   other day the target holds its case input or leeg; ref's documents
+   (ref/test/fixtures/writers-per-day), its worked examples WV-3.11-per-dag-invoer
+   and WV-5.7-per-dag-twee-schrijvers-invoer, played in both executors *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let dir = "ref/test/fixtures/writers-per-day/" in
+  List.iter
+    (fun f ->
+      let ir = read (dir ^ f ^ "/ir.json") and case_text = read (dir ^ f ^ "/case.json") in
+      ref_matches ~name:("writers per day beside the input: " ^ f) ~ir ~case_text;
+      clingo_matches ~name:("writers per day beside the input: " ^ f) ~ir ~case_text)
+    [ "een-schrijver"; "een-schrijver-gelijk"; "een-schrijver-gat"; "twee-schrijvers" ]
+
 (* RUNTIME-SEMANTICS ch. 2.6 rule 7, ch. 3.4, 3.5 and 8.4 on ref's documents
    (ref/test/fixtures/period-units, bucket-scalar): a percentage of a value with
    a unit carries that unit, scalar and per period, also as the left factor of a

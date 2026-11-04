@@ -10948,9 +10948,9 @@ let period_cuts q ~van ~tot =
    and since gringo has no min/max on terms each bound contributes two
    rules, one per side of the comparison. An open bound contributes none.
    A leeg own-attribute bound binds no val atom, so nothing is written — the
-   empty window of ch. 3.10. On a standing temporal target the effect atom
-   rides the same bodies, so the case input stands exactly when no clipped
-   segment was derived (ch. 7.8), as for any producer. *)
+   empty window of ch. 3.10. Each segment is also the writer's, wtl/6 under
+   its index [writer], beside which the case input stands on the days no
+   writer decides ([timeline_input]). *)
 (* the bucket [B, N) overlaps the subject's window: the atoms every FENCE of
    a clipped producer carries. A bucket outside the window is never written,
    so a range or exactness fence on it guards nothing — ref computes the
@@ -10972,7 +10972,7 @@ let window_overlap ?periods ctx ~subject ~ot clip =
           let h = if incl then Printf.sprintf "(%s+1)" h else h in
           atoms @ [ Printf.sprintf "B < %s" h ]
 
-let write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~p ~value ~body =
+let write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~value ~body =
   let heads =
     match (clip, periods) with
     | _, Some q -> List.map (fun (l, h, g) -> (l, h, body @ g)) (period_cuts q ~van:"B" ~tot:"N")
@@ -11005,15 +11005,7 @@ let write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~p ~value ~body =
       Option.iter
         (fun i -> head_body ctx (Printf.sprintf "wtl(%s,%s,%s,%s,%s,%d)" subject (str a) van up_to value i) b)
         writer)
-    heads;
-  if List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc) then begin
-    let eff = Printf.sprintf "%s_eff(%s)" p subject in
-    List.iter (fun (_, _, b) -> head_body ctx eff b) heads;
-    head_body ctx
-      (Printf.sprintf "tl(%s,%s,Van,Tot,V)" subject (str a))
-      [ Printf.sprintf "inputtl(%s,%s,Van,Tot,V)" subject (str a);
-        Printf.sprintf "isa(%s,%s)" subject (str ot); "not " ^ eff ]
-  end
+    heads
 
 (* ch. 3.7: the pro-rata temporal target. The whole calendar is
    compile-time data (the shared Timeline module, like the clip's wu
@@ -11118,11 +11110,9 @@ let translate_pro_rata ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~b ~k ~(
        numt dent
    else
      emit ctx "viol(\"%s\",S) :- %s, %s \\ %s != 0." pro_rata_misfit (String.concat ", " body) numt dent);
-  (* ch. 7.8, the timeline arm: on a standing temporal target the fold
-     decides only when it derives at least one bucket — the case's
-     input timeline (entered as inputtl/5) stands whole by NAF
-     otherwise, matching ref's no-write on an empty result *)
-  write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~p
+  (* the fold decides the buckets it derives; a bucket without a true day or
+     with a leeg base it does not decide (ch. 3.11) *)
+  write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip
     ~value:(Printf.sprintf "%s/%s" numt dent)
     ~body:(body @ [ Printf.sprintf "%s \\ %s == 0" numt dent ])
 
@@ -11217,8 +11207,7 @@ let translate_day_count ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~k ~day
       ktl(S,%s,KV,KT), KT > %d."
      (norm k) lo hi base (str k) hi);
   emit ctx "%s_cnt(S,B) :- %s." p (String.concat ", " ((base :: ctx.rule_guard) @ cond @ [ Printf.sprintf "%s_b(B,N,_)" p; counted; "TD > 0" ]));
-  (* the ch. 7.8 timeline arm, as for pro-rata *)
-  write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~p ~value:vterm ~body;
+  write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~value:vterm ~body;
   (* the runs of buckets without a true day, with the open ends beyond the
      span, as maximal segments of 0 *)
   let z = p ^ "_z" in
@@ -11235,7 +11224,7 @@ let translate_day_count ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~k ~day
   emit ctx "%s_end(S,Y) :- %s(S,_,Y), not %s_join(S,Y)." z z z;
   emit ctx "%s_run(S,B,N) :- %s_start(S,B), %s_end(S,N), B < N, #count { Z : %s_end(S,Z), B < Z, Z < N } = 0."
     z z z z;
-  write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~p ~value:"0"
+  write_segment ?periods ?writer ctx ~subject ~ot ~a ~clip ~value:"0"
     ~body:(zbase @ [ Printf.sprintf "%s_run(S,B,N)" z ])
 
 (* ch. 3.4 and 3.5 as the value of a rule on a temporal attribute target, over
@@ -11533,8 +11522,8 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
   emit ctx "%s_start(%s,X) :- %s_val(%s,X,_,_), not %s_join(%s,X)." p subject p subject p subject;
   emit ctx "%s_end(%s,Y) :- %s_val(%s,_,Y,_), not %s_join(%s,Y)." p subject p subject p subject;
   (* the written segments, restricted to the periods of a condition read per
-     period (ch. 3.10's clip generalised) and, on a target of several writers,
-     each also as this writer's ([writer_timeline_conflicts]) *)
+     period (ch. 3.10's clip generalised), each also as this writer's
+     ([writer_timeline_conflicts], [timeline_input]) *)
   let run = Printf.sprintf
       "%s_start(%s,X), %s_val(%s,X,_,V), %s_end(%s,Y), X < Y, #count { Z : %s_end(%s,Z), X < Z, Z < Y } = 0"
       p subject p subject p subject p subject in
@@ -11549,16 +11538,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ctx ~subject ~ot ~
     (fun (l, h, b) ->
       head_body ctx (Printf.sprintf "tl(%s,%s,%s,%s,V)" subject (str a) l h) b;
       Option.iter (fun i -> head_body ctx (Printf.sprintf "wtl(%s,%s,%s,%s,V,%d)" subject (str a) l h i) b) writer)
-    heads;
-  (* ch. 7.8, the timeline arm: on a standing temporal target the rule decides
-     where it writes a segment, and the case's input timeline stands otherwise *)
-  if List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc) then begin
-    emit ctx "%s_eff(%s) :- %s_val(%s,_,_,_)." p subject p subject;
-    head_body ctx
-      (Printf.sprintf "tl(%s,%s,Van,Tot,V)" subject (str a))
-      [ Printf.sprintf "inputtl(%s,%s,Van,Tot,V)" subject (str a); base;
-        Printf.sprintf "not %s_eff(%s)" p subject ]
-  end
+    heads
 
 (* the writers of the attribute target (ot, a) beside a natively translated
    initialisation (translate_rule's Initialisatie arm): the initialisations
@@ -11654,9 +11634,9 @@ let co_writer ctx (r : resolved_rule) ~ot ~a =
       else None
   | _ -> None
 
-(* The writers of a timeline target (ot, a) of two or more computing rules
-   decide their own segments (RUNTIME-SEMANTICS ch. 5.7 per day): writer [r]
-   writes wtl/6 under its index in the document, and with every writer before
+(* The computing rules of a timeline target (ot, a) decide their own segments
+   (RUNTIME-SEMANTICS ch. 3.11, 5.7 per day): writer [r] writes wtl/6 under its
+   index in the document, and with every writer before
    it, one that decides a day with another value is a fault in the sentence of
    [writer_conflicts], so the fault kind is EF-016. Two writers that decide one
    day with one value hold together; ref then gives the day to the writer the
@@ -11697,6 +11677,45 @@ let writer_timeline_conflicts ctx (r : resolved_rule) ~ot ~a =
                 overlap
           | _ -> ())
         comps
+
+(* The case input of a timeline target that computing rules write, which
+   [translate_case] enters as inputtl/5 ([written_timeline]), on the days no
+   writer decides (RUNTIME-SEMANTICS ch. 3.11, 5.7 per day): each input
+   segment is cut at the bounds of the writers' segments (wtl/6) that lie
+   inside it, and a piece that no writer's segment covers is a segment of the
+   target. A piece lies inside a writer's segment or outside all of them, since
+   every bound of a writer's segment inside the input segment is a cut. A
+   writer writes no leeg segment, so a day on which its timeline reads leeg is
+   no day it decides. Emitted where some computing rule writes a timeline
+   target; a program without one has no inputtl/5 *)
+let timeline_input ctx =
+  if
+    List.exists
+      (fun (r : resolved_rule) ->
+        match (r.rr_presentation, Ir_v0.Desugar.target_of r) with
+        | Some (Calculation | Equation), Some (ot, a) -> attr_temporal ctx ~otype:ot ~attr:a
+        | _ -> false)
+      ctx.doc.resolved_rules
+  then begin
+    emit ctx "#defined wtl/6.";
+    emit ctx "incut(S,A,F,T,F) :- inputtl(S,A,F,T,_).";
+    emit ctx "incut(S,A,F,T,T) :- inputtl(S,A,F,T,_).";
+    emit ctx "incut(S,A,F,T,X) :- inputtl(S,A,F,T,_), wtl(S,A,X,_,_,_), F < X, X < T.";
+    emit ctx "incut(S,A,F,T,Y) :- inputtl(S,A,F,T,_), wtl(S,A,_,Y,_,_), F < Y, Y < T.";
+    emit ctx
+      "inpiece(S,A,F,T,X,Y) :- incut(S,A,F,T,X), incut(S,A,F,T,Y), X < Y, #count { Z : incut(S,A,F,T,Z), X < Z, Z < Y } = 0.";
+    emit ctx "indecided(S,A,X,Y) :- inpiece(S,A,_,_,X,Y), wtl(S,A,F,T,_,_), F <= X, Y <= T.";
+    emit ctx "tl(S,A,X,Y,V) :- inpiece(S,A,F,T,X,Y), inputtl(S,A,F,T,V), not indecided(S,A,X,Y)."
+  end
+
+(* Whether the case input of the time-dependent attribute [a] on an instance of
+   the concrete type [ot] enters beside its writers ([timeline_input]): a
+   computing rule that applies on the case's date writes it there *)
+let written_timeline ctx ~ot ~a =
+  attr_temporal ctx ~otype:ot ~attr:a
+  &&
+  let _, comps, _ = init_writers ctx ~ot ~a in
+  comps <> []
 
 (* ch. 3.11: a time-dependent characteristic target within a period window
    (ch. 3.10) holds in the maximal periods of its condition, read per period
@@ -11951,11 +11970,13 @@ let translate_rule ctx (r : resolved_rule) =
                  read and a derived val/3 would split; no corpus case)"
                 a
           | Some (Calculation | Equation) when attr_temporal ctx ~otype:ot ~attr:a -> (
-              (* a timeline of two or more writers: each writes its own
-                 segments, also as wtl/6 under its index, and two that decide
-                 one day with different values are a fault (ch. 5.7 per day,
-                 [writer_timeline_conflicts]) *)
-              if writer <> None then writer_timeline_conflicts ctx r ~ot ~a;
+              (* each writer of a timeline writes its own segments, also as
+                 wtl/6 under its index in the document: the case input stands
+                 on the days none decides ([timeline_input]), and two that
+                 decide one day with different values are a fault (ch. 3.11,
+                 5.7 per day, [writer_timeline_conflicts]) *)
+              let writer = List.find_index (fun r' -> r' == r) ctx.doc.resolved_rules in
+              writer_timeline_conflicts ctx r ~ot ~a;
               let value = Option.map Ir_v0.Checks.let_bound_value r.value_node in
               (* the period arithmetic cuts its timeline to a window that is its
                  whole condition as to any condition read per period *)
@@ -11965,14 +11986,6 @@ let translate_rule ctx (r : resolved_rule) =
                 | Some c, Some v when clip <> None && Eval.is_period_arithmetic v -> Some (period_condition ctx ~ot ~a c)
                 | _ -> None
               in
-              if
-                (not (List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_temporal_targets ctx.doc)))
-                && case_supplies ctx ~otype:ot ~attr:a
-              then
-                fault
-                  "the case supplies input for computed target %S: ref (like v0) overwrites it, \
-                   which has no monotone encoding here (no corpus case)"
-                  a;
               match value with
               | Some
                   (Function_call
@@ -13507,8 +13520,9 @@ let translate_case ctx (case : Case.t) =
         | None -> false)
       doc.prioritized_defaults
     || List.exists (fun (t, a) -> a = norm aname && inherits otype t) standing
-    (* a target of two or more co-writers that are not standing: the input
-       stands where none of them fires (translate_rule) *)
+    (* a scalar target of two or more co-writers that are not standing: the
+       input stands where none of them fires (translate_rule); a timeline
+       target's input is its timeline ([timeline_input]) *)
     || List.exists
          (fun (r : resolved_rule) ->
            match Ir_v0.Desugar.target_of r with
@@ -13516,6 +13530,7 @@ let translate_case ctx (case : Case.t) =
                norm a = norm aname && inherits otype t
                && applies ctx r.rr_validity
                && co_writer ctx r ~ot:t ~a <> None
+               && (not (attr_temporal ctx ~otype:t ~attr:a))
                && not (List.mem (norm t, norm a) standing)
            | None -> false)
          doc.resolved_rules
@@ -13633,14 +13648,10 @@ let translate_case ctx (case : Case.t) =
               fault "temporal struct carriage is a recorded flank; no corpus case"
           | _ -> ());
           let dt = attr_datatype ctx ~otype:i.otype ~attr:aname in
-          (* a standing temporal target's input timeline enters
-             defeasibly (inputtl/5), standing whole unless the fold
-             decides (ch. 7.8, the timeline arm) *)
-          let pred =
-            if List.mem (norm i.otype, norm aname) (Ir_v0.Desugar.standing_temporal_targets doc)
-            then "inputtl"
-            else "tl"
-          in
+          (* the input timeline of a target that computing rules write enters
+             as inputtl/5, and stands on the days none of them decides
+             (ch. 3.11, [timeline_input]) *)
+          let pred = if written_timeline ctx ~ot:i.otype ~a:aname then "inputtl" else "tl" in
           List.iter
             (fun (s : Uchar_ref.Timeline.segment) ->
               emit ctx "%s(%s,%s,%s,%s,%d)." pred (str_raw label) (str aname) (bound_term s.s_from)
@@ -14209,6 +14220,7 @@ let translate (doc : document) (case : Case.t) : string =
   List.iter (fun r -> each_form (fun () -> translate_rule ctx r)) doc.resolved_rules;
   ctx.anchored <- !all_anchored;
   writer_conflicts ctx;
+  timeline_input ctx;
   List.iter (fun f -> each_form (fun () -> translate_fact_creation ctx f)) doc.fact_creations;
   List.iteri (fun i o -> each_form (fun () -> translate_object_creation ctx i o)) doc.object_creations;
   List.iteri (fun i a -> each_form (fun () -> translate_allocation ctx i a)) doc.allocations;

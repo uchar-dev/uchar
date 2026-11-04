@@ -302,15 +302,23 @@ spec bug.
   effectiveness atom (`stateN_eff`) carries the full val-head body —
   condition AND value bindings — so a leeg evaluation derives neither
   and the input stands (`val :- inputval, not stateN_eff`), matching
-  ref/'s no-write-on-leeg. The temporal arm mirrors it
-  (`standing_temporal_targets`): a standing pro-rata target's input
-  timeline enters as `inputtl/5`, standing WHOLE unless the fold
-  derives a bucket (`prN_eff`, the full bucket body incl. the
-  exactness guard) — the whole-timeline reading of RS ch. 7.8. The
-  ch. 6d computed-target fence does not apply to standing targets
-  (scalar or temporal); it applies to multi-writer and versioned
-  computing targets, and an allocation `doelAttribuut` supplied by the
-  case is fenced the same way.
+  ref/'s no-write-on-leeg. The ch. 6d computed-target fence does not
+  apply to standing targets, nor beside co-writers (below); it applies
+  to a scalar computing target outside the standing domain that is its
+  target's only computing rule, and an allocation `doelAttribuut`
+  supplied by the case is fenced the same way.
+- A writer of a timeline target, also its only one, decides the days of
+  the segments it writes (RUNTIME-SEMANTICS ch. 3.11, 5.7 per day). Each
+  writer writes its segments as `tl/5` and also as `wtl/6`, under its
+  index in the document. The case input timeline of a target that a
+  computing rule writes enters as `inputtl/5`; each input segment is cut
+  at the bounds of the writers' segments inside it (`incut/5`,
+  `inpiece/6`), and a piece that no writer's segment covers
+  (`indecided/4`) is a `tl/5` segment of the target. A writer writes no
+  leeg segment, so a day its timeline reads leeg is no day it decides,
+  and an empty result leaves the input standing whole. Two writers that
+  decide one day with different values are a named `viol/2` witness
+  (EF-016); with one value, see [V7].
 - A fail-fast or a §9.5 deposit fires only where ref evaluates its place at
   the fixpoint (RUNTIME-SEMANTICS ch. 5.7): under a default that is reached,
   under the guard of an initialisation, and a deposit of a declared default
@@ -337,9 +345,8 @@ spec bug.
   that are not standing the case input enters as `inputval/3` as well
   and stands only where none of them fires (`wfired/2`): the value at the
   fixpoint is that of the writers that decide there, a leeg one included
-  (`corpus/golden/jutterswet-twee-schrijvers-aan-fixpunt`). Two computing
-  rules on a temporal target are refused by name: a timeline is no
-  single term to compare.
+  (`corpus/golden/jutterswet-twee-schrijvers-aan-fixpunt`). Writers of a
+  timeline target are compared per day, by the item above.
 - An initialisation outside the desugaring domain — a conditional one,
   which ch. 7.7 excludes, or a windowed one — translates natively, as
   ref replays it (RS ch. 5.4): its `val` head needs the condition and
