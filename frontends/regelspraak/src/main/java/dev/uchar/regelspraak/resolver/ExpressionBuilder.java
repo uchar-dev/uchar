@@ -3121,7 +3121,7 @@ final class ExpressionBuilder {
      *  {@link #duringCharacteristicCheckFilter} tests negatively to admit the temporal clip; the granularity half is the
      *  same test {@link #totalOperandError} applies (a §5.1.4 timeline-declared attribute, "voor elke maand"),
      *  because a set read over a TEMPORAL attribute is the §7.1 PER-ELEMENT TIMELINE FOLD — each element's
-     *  tijdreeks is summed over time FIRST (rsTijdTotaal at the attribute's granularity) and only then over the
+     *  tijdreeks is summed over time FIRST (the total over time on the attribute's own grid) and only then over the
      *  set — so that form DOES integrate over time and the §4.20 strip must keep applying to it. */
     static boolean setRead(List<Expr> args) {
         return args.size() == 1 && args.get(0) instanceof Expr.AttributeReference a && a.set()
