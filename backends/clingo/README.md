@@ -26,8 +26,9 @@ spec bug.
   index first. A read that every allowed order reaches fires in ref's
   words; a read that one allowed order reaches and another does not
   fires in a sentence that names the unnormed order, whichever order
-  ref keeps (maintainer decision 2026-09-23); a read no allowed order
-  reaches fires nothing, but for [N4] below. That holds for a
+  ref keeps (maintainer decision 2026-09-23), a refusal of this backend
+  (CLINGO-035) and no fault kind; a read no allowed order reaches fires
+  nothing, but for [N4] below. That holds for a
   quantifier fold's matrix, for a Let barrier in a part that runs
   member by member, and for the value of a Let whose binder is read at
   such a place. For the Let barrier the pass before a creation is one
@@ -74,10 +75,8 @@ spec bug.
   where [8, 3] settles the outer fold at 8 and [3, 8] the inner one at
   3 [N4]. Where the guard is not exact otherwise, it errs in one of
   two directions:
-  - Loud, a refusal where ref plays. [L1] The day-kind table and the
-    §7.1 horizon fence read their parameter at translation and refuse
-    there, also behind a rule condition that fails, where ref never
-    reads it. [L2] A Let barrier that only a created member raises, or a
+  - Loud, a refusal where ref plays. [L2] A Let barrier that only a
+    created member raises, or a
     short circuit that only a created member settles, counts the pass
     before the creation also where ref has no such pass for the read: in a
     form that ch. 6.1/6.3 puts above that creation (a rule, the condition
@@ -108,6 +107,12 @@ spec bug.
     branch hoist puts the operand beside the branch behind the branch's
     condition, and that operand's read has a second guard without the
     arm's atoms.)
+
+  The die/dat filter of a per-element total and the day-kind table read
+  their parameter at translation, and its guard fires where ref reads it:
+  the filter's own read in the fold carries the guard, and a member whose
+  filter faults is no contributor to the §7.1 horizon fence; the table
+  records the days on which the day kind's condition reads it (below).
 
   Each tagged entry, here and under Recorded limitations ([V1], [V2],
   [V3], [V4], [V5], [V6], [V7], [V8]),
@@ -363,9 +368,30 @@ spec bug.
   instance. An unbound parameter in the period arithmetic, time-dependent
   or a scalar operand, faults (EF-014) under the same reach. Where an atom
   of that reach hangs on the order of the members a creation adds, the
-  fault is raised in translation, over every instance that gives the
-  scalar. A point read of an absent attribute faults in translation,
-  without a code.
+  witness takes the two forms of the unbound-parameter guard: ref's words
+  where every allowed order reaches the read, the named sentence
+  (CLINGO-035) where one does and another does not. A point read of an
+  absent attribute faults in translation, without a code.
+- Every other fault kind ref raises where it evaluates a node is a
+  `viol/2` witness in ref's sentence under the reach of that node, with the
+  same two forms: the bound day outside a day-kind evaluation (EF-010), a
+  context value in a session without an evaluation date (EF-011), an
+  `Unresolved` expression or condition (EF-019) and a filled count over a
+  temporal attribute of a set (EF-021). The node's term derives nothing
+  (`#false`): where the evaluation reaches it the program is
+  UNSATISFIABLE, and where it does not, the form's answer does not hang on
+  it. A clamp whose bound is such a context value stops after it, as ref
+  does. The day-kind table records the days on which the day kind's
+  condition faults — it reads a parameter the case does not bind (EF-014)
+  or tests a day kind on another day (EF-022), its composite read in the
+  order of ch. 5.10 — and a step faults where it walks such a day before
+  it has found the days of the kind it counts, a count where such a day
+  lies in its interval. A key with two temporal components faults for
+  each instance of the type the uniqueness keys (EF-024), so over a type
+  without instances nothing. The ambiguous back-link of a creation
+  (EF-018) faults in translation, where ref faults wherever the creation
+  is run. Where a walk reaches a day that faults, the reach fence of the
+  day kind can fire beside it, a second code at the head of the report.
 - Two or more computing rules on one target whose populations share a
   concrete type (on one type, or on a type and its subtype) would give
   the target two values in one model wherever two of them apply to one

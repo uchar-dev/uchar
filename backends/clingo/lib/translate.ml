@@ -821,6 +821,39 @@ let date_parts witness names =
           in
           try List.combine names values with Invalid_argument _ -> []))
 
+(* the sentences of the faults ref raises where it evaluates their node, in
+   ref's words ([fault_where_reached], [viol_code]) *)
+let bound_day_reason =
+  "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind evaluation it denotes nothing"
+
+let no_evaluation_date_reason context_value =
+  Printf.sprintf "the %s context value needs an evaluation date; the case carries asOfDate null" context_value
+
+let unresolved_reason = "Unresolved reached in evaluation: this rule fails observably"
+let unresolved_condition_reason = "Unresolved condition reached in evaluation"
+
+let filled_count_temporal_reason attr =
+  Printf.sprintf
+    "the temporal attribute %S of a set has no moment at which a filled count can ask a timeline whether it is \
+     filled (ch. 3.4c); presence is a question about an instant, and only sum and total define the per-element \
+     collapse that would supply one"
+    attr
+
+let two_temporal_keys_reason =
+  "a uniqueness key list carries at most one temporal key component (the same-moment tuple join has no corpus case; \
+   ch. 5.9)"
+
+let other_day_test_reason =
+  "a nested day-kind test on a date other than the bound day is a recognised, unexecuted form (the \xc2\xa79.8 \
+   composition is carried on the bound day only)"
+
+(* the tail of every refusal where a read hangs on the order of the members a
+   creation adds (maintainer decision 2026-09-23): one order the spec allows
+   reaches the read and another does not, so the refusal is named and never in
+   ref's words, whichever order ref itself keeps. [viol_code] reads it as
+   CLINGO-035, a refusal, never as the fault kind of the read *)
+let order_not_normed = "depends on the order of the members a creation adds, which is not normed (ch. 3.9a/5.7a)"
+
 let viol_code witness =
   let opens p = String.starts_with ~prefix:("viol(\"" ^ p) witness in
   let holds s = Case.contains ~needle:s witness in
@@ -843,7 +876,10 @@ let viol_code witness =
     | _ -> []
   in
   let found k = function Some v -> [ (k, v) ] | None -> [] in
-  if opens (non_exact_division_bounded ^ "\"") then Some ("EF-006", [])
+  (* the named twin of a fail-fast whose reach hangs on the order of the members
+     a creation adds: a refusal of this encoding, whatever fault ref raises there *)
+  if holds (order_not_normed ^ "\",") then Some ("CLINGO-035", [])
+  else if opens (non_exact_division_bounded ^ "\"") then Some ("EF-006", [])
   (* the sentence names none of place, value and decimals; the subject is a
      label, which is no parameter of EF-006 *)
   else if opens (allocation_share_misfit ^ "\"") then Some ("EF-006", [])
@@ -868,6 +904,16 @@ let viol_code witness =
   else if opens "parameter \"" && holds "\" is unbound in this case" then
     Some ("EF-014", found "parameter" (between "parameter \"" "\" is unbound in this case"))
   else if opens "creation budget exhausted\"" then Some ("EF-015", [])
+  else if opens (bound_day_reason ^ "\"") then Some ("EF-010", [])
+  else if
+    opens (no_evaluation_date_reason Ir_v0.Spelling.evaluation_date ^ "\"")
+    || opens (no_evaluation_date_reason Ir_v0.Spelling.evaluation_year ^ "\"")
+  then Some ("EF-011", [])
+  else if opens (unresolved_reason ^ "\"") || opens (unresolved_condition_reason ^ "\"") then Some ("EF-019", [])
+  else if opens "the temporal attribute \"" && holds "\" of a set has no moment at which a filled count can ask" then
+    Some ("EF-021", found "attribute" (between "the temporal attribute \"" "\" of a set"))
+  else if opens (two_temporal_keys_reason ^ "\"") then Some ("EF-024", [])
+  else if opens (other_day_test_reason ^ "\"") then Some ("EF-022", [])
   else if opens "the periods in which the time-dependent characteristic " && holds " holds have an open bound" then
     Some ("EF-023", found "characteristic" (between "the periods in which the time-dependent characteristic " " holds have"))
   else if opens "the temporal total of \"" && holds "\" meets a segment with an open bound" then
@@ -1437,20 +1483,19 @@ let param_unbound ctx name =
 let unbound_param_reason name =
   Printf.sprintf "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" name
 
-(* the refusal where the read hangs on the order of the members a creation
-   adds (maintainer decision 2026-09-23): one order the spec allows reads the
-   parameter and another does not, so the refusal is named and never in ref's
-   words, whichever order ref itself keeps. [what] names the node whose read
+(* that refusal for an unbound parameter. [what] names the node whose read
    depends on that order: a quantifier fold, a Let whose value waits for its
    binder or whose barrier may end it first, or a composite condition whose
    prefix the pass before a creation leaves open *)
 let unbound_param_order_reason name what =
-  Printf.sprintf
-    "parameter %S is unbound in this case, and whether %s reads it depends on the order of the \
-     members a creation adds, which is not normed (ch. 3.9a/5.7a)"
-    name what
+  Printf.sprintf "parameter %S is unbound in this case, and whether %s reads it %s" name what order_not_normed
 
-(* The fail-fast is to fire where evaluation READS the parameter: ch. 5.11
+(* that refusal for any other fault ref raises at a read, in ref's [reason] *)
+let reached_order_reason reason what = Printf.sprintf "%s; whether %s reaches it %s" reason what order_not_normed
+
+(* [reach_guard] is the fail-fast [reason] of a read whose reach is [body], and
+   [unbound_param_guard] below that of a parameter the case does not bind.
+   The fail-fast is to fire where evaluation READS the parameter: ch. 5.11
    says an operand that is never reached raises no fault, and ref reaches a
    read only down the taken branch, under a holding condition, inside a
    composite or quantifier fold whose outcome does not stand yet, per element
@@ -1483,9 +1528,8 @@ let unbound_param_order_reason name what =
    its own below.
 
    Where the body is not exact otherwise, it errs in one of two directions,
-   each written at the place that builds it. Loud: the day-kind table and the
-   horizon fence read in translation and refuse there, reached or not (README
-   [L1]); and a Let barrier that only a created member raises, or a short
+   each written at the place that builds it. Loud: a Let barrier that only a
+   created member raises, or a short
    circuit that only a created member settles, counts the pass before the
    creation also where ref has no such pass for the read: ch. 6.1/6.3 puts the
    form above the creation (a rule, the condition of a creation or fact
@@ -1500,10 +1544,9 @@ let unbound_param_order_reason name what =
    reaches only in the pass before a creation through a condition that holds
    on absence, in an `all` prefix, a taken arm or a rule's condition (README
    [S4]). *)
-let unbound_param_guard ctx ~witness ~guard name =
-  if param_unbound ctx name then begin
-    let body = guard () in
-    emit ctx "viol(%s,%s) :- %s." (quote (unbound_param_reason name)) witness (String.concat ", " body);
+let reach_guard ctx ~witness ~reason ~(order_reason : string -> string) body =
+  begin
+    emit ctx "viol(%s,%s) :- %s." (quote reason) witness (String.concat ", " body);
     (* the named twins: the rest of "read in some allowed order". One rule per
        order-dependent atom, split on the first that does not hold in every
        order: the atoms before it in their every-order form, it in its
@@ -1525,8 +1568,7 @@ let unbound_param_guard ctx ~witness ~guard name =
               | _ -> b)
             body
         in
-        emit ctx "viol(%s,%s) :- %s." (quote (unbound_param_order_reason name fold)) witness
-          (String.concat ", " body'))
+        emit ctx "viol(%s,%s) :- %s." (quote (order_reason fold)) witness (String.concat ", " body'))
       dep;
     (* the pass before a creation's twins: every atom as it reads in that
        pass ([pre_form]), and one short circuit that pass leaves open is
@@ -1544,10 +1586,14 @@ let unbound_param_guard ctx ~witness ~guard name =
                 (fun b -> if b = a then [ e.pe_form; e.pe_not_fix ] else [ pre_form ctx ~certain:false b ])
                 body
             in
-            emit ctx "viol(%s,%s) :- %s." (quote (unbound_param_order_reason name e.pe_desc)) witness
-              (String.concat ", " body'))
+            emit ctx "viol(%s,%s) :- %s." (quote (order_reason e.pe_desc)) witness (String.concat ", " body'))
       (List.sort_uniq compare body)
   end
+
+let unbound_param_guard ctx ~witness ~guard name =
+  if param_unbound ctx name then
+    reach_guard ctx ~witness ~reason:(unbound_param_reason name) ~order_reason:(unbound_param_order_reason name)
+      (guard ())
 
 (* the case instances of [otype] that give [attr] as the asOfDate-bucket scalar,
    which carries no period; an absent attribute is the empty timeline *)
@@ -1559,12 +1605,6 @@ let bucket_scalars ctx ~otype ~attr =
       else acc)
     ctx.case.world.instances []
   |> List.rev
-
-(* whether an atom of [reach] hangs on the order of the members a creation adds
-   (ch. 3.9a/5.7a): a fold's matrix reach, a Let barrier or demand with a named
-   form, or a short circuit with a form in the pass before a creation. No one
-   body then says whether ref reaches the place. *)
-let order_dependent ctx reach = List.exists (fun a -> List.mem_assoc a ctx.named || List.mem_assoc a ctx.pre_reach) reach
 
 (* EF-037 (RUNTIME-SEMANTICS ch. 5.7b, ch. 8.4) where ref raises it: a form that
    reads the timeline of [attr] whole — the period arithmetic, a condition per
@@ -1580,25 +1620,25 @@ let order_dependent ctx reach = List.exists (fun a -> List.mem_assoc a ctx.named
    its subject, so the diagnosis names it: [reach] says that evaluation reaches
    the read, and the atoms beside the instance say that the read is of it. Both
    are built only for a document whose case gives such a scalar, so every
-   other document translates as before. Where [reach] is [order_dependent], the
-   fault is raised in translation, over every such instance. *)
-let bucket_scalar_fault ctx ~(reach : unit -> string list) ~attr ~(sentence : string -> string)
+   other document translates as before. Where an atom of [reach] hangs on the
+   order of the members a creation adds, the named twins of [reach_guard] say
+   the rest, in CLINGO-035. *)
+let bucket_scalar_fault ctx ~(reach : unit -> string list) ~(sentence : string -> string)
     (reads : (Uchar_ref.World.instance * string list) list) =
   if reads <> [] then begin
     let reach = reach () in
-    let eager = order_dependent ctx reach in
     List.iter
       (fun ((i : Uchar_ref.World.instance), binds) ->
-        if eager then faultc ~params:[ ("attribute", attr); ("label", i.label) ] "EF-037" "%s" (sentence i.label)
-        else
-          emit ctx "viol(%s,%s) :- %s." (quote (sentence i.label)) (str_raw i.label) (String.concat ", " (reach @ binds)))
+        reach_guard ctx ~witness:(str_raw i.label) ~reason:(sentence i.label)
+          ~order_reason:(reached_order_reason (sentence i.label))
+          (reach @ binds))
       reads
   end
 
 (* [bucket_scalar_fault] for a read of [attr] on the object [holder], a
    variable of [reach], of type [otype] *)
 let bucket_scalar_guard ctx ~holder ~reach ~otype ~attr ~sentence =
-  bucket_scalar_fault ctx ~reach ~attr ~sentence
+  bucket_scalar_fault ctx ~reach ~sentence
     (List.map
        (fun (i : Uchar_ref.World.instance) -> (i, [ Printf.sprintf "%s = %s" holder (str_raw i.label) ]))
        (bucket_scalars ctx ~otype ~attr))
@@ -1687,16 +1727,6 @@ let let_order (body : expr) : (expr * (int * bool)) list =
   in
   fst (walk_order ~value:(fun _ _ -> false) visit) body;
   !acc
-
-(* the parameters a condition may read, by name *)
-let cond_param_names c =
-  let names = ref [] in
-  snd
-    (walk_order
-       ~value:(fun b body -> Ir_v0.Checks.mentions_binder b body)
-       (fun e -> match e with Parameter_ref { parameter = Some p; _ } -> names := p :: !names | _ -> ()))
-    c;
-  List.rev !names
 
 (* the place of [node] in [li]'s body; a shared node has none *)
 let let_place li node =
@@ -2795,7 +2825,7 @@ let day_kind_reach = 40_000
    of a use site, so two duration positions on one day kind share it. Reset
    per translation (the one entry point below). *)
 let dk_tables :
-    (string, string * string * string * string * (int * int)) Hashtbl.t =
+    (string, string * string * string * string * (int * int) * (string * string) list) Hashtbl.t =
   Hashtbl.create 4
 
 let day_kind_spells = Ir_v0.Checks.day_kind_of_unit
@@ -4553,7 +4583,7 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
                         (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (str (role_canonical r)) n ], n))
                       ([], subject) roles
                   in
-                  bucket_scalar_fault ctx ~reach ~attr:a ~sentence:(qualifier_sentence a)
+                  bucket_scalar_fault ctx ~reach ~sentence:(qualifier_sentence a)
                     (List.map
                        (fun (i : Uchar_ref.World.instance) ->
                          (i, path @ [ Printf.sprintf "%s = %s" last (str_raw i.label) ]))
@@ -4787,6 +4817,41 @@ let rec period_bounds_not_case ctx ~seen ~otype ~attr : (string * string) option
             | _ -> None))
       None ctx.doc.resolved_rules
 
+(* the operands ref evaluates before a hoisted branch's condition whatever the
+   condition decides: [f] runs once more without the atoms of the arms the hoist
+   copied [e] into ([hoist_branch]), so its guard carries the reach ref has *)
+let beside_hoisted_arms ctx (e : expr) f =
+  let arms =
+    List.filter
+      (fun (before, _, _) -> List.exists (fun b -> b == e || expr_reaches ctx (fun n -> n == e) b) before)
+      ctx.before_arm
+  in
+  if arms <> [] then begin
+    let saved_g = ctx.rule_guard in
+    ctx.rule_guard <-
+      List.filteri (fun i _ -> not (List.exists (fun (_, from, len) -> i >= from && i < from + len) arms)) saved_g;
+    f ();
+    ctx.rule_guard <- saved_g
+  end
+
+(* an evaluation fault that ref raises where it evaluates [node] and never
+   elsewhere (RUNTIME-SEMANTICS ch. 5.11): the bound day outside a day-kind
+   evaluation, a context value without an evaluation date, an Unresolved node,
+   a filled count over a temporal attribute of a set. One viol/2 witness in
+   ref's [reason] under the reach of [node], as the fail-fast of an unbound
+   parameter ([reach_guard]); where the evaluation reaches [node] the program
+   is UNSATISFIABLE, and where it does not, the form's answer does not hang on
+   the node, so the term derives nothing (#false) and the witness's subject is
+   [subject]. A node in a condition has no place of its own in a Let's
+   evaluation order; [node] is then the expression the reach is taken at. *)
+let fault_where_reached ctx ~subject ~subject_ot (node : expr) reason =
+  let guard () =
+    reach_guard ctx ~witness:subject ~reason ~order_reason:(reached_order_reason reason)
+      (rule_reach ctx ~subject ~subject_ot node)
+  in
+  guard ();
+  beside_hoisted_arms ctx node guard
+
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   (* the rounding's mark is for its base alone, the node translated first here *)
   let calendar_ok = ctx.calendar_rounding in
@@ -4830,29 +4895,11 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       | Some p ->
           let d = decimals_of_datatype p.par_datatype in
           let v = fresh ctx "P" in
-          unbound_param_guard ctx ~witness:subject
-            ~guard:(fun () -> rule_reach ctx ~subject ~subject_ot e)
-            name;
-          (* an operand ref evaluates before a hoisted branch's condition is
-             reached whatever the condition decides: a second guard, without
-             the atoms of the arms the hoist copied it into ([hoist_branch]) *)
-          (if param_unbound ctx name then
-             let arms =
-               List.filter
-                 (fun (before, _, _) -> List.exists (fun b -> b == e || expr_reaches ctx (fun n -> n == e) b) before)
-                 ctx.before_arm
-             in
-             if arms <> [] then begin
-               let saved_g = ctx.rule_guard in
-               ctx.rule_guard <-
-                 List.filteri
-                   (fun i _ -> not (List.exists (fun (_, from, len) -> i >= from && i < from + len) arms))
-                   saved_g;
-               unbound_param_guard ctx ~witness:subject
-                 ~guard:(fun () -> rule_reach ctx ~subject ~subject_ot e)
-                 name;
-               ctx.rule_guard <- saved_g
-             end);
+          let guard () =
+            unbound_param_guard ctx ~witness:subject ~guard:(fun () -> rule_reach ctx ~subject ~subject_ot e) name
+          in
+          guard ();
+          if param_unbound ctx name then beside_hoisted_arms ctx e guard;
           ([ Printf.sprintf "param(%s,%s)" (str name) v ], v, pow10 d)
       | None -> fault "unknown parameter %S" name)
   | Attribute_reference { attribute_ref; object_type = ot; _ } ->
@@ -5487,24 +5534,23 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                                answer (ch. 3.4a/3.6)"
                               a n who el)
                       names);
-                (* the filter is READ here, for a suspect whose verdict the
-                   fold hangs on, so a parameter the case does not bind
-                   refuses in the shared sentence, in the translation phase —
-                   the day-kind table's posture *)
-                (match List.find_opt (param_unbound ctx) (cond_param_names c) with
-                | Some p -> faultc ~params:[ ("parameter", p) ] "EF-014" "%s" (unbound_param_reason p)
-                | None -> ());
                 fun (i : Uchar_ref.World.instance) ->
-                  (* a filter that cannot be evaluated at all keeps the member:
-                     the fence then fires, which is the conservative side —
-                     a member wrongly DROPPED would contribute a silent 0 *)
-                  (try Eval.eval_cond env ctx.case.world i ~err:(fun _ -> ()) c
-                   with Value.Fault _ -> true)
+                  (* the filter is READ here, for a suspect whose verdict the
+                     fold hangs on. Where it reads a parameter the case does
+                     not bind, the translation of the filter above carries the
+                     fail-fast of that read, which fires where the member's
+                     filter is reached, before ref integrates any member, so
+                     the member is no contributor here. A filter that cannot be
+                     evaluated otherwise keeps the member: the fence then
+                     fires, which is the conservative side — a member wrongly
+                     DROPPED would contribute a silent 0 *)
+                  (try Eval.eval_cond env ctx.case.world i ~err:(fun _ -> ()) c with
+                   | Value.Fault { code = Some "EF-014"; _ } -> false
+                   | Value.Fault _ -> true)
           in
           (* a contributing suspect faults where its subject's fold is reached *)
           bucket_scalar_fault ctx
             ~reach:(fun () -> rule_reach ctx ~subject ~subject_ot e)
-            ~attr:a
             ~sentence:(fun label ->
               Printf.sprintf
                 "the per-element temporal fold of %S over %S: the case supplies an asOfDate-bucket scalar, which \
@@ -5739,19 +5785,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       let a = set_source_attribute ctx ~subject_ot ~el (req "fold attribute" attribute_ref) in
       (* the ch. 3.4c exclusion, on the TEMPORAL axis rather than on a value
          type: a set read of a time-dependent attribute folds twice, and only
-         som and totaal define the first collapse. ref refuses the form by
-         name; answering here from the asOfDate buckets would be this backend
-         inventing a moment the chapter does not carry. The sentence NAMES the
-         construct after the interpolation, word for word ref's arm, because the
-         interpolation-free tail is all a red pin can quote: the ranking folds'
-         refusal sits at the same position on the same ground and a pin must be
-         able to tell which one spoke. *)
-      if attr_temporal ctx ~otype:el ~attr:a then
-        faultc ~params:[ ("attribute", a) ] "EF-021"
-          "the temporal attribute %S of a set has no moment at which a filled count can ask a \
-           timeline whether it is filled (ch. 3.4c); ref refuses the form on that ground, so this \
-           arm must not answer from a bucket it picked itself"
-          a;
+         som and totaal define the first collapse. ref declines the form where
+         it evaluates the count (EF-021); answering here from the asOfDate
+         buckets would be this backend inventing a moment the chapter does not
+         carry, so the count derives nothing and faults where it is reached *)
+      if attr_temporal ctx ~otype:el ~attr:a then begin
+        fault_where_reached ctx ~subject ~subject_ot e (filled_count_temporal_reason a);
+        ([ "#false" ], "0", 1)
+      end
+      else
       let env = { Eval.doc = ctx.doc; params = Eval.SMap.empty; param_tls = Eval.SMap.empty; as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None } in
       let v = fresh ctx "F" in
       let g = fresh ctx "G" and x = fresh ctx "X" in
@@ -6566,7 +6608,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         match day_kind_unit_of ctx typ with
         | Some k ->
             dk_duration ctx ~subject ~subject_ot ~kind:k
-              ~absolute:(kind = Absolute_duration) a b
+              ~absolute:(kind = Absolute_duration) ~node:e a b
         | None ->
         let tu = day_time_unit_of ~what:"duration" typ in
         let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
@@ -6964,13 +7006,21 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          and bounds into the widest scale, dividing by each of the three *)
       let b_scale = numeric_scale ~what:"a Clamp base" b_scale in
       let base_unit = eff_unit ctx base_e in
+      let faulted = ref false in
       let bound name = function
         | None -> None
+        | Some _ when !faulted -> None
         | Some e ->
             numeric_ok ctx (Some e);
             units_identical_ok ~what:"a Clamp bound" base_unit (eff_unit ctx e);
             let atoms, term, scale = expr_term ctx ~subject ~subject_ot e in
-            if atoms <> [] then
+            (* a context value is a constant of the session, never empty: without
+               an evaluation date its term derives nothing and its witness
+               faults where the bound is reached (EF-011), and ref evaluates
+               nothing of the clamp after it *)
+            let session_constant = match e with Context_value _ -> true | _ -> false in
+            if session_constant && atoms <> [] then faulted := true;
+            if atoms <> [] && not session_constant then
               faultc ~params:[ ("bound", name) ] "CLINGO-005"
                 "a Clamp %s bound that is not a ground literal could be empty; ref reads an empty \
                  bound as no bound, which the bare join cannot express (no corpus case)"
@@ -7005,19 +7055,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          predicate is being applied to. It never reaches an ASP term: the
          day-kind predicate is evaluated at translation time (the extension
          table), so the only way here is a bound day OUTSIDE a day-kind
-         condition, which denotes nothing. *)
-      faultc "EF-010"
-        "a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind \
-         evaluation it denotes nothing"
+         condition, which denotes nothing, a fault where it is evaluated
+         (EF-010) *)
+      fault_where_reached ctx ~subject ~subject_ot e bound_day_reason;
+      ([ "#false" ], "0", 1)
   | Context_value { ident = Some n; _ } when n = Ir_v0.Spelling.evaluation_date -> (
       (* ch. 8.2: the execution-date context value is a program constant —
-         the session's one evaluation date as a civil day number *)
+         the session's one evaluation date as a civil day number, and without
+         one a fault where it is evaluated (EF-011) *)
       match ctx.case.as_of with
       | Some d -> ([], string_of_int (day_of_lexeme d), 1)
       | None ->
-          faultc "EF-011"
-            "the evaluationDate context value needs an evaluation date; the case carries asOfDate \
-             null")
+          fault_where_reached ctx ~subject ~subject_ot e (no_evaluation_date_reason n);
+          ([ "#false" ], "0", 1))
   | Context_value { ident = Some n; _ } when n = Ir_v0.Spelling.evaluation_year -> (
       (* ch. 8.2: the execution year is a program constant too — the civil
          year of the session's one evaluation date, a whole unitless term,
@@ -7027,9 +7077,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let y, _, _ = Value.civil_from_days (day_of_lexeme d) in
           ([], string_of_int y, 1)
       | None ->
-          faultc "EF-011"
-            "the evaluationYear context value needs an evaluation date; the case carries asOfDate \
-             null")
+          fault_where_reached ctx ~subject ~subject_ot e (no_evaluation_date_reason n);
+          ([ "#false" ], "0", 1))
   (* a name outside WF-098's closed set, spelled byte for byte (the bound
      day included, which is a BoundDay): refused at load for an executor, so
      only a node built by hand arrives, refused in the loader's own sentence *)
@@ -7258,8 +7307,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (atoms, term, 0)
   | Expr_unresolved _ ->
       (* the unsolved-state guard: an Unresolved node never vanishes —
-         the rule that carries it fails observably (WF-044) *)
-      faultc "EF-019" "Unresolved reached in translation: this rule fails observably"
+         the rule whose evaluation reaches it fails observably (WF-044) *)
+      fault_where_reached ctx ~subject ~subject_ot e unresolved_reason;
+      ([ "#false" ], "0", 1)
   | Function_call { kind = Sum_function; element_object_type = None; dimension_selections = None; _ } ->
       (* the LISTED-operand som (§5.8.3, RUNTIME-SEMANTICS ch. 5.11): the
          contributors are spelled out as operands and there is no instance
@@ -8075,11 +8125,10 @@ and dk_value ctx ~stack ~day (e : expr) : Value.t =
           | Some v -> v
           | None ->
               (* fail-fast, in ref's terms: a day-kind condition that reads a
-                 parameter the case does not bind has no truth value, and
-                 answering Empty here would make the table — and therefore
-                 every duration over it — a confident wrong answer. The shared
-                 sentence, in the translation phase: the table is EVALUATED
-                 here, before any rule body exists that could carry a guard. *)
+                 parameter the case does not bind has no truth value on that
+                 day, and answering Empty here would make the table — and
+                 therefore every duration over it — a confident wrong answer.
+                 The table records the day as one that faults ([dk_table]) *)
               faultc ~params:[ ("parameter", nm) ] "EF-014" "%s" (unbound_param_reason nm))
       | None -> fault "unknown parameter %S" nm)
   | Function_call { kind; grain = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
@@ -8166,15 +8215,33 @@ and dk_cond ctx ~stack ~day (c : condition_expr) : bool =
       dk_compare op
         (dk_value ctx ~stack ~day (req "Comparison.left" left_side))
         (dk_value ctx ~stack ~day (req "Comparison.right" right_side))
-  | Compound { quantifier_kind; cutoff; components; _ } -> (
-      let hits = List.length (List.filter (dk_cond ctx ~stack ~day) components) in
+  | Compound { quantifier_kind; cutoff; components; _ } ->
+      (* ch. 5.10: the members in order, and none after the one after which the
+         outcome stands, so a member after the stop raises no fault on this day *)
       let n = List.length components in
-      match quantifier_kind with
-      | The | All -> hits = n
-      | None_of -> hits = 0
-      | At_least -> hits >= cutoff
-      | At_most -> hits <= cutoff
-      | Exactly -> hits = cutoff)
+      let settled ~hits ~left =
+        match quantifier_kind with
+        | The | All -> if hits < n - left then Some false else None
+        | None_of -> if hits > 0 then Some false else None
+        | At_least -> if hits >= cutoff then Some true else if hits + left < cutoff then Some false else None
+        | At_most -> if hits > cutoff then Some false else if hits + left <= cutoff then Some true else None
+        | Exactly -> if hits > cutoff || hits + left < cutoff then Some false else None
+      in
+      let rec read hits left = function
+        | c :: rest when settled ~hits ~left = None ->
+            read (if dk_cond ctx ~stack ~day c then hits + 1 else hits) (left - 1) rest
+        | _ -> (
+            match settled ~hits ~left with
+            | Some v -> v
+            | None -> (
+                match quantifier_kind with
+                | The | All -> hits = n
+                | None_of -> hits = 0
+                | At_least -> hits >= cutoff
+                | At_most -> hits <= cutoff
+                | Exactly -> hits = cutoff))
+      in
+      read 0 n components
   | Predicate { variety = Empty_predicate; operand; negation; time_period = None; _ } ->
       let v = dk_value ctx ~stack ~day (req "Predicate.operand" operand) in
       if negation then v <> Value.Empty else v = Value.Empty
@@ -8189,9 +8256,7 @@ and dk_cond ctx ~stack ~day (c : condition_expr) : bool =
       | None -> ()
       | Some (Bound_day _) -> ()
       | Some _ ->
-          faultc "EF-022"
-            "a nested day-kind test on a date other than the bound day is a recognised, \
-             unexecuted form (the \xc2\xa79.8 composition is carried on the bound day only)");
+          faultc "EF-022" "%s" other_day_test_reason);
       let hit = dk_holds ctx ~stack (req "Predicate.dayKind" day_kind) day in
       if negation then not hit else hit
   | _ ->
@@ -8281,9 +8346,14 @@ and dk_seen_days ctx : int list =
 (* the day kind's extension, emitted once per document and shared by every
    use site: `p(D,R)` for the R-th matching day in the window, plus the
    ranks whose gap to the previous match exceeds the reach, plus the two
-   edge markers that make a TRUNCATED table loud instead of wrong. Returns
-   (predicate, far-predicate, lo-edge fact, hi-edge fact, window). *)
-and dk_table ctx (name : string) : string * string * string * string * (int * int) =
+   edge markers that make a TRUNCATED table loud instead of wrong, plus the
+   days on which the condition faults (it reads a parameter the case does
+   not bind, EF-014, or tests a day kind on another day, EF-022): no match,
+   and a fault where a walk or a count reaches it, as in ref, one predicate
+   per sentence. Returns (predicate, far-predicate, lo-edge fact, hi-edge
+   fact, window, the fault predicates with their sentences). *)
+and dk_table ctx (name : string) :
+    string * string * string * string * (int * int) * (string * string) list =
   let key = norm name in
   match Hashtbl.find_opt dk_tables key with
   | Some t -> t
@@ -8300,8 +8370,16 @@ and dk_table ctx (name : string) : string * string * string * string * (int * in
       let p = Printf.sprintf "dkt%d" n and far = Printf.sprintf "dkf%d" n in
       let edge_lo = Printf.sprintf "dkl%d" n and edge_hi = Printf.sprintf "dkh%d" n in
       let rank = ref 0 and prev = ref None and fars = ref 0 in
+      let faults = ref [] in
+      let holds d =
+        match dk_holds ctx ~stack:[] name d with
+        | b -> b
+        | exception Value.Fault { code = Some ("EF-014" | "EF-022"); text; _ } ->
+            (if not (List.mem (d, text) !faults) then faults := (d, text) :: !faults);
+            false
+      in
       for d = lo to hi do
-        if dk_holds ctx ~stack:[] name d then begin
+        if holds d then begin
           incr rank;
           emit ctx "%s(%d,%d)." p d !rank;
           (* the rank projection, so a MISSING rank can be tested with `not`
@@ -8326,7 +8404,7 @@ and dk_table ctx (name : string) : string * string * string * string * (int * in
          floor means the extension may be truncating a backward step *)
       let rec first d =
         if d > lo + day_kind_reach then None
-        else if dk_holds ctx ~stack:[] name d then Some d
+        else if holds d then Some d
         else first (d + 1)
       in
       (match first lo with
@@ -8341,7 +8419,16 @@ and dk_table ctx (name : string) : string * string * string * string * (int * in
         emit ctx "%s_r(0) :- #false." p
       end;
       if !fars = 0 then emit ctx "%s(0) :- #false." far;
-      let t = (p, far, edge_lo, edge_hi, (lo, hi)) in
+      let sentences = List.sort_uniq compare (List.map snd !faults) in
+      let fault_preds =
+        List.mapi
+          (fun k text ->
+            let fp = Printf.sprintf "dke%d_%d" n (k + 1) in
+            List.iter (fun (d, t) -> if t = text then emit ctx "%s(%d)." fp d) (List.sort_uniq compare !faults);
+            (fp, text))
+          sentences
+      in
+      let t = (p, far, edge_lo, edge_hi, (lo, hi), fault_preds) in
       Hashtbl.replace dk_tables key t;
       t
 
@@ -8361,12 +8448,25 @@ and dk_window_guard ctx ~subject ~body ~(win : int * int) (t : string) =
 (* §6.10: the days of the kind in (A, B], signed by operand order. The
    interval bounds the work, so this form has no reach fence of its own, and
    an unsatisfiable day kind counts 0 here exactly as in ref. *)
-and dk_duration ctx ~subject ~subject_ot ~kind ~absolute a b =
+and dk_duration ctx ~subject ~subject_ot ~kind ~absolute ~(node : expr) a b =
   let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
   let ba, ta, sa = expr_term ctx ~subject ~subject_ot a in
   let bb, tb, sb = expr_term ctx ~subject ~subject_ot b in
   if sa <> 1 || sb <> 1 then fault "duration operands must be unscaled day terms";
-  let tbl, _far, _el, _eh, win = dk_table ctx kind in
+  let tbl, _far, _el, _eh, win, faults = dk_table ctx kind in
+  (* ref counts every day between two filled operands, so a day of the
+     interval on which the condition faults raises that fault where the count
+     is reached *)
+  List.iter
+    (fun (fp, reason) ->
+      let f = fresh ctx "DKF" in
+      List.iter
+        (fun (lo, hi) ->
+          reach_guard ctx ~witness:subject ~reason ~order_reason:(reached_order_reason reason)
+            (rule_reach ctx ~subject ~subject_ot node @ ba @ bb
+            @ [ Printf.sprintf "%s(%s)" fp f; Printf.sprintf "%s < %s" lo f; Printf.sprintf "%s <= %s" f hi ]))
+        [ (ta, tb); (tb, ta) ])
+    faults;
   ctx.fresh <- ctx.fresh + 1;
   let id = ctx.fresh in
   let seed = Printf.sprintf "dks%d" id and res = Printf.sprintf "dkr%d" id in
@@ -8419,7 +8519,24 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
   let sn = numeric_scale ~what:"a day-kind duration" sn in
   let n_term = if sn = 1 then tn else Printf.sprintf "((%s)/%d)" tn sn in
   let n_term = if minus then Printf.sprintf "(0-(%s))" n_term else n_term in
-  let tbl, far, edge_lo, edge_hi, win = dk_table ctx kind in
+  let tbl, far, edge_lo, edge_hi, win, faults = dk_table ctx kind in
+  (* ref walks day by day from the start, the start itself excluded, until it
+     has found as many days of the kind as the count asks, so a day on which
+     the condition faults raises that fault where the step is reached and
+     fewer days of the kind than the count lie between the start and it *)
+  List.iter
+    (fun (fp, reason) ->
+      let f = fresh ctx "DKF" and k = fresh ctx "DKC" in
+      List.iter
+        (fun (sign, after, before) ->
+          reach_guard ctx ~witness:subject ~reason ~order_reason:(reached_order_reason reason)
+            (rule_reach ctx ~subject ~subject_ot node @ bd @ bn
+            @ [ Printf.sprintf "%s = %s(%s)" k sign n_term; Printf.sprintf "%s > 0" k;
+                Printf.sprintf "%s(%s)" fp f; after f;
+                Printf.sprintf "#count { DKX : %s(DKX,DKJ), %s } < %s" tbl (before "DKX" f) k ]))
+        [ ("", (fun f -> Printf.sprintf "%s > %s" f td), fun x f -> Printf.sprintf "%s > %s, %s < %s" x td x f);
+          ("0-", (fun f -> Printf.sprintf "%s < %s" f td), fun x f -> Printf.sprintf "%s < %s, %s > %s" x td x f) ])
+    faults;
   ctx.fresh <- ctx.fresh + 1;
   let id = ctx.fresh in
   let zero = Printf.sprintf "dkz%d" id
@@ -9451,16 +9568,16 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
         emit ctx "%s(%s) :- %s." p key (String.concat ", " (opening @ atoms));
         [ Printf.sprintf "not %s(%s)" p key ]
       end
-  | Condition_unresolved _ ->
+  | Condition_unresolved { source_name } ->
       (* the unsolved-state guard on the CONDITION position — the sibling of
          [Expr_unresolved] above, and the form the §13.4.7 creation guard takes
-         when doel and anker are the same type. Without this arm the node fell
-         through to the catch-all, whose sentence claims no corpus case
-         exercises it: a red witness on this position would have made its own
-         message untrue. Wording follows ref (`Unresolved condition reached in
-         …`) so both executors name the same position, and the expression arm
-         (`… in translation …`) so the phase stays this backend's own. *)
-      faultc "EF-019" "Unresolved condition reached in translation: this rule fails observably"
+         when doel and anker are the same type: a fault where the evaluation
+         reaches the condition, in ref's words (WF-044). The reach is taken at
+         a fresh expression, since a condition has no place of its own in a
+         Let's evaluation order ([fault_where_reached]) *)
+      fault_where_reached ctx ~subject ~subject_ot (Expr_unresolved { typ = None; source_name })
+        unresolved_condition_reason;
+      [ "#false" ]
   | Identity_check { negation; _ } ->
       (* ch. 3.4a: the member is the form subject, the same object. Both
          variables are bound where the filter's or the test's atoms land, and
@@ -11534,12 +11651,9 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ct
                faults where the period arithmetic is evaluated *)
             Eval.refuse_finer ~what:(Printf.sprintf "the parameter %S" n) ~operand:(Uchar_ref.Timeline.param_grid decl)
               ~target ~attr:a;
-            if not (Eval.SMap.mem (norm n) ctx.case.param_tls) then begin
-              let reach = base :: cond in
-              if order_dependent ctx reach then
-                faultc ~params:[ ("parameter", n) ] "EF-014" "%s" (unbound_param_reason n)
-              else emit ctx "viol(%s,%s) :- %s." (quote (unbound_param_reason n)) subject (String.concat ", " reach)
-            end;
+            if not (Eval.SMap.mem (norm n) ctx.case.param_tls) then
+              reach_guard ctx ~witness:subject ~reason:(unbound_param_reason n)
+                ~order_reason:(unbound_param_order_reason n) (base :: cond);
             emit ctx "%s_cut(%s,X) :- %s, param_tl(%s,X,_,_)." p subject base (str n);
             emit ctx "%s_cut(%s,X) :- %s, param_tl(%s,_,X,_)." p subject base (str n);
             let q = fresh ctx (p ^ "_p") in
@@ -13620,26 +13734,29 @@ let translate_consistency ctx i (c : resolved_consistency) =
    needs the full timeline. *)
 let uni_key_guards ctx ~otype ~keys =
   let temporal = List.filter (fun k -> attr_temporal ctx ~otype ~attr:k) keys in
+  (* ref asks both of every instance of the type the uniqueness keys, a made
+     one included, the number of temporal components first: a type without
+     instances faults nowhere (EF-024), and with that fault the key form of no
+     instance is asked (EF-020) *)
   if List.length temporal > 1 then
-    faultc "EF-024"
-      "a uniqueness key list carries at most one temporal key component (the same-moment \
-       tuple join has no corpus case; ch. 5.9)";
-  List.iter
-    (fun k ->
-      if attr_temporal ctx ~otype ~attr:k then
-        Eval.SMap.iter
-          (fun _ (inst : Uchar_ref.World.instance) ->
-            if
-              isa ctx inst.otype otype
-              && Uchar_ref.World.timeline inst k = None
-              && Uchar_ref.World.attr inst k <> Value.Empty
-            then
-              faultc ~params:[ ("key", k); ("label", inst.label) ] "EF-020"
-                "the ever-unique key %S needs the full timeline; %S supplies only a scalar \
-                 (ch. 5.9)"
-                k inst.label)
-          ctx.case.world.instances)
-    keys
+    emit ctx "viol(%s,S) :- isa(S,%s)." (quote two_temporal_keys_reason) (str otype)
+  else
+    List.iter
+      (fun k ->
+        if attr_temporal ctx ~otype ~attr:k then
+          Eval.SMap.iter
+            (fun _ (inst : Uchar_ref.World.instance) ->
+              if
+                isa ctx inst.otype otype
+                && Uchar_ref.World.timeline inst k = None
+                && Uchar_ref.World.attr inst k <> Value.Empty
+              then
+                faultc ~params:[ ("key", k); ("label", inst.label) ] "EF-020"
+                  "the ever-unique key %S needs the full timeline; %S supplies only a scalar \
+                   (ch. 5.9)"
+                  k inst.label)
+            ctx.case.world.instances)
+      keys
 
 (* the key atom for one position: a val join for a scalar key, a tl
    join for a temporal one — ANY segment's value, which IS the ever

@@ -6626,9 +6626,8 @@ let () =
    conditiepositie — de voorwaarde van een gewone rekenregel — die geen
    corpusdocument draagt: een golden zou erop falen en de rode zone houdt één
    getuige per vorm. Beide posities lopen door dezelfde arm in [cond_atoms].
-   Het fragment spiegelt `ref` in de positie ("Unresolved condition reached
-   in …") en de expressie-arm in de fase ("… in translation …"), zodat de
-   twee uitvoerders dezelfde plek in dezelfde woorden noemen. *)
+   De zin is die van `ref` ("Unresolved condition reached in evaluation"),
+   en hij vuurt waar de evaluatie de voorwaarde bereikt. *)
 let unresolved_condition_doc =
   {|{
   "format": "uchar-ir-v1",
@@ -6676,9 +6675,9 @@ let unresolved_condition_case =
 |}
 
 let () =
-  faults_with ~name:"WF-044 an Unresolved rule condition is cited, not swallowed"
-    ~ir:unresolved_condition_doc ~case_text:unresolved_condition_case
-    ~needle:"Unresolved condition reached in translation: this rule fails observably"
+  faults_at_solving ~code:("EF-019", []) ~name:"WF-044 an Unresolved rule condition is cited, not swallowed"
+    ~ir:unresolved_condition_doc ~case_text:unresolved_condition_case ~needle:"Unresolved condition reached in evaluation"
+    ()
 
 (* DE GELIJSTE SOM KRIJGT EEN EIGEN ARM (kaart clingo-som-catchall-
    eerlijkheid, 2026-09-19).
@@ -7186,8 +7185,9 @@ let () =
           (dk_doc ~day_kinds:two_day_kinds ~day_kinds_defs:(two_defs neg)
              ~value_node:(step_item ()) ()))
     [ ("positief", false); ("ontkend", true) ];
-  (* the four refusals, each named rather than fallen through to *)
-  faults_with ~name:"'de dag' outside a day-kind evaluation"
+  (* the four refusals, each named rather than fallen through to; the bound
+     day outside a day-kind evaluation faults where it is evaluated (EF-010) *)
+  faults_at_solving ~code:("EF-010", []) ~name:"'de dag' outside a day-kind evaluation"
     ~ir:
       (dk_doc ~precondition:(part_equal "dayOf" "1")
          ~value_node:
@@ -7196,7 +7196,7 @@ let () =
                   "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "de dag plus zijn termijn" } }|}
               the_day deadline)
          ())
-    ~case_text:dk_case ~needle:"the bound day of a day-kind definition";
+    ~case_text:dk_case ~needle:"the bound day of a day-kind definition" ();
   faults_with ~name:"dagsoortverwijzingscyclus (WF-085)"
     ~ir:
       (dk_doc
@@ -7258,11 +7258,12 @@ let () =
               (as_of_date ()))
          ())
     ~case_text:dt_case ~needle:"a recognised, unexecuted form";
-  (* F1: a parameter the case does not bind has NO truth value in the table
-     build — the backend must fault in ref's terms, not answer Empty and ship
-     a confident table. (The corpus witness is red case
-     day-kind-parameter-unbound; this is the translation-level twin.) *)
-  faults_with ~name:"unbound parameter in a day-kind condition fails fail-fast"
+  (* F1: a parameter the case does not bind has NO truth value on a day of the
+     table — the backend must fault in ref's terms where the step walks that
+     day, not answer Empty and ship a confident table. (The corpus witness is
+     red case day-kind-parameter-unbound.) *)
+  faults_at_solving ~code:("EF-014", [ ("parameter", "grensdatum") ])
+    ~name:"unbound parameter in a day-kind condition fails fail-fast"
     ~ir:
       (dk_doc
          ~precondition:
@@ -7277,7 +7278,7 @@ let () =
            {|{ "node": "Parameter", "name": "grensdatum",
                "datatype": { "node": "Date", "precision": "day" } }|}
          ~value_node:(step_item ()) ())
-    ~case_text:dk_case ~needle:"is unbound in this case";
+    ~case_text:dk_case ~needle:"is unbound in this case" ();
   (* F4/F5: the two fences say ONE thing each. Every reach rule this backend
      emits is guarded by the in-window atom, so a start past the window edge
      draws the window refusal ALONE — the doubled, partly untrue diagnosis the
@@ -7310,8 +7311,9 @@ let () =
          || Uchar_ref.Case.contains ~needle:"_r(DKR-DKM+1), not " l)
        reach_rules);
   (* the §9.8 composition on a date OTHER than the bound day: the narrow
-     route, refused here and in ref in the same words *)
-  faults_with ~name:"nested day-kind test on a different day than the bound day"
+     route, declined here and in ref in the same words, where the step walks
+     a day on which it is evaluated (EF-022) *)
+  faults_at_solving ~code:("EF-022", []) ~name:"nested day-kind test on a different day than the bound day"
     ~ir:
       (dk_doc ~day_kinds:two_day_kinds
          ~day_kinds_defs:
@@ -7327,7 +7329,7 @@ let () =
                   "validity": { "node": "Validity" } }|}
               (part_equal "dayOf" "1"))
          ~value_node:(step_item ()) ())
-    ~case_text:dk_case ~needle:"on a date other than the bound day"
+    ~case_text:dk_case ~needle:"on a date other than the bound day" ()
 
 (* The filled-value count (`filledCount`, IR-SPEC ch. 4.3, RUNTIME-SEMANTICS
    ch. 3.4c) landed on the wire and in `ref` on 2026-09-20 and is translated
@@ -7612,23 +7614,11 @@ let () =
       ~vondst_granularity:
         {|, "timeline": { "node": "TimelineFacet", "granularity": "day", "count": 1 }|}
   in
-  faults_with ~name:"AANTAL_GEVULDE: the temporal set source is refused by its own arm" ~ir
-    ~case_text:filled_count_case
-    ~needle:"no moment at which a filled count can ask a timeline whether it is filled";
-  (* and that refusal is NOT the fall-through: a pin on that sentence would
-     witness every untranslated form at once, which is what gate 8 forbids *)
-  let irf = write_temp ".ir.json" ir in
-  let casef = write_temp ".case.json" filled_count_case in
-  let doc = Ir_v0.Loader.load_file irf in
-  let case = Uchar_ref.Case.load_file doc casef in
-  Sys.remove irf;
-  Sys.remove casef;
-  match translate doc case with
-  | (_ : string) -> check "AANTAL_GEVULDE temporal: expected a loud fault, got a model" false
-  | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check
-        ("AANTAL_GEVULDE temporal: the refusal is not the expr_term bottom sentence (" ^ m ^ ")")
-        (not (Uchar_ref.Case.contains ~needle:"expression kind not translated" m))
+  (* declined by its own arm where the count is evaluated, never the
+     fall-through: the witness reads EF-021 with its attribute *)
+  faults_at_solving ~code:("EF-021", [ ("attribute", "gewicht") ])
+    ~name:"AANTAL_GEVULDE: the temporal set source is declined by its own arm" ~ir ~case_text:filled_count_case
+    ~needle:"no moment at which a filled count can ask a timeline whether it is filled" ()
 
 (* The unit deriver's NAMED arm for the two counts, pinned by its CONSEQUENCE.
    [eff_unit] is internal, so what is measured is what the arm buys: the
@@ -9886,8 +9876,9 @@ let () =
    filter drops V2 and J1's keurlast is 3 x 12 = 36. The fence evaluated the
    filter without the case's parameters, so the BOUND parameter read as
    unbound, V2 stayed a contributor, and the fence refused a document ref
-   plays. Unbound, the read happens in translation, so it refuses there, in
-   the shared sentence. *)
+   plays. Unbound, the filter's own read faults where the member's filter is
+   reached, in the shared sentence, and the member contributes nothing to
+   the fence. *)
 let () =
   let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"keurlast","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}}]}}],"characteristics":[]},{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"keurtarief","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}},{"node":"Unit","abbreviation":"mnd","system":"Keurtijd","canonical":"mnd","factorToCanonical":{"num":1,"den":1},"exponent":-1}]},"plural":"keurtarieven","timeline":{"node":"TimelineFacet","granularity":"month","count":1}},{"node":"Attribute","name":"gewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"gekeurd","kind":"adjectival"}]}],"factTypes":[{"node":"FactType","name":"keuring","reciprocal":false,"roles":[{"node":"Role","name":"keurende jutter","objectType":"Jutter","many":false},{"node":"Role","name":"vondst","objectType":"Vondst","plural":"vondsten","many":true}]}],"parameters":[{"node":"Parameter","name":"minimumgewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"domains":[],"unitSystems":[{"node":"UnitSystem","name":"Munt","units":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1},"spellings":["€","euro","euros"]}]},{"node":"UnitSystem","name":"Keurtijd","units":[{"node":"Unit","abbreviation":"mnd","system":"Keurtijd","canonical":"mnd","factorToCanonical":{"num":1,"den":1},"spellings":["maand"]}]}],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"keurlast van een jutter","versions": [ { "initialisation": false, "presentation": "calculation","target":{"node":"AttributeReference","attribute":"keurlast","subjectType":"Jutter","source":{"snippet":"De keurlast van een Jutter"}},"value":{"node":"Aggregation","kind":"total","arguments":[{"node":"AttributeReference","attribute":"keurtarief","subjectType":"Vondst","source":{"snippet":"het keurtarief van alle vondsten van de Jutter die gekeurd zijn"}}],"elementType":"Vondst","filter":{"node":"Comparison","op":"greater","left":{"node":"AttributeReference","attribute":"gewicht","subjectType":"Vondst","source":{"snippet":"gewicht"}},"right":{"node":"ParameterReference","parameter":"minimumgewicht","source":{"snippet":"het minimumgewicht"}},"source":{"snippet":"zwaarder dan het minimumgewicht"}},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}}]},"source":{"snippet":"het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn"},"sourceRole":{"node":"RoleBinding","factType":"keuring","role":"vondst"}},"validity":{"node":"Validity"} } ]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
   let case_text params rows =
@@ -9914,10 +9905,17 @@ let () =
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("horizon fence: an unbound parameter in the die/dat filter: ref faults (" ^ m ^ ")")
         (Uchar_ref.Case.contains ~needle m));
-  faults_with ~name:"horizon fence: an unbound parameter in the die/dat filter, in translation" ~ir
-    ~case_text:unbound ~needle;
-  (* the fence reads its parameter in translation, also where the rule's
-     condition fails and ref never reads it *)
+  faults_at_solving ~code:("EF-014", [ ("parameter", "minimumgewicht") ])
+    ~name:"horizon fence: an unbound parameter in the die/dat filter, at solving" ~ir ~case_text:unbound ~needle ();
+  (* ref faults on V2's filter before it integrates any member, so V2's bucket
+     scalar raises nothing beside it *)
+  (let doc, case = load_pair ~ir ~case_text:unbound in
+   let ws = Solve.diagnostic (translate doc case) in
+   check
+     ("horizon fence: a member whose filter faults is no contributor (" ^ String.concat "; " ws ^ ")")
+     (ws <> [] && not (List.exists (fun w -> Uchar_ref.Case.contains ~needle:"asOfDate-bucket scalar" w) ws)));
+  (* where the rule's condition fails ref never reads the filter, and neither
+     does this backend *)
   let behind =
     replace_first ~needle:{|"initialisation": false, "presentation": "calculation",|}
       ~by:
@@ -9925,8 +9923,8 @@ let () =
            (pf_cmp "greater" (pf_l ~typ:pf_n0 "1") (pf_l ~typ:pf_n0 "2")))
       ir
   in
-  pinned_loud ~entry:"L1" ~name:"the horizon fence behind a condition that fails (hf-cond)" ~ir:behind
-    ~case_text:(case_text "" [ pf_empty ~attr:"keurlast" (); pf_cons ]) ~needle
+  both_answer ~name:"the horizon fence behind a condition that fails (hf-cond)" ~ir:behind
+    ~case_text:(case_text "" [ pf_empty ~attr:"keurlast" (); pf_cons ])
 
 (* the translator has no date reader of its own (card clingo-parameter-
    failfast, the dead-arm sweep): a malformed date literal in a term position
@@ -11825,10 +11823,10 @@ let () =
   both_answer ~name:"the same two folds over the case's 3 before 8 (nr-case-3-8, control)" ~ir:(doc [])
     ~case_text:(pf_case ~instances:(w1 [ "3"; "8" ]) rows)
 
-(* FIXRONDE 5, lens point 5: README [L1]'s other half. The day-kind table,
-   like the horizon fence, reads its parameter at translation, also where the
-   rule's condition fails and ref never builds the table: "de dag later is
-   dan de grensdatum" with grensdatum unbound, under the condition 1 > 2 *)
+(* The day-kind table records the days on which its condition reads a
+   parameter the case does not bind, and the step faults only where it is
+   reached: "de dag later is dan de grensdatum" with grensdatum unbound,
+   under the condition 1 > 2, where ref never walks a day *)
 let () =
   let ir =
     dk_doc
@@ -11853,8 +11851,7 @@ let () =
       ~by:{|"expected": [ { "kind": "attributeEmpty", "label": "B1", "attribute": "uitkomst" }, { "kind": "consistent" } ]|}
       dk_case
   in
-  pinned_loud ~entry:"L1" ~name:"the day-kind table behind a condition that fails (dk-cond)" ~ir ~case_text
-    ~needle:(pf_reason "grensdatum")
+  both_answer ~name:"the day-kind table behind a condition that fails (dk-cond)" ~ir ~case_text
 
 (* ch. 3.9a, "a member never reached produces no fault", for the reach fence
    of a day-kind step (EF-009) in a quantifier fold's matrix: the fences carry
@@ -12954,10 +12951,8 @@ let () =
   | (_ : string list) -> check "Rekenjaar without rekendatum: ref refuses (got a world)" false
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check ("Rekenjaar without rekendatum: ref refuses (" ^ m ^ ")") (m = sentence_text));
-  match translate doc case with
-  | (_ : string) -> check "Rekenjaar without rekendatum: clingo refuses (got a program)" false
-  | exception Uchar_ref.Value.Fault { text = m; _ } ->
-      check ("Rekenjaar without rekendatum: clingo refuses (" ^ m ^ ")") (m = sentence_text)
+  faults_at_solving ~code:("EF-011", []) ~name:"Rekenjaar without rekendatum: clingo faults where it is evaluated" ~ir
+    ~case_text:(case_text "null" "2026") ~needle:sentence_text ()
 
 (* WF-108 (c) over the wire, on the probe that found the gap: the golden
    jutterswet-ketenkwantor with its first rule alone and that rule's sourcePath
@@ -17679,6 +17674,263 @@ let () =
       ( "value-differs",
         "J1.vondstopbrengst timeline = [19723,19754)=50 [19754,19783)=70 [19783,19814)=10, expected \
          [19723,19754)=50 [19754,19783)=60 [19783,19814)=10" ) ]
+
+(* The faults ref raises where it evaluates their node, and where it does not
+   (RUNTIME-SEMANTICS ch. 5.11, 5.7b): the bound day outside a day-kind
+   evaluation (EF-010), a context value without an evaluation date (EF-011),
+   an Unresolved node (EF-019), a filled count over a temporal attribute of a
+   set (EF-021), a nested day-kind test on another day (EF-022) and a key with
+   two temporal components (EF-024) fault at solving where the evaluation
+   reaches them, and behind a condition that does not hold both executors
+   play. The goldens corpus/golden/*-behind-a-failing-condition and their red
+   twins hold the first three in every executor; these frames hold the
+   positions the corpus does not. A back-link that two fact types make
+   ambiguous (EF-018) ref raises wherever the creation is run, also behind a
+   condition that does not hold, and so does this backend. *)
+let () =
+  let behind_one_above_two ir =
+    replace_first ~needle:{|"initialisation": false, "presentation": "calculation",|}
+      ~by:
+        (Printf.sprintf {|"initialisation": false, "presentation": "calculation", "condition": %s,|}
+           (pf_cmp "greater" (pf_l ~typ:pf_n0 "1") (pf_l ~typ:pf_n0 "2")))
+      ir
+  in
+  (* EF-021 behind the rule's condition *)
+  let filled =
+    filled_count_doc
+      ~vondst_granularity:{|, "timeline": { "node": "TimelineFacet", "granularity": "day", "count": 1 }|}
+  in
+  both_answer ~name:"EF-021: a filled count over a temporal attribute behind a condition that fails"
+    ~ir:(behind_one_above_two filled)
+    ~case_text:
+      (replace_first
+         ~needle:{|{ "kind": "attributeValue", "label": "J1",
+                  "attribute": "aantal gevulde vondstgewichten", "value": { "number": "1" } }|}
+         ~by:{|{ "kind": "attributeEmpty", "label": "J1", "attribute": "aantal gevulde vondstgewichten" }|}
+         filled_count_case);
+  (* EF-022 behind the rule's condition: ref walks no day, and neither table day faults *)
+  let other_day =
+    dk_doc ~day_kinds:two_day_kinds
+      ~day_kinds_defs:
+        (Printf.sprintf
+           {|{ "node": "DayKindDefinition", "dayKind": "nevelsdag",
+               "condition": { "node": "Predicate", "kind": "dayKind",
+                               "operand": { "node": "Literal", "value": { "date": "2026-03-15" },
+                                            "type": { "node": "Date", "precision": "day" }, "source": { "snippet": "15-03-2026" } },
+                               "dayKind": "mistdag", "negated": false, "digits": 0,
+                               "source": { "snippet": "15-03-2026 een mistdag is" } },
+               "validity": { "node": "Validity" } },
+             { "node": "DayKindDefinition", "dayKind": "mistdag", "condition": %s,
+               "validity": { "node": "Validity" } }|}
+           (part_equal "dayOf" "1"))
+      ~value_node:(step_item ()) ()
+  in
+  let uitkomst_empty =
+    replace_first ~needle:{|"expected": [ { "kind": "consistent" } ]|}
+      ~by:{|"expected": [ { "kind": "attributeEmpty", "label": "B1", "attribute": "uitkomst" }, { "kind": "consistent" } ]|}
+      dk_case
+  in
+  both_answer ~name:"EF-022: a nested day-kind test on another day behind a condition that fails"
+    ~ir:(behind_one_above_two other_day) ~case_text:uitkomst_empty;
+  (* EF-024: ref asks it of every instance of the type, so a type without one
+     faults nowhere; with an instance it faults at solving *)
+  let corpus rel =
+    In_channel.with_open_text (if Sys.file_exists rel then rel else Filename.concat "../../../../.." rel)
+      In_channel.input_all
+  in
+  let two_keys = corpus "corpus/red/uniqueness-two-temporal-keys/ir.json" in
+  both_answer ~name:"EF-024: a key with two temporal components over a type without instances" ~ir:two_keys
+    ~case_text:{|{ "format": "uchar-case-v0", "asOfDate": null, "input": { "instances": [], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|};
+  faults_at_solving ~code:("EF-024", []) ~name:"EF-024: a key with two temporal components over an instance"
+    ~ir:two_keys
+    ~case_text:
+      (replace_first ~needle:{|"expectedFault": {
+    "code": "EF-024",
+    "params": {}
+  }|} ~by:{|"expected": [ { "kind": "consistent" } ]|}
+         (corpus "corpus/red/uniqueness-two-temporal-keys/case1.json"))
+    ~needle:"at most one temporal key component" ();
+  (* EF-011 in the justification of a default below the one that decides: the
+     zeer zware vondst of 150 is oud by the higher default, so ref never reads
+     the Rekenjaar of the lower one; of 50 it does (the red case) *)
+  let bottom = corpus "corpus/red/defaults-negation-at-bottom-without-evaluation-date/ir.json" in
+  both_answer ~name:"EF-011: a default below the one that decides reads no evaluation date" ~ir:bottom
+    ~case_text:{|{ "format": "uchar-case-v0", "asOfDate": null, "input": { "instances": [
+    { "label": "V1", "objectType": "Vondst", "attributes": { "vondstjaar": { "number": "2026" }, "gewicht": { "number": "150" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "characteristicPresent", "label": "V1", "characteristic": "oud" }, { "kind": "consistent" } ] }|};
+  faults_at_solving ~code:("EF-011", []) ~name:"EF-011: the default at its turn reads the Rekenjaar" ~ir:bottom
+    ~case_text:{|{ "format": "uchar-case-v0", "asOfDate": null, "input": { "instances": [
+    { "label": "V1", "objectType": "Vondst", "attributes": { "vondstjaar": { "number": "2026" }, "gewicht": { "number": "50" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+    ~needle:"the evaluationYear context value needs an evaluation date" ();
+  (* EF-018: raised wherever the creation is run, in both executors *)
+  let backlink = corpus "corpus/red/ambiguous-backlink/ir.json" in
+  let gated =
+    replace_first ~needle:{|"initialisations": [],|}
+      ~by:
+        (Printf.sprintf {|"initialisations": [], "condition": %s,|}
+           (pf_cmp "greater" (pf_l ~typ:pf_n0 "1") (pf_l ~typ:pf_n0 "2")))
+      backlink
+  in
+  let case_text =
+    {|{ "format": "uchar-case-v0", "asOfDate": null, "input": { "instances": [
+    { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ { "kind": "consistent" } ] }|}
+  in
+  let doc, case = load_pair ~ir:gated ~case_text in
+  let needle = "the created object's back-link is ambiguous" in
+  (match ref_report doc case with
+  | (_ : string list) -> check "EF-018 behind a condition that fails: ref faults (got a world)" false
+  | exception Uchar_ref.Value.Fault { code; text = m; _ } ->
+      check ("EF-018 behind a condition that fails: ref faults (" ^ m ^ ")")
+        (code = Some "EF-018" && Uchar_ref.Case.contains ~needle m));
+  match translate doc case with
+  | (_ : string) -> check "EF-018 behind a condition that fails: clingo faults (got a program)" false
+  | exception Uchar_ref.Value.Fault { code; text = m; _ } ->
+      check ("EF-018 behind a condition that fails: clingo faults (" ^ m ^ ")")
+        (code = Some "EF-018" && Uchar_ref.Case.contains ~needle m)
+
+(* The days on which a day-kind condition faults, walked as ref walks them
+   (RUNTIME-SEMANTICS ch. 3.8, 5.10): "TEN MINSTE 1 [de dag uit de dag gelijk
+   aan 11, de dag later is dan de grensdatum]" with grensdatum unbound reads the
+   parameter on every day but the 11th, where the composite stops. From
+   2026-03-10 one nevelsdag on is the 11th, found before any day that reads the
+   parameter; two read the 12th and fault. A step of 0 walks no day. The count
+   over (2026-03-10, 2026-03-11] reads the 11th alone; over (2026-03-10,
+   2026-03-12] it reads the 12th; over an empty interval no day. *)
+let () =
+  let later =
+    Printf.sprintf
+      {|{ "node": "Comparison", "op": "later", "left": %s,
+          "right": { "node": "ParameterReference", "parameter": "grensdatum", "source": { "snippet": "de grensdatum" } },
+          "source": { "snippet": "de dag later is dan de grensdatum" } }|}
+      the_day
+  in
+  let parameters = {|{ "node": "Parameter", "name": "grensdatum", "datatype": { "node": "Date", "precision": "day" } }|} in
+  let precondition = compound "atLeast" 1 [ part_equal "dayOf" "11"; later ] in
+  let case termijn rows =
+    Printf.sprintf
+      {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ { "label": "B1", "objectType": "Baken",
+      "attributes": { "peildatum": { "date": "2026-03-10" }, "termijn": { "number": "%s" } },
+      "roles": {}, "characteristics": [] } ], "parameters": {} },
+  "expected": [ %s ] }|}
+      termijn (String.concat ", " rows)
+  in
+  let step = dk_doc ~precondition ~parameters ~value_node:(step_item ()) () in
+  let uitkomst v = pf_is ~label:"B1" ~attr:"uitkomst" ~variant:"date" v in
+  both_answer ~name:"day-kind step: one day on, found before a day that faults (dk-walk-1)" ~ir:step
+    ~case_text:(case "1" [ uitkomst "2026-03-11"; pf_cons ]);
+  faults_at_solving ~code:("EF-014", [ ("parameter", "grensdatum") ])
+    ~name:"day-kind step: two days on, the walk reads a day that faults (dk-walk-2)" ~ir:step
+    ~case_text:(case "2" [ pf_cons ]) ~needle:(pf_reason "grensdatum") ();
+  both_answer ~name:"day-kind step of 0 walks no day (dk-walk-0)" ~ir:step
+    ~case_text:(case "0" [ uitkomst "2026-03-10"; pf_cons ]);
+  let nevelsdagen =
+    {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified",
+        "unit": [{ "node": "Unit", "abbreviation": "nevelsdagen", "canonical": "nevelsdagen", "factorToCanonical": { "num": 1, "den": 1 } }] }|}
+  in
+  let count until =
+    dk_doc ~precondition ~parameters ~objective_type_name:nevelsdagen
+      ~value_node:
+        (Printf.sprintf
+           {|{ "node": "BuiltinCall", "kind": "duration", "arguments": [ %s, %s ], "type": %s,
+               "source": { "snippet": "de tijdsduur van zijn peildatum tot de grensdag in nevelsdagen" } }|}
+           (as_of_date ()) until nevelsdagen)
+      ()
+  in
+  let day d = pf_l ~typ:pf_date d in
+  let uitkomst n = pf_is ~label:"B1" ~attr:"uitkomst" n in
+  both_answer ~name:"day-kind count over the 11th alone (dk-count-1)" ~ir:(count (day "2026-03-11"))
+    ~case_text:(case "1" [ uitkomst "1"; pf_cons ]);
+  faults_at_solving ~code:("EF-014", [ ("parameter", "grensdatum") ])
+    ~name:"day-kind count up to the 12th reads a day that faults (dk-count-2)" ~ir:(count (day "2026-03-12"))
+    ~case_text:(case "1" [ pf_cons ]) ~needle:(pf_reason "grensdatum") ();
+  both_answer ~name:"day-kind count over an empty interval reads no day (dk-count-0)" ~ir:(count (as_of_date ()))
+    ~case_text:(case "1" [ uitkomst "0"; pf_cons ])
+
+(* EF-037 where whether the read is reached hangs on the order of the members a
+   creation adds (ch. 3.9a/5.7a): the point read of a schuit's peil in the
+   matrix "TEN MINSTE 1 [lengte > 5, de peil op 1 januari 2025 > 0]" of "TEN
+   MINSTE 1 schuiten" of a Werf, its schuit S1 of the case with the peil as the
+   asOfDate-bucket scalar, and one schuit created for every Werf. S1 of 3 beside
+   a created 8: the 8 settles the fold where it comes first and S1 does not, so
+   one allowed order reads S1's peil and another does not, and clingo refuses
+   in the named sentence (CLINGO-035), whichever order ref keeps. S1 of 3 beside
+   a created 3: every order reads S1's peil, EF-037 in ref's words. S1 of 8:
+   S1 settles the fold at itself, so no order reads its peil, and both play. *)
+let () =
+  let werf = pf_ot ~ident:"Werf" ~plural:"Werven" [ ("keur", pf_n0) ]
+  and schuit = pf_ot ~ident:"Schuit" ~plural:"Schuiten" ~grain:[ ("peil", "month") ] [ ("lengte", pf_n0); ("peil", pf_n0) ] in
+  let ligplaats =
+    {|{ "node": "FactType", "name": "ligplaats", "reciprocal": false, "roles": [
+      { "node": "Role", "name": "werf", "objectType": "Werf", "many": false },
+      { "node": "Role", "name": "schuit", "objectType": "Schuit", "plural": "schuiten", "many": true } ] }|}
+  in
+  let schuiten = {|{ "node": "RoleBinding", "factType": "ligplaats", "role": "schuit" }|} in
+  let gt l r = pf_cmp "greater" l r and lit v = pf_l ~typ:pf_n0 v in
+  let peil =
+    Printf.sprintf
+      {|{ "node": "TemporalRead", "base": %s, "date": %s, "type": %s, "source": { "snippet": "de peil op 1 januari 2025" } }|}
+      (pf_a ~ot:"Schuit" "peil") (pf_l ~typ:pf_date "2025-01-01") pf_n0
+  in
+  let fold =
+    Printf.sprintf
+      {|{ "node": "QuantifierFold", "quantifier": "atLeast", "threshold": 1, "elementType": "Schuit", "test": %s,
+          "source": { "snippet": "de schuiten" }, "sourceRole": %s }|}
+      (pf_comp ~cutoff:1 "atLeast" [ gt (pf_a ~ot:"Schuit" "lengte") (lit "5"); gt peil (lit "0") ])
+      schuiten
+  in
+  let creation v =
+    Printf.sprintf
+      {|{ "node": "ObjectCreation", "name": "maak schuit", "versions": [ { "createdType": "Schuit", "subject": "Werf",
+          "initialisations": [ { "node": "MemberInit", "member": "lengte", "value": %s, "characteristic": false } ],
+          "validity": { "node": "Validity" }, "connectingRole": %s } ] }|}
+      (lit v) schuiten
+  in
+  let doc v =
+    pf_doc ~object_types:[ werf; schuit ] ~fact_types:ligplaats
+      ~rule_defs:[ pf_rule ~ot:"Werf" ~objective:"keur" ~precondition:fold (lit "99") ]
+      ~creations:[ creation v ] ()
+  in
+  let case s1 rows =
+    pf_case ~as_of:{|"2025-01-15"|}
+      ~instances:
+        [ {|{ "label": "W1", "objectType": "Werf", "attributes": {}, "roles": { "schuiten": [ "S1" ] }, "characteristics": [] }|};
+          Printf.sprintf
+            {|{ "label": "S1", "objectType": "Schuit", "attributes": { "lengte": { "number": "%s" }, "peil": { "number": "4" } },
+                "roles": {}, "characteristics": [] }|}
+            s1 ]
+      rows
+  in
+  let keur = [ pf_is ~label:"W1" ~attr:"keur" "99"; pf_cons ] in
+  (* one allowed order reads S1's peil; ref's own order reads S1, the case's
+     link, first *)
+  let some_order = doc "8" and case3 = case "3" keur in
+  (let d, c = load_pair ~ir:some_order ~case_text:case3 in
+   match ref_report d c with
+   | (_ : string list) -> check "EF-037, some order: ref faults in its own order (got a world)" false
+   | exception Uchar_ref.Value.Fault { code; text = m; _ } ->
+       check ("EF-037, some order: ref faults in its own order (" ^ m ^ ")") (code = Some "EF-037"));
+  faults_at_solving ~code:("CLINGO-035", []) ~name:"EF-037, some order: clingo refuses in the named sentence"
+    ~ir:some_order ~case_text:case3
+    ~needle:{|whether the quantifier fold "de schuiten" reaches it depends on the order of the members a creation adds|}
+    ();
+  (* every allowed order reads S1's peil *)
+  let every_order = doc "3" in
+  (let d, c = load_pair ~ir:every_order ~case_text:case3 in
+   match ref_report d c with
+   | (_ : string list) -> check "EF-037, every order: ref faults (got a world)" false
+   | exception Uchar_ref.Value.Fault { code; text = m; _ } ->
+       check ("EF-037, every order: ref faults (" ^ m ^ ")") (code = Some "EF-037"));
+  faults_at_solving ~code:("EF-037", [ ("attribute", "peil"); ("label", "S1") ])
+    ~name:"EF-037, every order: clingo faults in ref's words" ~ir:every_order ~case_text:case3
+    ~needle:"the temporal read of \"peil\" needs the full timeline" ();
+  (* no allowed order reads S1's peil *)
+  both_answer ~name:"EF-037, no order: S1 of 8 settles the fold at itself" ~ir:every_order ~case_text:(case "8" keur)
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
