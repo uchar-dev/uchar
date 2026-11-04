@@ -1,4 +1,4 @@
-WF-126.value-grid
+WF-126.consequence-grid
 operand=the attribute 'dagtoeslag'
 operandGrid=day
 target=wachtgeld

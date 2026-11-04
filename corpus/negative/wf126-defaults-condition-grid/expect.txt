@@ -1,4 +1,4 @@
-WF-126.condition-grid
+WF-126.justification-grid
 operand=the characteristic 'kustwacht'
 operandGrid=day
 target=wachtgeld

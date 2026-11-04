@@ -12421,20 +12421,21 @@ let wf126 ctx =
   let calendar g = (g, None) in
   (* the judges of one form on the timeline target [a] of [ot], on the grid [target]:
      its value and its condition, named in the message by [value_word] and
-     [condition_word] *)
+     [condition_word], each its own arm *)
   let judges ~(ot : object_type) ~a ~target ~form ~value_word ~condition_word =
-    let judge kind at what operand =
+    let judge side at what operand =
+      let word_of = match side with `Value -> value_word | `Condition -> condition_word in
       match operand with
       | Some operand when not (grid_fits ~operand ~target) ->
           [ v
               ~params:
                 [ ("operand", what); ("operandGrid", word (fst operand)); ("target", a);
                   ("targetGrid", word (fst target)) ]
-              ("WF-126." ^ kind) at
+              ("WF-126." ^ word_of ^ "-grid") at
               (Printf.sprintf
                  "%s, read per period by the %s of a %s on the timeline target '%s', lies on the %s \
                   grid, which does not fit the %s grid of the target: the target cannot carry its cuts"
-                 what (if kind = "value-grid" then value_word else condition_word) form a (word (fst operand))
+                 what word_of form a (word (fst operand))
                  (word (fst target))) ]
       | _ -> []
     in
@@ -12446,25 +12447,25 @@ let wf126 ctx =
       | Attribute_reference { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ }
         -> (
           match object_type ctx botn with
-          | Some bot -> judge "value-grid" at (Printf.sprintf "the attribute '%s'" b) (attr_grid bot b)
+          | Some bot -> judge `Value at (Printf.sprintf "the attribute '%s'" b) (attr_grid bot b)
           | None -> [])
       | Function_call
           { kind = Sum_function; element_object_type = Some el;
             call_arguments = [ Attribute_reference { attribute_ref = Some x; _ } ]; _ } -> (
           match object_type ctx el with
-          | Some elt -> judge "value-grid" (at ^ "/arguments/0") (Printf.sprintf "the attribute '%s'" x) (attr_grid elt x)
+          | Some elt -> judge `Value (at ^ "/arguments/0") (Printf.sprintf "the attribute '%s'" x) (attr_grid elt x)
           | None -> [])
       | Parameter_ref { parameter = Some p; _ } -> (
           match find_ci ctx.doc.parameters p with
           | Some { par_granularity = Some g; par_fixed_start_point; par_timeline_count; _ }
             when Option.value par_timeline_count ~default:1 = 1 ->
-              judge "value-grid" at (Printf.sprintf "the parameter '%s'" p) (Some (g, par_fixed_start_point))
+              judge `Value at (Printf.sprintf "the parameter '%s'" p) (Some (g, par_fixed_start_point))
           | _ -> [])
       | Rounding { base_expr = Some b; _ } -> value (at ^ "/base") b
       | _ -> []
     in
     let qualifier at (gp : entire_period) =
-      judge "condition-grid" at "the whole-period qualifier" (Some (calendar (if gp.gp_granularity then Year else Month)))
+      judge `Condition at "the whole-period qualifier" (Some (calendar (if gp.gp_granularity then Year else Month)))
     in
     let rec condition at (c : condition_expr) =
       match c with
@@ -12473,7 +12474,7 @@ let wf126 ctx =
           qualifier at gp
       | Characteristic_check { characteristic = Some k; navigation_binding = None; _ } -> (
           match find_ci ot.characteristic_granularity k with
-          | Some (Some g) -> judge "condition-grid" at (Printf.sprintf "the characteristic '%s'" k) (Some (calendar g))
+          | Some (Some g) -> judge `Condition at (Printf.sprintf "the characteristic '%s'" k) (Some (calendar g))
           | _ -> [])
       | Comparison { left_side; right_side; _ } ->
           let side key e =
@@ -12481,7 +12482,7 @@ let wf126 ctx =
             | Some (Attribute_reference { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ })
               -> (
                 match object_type ctx botn with
-                | Some bot -> judge "condition-grid" (at ^ key) (Printf.sprintf "the attribute '%s'" b) (attr_grid bot b)
+                | Some bot -> judge `Condition (at ^ key) (Printf.sprintf "the attribute '%s'" b) (attr_grid bot b)
                 | None -> [])
             | _ -> []
           in
