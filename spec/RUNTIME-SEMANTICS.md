@@ -3794,7 +3794,6 @@ and in the READMEs of the backends.
 | 7 | **A time-dependent characteristic outside a window** | ch. 3.3, 3.10, 3.11 | The write of a characteristic is defined within a window. No meaning: periods with an open bound (EF-023), so an unconditional characteristic and a negated check outside a window. Not defined: a write without a window, two rules on one characteristic, a case-supplied timeline of a characteristic a rule writes, a navigated characteristic in the condition of the write, and a time-dependent characteristic as the operand of the point read (the case format). A defaults group on a time-dependent characteristic is ill-formed (`IR-SPEC.md` WF-086). Open: each of these. |
 | 8 | **The period window and the axis of versions** | ch. 3.10 | (a) A rule version's validity window on a temporal write mixes the selection of versions with the timeline axis; it belongs to the single-axis decision of ch. 8 (PLAN §9, decision 2), and no golden carries a validity window on a temporal rule; a defaults group's validity on a timeline target gates by the evaluation date in the same way (ch. 7.11, `WV-7.11-versie`). (b) A window in the `filter` of an `all` quantifier fold in a session without an evaluation date never matches, so the member is filtered out and the fold is vacuously waar; WF-112 is not widened to it (`corpus/golden/jutterswet-wachtvenster`, `bevoegd` in `case3-tijdvrij`). (c) A clip that cuts a bucket has no corpus carrier, because the case format pins every expected timeline to the declared grid; the alternative, a WF rule that demands bounds on the grid for a clip, is not taken. Open: (a), the reading of (b), and a case format that releases expected timelines from the grid. |
 | 9 | **The subject's own total of a case-supplied timeline** | ch. 3.6, 8.4 | It reads the asOfDate bucket, one period of the grid that holds the evaluation date, while a timeline a rule writes is totalled whole, so the meaning of "het totaal van zijn X" depends on who wrote X. Open: whether the own total of a case timeline reads the whole timeline, as every other timeline is read over all time, which changes the case convention of ch. 8.4. |
-| 10 | **The reading of a default per day** | ch. 5.12, 7.11 | Ch. 5.12 reads a form per subject, a default at its turn or displaced; a default of a group on a timeline target is at its turn on some days and displaced on others. Open: its reading, the periods of its justification and the timeline of its consequence per day. |
 
 ---
 
@@ -6268,11 +6267,12 @@ allocation, a creation — has none: there is nothing to read.
 |--------|------|-------|
 | `HOLDS` | the condition holds | the nodes of the condition, and of the value |
 | `HOLDS` | the form has no condition and is at its turn | the nodes of the value |
+| `HOLDS` | the form is a default of a group on a timeline target that is at its turn on at least one day (ch. 7.11; **A default on a timeline target**, below) | the nodes of its justification, and of its consequence where the justification holds on some day |
 | `FAILS` | the condition does not hold | the nodes of the condition |
 | `FAULTS` | the evaluation of the condition faults (ch. 5.7) | the nodes, the fault at those it reached |
 | `FAULTS` | the form has a dated validity and the session no evaluation date (ch. 8.1) | none |
-| `DISPLACED` | the form is a default that is not at its turn because a higher default of its chain decided or settled (ch. 7.1, 7.9): a default below the one that decides, at the root or in an exception group, and every default inside its exception groups; the content of a default whose exception groups settled; an ordinary rule that ch. 7.10 folds into a stack, below the default that decides; the initialisation default below the default that decides, where the input leaves its target empty | the nodes of the condition, and of the value where the condition holds, as at its turn (**A displaced default is read**, below) |
-| `DISPLACED` | the target of an initialisation — a rule's, a folded one's in a stack, or the initialisation default's — holds a value of the input or of another writer (ch. 5.4, 7.3); the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
+| `DISPLACED` | the form is a default that is not at its turn because a higher default of its chain decided or settled (ch. 7.1, 7.9): a default below the one that decides, at the root or in an exception group, and every default inside its exception groups; the content of a default whose exception groups settled; an ordinary rule that ch. 7.10 folds into a stack, below the default that decides; the initialisation default below the default that decides, where the input leaves its target empty; on a timeline target, a default at its turn on no day (ch. 7.11) | the nodes of the condition, and of the value where the condition holds, as at its turn (**A displaced default is read**, below) |
+| `DISPLACED` | the target of an initialisation — a rule's, a folded one's in a stack, or the initialisation default's — holds a value of the input or of another writer (ch. 5.4, 7.3), on a timeline target on every day; the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
 | `OUTSIDE_VALIDITY` | the validity window of the form does not admit the evaluation date (ch. 8.2) | none |
 
 The session does not evaluate a form that is not at its turn or outside its
@@ -6360,6 +6360,79 @@ Not so: an initialisation whose target the input or another writer fills
 justification (nothing to read, displaced or not), and a member of a
 declared-unordered group of exception groups, which decides on its own
 (ch. 7.2, 7.9) and is at its turn wherever the default that carries it is.
+
+**A default on a timeline target** (card `defaults-per-period-on-timeline`,
+2026-11-04). A default of a group on a timeline target decides per day
+(ch. 7.11), and its reading is the reading per day. Its justification is read
+per period, as the condition of a rule on a timeline target (ch. 3.10), each
+of its nodes the part of all time in which it holds. Its consequence, where
+the justification holds on at least one day, is read as a producer of
+ch. 3.11: each node below its root the timeline it reads or computes, or its
+value where it is a scalar, and the root the filled segments of the
+consequence's timeline within the periods of the justification, the timeline
+the default would write; where the justification holds on no day, the
+consequence is not reached. A default without a justification, the
+initialisation default among them, reads its consequence alone, its root the
+whole filled timeline. Both are read over all time, whatever the days of the
+default's turn. A day of its turn is a day on which no strictly higher default
+of its chain settled (ch. 7.1, 7.9), within the days of the turn of the
+default whose exception group its chain is; the days of the turn of the
+content of a default with exception groups are those days of its turn on
+which none of its exception groups settled; and those of the initialisation
+default the days of its turn on which the input leaves its target empty. Its
+status is `HOLDS` where it is at its turn on at least one day and `DISPLACED`
+where it is on none, with the same nodes, read as at its turn (**A displaced
+default is read**, above); the initialisation default whose input fills its
+target on every day is `DISPLACED` without nodes, as on a scalar target. A
+justification that faults leaves the status `FAULTS` where the default is at
+its turn on some day and `DISPLACED` where it is on none, the fault at its
+nodes. The status line names no days: the days of the turn follow from the
+readings of the defaults above, the periods of each justification and the
+filled segments of each consequence, by the rule of ch. 7.11.
+
+Worked example `WV-5.12-default-per-dag` (absolute; `ref/test/` verbatim, the
+golden `jutterswet-opgave-per-periode` of ch. 7.11). The defaults
+`/rules/prioritizedDefaults/0/defaults/0`, the opgave, and `/1`, the
+computation, each number node 0 `Compound` (the justification "altijd", a
+composite without members, which reads no timeline and holds on every day)
+and node 1 `AttributeReference` (the consequence); the initialisation default
+of the stormtoelage, `/rules/prioritizedDefaults/1/defaults/2`, numbers node 0
+`Literal`. Their readings on case 2 (J2, the opgave 10 on January and February
+2025) and on a case J6 of the same document with the opgave 10 and the opgave
+12 on all time and the input 7 on the stormtoelage on all time:
+
+| form | J2 | J6 |
+|------|----|----|
+| `…/0/defaults/0` | `HOLDS`: `[[- - empty]]`, `[[2025-01-01 2025-03-01 10]]` | `HOLDS`: `[[- - empty]]`, `[[- - 10]]` |
+| `…/0/defaults/1` | `HOLDS`: `[[- - empty]]`, `[[2025-03-01 2025-06-01 20]]` | `DISPLACED`: `[[- - empty]]`, `[[2025-03-01 2025-06-01 20]]` |
+| `…/1/defaults/0` | `HOLDS`: `[[- - empty]]`, `[]` | `HOLDS`: `[[- - empty]]`, `[[- - 12]]` |
+| `…/1/defaults/1` | `HOLDS`: `[[- - empty]]`, `[]` | `DISPLACED`: `[[- - empty]]`, `[[2025-10-01 2026-01-01 30]]` |
+| `…/1/defaults/2` | `HOLDS`: `[[- - 0]]` | `DISPLACED`, no nodes |
+
+On J2 the computation is at its turn on every day outside January and February
+and reads the 20 it writes in spring; on J6 the opgave decides every day, so
+the computation is at its turn on none and is read all the same. The
+initialisation default of J6 has no nodes: the input fills the stormtoelage on
+every day. In the canonical text J6 reads, for the strandloon:
+
+```
+/rules/prioritizedDefaults/0/defaults/0 "J6" 0 Compound [[- - empty]]
+/rules/prioritizedDefaults/0/defaults/0 "J6" 1 AttributeReference [[- - 10]]
+/rules/prioritizedDefaults/0/defaults/0 "J6" HOLDS
+/rules/prioritizedDefaults/0/defaults/1 "J6" 0 Compound [[- - empty]]
+/rules/prioritizedDefaults/0/defaults/1 "J6" 1 AttributeReference [[2025-03-01 2025-06-01 20]]
+/rules/prioritizedDefaults/0/defaults/1 "J6" DISPLACED
+```
+
+On the document of `WV-7.11-uitzondering` with a Jutter J3 without kustwacht
+and the basisloon 10 on 2025, the exception reads `0 CharacteristicCheck []`
+and `1 Literal unreached`, `HOLDS`: its justification holds on no day, so its
+consequence is not reached, and it is at its turn on every day
+(`WV-5.12-default-per-dag-niet-gerechtvaardigd`). On the document of
+`WV-7.11-verdrongen-conflict` the default of 30 and the members of its
+exception groups are at their turn on every day outside April, which the
+default of 60 settles, and each reads `HOLDS` with its periods
+(`WV-5.12-default-per-dag-uitzonderingsgroepen`).
 
 **A reading deposits nothing and writes nothing.** A §9.5 deposit the
 evaluation makes is dropped, a value it computes is written nowhere, and no
@@ -6895,7 +6968,10 @@ written-back beans. `WV-5.12-nestuitzondering-verdrongen` and
 `WV-5.12-vondstwaardering-verdrongen` (the two examples above) and
 `WV-5.12-fout-in-een-verdrongen-default` (a justification of a displaced
 default that faults: the fault at its nodes, the status `DISPLACED`) pin
-the reading of a displaced default in `ref/`, the last also in the Drools
+the reading of a displaced default in `ref/`, and
+`WV-5.12-default-per-dag` with its three rows the reading of a default on a
+timeline target, which the Drools backend's `TmsDefaultsPerDayWitnessTest`
+holds on both its branches as well; the last also in the Drools
 backend's `ReadingsWitnessTest`, beside its records of displaced defaults:
 an attribute default that held and gave a value, one that held and gave
 none, one that did not hold, a characteristic default, a default in an
@@ -8733,7 +8809,11 @@ not fit does on a scalar target (ch. 7.1).
 **The evaluation.** A default's evaluation is the evaluation of its
 justification and its consequence over all time (ch. 3.11, "a whole timeline
 at once"); what it deposits on the §9.5 channel stands where it decides on at
-least one day (ch. 7.1, the speculative deposit).
+least one day (ch. 7.1, the speculative deposit). A default is evaluated where
+it is at its turn on some day, and its consequence where its justification
+holds on a day of its turn, so a consequence that is not evaluated raises no
+fault. Its reading at the fixpoint is the reading per day of ch. 5.12 (**A
+default on a timeline target**).
 
 **The scalar target is the case of one segment.** A scalar is the timeline
 (−∞, +∞) (ch. 3.1), so on a scalar target the reading per day is the reading
@@ -8780,8 +8860,9 @@ justified on the days the input leaves empty, and in January and February the
 input stands.
 
 Worked examples on the forms of the dialect (`ref/test/` verbatim, the
-documents of `ref/test/fixtures/defaults-per-day`, which the suite of the ASP
-backend plays as well), each a whole number for every month:
+documents of `ref/test/fixtures/defaults-per-day`, which the suites of the ASP
+and the Drools backend play as well, the ASP backend all but
+`lazy-consequence`, below), each a whole number for every month:
 
 - `WV-7.11-uitzondering`: "Het strandloon moet berekend worden als zijn
   basisloon" with the exception "… gesteld worden op 30 indien hij kustwacht
@@ -8812,6 +8893,30 @@ backend plays as well), each a whole number for every month:
 - `WV-7.11-versie`: the base 5 and the exception 30 "indien hij kustwacht is",
   both "geldig vanaf 2025", on 2025-07-01, kustwacht in spring: **5**, **30**,
   **5**.
+- `WV-7.11-gevolg-buiten-de-beurt`: the base 5, above it "… berekend worden
+  als zijn kustloon indien hij kustwacht is", and above that 60 "indien hij
+  winterwacht is"; the case gives the kustloon as the asOfDate-bucket scalar 40
+  on 2025-07-01. Without kustwacht: **5** on all time; with kustwacht and
+  winterwacht in April 2025: **5**, **60** in April, **5**, and no fault — the
+  consequence is not evaluated, since its justification holds on no day of its
+  turn. With kustwacht from June to August 2025 it is, and faults: **EF-037**,
+  attribute `kustloon`, label `J1` (`WV-7.11-gevolg-buiten-de-beurt-fout`).
+  The ASP backend reads the bucket scalar while it translates the document,
+  and faults with EF-037 on both cases.
+- `WV-7.11-deponering`: the base 5 and above it "… berekend worden als (zijn
+  basisloon gedeeld door zijn deler) naar beneden afgerond op 0 decimalen
+  indien hij kustwacht is", the basisloon 20 on 2025 and the deler 0 up to
+  2025-04-01 and 2 from then to 2026-01-01. Kustwacht from March to May: **5**
+  on (−∞, 2025-04-01), **10** on [2025-04-01, 2025-06-01), **5** on
+  [2025-06-01, +∞), and one fact `Jutter.strandloon` of EF-005 — the default
+  decides April and May, and its division by 0 deposits; kustwacht in March
+  alone: **5** on all time and no fact — it decides no day.
+
+Worked example `WV-7.11-initialisatie-emmerscalair` (the golden
+`jutterswet-opgave-per-periode`): the case gives the stormtoelage as the
+asOfDate-bucket scalar 7 on 2025-07-01, which carries no period, so the
+initialisation default cannot read on which days the input leaves its target
+empty: **EF-037**, attribute `stormtoelage`, label `J7`.
 
 ## 9. Sum types and match
 
