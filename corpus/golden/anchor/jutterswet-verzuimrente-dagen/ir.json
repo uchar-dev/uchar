@@ -13,8 +13,8 @@
             "name": "afdrachtbedrag",
             "datatype": {
               "node": "Number",
-              "whole": true,
-              "decimals": 0,
+              "whole": false,
+              "decimals": 2,
               "sign": "unspecified",
               "unit": [
                 {
@@ -52,7 +52,7 @@
             "datatype": {
               "node": "Number",
               "whole": false,
-              "decimals": 2,
+              "decimals": 0,
               "sign": "unspecified",
               "unit": [
                 {
@@ -90,7 +90,7 @@
             "datatype": {
               "node": "Number",
               "whole": false,
-              "decimals": 2,
+              "decimals": 0,
               "sign": "unspecified",
               "unit": [
                 {
@@ -251,7 +251,7 @@
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 2,
+                "decimals": 4,
                 "sign": "unspecified",
                 "unit": [
                   {
@@ -303,57 +303,31 @@
               }
             },
             "value": {
-              "node": "Rounding",
-              "base": {
-                "node": "Aggregation",
-                "kind": "total",
-                "arguments": [
-                  {
-                    "node": "AttributeReference",
-                    "attribute": "dagrente",
-                    "subjectType": "Afdracht",
-                    "source": {
-                      "snippet": "zijn dagrente"
-                    }
-                  }
-                ],
-                "elementType": "Afdracht",
-                "filter": {
-                  "node": "CharacteristicCheck",
-                  "characteristic": "rentedragend",
-                  "negated": false,
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "dagrente",
+                  "subjectType": "Afdracht",
                   "source": {
-                    "snippet": "gedurende de tijd dat hij rentedragend is"
+                    "snippet": "zijn dagrente"
                   }
-                },
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 2,
-                  "sign": "unspecified",
-                  "unit": [
-                    {
-                      "node": "Unit",
-                      "abbreviation": "EUR",
-                      "system": "Munt",
-                      "canonical": "EUR",
-                      "factorToCanonical": {
-                        "num": 1,
-                        "den": 1
-                      }
-                    }
-                  ]
-                },
+                }
+              ],
+              "elementType": "Afdracht",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "rentedragend",
+                "negated": false,
                 "source": {
-                  "snippet": "het totaal van zijn dagrente gedurende de tijd dat hij rentedragend is"
+                  "snippet": "gedurende de tijd dat hij rentedragend is"
                 }
               },
-              "mode": "halfAwayFromZero",
-              "decimals": 2,
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 2,
+                "decimals": 0,
                 "sign": "unspecified",
                 "unit": [
                   {
@@ -369,7 +343,7 @@
                 ]
               },
               "source": {
-                "snippet": "(het totaal van zijn dagrente gedurende de tijd dat hij rentedragend is) rekenkundig afgerond op 2 decimalen"
+                "snippet": "het totaal van zijn dagrente gedurende de tijd dat hij rentedragend is"
               }
             },
             "initialisation": false,

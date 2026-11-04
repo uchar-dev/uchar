@@ -8,12 +8,12 @@ Eenheidsysteem Tijd
 Parameter de verzuimrentevoet : Numeriek (getal met 2 decimalen) met eenheid 1/jr voor elke maand;
 
 Objecttype de Afdracht (mv: Afdrachten)
-    het afdrachtbedrag Numeriek (geheel getal) met eenheid €;
+    het afdrachtbedrag Numeriek (getal met 2 decimalen) met eenheid €;
     de vervaldatum Datum in dagen;
     de betaaldatum Datum in dagen;
     is rentedragend kenmerk (bijvoeglijk) voor elke dag;
-    de dagrente Numeriek (getal met 2 decimalen) met eenheid €/jr voor elke dag;
-    de verzuimrente Numeriek (getal met 2 decimalen) met eenheid €;
+    de dagrente Numeriek (getal) met eenheid €/jr voor elke dag;
+    de verzuimrente Numeriek (getal) met eenheid €;
 
 Regel dagrente
     geldig altijd
@@ -21,4 +21,4 @@ Regel dagrente
 
 Regel verzuimrente
     geldig altijd
-        De verzuimrente van een Afdracht moet berekend worden als (het totaal van zijn dagrente gedurende de tijd dat hij rentedragend is) rekenkundig afgerond op 2 decimalen.
+        De verzuimrente van een Afdracht moet berekend worden als het totaal van zijn dagrente gedurende de tijd dat hij rentedragend is.

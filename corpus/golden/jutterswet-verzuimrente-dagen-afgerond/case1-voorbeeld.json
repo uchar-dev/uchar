@@ -1,0 +1,83 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2026-03-12",
+  "input": {
+    "instances": [
+      {
+        "label": "A1",
+        "objectType": "Afdracht",
+        "attributes": {
+          "afdrachtbedrag": {
+            "number": "10000"
+          },
+          "vervaldatum": {
+            "date": "2025-11-15"
+          },
+          "betaaldatum": {
+            "date": "2026-03-12"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "rentedragend": [
+            {
+              "from": "2025-11-16",
+              "to": "2026-03-13"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {
+      "verzuimrentevoet": {
+        "timeline": [
+          {
+            "to": "2026-02-01",
+            "value": {
+              "number": "0.04"
+            }
+          },
+          {
+            "from": "2026-02-01",
+            "value": {
+              "number": "0.05"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "A1",
+      "attribute": "dagrente",
+      "timeline": [
+        {
+          "to": "2026-02-01",
+          "value": {
+            "number": "400"
+          }
+        },
+        {
+          "from": "2026-02-01",
+          "value": {
+            "number": "500"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeValue",
+      "label": "A1",
+      "attribute": "verzuimrente",
+      "value": {
+        "number": "139.18"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

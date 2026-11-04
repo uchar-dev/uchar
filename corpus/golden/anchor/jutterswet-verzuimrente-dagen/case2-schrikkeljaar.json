@@ -8,7 +8,7 @@
         "objectType": "Afdracht",
         "attributes": {
           "afdrachtbedrag": {
-            "number": "10000"
+            "number": "10000.00"
           },
           "vervaldatum": {
             "date": "2028-02-10"
@@ -73,7 +73,7 @@
       "label": "A1",
       "attribute": "verzuimrente",
       "value": {
-        "number": "73.77"
+        "number": "4500/61"
       }
     },
     {

@@ -1,6 +1,6 @@
 Violates WF-023 (`spec/IR-SPEC.md` ch. 3.1), the precision gate of RUNTIME-SEMANTICS ch. 2.4 on a temporal total the calendar integrates (ch. 2.3, ch. 3.6): a rate per year over a day grid totalled into a target of 2 decimals without a rounding.
 
-The anchor `corpus/golden/anchor/jutterswet-verzuimrente-dagen` without its rounding. A day weighs 1/365 or 1/366 of its year, so the total has no finite bound (139 13/73 € in the anchor's case 1); the anchor rounds it to the cent.
+The golden `corpus/golden/jutterswet-verzuimrente-dagen-afgerond` without its rounding. A day weighs 1/365 or 1/366 of its year, so the total has no finite bound (139 13/73 € in its case 1); the golden rounds it to the cent, and the anchor `corpus/golden/anchor/jutterswet-verzuimrente-dagen` holds it in a target of the unbounded form.
 
     WF-023.precision-unbounded FAIL /rules/rules/1/versions/0/value
 

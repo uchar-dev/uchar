@@ -17246,7 +17246,7 @@ let () =
      month family would stand in for it, and is refused by name (WF-009) *)
   faults_with ~name:"period arithmetic: calendar-family factor"
     ~ir:(read "corpus/negative/wf009-calendar-family-factor/ir.json")
-    ~case_text:(read "corpus/golden/anchor/jutterswet-verzuimrente-dagen/case2-schrikkeljaar.json")
+    ~case_text:(read "corpus/golden/jutterswet-verzuimrente-dagen-afgerond/case2-schrikkeljaar.json")
     ~needle:"by a declared factor between the day family and the month family of the calendar"
 
 

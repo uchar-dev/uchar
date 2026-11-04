@@ -247,7 +247,7 @@ class PrecisionGateTest {
             """, "RGS-370", unbounded(2));
     }
 
-    /** The negative wf023-precision-calendar-total, the anchor anchor/jutterswet-verzuimrente-dagen without its rounding;
+    /** The negative wf023-precision-calendar-total, the golden jutterswet-verzuimrente-dagen-afgerond without its rounding;
      *  {@code %s} is the value of the verzuimrente. */
     private static final String AFDRACHT = """
         Eenheidsysteem Munt
