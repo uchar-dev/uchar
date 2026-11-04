@@ -109,8 +109,8 @@ tweede bewaking naast een gehesen tak (`beside_hoisted_arms`, nu gedeeld met de 
 `reach_guard`; de term leidt niets af (`#false`). Een `Unresolved`-voorwaarde neemt haar bereik bij een verse
 expressie. EF-024 is `viol(…,S) :- isa(S,T).` per instantie van het type (ref vraagt het per instantie, ook een gemaakte),
 en dan wordt EF-020 niet meer gevraagd (ref geeft EF-024 eerst). Een clamp waarvan een grens zo'n contextwaarde is, stopt
-na die grens (zonder dat gaf `clamp-reads-bounds-in-order` CLINGO-005 op het maximum, waar ref EF-011 geeft). Bij de
-gemeten aanpak gaf de eerste meting van het nieuwe corpus deze clamp-casus; hij is gerepareerd vóór de commit.
+na die grens (zonder dat gaf `clamp-reads-bounds-in-order` CLINGO-005 op het maximum, waar ref EF-011 geeft; dat kwam
+aan het licht toen alle rode casussen door de nieuwe runner gingen, vóór de commit).
 
 Na (`logs/16-measure`, op `ee5e87dc9`): **13 vroege EF-fouten** (was 34): EF-004 ×6, EF-020 ×3, EF-018 ×2, EF-013,
 EF-012; op elk faalt ref met dezelfde code (EF-018 in de suite: het frame achter 1 > 2, waar ref ook faalt).
