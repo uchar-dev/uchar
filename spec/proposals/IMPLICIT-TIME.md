@@ -385,6 +385,13 @@ het besluit van 2026-11-02 per dag gelezen.
 - VB 5.1 — Een schrijver wiens tijdlijn op dag d leeg leest, beslist dag d niet. Dat volgt uit
   ch. 3.1 (een gat en een leeg segment zijn per `read` gelijk) en is ALEF's `merge`; de zin "a writer
   that fires with a leeg value writes leeg" van ch. 5.7 heeft per dag geen tegenhanger.
+- **Besluit van de eigenaar (2026-11-04), invoer naast schrijvers.** Op een tijdlijndoel beslist elke schrijver, ook een
+  enige, alleen de dagen waarop zijn tijdlijn een waarde leest; op een dag die geen schrijver beslist, staat de invoer (of
+  leeg); op een dag die een schrijver beslist, staat zijn waarde. Dat volgt ALEF (`merlin/lazy/MLazyTimedProperty.java`
+  r. 18–31: elke schrijfactie wordt per moment samengevoegd met de huidige waarde, de invoer inbegrepen; de specificatie
+  zwijgt, §9.3 zet invoer buiten haar bereik) en herziet voor het tijdlijndoel het besluit van 2026-08-21 (RS ch. 7.8, "the
+  timeline arm": de hele tijdlijn, invoer en berekende segmenten mengen nooit). Meting: `werk/writers-and-input/verslag.md`
+  (buiten de repo). Kaart `20261104-writers-per-day-beside-input`.
 - VB 5.2 — Eén fout EF-016 per (attribuut, onderwerp), met de schrijvers en de waarden van de eerste
   dag waarop ze verschillen; het register van ch. 5.7b verandert niet. Waar op een dag geen schrijver
   beslist, staat de invoertijdlijn van die dag of leeg (ch. 5.7, ch. 7.8 per dag).
