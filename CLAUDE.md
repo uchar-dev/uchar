@@ -508,7 +508,8 @@ missing line makes `make gates` exit non-zero. Current gates:
     `runtime-tijdconditie-leeg` (2026-11-03) DROOLS-222, since the card
     `timeline-arithmetic-per-period` (2026-11-03) DROOLS-030, DROOLS-036,
     DROOLS-304 and DROOLS-307, since the card `conditions-per-period`
-    (2026-11-03) DROOLS-302, DROOLS-104 and DROOLS-311; every raised code
+    (2026-11-03) DROOLS-302, DROOLS-104 and DROOLS-311, since the card
+    `writers-as-one-defaults-stack` (2026-11-04) DROOLS-142; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`
