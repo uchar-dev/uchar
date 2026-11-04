@@ -7351,8 +7351,8 @@ let () =
   check "WV-3.9-kenmerk-jaar-deelmaand" (not (ec ~link:true half_jan (cond ())));
   (* the OWN form — the same qualifier without a hop, read on the Werf
      itself. Every row above navigates, and so does the corpus golden, so
-     without this row the "own and navigated" of the ch. 3.12 delta line and
-     the CONSTRUCTS register would be a word with no artefact. Both
+     without this row the "own and navigated" of CONSTRUCTS row 29 would be
+     a word with no artefact. Both
      directions in one check: the full year passes, the half year does not,
      which is what separates the own arm from a constant. *)
   let own_cond : Ir_v0.Ast.condition_expr =

@@ -1270,20 +1270,19 @@ selections as the resolver built them.
 
 ---
 
-## §8.4.3 A time window's bounds — narrowed to the wire's two shapes
+## §8.4.3 A time window's bounds — narrowed to a date expression over the subject
 
 Not a dialect extension and not inert: a narrowing of what v2.3.0 spells.
 §13.4.15.68 gives a periodevergelijking ("vanaf …", "van … tot …", "tot en met
-…") any date expression as a bound. WF-111 (`spec/IR-SPEC.md` ch. 4.6,
-maintainer decision 2026-09-23) admits two shapes on the wire — a date literal,
-or an own scalar date attribute of the subject — both of day precision; the
-general date expression is an OPEN wire decision (`spec/RUNTIME-SEMANTICS.md`
-ch. 3.12). `RuleChecker.periodBoundaryError` refuses every other bound — a
-parameter, a navigated read, a datum-tijd attribute, a computed date ("zijn
-peildatum plus 1 dg"), a time-dependent attribute, a datum-tijd literal and an
-attribute of another object type, each of which the verifier refuses — with an
-ERROR in the verifier's WF-111 sentence for the bound it would write, after the
-written bound, so the document never reaches disk. No source in any zone writes
+…") any date expression as a bound. WF-111 (`spec/IR-SPEC.md` ch. 4.6) admits a
+day-precise date expression over the subject, the parameters and literals
+("zijn vervaldatum plus 1 dg"): every attribute it reads a scalar attribute of
+the subject's own, un-navigated, every parameter scalar, and no fold over a set.
+`RuleChecker.periodBoundaryError` refuses every other bound — a navigated read,
+a time-dependent attribute or parameter, a datum-tijd attribute or literal, an
+attribute of another object type and any other computed form, each of which the
+verifier refuses — with an ERROR in the verifier's WF-111 sentence for the bound
+it would write, after the written bound, so the document never reaches disk. No source in any zone writes
 a window with such a bound.
 
 **"Own" is written on the subject, and compared by identity.** WF-111's text

@@ -6746,8 +6746,8 @@ separate out, because until this node existed there was nothing to
 separate it for: the condition carrying the §8.2 whole-period
 qualifier. Widening the lowering to the unqualified condition is
 possible with the same node and deliberately not done here — it has no
-pinned witness in two of three executors (`RUNTIME-SEMANTICS.md`
-ch. 3.12), and it belongs to whoever measures it.
+pinned witness in two of three executors (`CONSTRUCTS.md` row 40),
+and it belongs to whoever measures it.
 
 ### 4.6 Well-formedness
 

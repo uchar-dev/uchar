@@ -273,7 +273,7 @@ DROOLS-238	een VerreRollidmaatschap in de voorwaarde ('{snippet}'): de verre rol
 DROOLS-239	een periodevenster zonder grens ('{snippet}'): er is geen venster om op te poorten
 DROOLS-240	een CharacteristicCheck met een host die het onderwerp niet is ('{snippet}')
 DROOLS-241	een CharacteristicCheck met een navigatie zonder binding ('{snippet}')
-DROOLS-242	{description} met de ontkenning binnen de kwalificatie: deze tak draagt deze vorm nog niet, zoals de andere twee takken (RUNTIME-SEMANTICS ch. 3.9, 3.12); geen golden met cases heeft haar
+DROOLS-242	{description} met de ontkenning binnen de kwalificatie: deze tak draagt deze vorm nog niet, zoals de andere twee takken (RUNTIME-SEMANTICS ch. 3.9); geen golden met cases heeft haar
 DROOLS-243	{description} met een navigatie zonder binding
 DROOLS-244	{description} over een tijdlijn langs een pad ('{snippet}'): de referentie-interpreter vouwt alleen een eigen tijdsafhankelijk attribuut van het onderwerp (RUNTIME-SEMANTICS ch. 3.9, 3.12)
 DROOLS-245	{description}{sideDescription}: de vouw toetst één tijdlijn van het onderwerp tegen een grens (RUNTIME-SEMANTICS ch. 3.9)

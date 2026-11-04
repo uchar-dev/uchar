@@ -273,7 +273,7 @@ DROOLS-238	a VerreRollidmaatschap in the condition ('{snippet}'): the far role c
 DROOLS-239	a period window without a boundary ('{snippet}'): there is no window to gate on
 DROOLS-240	a CharacteristicCheck with a host that is not the subject ('{snippet}')
 DROOLS-241	a CharacteristicCheck with a navigation without a binding ('{snippet}')
-DROOLS-242	{description} with the negation within the qualification: this branch does not carry this form yet, as the other two branches do not (RUNTIME-SEMANTICS ch. 3.9, 3.12); no golden with cases has it
+DROOLS-242	{description} with the negation within the qualification: this branch does not carry this form yet, as the other two branches do not (RUNTIME-SEMANTICS ch. 3.9); no golden with cases has it
 DROOLS-243	{description} with a navigation without a binding
 DROOLS-244	{description} over a timeline along a path ('{snippet}'): the reference interpreter folds only an own time-dependent member of the subject (RUNTIME-SEMANTICS ch. 3.9, 3.12)
 DROOLS-245	{description}{sideDescription}: the fold tests one timeline of the subject against a boundary (RUNTIME-SEMANTICS ch. 3.9)

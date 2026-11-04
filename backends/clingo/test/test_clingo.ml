@@ -3579,7 +3579,7 @@ let () =
   table_row ~name:"ch3.9 month-submonth" ~year:false ~link:true ~timeline_state:half_jan ~truth:false ();
   (* the OWN form — the same qualifier without a hop. Every row above
      navigates, and so does the corpus golden, so this row is what gives the
-     "own and navigated" of the ch. 3.12 delta line its artefact on this
+     "own and navigated" of CONSTRUCTS row 29 its artefact on this
      side. One document, two rules — the qualifier and its negation — so a
      single case pins both directions: an arm that answered a constant would
      move one of the two. `ref` holds the mirror of this row in its own suite

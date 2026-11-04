@@ -4628,9 +4628,10 @@ the fixtures `ref/test/fixtures/conditions-per-period/afdracht` and
 [2025-11-16, 2026-03-13); writer 1 sets the rentedagen to 30 gedurende de
 tijd dat hij gedurende de gehele maand rentedragend is, writer 2 counts the
 days gedurende de tijd dat hij niet gedurende de gehele maand rentedragend
-is. Together: **15** on [2025-11-01, 2025-12-01), **30** on
-[2025-12-01, 2026-03-01) (writer 1's one segment) and **12** on
-[2026-03-01, 2026-04-01). Without writer 2's condition both decide December
+is. Together: **0** on (−∞, 2025-11-01), **15** on [2025-11-01, 2025-12-01),
+**30** on [2025-12-01, 2026-03-01) (writer 1's one segment), **12** on
+[2026-03-01, 2026-04-01) and **0** on [2026-04-01, +∞) (writer 2's day count
+over all time, ch. 3.8). Without writer 2's condition both decide December
 2025, with 30 and 31: EF-016 on A1.rentedagen, the rules "rentedagen in een
 gehele maand, rentedagen in elke maand", the values 30 and 31. The corpus
 witnesses are `corpus/golden/jutterswet-wachtdagen-twee-schrijvers` and
@@ -4911,7 +4912,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-017 | a to-one role gets a second filler | fault | `role`, `label`, `filler` | ch. 5.5 | `corpus/red/to-one-second-filler` |
 | EF-018 | the back-link of a created object is ambiguous | fault | `objectType`, `createdType` | ch. 5.5 | `corpus/red/ambiguous-backlink` |
 | EF-019 | an `Unresolved` node is reached, at an expression or a condition position | fault | `position` | ch. 5.7; WF-044 | `corpus/red/wf044-unresolved-guard`, `corpus/red/wf044-unresolved-reached` |
-| EF-020 | a temporal key component is supplied as a scalar | fault | `key`, `label` | ch. 5.9 | `corpus/red/uniqueness-temporal-key-scalar`, `corpus/red/ever-unique-temporal-key-scalar` |
+| EF-020 | a temporal key component is supplied as a scalar | fault | `key`, `label` | ch. 5.9 | `corpus/red/uniqueness-temporal-key-scalar`, `corpus/red/ever-unique-temporal-key-scalar`, `corpus/red/ever-unique-temporal-key-bucket-scalar` |
 | EF-021 | a filled count over a temporal attribute of a set | declined | `attribute` | ch. 3.4c | `corpus/red/filled-count-temporal-set-source` |
 | EF-022 | a nested day-kind test on a date other than the bound day | declined | — | ch. 3.8; ch. 3.12 | `corpus/red/day-kind-reference-other-day` |
 | EF-023 | a period condition on a temporal characteristic target leaves its true periods with an open bound | declined | `characteristic` | ch. 3.10; ch. 3.11 | `corpus/red/time-window-timeline-characteristic-open` |
@@ -8862,7 +8863,7 @@ kind EF-005 (the golden `closed-runtime-division-by-zero`).
   evaluates leeg (no holes, ch. 10.1).
 - **FilterList**: keeps, in order, the elements for which the
   condition holds with the binder bound to the element — the
-  ch. 3.5a aggregation-filter discipline per element; a leeg source
+  ch. 3.4a aggregation-filter discipline per element; a leeg source
   propagates. A filter that excludes everything yields `[]`, a value.
 - **ListLength**: the element count; `[]` counts 0; a leeg source
   propagates leeg.
