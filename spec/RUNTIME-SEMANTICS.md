@@ -8322,7 +8322,9 @@ melding met waarde gelijk aan zijn vangst", the initialisation "De waarde van ee
 Melding moet geïnitialiseerd worden op 5" finds the waarde 7 of the making
 filled and fills it where the making gives none: a Jutter with vangst 7 has a
 terug, the sum of the waarde of its meldingen, of **7**, one without a vangst
-**5**. The goldens `jutterswet-invoer-naast-verdeling`,
+**5**; the same with the initialisation "… op 5 indien zijn toeslag groter is
+dan 0" and a making that gives the toeslag 1 (`WV-7.8-stapel-creatie-voorwaardelijk`).
+The goldens `jutterswet-invoer-naast-verdeling`,
 `jutterswet-invoer-naast-objectcreatie` and `jutterswet-invoer-op-keurklasse`
 pin the stack with case input beside an allocation, beside a creation and on an
 enumeration and a text target, through all three executors.

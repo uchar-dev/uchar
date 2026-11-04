@@ -12739,7 +12739,9 @@ let () =
    on an unlinked B3, the input 7 on an unlinked B4 and leeg on B5, which is not
    vast; the initialisation "op 5" of the waarde of a Melding finds the waarde 7
    a creation gives it filled (terug 7), fills it where the making gives none
-   (terug 5) and finds the input 40 of an input Melding filled; the rule "op
+   (terug 5) and finds the input 40 of an input Melding filled, and so does
+   the initialisation "op 5 indien zijn toeslag groter is dan 0" beside a
+   making that gives the toeslag; the rule "op
    zijn vaste aandeel indien hij vast is" writing 30 where the allocation writes
    50 is EF-016. An initialisation, an allocation and the member value of a
    creation on a timeline target have no meaning and are refused by name *)
@@ -12752,7 +12754,8 @@ let () =
   let dir = "ref/test/fixtures/writers-stack/" in
   List.iter
     (fun (ident, d) -> plays ~ident ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
-    [ ("WV-7.8-stapel-verdeling", "allocation-initialisation"); ("WV-7.8-stapel-creatie", "creation-initialisation") ];
+    [ ("WV-7.8-stapel-verdeling", "allocation-initialisation"); ("WV-7.8-stapel-creatie", "creation-initialisation");
+      ("WV-7.8-stapel-creatie-voorwaardelijk", "creation-conditional-initialisation") ];
   with_files ~ir:(read (dir ^ "allocation-conflict/ir.json")) ~case_data:(read (dir ^ "allocation-conflict/case.json"))
     (fun findings _ evaluate ->
       check "WV-7.8-stapel-verdeling-botsing: verifier-clean" (findings = []);

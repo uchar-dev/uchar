@@ -17537,7 +17537,7 @@ let () =
     (fun f ->
       let ir = read (dir ^ f ^ "/ir.json") and case_text = read (dir ^ f ^ "/case.json") in
       both_answer ~name:("the stack of a target: " ^ f) ~ir ~case_text)
-    [ "allocation-initialisation"; "creation-initialisation" ];
+    [ "allocation-initialisation"; "creation-initialisation"; "creation-conditional-initialisation" ];
   faults_at_solving
     ~code:
       ( "EF-016",
