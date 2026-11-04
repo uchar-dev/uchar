@@ -55,6 +55,11 @@ class CanonicalTimelineWitnessTest {
         assertEquals(gap, CaseRunner.canonical(gap));
     }
 
+    @Test void the_form_does_not_depend_on_the_order_of_the_segments() {
+        assertEquals(List.of(segment(null, "2024-03-01", "7")), CaseRunner.canonical(List.of(
+                segment("2024-01-01", "2024-03-01", "7"), segment(null, "2024-01-01", "7"))));
+    }
+
     @Test void a_degenerate_segment_contributes_nothing() {
         assertEquals(List.of(), CaseRunner.canonical(List.of(segment("2024-05-01", "2024-05-01", "1"),
                 segment("2024-05-01", "2024-04-01", "1"))));
