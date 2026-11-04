@@ -201,8 +201,8 @@ public final class PeriodArithmetic {
                 WriteBoundaryFault.Misfit m = WriteBoundaryFault.misfit(null, null, attribute, p.value(), decimals);
                 if (m != null) throw new WriteBoundaryFault(List.of(m));
             } else if (!q.isTerminerend())
-                throw new ComputeFault(ComputeFault.nonTerminatingSegment(attribute, WriteBoundaryFault.text(q),
-                        bound(p.from()), bound(p.to())));
+                throw ComputeFault.nonTerminatingSegment(attribute, WriteBoundaryFault.text(q), bound(p.from()),
+                        bound(p.to()));
             out.add(new Period(p.from(), p.to(), q.naarDecimal()));
         }
         List<Period> joined = new ArrayList<>();

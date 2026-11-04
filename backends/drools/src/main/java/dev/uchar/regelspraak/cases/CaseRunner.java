@@ -213,6 +213,7 @@ public final class CaseRunner {
                     throw DroolsBackend.designate(e);
                 }
                 if (firing.noFixpoint() != null) return List.of("nofixpoint " + firing.noFixpoint());
+                DroolsBackend.refuseLimit(build, session);
                 return SessionDump.readingLines(build, session, labels).stream().map(l -> "reading " + l).toList();
             }));
         }

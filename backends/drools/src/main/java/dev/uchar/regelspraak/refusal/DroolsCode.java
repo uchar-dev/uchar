@@ -332,7 +332,8 @@ public enum DroolsCode {
     PERIOD_ARITHMETIC_FINER_OPERAND("DROOLS-308", Kind.REFUSAL, "period-arithmetic-finer-operand", "attribute,operandGranularity,targetGranularity", null),
     PERIOD_CONDITION_FORM("DROOLS-309", Kind.REFUSAL, "period-condition-form", "attribute,declarant,snippet", null),
     PERIOD_CONDITION_GRID("DROOLS-310", Kind.REFUSAL, "period-condition-grid", "operand,operandGranularity,attribute,targetGranularity", null),
-    TIMELINE_WRITERS_READ("DROOLS-311", Kind.RETIRED, "timeline-writers-read", "attribute,declarant", null);
+    TIMELINE_WRITERS_READ("DROOLS-311", Kind.RETIRED, "timeline-writers-read", "attribute,declarant", null),
+    NON_TERMINATING_SEGMENT("DROOLS-312", Kind.LIMIT, "non-terminating-segment", "value,from,to,attribute", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

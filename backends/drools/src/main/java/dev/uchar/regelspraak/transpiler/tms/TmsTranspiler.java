@@ -1257,7 +1257,9 @@ public final class TmsTranspiler {
      * <p>An evaluation fault that stands at the fixpoint ({@link Fault}) means the session has no answer, so before it
      * writes anything this throws the faults that stand: one as the exception it is, named after its rule, two or more
      * as {@link EvaluationFaults}, ordered by the name of the form and then by the sentence, so that the report does not
-     * depend on the order of the rules or of the firings. Then it writes nothing, and the session stays as it was. It
+     * depend on the order of the rules or of the firings. A fault that is a limit of this branch
+     * ({@link ComputeFault#limit}) goes before every other: the first such fault in that order is thrown alone. Then it
+     * writes nothing, and the session stays as it was. It
      * refuses the sessions {@link #readOf} refuses, those without a fixpoint of the driver, likewise before it writes
      * anything.
      *
@@ -1280,6 +1282,9 @@ public final class TmsTranspiler {
     public void setDerivedValues(KieSession session, Function<Object, String> label) {
         Read readFixpoint = readFixpoint(session, label);
         List<Fault> faults = readFixpoint.fixpoint().faults();
+        // a limit of this branch leaves the session without an answer of the branch, so its refusal goes before the
+        // faults beside it, which may stem from the value the branch could not hold
+        for (Fault f : faults) if (f.fault() instanceof ComputeFault c && c.limit() != null) throw c;
         if (faults.size() == 1) throw faults.get(0).fault();
         if (!faults.isEmpty()) throw new EvaluationFaults(faults);
         readFixpoint.writeActs().forEach(Runnable::run);

@@ -1,6 +1,8 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.message.Msg;
+import dev.uchar.regelspraak.refusal.DroolsCode;
+import dev.uchar.regelspraak.refusal.Reason;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
@@ -15,7 +17,8 @@ import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
  * dateTimeWith over parts that name no calendar day or no clock time (EF-032) or that are no whole numbers, an
  * irrational square root without a rounding (ch. 2.2), a time-dependent parameter that the period arithmetic reads
  * and the case does not bind (EF-014, ch. 3.4, 5.7), and a segment of a timeline of the unbounded form whose value does
- * not terminate, which a segment of this branch does not hold (ch. 3.4). Its sentence
+ * not terminate, which a segment of this branch does not hold (ch. 3.4): a limit of the branch and no fault of the
+ * document ({@link #limit}), which the write-back refuses with its code. Its sentence
  * ({@link #sentence}) is the reference interpreter's wherever that executor names the fault, so a pinned fragment matches
  * both.
  *
@@ -57,36 +60,50 @@ public final class ComputeFault extends RuntimeException {
     private static final java.util.regex.Pattern UNBOUND_PARAMETER =
             java.util.regex.Pattern.compile("parameter \"(.*)\" is unbound in this case \\(binding is fail-fast, ch\\. 5\\.7\\)");
 
-    /** The sentence of a segment of a timeline of the unbounded form whose value does not terminate: a limit of this
-     *  branch, whose segment holds a decimal, where the reference interpreter writes the exact value (ch. 2.4 point 3,
-     *  3.4). No fault kind of ch. 5.7b. */
-    static String nonTerminatingSegment(String attribute, String value, String from, String to) {
-        return "the period arithmetic of ch. 3.4 writes " + value + " on [" + from + ", " + to + ") into the timeline of \""
-                + attribute + "\", of the unbounded form: the value does not terminate, and a segment of this branch holds"
-                + " a decimal (a limit of this branch, not of the document)";
+    /** A segment of a timeline of the unbounded form whose value does not terminate: a limit of this branch, whose
+     *  segment holds a decimal, where the reference interpreter writes the exact value (ch. 2.4 point 3, 3.4). No fault
+     *  kind of ch. 5.7b: the refusal DROOLS-312 ({@link #limit}), which the write-back gives where it stands at the
+     *  fixpoint. */
+    static ComputeFault nonTerminatingSegment(String attribute, String value, String from, String to) {
+        return new ComputeFault(DroolsCode.NON_TERMINATING_SEGMENT.reason("value", value, "from", from, "to", to,
+                "attribute", attribute));
     }
 
     private final String sentence;
     private final String rule;
+    private final Reason limit;
 
     ComputeFault(String sentence) {
-        this(sentence, null, null);
+        this(sentence, null, null, null);
     }
 
     ComputeFault(String sentence, Throwable cause) {
-        this(sentence, null, cause);
+        this(sentence, null, cause, null);
     }
 
-    private ComputeFault(String sentence, String rule, Throwable cause) {
+    /** A limit of this branch, whose sentence is that of {@code limit}. */
+    private ComputeFault(Reason limit) {
+        this(limit.text(), null, null, limit);
+    }
+
+    private ComputeFault(String sentence, String rule, Throwable cause, Reason limit) {
         super(rule == null ? sentence : Msg.drools("FRAME.fault-in-rule", "rule", rule, "sentence", sentence).text(), cause);
         this.sentence = sentence;
         this.rule = rule;
+        this.limit = limit;
     }
 
     /** The same fault named after the rule {@code rule} it ran in, with this one as its cause, as
      *  {@link Breuk.DelingDoorNul#inDeRegel} names a division. */
     public ComputeFault inRule(String rule) {
-        return new ComputeFault(sentence, rule, this);
+        return new ComputeFault(sentence, rule, this, limit);
+    }
+
+    /** The refusal of a limit of this branch the fault is, with its register code (a {@code LIMIT} of
+     *  {@link DroolsCode}); null for a fault of the document. A limit means that the session has no answer of the
+     *  branch: the value is the document's, and this branch cannot hold it. */
+    public Reason limit() {
+        return limit;
     }
 
     /** The sentence of the fault, without the rule. */

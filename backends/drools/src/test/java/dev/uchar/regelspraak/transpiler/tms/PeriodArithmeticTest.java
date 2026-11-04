@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.runtime.Breuk;
 
 import org.junit.jupiter.api.Test;
@@ -69,12 +70,14 @@ class PeriodArithmeticTest {
                 PeriodArithmetic.written(PeriodArithmetic.times(quotient, PeriodArithmetic.scalar(new BigDecimal("3"))),
                         0, "(a gedeeld door b) maal 3"));
         assertEquals(List.of("EF-031"), ComputeHelpers.depositCodes(flag));
-        // a segment of this branch holds a decimal, so 10/3 written into the unbounded form faults by name
+        // a segment of this branch holds a decimal, so 10/3 written into the unbounded form is a limit of the branch,
+        // the refusal DROOLS-312, and no fault kind of the document
         ComputeFault f = assertThrows(ComputeFault.class, () -> PeriodArithmetic.written(quotient, null, "verhouding"));
-        assertEquals("the period arithmetic of ch. 3.4 writes 10/3 on [2024-04-01, 2024-07-01) into the timeline of"
-                + " \"verhouding\", of the unbounded form: the value does not terminate, and a segment of this branch"
-                + " holds a decimal (a limit of this branch, not of the document)", f.sentence());
+        assertEquals("het rekenen per periode van ch. 3.4 schrijft 10/3 op [2024-04-01, 2024-07-01) in de tijdlijn van"
+                + " 'verhouding', van de onbegrensde vorm: de waarde eindigt niet, en een segment van deze tak houdt een"
+                + " decimaal", f.sentence());
         assertEquals(null, f.code());
+        assertEquals(DroolsCode.NON_TERMINATING_SEGMENT, f.limit().code());
     }
 
     /** A divisor leeg in one period and 0 in another: both periods are leeg, and the probe hears each code once,

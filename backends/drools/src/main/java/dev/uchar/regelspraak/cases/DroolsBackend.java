@@ -28,6 +28,7 @@ import dev.uchar.regelspraak.transpiler.tms.BucketInput;
 import dev.uchar.regelspraak.transpiler.tms.ConditionReading;
 import dev.uchar.regelspraak.transpiler.tms.DefaultsDecision;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
+import dev.uchar.regelspraak.transpiler.tms.ComputeFault;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.Fired;
 import dev.uchar.regelspraak.transpiler.tms.Cycles;
@@ -716,7 +717,10 @@ public final class DroolsBackend {
      * {@code WritersConflict} for two writers of one attribute that disagree (an {@code IllegalStateException},
      * RUNTIME-SEMANTICS ch. 5.7) and an {@code InputFormFault} for a timeline input in the other convention (ch. 8.4);
      * two or more as {@code EvaluationFaults}, ordered by the name of the form and then by the sentence, with the faults
-     * as {@code faults()}. {@link #fixpointOf} gives the same faults as data.
+     * as {@code faults()}. {@link #fixpointOf} gives the same faults as data. A fault that is a limit of this branch
+     * ({@code ComputeFault.limit}: a segment of a timeline of the unbounded form whose value does not terminate) is no
+     * fault of the document: where one stands, the session has no answer of the branch, and this refuses it as a
+     * {@link CaseRunner.Excluded} with its register code, before the faults beside it.
      *
      * <p>It refuses the sessions {@link #fixpointOf} refuses, with the same {@code IllegalStateException}, before anything is
      * written: one not fired through {@link #fire}, one whose last {@code fire} ended without a fixpoint, and one in which
@@ -729,7 +733,11 @@ public final class DroolsBackend {
     public static void setDerivedValues(Build build, KieSession session) {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(session, "session");
-        build.execModelTranspiler().setDerivedValues(session);
+        try {
+            build.execModelTranspiler().setDerivedValues(session);
+        } catch (ComputeFault f) {
+            throw refused(f);
+        }
     }
 
     /** As {@link #setDerivedValues(Build, KieSession)}, with {@code label} giving the case label of an input bean
@@ -740,7 +748,25 @@ public final class DroolsBackend {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(session, "session");
         Objects.requireNonNull(label, "label");
-        build.execModelTranspiler().setDerivedValues(session, label);
+        try {
+            build.execModelTranspiler().setDerivedValues(session, label);
+        } catch (ComputeFault f) {
+            throw refused(f);
+        }
+    }
+
+    /** {@code f} as the refusal of its limit where it is a limit of this branch, else {@code f} itself. */
+    private static RuntimeException refused(ComputeFault f) {
+        return f.limit() == null ? f : new CaseRunner.Excluded(f.limit());
+    }
+
+    /** Refuses {@code session}, after a {@link #fire} that reached its fixpoint, where a limit of this branch stands
+     *  there, as {@link #setDerivedValues} refuses it: the first such fault in the order of the faults, as a
+     *  {@link CaseRunner.Excluded}. The readings of a build with readings read a session without its write-back, so they
+     *  ask here, and a document the replay refuses at its fixpoint is refused by its readings in the same sentence. */
+    static void refuseLimit(Build build, KieSession session) {
+        for (Fault f : fixpointOf(build, session).faults())
+            if (f.fault() instanceof ComputeFault c && c.limit() != null) throw new CaseRunner.Excluded(c.limit());
     }
 
     /**

@@ -401,17 +401,54 @@ class TmsPerDayArithmeticWitnessTest {
     }
 
     /** 100/−28 is −25/7, which does not terminate: the unbounded form holds it exactly in the reference interpreter,
-     *  and a segment of this branch holds a decimal. */
-    @Test void a_segment_of_the_unbounded_form_that_does_not_terminate_faults_by_name() throws Exception {
+     *  and a segment of this branch holds a decimal, so the session has no answer of the branch: a limit, refused by
+     *  name with its code (DROOLS-312) on both branches, and no fault of the document. */
+    @Test void a_segment_of_the_unbounded_form_that_does_not_terminate_is_refused_as_a_limit() throws Exception {
         String quotient = computingRule("verhouding", "BEREKENING", "Jutter", "verhouding",
                 binary("dividedBy", ownRead("strandloon", "Jutter"), ownRead("noemer", "Jutter"), numberType(false, 0, null)),
                 "null");
         JsonNode c = TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of("strandloon",
                 STRANDLOON, "stormtoeslag", STORMTOESLAG), List.of(), Map.of(), Map.of())), List.of(consistent()));
-        assertEquals("ComputeFault: fout in de regel \"verhouding\": the period arithmetic of ch. 3.4 writes -25/7 on"
-                + " [2024-01-10, 2024-04-03) into the timeline of \"verhouding\", of the unbounded form: the value does not"
-                + " terminate, and a segment of this branch holds a decimal (a limit of this branch, not of the document)",
-                TmsFaultWitnessTest.playBoth(document(MODEL_B, List.of(NOEMER, quotient)), c));
+        Path ir = document(MODEL_B, List.of(NOEMER, quotient));
+        assertEquals("Excluded: het rekenen per periode van ch. 3.4 schrijft -25/7 op [2024-01-10, 2024-04-03) in de"
+                + " tijdlijn van 'verhouding', van de onbegrensde vorm: de waarde eindigt niet, en een segment van deze tak"
+                + " houdt een decimaal", TmsFaultWitnessTest.playBoth(ir, c));
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                    () -> CaseRunner.playCase(ir, c, branch));
+            assertEquals(dev.uchar.regelspraak.refusal.DroolsCode.NON_TERMINATING_SEGMENT, e.code(), branch::name);
+        }
+        // the red path and the readings refuse the session in the same code, since they read the same fixpoint
+        Path casePath = java.nio.file.Files.createTempFile("tms-per-dag-grens", ".json");
+        casePath.toFile().deleteOnExit();
+        java.nio.file.Files.writeString(casePath, c.toString());
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            CaseRunner.RedResult red = CaseRunner.runRed(ir, casePath, branch);
+            assertEquals("EXCLUDE DROOLS-312", red.status() + " " + red.droolsCode().id(), branch::name);
+            CaseRunner.Excluded e = org.junit.jupiter.api.Assertions.assertThrows(CaseRunner.Excluded.class,
+                    () -> CaseRunner.readings(ir, List.of(casePath), branch));
+            assertEquals(dev.uchar.regelspraak.refusal.DroolsCode.NON_TERMINATING_SEGMENT, e.code(), branch::name);
+        }
+    }
+
+    /** Two segments that do not terminate, in two rules, are two limits at the fixpoint: the write-back refuses the
+     *  session with the first in the order of the faults, by the name of the form, and does not throw them as two
+     *  evaluation faults of the document. */
+    @Test void two_limits_at_the_fixpoint_refuse_with_the_first_in_the_order_of_the_faults() throws Exception {
+        String model = TmsDocuments.model(List.of(objectType("Jutter", List.of(
+                timeAttribute("strandloon", WHOLE, "day"), timeAttribute("stormtoeslag", WHOLE, "day"),
+                timeAttribute("noemer", WHOLE, "day"), timeAttribute("verhouding", numberType(false, 0, null), "day"),
+                timeAttribute("derde", numberType(false, 0, null), "day")), List.of())), List.of());
+        String quotient = computingRule("verhouding", "BEREKENING", "Jutter", "verhouding",
+                binary("dividedBy", ownRead("strandloon", "Jutter"), ownRead("noemer", "Jutter"), numberType(false, 0, null)),
+                "null");
+        String third = computingRule("derde", "BEREKENING", "Jutter", "derde",
+                binary("dividedBy", ownRead("strandloon", "Jutter"), number("3"), numberType(false, 0, null)), "null");
+        JsonNode c = TmsTimelineDocuments.caseDocument(null, List.of(instance("J1", "Jutter", Map.of("strandloon",
+                STRANDLOON, "stormtoeslag", STORMTOESLAG), List.of(), Map.of(), Map.of())), List.of(consistent()));
+        assertEquals("Excluded: het rekenen per periode van ch. 3.4 schrijft 100/3 op [2024-01-10, 2024-07-05) in de"
+                + " tijdlijn van 'derde', van de onbegrensde vorm: de waarde eindigt niet, en een segment van deze tak"
+                + " houdt een decimaal", TmsFaultWitnessTest.playBoth(document(model, List.of(NOEMER, quotient, third)), c));
     }
 
     /** 100/8 is 25/2, which a whole target does not hold (RUNTIME-SEMANTICS ch. 2.4 point 1, EF-006). */
