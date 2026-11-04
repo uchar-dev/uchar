@@ -1032,12 +1032,12 @@ public final class CaseRunner {
         return map == null ? null : ((Map<?, ?>) map).get(key);
     }
 
-    /** The §13.3.6 timeline read-back: the doel's {@code List<Segment>} against the pinned segment list, with
-     *  ref's comparison discipline — equal length, van/tot EXACT, waarde scale-safe ({@code compareTo == 0}),
-     *  compared index-for-index. Both sides arrive ordered (the expectation through the validator, the bean
-     *  list through the runtime's ordered writes), so an order-blind comparator has no observable witness —
-     *  the claim stops at what is falsifiable. A never-written target (a null field) matches an explicitly
-     *  empty expectation: both read leeg on every day (ch. 3.1), exactly as ref and clingo pin it. */
+    /** The §13.3.6 timeline read-back: the doel's {@code List<Segment>} against the pinned segment list, both in
+     *  the canonical form of RUNTIME-SEMANTICS ch. 3.1 ({@link #canonical}), then equal length, van/tot EXACT,
+     *  waarde scale-safe ({@code compareTo == 0}), compared index-for-index. The expectation pins what the
+     *  timeline reads on each day, not how the backend or the case divides a run of equal values into segments.
+     *  A never-written target (a null field) matches an explicitly empty expectation: both read leeg on every day
+     *  (ch. 3.1), exactly as ref and clingo pin it. */
     private String timeline(JsonNode v) {
         String attr = v.get("attribute").asText(), label = v.get("label").asText();
         ObjectType ot = labelType.get(label);
@@ -1049,14 +1049,14 @@ public final class CaseRunner {
         if (!temporal(ot, attr))
             throw new IllegalArgumentException("attributeTimeline-verwachting op niet-temporeel attribuut '" + attr + "'");
         ownField(ot, attr, false, "reads");
-        List<Object> expected = timelineSegments(v.get("timeline"), attr, "expected " + label + "." + attr, grid(ot, attr),
-                true);
+        List<TimelineSegment> expected = canonical(segments(timelineSegments(v.get("timeline"), attr,
+                "expected " + label + "." + attr, grid(ot, attr), true)));
         Object read = labelToBean.containsKey(label)
                 ? invokeGetter(labelToBean.get(label), Namen.getter(attributeName(ot, attr))) : null;
         if (read == null)
             return expected.isEmpty() ? null
                     : "attribuut " + attr + ": draagt geen tijdreeks, verwacht " + renderTl(expected);
-        List<?> actual = (List<?>) read;
+        List<TimelineSegment> actual = canonical(segments((List<?>) read));
         boolean equal = actual.size() == expected.size();
         for (int k = 0; equal && k < expected.size(); k++)
             equal = segEqual(expected.get(k), actual.get(k));
@@ -1064,22 +1064,53 @@ public final class CaseRunner {
                 : "attribuut " + attr + ": verwacht " + renderTl(expected) + ", werkelijk " + renderTl(actual);
     }
 
-    private static boolean segEqual(Object expectation, Object actual) {
-        return java.util.Objects.equals(segField(expectation, "van"), segField(actual, "van"))
-                && java.util.Objects.equals(segField(expectation, "tot"), segField(actual, "tot"))
-                && equal(segField(expectation, "waarde"), segField(actual, "waarde"));
+    private static boolean segEqual(TimelineSegment expectation, TimelineSegment actual) {
+        return java.util.Objects.equals(expectation.from(), actual.from())
+                && java.util.Objects.equals(expectation.to(), actual.to())
+                && equal(expectation.value(), actual.value());
+    }
+
+    /** One segment of a timeline as the read-back compares it: a null bound is open, a null value leeg. */
+    record TimelineSegment(LocalDate from, LocalDate to, BigDecimal value) {}
+
+    /** The {@code Segment} facts of a timeline, in their order, as the read-back compares them. */
+    private static List<TimelineSegment> segments(List<?> facts) {
+        List<TimelineSegment> out = new ArrayList<>();
+        for (Object s : facts)
+            out.add(new TimelineSegment((LocalDate) segField(s, "van"), (LocalDate) segField(s, "tot"),
+                    (BigDecimal) segField(s, "waarde")));
+        return out;
+    }
+
+    /** The canonical form of RUNTIME-SEMANTICS ch. 3.1: the maximal runs of equal filled values, gaps omitted, an
+     *  open bound as it stands. A leeg segment reads as a gap does, so it goes before the runs are merged and never
+     *  joins its two neighbours; so does a segment whose {@code tot} does not lie after its {@code van}. Two
+     *  well-formed timelines read alike on every day exactly when their canonical forms are equal. Values merge by
+     *  {@code compareTo}, the equality the read-back compares them with. */
+    static List<TimelineSegment> canonical(List<TimelineSegment> segments) {
+        List<TimelineSegment> filled = new ArrayList<>();
+        for (TimelineSegment s : segments)
+            if (s.value() != null && (s.from() == null || s.to() == null || s.to().isAfter(s.from()))) filled.add(s);
+        filled.sort(Comparator.comparing(TimelineSegment::from, Comparator.nullsFirst(Comparator.naturalOrder())));
+        List<TimelineSegment> out = new ArrayList<>();
+        for (TimelineSegment s : filled) {
+            TimelineSegment last = out.isEmpty() ? null : out.get(out.size() - 1);
+            if (last != null && last.to() != null && last.to().equals(s.from()) && last.value().compareTo(s.value()) == 0)
+                out.set(out.size() - 1, new TimelineSegment(last.from(), s.to(), last.value()));
+            else out.add(s);
+        }
+        return out;
     }
 
     /** One field of a {@code Segment} fact, read through the runtime's property bridge (the class is a runtime
      *  objecttype — no compile-time type to cast to). */
     private static Object segField(Object seg, String field) { return RegelSpraakRuntime.get(seg, field); }
 
-    private static String renderTl(List<?> segs) {
+    private static String renderTl(List<TimelineSegment> segs) {
         if (segs.isEmpty()) return "(leeg)";
         List<String> out = new ArrayList<>();
-        for (Object s : segs)
-            out.add("[" + bound(segField(s, "van"), "-inf") + "," + bound(segField(s, "tot"), "+inf") + ")="
-                    + render(segField(s, "waarde")));
+        for (TimelineSegment s : segs)
+            out.add("[" + bound(s.from(), "-inf") + "," + bound(s.to(), "+inf") + ")=" + render(s.value()));
         return String.join(" ", out);
     }
 
@@ -1241,7 +1272,7 @@ public final class CaseRunner {
             case "attributeTimeline" -> {
                 Object read = bean == null ? null
                         : invokeGetter(bean, Namen.getter(attributeName(ot, v.get("attribute").asText())));
-                yield read == null ? "(leeg)" : renderTl((List<?>) read);
+                yield read == null ? "(leeg)" : renderTl(segments((List<?>) read));
             }
             case "cellValue", "cellEmpty" -> render(cellValue(v, bean, ot));
             case "characteristicPresent", "characteristicAbsent" -> bean != null && Boolean.TRUE.equals(

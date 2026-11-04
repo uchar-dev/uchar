@@ -1069,7 +1069,8 @@ public final class DroolsBackend {
      * label of an input bean and null for any other object, as for {@link #fixpointOf} and {@link Observer}: the labels are
      * the caller's, the ids of a request among them, and need not be those of a case file. An expectation compares as
      * the replay compares: a number by value whatever its scale, an enumeration label up to the name equality of the
-     * reference interpreter, a timeline segment for segment, and a §9.5 deposit by its rule and, where the expectation
+     * reference interpreter, a timeline segment for segment in the canonical form of RUNTIME-SEMANTICS ch. 3.1 (the
+     * maximal runs of equal values, gaps omitted), and a §9.5 deposit by its rule and, where the expectation
      * names one, the label of its subject. An empty list passes, as in the replay, though {@code uchar-case-v0} asks
      * for at least one expectation.
      *
