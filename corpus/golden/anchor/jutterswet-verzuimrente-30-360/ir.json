@@ -13,8 +13,8 @@
             "name": "afdrachtbedrag",
             "datatype": {
               "node": "Number",
-              "whole": true,
-              "decimals": 0,
+              "whole": false,
+              "decimals": 2,
               "sign": "unspecified",
               "unit": [
                 {
@@ -90,7 +90,7 @@
             "datatype": {
               "node": "Number",
               "whole": false,
-              "decimals": 3,
+              "decimals": 0,
               "sign": "unspecified",
               "unit": [
                 {
@@ -128,7 +128,7 @@
             "datatype": {
               "node": "Number",
               "whole": false,
-              "decimals": 2,
+              "decimals": 0,
               "sign": "unspecified",
               "unit": [
                 {
@@ -593,73 +593,19 @@
               }
             },
             "value": {
-              "node": "Rounding",
-              "base": {
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
                 "node": "Binary",
-                "op": "dividedBy",
+                "op": "times",
                 "left": {
                   "node": "Binary",
                   "op": "times",
                   "left": {
-                    "node": "Binary",
-                    "op": "times",
-                    "left": {
-                      "node": "ParameterReference",
-                      "parameter": "verzuimrentevoet",
-                      "source": {
-                        "snippet": "de verzuimrentevoet"
-                      }
-                    },
-                    "right": {
-                      "node": "AttributeReference",
-                      "attribute": "rentedagen",
-                      "subjectType": "Afdracht",
-                      "source": {
-                        "snippet": "zijn rentedagen"
-                      }
-                    },
-                    "type": {
-                      "node": "Number",
-                      "whole": false,
-                      "decimals": 2,
-                      "sign": "unspecified",
-                      "unit": [
-                        {
-                          "node": "Unit",
-                          "abbreviation": "dg",
-                          "system": "Rentetijd",
-                          "canonical": "dg",
-                          "factorToCanonical": {
-                            "num": 1,
-                            "den": 1
-                          }
-                        },
-                        {
-                          "node": "Unit",
-                          "abbreviation": "jr",
-                          "system": "Rentetijd",
-                          "canonical": "jr",
-                          "factorToCanonical": {
-                            "num": 1,
-                            "den": 1
-                          },
-                          "exponent": -1
-                        },
-                        {
-                          "node": "Unit",
-                          "abbreviation": "mnd",
-                          "system": "Rentetijd",
-                          "canonical": "mnd",
-                          "factorToCanonical": {
-                            "num": 1,
-                            "den": 1
-                          },
-                          "exponent": -1
-                        }
-                      ]
-                    },
+                    "node": "ParameterReference",
+                    "parameter": "verzuimrentevoet",
                     "source": {
-                      "snippet": "de verzuimrentevoet maal zijn rentedagen"
+                      "snippet": "de verzuimrentevoet"
                     }
                   },
                   "right": {
@@ -673,7 +619,7 @@
                   "type": {
                     "node": "Number",
                     "whole": false,
-                    "decimals": 2,
+                    "decimals": 4,
                     "sign": "unspecified",
                     "unit": [
                       {
@@ -681,16 +627,6 @@
                         "abbreviation": "EUR",
                         "system": "Munt",
                         "canonical": "EUR",
-                        "factorToCanonical": {
-                          "num": 1,
-                          "den": 1
-                        }
-                      },
-                      {
-                        "node": "Unit",
-                        "abbreviation": "dg",
-                        "system": "Rentetijd",
-                        "canonical": "dg",
                         "factorToCanonical": {
                           "num": 1,
                           "den": 1
@@ -706,35 +642,25 @@
                           "den": 1
                         },
                         "exponent": -1
-                      },
-                      {
-                        "node": "Unit",
-                        "abbreviation": "mnd",
-                        "system": "Rentetijd",
-                        "canonical": "mnd",
-                        "factorToCanonical": {
-                          "num": 1,
-                          "den": 1
-                        },
-                        "exponent": -1
                       }
                     ]
                   },
                   "source": {
-                    "snippet": "de verzuimrentevoet maal zijn rentedagen maal zijn afdrachtbedrag"
+                    "snippet": "de verzuimrentevoet maal zijn afdrachtbedrag"
                   }
                 },
                 "right": {
-                  "node": "ParameterReference",
-                  "parameter": "rentejaar",
+                  "node": "AttributeReference",
+                  "attribute": "rentedagen",
+                  "subjectType": "Afdracht",
                   "source": {
-                    "snippet": "het rentejaar"
+                    "snippet": "zijn rentedagen"
                   }
                 },
                 "type": {
                   "node": "Number",
                   "whole": false,
-                  "decimals": 2,
+                  "decimals": 4,
                   "sign": "unspecified",
                   "unit": [
                     {
@@ -746,6 +672,27 @@
                         "num": 1,
                         "den": 1
                       }
+                    },
+                    {
+                      "node": "Unit",
+                      "abbreviation": "dg",
+                      "system": "Rentetijd",
+                      "canonical": "dg",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      }
+                    },
+                    {
+                      "node": "Unit",
+                      "abbreviation": "jr",
+                      "system": "Rentetijd",
+                      "canonical": "jr",
+                      "factorToCanonical": {
+                        "num": 1,
+                        "den": 1
+                      },
+                      "exponent": -1
                     },
                     {
                       "node": "Unit",
@@ -761,15 +708,20 @@
                   ]
                 },
                 "source": {
-                  "snippet": "de verzuimrentevoet maal zijn rentedagen maal zijn afdrachtbedrag gedeeld door het rentejaar"
+                  "snippet": "de verzuimrentevoet maal zijn afdrachtbedrag maal zijn rentedagen"
                 }
               },
-              "mode": "halfAwayFromZero",
-              "decimals": 3,
+              "right": {
+                "node": "ParameterReference",
+                "parameter": "rentejaar",
+                "source": {
+                  "snippet": "het rentejaar"
+                }
+              },
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 3,
+                "decimals": 4,
                 "sign": "unspecified",
                 "unit": [
                   {
@@ -796,7 +748,7 @@
                 ]
               },
               "source": {
-                "snippet": "(de verzuimrentevoet maal zijn rentedagen maal zijn afdrachtbedrag gedeeld door het rentejaar) rekenkundig afgerond op 3 decimalen"
+                "snippet": "de verzuimrentevoet maal zijn afdrachtbedrag maal zijn rentedagen gedeeld door het rentejaar"
               }
             },
             "initialisation": false,
@@ -821,49 +773,23 @@
               }
             },
             "value": {
-              "node": "Rounding",
-              "base": {
-                "node": "Aggregation",
-                "kind": "total",
-                "arguments": [
-                  {
-                    "node": "AttributeReference",
-                    "attribute": "maandrente",
-                    "subjectType": "Afdracht",
-                    "source": {
-                      "snippet": "zijn maandrente"
-                    }
+              "node": "Aggregation",
+              "kind": "total",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "maandrente",
+                  "subjectType": "Afdracht",
+                  "source": {
+                    "snippet": "zijn maandrente"
                   }
-                ],
-                "elementType": "Afdracht",
-                "type": {
-                  "node": "Number",
-                  "whole": false,
-                  "decimals": 3,
-                  "sign": "unspecified",
-                  "unit": [
-                    {
-                      "node": "Unit",
-                      "abbreviation": "EUR",
-                      "system": "Munt",
-                      "canonical": "EUR",
-                      "factorToCanonical": {
-                        "num": 1,
-                        "den": 1
-                      }
-                    }
-                  ]
-                },
-                "source": {
-                  "snippet": "het totaal van zijn maandrente"
                 }
-              },
-              "mode": "halfAwayFromZero",
-              "decimals": 2,
+              ],
+              "elementType": "Afdracht",
               "type": {
                 "node": "Number",
                 "whole": false,
-                "decimals": 2,
+                "decimals": 0,
                 "sign": "unspecified",
                 "unit": [
                   {
@@ -879,7 +805,7 @@
                 ]
               },
               "source": {
-                "snippet": "(het totaal van zijn maandrente) rekenkundig afgerond op 2 decimalen"
+                "snippet": "het totaal van zijn maandrente"
               }
             },
             "initialisation": false,

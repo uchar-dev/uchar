@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <li>{@code venster-als-lid} and {@code venster-rekenen}: the window as a member of a composite, and as the whole
  * condition of the period arithmetic; golden {@code jutterswet-pachtvenster} the window as the whole condition of a
  * pro-rata part and of a day count, its bound an own attribute or a literal.
- * <li>{@code anchor/jutterswet-verzuimrente-30-360}: formulation A, the characteristic within a window, two writers of
+ * <li>{@code jutterswet-verzuimrente-30-360-afgerond}: formulation A, the characteristic within a window, two writers of
  * the rentedagen whose union the maandrente reads, the day count behind a variable with its day-kind test and its unit,
  * the rounding of the period arithmetic per segment and the total of a timeline whose bounds rules derive: 141,67 € and
  * 72,22 €.
@@ -80,7 +80,7 @@ class TmsCharacteristicWindowWitnessTest {
     }
 
     @Test void formulation_a_in_every_order_on_both_branches() throws Exception {
-        assertPlayed(GOLDEN.resolve("anchor").resolve("jutterswet-verzuimrente-30-360"));
+        assertPlayed(GOLDEN.resolve("jutterswet-verzuimrente-30-360-afgerond"));
     }
 
     @Test void the_sum_per_period_of_a_rate_keeps_its_members_unit_on_both_branches() throws Exception {

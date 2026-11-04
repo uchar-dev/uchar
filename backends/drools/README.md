@@ -678,8 +678,10 @@ off its global, the `List<Period>` the case runner sets from the parameter's tim
 fault of an unbound parameter (EF-014) where the case gives none; a literal, an own scalar attribute or a scalar
 parameter on the one segment (−∞, +∞). Each of these operands also stands alone as the whole value. The values between two operators are exact, a decimal or a `Breuk`. The rule
 writes the filled segments, adjacent equal ones one segment, a leeg period a gap, each under the write boundary of the
-target's decimals; in a target of the unbounded form a segment whose value does not terminate faults by name
-(`ComputeFault`), a limit of this branch, whose segment holds a decimal. Units are computed without a restatement:
+target's decimals; in a target of the unbounded form a segment whose value does not terminate is a limit of this
+branch, whose segment holds a decimal (`ComputeFault.limit`): where it stands at the fixpoint, the write-back refuses
+the session with DROOLS-312, before the faults beside it, and so do the red path and the readings (anchor
+`jutterswet-verzuimrente-30-360`, in gate 12's channel). Units are computed without a restatement:
 the operands of an additive operator in one unit, a product and a quotient with no factor between their operands, and
 the result in the target's unit (else DROOLS-306). The subject's own total of such a timeline reads it whole, an
 absent one 0, and so do the clip and the per-element fold over a set: an open segment of 0 adds 0, one of another
@@ -741,7 +743,7 @@ the first such day in the order of the document with their values there (`Writer
 reads that union through the target's one standing, which two rules of its own build from the writers' values and the
 input as the write-back does (`TmsTranspiler.writersUnionRules`, `ComputeHelpers.writersUnion`), with no input timeline
 where the case gives the input as the asOfDate-bucket scalar. Witnesses `TmsConditionPerPeriodWitnessTest`,
-goldens `jutterswet-wachtdagen-twee-schrijvers` and `anchor/jutterswet-verzuimrente-30-360`, red case
+goldens `jutterswet-wachtdagen-twee-schrijvers` and `jutterswet-verzuimrente-30-360-afgerond`, red case
 `jutterswet-wachtdagen-botsing`.
 
 **A characteristic within a window.** A rule may write a time-dependent characteristic within a period window
@@ -753,7 +755,7 @@ faults with EF-023, naming the characteristic and the object, and where the case
 characteristic it faults by name, as the reference interpreter does (`CharacteristicPeriodsFault`). The write-back puts
 the true periods on the bean, as segments without a value. In a build with readings the form holds, the window has its
 days and its bounds their values. Witnesses `TmsCharacteristicWindowWitnessTest`, goldens
-`time-window-timeline-characteristic` and `anchor/jutterswet-verzuimrente-30-360`, red case
+`time-window-timeline-characteristic` and `jutterswet-verzuimrente-30-360-afgerond`, red case
 `time-window-timeline-characteristic-open`.
 
 **The two input conventions of a timeline.** The case gives an attribute on a timeline either as its full timeline or

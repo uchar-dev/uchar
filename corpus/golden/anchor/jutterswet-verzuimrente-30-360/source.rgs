@@ -12,13 +12,13 @@ Parameter de verzuimrentevoet : Numeriek (getal met 2 decimalen) met eenheid 1/j
 Parameter het rentejaar : Numeriek (geheel getal) met eenheid dg/jr;
 
 Objecttype de Afdracht (mv: Afdrachten)
-    het afdrachtbedrag Numeriek (geheel getal) met eenheid €;
+    het afdrachtbedrag Numeriek (getal met 2 decimalen) met eenheid €;
     de vervaldatum Datum in dagen;
     de betaaldatum Datum in dagen;
     is rentedragend kenmerk (bijvoeglijk) voor elke dag;
     de rentedagen Numeriek (niet-negatief geheel getal) met eenheid dg/mnd voor elke maand;
-    de maandrente Numeriek (getal met 3 decimalen) met eenheid €/mnd voor elke maand;
-    de verzuimrente Numeriek (getal met 2 decimalen) met eenheid €;
+    de maandrente Numeriek (getal) met eenheid €/mnd voor elke maand;
+    de verzuimrente Numeriek (getal) met eenheid €;
 
 Regel schrikkeldag
     geldig altijd
@@ -45,8 +45,8 @@ Regel rentedagen in een gedeeltelijke maand
 
 Regel maandrente
     geldig altijd
-        De maandrente van een Afdracht moet berekend worden als (de verzuimrentevoet maal zijn rentedagen maal zijn afdrachtbedrag gedeeld door het rentejaar) rekenkundig afgerond op 3 decimalen.
+        De maandrente van een Afdracht moet berekend worden als de verzuimrentevoet maal zijn afdrachtbedrag maal zijn rentedagen gedeeld door het rentejaar.
 
 Regel verzuimrente
     geldig altijd
-        De verzuimrente van een Afdracht moet berekend worden als (het totaal van zijn maandrente) rekenkundig afgerond op 2 decimalen.
+        De verzuimrente van een Afdracht moet berekend worden als het totaal van zijn maandrente.

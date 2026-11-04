@@ -413,7 +413,15 @@ Recorded limitations:
   exact only while every value and intermediate product stays within
   ±2³¹ (the allocation forms A×W before dividing). A mismatch fails
   loud against the absolute expectations, but a bignum/rational
-  encoding is follow-up work for realistic monetary magnitudes.
+  encoding is follow-up work for realistic monetary magnitudes. The
+  range guards on products and sums fire the witness
+  `viol("arithmetic range exceeded …", _)`, the limit CLINGO-034; a
+  number of the unbounded form whose declaration and values fix no
+  finite scale is held as a whole number, and a division, a pro-rata
+  part or a result written there that is not whole fires the limit
+  CLINGO-033. Both are limits of this encoding, where ref writes the
+  exact value; the anchor `jutterswet-verzuimrente-30-360` stands with
+  both codes in gate 6's channel.
 - The Let lowering keeps an enclosing Let's need on a path that does
   not read its binder, also with every parameter bound, so a value ref
   computes stays leeg. [V1] A Match with an arm that reads the binder,

@@ -12650,9 +12650,9 @@ let () =
      2024-03-01 to 2024-06-01: 15 on the window, nothing outside it *)
   plays ~ident:"WV-3.10-venster-rekenen" ~ir:(read (dir ^ "venster-rekenen/ir.json"))
     ~case_data:(read (dir ^ "venster-rekenen/case.json")) (fun _ -> ());
-  (* formulation A of IMPLICIT-TIME §4, end to end: the anchor
-     jutterswet-verzuimrente-30-360 with its maandrente and verzuimrente in the
-     unbounded form and without the roundings. Geval 1: 16 2/3, 33 1/3 in
+  (* formulation A of IMPLICIT-TIME §4, end to end: the golden
+     jutterswet-verzuimrente-30-360-afgerond with its maandrente and verzuimrente
+     in the unbounded form and without the roundings. Geval 1: 16 2/3, 33 1/3 in
      December and January, 41 2/3, 16 2/3, totaal 141 2/3 €; geval 2: 25,
      41 2/3, 5 5/9, totaal 72 2/9 € *)
   List.iter

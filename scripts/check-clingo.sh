@@ -130,6 +130,7 @@ fi
 # refusals, whose shrinking is progress; the count of replayed cases is the case set gate 5 floors.
 EXPECTED_CHANNEL='
 anchor/jutterswet-verzuimrente-dagen|CLINGO-032|the temporal total by the calendar outside a rounding (README [V6]): a day weighs 1/365 or 1/366 of its year, so the exact verzuimrente, 10160/73 and 4500/61, has a denominator that no decimal scale of this encoding holds, and the backend translates the total only as the base of a rounding. ref plays both cases; the rounded form, jutterswet-verzuimrente-dagen-afgerond, plays here
+anchor/jutterswet-verzuimrente-30-360|CLINGO-033, CLINGO-034|two guards of the encoding fire on both cases: the exact maandrente, 50/3 in November, is written into the unbounded form, which this encoding holds as a whole number (CLINGO-033), and the rate times the afdrachtbedrag, the first factor of the product in the order of IMPLICIT-TIME §4, passes the bound 46 340 per factor of the machine-integer products at the scales of their decimals (CLINGO-034). ref plays both cases; the rounded form, jutterswet-verzuimrente-30-360-afgerond, plays here
 '
 
 list=$(mktemp) || exit 2

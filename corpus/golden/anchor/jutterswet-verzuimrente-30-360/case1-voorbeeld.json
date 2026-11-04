@@ -8,7 +8,7 @@
         "objectType": "Afdracht",
         "attributes": {
           "afdrachtbedrag": {
-            "number": "10000"
+            "number": "10000.00"
           },
           "vervaldatum": {
             "date": "2025-11-15"
@@ -99,28 +99,28 @@
           "from": "2025-11-01",
           "to": "2025-12-01",
           "value": {
-            "number": "16.667"
+            "number": "50/3"
           }
         },
         {
           "from": "2025-12-01",
           "to": "2026-02-01",
           "value": {
-            "number": "33.333"
+            "number": "100/3"
           }
         },
         {
           "from": "2026-02-01",
           "to": "2026-03-01",
           "value": {
-            "number": "41.667"
+            "number": "125/3"
           }
         },
         {
           "from": "2026-03-01",
           "to": "2026-04-01",
           "value": {
-            "number": "16.667"
+            "number": "50/3"
           }
         },
         {
@@ -136,7 +136,7 @@
       "label": "A1",
       "attribute": "verzuimrente",
       "value": {
-        "number": "141.67"
+        "number": "425/3"
       }
     },
     {
