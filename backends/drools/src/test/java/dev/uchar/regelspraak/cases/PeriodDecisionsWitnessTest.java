@@ -53,7 +53,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>The witness, on both branches of the build with readings: every case of every golden the exec-model branch plays,
  * every case of the red corpus, the documents and cases of {@code ref/test/fixtures/defaults-per-day} and
- * {@code -cases} and those of {@code ref/test/fixtures/writers-per-day}; per case every record. Where no fault stands:
+ * {@code -cases} and those of {@code ref/test/fixtures/writers-per-day}, and the document of
+ * {@code ref/test/fixtures/conditions-per-period/twee-schrijvers-gelijk}, whose two rules write one value on the days
+ * of November; per case every record. Where no fault stands:
  *
  * <ul>
  *   <li>the records are one per object whose type has the member and per attribute on a timeline that a stack or
@@ -75,7 +77,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>Floors, measured 2026-11-04: {@value #EXPECTED_MIN_RECORDS} records per branch, {@value #EXPECTED_MIN_STACK_RECORDS}
  * of them of a stack per day; spans with a decider {@value #EXPECTED_MIN_DECIDER_SPANS}, with a conflict
- * {@value #EXPECTED_MIN_CONFLICT_SPANS}, with rules {@value #EXPECTED_MIN_RULE_SPANS} and with the input
+ * {@value #EXPECTED_MIN_CONFLICT_SPANS}, with rules {@value #EXPECTED_MIN_RULE_SPANS}, of them
+ * {@value #EXPECTED_MIN_SHARED_RULE_SPANS} with two or more, and with the input
  * {@value #EXPECTED_MIN_INPUT_SPANS}; {@value #EXPECTED_MIN_FAULTED_CASES} red cases read where a fault stands. A smaller
  * count is a corpus or a fixture zone that lost a document or a case, or a selection that silently stopped checking.
  */
@@ -87,13 +90,15 @@ class PeriodDecisionsWitnessTest {
     private static final Path GOLDEN_BORGDEEL = CORPUS.resolve("golden").resolve("anchor").resolve("jutterswet-borgdeel");
 
     /** The records checked against the readings per branch, measured 2026-11-04. */
-    static final int EXPECTED_MIN_RECORDS = 271;
+    static final int EXPECTED_MIN_RECORDS = 272;
     /** Of them those a stack per day decides, measured 2026-11-04. */
     static final int EXPECTED_MIN_STACK_RECORDS = 28;
     /** The spans with a decider, with a conflict, with rules, and with the input standing, measured 2026-11-04. */
     static final int EXPECTED_MIN_DECIDER_SPANS = 57;
     static final int EXPECTED_MIN_CONFLICT_SPANS = 2;
-    static final int EXPECTED_MIN_RULE_SPANS = 451;
+    static final int EXPECTED_MIN_RULE_SPANS = 454;
+    /** Of the spans with rules those with two or more, measured 2026-11-04. */
+    static final int EXPECTED_MIN_SHARED_RULE_SPANS = 1;
     static final int EXPECTED_MIN_INPUT_SPANS = 17;
     /** The red cases read at a fixpoint where a fault stands, per branch, measured 2026-11-04. */
     static final int EXPECTED_MIN_FAULTED_CASES = 43;
@@ -148,7 +153,7 @@ class PeriodDecisionsWitnessTest {
 
     /** What the witness counted on one branch. */
     private static final class Counts {
-        int records, stackRecords, deciders, conflicts, rules, inputs, faulted, builds;
+        int records, stackRecords, deciders, conflicts, rules, sharedRules, inputs, faulted, builds;
     }
 
     /** One case to play: the document, the case, and whether a fault is to stand at its fixpoint. */
@@ -208,7 +213,8 @@ class PeriodDecisionsWitnessTest {
             }
             System.out.println("PeriodDecisionsWitnessTest " + branch + ": " + n.builds + " builds, " + n.records
                     + " records (" + n.stackRecords + " van een stapel per dag), perioden met een beslisser " + n.deciders
-                    + ", een conflict " + n.conflicts + ", regels " + n.rules + ", de invoer " + n.inputs + "; "
+                    + ", een conflict " + n.conflicts + ", regels " + n.rules + " (" + n.sharedRules + " met twee of"
+                    + " meer), de invoer " + n.inputs + "; "
                     + n.faulted + " rode cases met een fout aan het fixpunt");
         }
         assertEquals(List.of(), differences, "records die niet die van de lezing per dag zijn");
@@ -220,6 +226,7 @@ class PeriodDecisionsWitnessTest {
             floor(b, "perioden met een beslisser", n.deciders, EXPECTED_MIN_DECIDER_SPANS);
             floor(b, "perioden met een conflict", n.conflicts, EXPECTED_MIN_CONFLICT_SPANS);
             floor(b, "perioden met regels", n.rules, EXPECTED_MIN_RULE_SPANS);
+            floor(b, "perioden met twee regels of meer", n.sharedRules, EXPECTED_MIN_SHARED_RULE_SPANS);
             floor(b, "perioden met de invoer", n.inputs, EXPECTED_MIN_INPUT_SPANS);
             floor(b, "cases met een fout", n.faulted, EXPECTED_MIN_FAULTED_CASES);
         }
@@ -269,6 +276,10 @@ class PeriodDecisionsWitnessTest {
         for (String d : List.of("een-schrijver", "een-schrijver-gat", "een-schrijver-gelijk", "twee-schrijvers"))
             out.add(fixture("writers-per-day/" + d, writers.resolve(d).resolve("ir.json"),
                     writers.resolve(d).resolve("case.json")));
+        // two rules that write one value on a day stand on its span side by side, in the order of the document
+        Path alike = FIXTURES.resolve("conditions-per-period").resolve("twee-schrijvers-gelijk");
+        out.add(fixture("conditions-per-period/twee-schrijvers-gelijk", alike.resolve("ir.json"),
+                alike.resolve("case.json")));
         return out;
     }
 
@@ -356,6 +367,7 @@ class PeriodDecisionsWitnessTest {
                     if (s.decider() != null) n.deciders++;
                     if (s.conflict() != null) n.conflicts++;
                     if (!s.rules().isEmpty()) n.rules++;
+                    if (s.rules().size() > 1) n.sharedRules++;
                     if (s.input() != null) n.inputs++;
                 }
             }
