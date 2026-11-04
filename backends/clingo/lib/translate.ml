@@ -8370,12 +8370,15 @@ and dk_table ctx (name : string) :
       let p = Printf.sprintf "dkt%d" n and far = Printf.sprintf "dkf%d" n in
       let edge_lo = Printf.sprintf "dkl%d" n and edge_hi = Printf.sprintf "dkh%d" n in
       let rank = ref 0 and prev = ref None and fars = ref 0 in
-      let faults = ref [] in
+      let faults = ref [] and seen = Hashtbl.create 16 in
       let holds d =
         match dk_holds ctx ~stack:[] name d with
         | b -> b
         | exception Value.Fault { code = Some ("EF-014" | "EF-022"); text; _ } ->
-            (if not (List.mem (d, text) !faults) then faults := (d, text) :: !faults);
+            if not (Hashtbl.mem seen (d, text)) then begin
+              Hashtbl.replace seen (d, text) ();
+              faults := (d, text) :: !faults
+            end;
             false
       in
       for d = lo to hi do
@@ -8420,11 +8423,12 @@ and dk_table ctx (name : string) :
       end;
       if !fars = 0 then emit ctx "%s(0) :- #false." far;
       let sentences = List.sort_uniq compare (List.map snd !faults) in
+      let days = List.sort compare !faults in
       let fault_preds =
         List.mapi
           (fun k text ->
             let fp = Printf.sprintf "dke%d_%d" n (k + 1) in
-            List.iter (fun (d, t) -> if t = text then emit ctx "%s(%d)." fp d) (List.sort_uniq compare !faults);
+            List.iter (fun (d, t) -> if t = text then emit ctx "%s(%d)." fp d) days;
             (fp, text))
           sentences
       in
