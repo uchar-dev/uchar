@@ -44,8 +44,8 @@ public enum Route {
     /** The input of a cell of a dimensioned attribute, the entry of its key in the map of the attribute's cells, which
      *  {@link Consequence.State} carries where it names a cell. */
     CELL(ComputeHelpers.class, "cell"),
-    /** The fault of the form of an input, its sentence around the object, named in a rule, which
-     *  {@link Consequence.InputFormFault} inserts. */
+    /** The fault EF-020 of the form of an input, the component of an ever-unique key given as the asOfDate-bucket
+     *  scalar, its sentence around the object, named in a rule, which {@link Consequence.InputFormFault} inserts. */
     INPUT_FORM_FAULT(ComputeHelpers.class, "inputFormFault"),
     /** The fault EF-037 of a member of a fold whose timeline the case gives as the asOfDate-bucket scalar
      *  ({@link Consequence.MemberFault}). */

@@ -235,9 +235,10 @@ public sealed interface Consequence {
      *  duplicate (ch. 5.9). */
     record UniquenessViolation(String subject, String uniqueness, Insertion insertion) implements Consequence {}
 
-    /** The fault of the form of an input on the object {@code subject} binds, the sentence {@code voor}, the object
-     *  and {@code na}, under {@code fault}, made by the route {@link Route#INPUT_FORM_FAULT}. */
-    record InputFormFault(String subject, String before, String after, FaultName fault, Insertion insertion)
+    /** The fault of the form of an input on the object {@code subject} binds: the case gives the component {@code key}
+     *  of an ever-unique key as the asOfDate-bucket scalar (EF-020), the sentence {@code before}, the object and
+     *  {@code after}, under {@code fault}, made by the route {@link Route#INPUT_FORM_FAULT}. */
+    record InputFormFault(String subject, String key, String before, String after, FaultName fault, Insertion insertion)
             implements Consequence {}
 
     /** The standing of the §9.5 channel of the form {@code producer} (ch. 5.6), {@code inconsistent} or consistent: a

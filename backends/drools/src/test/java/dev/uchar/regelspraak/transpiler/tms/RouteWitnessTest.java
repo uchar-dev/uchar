@@ -73,7 +73,7 @@ class RouteWitnessTest {
                 "INCONSISTENCY: Object ComputeHelpers.inconsistency[String, Object, List]",
                 "BUCKET_SCALAR: BucketScalar ComputeHelpers.bucketScalarOf[Object]",
                 "CELL: Object ComputeHelpers.cell[Object, List]",
-                "INPUT_FORM_FAULT: InputFormFault ComputeHelpers.inputFormFault[String, Object, String, String]",
+                "INPUT_FORM_FAULT: InputFormFault ComputeHelpers.inputFormFault[String, String, Object, String, String]",
                 "BUCKET_SCALAR_FAULT: InputFormFault ComputeHelpers.bucketScalarFault[String, String, Object, String]",
                 "OPEN_SEGMENT_FAULT: OpenSegmentFault PeriodArithmetic.openSegmentFault[String, Object, Object]",
                 "UNIQUENESS_KEYS: List ComputeHelpers.uniquenessKeys[String, int, Object, Object, List, int]",

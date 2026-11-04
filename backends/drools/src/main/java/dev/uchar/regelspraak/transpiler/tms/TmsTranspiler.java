@@ -3284,7 +3284,7 @@ public final class TmsTranspiler {
         reads.recorder();
         return as(RuleOrigin.Role.UNIQUENESS_KEY_FORM_FAULT, reads.rulePlan(ruleName + ": sleutelvorm van "
                 + type.name + " " + (b + 1), items,
-                new Consequence.InputFormFault(SUBJECT, "the ever-unique key \"" + timeMember.name()
+                new Consequence.InputFormFault(SUBJECT, timeMember.name(), "the ever-unique key \"" + timeMember.name()
                         + "\" needs the full timeline; ", " supplies only a scalar (ch. 5.9)",
                         new Consequence.FaultName(name, ruleName), Consequence.Insertion.LOGICAL)));
     }

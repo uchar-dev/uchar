@@ -1269,7 +1269,8 @@ final class DrlRendering {
                         + typeName(UniquenessViolation.class) + "(" + str(x.uniqueness()) + ", " + x.subject() + ")");
                 case Consequence.InputFormFault x -> insert(b, "    ", x.insertion(), "new " + typeName(Fault.class) + "("
                         + x.subject() + ", " + str(x.fault().form()) + ", " + route(Route.INPUT_FORM_FAULT) + "("
-                        + str(x.before()) + ", " + x.subject() + ", " + str(x.after()) + ", " + str(x.fault().rule())
+                        + str(x.key()) + ", " + str(x.before()) + ", " + x.subject() + ", " + str(x.after()) + ", "
+                        + str(x.fault().rule())
                         + "))");
                 case Consequence.InsertChannelState x -> insert(b, "    ", x.insertion(), "new " + typeName(ChannelState.class)
                         + "(" + str(x.producer()) + ", " + x.inconsistent() + ")");

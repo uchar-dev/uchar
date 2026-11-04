@@ -900,13 +900,12 @@ public final class ComputeHelpers {
         return BucketScalar.of((List<?>) timeline);
     }
 
-    /** The fault of the form of an input ({@link InputFormFault}), the sentence {@code before}, the object {@code object}
-     *  and {@code after}, named in the rule {@code rule}: the fault a consequence inserts where the case gives an input
-     *  in a form the rule cannot read ({@code plan.Consequence.InputFormFault}). A null {@code rule} names no rule yet: the
-     *  fault of a member of a fold ({@code plan.Consequence.MemberFault}), which the form that reads the fold names where it
-     *  meets it. */
-    public static InputFormFault inputFormFault(String before, Object object, String after, String rule) {
-        return new InputFormFault(before, object, after).inRule(rule);
+    /** The fault EF-020 of the form of an input ({@link InputFormFault#temporalKeyScalar}): the case gives the component
+     *  {@code key} of an ever-unique key, an attribute on a timeline, as the asOfDate-bucket scalar on the object
+     *  {@code object}; the sentence {@code before}, the object and {@code after}, named in the rule {@code rule}. The
+     *  fault a {@code plan.Consequence.InputFormFault} inserts. */
+    public static InputFormFault inputFormFault(String key, String before, Object object, String after, String rule) {
+        return InputFormFault.temporalKeyScalar(key, before, object, after).inRule(rule);
     }
 
     /** The fault EF-037 of the member {@code member} of a fold whose timeline of the attribute {@code attribute} the

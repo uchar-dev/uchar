@@ -302,7 +302,8 @@ final class FormsPlan {
             "for (Object k : ComputeHelpers.uniquenessKeys(\"proefuniciteit\", 1, $onderwerp, $kustvak, ",
             ", -1)) {", ", 0)) {", "        insertLogical(k);",
             "insertLogical(new UniquenessViolation(\"proefuniciteit\", $onderwerp));",
-            "insertLogical(new Fault($onderwerp, \"proefuniciteit\", ComputeHelpers.inputFormFault(\"the key \\\"uitkijkbonus\\\""
+            "insertLogical(new Fault($onderwerp, \"proefuniciteit\", ComputeHelpers.inputFormFault(\"uitkijkbonus\","
+                    + " \"the key \\\"uitkijkbonus\\\""
                     + " needs the full timeline; \", $onderwerp, \" supplies a scalar\", \"proefuniciteit\")));",
             "insertLogical(new ChannelState(\"proef\", true));", "insertLogical(new ChannelState(\"proef\", false));");
 
@@ -334,7 +335,8 @@ final class FormsPlan {
         rules.add(new RulePlan("schending", "proefuniciteit", null, table(), List.of(subject),
                 new Consequence.UniquenessViolation(O, "proefuniciteit", Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("invoervorm", "proefuniciteit", null, table(), List.of(subject),
-                new Consequence.InputFormFault(O, "the key \"uitkijkbonus\" needs the full timeline; ", " supplies a scalar",
+                new Consequence.InputFormFault(O, "uitkijkbonus", "the key \"uitkijkbonus\" needs the full timeline; ",
+                        " supplies a scalar",
                         new Consequence.FaultName("proefuniciteit", "proefuniciteit"), Consequence.Insertion.LOGICAL)));
         List<FactPattern> channel = List.of(new FactPattern(inconsistency, "$inconsistentie", List.of(new Alpha("kanaal",
                 List.of(new Alpha.FieldTest("rule", Alpha.Comparator.GELIJK, "proef")))), List.of(), List.of()));

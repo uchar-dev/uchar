@@ -216,7 +216,7 @@ final class PatternDslRendering {
                     insert(drools, x.insertion(), new UniquenessViolation(x.uniqueness(), a[0])));
             case Consequence.InputFormFault x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new Fault(a[0], x.fault().form(),
-                            ComputeHelpers.inputFormFault(x.before(), a[0], x.after(), x.fault().rule()))));
+                            ComputeHelpers.inputFormFault(x.key(), x.before(), a[0], x.after(), x.fault().rule()))));
             case Consequence.InsertChannelState x -> new VariadicConsequence(new Variable[0], (drools, a) ->
                     insert(drools, x.insertion(), new ChannelState(x.producer(), x.inconsistent())));
             case Consequence.Recipient x -> consequenceItem(x.subject(), slotsOf(x.recipient(), x.weight(), x.key(),

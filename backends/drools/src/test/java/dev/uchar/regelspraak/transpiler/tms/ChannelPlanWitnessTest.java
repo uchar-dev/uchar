@@ -319,7 +319,8 @@ class ChannelPlanWitnessTest {
                 "    test 0.0 Call",
                 "    test 0.0.0 SlotValue",
                 "    test 0.0.1 Const Boolean",
-                "  consequence InputFormFault [subject=$onderwerp, before=the ever-unique key \"vondstnummer\" needs the"
+                "  consequence InputFormFault [subject=$onderwerp, key=vondstnummer, before=the ever-unique key"
+                        + " \"vondstnummer\" needs the"
                         + " full timeline; , after= supplies only a scalar (ch. 5.9), fault=FaultName[form=eenmalig nummer,"
                         + " rule=eenmalig nummer], insertion=LOGICAL]",
                 "rule eenmalig nummer | form eenmalig nummer | group null",

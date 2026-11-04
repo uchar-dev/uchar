@@ -22,14 +22,17 @@ import java.util.function.Function;
  *
  * <p>A form that reads a timeline whole and finds the asOfDate-bucket scalar is the fault kind EF-037 (ch. 5.7b,
  * {@link #bucketScalar}): its parameters are the attribute and the label of the object whose input it is, the latter
- * only where the sentence names that object itself and not the subject of the rule along a path. The other faults of
- * this class have no code.
+ * only where the sentence names that object itself and not the subject of the rule along a path. An ever-unique key
+ * whose component on a timeline the case gives as that scalar is the fault kind EF-020 ({@link #temporalKeyScalar}):
+ * its parameters are the key component and the label of the object. The other faults of this class have no code.
  */
 public final class InputFormFault extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
     private final String code;
+    /** The parameter of the kind that names the member whose input it is: {@code attribute}, or {@code key}. */
+    private final String memberParameter;
     private final String attribute;
     private final boolean owner;
     private final String before;
@@ -40,14 +43,15 @@ public final class InputFormFault extends RuntimeException {
 
     /** The fault without a code whose sentence is {@code before}, the object {@code object}, then {@code after}. */
     InputFormFault(String before, Object object, String after) {
-        this(null, null, false, before, object, FactNames.object(object), after, null);
+        this(null, null, null, false, before, object, FactNames.object(object), after, null);
     }
 
-    private InputFormFault(String code, String attribute, boolean owner, String before, Object object,
-                           String objectName, String after, String rule) {
+    private InputFormFault(String code, String memberParameter, String attribute, boolean owner, String before,
+                           Object object, String objectName, String after, String rule) {
         super(rule == null ? sentence(before, objectName, after)
                 : Msg.drools("FRAME.fault-in-rule", "rule", rule, "sentence", sentence(before, objectName, after)).text());
         this.code = code;
+        this.memberParameter = memberParameter;
         this.attribute = attribute;
         this.owner = owner;
         this.before = before;
@@ -61,7 +65,15 @@ public final class InputFormFault extends RuntimeException {
      *  scalar, in the sentence {@code before}, the object {@code object}, {@code after}; {@code owner} says whether
      *  {@code object} is the object whose input it is, which the parameter {@code label} then names. */
     static InputFormFault bucketScalar(String attribute, boolean owner, String before, Object object, String after) {
-        return new InputFormFault("EF-037", attribute, owner, before, object, FactNames.object(object), after, null);
+        return new InputFormFault("EF-037", "attribute", attribute, owner, before, object, FactNames.object(object),
+                after, null);
+    }
+
+    /** The fault EF-020 of an ever-unique key whose component {@code key}, an attribute on a timeline, the case gives as
+     *  the asOfDate-bucket scalar on the object {@code object} (RUNTIME-SEMANTICS ch. 5.9, 5.7b), in the sentence
+     *  {@code before}, the object, {@code after}: ever-uniqueness reads every value the timeline ever carries. */
+    static InputFormFault temporalKeyScalar(String key, String before, Object object, String after) {
+        return new InputFormFault("EF-020", "key", key, true, before, object, FactNames.object(object), after, null);
     }
 
     private static String sentence(String before, String objectName, String after) {
@@ -70,14 +82,15 @@ public final class InputFormFault extends RuntimeException {
 
     /** The same fault named after the rule {@code rule} it ran in, as {@link ComputeFault#inRule} names one. */
     public InputFormFault inRule(String rule) {
-        return new InputFormFault(code, attribute, owner, before, object, objectName, after, rule);
+        return new InputFormFault(code, memberParameter, attribute, owner, before, object, objectName, after, rule);
     }
 
     /** The same fault with the object named by {@code label}, which gives the case label of an input object and null
      *  for one a creation made, which keeps its name by type and identity. */
     public InputFormFault named(Function<Object, String> label) {
         String l = label.apply(object);
-        return l == null ? this : new InputFormFault(code, attribute, owner, before, object, l, after, rule);
+        return l == null ? this
+                : new InputFormFault(code, memberParameter, attribute, owner, before, object, l, after, rule);
     }
 
     /** The sentence of the fault, without the rule. */
@@ -95,17 +108,18 @@ public final class InputFormFault extends RuntimeException {
         return object;
     }
 
-    /** The fault kind (RUNTIME-SEMANTICS ch. 5.7b): EF-037 for the asOfDate-bucket scalar, null for the others. */
+    /** The fault kind (RUNTIME-SEMANTICS ch. 5.7b): EF-037 for the asOfDate-bucket scalar read whole, EF-020 for it as
+     *  the component of an ever-unique key, null for the others. */
     public String code() {
         return code;
     }
 
-    /** The parameters of the kind (ch. 5.7b): the attribute, and the object whose input it is where the sentence
-     *  names that object itself. Empty for a fault without a code. */
+    /** The parameters of the kind (ch. 5.7b): the attribute, or the key component of EF-020, and the object whose
+     *  input it is where the sentence names that object itself. Empty for a fault without a code. */
     public Map<String, String> params() {
         Map<String, String> p = new LinkedHashMap<>();
         if (code == null) return p;
-        p.put("attribute", attribute);
+        p.put(memberParameter, attribute);
         if (owner) p.put("label", objectName);
         return p;
     }
