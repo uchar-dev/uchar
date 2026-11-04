@@ -9624,10 +9624,20 @@ let () =
          ((pf_is ~label:"V1" ~attr:"bergloon" "30.00" :: pf_empty ~label:"V2" ~attr:"bergloon" ()
           :: wrak_rows)
          @ [ pf_cons ]));
-  (* case input on a computed target keeps its fence beside an initialisation *)
-  faults_with ~name:"initialisation beside a computation, input supplied" ~ir:beside
-    ~case_text:(v1 [ num "gewicht" "8.00"; num "bergloon" "40.00" ] [ is "40.00"; pf_cons ])
-    ~needle:"the case supplies input for computed target \"bergloon\"";
+  (* the input of the target stands below the computation and above the
+     initialisation (RUNTIME-SEMANTICS ch. 7.8, the stack): where the rule
+     does not fire, and where it fires with leeg, the input stands, and where
+     it decides it displaces the input *)
+  both_answer ~name:"initialisation beside a computation, input supplied: the input stands" ~ir:beside
+    ~case_text:(v1 [ num "gewicht" "8.00"; num "lengte" "5.00"; num "bergloon" "40.00" ] [ is "40.00"; pf_cons ]);
+  both_answer ~name:"initialisation beside a computation that evaluates leeg, input supplied: the input stands"
+    ~ir:beside
+    ~case_text:(v1 [ num "gewicht" "12.00"; num "lengte" "5.00"; num "bergloon" "40.00" ] [ is "40.00"; pf_cons ]);
+  both_answer ~name:"initialisation beside a computation, input supplied: the computed value displaces it"
+    ~ir:beside
+    ~case_text:
+      (v1 [ num "gewicht" "12.00"; num "taxatie" "30.00"; num "lengte" "5.00"; num "bergloon" "40.00" ]
+         [ is "30.00"; pf_cons ]);
   (* the shapes the arm does not carry, each refused by name *)
   faults_with ~name:"two initialisations on one target"
     ~ir:
@@ -9636,18 +9646,39 @@ let () =
            init ~ident:"lengtebergloon" ~precondition:(greater "lengte" "3.00") (pf_l "30.00") ])
     ~case_text:(v1 [ num "gewicht" "12.00" ] [ is "25.00"; pf_cons ])
     ~needle:"2 initialisations write \"bergloon\"";
-  faults_with ~name:"an initialisation beside two computing rules"
-    ~ir:
-      (doc
-         [ pf_rule ~ot:"Vondst" ~objective:"bergloon" ~precondition:(greater "gewicht" "10.00") (va "taxatie");
-           ( "zware bergloon",
-             snd
-               (pf_rule ~ot:"Vondst" ~objective:"bergloon" ~precondition:(greater "gewicht" "20.00")
-                  (va "gewicht"))
-             |> substitute ~truth:{|"name": "bergloon van een vondst"|} ~via:{|"name": "zware bergloon"|} );
-           fallback ])
-    ~case_text:(v1 [ num "gewicht" "8.00" ] [ is "25.00"; pf_cons ])
-    ~needle:"the initialisation of \"bergloon\" sits beside 2 computing rules";
+  (* beside two computing rules the initialisation writes where neither
+     decides (the stack of ch. 7.8): a rule that evaluates leeg decides
+     nothing, and two that decide with different values are the fault of
+     ch. 5.7 *)
+  let two_rules =
+    doc
+      [ pf_rule ~ot:"Vondst" ~objective:"bergloon" ~precondition:(greater "gewicht" "10.00") (va "taxatie");
+        ( "zware bergloon",
+          snd
+            (pf_rule ~ot:"Vondst" ~objective:"bergloon" ~precondition:(greater "gewicht" "20.00")
+               (va "gewicht"))
+          |> substitute ~truth:{|"name": "bergloon van een vondst"|} ~via:{|"name": "zware bergloon"|} );
+        fallback ]
+  in
+  both_answer ~name:"an initialisation beside two computing rules: none of the three fires"
+    ~ir:two_rules ~case_text:(v1 [ num "gewicht" "8.00" ] [ empty_value; pf_cons ]);
+  both_answer ~name:"an initialisation beside two computing rules: one decides, one evaluates leeg"
+    ~ir:two_rules
+    ~case_text:(v1 [ num "gewicht" "25.00"; num "bergloon" "40.00" ] [ is "25.00"; pf_cons ]);
+  both_answer ~name:"an initialisation beside two computing rules: both evaluate leeg, the input stands"
+    ~ir:two_rules
+    ~case_text:(v1 [ num "gewicht" "15.00"; num "bergloon" "40.00" ] [ is "40.00"; pf_cons ]);
+  both_answer ~name:"an initialisation beside two computing rules: both evaluate leeg, the initialisation fills"
+    ~ir:two_rules ~case_text:(v1 [ num "gewicht" "15.00" ] [ is "25.00"; pf_cons ]);
+  faults_at_solving
+    ~code:
+      ( "EF-016",
+        [ ("rules", "bergloon van een vondst, zware bergloon"); ("attribute", "bergloon"); ("label", "V1");
+          ("objectType", "Vondst") ] )
+    ~name:"an initialisation beside two computing rules: two values"
+    ~ir:two_rules
+    ~case_text:(v1 [ num "gewicht" "25.00"; num "taxatie" "30.00" ] [ is "25.00"; pf_cons ])
+    ~needle:"two writers of one target disagree" ();
   (* a defaults group on the subtype folds the supertype's initialisation
      into the subtype's stack (ch. 7.10), condition and all. Folded without
      its condition, ref and the Drools exec-model branch wrote 25,00 on a
@@ -9688,9 +9719,7 @@ let () =
   faults_with ~name:"an initialisation beside a defaults group of its own level"
     ~ir:(pf_doc ~object_types:[ vondst ] ~defaults:[ wrak_group "Vondst" ] ~rule_defs:[ fallback ] ())
     ~case_text:(v1 [ num "gewicht" "8.00" ] [ empty_value; pf_cons ])
-    ~needle:
-      "the initialisation of \"bergloon\" shares its target with an allocation, an object \
-       creation or a defaults group of its own level";
+    ~needle:"the initialisation of \"bergloon\" shares its target with a defaults group of its own level";
   (* two initialisations on two levels of a chain whose top declares a
      defaults group: on every instance they share, the fold takes both into
      one stack, the inherited one above the own one (ch. 7.10), so neither
@@ -17493,6 +17522,89 @@ let () =
   in
   ref_matches ~name:"a leeg write decides nothing: a writer outside its window" ~ir ~case_text;
   clingo_matches ~name:"a leeg write decides nothing: a writer outside its window" ~ir ~case_text
+
+(* RUNTIME-SEMANTICS ch. 7.8, the stack of a scalar target: its writers — the
+   computing rules and an allocation — of one rank, then the input of the
+   object, the case's or the values of a making, then the initialisation; ref's
+   documents (ref/test/fixtures/writers-stack), its worked example WV-7.8-stapel,
+   played in both executors. Two writers with different values are EF-016, and
+   an initialisation, an allocation and a creation's member value on a timeline
+   target are refused in ref's words *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let dir = "ref/test/fixtures/writers-stack/" in
+  List.iter
+    (fun f ->
+      let ir = read (dir ^ f ^ "/ir.json") and case_text = read (dir ^ f ^ "/case.json") in
+      both_answer ~name:("the stack of a target: " ^ f) ~ir ~case_text)
+    [ "allocation-initialisation"; "creation-initialisation" ];
+  faults_at_solving
+    ~code:
+      ( "EF-016",
+        [ ("rules", "vast bergingsaandeel, verdeel de opbrengst van een berging"); ("attribute", "bergingsaandeel");
+          ("label", "B1"); ("objectType", "Berger") ] )
+    ~name:"the stack of a target: a computing rule and an allocation with different values"
+    ~ir:(read (dir ^ "allocation-conflict/ir.json")) ~case_text:(read (dir ^ "allocation-conflict/case.json"))
+    ~needle:"two writers of one target disagree" ();
+  List.iter
+    (fun (f, attribute) ->
+      faults_with ~name:("the stack of a target: on a timeline target, " ^ f) ~ir:(read (dir ^ f ^ "/ir.json"))
+        ~case_text:(read (dir ^ f ^ "/case.json"))
+        ~needle:(Printf.sprintf "temporal attribute %S as a target: temporal writes are not implemented" attribute))
+    [ ("timeline-initialisation", "strandloon"); ("timeline-allocation", "bergingsaandeel");
+      ("timeline-creation", "waarde") ];
+  (* the input of a computed target of every scalar datatype enters the stack:
+     a sum (the anchor jutterswet-beschikkingsom: "de herbeschikking moet berekend
+     worden als toegekend zijn borg"), a struct (jutterswet-vangstwaardering: the
+     waardering a StructLiteral of the toeslagbedrag and a kern of stuks and
+     grondbedrag) and a date-time (jutterswet-getijdenpaar: "de hersteltijd moet
+     berekend worden als zijn aankomst plus 26 uur"); where the rule decides it
+     displaces the input, where its value is leeg the input stands *)
+  let golden g = read ("corpus/golden/" ^ g ^ "/ir.json") in
+  let case_of ?(params = "{}") instances rows =
+    Printf.sprintf
+      {|{"format": "uchar-case-v0", "asOfDate": null, "input": {"instances": [%s], "parameters": %s}, "expected": [%s]}|}
+      (String.concat ", " instances) params (String.concat ", " rows)
+  in
+  let instance label ot attrs =
+    Printf.sprintf {|{"label": "%s", "objectType": "%s", "attributes": {%s}, "roles": {}, "characteristics": []}|}
+      label ot (String.concat ", " attrs)
+  in
+  let value label attr v =
+    Printf.sprintf {|{"kind": "attributeValue", "label": "%s", "attribute": "%s", "value": %s}|} label attr v
+  in
+  let afgewezen = {|{"constructor": "Afgewezen"}|} in
+  both_answer ~name:"the stack of a target: case input on a computed sum target"
+    ~ir:(golden "anchor/jutterswet-beschikkingsom")
+    ~case_text:
+      (case_of ~params:{|{"vaste voet": {"number": "25.00"}}|}
+         [ instance "J1" "Jutter" [ {|"herbeschikking": |} ^ afgewezen ];
+           instance "J2" "Jutter" [ {|"herbeschikking": |} ^ afgewezen; {|"borg": {"number": "300.00"}|} ] ]
+         [ value "J1" "herbeschikking" afgewezen;
+           value "J2" "herbeschikking" {|{"constructor": "Toegekend", "payload": {"number": "300.00"}}|} ]);
+  let waardering t e g =
+    Printf.sprintf
+      {|{"struct": {"toeslag": {"number": "%s"}, "kern": {"struct": {"eenheden": {"number": "%s"}, "grondslag": {"number": "%s"}}}}}|}
+      t e g
+  in
+  both_answer ~name:"the stack of a target: case input on a computed struct target"
+    ~ir:(golden "jutterswet-vangstwaardering")
+    ~case_text:
+      (case_of
+         [ instance "V1" "Vangst"
+             [ {|"grondbedrag": {"number": "100.25"}|}; {|"stuks": {"number": "3"}|};
+               {|"toeslagbedrag": {"number": "25.50"}|}; {|"waardering": |} ^ waardering "1.00" "1" "1.00" ];
+           instance "V2" "Vangst" [ {|"waardering": |} ^ waardering "1.00" "1" "1.00" ] ]
+         [ value "V1" "waardering" (waardering "25.50" "3" "100.25"); value "V2" "waardering" (waardering "1.00" "1" "1.00") ]);
+  both_answer ~name:"the stack of a target: case input on a computed date-time target"
+    ~ir:(golden "jutterswet-getijdenpaar")
+    ~case_text:
+      (case_of
+         [ instance "G1" "Getijdenpaar"
+             [ {|"aankomst": {"dateTime": "2024-02-28T23:30:00"}|}; {|"hersteltijd": {"dateTime": "2024-01-01T00:00:00"}|} ];
+           instance "G2" "Getijdenpaar" [ {|"hersteltijd": {"dateTime": "2024-01-01T00:00:00"}|} ] ]
+         [ value "G1" "hersteltijd" {|{"dateTime": "2024-03-01T01:30:00"}|};
+           value "G2" "hersteltijd" {|{"dateTime": "2024-01-01T00:00:00"}|} ])
 
 (* RUNTIME-SEMANTICS ch. 7.11: a defaults group on a timeline target decides per
    day, the highest default that decides on a day winning that day; ref's

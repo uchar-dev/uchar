@@ -301,19 +301,20 @@ spec bug.
   the input value of a defaults target enters as `inputval/3`, standing
   defeasibly (`val :- inputval, not decided`) exactly where ref/'s
   write overwrites it; the initialisation default's justification is the
-  absence of that input. The ch. 7.8 **standing targets** (a scalar
-  target that only computing rules write, one or more, with or without
-  a validity window, `Ir_v0.Desugar.standing_targets`) take the same
-  entry where a computing rule on them applies: each such rule derives
-  its value under its index in the document as well (`wval/4`), with
-  the full val-head body — condition AND value bindings — so a leeg
-  evaluation derives neither and decides nothing (RS ch. 3.11), and the
-  input stands where no writer decides (`val :- inputval, not
-  wdecides`). The ch. 6d computed-target fence applies to a scalar
-  computing target outside the standing domain, beside an
-  initialisation, an allocation or a creation-time write, and an
-  allocation `doelAttribuut` supplied by the case is fenced the same
-  way.
+  absence of that input. Every writer of a scalar target stands in the
+  target's **stack** (RS ch. 7.8), and its input takes the same entry: a
+  computing rule that applies, of any datatype, derives its value under
+  its index in the document as well (`wval/4`), an allocation under
+  `vdN` for its share target and its rest, each with the full val-head
+  body — condition AND value bindings — so a leeg evaluation derives
+  neither and decides nothing (RS ch. 3.11); the input stands where no
+  writer decides (`val :- inputval, not wdecides`), and two writers with
+  different values on one object are the EF-016 witness below. The member
+  value of a creation is the input of the object it makes: where a
+  writer, a defaults group or an initialisation writes the member, the
+  creation derives `inputval/3` (and `inputfilled/2`) on its term in
+  place of `val/3`. An initialisation, an allocation and a creation's
+  member value on a timeline target are refused in ref's words.
 - A writer of a timeline target, also its only one, decides the days of
   the segments it writes (RUNTIME-SEMANTICS ch. 3.11, 5.7 per day). Each
   writer writes its segments as `tl/5` and also as `wtl/6`, under its
@@ -418,14 +419,14 @@ spec bug.
   which ch. 7.7 excludes, or a windowed one — translates natively, as
   ref replays it (RS ch. 5.4): its `val` head needs the condition and
   `not inputfilled(S,a)`, a case fact beside the untouched input `val`,
-  so a supplied value stands. Beside one computing rule on the target
-  that writes a concrete type of its chain as a rule too, the head also
-  needs `not comp_decides(S,a)`, which that rule derives with its own
-  val body: the computed value wins. Where the rule fires and evaluates
-  leeg it decides nothing (RS ch. 3.11), so the initialisation writes.
-  Two initialisations that write one concrete type as rules
-  (WF-079 refuses them first), two computing rules on one target, an
-  allocation, a creation-time write or a defaults group of its own level
+  so a supplied value stands, and on an object a creation made the
+  creation derives it with the member value. Beside the writers of its
+  stack — the computing rules that write a concrete type of its chain as
+  a rule too and an allocation of the target — the head also needs `not
+  wdecides(S,a)`: a writer's value wins. Where a rule fires and
+  evaluates leeg it decides nothing (RS ch. 3.11), so the initialisation
+  writes. Two initialisations that write one concrete type as rules
+  (WF-079 refuses them first), a defaults group of its own level
   (WF-050's) beside it, and a target that is no number or date are
   refused by name. A defaults group on another level of the chain is no
   co-writer: on the instances its stack runs on, the initialisation is

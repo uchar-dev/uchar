@@ -70,7 +70,7 @@ let chosen_targets (doc : document) =
     (* exactly one initialisation: the init default is what the desugaring
        exists for — a computation without one stays structurally outside the
        desugaring and carries the defaults reading directly through the
-       ch. 7.8 standing norm (standing_targets below) *)
+       ch. 7.8 stack of its target *)
     List.length rs = List.length inits + List.length comps
     && List.length inits = 1
     && List.for_all is_plain_init inits
@@ -144,72 +144,6 @@ let document (doc : document) : document =
       resolved_rules = List.filter (fun r -> not (in_chosen r)) doc.resolved_rules;
       prioritized_defaults = doc.prioritized_defaults @ List.map defaults_of chosen;
     }
-
-(* The standing domain of RUNTIME-SEMANTICS ch. 7.8: a scalar target that
-   only computing rules write — one Gelijkstelling/Berekening or more, with or
-   without a validity window, and no initialisation (the pair of one
-   computation and one initialisation is the ch. 7.7 desugaring's domain
-   above), prioritized defaults, allocation or creation-time write beside
-   them. Every computing rule decides like a default: a leeg evaluation
-   writes nothing (ch. 3.11). On these targets the case-supplied input value
-   stands where no writer decides, which the ASP backend encodes by entering
-   it defeasibly (inputval/3); beside the other kinds of writer it has no
-   such entry. *)
-let standing_targets (doc : document) : (string * string) list =
-  let key (ot, a) = (norm ot, norm a) in
-  let initialised =
-    List.filter_map
-      (fun r ->
-        match target_of r with
-        | Some t when r.rr_presentation = Some Initialisation -> Some (key t)
-        | _ -> None)
-      doc.resolved_rules
-  in
-  let computing (r : resolved_rule) =
-    (match r.rr_presentation with Some (Equation | Calculation) -> true | _ -> false) && r.value_node <> None
-  in
-  let other_writer (ot, a) =
-    List.exists
-      (fun (l : prioritized_defaults) ->
-        norm l.pd_subject = norm ot
-        && match l.pd_attribute with Some la -> norm la = norm a | None -> false)
-      doc.prioritized_defaults
-    || List.exists
-         (fun (v : resolved_allocation) ->
-           (match v.objective_type_name with Some dt -> norm dt = norm ot | None -> false)
-           && match v.target_attribute with Some da -> norm da = norm a | None -> false)
-         doc.allocations
-    || List.exists
-         (fun (o : resolved_object_creation) ->
-           (match o.created_type with Some nt -> norm nt = norm ot | None -> false)
-           && List.exists
-                (fun (t : assignment) ->
-                  (not t.to_characteristic)
-                  && match t.to_attribute with
-                     | Some ta -> norm (Checks.cell_member ta (Option.map Checks.some_names t.to_labels)) = norm a
-                     | None -> false)
-                o.assignments)
-         doc.object_creations
-  in
-  (* a timeline target is no standing target: each of its writers decides
-     the days its timeline reads a value, beside the input (ch. 3.11) *)
-  let scalar (ot, a) =
-    match List.find_opt (fun (n, _) -> norm n = norm ot) doc.object_types with
-    | Some (_, decl) -> not (Checks.attr_temporal decl a)
-    | None -> false
-  in
-  List.fold_left
-    (fun acc r ->
-      match target_of r with
-      | Some t
-        when computing r
-             && scalar t
-             && (not (List.mem (key t) initialised))
-             && (not (other_writer t))
-             && not (List.mem (key t) acc) ->
-          acc @ [ key t ]
-      | _ -> acc)
-    [] doc.resolved_rules
 
 (* --- inheritance: the effective defaults stack per type (RUNTIME-SEMANTICS
    ch. 7.10) ---------------------------------------------------------------

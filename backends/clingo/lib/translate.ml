@@ -11780,11 +11780,12 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ct
 (* the writers of the attribute target (ot, a) beside a natively translated
    initialisation (translate_rule's Initialisatie arm): the initialisations
    and the computing rules among the rules that apply on the case's date — an
-   excluded version emits nothing and is no writer — and whether an
-   allocation, a creation-time member or a defaults group of ot's own level
-   writes the target too. A writer declared on a type of ot's chain, above or
-   below it, writes the instances the two types share (ch. 2.2), so it counts
-   wherever the two populations overlap. A defaults group on ANOTHER level of
+   excluded version emits nothing and is no writer — and whether a defaults
+   group of ot's own level writes the target too. A writer declared on a type
+   of ot's chain, above or below it, writes the instances the two types share
+   (ch. 2.2), so it counts wherever the two populations overlap. An allocation
+   is a writer of the stack ([allocation_writes]), and the member value of a
+   creation the input of the object it makes. A defaults group on ANOTHER level of
    the chain is no co-writer: on every instance its stack runs on, the
    initialisation is folded into that stack with its condition
    (RUNTIME-SEMANTICS ch. 7.10) and excluded here by [absorbed_on], so the two
@@ -11808,7 +11809,6 @@ let native_types ctx ~ot ~a =
    ch. 7.10), and were refused here although ref and the Drools exec-model
    branch answer them *)
 let init_writers ctx ~ot ~a =
-  let overlaps t = Ir_v0.Checks.populations_overlap ctx.doc ot t in
   let mine = native_types ctx ~ot ~a in
   let co_writes ot' = List.exists (fun t -> List.mem t mine) (native_types ctx ~ot:ot' ~a) in
   let on_target (r : resolved_rule) =
@@ -11824,31 +11824,14 @@ let init_writers ctx ~ot ~a =
       (fun (r : resolved_rule) -> r.rr_presentation = Some Initialisation)
       (List.filter on_target ctx.doc.resolved_rules)
   in
-  let other =
+  let group =
     List.exists
       (fun (l : prioritized_defaults) ->
         norm l.pd_subject = norm ot
         && match l.pd_attribute with Some la -> norm la = norm a | None -> false)
       ctx.doc.prioritized_defaults
-    || List.exists
-         (fun (v : resolved_allocation) ->
-           (match v.objective_type_name with Some dt -> overlaps dt | None -> false)
-           && match v.target_attribute with Some da -> norm da = norm a | None -> false)
-         ctx.doc.allocations
-    || List.exists
-         (fun (o : resolved_object_creation) ->
-           (match o.created_type with Some nt -> overlaps nt | None -> false)
-           && List.exists
-                (fun (t : assignment) ->
-                  (not t.to_characteristic)
-                  && match t.to_attribute with
-                     | Some ta ->
-                         norm (Ir_v0.Checks.cell_member ta (Option.map Ir_v0.Checks.some_names t.to_labels)) = norm a
-                     | None -> false)
-                o.assignments)
-         ctx.doc.object_creations
   in
-  (inits, comps, other)
+  (inits, comps, group)
 
 (* A computing rule derives its value under its index in the document as well
    (wval/4). A leeg value derives none, so a writer that fires with a leeg
@@ -11956,6 +11939,88 @@ let written_timeline ctx ~ot ~a =
             (match l.pd_attribute with Some la -> norm la = norm a | None -> false)
             && Ir_v0.Checks.subtype_of ctx.doc ~sub:ot ~super:l.pd_subject)
           ctx.doc.prioritized_defaults)
+
+(* --- the implicit stack of a scalar target (RUNTIME-SEMANTICS ch. 7.8) ---
+
+   Every writer of a target stands in one stack, highest first: the writers —
+   the computing rules and the allocations that write it, of one rank, each
+   deciding where its value is filled (wval/4, wdecides/2), two of them with
+   different values the fault of ch. 5.7 ([writer_conflicts]); then the input of
+   the object, the case's or, on an object a creation made, the values of its
+   making (inputval/3), which stands where no writer decides; then the
+   initialisation, which writes where the input leaves the target empty
+   (inputfilled/2) and no writer decides. A defaults group is a stack of its own
+   with the input as its virtual input default. *)
+
+(* Whether the allocation [v] writes the attribute [a] on instances of the
+   concrete type [ot]: its share target or its rest, declared on a type of
+   [ot]'s chain *)
+let allocation_writes ctx ~ot ~a (v : resolved_allocation) =
+  let overlaps t = Ir_v0.Checks.populations_overlap ctx.doc ot t in
+  ((match v.objective_type_name with Some dt -> overlaps dt | None -> false)
+   && match v.target_attribute with Some da -> norm da = norm a | None -> false)
+  || (match v.source_type with Some bt -> overlaps bt | None -> false)
+     && match v.remainder_attribute with Some ra -> norm ra = norm a | None -> false
+
+(* Whether the input of the member [attr] on an instance of the concrete type
+   [otype] enters as inputval/3: a defaults group of its chain writes it, or,
+   on a scalar target, a computing rule that applies on the case's date or an
+   allocation does. A writer declared on one of its supertypes reaches it
+   (ch. 2.2). A timeline target's input is its timeline ([timeline_input]) *)
+let defeasible_input ctx ~otype ~attr =
+  let doc = ctx.doc in
+  let inherits declared = Ir_v0.Checks.subtype_of doc ~sub:otype ~super:declared in
+  List.exists
+    (fun (l : prioritized_defaults) ->
+      match l.pd_attribute with Some a -> inherits l.pd_subject && norm a = norm attr | None -> false)
+    doc.prioritized_defaults
+  || (not (attr_temporal ctx ~otype ~attr))
+     && (List.exists
+           (fun (r : resolved_rule) ->
+             match Ir_v0.Desugar.target_of r with
+             | Some (t, a) ->
+                 norm a = norm attr && inherits t && applies ctx r.rr_validity && writer_index ctx r <> None
+             | None -> false)
+           doc.resolved_rules
+        || List.exists
+             (fun (v : resolved_allocation) ->
+               (match v.objective_type_name with Some dt -> inherits dt | None -> false)
+               && (match v.target_attribute with Some da -> norm da = norm attr | None -> false)
+               || (match v.source_type with Some bt -> inherits bt | None -> false)
+                  && match v.remainder_attribute with Some ra -> norm ra = norm attr | None -> false)
+             doc.allocations)
+
+(* Whether an initialisation writes the member [attr] on an instance of the
+   concrete type [otype]: the guard of the native arm reads whether its input
+   fills it (inputfilled/2) *)
+let init_target ctx ~otype ~attr =
+  List.exists
+    (fun (r : resolved_rule) ->
+      r.rr_presentation = Some Initialisation
+      &&
+      match Ir_v0.Desugar.target_of r with
+      | Some (ot, a) -> norm a = norm attr && Ir_v0.Checks.subtype_of ctx.doc ~sub:otype ~super:ot
+      | None -> false)
+    ctx.doc.resolved_rules
+
+(* Whether some object of the type [otype]'s chain has an input for [attr]: the
+   case gives one, or a creation makes an object of a type of the chain with a
+   value for it. Where one has, a writer emits the rule by which that input
+   stands where no writer decides *)
+let input_on ctx ~otype ~attr =
+  case_supplies ctx ~otype ~attr
+  || List.exists
+       (fun (o : resolved_object_creation) ->
+         (match o.created_type with Some nt -> Ir_v0.Checks.populations_overlap ctx.doc nt otype | None -> false)
+         && List.exists
+              (fun (t : assignment) ->
+                (not t.to_characteristic)
+                && match t.to_attribute with
+                   | Some ta ->
+                       norm (Ir_v0.Checks.cell_member ta (Option.map Ir_v0.Checks.some_names t.to_labels)) = norm attr
+                   | None -> false)
+              o.assignments)
+       ctx.doc.object_creations
 
 (* ch. 3.11: a time-dependent characteristic target within a period window
    (ch. 3.10) holds in the maximal periods of its condition, read per period
@@ -12069,16 +12134,21 @@ let translate_rule ctx (r : resolved_rule) =
                 Some (starting_at, up_to, to_inclusive)
             | _ -> None
           in
-          (* an initialisation that the input or a computed value blocks does not
+          (* an initialisation that the input or a writer's value blocks does not
              decide, so neither its condition nor its value is evaluated
-             (RUNTIME-SEMANTICS ch. 5.4, 5.7, 7.3): the fences and deposits of both
-             carry this guard, as the val head does *)
+             (RUNTIME-SEMANTICS ch. 5.4, 5.7, 7.3, 7.8): the fences and deposits
+             of both carry this guard, as the val head does *)
+          let beside_writers =
+            r.rr_presentation = Some Initialisation
+            &&
+            let _, comps, _ = init_writers ctx ~ot ~a in
+            comps <> [] || List.exists (allocation_writes ctx ~ot ~a) ctx.doc.allocations
+          in
           let init_guard =
             match r.rr_presentation with
             | Some Initialisation ->
-                let _, comps, _ = init_writers ctx ~ot ~a in
                 Printf.sprintf "not inputfilled(%s,%s)" subject (str a)
-                :: (if comps <> [] then [ Printf.sprintf "not comp_decides(%s,%s)" subject (str a) ] else [])
+                :: (if beside_writers then [ Printf.sprintf "not wdecides(%s,%s)" subject (str a) ] else [])
             | _ -> []
           in
           (* a condition that reads a timeline is read per period on a timeline
@@ -12124,14 +12194,8 @@ let translate_rule ctx (r : resolved_rule) =
                  carries no numeric scale, no unit and no fit — the constructor
                  term rides straight into the val head. A leeg argument binds no
                  atom, so the rule does not fire and the target is leeg
-                 (propagation). A case-supplied sum computed target has no
-                 monotone encoding here (the standing/inputval path is
-                 numeric-shaped; no corpus case), so it is fenced loudly. *)
-              if case_supplies ctx ~otype:ot ~attr:a then
-                fault
-                  "a case-supplied sum-typed computed target %S has no encoding here (no corpus \
-                   case)"
-                  a;
+                 (propagation). The rule is a writer of the target's stack, as
+                 every computing rule is (below the match). *)
               ctx.rule_guard <- cond;
               let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.value_node) in
               ctx.rule_guard <- [];
@@ -12141,13 +12205,8 @@ let translate_rule ctx (r : resolved_rule) =
                  record term rides straight into the val head — no numeric scale,
                  no unit, no fit (value_scale 0), the Construct-write sibling. A
                  leeg field leaves the literal underivable, so the target is leeg
-                 (no-hole propagation). A case-supplied struct computed target has
-                 no monotone encoding here (the sum-target sibling), fenced. *)
-              if case_supplies ctx ~otype:ot ~attr:a then
-                fault
-                  "a case-supplied struct-typed computed target %S has no encoding here (no corpus \
-                   case)"
-                  a;
+                 (no-hole propagation), and the rule is a writer of the target's
+                 stack (the sum-target sibling). *)
               ctx.rule_guard <- cond;
               let bindings, term, _ = expr_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.value_node) in
               ctx.rule_guard <- [];
@@ -12157,14 +12216,8 @@ let translate_rule ctx (r : resolved_rule) =
                  (datetime ± duration) rides the pair term dt(D, MS) straight
                  into the val head — no numeric scale, no unit, no fit (the
                  sum/struct-target sibling). A leeg date operand leaves the
-                 pair underivable, so the target is leeg (propagation). A
-                 case-supplied datum-tijd computed target has no monotone
-                 encoding here (the sum-target sibling), fenced loudly. *)
-              if case_supplies ctx ~otype:ot ~attr:a then
-                fault
-                  "a case-supplied datum-tijd computed target %S has no encoding here (no corpus \
-                   case)"
-                  a;
+                 pair underivable, so the target is leeg (propagation), and the
+                 rule is a writer of the target's stack (the sum-target sibling). *)
               ctx.rule_guard <- cond;
               let atoms, dd, dm = dt_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.value_node) in
               ctx.rule_guard <- [];
@@ -12178,14 +12231,8 @@ let translate_rule ctx (r : resolved_rule) =
                  rides straight into the val head — no numeric scale, no unit,
                  no fit (the sum/struct-target pattern). A leeg source read
                  binds no atom, so the rule does not fire and the target is
-                 leeg (propagation). A case-supplied text/enum computed target
-                 has no monotone encoding here (the sum-target sibling),
-                 fenced loudly. *)
-              if case_supplies ctx ~otype:ot ~attr:a then
-                fault
-                  "a case-supplied text/enum computed target %S has no encoding here (no corpus \
-                   case)"
-                  a;
+                 leeg (propagation), and the rule is a writer of the target's
+                 stack (the sum-target sibling). *)
               ctx.rule_guard <- cond;
               let bindings, term = symbolic_term ctx ~subject ~subject_ot:ot (req "RuleVersion.value" r.value_node) in
               ctx.rule_guard <- [];
@@ -12257,18 +12304,6 @@ let translate_rule ctx (r : resolved_rule) =
                      shape (a gedurende condition over an own temporal characteristic) or the \
                      period arithmetic of ch. 3.4/3.5; no corpus case for more")
           | Some (Calculation | Equation) ->
-              (* on a target that only computing rules write (ch. 7.8) the case
-                 input enters as inputval/3 (translate_case) and stands where no
-                 writer decides; beside an initialisation, an allocation or a
-                 creation-time write it has no such entry *)
-              let standing =
-                List.mem (norm ot, norm a) (Ir_v0.Desugar.standing_targets ctx.doc)
-              in
-              if (not standing) && case_supplies ctx ~otype:ot ~attr:a then
-                fault
-                  "the case supplies input for computed target %S, which an initialisation, an allocation \
-                   or an object creation writes as well: not encoded here (no corpus case)"
-                  a;
               let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
               units_identical_ok
                 ~what:(Printf.sprintf "the write to %S" a)
@@ -12288,59 +12323,26 @@ let translate_rule ctx (r : resolved_rule) =
               ctx.write_scale <- 1;
               ctx.write_unbounded <- false;
               ctx.write_value <- None;
-              (* beside an initialisation (ch. 5.4) the initialisation arm
-                 reads when this rule decides — the computed value wins. The
-                 decision atom carries the val head's body, so a leeg
-                 evaluation derives neither and the initialisation fills the
-                 target *)
-              let beside_init =
-                let inits, _, _ = init_writers ctx ~ot ~a in
-                inits <> []
-              in
               List.iter
                 (fun { vb_guard = bindings; vb_term = term; vb_scale = scale; _ } ->
                   let body = (base :: cond) @ bindings in
                   let term, fit_guards = fitted ~unbounded ctx ~subject ~what:a ~body term scale target_scale in
-                  write_head term (body @ fit_guards);
-                  if beside_init then
-                    head_body ctx
-                      (Printf.sprintf "comp_decides(%s,%s)" subject (str a))
-                      (body @ fit_guards))
-                branches;
-              (* the value at the fixpoint is that of the writers that decide
-                 there (RUNTIME-SEMANTICS ch. 5.7), each with the val head's body
-                 under its own index, so the case input stands where none
-                 decides, a writer on another type of the chain included; with
-                 a Let-nested IfThenElse the rule decides where ANY branch
-                 does *)
-              Option.iter
-                (fun i ->
-                  head_body ctx
-                    (Printf.sprintf "wdecides(%s,%s)" subject (str a))
-                    [ Printf.sprintf "wval(%s,%s,_,%d)" subject (str a) i ])
-                writer;
-              if standing then
-                head_body ctx
-                  (Printf.sprintf "val(%s,%s,V)" subject (str a))
-                  [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base;
-                    Printf.sprintf "not wdecides(%s,%s)" subject (str a) ]
+                  write_head term (body @ fit_guards))
+                branches
           | Some Initialisation ->
               (* RUNTIME-SEMANTICS ch. 5.4, natively: an initialisation
                  reaches this arm only outside the ch. 7.7 desugaring domain
                  (a conditional or a windowed one), where ref replays the v0
-                 form natively too. It writes where the target is empty and
-                 its condition holds. Emptiness is read off the INPUT world,
-                 inputfilled/2 beside the untouched val/3 input fact: the
-                 input then stands by this guard alone, and reading val/3
-                 here would make the head its own negative premise. On an
-                 only writer the input world is the whole question; beside
-                 one computing rule the computed value wins whichever fires
-                 first, so that rule's decision atom guards the head too (a
-                 case input on that target stays fenced by the computing
-                 arm). Where the rule fires and evaluates leeg it decides
-                 nothing (ch. 3.11), so this writes. Every other writer beside
-                 it is refused by name. *)
-              let inits, comps, other = init_writers ctx ~ot ~a in
+                 form natively too. It is the lowest of the target's stack
+                 (ch. 7.8): it writes where its condition holds, the input
+                 leaves the target empty and no writer decides. Emptiness is
+                 read off the INPUT world, inputfilled/2 beside the input
+                 fact: the input then stands by this guard alone, and reading
+                 val/3 here would make the head its own negative premise. A
+                 writer — a computing rule or an allocation — decides where
+                 its value is filled (wdecides/2), so a rule that evaluates
+                 leeg decides nothing (ch. 3.11) and this writes. *)
+              let inits, _, group = init_writers ctx ~ot ~a in
               (match inits with
               | _ :: _ :: _ ->
                   fault
@@ -12349,18 +12351,10 @@ let translate_rule ctx (r : resolved_rule) =
                      reproduces (no corpus case)"
                     (List.length inits) a
               | _ -> ());
-              (match comps with
-              | _ :: _ :: _ ->
-                  fault
-                    "the initialisation of %S sits beside %d computing rules on its target: \
-                     their v0 meaning is the order in which they fire (no corpus case)"
-                    a (List.length comps)
-              | _ -> ());
-              if other then
+              if group then
                 fault
-                  "the initialisation of %S shares its target with an allocation, an object \
-                   creation or a defaults group of its own level: ch. 5.4 places an \
-                   initialisation beside ordinary rules only (no corpus case)"
+                  "the initialisation of %S shares its target with a defaults group of its own \
+                   level: WF-050 admits no writer beside a defaults group"
                   a;
               if attr_temporal ctx ~otype:ot ~attr:a then
                 fault "temporal attribute %S as a target: temporal writes are not implemented" a;
@@ -12371,9 +12365,8 @@ let translate_rule ctx (r : resolved_rule) =
                     "the initialisation of %S writes a target that is neither a number nor a \
                      date, and only those are translated here (no corpus case)"
                     a);
-              let beside = comps <> [] in
               emit ctx "#defined inputfilled/2.";
-              if beside then emit ctx "#defined comp_decides/2.";
+              if beside_writers then emit ctx "#defined wdecides/2.";
               let guard = init_guard in
               let target_scale = pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
               units_identical_ok
@@ -12400,7 +12393,23 @@ let translate_rule ctx (r : resolved_rule) =
                     (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
                     (body @ fit_guards))
                 branches
-          | _ -> faultc "CLINGO-025" "rule kind not translated")
+          | _ -> faultc "CLINGO-025" "rule kind not translated");
+          (* a computing rule on a scalar target is a writer of its stack
+             (ch. 7.8): it decides where its value is filled, the wval/4 the
+             arms above derive with the val head's body (a Let-nested
+             IfThenElse decides where ANY branch does), and the input of the
+             object stands where no writer of the target decides *)
+          (match (r.rr_presentation, writer) with
+          | Some (Calculation | Equation), Some i when not target_timeline ->
+              head_body ctx
+                (Printf.sprintf "wdecides(%s,%s)" subject (str a))
+                [ Printf.sprintf "wval(%s,%s,_,%d)" subject (str a) i ];
+              if input_on ctx ~otype:ot ~attr:a then
+                head_body ctx
+                  (Printf.sprintf "val(%s,%s,V)" subject (str a))
+                  [ Printf.sprintf "inputval(%s,%s,V)" subject (str a); base;
+                    Printf.sprintf "not wdecides(%s,%s)" subject (str a) ]
+          | _ -> ())
       | None -> faultc "CLINGO-026" "unsupported rule target")
   end
 
@@ -12538,10 +12547,23 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
         subject subject (str subject_ot) subject k
   | None -> ());
   head_body ctx (Printf.sprintf "is_a(%s,%s)" term (str created)) body;
+  (* the member value is the input of the object it makes (RUNTIME-SEMANTICS
+     ch. 5.5, 7.8): where a writer of the stack or a defaults group writes the
+     member it enters as inputval/3, and stands where none of them decides,
+     and where an initialisation writes it, it fills the input world the
+     initialisation's guard reads, as a case input does ([translate_case]) *)
+  let member_head m tm b =
+    let pred = if defeasible_input ctx ~otype:created ~attr:m then "inputval" else "val" in
+    head_body ctx (Printf.sprintf "%s(%s,%s,%s)" pred term (str m) tm) b;
+    if init_target ctx ~otype:created ~attr:m then
+      head_body ctx (Printf.sprintf "inputfilled(%s,%s)" term (str m)) b
+  in
   List.iter
     (fun (t : assignment) ->
       (* the member, or the cell it names on the made object (ch. 5.8c, 2) *)
       let m = Eval.init_member (doc_env ctx) ~created t in
+      if (not t.to_characteristic) && attr_temporal ctx ~otype:created ~attr:m then
+        fault "temporal attribute %S as a target: temporal writes are not implemented" m;
       if t.to_characteristic then (
         match t.to_value with
         | Some (Literal { variant = Lv_boolean true; _ }) ->
@@ -12566,7 +12588,7 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
         ctx.rule_guard <- cond @ guard @ depth_guard;
         let bindings, tm, _ = expr_term ctx ~subject ~subject_ot (req "MemberInit.value" t.to_value) in
         ctx.rule_guard <- [];
-        head_body ctx (Printf.sprintf "val(%s,%s,%s)" term (str m) tm) (body @ bindings)
+        member_head m tm (body @ bindings)
       end
       else begin
         let target_scale = pow10 (attr_decimals ctx ~otype:created ~attr:m) in
@@ -12588,7 +12610,7 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
         ctx.write_value <- None;
         let wbody = body @ bindings in
         let tm, fit_guards = fitted ~unbounded ctx ~subject ~what:m ~body:wbody tm scale target_scale in
-        head_body ctx (Printf.sprintf "val(%s,%s,%s)" term (str m) tm) (wbody @ fit_guards)
+        member_head m tm (wbody @ fit_guards)
       end)
     oc.assignments;
   (match pair with
@@ -13348,52 +13370,13 @@ let translate_allocation ctx i (v : resolved_allocation) =
   let method_name = req "AllocationVersion.method" v.vd_method in
   let bt = req "AllocationVersion.sourceType" v.source_type and dt = req "AllocationVersion.targetType" v.objective_type_name in
   let ba = req "AllocationVersion.sourceAttribute" v.source_attribute and da = req "AllocationVersion.targetAttribute" v.target_attribute in
-  (* case input on the allocation target: ref (like v0) OVERWRITES the
-     target where the verdeling reaches an instance and the input stands
-     where it does not (World.write_attr, ch. 4). The S10 defeasible-input
-     layer carries exactly that — the case value enters as inputval/3
-     (translate_case), the allocation's own head wins on reached instances,
-     and the pass-through (below, once p is bound) re-admits the input on
-     unreached ones. Engaged only where the case actually supplies the
-     target, so a verdeling with no target input translates as before. *)
-  let default_input = case_supplies ctx ~otype:dt ~attr:da in
-  if default_input then begin
-    (* STRATIFICATION FENCE (the narrowest safe form): the pass-through
-       adds `not vdI_eff`, so if the target attribute feeds back into the
-       allocation's own inputs (pot, weights, cap, key or condition) the
-       negation has no stratified encoding. The verdeling never reads its
-       own target, so ANY read elsewhere is refused loudly — only a target
-       read nowhere else is provably acyclic. Read detection reuses the
-       verifier's dependency reads (the machinery WF-045/046 trusts), so
-       the fence cannot drift from the graph the verifier checks. *)
-    let target_node = Ir_v0.Checks.n_attr dt da in
-    let dforms = Ir_v0.Checks.dep_forms (Ir_v0.Checks.ctx_of ctx.doc) in
-    if
-      List.exists
-        (fun (f : Ir_v0.Checks.dep_form) ->
-          List.exists (fun (node, _) -> node = target_node) f.df_reads)
-        dforms
-    then
-      fault
-        "the case supplies input for allocation target %S, which is read elsewhere: a feedback \
-         into the allocation's pot, weights, criteria or condition has no stratified \
-         negation-as-failure encoding (the S10 input default admits only a target read nowhere \
-         else)"
-        da;
-    (* a second writer of the same target — another verdeling, a rule,
-       prioritized defaults or a creation — leaves the overwrite order
-       unpinned: ref's fixpoint decides it, no witness pins the ASP union, so
-       refuse. *)
-    if
-      List.length
-        (List.filter (fun (f : Ir_v0.Checks.dep_form) -> List.mem target_node f.df_writes) dforms)
-      > 1
-    then
-      fault
-        "the case supplies input for allocation target %S, which a second form also writes: the \
-         overlap's overwrite order is unpinned (no witness), so the S10 input default is refused"
-        da
-  end;
+  (* the allocation writes a scalar share target and rest: a timeline
+     target has no meaning here, in ref's words *)
+  List.iter
+    (fun (t, a) ->
+      if attr_temporal ctx ~otype:t ~attr:a then
+        fault "temporal attribute %S as a target: temporal writes are not implemented" a)
+    ((dt, da) :: Option.fold ~none:[] ~some:(fun ra -> [ (bt, ra) ]) v.remainder_attribute);
   (* WF-025 field-validity backstops, rejected before translation on
      verifier-clean input *)
   (match (method_name, v.ratio_attribute, v.maximum_attribute) with
@@ -13430,15 +13413,21 @@ let translate_allocation ctx i (v : resolved_allocation) =
   emit ctx "%sontv(B,X) :- role(B,%s,X), isa(X,%s)." p (str role) (str dt);
   let recip = Printf.sprintf "%sontv(B,X)" p in
   let recip_any = Printf.sprintf "%sontv(B,_)" p in
-  (* the S10 pass-through: the case value stands on any target instance the
-     verdeling does not effectively write — a non-recipient the role never
-     reaches, or a recipient the method excludes (a weightless proportional
-     share, ref's leeg/standing, never 0). vdI_eff(X) fires with the SAME
-     body as each val head (emit_write below), so the input yields exactly
-     where the allocation decides. *)
-  if default_input then
-    emit ctx "val(D,%s,V) :- inputval(D,%s,V), isa(D,%s), not %seff(D)." (str da) (str da)
-      (str dt) p;
+  (* the allocation is a writer of the stacks of its share target and its
+     rest (RUNTIME-SEMANTICS ch. 4, 7.8): where it writes an instance it
+     decides there, wval/4 under the writer vdI beside the computing rules of
+     the target ([writer_conflicts]), with the SAME body as each val head
+     (emit_write, emit_rest below). The input of the object stands where no
+     writer decides — a non-recipient the role never reaches, or a recipient
+     the method excludes (a weightless proportional share, which ref leaves
+     standing, never 0) —, and an initialisation writes below both *)
+  let writer = Printf.sprintf "vd%d" i in
+  let stands t a =
+    if input_on ctx ~otype:t ~attr:a then
+      emit ctx "val(D,%s,V) :- inputval(D,%s,V), isa(D,%s), not wdecides(D,%s)." (str a) (str a) (str t) (str a)
+  in
+  stands dt da;
+  Option.iter (stands bt) v.remainder_attribute;
   (* --- the scale layer ------------------------------------------------ *)
   let pdec = attr_decimals ctx ~otype:bt ~attr:ba in
   let tdec = attr_decimals ctx ~otype:dt ~attr:da in
@@ -13541,20 +13530,19 @@ let translate_allocation ctx i (v : resolved_allocation) =
   (* the target write and the remainder, shared across the methods; the
      remainder guard carries each method's Nothing case (ch. 4.4: zero
      recipients, or an absent/zero weight sum, write NO rest) *)
-  let emit_write ~eff_atom share_atom =
+  let emit_write share_atom =
     emit ctx "val(X,%s,%s) :- %s." (str da) (scaled "S" m_val) share_atom;
-    (* the effectiveness helper for the S10 pass-through above: same body as
-       the val head (the share atom, value anonymised), so it derives
-       exactly where the verdeling writes the target instance X *)
-    if default_input then emit ctx "%seff(X) :- %s." p eff_atom
+    emit ctx "wval(X,%s,%s,%s) :- %s." (str da) (scaled "S" m_val) writer share_atom;
+    emit ctx "wdecides(X,%s) :- wval(X,%s,_,%s)." (str da) (str da) writer
   in
   let emit_rest ~guard ~sum =
     match (v.remainder_attribute, rdec) with
     | Some ra, Some r ->
-        emit ctx "val(B,%s,%s-%s) :- %s, val(B,%s,A), %s, T = #sum { %s }." (str ra)
-          (scaled "A" (pow10 (r - pdec)))
-          (scaled "T" (pow10 (r - ddec)))
-          src (str ba) guard sum
+        let rest = Printf.sprintf "%s-%s" (scaled "A" (pow10 (r - pdec))) (scaled "T" (pow10 (r - ddec))) in
+        let body = Printf.sprintf "%s, val(B,%s,A), %s, T = #sum { %s }" src (str ba) guard sum in
+        emit ctx "val(B,%s,%s) :- %s." (str ra) rest body;
+        emit ctx "wval(B,%s,%s,%s) :- %s." (str ra) rest writer body;
+        emit ctx "wdecides(B,%s) :- wval(B,%s,_,%s)." (str ra) (str ra) writer
     | _ -> () (* undeclared: the rest lapses (a SHOULD, no WF rule) *)
   in
   (* cap-before-floor (ch. 4.3): share = min(floor_d raw, floor_d cap) —
@@ -13612,7 +13600,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
           emit ctx "%sshare(X,C) :- %sraw(X,R), %scapd(X,C), R > C." p p p;
           emit ctx "%sshare(X,R) :- %sraw(X,R), not %shas_cap(X)." p p p
       | None -> emit ctx "%sshare(X,R) :- %sraw(X,R)." p p);
-      emit_write ~eff_atom:(Printf.sprintf "%sshare(X,_)" p) (Printf.sprintf "%sshare(X,S)" p);
+      emit_write (Printf.sprintf "%sshare(X,S)" p);
       emit_rest ~guard:(Printf.sprintf "%swsum(B,_)" p)
         ~sum:(Printf.sprintf "S,X : %s, %sshare(X,S)" recip p)
   | Equal_shares ->
@@ -13629,7 +13617,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
       emit ctx "%sshare(X,(%s)/%s) :- %s." p num den raw_body;
       if exact then
         emit ctx "viol(\"%s\",X) :- %s, (%s) \\ %s != 0." exact_viol raw_body num den;
-      emit_write ~eff_atom:(Printf.sprintf "%sshare(X,_)" p) (Printf.sprintf "%sshare(X,S)" p);
+      emit_write (Printf.sprintf "%sshare(X,S)" p);
       emit_rest ~guard:(Printf.sprintf "%sn(B,_)" p)
         ~sum:(Printf.sprintf "S,X : %s, %sshare(X,S)" recip p)
   | Ordered ->
@@ -13725,7 +13713,7 @@ let translate_allocation ctx i (v : resolved_allocation) =
         p p p p;
       emit ctx "%spot(B,R+1,0) :- %spot(B,R,P), %sspent(B,R,T), %sranks(B,N), R+1 < N, P-T < 0."
         p p p p;
-      emit_write ~eff_atom:(Printf.sprintf "%sshare(B,X,_)" p) (Printf.sprintf "%sshare(B,X,S)" p);
+      emit_write (Printf.sprintf "%sshare(B,X,S)" p);
       emit_rest ~guard:recip_any
         ~sum:(Printf.sprintf "S,X : %sshare(B,X,S)" p)
 
@@ -13921,58 +13909,15 @@ let reify_list ctx ~one_member ~element (xs : Value.t list) =
 
 let translate_case ctx (case : Case.t) =
   let doc = ctx.doc in
-  (* attribute-defaults targets — the ch. 7.8 standing targets (a scalar
-     target that only computing rules write) and the allocation targets
-     (S12, the verdeling whose fence translate_allocation has already
-     cleared) — take their input values defeasibly (inputval/3), standing
-     unless the defaults/rule/verdeling decides *)
-  let standing = Ir_v0.Desugar.standing_targets doc in
-  (* [otype] is the instance's CONCRETE type; a writer declared on any of
-     its supertypes reaches it (ch. 2.2), so the defeasible carriage of a
-     case-supplied value must be decided over the chain — otherwise a
-     subtype instance whose supertype declares the defaults target would
-     enter as a hard fact and silently outvote the stack *)
-  let inherits otype declared = Ir_v0.Checks.subtype_of doc ~sub:otype ~super:declared in
-  let defaults_target otype aname =
-    List.exists
-      (fun (l : prioritized_defaults) ->
-        match l.pd_attribute with
-        | Some a -> inherits otype l.pd_subject && norm a = norm aname
-        | None -> false)
-      doc.prioritized_defaults
-    (* a standing target that a computing rule which applies writes: the
-       input stands where none of them decides (translate_rule); one whose
-       rules all lie outside their windows writes nothing, and the input is a
-       plain fact. A timeline target's input is its timeline
-       ([timeline_input]) *)
-    || List.exists
-         (fun (r : resolved_rule) ->
-           match Ir_v0.Desugar.target_of r with
-           | Some (t, a) ->
-               norm a = norm aname && inherits otype t
-               && applies ctx r.rr_validity
-               && writer_index ctx r <> None
-               && List.mem (norm t, norm a) standing
-           | None -> false)
-         doc.resolved_rules
-    || List.exists
-         (fun (v : resolved_allocation) ->
-           (match v.objective_type_name with Some dt -> inherits otype dt | None -> false)
-           && match v.target_attribute with Some da -> norm da = norm aname | None -> false)
-         doc.allocations
-  in
-  (* the targets translate_rule's Initialisatie arm writes: their input
-     world's filledness is the guard that arm reads (inputfilled/2) *)
-  let init_target otype aname =
-    List.exists
-      (fun (r : resolved_rule) ->
-        r.rr_presentation = Some Initialisation
-        &&
-        match Ir_v0.Desugar.target_of r with
-        | Some (ot, a) -> norm a = norm aname && inherits otype ot
-        | None -> false)
-      doc.resolved_rules
-  in
+  (* the input of a member that a writer of the target's stack or a defaults
+     group writes enters defeasibly (inputval/3, [defeasible_input]) and stands
+     where none of them decides; that of a member an initialisation writes
+     also as inputfilled/2, the input world the initialisation's guard reads.
+     [otype] is the instance's CONCRETE type, so the decision is taken over
+     the chain: a subtype instance whose supertype declares the writer would
+     otherwise enter as a hard fact and silently outvote it *)
+  let init_target otype aname = init_target ctx ~otype ~attr:aname in
+  let input_pred otype aname = if defeasible_input ctx ~otype ~attr:aname then "inputval" else "val" in
   Eval.SMap.iter
     (fun label (i : Uchar_ref.World.instance) ->
       emit ctx "is_a(%s,%s)." (str_raw label) (str i.otype);
@@ -14006,19 +13951,18 @@ let translate_case ctx (case : Case.t) =
                  string, an enum label its normalised quoted string — the same
                  ground terms symbolic_term reads and the literal emission
                  writes, so equality is direct term identity (S2). *)
-              emit ctx "val(%s,%s,%s)." (str_raw label) (str aname) (symbolic_value_term v)
+              emit ctx "%s(%s,%s,%s)." (input_pred i.otype aname) (str_raw label) (str aname)
+                (symbolic_value_term v)
           | Value.Ctor (tag, payload) ->
               (* ch. 9.4 case carriage: a sum-typed input value is a ground
                  constructor term, payload scaled by its declared payload
-                 datatype. A sum-typed COMPUTED target is fenced against
-                 case-supplied input in translate_rule, so a sum value in the
-                 input is input-only here and enters as a plain val/3. *)
+                 datatype *)
               let constructor_list =
                 match Ir_v0.Checks.find_ci (object_type ctx i.otype).attributes declared with
                 | Some (Some (Sum_type { constructor_list; _ })) -> constructor_list
                 | _ -> fault "constructor value on non-sum-typed attribute %S" aname
               in
-              emit ctx "val(%s,%s,%s)." (str_raw label) (str aname)
+              emit ctx "%s(%s,%s,%s)." (input_pred i.otype aname) (str_raw label) (str aname)
                 (ctor_value_term constructor_list (tag, payload))
           | Value.List_value xs ->
               (* ch. 10.5 case carriage: a list-typed input attribute reifies
@@ -14034,26 +13978,23 @@ let translate_case ctx (case : Case.t) =
                 ~element xs
           | Value.Record fs ->
               (* ch. 11.3 case carriage: a struct-typed input attribute is a
-                 ground record term, fields scaled by their declared datatypes.
-                 A struct-typed COMPUTED target is fenced against case-supplied
-                 input in translate_rule, so a struct value is input-only here
-                 and enters as a plain val/3 (the Ctor sibling). *)
+                 ground record term, fields scaled by their declared datatypes
+                 (the Ctor sibling) *)
               let domain_spec, field_list =
                 match Ir_v0.Checks.find_ci (object_type ctx i.otype).attributes declared with
                 | Some (Some (Struct_type { domain_spec; field_list })) -> (domain_spec, field_list)
                 | _ -> fault "record value on non-struct-typed attribute %S" aname
               in
-              emit ctx "val(%s,%s,%s)." (str_raw label) (str aname)
+              emit ctx "%s(%s,%s,%s)." (input_pred i.otype aname) (str_raw label) (str aname)
                 (struct_value_term (domain_spec, field_list) fs)
           | Value.Date_time t ->
               (* ch. 3.8 the millisecond layer: a datum-tijd input rides the
                  pair term dt(D, MS) — the civil day beside the ms-of-day — so
                  its absolute ms value never enters clingo's integer range (the
                  A4 pair-term encoding) *)
-              emit ctx "val(%s,%s,%s)." (str_raw label) (str aname) (datetime_term t)
+              emit ctx "%s(%s,%s,%s)." (input_pred i.otype aname) (str_raw label) (str aname) (datetime_term t)
           | _ ->
-              let pred = if defaults_target i.otype aname then "inputval" else "val" in
-              emit ctx "%s(%s,%s,%d)." pred (str_raw label) (str aname)
+              emit ctx "%s(%s,%s,%d)." (input_pred i.otype aname) (str_raw label) (str aname)
                 (scaled_input ~what:(label ^ "." ^ aname) (attr_datatype ctx ~otype:i.otype ~attr:declared) v))
         i.attrs;
       List.iter (fun k -> emit ctx "has(%s,%s)." (str_raw label) (str k)) i.chars;
@@ -14165,7 +14106,23 @@ let writer_conflicts ctx =
                       (name ri) (name rj) a lower))
                 (str a) i (str a) j
             end)
-          writers)
+          writers;
+        (* an allocation that writes the target is a writer of the same rank
+           (RUNTIME-SEMANTICS ch. 7.8): where it and the rule write one
+           instance with different values, there is no fixpoint either *)
+        List.iteri
+          (fun k (v : resolved_allocation) ->
+            if allocation_writes ctx ~ot:oti ~a v then
+              emit ctx "viol(%s,S) :- wval(S,%s,X,%d), wval(S,%s,Y,vd%d), X != Y."
+                (quote
+                   (Printf.sprintf
+                      "two writers of one target disagree: rules \"%s\" and \"%s\" write different values to \
+                       the attribute %s of a %s — no fixpoint, divergence is a fault (ch. 5.7)"
+                      (Option.value ri.rr_name ~default:"<naamloos>")
+                      (Option.value v.vd_name ~default:"<naamloos>")
+                      a oti))
+                (str a) i (str a) k)
+          ctx.doc.allocations)
       writers
   end
 
