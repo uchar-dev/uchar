@@ -306,6 +306,7 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-vondstdossier|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "closed-runtime-division-by-zero|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a red case until card zero-division-channel (2026-10-19), excluded in check-red.sh on the same refusal"
   "jutterswet-aanspraakherziening|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
+  "jutterswet-afwezigheidsmarkers|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType — an attribute with absence markers lowers to a sum type (RUNTIME-SEMANTICS ch. 9.5), which the loader does not carry; measured 2026-11-04 on both branches (card absence-markers, step A). Its pins are a ref = clingo pair until the Drools carriage of sum types"
   "jutterswet-dossierrecht-catala|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-dossierspelling|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-halfstokspelling|EXCLUDE DROOLS-054|bean name collision: the characteristic 'half stok' of Sein falls on the bean property Sein.halfStok of the attribute 'half-stok', has no field of its own, and a rule writes it. Measured 2026-09-28 before the refusal: both branches played the golden and answered two wrong values (a rouwmelding of 1 where ref and clingo keep it leeg, and the characteristic read from the registration), so its pins are a ref = clingo pair"
