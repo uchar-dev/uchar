@@ -460,7 +460,18 @@ missing line makes `make gates` exit non-zero. Current gates:
     write a time-dependent characteristic within a window as a standing of
     its true periods (`PeriodCondition`, `CharacteristicPeriodsFault`, EF-023
     on an open bound); the standing of a timeline target that rules write is
-    the union of its writers with its input (`Consequence.WritersUnion`). A golden whose forms the loader+transpiler carry
+    the union of its writers with its input (`Consequence.WritersUnion`).
+    Since the card `defaults-per-period-on-timeline` (step B, 2026-11-04) a
+    defaults group on a timeline target decides per day on both branches
+    (RUNTIME-SEMANTICS ch. 7.11; `TmsTranspiler.dayStackRules`,
+    `PeriodDefaults`): every default and every reconciliation of exception
+    groups puts the days it decides or conflicts on in the value of its
+    `Outcome`, a lower default reads those of the defaults above it and
+    decides only on the days they leave, its consequence evaluated only
+    where it can decide, and the root of the stack is one writer of the
+    target, beside whose `Value` the input stands on the other days
+    (`Consequence.WritersUnion`); `decisionsOf` refuses a build with such a
+    stack. A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
     (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
     over the corpus). Not-carried forms never vanish silently: per-form
@@ -754,6 +765,13 @@ missing line makes `make gates` exit non-zero. Current gates:
     other, and floor `EXPECTED_MIN_DISPLACED_NODE_LINES=484` (measured
     2026-10-27, 207 readings) counts them, its counter passing two rows
     of its own.
+    Since the card `defaults-per-period-on-timeline` (step B, 2026-11-04) a
+    default of a group on a timeline target is read per day on both sides
+    (ch. 5.12, "A default on a timeline target"): its justification per
+    period, its consequence where that holds on some day, its root the
+    filled segments within the justification's periods, the status `HOLDS`
+    where it is at its turn on some day and `DISPLACED` where on none; its
+    lines are compared verbatim as every other, and no floor moved.
     The jar is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`). The
     traces run on one process per core, the readings and the plain
     replays on one per two cores with the replay flags of
