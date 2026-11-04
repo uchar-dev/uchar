@@ -6432,7 +6432,17 @@ consequence is not reached, and it is at its turn on every day
 `WV-7.11-verdrongen-conflict` the default of 30 and the members of its
 exception groups are at their turn on every day outside April, which the
 default of 60 settles, and each reads `HOLDS` with its periods
-(`WV-5.12-default-per-dag-uitzonderingsgroepen`).
+(`WV-5.12-default-per-dag-uitzonderingsgroepen`). On the golden
+`jutterswet-gevolg-buiten-de-beurt` of ch. 7.11 (`WV-7.11-gevolg-buiten-de-beurt`),
+J2 with kustwacht and winterwacht in April 2025: the kustwacht default is at
+its turn outside April and justified in April alone, so its consequence is
+read, and its read of the kustloon, which the case gives as the
+asOfDate-bucket scalar, faults: `0 CharacteristicCheck [[2025-04-01
+2025-05-01 empty]]`, `1 AttributeReference fault EF-037`, `HOLDS`, where the
+evaluation raises nothing (`WV-5.12-default-per-dag-gevolg-faalt`). With the
+consequence "zijn kustloon plus 1" the sum passes the fault on and its right
+operand is not reached: `1 Binary fault EF-037`, `2 AttributeReference fault
+EF-037`, `3 Literal unreached` (`-som`).
 
 **A reading deposits nothing and writes nothing.** A §9.5 deposit the
 evaluation makes is dropped, a value it computes is written nowhere, and no
