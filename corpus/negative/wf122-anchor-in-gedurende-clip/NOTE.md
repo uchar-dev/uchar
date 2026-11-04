@@ -6,14 +6,16 @@ subject is the subject of the clip itself (WF-097's three clips): the anchor
 there is a second spelling of the check.
 
     WF-122.anchor-outside-context FAIL
-    /rules/rules/0/versions/0/value/filter/anchor: the anchor "form" of this
+    /rules/rules/0/versions/0/value/base/filter/anchor: the anchor "form" of this
     CharacteristicCheck stands in the condition of a gedurende clip, which is
     no per-element context the anchor stands in: it reads the subject of the
     form where the filter of an instance fold, or the filter or the test of a
     quantifier fold, has moved the subject to the element (IR-SPEC ch. 4.1a)
 
 The document is `corpus/golden/jutterswet-getijdenwacht` with `anchor: "form"`
-on the clip's check `wachtplichtig` in the temporal total of its first rule.
+on the clip's check `wachtplichtig` in the temporal total of its first rule,
+as the golden writes its totals, each rounded to 0 decimals (the precision
+bound of a total that can split a period, RUNTIME-SEMANTICS ch. 2.3).
 
 The arm `expect.txt` pins is the key and its parameters as `verifier --arms`
 prints them. Before the card `subselection-reads-subject` (2026-10-23) every

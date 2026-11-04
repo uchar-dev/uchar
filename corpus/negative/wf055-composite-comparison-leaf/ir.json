@@ -95,67 +95,81 @@
               }
             },
             "value": {
-              "node": "Aggregation",
-              "kind": "total",
-              "arguments": [
-                {
-                  "node": "AttributeReference",
-                  "attribute": "wachtvergoeding per maand",
-                  "subjectType": "Jutter",
-                  "source": {
-                    "snippet": "zijn wachtvergoeding per maand"
-                  }
-                }
-              ],
-              "elementType": "Jutter",
-              "filter": {
-                "node": "Compound",
-                "quantifier": "all",
-                "threshold": 0,
-                "parts": [
+              "node": "Rounding",
+              "base": {
+                "node": "Aggregation",
+                "kind": "total",
+                "arguments": [
                   {
-                    "node": "CharacteristicCheck",
-                    "characteristic": "borgplichtig",
-                    "negated": false,
+                    "node": "AttributeReference",
+                    "attribute": "wachtvergoeding per maand",
+                    "subjectType": "Jutter",
                     "source": {
-                      "snippet": "gedurende de tijd dat hij borgplichtig is"
-                    }
-                  },
-                  {
-                    "node": "Comparison",
-                    "op": "greater",
-                    "left": {
-                      "node": "AttributeReference",
-                      "attribute": "wachtvergoeding per maand",
-                      "subjectType": "Jutter",
-                      "source": {
-                        "snippet": "zijn wachtvergoeding per maand"
-                      }
-                    },
-                    "right": {
-                      "node": "Literal",
-                      "value": {
-                        "number": "5"
-                      },
-                      "type": {
-                        "node": "Number",
-                        "whole": true,
-                        "decimals": 0,
-                        "sign": "unspecified"
-                      },
-                      "source": {
-                        "snippet": "5"
-                      }
-                    },
-                    "source": {
-                      "snippet": "zijn wachtvergoeding per maand groter is dan 5"
+                      "snippet": "zijn wachtvergoeding per maand"
                     }
                   }
                 ],
+                "elementType": "Jutter",
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "all",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "CharacteristicCheck",
+                      "characteristic": "borgplichtig",
+                      "negated": false,
+                      "source": {
+                        "snippet": "gedurende de tijd dat hij borgplichtig is"
+                      }
+                    },
+                    {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "wachtvergoeding per maand",
+                        "subjectType": "Jutter",
+                        "source": {
+                          "snippet": "zijn wachtvergoeding per maand"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "5"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "5"
+                        }
+                      },
+                      "source": {
+                        "snippet": "zijn wachtvergoeding per maand groter is dan 5"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "gedurende de tijd dat hij borgplichtig is en zijn wachtvergoeding per maand groter is dan 5"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "gedurende de tijd dat hij borgplichtig is en zijn wachtvergoeding per maand groter is dan 5"
+                  "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij borgplichtig en aangesteld is"
                 }
               },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
                 "whole": true,
@@ -163,7 +177,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij borgplichtig en aangesteld is"
+                "snippet": "(het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij borgplichtig en aangesteld is) rekenkundig afgerond op 0 decimalen"
               }
             },
             "initialisation": false,

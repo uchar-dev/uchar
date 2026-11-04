@@ -95,45 +95,59 @@
               }
             },
             "value": {
-              "node": "Aggregation",
-              "kind": "total",
-              "arguments": [
-                {
-                  "node": "AttributeReference",
-                  "attribute": "wachtvergoeding per maand",
-                  "subjectType": "Jutter",
-                  "source": {
-                    "snippet": "zijn wachtvergoeding per maand"
-                  }
-                }
-              ],
-              "elementType": "Jutter",
-              "filter": {
-                "node": "Compound",
-                "quantifier": "all",
-                "threshold": 1,
-                "parts": [
+              "node": "Rounding",
+              "base": {
+                "node": "Aggregation",
+                "kind": "total",
+                "arguments": [
                   {
-                    "node": "CharacteristicCheck",
-                    "characteristic": "borgplichtig",
-                    "negated": false,
+                    "node": "AttributeReference",
+                    "attribute": "wachtvergoeding per maand",
+                    "subjectType": "Jutter",
                     "source": {
-                      "snippet": "hij borgplichtig is"
-                    }
-                  },
-                  {
-                    "node": "CharacteristicCheck",
-                    "characteristic": "aangesteld",
-                    "negated": true,
-                    "source": {
-                      "snippet": "hij niet aangesteld is"
+                      "snippet": "zijn wachtvergoeding per maand"
                     }
                   }
                 ],
+                "elementType": "Jutter",
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "all",
+                  "threshold": 1,
+                  "parts": [
+                    {
+                      "node": "CharacteristicCheck",
+                      "characteristic": "borgplichtig",
+                      "negated": false,
+                      "source": {
+                        "snippet": "hij borgplichtig is"
+                      }
+                    },
+                    {
+                      "node": "CharacteristicCheck",
+                      "characteristic": "aangesteld",
+                      "negated": true,
+                      "source": {
+                        "snippet": "hij niet aangesteld is"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij niet aangesteld is"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij niet aangesteld is"
+                  "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij niet aangesteld is"
                 }
               },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
                 "whole": true,
@@ -141,7 +155,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij niet aangesteld is"
+                "snippet": "(het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet: - hij borgplichtig is - hij niet aangesteld is) rekenkundig afgerond op 0 decimalen"
               }
             },
             "initialisation": false,
@@ -166,32 +180,46 @@
               }
             },
             "value": {
-              "node": "Aggregation",
-              "kind": "total",
-              "arguments": [
-                {
-                  "node": "AttributeReference",
-                  "attribute": "wachtvergoeding per maand",
-                  "subjectType": "Jutter",
-                  "source": {
-                    "snippet": "zijn wachtvergoeding per maand"
+              "node": "Rounding",
+              "base": {
+                "node": "Aggregation",
+                "kind": "total",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "wachtvergoeding per maand",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn wachtvergoeding per maand"
+                    }
                   }
-                }
-              ],
-              "elementType": "Jutter",
-              "filter": {
-                "node": "CharacteristicCheck",
-                "characteristic": "aangesteld",
-                "negated": true,
-                "wholePeriod": {
-                  "node": "WholePeriod",
-                  "granularity": "year",
-                  "negated": true
+                ],
+                "elementType": "Jutter",
+                "filter": {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "aangesteld",
+                  "negated": true,
+                  "wholePeriod": {
+                    "node": "WholePeriod",
+                    "granularity": "year",
+                    "negated": true
+                  },
+                  "source": {
+                    "snippet": "gedurende de tijd dat hij niet aangesteld is"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
                 },
                 "source": {
-                  "snippet": "gedurende de tijd dat hij niet aangesteld is"
+                  "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is"
                 }
               },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
                 "whole": true,
@@ -199,7 +227,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is"
+                "snippet": "(het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij niet aangesteld is) rekenkundig afgerond op 0 decimalen"
               }
             },
             "initialisation": false,

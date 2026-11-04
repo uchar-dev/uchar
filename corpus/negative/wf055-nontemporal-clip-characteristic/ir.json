@@ -80,27 +80,41 @@
               }
             },
             "value": {
-              "node": "Aggregation",
-              "kind": "total",
-              "arguments": [
-                {
-                  "node": "AttributeReference",
-                  "attribute": "wachtvergoeding per maand",
-                  "subjectType": "Jutter",
-                  "source": {
-                    "snippet": "zijn wachtvergoeding per maand"
+              "node": "Rounding",
+              "base": {
+                "node": "Aggregation",
+                "kind": "total",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "wachtvergoeding per maand",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn wachtvergoeding per maand"
+                    }
                   }
-                }
-              ],
-              "elementType": "Jutter",
-              "filter": {
-                "node": "CharacteristicCheck",
-                "characteristic": "wachtplichtig",
-                "negated": false,
+                ],
+                "elementType": "Jutter",
+                "filter": {
+                  "node": "CharacteristicCheck",
+                  "characteristic": "wachtplichtig",
+                  "negated": false,
+                  "source": {
+                    "snippet": "gedurende de tijd dat hij wachtplichtig is"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
                 "source": {
-                  "snippet": "gedurende de tijd dat hij wachtplichtig is"
+                  "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is"
                 }
               },
+              "mode": "halfAwayFromZero",
+              "decimals": 0,
               "type": {
                 "node": "Number",
                 "whole": true,
@@ -108,7 +122,7 @@
                 "sign": "unspecified"
               },
               "source": {
-                "snippet": "het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is"
+                "snippet": "(het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is) rekenkundig afgerond op 0 decimalen"
               }
             },
             "initialisation": false,
