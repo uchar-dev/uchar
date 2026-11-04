@@ -151,14 +151,8 @@ class MorePeriodicGateWitnessTest {
         //                         buiten Phase-C scope)
         //     Drools DRL-tekst  : EXCLUDE drl-transpiler MARKER: regel: bewaargeld van een jutter — TODO totaal van
         //                         een meer-periodieke tijdreeks (§13.3.6.7, voor elke <n> maanden)
-        // J2 brings no bewaarvergoeding per maand, and an absent timeline totals 0 (RUNTIME-SEMANTICS ch. 3.6,
-        // IMPLICIT-TIME 12c), which neither branch gives until card total-over-partial-unit, step B: both answer leeg
-        // there, in the same line, and every other expectation of the case plays.
-        List<Path> cases = casePaths(TEMPOTOTAAL);
-        assertEquals(1, cases.size(), "het aantal cases van " + TEMPOTOTAAL);
-        assertEquals("case: attribuut bewaargeld: verwacht 0, werkelijk leeg",
-                BothBranches.red(withCount(TEMPOTOTAAL, "Jutter", "attributes", "bewaarvergoeding per maand", 1),
-                        JSON.readTree(Files.readString(cases.get(0))), "bewaargeld", "the total at count one"));
+        playBothBranches(withCount(TEMPOTOTAAL, "Jutter", "attributes", "bewaarvergoeding per maand", 1),
+                TEMPOTOTAAL, 1);
     }
 
     @Test void the_whole_period_comparison_does_not_read_the_count_at_all() throws Exception {

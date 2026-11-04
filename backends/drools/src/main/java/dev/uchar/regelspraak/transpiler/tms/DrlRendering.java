@@ -1435,7 +1435,8 @@ final class DrlRendering {
                             .append(l.cell() == null ? variable(l.value()) : route(Route.CELL) + "("
                                     + variable(l.value()) + ", " + consequenceConstant(l.cell()).text() + ")")
                             .append(", ")
-                            .append(l.total() == null ? "null" : str(l.total())).append(", ").append(l.filled())
+                            .append(l.total() == null ? "null" : str(l.total())).append(", ")
+                            .append(l.fixed() == null ? "null" : str(l.fixed())).append(", ").append(l.filled())
                             .append(", ").append(l.whole()).append(");\n");
                     b.append("    if (v != null) {\n");
                     insert(b, "        ", x.insertion(), "v");

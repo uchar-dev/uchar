@@ -6088,8 +6088,9 @@ public final class TmsTranspiler {
      *
      * <p>A total without a range reads the subject's own timeline ({@link #ownTotal}). A sum or a total over a member
      * on a timeline folds twice (RUNTIME-SEMANTICS ch. 3.6, the per-element fold): each member's timeline collapses over
-     * time first, at its own granularity, in the contribution rule, which contributes that scalar, and a member without
-     * a timeline contributes nothing; the fold over the set is the ordinary one. Every other fold over a member on a
+     * time first, on its own grid, in the contribution rule, which contributes that scalar, and a member without a
+     * timeline contributes 0, the total of a timeline that is leeg on every day; the fold over the set is the ordinary
+     * one. Every other fold over a member on a
      * timeline is refused by name, as the reference interpreter refuses it: it has no moment at which to rank, count or
      * test the timeline.
      */
@@ -6207,24 +6208,25 @@ public final class TmsTranspiler {
      * ({@link Reads#timeline}), and every timeline and value the clause reads. The two routes of the total take the two
      * conventions of the case input, and a form that needs the one and finds the other faults ({@link InputFormFault},
      * ch. 8.4). Without a clause the total takes the asOfDate-bucket scalar, the session's date being the horizon: it is
-     * {@code rsTijdTotaal} of the one period of X's grid that holds the evaluation date ({@link BucketScalar}), the
-     * segment's value times the whole units it spans, and leeg where X has no input; a full timeline faults, in the
+     * the total of the one period of X's grid that holds the evaluation date ({@link BucketScalar}), the segment's value
+     * times its length in units of the grid, and 0 where X has no input; a full timeline faults, in the
      * reference interpreter's words, and so does a session without an evaluation date, where the total has no bucket to
      * take, X filled or not: this route reads the date ({@link Reads#evaluationDate}), and the reference interpreter tests
      * the full timeline first, then the date, then the value. With a clause the total reads the full timeline: it is
      * clipped to the clause's true
-     * periods first ({@link #clip}) and then totalled per clipped fragment, so an absent timeline totals 0 (ch. 3.6: the
-     * clip's presence turns absence into 0), and the bucket scalar faults, before the clause is evaluated, as in the
-     * reference interpreter. The runtime's helpers compute this, with {@link Period} as their segment class.
+     * periods first ({@link #clip}) and then totalled per clipped fragment, so an absent timeline totals 0, and the
+     * bucket scalar faults, before the clause is evaluated, as in the reference interpreter. The runtime's helpers
+     * clip, with {@link Period} as their segment class.
      *
      * <p>The total without a clause over a timeline that period arithmetic writes (ch. 3.4, 3.5) takes neither: such a
      * timeline divides all time, so it is totalled whole, no asOfDate bucket enters, and an absent one totals 0 (ch. 3.6);
      * an open segment of 0 adds 0, and one of another value faults (EF-036, {@link PeriodArithmetic#total}). The clip
      * keeps the open bound of a fragment it cuts from an open segment, and its total faults alike.
      *
-     * <p>On every route a rate whose denominator is a time unit of the other family of the calendar than the grid's
-     * integrates by the calendar ({@link #calendar}, {@link PeriodArithmetic#weighed}): a rate per year over a day grid
-     * weighs a day by 1/365 or 1/366 of its year.
+     * <p>On every route the total measures a segment in units of X's grid, on the calendar or from X's fixed start
+     * point, a part of a unit by its days ({@link PeriodArithmetic#weighed}, ch. 3.6), and a rate whose denominator is a
+     * time unit of the other family of the calendar than the grid's integrates by the calendar ({@link #calendar}): a
+     * rate per year over a day grid weighs a day by 1/365 or 1/366 of its year.
      *
      * <p>Refused by name: an X over a path or of another type than the subject (WF-083 (c)), one that is not a number
      * (WF-091), a rate over a grid whose unit the document does not declare as one unit or whose denominator neither is
@@ -6247,6 +6249,7 @@ public final class TmsTranspiler {
         int subjectType = reads.member();
         reads.markFail();
         String gran = member.time().name();
+        String fixed = member.declarant().fixedStartPointOf(member.name());
         String name = member.name();
         String source = source(f.source());
         if (periodArithmetic) {
@@ -6254,22 +6257,23 @@ public final class TmsTranspiler {
                     subjectType, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", name, true,
                     source(a.source()));
             note(a, whole);
-            return new Term.Call(StaticFunction.PERIOD_TOTAL, List.of(whole, constant(gran), constant(calendar),
-                    constant(name), new Term.SlotValue(subjectType, null)), source);
+            return new Term.Call(StaticFunction.PERIOD_TOTAL, List.of(whole, constant(gran), constant(fixed),
+                    constant(calendar), constant(name), new Term.SlotValue(subjectType, null)), source);
         }
         if (f.filter() == null) {
             int date = reads.evaluationDate();
             Term input = new Term.SlotValue(timeline, source(a.source()));
             note(a, input);
             return new Term.Call(StaticFunction.OWN_TOTAL, List.of(input, new Term.SlotValue(subjectType, null),
-                    new Term.SlotValue(date, null), constant(name), constant(gran), constant(calendar)), source);
+                    new Term.SlotValue(date, null), constant(name), constant(gran), constant(fixed), constant(calendar)),
+                    source);
         }
         Term whole = complete(timeline, "the gedurende clip of \"" + name + "\" needs the full timeline; ", subjectType,
                 " supplies only the asOfDate-bucket scalar", name, true, source(a.source()));
         note(a, whole);
         Term cut = clip(f.filter(), reads, description, name, whole, whole);
-        return new Term.Call(StaticFunction.PERIOD_TOTAL, List.of(cut, constant(gran), constant(calendar),
-                constant(name), new Term.SlotValue(subjectType, null)), source);
+        return new Term.Call(StaticFunction.PERIOD_TOTAL, List.of(cut, constant(gran), constant(fixed),
+                constant(calendar), constant(name), new Term.SlotValue(subjectType, null)), source);
     }
 
     /** The timeline of the attribute {@code attribute} bound at slot {@code timeline}, which a form reads whole, or the
@@ -6293,7 +6297,8 @@ public final class TmsTranspiler {
      * comparison of ch. 1.2 ({@code rsTijdConditie}): the segments of that timeline whose value satisfies it, and its
      * gaps within the segments of the clipped timeline where a leeg side does, so that an ordering holds on no leeg
      * side, "gelijk aan" on two and "ongelijk aan" on exactly one (ch. 3.6, the worked example of 500,00). The
-     * fragments are kept apart, never coalesced, so a clip that splits one whole unit loses it. Every characteristic's
+     * fragments are kept apart, never coalesced; the total measures each by its days, so two fragments that split one
+     * unit of the grid count that unit (ch. 3.6). Every characteristic's
      * true periods are bound off the bean ({@link Reads#timeline}), the compared timeline through its standing, read
      * whole ({@link #comparisonClip}), and the bound like any value of the rule. {@code cut} names the attribute whose
      * timeline is clipped, and {@code timeline} computes that timeline, which the clip takes first; {@code base} computes
@@ -6476,8 +6481,8 @@ public final class TmsTranspiler {
 
     /**
      * {@code member}, a member on a timeline whose total over time a per-element fold takes ({@link #contributionRules}),
-     * where that total is the bare value times the count of whole units of the member's grid, as the runtime's
-     * {@code rsTijdTotaal} computes it ({@link #calendar}). Refused by name as well: a rate the calendar integrates,
+     * where that total is the bare value times the length of each segment in units of the member's grid
+     * ({@link PeriodArithmetic#weighed}, {@link #calendar}). Refused by name as well: a rate the calendar integrates,
      * which the fold over the members does not weigh (RUNTIME-SEMANTICS ch. 3.6).
      */
     private Member integrable(Member member, Object description) {
@@ -6488,8 +6493,8 @@ public final class TmsTranspiler {
 
     /**
      * How the total over time of {@code member}, a member on a timeline, weighs a segment (RUNTIME-SEMANTICS ch. 3.6):
-     * null where it is the bare value times the count of whole units of the member's grid, as the runtime's
-     * {@code rsTijdTotaal} computes it, for a number without a unit, with a unit without a denominator, or a rate with a
+     * null where it is the bare value times the length of the segment in units of the member's grid
+     * ({@link PeriodArithmetic#weighed}), for a number without a unit, with a unit without a denominator, or a rate with a
      * negative factor in the time unit of the grid itself ({@code EUR/mnd} and {@code EUR/m/mnd} on a grid of months),
      * where the integration cancels that factor one for one; and the time unit, as a granularity's name
      * ({@code "JAAR"}), of a denominator that the calendar table spells as a unit of the other family than the grid's,
@@ -6497,9 +6502,9 @@ public final class TmsTranspiler {
      * (maintainer decision 2026-11-03, {@code spec/proposals/IMPLICIT-TIME.md} point 11).
      * Refused by name: a value that is no number (WF-091); a rate over a grid whose unit the document does not declare
      * as exactly one unit ({@link #gridUnit}), where the calendar does not integrate it, which the reference interpreter
-     * refuses to integrate and {@code rsTijdTotaal} would weigh as if it did; and a rate whose denominator the
+     * refuses to integrate and the length in units of the grid would weigh as if it did; and a rate whose denominator the
      * declarations restate into the grid's unit by a factor, which the reference interpreter integrates through that
-     * factor, or refuses where it lies between the two families (WF-009), and {@code rsTijdTotaal} would weigh unit-blind
+     * factor, or refuses where it lies between the two families (WF-009), and the length in units of the grid would weigh unit-blind
      * (the executor note of ch. 3.6); no golden has it.
      */
     private String calendar(Member member, Object description) {
@@ -6701,10 +6706,12 @@ public final class TmsTranspiler {
                         Msg.drools("PART.desc.member-total", "snippet", snippet(arg.source()))), Msg.drools("PART.desc.member-total-plain"));
         int value = memberValue == null ? -1 : memberValue.time() == null ? reads.own(memberValue) : reads.timeline(memberValue);
         String total = memberValue == null || memberValue.time() == null || whole ? null : memberValue.time().name();
+        String fixed = total == null ? null : memberValue.declarant().fixedStartPointOf(memberValue.name());
         reads.stop();
         List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
         Consequence.Input input = kind == Expr.FunctionKind.AANTAL ? new Consequence.Input.Count()
-                : new Consequence.Input.MemberValue(value, total, kind == Expr.FunctionKind.AANTAL_GEVULDE, cellKey, whole);
+                : new Consequence.Input.MemberValue(value, total, fixed, kind == Expr.FunctionKind.AANTAL_GEVULDE, cellKey,
+                        whole);
         String formName = model.emittedRuleName(form);
         out.add(as(RuleOrigin.Role.FOLD_CONTRIBUTION, reads.rulePlan(formName + ": bijdrage aan " + name, items,
                 new Consequence.Contribution(FOLD_SUBJECT, key, member, input, List.copyOf(use), reads.size(),

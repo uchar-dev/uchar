@@ -41,7 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * topsom leeg; where the topsom's rule fires before the vrijstelling, it evaluates the total on that intermediate state
  * and faults, and the fault goes with the state. J2 (score 10) is not vrijgesteld, and the session faults. With the
  * evaluation date 2024-06-15: J2 with bedrag 7 as the bucket scalar of June 2024 totals 7, J3 (score 10) without a
- * bedrag leeg, and J1, with the same bedrag, stays leeg. Both orders of the two rules; beside them the generated rules in
+ * bedrag 0, the total of a timeline that is leeg on every day (spec/proposals/IMPLICIT-TIME.md 12c), and J1, with the
+ * same bedrag, stays leeg. Both orders of the two rules; beside them the generated rules in
  * a hundred sampled orders on a J1 of its own, in some of which the fault was inserted and withdrawn.
  *
  * <p><b>Measured</b> (2026-10-09, the documents {@link #main} writes, both orders): the verifier passes them. The
@@ -86,7 +87,7 @@ class TmsTotalEvaluationDateWitnessTest {
                         instance("J2", "Jutter", Map.of("score", numberValue("10"), "bedrag", numberValue("7")), List.of(),
                                 Map.of(), Map.of()),
                         instance("J3", "Jutter", Map.of("score", numberValue("10")), List.of(), Map.of(), Map.of())),
-                List.of(value("J1", "topsom", null), value("J2", "topsom", "7"), value("J3", "topsom", null),
+                List.of(value("J1", "topsom", null), value("J2", "topsom", "7"), value("J3", "topsom", "0"),
                         consistent()));
     }
 

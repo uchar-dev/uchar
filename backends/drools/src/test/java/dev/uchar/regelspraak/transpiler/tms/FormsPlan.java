@@ -426,8 +426,8 @@ final class FormsPlan {
 
     /** Fragments of the text that show the forms of the fold plan ({@link #folds}), one per form. */
     static final List<String> FOLD_FORMS = List.of("new Contribution(\"proefvouw: telling\", $vouwonderwerp, $onderwerp, null)",
-            "ComputeHelpers.contribution(\"proefvouw: som\"", "\"MAAND\", true, false)",
-            "ComputeHelpers.contribution(\"proefvouw: som per periode\"", "null, false, true)", "ComputeHelpers.verdict(",
+            "ComputeHelpers.contribution(\"proefvouw: som\"", "\"MAAND\", null, true, false)",
+            "ComputeHelpers.contribution(\"proefvouw: som per periode\"", "null, null, false, true)", "ComputeHelpers.verdict(",
             "matrix_oordeel(", "PeriodArithmetic.openSegmentFault(\"hoogte\", ",
             "lidtoets_lidtoets(", "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(sonde), ComputeHelpers.depositCodes(sonde))",
             "new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null))", "plaats_lidtoets(",
@@ -464,13 +464,13 @@ final class FormsPlan {
                 new Consequence.Input.Count(), List.of(0), 1, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidwaarde", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: som", 1,
-                new Consequence.Input.MemberValue(0, null, false, null, false), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, null, null, false, null, false), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidtijdlijn", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: som per periode", 1,
-                new Consequence.Input.MemberValue(0, null, false, null, true), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, null, null, false, null, true), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidwaarde per maand", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: totaal", 1,
-                new Consequence.Input.MemberValue(0, "MAAND", true, null, false), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, "MAAND", null, true, null, false), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("oordeel", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: oordeel", 1,
                 new Consequence.Input.Verdict(matrix), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));

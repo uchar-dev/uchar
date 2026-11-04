@@ -29,8 +29,8 @@ import java.util.Objects;
  * reads the same on every day, since ch. 3.1 makes the segment-wise comparison the change detection, and the
  * reference interpreter compares so.
  *
- * <p>The runtime's timeline helpers ({@code rsTijdTotaal}, {@code rsTijdKnip},
- * {@code rsAantalDagenIn}, {@code rsOoitWaarden} and the others) read a segment through {@code getVan()},
+ * <p>The runtime's timeline helpers ({@code rsTijdKnip}, {@code rsAantalDagenIn}, {@code rsOoitWaarden} and the
+ * others) read a segment through {@code getVan()},
  * {@code getTot()} and {@code getWaarde()} ({@link RegelSpraakRuntime#get}) and make one through the public constructor
  * of {@code (LocalDate, LocalDate, BigDecimal)} ({@link RegelSpraakRuntime#newSegment}): given this class as their
  * segment class they compute with it as with the bean model's, and nothing in {@code runtime/} changes.

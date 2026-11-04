@@ -636,14 +636,14 @@ another cut are another; its `hashCode` agrees with it, since the KieBase in EQU
 generated bean `Segment` has no value equality and is mutable, so the branch converts at two boundaries only: where it
 binds a timeline off a bean, the input of an attribute or the true periods of a characteristic, and where
 `setDerivedValues` puts a derived timeline on the bean as its `Segment`s. `Period` has the getters and the
-constructor the runtime's helpers ask of a segment class, so `rsTijdsevenredig`, `rsAantalDagenIn`, `rsTijdTotaal`,
-`rsTijdKnip`, `rsTijdConditie` and `rsOoitWaarden` compute on it unchanged. A timeline is bound in the left-hand side
+constructor the runtime's helpers ask of a segment class, so `rsTijdsevenredig`, `rsAantalDagenIn`, `rsTijdKnip`,
+`rsTijdConditie` and `rsOoitWaarden` compute on it unchanged. A timeline is bound in the left-hand side
 like any read, an attribute through its standing, derived or input, and read whole: by the temporal total of the
 subject's own timeline, with the clip of ch. 3.6 by a characteristic, negated or not, by an `alle` of characteristics
 or by a comparison of an own timeline against a value, read per period by the comparison of ch. 1.2, a gap in the
 compared timeline leeg; by a sum or a total per member of a set (ch. 3.6, the
 per-element fold), where each member's timeline collapses over time in its contribution rule and a member without one
-contributes nothing; and as a uniqueness key, which reads ever-uniqueness (ch. 5.9): one key per value the timeline
+contributes 0; and as a uniqueness key, which reads ever-uniqueness (ch. 5.9): one key per value the timeline
 ever carries. It is written whole, by a pro-rata part (ch. 3.7) or a day count (ch. 3.8), on the calendar grid or
 from a fixed start point (ch. 3.2), or by the period arithmetic of ch. 3.4 and 3.5 over all time (below). The day count
 is over all time: the true days per bucket with a true day, one segment each, and 0 on every run of buckets without
@@ -695,13 +695,21 @@ timeline the rule writes. Witnesses
 `jutterswet-maandloon`, `jutterswet-rekenen-per-dag` and `anchor/jutterswet-verzuimrente-dagen`, red case
 `jutterswet-totaal-open-segment`.
 
+**The length of a segment.** The total measures each segment in units of its grid (RUNTIME-SEMANTICS ch. 3.6): a
+day counts 1/len of the period of the grid that holds it, len that period's length in days, the calendar unit or the
+period a fixed start point lays (`PeriodArithmetic.gridMeasure`), so a part of a unit counts by its days and two
+fragments of a clip that split a unit count that unit. The total is the exact rational these lengths give. An absent
+timeline totals 0 on every route: the asOfDate bucket, the clip, the whole timeline a period arithmetic writes, and a
+member of the per-element fold, which contributes 0. Witnesses `PeriodArithmeticTest`, `TimeTotalClampWitnessTest`,
+`TmsTimelineFoldWitnessTest`, goldens `jutterswet-getijdenwacht` and `jutterswet-vast-startpunt`.
+
 **The calendar.** A rate whose denominator is a time unit of the other family of the calendar than the grid's — dag
 and week count in days, maand, kwartaal and jaar in months (RUNTIME-SEMANTICS ch. 3.6) — totals by the actual length
-of the calendar unit: the whole units of the grid of a segment measured in the denominator's unit, a day 1/len of the
-calendar month, quarter or year that holds it (`PeriodArithmetic.weighed`), an exact rational. This holds on every
-route of the subject's own total, the asOfDate bucket, the whole timeline a period arithmetic writes and the clip. A
-case reads a timeline on the calendar's day grid with any bounds. Witnesses `TmsPerDayArithmeticWitnessTest`,
-`PeriodArithmeticTest`, `GridSentenceWitnessTest`, anchor `jutterswet-verzuimrente-dagen`.
+of the calendar unit: the segment measured in the denominator's unit, a day 1/len of the calendar month, quarter or
+year that holds it (`PeriodArithmetic.weighed`), an exact rational. This holds on every route of the subject's own
+total, the asOfDate bucket, the whole timeline a period arithmetic writes and the clip. A case reads a timeline on the
+calendar's day grid with any bounds. Witnesses `TmsPerDayArithmeticWitnessTest`, `PeriodArithmeticTest`,
+`GridSentenceWitnessTest`, anchor `jutterswet-verzuimrente-dagen`.
 
 **A condition read per period.** On a rule with a timeline target, a condition that reads a timeline — a check of a
 time-dependent characteristic of the subject, an attribute or a parameter on a timeline as an operand, a whole-period
@@ -923,8 +931,8 @@ never as a silent fall:
   between two units (witnesses `TmsPeriodArithmeticWitnessTest`, `TmsPerDayArithmeticWitnessTest`); a rate
   over a grid whose unit the document does not declare, or declares in two different canonical chains, which the
   reference interpreter refuses to integrate, in its words, where the calendar does not integrate it; a rate whose
-  denominator the declarations restate into the unit of the grid by a factor, which `rsTijdTotaal` would weigh
-  unit-blind, and one the calendar integrates in a total per member of a set; a sum or a total per member over a
+  denominator the declarations restate into the unit of the grid by a factor, which the length in units of the grid
+  would weigh unit-blind, and one the calendar integrates in a total per member of a set; a sum or a total per member over a
   timeline in a fold over a created relation,
   whose made links have no place in the fold order that names the member given as a bucket scalar; the total without a clip
   over a timeline a pro-rata part or a day count writes, which the reference interpreter refuses as well; every form that reads or writes a

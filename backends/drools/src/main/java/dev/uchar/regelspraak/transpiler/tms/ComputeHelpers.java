@@ -722,16 +722,17 @@ public final class ComputeHelpers {
     /**
      * The temporal total of the subject's own timeline without a clip (RUNTIME-SEMANTICS ch. 3.6): of the input
      * {@code input} of the attribute {@code name}, which takes the asOfDate-bucket scalar, the session's date being the
-     * horizon: the total of the one period of the grid {@code granularity} that holds the evaluation date
-     * ({@link BucketScalar}), by the calendar where {@code calendar} names the time unit of the rate's denominator
-     * ({@link PeriodArithmetic#weighed}), and leeg where the attribute has no input. A full timeline faults, in the
-     * reference interpreter's words and naming {@code subject}, and so does a session without an evaluation date, where
-     * the total has no bucket to take: the reference interpreter tests the full timeline first, then the date
-     * ({@code rekendatum}), then the value.
+     * horizon: the total of the one period of the grid {@code granularity}, laid from the fixed start point
+     * {@code fixed} (null: the calendar's grid), that holds the evaluation date ({@link BucketScalar}), by the calendar
+     * where {@code calendar} names the time unit of the rate's denominator ({@link PeriodArithmetic#weighed}), and 0
+     * where the attribute has no input, the total of a timeline that is leeg on every day (spec/proposals/IMPLICIT-TIME.md
+     * 12c). A full timeline faults, in the reference interpreter's words and naming {@code subject}, and so does a
+     * session without an evaluation date, where the total has no bucket to take: the reference interpreter tests the
+     * full timeline first, then the date ({@code rekendatum}), then the value.
      */
     public static Object ownTotal(Object input, Object subject, Object evaluationDate, String name,
-                                     String granularity, String calendar) {
-        if (input instanceof BucketScalar e) return PeriodArithmetic.weighed(e.timeline(), granularity, calendar);
+                                     String granularity, String fixed, String calendar) {
+        if (input instanceof BucketScalar e) return PeriodArithmetic.weighed(e.timeline(), granularity, fixed, calendar);
         // a timeline a form writes is refused while the model is built, so a full timeline here is the case's
         if (input != null)
             throw new InputFormFault("the temporal total of \"" + name + "\" over a case-supplied full timeline"
@@ -742,7 +743,7 @@ public final class ComputeHelpers {
         if (evaluationDate == null)
             throw new ComputeFault("the temporal total of \"" + name + "\" needs the evaluation date: the case"
                     + " carries the asOfDate bucket's value");
-        return RegelSpraakRuntime.rsTijdTotaal(null, granularity);
+        return BigDecimal.ZERO;
     }
 
     /**
@@ -976,20 +977,23 @@ public final class ComputeHelpers {
     /** The contribution of the member {@code member} to the fold {@code fold} on {@code subject} by its value
      *  {@code value} ({@link Contribution}, RUNTIME-SEMANTICS ch. 3.4), or null where it contributes nothing: a leeg value is
      *  skipped (ch. 1.2). Where {@code total} is not null the value is the member's timeline and contributes its total
-     *  over time per that unit (ch. 3.6, the per-element fold), an open segment of 0 adding 0, and nothing where the
-     *  case gives the timeline as the asOfDate-bucket scalar ({@link BucketScalar}) or where it has an open segment of
-     *  another value, whose total has none, since the member's {@link MemberFault} stands instead. Where {@code whole}
+     *  over time on the grid of that unit, laid from the fixed start point {@code fixed} (null: the calendar's grid)
+     *  (ch. 3.6, the per-element fold; {@link PeriodArithmetic#weighed}), an open segment of 0 adding 0 and an absent
+     *  timeline contributing 0 (spec/proposals/IMPLICIT-TIME.md 12c), and nothing where the case gives the timeline as
+     *  the asOfDate-bucket scalar ({@link BucketScalar}) or where it has an open segment of another value, whose total
+     *  has none, since the member's {@link MemberFault} stands instead. Where {@code whole}
      *  the value is the member's timeline and contributes itself, to the sum per period of ch. 3.5, and nothing where it
      *  is the bucket scalar, for the same reason. Where
      *  {@code filled}, the contribution counts the member and carries no value; otherwise it carries the exact value,
      *  a decimal or a rational that does not terminate, which the exact folds add and compare
      *  ({@link ExactSumFunction}, {@link ExactMinimumFunction}, {@link ExactMaximumFunction}). */
     public static Contribution contribution(String fold, Object subject, Object member, Object value, String total,
-                                    boolean filled, boolean whole) {
+                                    String fixed, boolean filled, boolean whole) {
         if ((total != null || whole) && value instanceof BucketScalar) return null;
         if (total != null && PeriodArithmetic.openNonZero(value)) return null;
         Object v = total == null ? value
-                : value == null ? null : RegelSpraakRuntime.rsTijdTotaal(PeriodArithmetic.withoutOpenZeros((List<?>) value), total);
+                : value == null ? BigDecimal.ZERO
+                : PeriodArithmetic.weighed(PeriodArithmetic.withoutOpenZeros((List<?>) value), total, fixed, null);
         return v == null ? null : new Contribution(fold, subject, member, filled ? null : v);
     }
 

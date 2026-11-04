@@ -79,8 +79,8 @@ class RouteWitnessTest {
                 "UNIQUENESS_KEYS: List ComputeHelpers.uniquenessKeys[String, int, Object, Object, List, int]",
                 "PAYOUT: List ComputeHelpers.payout[String, Object, Method, Object, Object, boolean, boolean,"
                         + " boolean, Integer, ElementKey, ElementKey, String, Integer, Integer, String]",
-                "CONTRIBUTION: Contribution ComputeHelpers.contribution[String, Object, Object, Object, String, boolean,"
-                        + " boolean]",
+                "CONTRIBUTION: Contribution ComputeHelpers.contribution[String, Object, Object, Object, String, String,"
+                        + " boolean, boolean]",
                 "FOLD_PLACE: List ComputeHelpers.foldPlace[PlaceReason, String, Object, int, List, List, List]",
                 "CREATION_DEPTH: int ComputeHelpers.creationDepth[String, int, String, List, int]",
                 "NEW_OBJECT: Object ComputeHelpers.newObject[Object, String]",

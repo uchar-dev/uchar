@@ -62,8 +62,6 @@ public enum StaticFunction {
     RS_DIM_MIN(RegelSpraakRuntime.class, "rsDimMin", false),
     /** The greatest cell of a dimension map at a list of cells. */
     RS_DIM_MAX(RegelSpraakRuntime.class, "rsDimMax", false),
-    /** The total over time of a timeline on a grid, a {@code String} constant (ch. 3.6). */
-    RS_TIME_TOTAL(RegelSpraakRuntime.class, "rsTijdTotaal", false),
     /** A timeline clipped to the true periods of a characteristic (ch. 3.6), the segment class a constant. */
     RS_TIME_CLIP(RegelSpraakRuntime.class, "rsTijdKnip", false),
     /** A timeline clipped to the periods outside the true periods of a characteristic, within its segments. */
@@ -115,10 +113,11 @@ public enum StaticFunction {
     /** The timeline a rule of period arithmetic writes: its filled segments, each under the write boundary of the
      *  target's decimals, an {@code Integer} constant, and its attribute, a {@code String} constant (ch. 2.4, 3.1). */
     PERIOD_WRITTEN(PeriodArithmetic.class, "written", true),
-    /** The total over time of a timeline on a grid, a {@code String} constant (ch. 3.6), by the calendar where a second
-     *  {@code String} constant names the time unit of the rate's denominator and by the whole units of the grid where
-     *  it is null, the attribute a {@code String} constant and the object whose timeline it is: an open segment of 0
-     *  adds 0, one of another value the fault (EF-036). */
+    /** The total over time of a timeline on a grid, a {@code String} constant, laid from the fixed start point a second
+     *  {@code String} constant names, or the calendar's grid where it is null (ch. 3.6), by the calendar where a third
+     *  {@code String} constant names the time unit of the rate's denominator and by the length in units of the grid
+     *  where it is null, the attribute a {@code String} constant and the object whose timeline it is: an open segment
+     *  of 0 adds 0, one of another value the fault (EF-036). */
     PERIOD_TOTAL(PeriodArithmetic.class, "total", true),
     /** A timeline restricted to the periods in which its rule's condition holds, the periods first (ch. 3.10, the clip
      *  generalised): one fragment per overlap of a segment and a period. */
@@ -220,9 +219,10 @@ public enum StaticFunction {
     COUNT(ComputeHelpers.class, "countOf", false),
     /** The value of a fold from its count, its folded value and its fallback: the fallback over no contribution. */
     FOLD_VALUE(ComputeHelpers.class, "foldValue", false),
-    /** The subject's own total over time without a clip (ch. 3.6): from the asOfDate-bucket scalar of the input, by the
-     *  calendar where a {@code String} constant names the time unit of the rate's denominator, the fault for a full
-     *  timeline and for a session without an evaluation date. */
+    /** The subject's own total over time without a clip (ch. 3.6): from the asOfDate-bucket scalar of the input, on the
+     *  grid a {@code String} constant names, laid from the fixed start point a second one names, by the calendar where
+     *  a third names the time unit of the rate's denominator, 0 for an absent input, the fault for a full timeline and
+     *  for a session without an evaluation date. */
     OWN_TOTAL(ComputeHelpers.class, "ownTotal", true),
     /** The full timeline a form reads whole, the fault EF-037 where the case gives the asOfDate-bucket scalar (ch. 8.4,
      *  5.7b), in a sentence that names the object; the attribute and whether that object is the input's own follow the

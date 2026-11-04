@@ -744,9 +744,9 @@ public final class CaseInput {
      *    <li>a SCALAR value: the asOfDate-bucket convention recorded in {@code corpus/golden/README.md} — the
      *        scalar IS the value of the bucket the evaluation date falls in. ref keeps that scalar aside and
      *        folds precisely this one-bucket timeline inside the ch. 3.6 collapse ({@code Eval}'s temporal
-     *        total: value × whole units of its own grid); the bean model has no scalar slot beside the
-     *        {@code List<Segment>} field, so the bucket is materialised here and {@code RegelSpraakRuntime.rsTijdTotaal}
-     *        folds the identical segment to the identical scalar.</li>
+     *        total: value × the bucket's length in units of its own grid, one); the bean model has no scalar slot
+     *        beside the {@code List<Segment>} field, so the bucket is materialised here and the subject's own total
+     *        ({@code ComputeHelpers.ownTotal}) folds the identical segment to the identical scalar.</li>
      *  </ul>
      *  Deliberate consequence of that materialisation: the bean now carries a shape ref REFUSES to serve —
      *  ref has no point-in-time read at all (ch. 3.3: a temporal attribute in a scalar slot is refused, the

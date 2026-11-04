@@ -67,7 +67,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>C, the subject's own total without a clip</b> (ch. 3.6), "het totaal van zijn bedrag, indien hij actief is": J1
  * (actief, a full timeline) faults; J2 (not actief, a full timeline) is not reached; J3 (actief, the bedrag 7 as a bucket
- * scalar) totals 7, one month of 7; J4 (actief, no bedrag) totals leeg. Without J1 the case plays.
+ * scalar) totals 7, one month of 7; J4 (actief, no bedrag) totals 0, the total of a timeline that is leeg on every
+ * day (spec/proposals/IMPLICIT-TIME.md 12c). Without J1 the case plays.
  *
  * <p><b>D, the clip of a total</b> (ch. 3.6): "het totaal van zijn vergoeding gedurende de tijd dat hij wachtplichtig
  * is" and "… gedurende de tijd dat zijn controle groter is dan 5", where "De controle … als het tijdsevenredig deel per
@@ -260,7 +261,7 @@ class TmsInputFormWitnessTest {
                 List.of(), Map.of(), Map.of()));
         instances.add(instance("J4", "Jutter", Map.of("score", numberValue("10")), List.of(), Map.of(), Map.of()));
         return TmsTimelineDocuments.caseDocument(DATE, instances, List.of(value("J2", "topsom", null),
-                value("J3", "topsom", "7"), value("J4", "topsom", null)));
+                value("J3", "topsom", "7"), value("J4", "topsom", "0")));
     }
 
     @Test void the_own_total_without_clip_fails_on_a_full_timeline_where_the_rule_reaches_it() throws Exception {

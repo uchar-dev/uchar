@@ -1,5 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.core.FixedStartPoint;
+import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 
@@ -215,15 +217,15 @@ public final class PeriodArithmetic {
 
     /**
      * The temporal total of ch. 3.6 of {@code timeline}, the attribute {@code attribute} of {@code object}, on the grid
-     * {@code granularity}, each closed segment weighed as {@link #weighed} weighs it, by the calendar where
-     * {@code calendar} names the time unit of the rate's denominator: a segment with an open bound holds unboundedly
-     * many units, so with the value 0 it adds 0, and with any other value the total has none, the
-     * {@link OpenSegmentFault} of the first such segment (EF-036). A leeg segment adds 0, and an absent timeline totals
-     * 0, the per-day reading of a timeline that is leeg on every day: the routes that reach an absent timeline here are
-     * the clip, which turns absence into 0, and the subject's own total of a timeline that period arithmetic writes
-     * (ch. 3.6).
+     * {@code granularity} laid from the fixed start point {@code fixed} (null: the calendar's grid), each closed segment
+     * weighed as {@link #weighed} weighs it, by the calendar where {@code calendar} names the time unit of the rate's
+     * denominator: a segment with an open bound holds unboundedly many units, so with the value 0 it adds 0, and with
+     * any other value the total has none, the {@link OpenSegmentFault} of the first such segment (EF-036). A leeg
+     * segment adds 0, and an absent timeline totals 0, the per-day reading of a timeline that is leeg on every day
+     * (ch. 3.6, spec/proposals/IMPLICIT-TIME.md 12c).
      */
-    public static Object total(Object timeline, String granularity, String calendar, String attribute, Object object) {
+    public static Object total(Object timeline, String granularity, String fixed, String calendar, String attribute,
+                               Object object) {
         List<Period> closed = new ArrayList<>();
         for (Object o : timeline == null ? List.of() : (List<?>) timeline) {
             Period p = (Period) o;
@@ -234,35 +236,50 @@ public final class PeriodArithmetic {
             }
             closed.add(p);
         }
-        return weighed(closed, granularity, calendar);
+        return weighed(closed, granularity, fixed, calendar);
     }
 
     /**
-     * The total over time of the closed segments {@code segments} on the grid {@code granularity} (ch. 3.6): each
-     * segment's value times its whole units of the grid, as {@code rsTijdTotaal} counts them. Where {@code calendar}
-     * names a time unit of the other family of the calendar than the grid's ("DAG" or "WEEK" against "MAAND",
-     * "KWARTAAL" or "JAAR"), the whole units of a segment are measured in that unit by the actual length of the
-     * calendar unit each day lies in ({@link #measure}), the exact rational the total then is: a rate per year over a
-     * day grid weighs a day by 1/365 or 1/366. A segment shorter than one unit of the grid adds 0 either way.
+     * The total over time of the closed segments {@code segments} on the grid {@code granularity} laid from the fixed
+     * start point {@code fixed} (null: the calendar's grid) (ch. 3.6): each segment's value times its length in units
+     * of the grid ({@link #gridMeasure}), a part of a unit by its days (spec/proposals/IMPLICIT-TIME.md 12a). Where
+     * {@code calendar} names a time unit of the other family of the calendar than the grid's ("DAG" or "WEEK" against
+     * "MAAND", "KWARTAAL" or "JAAR"), the segment is measured in that unit by the actual length of the calendar unit each
+     * day lies in ({@link #measure}): a rate per year over a day grid weighs a day by 1/365 or 1/366. The total is the
+     * exact rational the lengths give, as a decimal where it terminates.
      */
-    public static Object weighed(List<?> segments, String granularity, String calendar) {
-        if (calendar == null) return RegelSpraakRuntime.rsTijdTotaal(segments, granularity);
+    public static Object weighed(List<?> segments, String granularity, String fixed, String calendar) {
         Breuk sum = Breuk.van(BigInteger.ZERO, BigInteger.ONE);
         for (Period p : Period.list(segments)) {
             if (p.value() == null || !p.from().isBefore(p.to())) continue;
-            long units = RegelSpraakRuntime.rsTijdTotaal(List.of(new Period(p.from(), p.to(), BigDecimal.ONE)),
-                    granularity).longValueExact();
-            LocalDate end = switch (granularity) {
-                case "DAG" -> p.from().plusDays(units);
-                case "WEEK" -> p.from().plusDays(7 * units);
-                case "MAAND" -> p.from().plusMonths(units);
-                case "KWARTAAL" -> p.from().plusMonths(3 * units);
-                case "JAAR" -> p.from().plusMonths(12 * units);
-                default -> throw new IllegalArgumentException("onbekende granulariteit voor de kalender: " + granularity);
-            };
-            sum = sum.optellen(Breuk.van(p.value()).vermenigvuldigen(measure(calendar, p.from(), end)));
+            // an open bound holds unboundedly many units; the callers take such a segment out or fault on it first
+            if (p.open())
+                throw new IllegalStateException("het totaal over de tijd meet geen segment met een open grens: " + p);
+            Breuk length = calendar == null ? gridMeasure(granularity, fixed, p.from(), p.to())
+                    : measure(calendar, p.from(), p.to());
+            sum = sum.optellen(Breuk.van(p.value()).vermenigvuldigen(length));
         }
         return sum.isTerminerend() ? sum.naarDecimal() : sum;
+    }
+
+    /** How many units of the grid {@code granularity} laid from the fixed start point {@code fixed} the days of
+     *  {@code [from, upTo)} make (ch. 3.6): a day counts 1/len of the period of the grid that holds it, len that period's
+     *  length in days, so a whole period counts 1 and a part of one its share of the days. On the calendar's grid
+     *  ({@code fixed} null) that period is the calendar unit ({@link #measure}); a fixed start point lays the periods
+     *  of its own grid ({@link FixedStartPoint#period}), as the case input lays the bucket of the evaluation date. */
+    static Breuk gridMeasure(String granularity, String fixed, LocalDate from, LocalDate upTo) {
+        if (fixed == null) return measure(granularity, from, upTo);
+        RegelSpraakModel.Granularity g = RegelSpraakModel.Granularity.valueOf(granularity);
+        Breuk acc = Breuk.van(BigInteger.ZERO, BigInteger.ONE);
+        LocalDate d = from;
+        while (d.isBefore(upTo)) {
+            LocalDate[] period = FixedStartPoint.period(g, fixed, d);
+            LocalDate e = period[1].isBefore(upTo) ? period[1] : upTo;
+            acc = acc.optellen(Breuk.van(BigInteger.valueOf(ChronoUnit.DAYS.between(d, e)),
+                    BigInteger.valueOf(ChronoUnit.DAYS.between(period[0], period[1]))));
+            d = e;
+        }
+        return acc;
     }
 
     /** How many {@code unit} the days of {@code [from, upTo)} make by the calendar (ch. 3.6): a day is one dag and a
@@ -304,7 +321,7 @@ public final class PeriodArithmetic {
     }
 
     /** {@code timeline} without its segments with an open bound that carry 0 or leeg, which add 0 to a total
-     *  (ch. 3.6): what {@code rsTijdTotaal} weighs of a timeline without an open segment of another value. */
+     *  (ch. 3.6): what {@link #weighed} weighs of a timeline without an open segment of another value. */
     public static List<Period> withoutOpenZeros(List<?> timeline) {
         List<Period> out = new ArrayList<>();
         for (Object o : timeline) {

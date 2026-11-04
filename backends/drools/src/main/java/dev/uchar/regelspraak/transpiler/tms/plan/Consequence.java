@@ -311,18 +311,23 @@ public sealed interface Consequence {
 
         /** The member's value in slot {@code value}, made by the route {@link Route#CONTRIBUTION}: nothing where it is
          *  leeg; where {@code total} is not null the slot holds the member's timeline, which contributes its total over
-         *  time per that unit, and nothing where the case gives it as the asOfDate-bucket scalar; where {@code filled},
+         *  time on the grid of that unit, laid from the fixed start point {@code fixed} (null: the calendar's grid), 0
+         *  where it is absent, and nothing where the case gives it as the asOfDate-bucket scalar; where {@code filled},
          *  the member without a value, a count of the members whose value is gevuld. Where {@code cell} is not null
          *  the slot holds the map of the cells of a dimensioned attribute of the member, and the value is the cell of
          *  that key ({@code ComputeHelpers.cell}): a cell of each member, which no form writes. Where {@code whole} the
          *  slot holds the member's timeline, which contributes itself whole to the sum per period of RUNTIME-SEMANTICS
          *  ch. 3.5, and nothing where the case gives it as the asOfDate-bucket scalar. */
-        record MemberValue(int value, String total, boolean filled, List<String> cell, boolean whole) implements Input {
+        record MemberValue(int value, String total, String fixed, boolean filled, List<String> cell, boolean whole)
+                implements Input {
             public MemberValue {
                 cell = cell == null ? null : List.copyOf(cell);
                 if (whole && (total != null || filled || cell != null))
                     throw new IllegalArgumentException("een lid dat zijn tijdlijn heel bijdraagt, telt niet, draagt geen"
                             + " totaal over de tijd bij en geen cel");
+                if (fixed != null && total == null)
+                    throw new IllegalArgumentException("een vast startpunt legt het raster van een totaal over de tijd,"
+                            + " en dit lid draagt geen totaal bij");
             }
         }
 

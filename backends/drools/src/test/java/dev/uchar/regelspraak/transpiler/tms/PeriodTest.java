@@ -66,7 +66,9 @@ class PeriodTest {
     @Test void the_runtime_computes_with_a_period_as_segment_class() {
         List<Period> timeline = List.of(new Period(JAN, FEB, new BigDecimal("10")),
                 new Period(FEB, MRT, new BigDecimal("11")));
-        assertEquals(0, new BigDecimal("21").compareTo(RegelSpraakRuntime.rsTijdTotaal(timeline, "MAAND")));
+        // rsOoitWaarden normalises a value by stripTrailingZeros, so 10 is 1E+1 there
+        assertEquals(Set.of(new BigDecimal("10").stripTrailingZeros(), new BigDecimal("11")),
+                RegelSpraakRuntime.rsOoitWaarden(timeline));
         List<Object> clip = RegelSpraakRuntime.rsTijdKnip(timeline, List.of(new Period(FEB, MRT, null)), Period.class);
         assertEquals(List.of(new Period(FEB, MRT, new BigDecimal("11"))), clip);
         Object fresh = RegelSpraakRuntime.newSegment(Period.class, JAN, FEB, BigDecimal.TEN);

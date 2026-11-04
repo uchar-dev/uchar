@@ -329,7 +329,6 @@ final class ClosureRendering {
             case RS_DIM_SUM -> x -> RegelSpraakRuntime.rsDimSom((Map<?, ?>) x[0], (List<?>) x[1]);
             case RS_DIM_MIN -> x -> RegelSpraakRuntime.rsDimMin((Map<?, ?>) x[0], (List<?>) x[1]);
             case RS_DIM_MAX -> x -> RegelSpraakRuntime.rsDimMax((Map<?, ?>) x[0], (List<?>) x[1]);
-            case RS_TIME_TOTAL -> x -> RegelSpraakRuntime.rsTijdTotaal((List<?>) x[0], (String) x[1]);
             case RS_TIME_CLIP -> x -> RegelSpraakRuntime.rsTijdKnip((List<?>) x[0], (List<?>) x[1], (Class<?>) x[2]);
             case RS_TIME_CLIP_NOT -> x -> RegelSpraakRuntime.rsTijdKnipNiet((List<?>) x[0], (List<?>) x[1],
                     (Class<?>) x[2]);
@@ -353,7 +352,8 @@ final class ClosureRendering {
             case PERIOD_PARAMETER -> x -> PeriodArithmetic.parameter(x[0], (String) x[1]);
             case PERIOD_SUM -> x -> PeriodArithmetic.sum(x[0], x[1]);
             case PERIOD_WRITTEN -> x -> PeriodArithmetic.written(x[0], (Integer) x[1], (String) x[2]);
-            case PERIOD_TOTAL -> x -> PeriodArithmetic.total(x[0], (String) x[1], (String) x[2], (String) x[3], x[4]);
+            case PERIOD_TOTAL -> x -> PeriodArithmetic.total(x[0], (String) x[1], (String) x[2], (String) x[3],
+                    (String) x[4], x[5]);
             case PERIOD_CLIPPED -> x -> PeriodArithmetic.clipped(x[0], x[1]);
             case PERIOD_TRUE_PERIODS -> x -> PeriodCondition.truePeriods(x[0]);
             case PERIOD_OUTSIDE -> x -> PeriodCondition.outside(x[0]);
@@ -395,7 +395,8 @@ final class ClosureRendering {
             case FALLBACK -> x -> ComputeHelpers.fallback(x[0], x[1]);
             case COUNT -> x -> ComputeHelpers.countOf(x[0]);
             case FOLD_VALUE -> x -> ComputeHelpers.foldValue(x[0], x[1], x[2]);
-            case OWN_TOTAL -> x -> ComputeHelpers.ownTotal(x[0], x[1], x[2], (String) x[3], (String) x[4], (String) x[5]);
+            case OWN_TOTAL -> x -> ComputeHelpers.ownTotal(x[0], x[1], x[2], (String) x[3], (String) x[4], (String) x[5],
+                    (String) x[6]);
             case COMPLETE -> x -> ComputeHelpers.complete(x[0], (String) x[1], x[2], (String) x[3], (String) x[4],
                     (Boolean) x[5]);
             case COLLAPSE -> x -> ComputeHelpers.collapse(x[0]);

@@ -46,8 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * A total and a sum per member over a timeline on the exec-model branch (RUNTIME-SEMANTICS ch. 3.6, the
  * per-element fold): each member's timeline collapses over time first, at its own granularity, in the member's
- * contribution rule, and the scalars fold over the set as any fold does; a member without a timeline contributes
- * nothing, so over no contribution the total is 0 and the sum leeg.
+ * contribution rule, and the scalars fold over the set as any fold does; a member without a timeline contributes 0,
+ * the total of a timeline that is leeg on every day, so over no member the total is 0 and the sum leeg.
  *
  * <p>The model: a Jutter keeps his Vondsten (bewaring: jutter, one Jutter; vondst, many Vondsten). "Het tarief van een
  * Vondst moet berekend worden als het tijdsevenredig deel per maand van zijn jaartarief gedurende de tijd dat hij
@@ -58,9 +58,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * the tarief 12 × 31/31, 12 × 29/29 and 12 × 31/31 in January, February and March 2024, three segments, which total
  * 36; V2 (tarief 5 on [2024-01-01, 2024-03-01) as input, no jaartarief, no true period) keeps its input, whose total
  * is 2 × 5 = 10; V3 (jaartarief 12 in 2024, no true period) and V4 (bewaard in May 2024, no jaartarief) get no
- * segment and hold no timeline, so they contribute nothing. J1 keeps V1, V2 and V3: last 36 + 10 = 46, som 46. J2
- * keeps none: last 0, som leeg. J3 keeps V4 alone: last 0, som leeg, where a member that contributed 0 would make the
- * sum 0. Every order of the three rules; beside them the generated rules in a hundred sampled orders, where at the
+ * segment and hold no timeline, so each contributes 0, the total of a timeline that is leeg on every day
+ * (RUNTIME-SEMANTICS ch. 3.6, spec/proposals/IMPLICIT-TIME.md 12c). J1 keeps V1, V2 and V3: last 36 + 10 + 0 = 46,
+ * som 46. J2 keeps none: last 0, som leeg, the sum over the empty set. J3 keeps V4 alone: last 0, and som 0, the sum
+ * over one member that contributes 0. Every order of the three rules; beside them the generated rules in a hundred sampled orders, where at the
  * fixpoint every object holds at most one {@link Value} per target, and in some order the last of J1 was 10 on the
  * way, before the tarief of V1 was derived.
  *
@@ -78,8 +79,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * last — een Aggregation TOTAAL over het tijdsafhankelijke attribuut 'tarief' in een waarde ('het totaal van de
  * tarieven van zijn vondsten'): tijdlijnen zijn buiten de proef van de truth-maintenance-tak, …, [som, last, tarief]
  * Excluded: … regel: som — een Aggregation SOM over het tijdsafhankelijke attribuut 'tarief' …&gt;", and the build of
- * the sampled orders on the refusal of the tarief. <b>Red by mutation</b> (not committed): with a member without a
- * timeline contributing 0, every order fails on J3, "case: verwacht leeg, werkelijk 0".
+ * the sampled orders on the refusal of the tarief. <b>Red by mutation</b> (not committed, 2026-11-04): with a member
+ * without a timeline contributing nothing, every order fails on J3, "case: verwacht 0, werkelijk leeg"; the reference
+ * interpreter passes the documents with the som 0 of J3 (2026-11-04, "oracle: PASS (11 expectations)").
  */
 class TmsTimelineFoldWitnessTest {
 
@@ -121,7 +123,7 @@ class TmsTimelineFoldWitnessTest {
                         expectedTimeline("V3", "tarief", List.of()), expectedTimeline("V4", "tarief", List.of()),
                         value("J1", "last", "46"), value("J1", "som", "46"),
                         value("J2", "last", "0"), value("J2", "som", null),
-                        value("J3", "last", "0"), value("J3", "som", null), consistent()));
+                        value("J3", "last", "0"), value("J3", "som", "0"), consistent()));
     }
 
     @Test void a_total_and_a_sum_per_member_over_a_derived_timeline_in_every_order_of_the_rules()
@@ -133,6 +135,58 @@ class TmsTimelineFoldWitnessTest {
             Path ir = TmsTimelineDocuments.document(MODEL, order, List.of());
             outcomes.add(names + " " + TmsFaultWitnessTest.play(ir, caseDocument, DroolsBackend.Branch.EXEC_MODEL));
             expected.add(names + " gespeeld");
+        }
+        assertEquals(expected, outcomes);
+    }
+
+    /** The member's own grid, laid from its fixed start point: the storm year from 1 October, {@code --10-01}. */
+    static final String MODEL_FIXED = TmsDocuments.model(List.of(
+            objectType("Jutter", List.of(TmsDocuments.attribute("last", WHOLE), TmsDocuments.attribute("som", WHOLE)),
+                    List.of()),
+            objectType("Vondst", List.of(timeAttribute("stormtarief", WHOLE, "year", "--10-01")), List.of())),
+            List.of(factTypeOneToMany("bewaring", "jutter", "Jutter", "vondst", "Vondst", "vondsten")));
+
+    static final List<String> RULES_FIXED = List.of(
+            computingRule("last", "BEREKENING", "Jutter", "last", aggregation("total", ownRead("stormtarief", "Vondst"),
+                    "Vondst", sourceRole("bewaring", "vondst"), "null", "null", WHOLE,
+                    "het totaal van de stormtarieven van zijn vondsten"), "null"),
+            computingRule("som", "BEREKENING", "Jutter", "som", aggregation("sum", ownRead("stormtarief", "Vondst"),
+                    "Vondst", sourceRole("bewaring", "vondst"), "null", "null", WHOLE,
+                    "de som van de stormtarieven van zijn vondsten"), "null"));
+
+    /** J1 keeps V1, the stormtarief 10 in the storm year from 2023-10-01 and 12 in the one from 2024-10-01, and V2,
+     *  without a stormtarief: each storm year is one unit of V1's grid, so last and som are 10 + 12 + 0 = 22 (on the
+     *  calendar's year grid the first storm year would be 92/365 + 274/366 of a year). J2 keeps V3 alone, without a
+     *  stormtarief: last 0 and som 0. J3 keeps none: last 0, som leeg. */
+    static JsonNode caseFixed() throws Exception {
+        return TmsTimelineDocuments.caseDocument(null, List.of(
+                        instance("J1", "Jutter", Map.of(), List.of(), Map.of(), Map.of("vondsten", List.of("V1", "V2"))),
+                        instance("J2", "Jutter", Map.of(), List.of(), Map.of(), Map.of("vondsten", List.of("V3"))),
+                        instance("J3", "Jutter", Map.of(), List.of(), Map.of(), Map.of()),
+                        instance("V1", "Vondst", Map.of("stormtarief", timeline(List.of(
+                                segment("2023-10-01", "2024-10-01", "10"), segment("2024-10-01", "2025-10-01", "12")))),
+                                List.of(), Map.of(), Map.of()),
+                        instance("V2", "Vondst", Map.of(), List.of(), Map.of(), Map.of()),
+                        instance("V3", "Vondst", Map.of(), List.of(), Map.of(), Map.of())),
+                List.of(value("J1", "last", "22"), value("J1", "som", "22"), value("J2", "last", "0"),
+                        value("J2", "som", "0"), value("J3", "last", "0"), value("J3", "som", null), consistent()));
+    }
+
+    /** The per-element fold measures each member on its own grid, laid from its fixed start point (RUNTIME-SEMANTICS
+     *  ch. 3.2, 3.6), and a member without a timeline contributes 0 to the total and the sum (12c). The reference
+     *  interpreter passes the documents {@link #main} writes (2026-11-04, "oracle: PASS (7 expectations)").
+     *  <b>Red by mutation</b> (not committed, 2026-11-04): with the fixed start point left out of the contribution,
+     *  the members are measured on the calendar's year grid. */
+    @Test void a_total_and_a_sum_per_member_on_a_fixed_start_grid_in_every_order_of_the_rules() throws Exception {
+        JsonNode caseDocument = caseFixed();
+        List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
+        for (List<String> order : TmsDocuments.permutations(RULES_FIXED)) {
+            List<String> names = TmsDocuments.ruleNames(order);
+            Path ir = TmsTimelineDocuments.document(MODEL_FIXED, order, List.of());
+            for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+                outcomes.add(names + " " + branch + " " + TmsFaultWitnessTest.play(ir, caseDocument, branch));
+                expected.add(names + " " + branch + " gespeeld");
+            }
         }
         assertEquals(expected, outcomes);
     }
@@ -219,6 +273,7 @@ class TmsTimelineFoldWitnessTest {
         Path out = Path.of(args[0]);
         Map<String, Object[]> parts = new LinkedHashMap<>();
         parts.put("vouw-per-lid", new Object[]{MODEL, RULES, caseDocument()});
+        parts.put("vouw-per-lid-vast-startpunt", new Object[]{MODEL_FIXED, RULES_FIXED, caseFixed()});
         for (Map.Entry<String, Object[]> d : parts.entrySet()) {
             @SuppressWarnings("unchecked") List<String> rules = (List<String>) d.getValue()[1];
             int n = 0;
