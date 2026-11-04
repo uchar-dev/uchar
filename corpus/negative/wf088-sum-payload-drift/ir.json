@@ -1,0 +1,92 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vindloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "kostbaar",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "keurklasse",
+        "datatype": {
+          "node": "Enumeration",
+          "values": [
+            "gaaf",
+            "beschadigd"
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "keuring van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Enumeration",
+                "domain": "keurklasse",
+                "values": [
+                  "gaaf",
+                  "beschadigd",
+                  "wrakhout"
+                ]
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            },
+            {
+              "name": "niet van toepassing",
+              "payload": null
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -1,0 +1,47 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "opslagkosten": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "constructor": "waarde",
+                  "payload": {
+                    "number": "10"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "consistent"
+    }
+  ]
+}

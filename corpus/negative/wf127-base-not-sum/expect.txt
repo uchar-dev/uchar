@@ -1,0 +1,2 @@
+WF-127.base-not-sum
+type=number

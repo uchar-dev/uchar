@@ -1,0 +1,29 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "schatting": {
+            "number": "300.00"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "onleesbaar"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-016",
+    "params": {
+      "attribute": "taxatie",
+      "label": "V1"
+    }
+  }
+}

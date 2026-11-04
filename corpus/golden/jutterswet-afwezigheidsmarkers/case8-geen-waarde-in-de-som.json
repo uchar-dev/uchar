@@ -1,0 +1,47 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "onleesbaar"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "getaxeerd totaal"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "taxatie",
+      "value": {
+        "constructor": "onbekend"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

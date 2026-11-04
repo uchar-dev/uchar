@@ -1,0 +1,89 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "opslagkosten": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "constructor": "waarde",
+                  "payload": {
+                    "number": "10"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "verkocht": [
+            {
+              "from": "2025-06-01",
+              "to": "2026-01-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "V1",
+      "attribute": "opslagkosten",
+      "timeline": [
+        {
+          "from": "2025-01-01",
+          "to": "2025-03-01",
+          "value": {
+            "constructor": "onbekend"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "constructor": "waarde",
+            "payload": {
+              "number": "10"
+            }
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "to": "2026-01-01",
+          "value": {
+            "constructor": "niet van toepassing"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "V1",
+      "attribute": "opslagtoeslag",
+      "timeline": [
+        {
+          "from": "2025-01-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "7"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

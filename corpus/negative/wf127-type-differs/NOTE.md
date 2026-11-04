@@ -1,0 +1,2 @@
+Violates WF-127 (`spec/IR-SPEC.md` ch. 4.7), the type arm. A Vondst whose `taxatie` is a sum type `waarde(getal met 2 decimalen) | onbekend | niet van toepassing` over the domain `taxatie van een Vondst`, the lowering of a RegelSpraak attribute with both absence markers (`spec/RUNTIME-SEMANTICS.md` ch. 9.5).
+The access is typed a whole number, where the payload of `waarde` is a number with 2 decimals.

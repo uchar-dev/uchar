@@ -1,0 +1,2 @@
+Violates WF-127 (`spec/IR-SPEC.md` ch. 4.7), the base arm. A Vondst whose `taxatie` is a sum type `waarde(getal met 2 decimalen) | onbekend | niet van toepassing` over the domain `taxatie van een Vondst`, the lowering of a RegelSpraak attribute with both absence markers (`spec/RUNTIME-SEMANTICS.md` ch. 9.5).
+The access takes `waarde` out of `schatting`, which is a number: there is no constructor to read.

@@ -1,0 +1,31 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "verkocht": [
+            {
+              "from": "2025-02-01",
+              "to": "2026-01-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-016",
+    "params": {
+      "attribute": "opslagkosten",
+      "label": "V1"
+    }
+  }
+}

@@ -1,0 +1,1140 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": false,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "getaxeerd totaal",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "taxatie",
+            "datatype": {
+              "node": "SumType",
+              "domain": "taxatie van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                },
+                {
+                  "name": "niet van toepassing",
+                  "payload": null
+                }
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "schatting",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vindloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opslagkosten",
+            "datatype": {
+              "node": "SumType",
+              "domain": "opslagkosten van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                },
+                {
+                  "name": "niet van toepassing",
+                  "payload": null
+                }
+              ]
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opslagtoeslag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "onleesbaar",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "drijfhout",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "kostbaar",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "verkocht",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vangst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "taxatie van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            },
+            {
+              "name": "niet van toepassing",
+              "payload": null
+            }
+          ]
+        }
+      },
+      {
+        "node": "Domain",
+        "name": "opslagkosten van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            },
+            {
+              "name": "niet van toepassing",
+              "payload": null
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "taxatie uit schatting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "taxatie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De taxatie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "taxatie van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  },
+                  {
+                    "name": "niet van toepassing",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "AttributeReference",
+                "attribute": "schatting",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn schatting"
+                }
+              },
+              "source": {
+                "snippet": "zijn schatting"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "taxatie onbekend",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "taxatie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De taxatie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "taxatie van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  },
+                  {
+                    "name": "niet van toepassing",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "onbekend",
+              "argument": null,
+              "source": {
+                "snippet": "onbekend"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "onleesbaar",
+              "negated": false,
+              "source": {
+                "snippet": "hij onleesbaar is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "taxatie niet van toepassing",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "taxatie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De taxatie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "taxatie van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  },
+                  {
+                    "name": "niet van toepassing",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "niet van toepassing",
+              "argument": null,
+              "source": {
+                "snippet": "niet van toepassing"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "drijfhout",
+              "negated": false,
+              "source": {
+                "snippet": "hij drijfhout is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vindloon naar taxatie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vindloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het vindloon van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Rounding",
+              "base": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "PayloadAccess",
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "base": {
+                    "node": "AttributeReference",
+                    "attribute": "taxatie",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn taxatie"
+                    }
+                  },
+                  "constructor": "waarde",
+                  "source": {
+                    "snippet": "zijn taxatie"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn taxatie gedeeld door 10"
+                }
+              },
+              "mode": "halfAwayFromZero",
+              "decimals": 2,
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn taxatie gedeeld door 10 rekenkundig afgerond op 2 decimalen"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "PayloadAccess",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "base": {
+                  "node": "AttributeReference",
+                  "attribute": "taxatie",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn taxatie"
+                  }
+                },
+                "constructor": "waarde",
+                "source": {
+                  "snippet": "zijn taxatie"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn taxatie een waarde heeft"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "forfaitair vindloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vindloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het vindloon van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "25.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "25,00"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "taxatie",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn taxatie"
+                }
+              },
+              "right": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "taxatie van een Vondst",
+                  "constructors": [
+                    {
+                      "name": "waarde",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
+                      }
+                    },
+                    {
+                      "name": "onbekend",
+                      "payload": null
+                    },
+                    {
+                      "name": "niet van toepassing",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "onbekend",
+                "argument": null,
+                "source": {
+                  "snippet": "onbekend"
+                }
+              },
+              "source": {
+                "snippet": "zijn taxatie onbekend is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "geen vindloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vindloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het vindloon van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "0.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "0,00"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "taxatie",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn taxatie"
+                }
+              },
+              "right": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "taxatie van een Vondst",
+                  "constructors": [
+                    {
+                      "name": "waarde",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
+                      }
+                    },
+                    {
+                      "name": "onbekend",
+                      "payload": null
+                    },
+                    {
+                      "name": "niet van toepassing",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "niet van toepassing",
+                "argument": null,
+                "source": {
+                  "snippet": "niet van toepassing"
+                }
+              },
+              "source": {
+                "snippet": "zijn taxatie niet van toepassing is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kostbare vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kostbaar",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is kostbaar"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "PayloadAccess",
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    },
+                    "base": {
+                      "node": "AttributeReference",
+                      "attribute": "taxatie",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn taxatie"
+                      }
+                    },
+                    "constructor": "waarde",
+                    "source": {
+                      "snippet": "zijn taxatie"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn taxatie heeft een waarde"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "PayloadAccess",
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    },
+                    "base": {
+                      "node": "AttributeReference",
+                      "attribute": "taxatie",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn taxatie"
+                      }
+                    },
+                    "constructor": "waarde",
+                    "source": {
+                      "snippet": "zijn taxatie"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1000.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1000,00"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn taxatie is groter dan 1000,00"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn taxatie heeft een waarde - zijn taxatie is groter dan 1000,00"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "getaxeerd totaal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "getaxeerd totaal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het getaxeerd totaal van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "PayloadAccess",
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "base": {
+                    "node": "AttributeReference",
+                    "attribute": "taxatie",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "de taxatie van alle vondsten van de Jutter die een waarde hebben"
+                    }
+                  },
+                  "constructor": "waarde",
+                  "source": {
+                    "snippet": "de taxatie van alle vondsten van de Jutter die een waarde hebben"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Predicate",
+                "kind": "filled",
+                "operand": {
+                  "node": "PayloadAccess",
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "base": {
+                    "node": "AttributeReference",
+                    "attribute": "taxatie",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "een waarde hebben"
+                    }
+                  },
+                  "constructor": "waarde",
+                  "source": {
+                    "snippet": "een waarde hebben"
+                  }
+                },
+                "negated": false,
+                "digits": 0,
+                "source": {
+                  "snippet": "een waarde hebben"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vangst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van de taxatie van alle vondsten van de Jutter die een waarde hebben"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "opslag onbekend in de winter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "opslagkosten",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De opslagkosten van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "opslagkosten van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  },
+                  {
+                    "name": "niet van toepassing",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "onbekend",
+              "argument": null,
+              "source": {
+                "snippet": "onbekend"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-01-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-01-2025"
+                }
+              },
+              "to": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-03-2025"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "van dd. 01-01-2025 tot dd. 01-03-2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "opslag niet van toepassing na verkoop",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "opslagkosten",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De opslagkosten van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "opslagkosten van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  },
+                  {
+                    "name": "niet van toepassing",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "niet van toepassing",
+              "argument": null,
+              "source": {
+                "snippet": "niet van toepassing"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "verkocht",
+              "negated": false,
+              "source": {
+                "snippet": "hij verkocht is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "opslagtoeslag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "opslagtoeslag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De opslagtoeslag van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "7"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "7"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "opslagkosten",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn opslagkosten"
+                }
+              },
+              "right": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "opslagkosten van een Vondst",
+                  "constructors": [
+                    {
+                      "name": "waarde",
+                      "payload": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      }
+                    },
+                    {
+                      "name": "onbekend",
+                      "payload": null
+                    },
+                    {
+                      "name": "niet van toepassing",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "onbekend",
+                "argument": null,
+                "source": {
+                  "snippet": "onbekend"
+                }
+              },
+              "source": {
+                "snippet": "zijn opslagkosten onbekend zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

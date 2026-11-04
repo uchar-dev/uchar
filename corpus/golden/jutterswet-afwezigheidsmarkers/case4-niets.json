@@ -1,0 +1,66 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "schatting": {
+            "number": "100.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "taxatie"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "kostbaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "taxatie",
+      "value": {
+        "constructor": "waarde",
+        "payload": {
+          "number": "100.00"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vindloon",
+      "value": {
+        "number": "10.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
