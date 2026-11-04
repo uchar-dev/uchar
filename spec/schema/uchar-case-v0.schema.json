@@ -130,7 +130,7 @@
           "properties": { "enumeration": { "type": "string", "minLength": 1 } }
         },
         {
-          "description": "A sum-type constructor value (CONSTRUCTS row 36): a declared constructor tag plus, for a unary constructor, its one payload value; 'payload' is absent for a nullary constructor.",
+          "description": "A sum-type constructor value (CONSTRUCTS row 36): a declared constructor tag plus, for a unary constructor, its one payload value; 'payload' is absent for a nullary constructor. An absence marker is such a value (spec/RUNTIME-SEMANTICS.md ch. 9.5): {\"constructor\": \"onbekend\"}, and a value of an attribute with markers is {\"constructor\": \"waarde\", \"payload\": ...}; the format has no null.",
           "type": "object", "additionalProperties": false, "required": ["constructor"],
           "properties": {
             "constructor": { "type": "string", "minLength": 1 },

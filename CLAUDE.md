@@ -230,7 +230,9 @@ missing line makes `make gates` exit non-zero. Current gates:
    `default-statute-annotations`) WF-082 judges the `statuteAnnotations` of a
    Default too (IR-SPEC ch. 6.1); the verifier reads those lists beside the
    document (`Loader.default_annotations`), and each of the three WF-082 keys
-   carries the parameter `kind` (`rule` or `default`).
+   carries the parameter `kind` (`rule` or `default`). Since the card `absence-markers` (2026-11-04) WF-127 holds a
+   `PayloadAccess` under a test of its constructor (IR-SPEC ch. 4.7),
+   with one negative per arm.
 4. `scripts/check-case-schema.sh` — the case schema
    (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
    `corpus/golden/**/case*.json` and `corpus/red/**/case*.json`
@@ -693,7 +695,9 @@ missing line makes `make gates` exit non-zero. Current gates:
     forms' lists and its reason, stale-failing in both directions; a golden
     the loader refuses cannot be compared and is reported with its form.
     ROUTE LEG: on every golden with a `source.rgs` the graph from the source
-    route equals the graph from the wire route byte for byte, and the
+    route equals the graph from the wire route byte for byte, (a golden whose `ir.json` the Drools loader
+    refuses carries no `source.rgs`: `jutterswet-afwezigheidsmarkers`,
+    whose source the frontend's suite holds), and the
     graph's own unit tests (under `backends/drools/src/source-route`, compiled
     by the gate against the frontend and the backend jar) pass with a
     non-zero count. Floors in the script (measured 2026-09-26 at the wave's
