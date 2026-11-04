@@ -47,6 +47,9 @@ lijsten en vloeren die schuiven; voorstel), kaartverplaatsing.
 
 Out of scope: de dienst van de distributie (een toolchain-kaart, daarna een pin-bump); meer markers dan twee; een kenmerk met markers.
 
+Meenemen (gemeten in `flavours-of-empty`): clingo weigert een Boolean-attribuut in een conditie zonder registercode ("unscalable
+datatype in the ASP translation", `backends/clingo/lib/translate.ml`); markers op een Boolean-attribuut hebben die conditie nodig.
+
 ## Omvang
 
 Middel tot groot; twee stappen.

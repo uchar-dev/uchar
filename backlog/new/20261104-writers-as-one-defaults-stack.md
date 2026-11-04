@@ -39,6 +39,9 @@ May touch: `backends/clingo/`, `ref/` en `backends/drools/**` alleen waar de met
 `spec/ASP-TRANSLATION.md` (voorstel), `spec/verifier/` (het staande domein, voorstel), `corpus/golden/`, `scripts/` (alleen lijsten die
 krimpen; voorstel), kaartverplaatsing.
 
+Meenemen (gemeten in `flavours-of-empty`): clingo weigert een door de case gegeven enumeratiewaarde op een berekend doel zonder
+registercode ("a case-supplied text/enum computed target … has no encoding here"); onder de stapel krijgt die invoer dezelfde route.
+
 ## Omvang
 
 Klein tot middel.

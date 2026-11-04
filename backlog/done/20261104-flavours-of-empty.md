@@ -104,3 +104,12 @@ Onderzoek, middel.
 - Na N4: een golden met het standpatroon van voorstel §6.1 (de rode case 6 met de gedeelde EF-016-parameters).
 
 Gate 1 (`scripts/check-self-contained.sh`) PASS. Geen `make gates` (alleen `spec/proposals/` en de kaart).
+
+### Besluiten van de eigenaar (2026-11-04, hoofdsessie)
+
+Eén leeg (de afwezigheid) en twee markers als gevulde waarden, onbekend en niet van toepassing, per attribuut aan te zetten voor elk
+datatype (ook per periode), niet op een kenmerk; een marker beslist, leeg niet; wie een attribuut met markers leest, toetst eerst. De
+bronvorm is dialectsuiker die naar het somtype verlaagt. Vastgelegd bovenaan `spec/proposals/FLAVOURS-OF-EMPTY.md`; bouwkaart
+`20261104-absence-markers`. Vervolg in clingo, gemeten in dit onderzoek: een Boolean-attribuut in een conditie en een enumeratie-invoer op
+een berekend doel worden zonder registercode geweigerd; mee in `20261104-writers-as-one-defaults-stack` (de enumeratie-invoer) en in
+`absence-markers` (de Boolean, omdat markers op een Boolean-attribuut die conditie nodig hebben).
