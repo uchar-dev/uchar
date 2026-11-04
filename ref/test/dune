@@ -35,6 +35,8 @@
   ../../corpus/golden/jutterswet-maandloon/case1-voorbeeld.json
   ../../corpus/golden/jutterswet-maandloon/case3-zonder-tijdlijnen.json
   fixtures/period-arithmetic/sum-member-without-timeline/case.json
+  ../../corpus/golden/jutterswet-rekenen-per-dag/ir.json
+  ../../corpus/golden/jutterswet-rekenen-per-dag/case4-gat-met-eenheid.json
   ; the examples of ch. 5.8c over one dimension are goldens
   ../../corpus/golden/jutterswet-seizoenvondst/ir.json
   ../../corpus/golden/jutterswet-seizoenvondst/case1-voorjaarscel.json

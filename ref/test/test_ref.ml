@@ -12775,6 +12775,25 @@ let () =
       (4, "0 Aggregation [[- - 0]]"); (4, "2 Literal 0"); (4, "HOLDS");
       (5, "0 Rounding 0"); (5, "1 Aggregation 0"); (5, "2 AttributeReference [[- - 0]]"); (5, "HOLDS") ]
 
+(* WV-5.12-rekenen-per-dag-eenheid: an operand read whole has its timeline in
+   the unit of its declaration, the product the unit of both factors: the
+   dagafdracht of the golden jutterswet-rekenen-per-dag, afdrachttarief maal
+   vondstwaarde, on case 4, by hand from its NOTE (afdrachttarief 2 /dg on
+   February-April, vondstwaarde 600 EUR on January-February and April-May) *)
+let () =
+  let golden = "corpus/golden/jutterswet-rekenen-per-dag/" in
+  let got = readings_of (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ "case4-gat-met-eenheid.json")) in
+  let p = "/rules/rules/6/versions/0 \"J1\" " in
+  let got = List.filter (fun l -> String.length l > String.length p && String.sub l 0 (String.length p) = p) got in
+  let expected =
+    List.map (( ^ ) p)
+      [ "0 Binary [[- 2024-02-01 0], [2024-02-01 2024-03-01 1200], [2024-03-01 2024-04-01 0], [2024-04-01 2024-05-01 1200], [2024-05-01 - 0]] \"EUR/dg\"";
+        "1 AttributeReference [[2024-02-01 2024-05-01 2]] \"1/dg\"";
+        "2 AttributeReference [[2024-01-01 2024-03-01 600], [2024-04-01 2024-06-01 600]] \"EUR\""; "HOLDS" ]
+  in
+  check "WV-5.12-rekenen-per-dag-eenheid" (got = expected);
+  if got <> expected then List.iter (Printf.printf "  got: %s\n") got
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

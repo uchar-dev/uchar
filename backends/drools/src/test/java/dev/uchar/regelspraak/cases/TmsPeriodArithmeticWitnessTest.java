@@ -475,6 +475,33 @@ class TmsPeriodArithmeticWitnessTest {
                 "test", "fixtures", "period-arithmetic", "sum-member-without-timeline", "case.json"), withoutTimeline);
     }
 
+    /** An operand read whole reads its timeline in the unit of its declaration, as the reference interpreter's trace
+     *  writes it ({@code WV-5.12-rekenen-per-dag-eenheid}): the dagafdracht of the golden
+     *  {@code jutterswet-rekenen-per-dag}, afdrachttarief maal vondstwaarde, on case 4, by hand from its NOTE
+     *  (afdrachttarief 2 /dg on February–April, vondstwaarde 600 € on January–February and April–May). */
+    @Test void an_operand_read_whole_reads_its_timeline_in_the_unit_of_its_declaration() {
+        Path golden = Path.of("..", "..", "corpus", "golden", "jutterswet-rekenen-per-dag");
+        String r = "reading /rules/rules/6/versions/0 \"J1\" ";
+        for (boolean drl : List.of(false, true)) {
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            List<String> arguments = new ArrayList<>(List.of("--readings"));
+            if (drl) arguments.add("--drl");
+            arguments.addAll(List.of(golden.resolve("ir.json").toString(),
+                    golden.resolve("case4-gat-met-eenheid.json").toString()));
+            int code = DroolsBackendMain.run(arguments.toArray(String[]::new),
+                    new java.io.PrintStream(out, true, java.nio.charset.StandardCharsets.UTF_8));
+            assertEquals(0, code);
+            assertEquals(List.of(
+                    r + "0 Binary [[- 2024-02-01 0], [2024-02-01 2024-03-01 1200], [2024-03-01 2024-04-01 0],"
+                            + " [2024-04-01 2024-05-01 1200], [2024-05-01 - 0]] \"EUR/dg\"",
+                    r + "1 AttributeReference [[2024-02-01 2024-05-01 2]] \"1/dg\"",
+                    r + "2 AttributeReference [[2024-01-01 2024-03-01 600], [2024-04-01 2024-06-01 600]] \"EUR\"",
+                    r + "HOLDS"),
+                    out.toString(java.nio.charset.StandardCharsets.UTF_8).lines().filter(l -> l.startsWith(r)).toList(),
+                    (drl ? "DRL_TEXT" : "EXEC_MODEL") + ": de lezing van de dagafdracht");
+        }
+    }
+
     // ---------------- helpers ----------------
 
     static Path document(String model, List<String> rules) throws Exception {
