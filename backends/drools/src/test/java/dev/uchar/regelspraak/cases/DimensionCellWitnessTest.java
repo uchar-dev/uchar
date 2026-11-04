@@ -296,6 +296,11 @@ class DimensionCellWitnessTest {
             if (k == 8) folds.add("/rules/rules/8/versions/0 \"J1\" 2 Literal 0.5 \"kg\"");
             folds.add("/rules/rules/" + k + "/versions/0 \"J1\" HOLDS");
         }
+        // the tenth rule: the sum with a unitless fallback, maal the kiloprijs, which this case leaves leeg, so the
+        // product is 0 in € (ch. 1.2, ch. 2.6 rule 2)
+        String v = "/rules/rules/9/versions/0 \"J1\" ";
+        folds.addAll(List.of(v + "0 Binary 0 \"EUR\"", v + "1 Aggregation 5 \"kg\"", v + "3 Literal 0",
+                v + "4 AttributeReference empty \"EUR/kg\"", v + "HOLDS"));
         assertReadings(document(golden("jutterswet-seizoenvouw")), caseFile(List.of(jutter("J1", cell("3.00", "voorjaar"),
                 cell("2.00", "najaar"))), List.of(value("J1", "jaargewicht", "5.00"))), folds);
     }
