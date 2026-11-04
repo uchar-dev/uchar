@@ -94,13 +94,23 @@ class AbsenceMarkerWitnessTest {
      *  slot and summed over the members, it is refused by name on both branches, as the reference interpreter refuses
      *  it, on its fixtures. */
     @Test void the_payload_of_a_timeline_is_refused_by_name() throws Exception {
-        for (String fixture : List.of("payload-of-a-timeline", "sum-of-a-timeline")) {
-            Path dir = FIXTURES.resolve(fixture);
+        // the sum without its filter, which WF-127 refuses and this loader reads: the fold's own source is refused, not
+        // only the filter's read
+        Path unfiltered = Files.createTempDirectory("sum-without-filter").resolve("ir.json");
+        com.fasterxml.jackson.databind.node.ObjectNode doc = (com.fasterxml.jackson.databind.node.ObjectNode)
+                JSON.readTree(Files.readString(FIXTURES.resolve("sum-of-a-timeline").resolve("ir.json")));
+        for (JsonNode r : doc.get("rules").get("rules"))
+            if (r.get("name").asText().equals("opslagtotaal"))
+                ((com.fasterxml.jackson.databind.node.ObjectNode) r.get("versions").get(0).get("value")).remove("filter");
+        Files.writeString(unfiltered, JSON.writeValueAsString(doc));
+        for (String fixture : List.of("payload-of-a-timeline", "sum-of-a-timeline", "sum-without-filter")) {
+            Path dir = FIXTURES.resolve(fixture.equals("sum-without-filter") ? "sum-of-a-timeline" : fixture);
+            Path ir = fixture.equals("sum-without-filter") ? unfiltered : dir.resolve("ir.json");
             JsonNode c = JSON.readTree(Files.readString(dir.resolve("case.json")));
             String exec = null;
             for (boolean viaDrl : new boolean[] { false, true }) {
                 CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
-                        () -> CaseRunner.playCase(dir.resolve("ir.json"), c, viaDrl), fixture);
+                        () -> CaseRunner.playCase(ir, c, viaDrl), fixture);
                 assertEquals(DroolsCode.PAYLOAD_ACCESS_OF_TIMELINE, e.code(), fixture + ": " + e.getMessage());
                 assertTrue(e.getMessage().contains("'opslagkosten'"), fixture + ": " + e.getMessage());
                 if (exec == null) exec = e.getMessage();
@@ -134,6 +144,11 @@ class AbsenceMarkerWitnessTest {
         LocalDate jan = LocalDate.of(2025, 1, 1), mar = LocalDate.of(2025, 3, 1), jun = LocalDate.of(2025, 6, 1);
         List<Period> timeline = List.of(new Period(jan, mar, onbekend),
                 new Period(mar, jun, new ConstructorValue("waarde", new BigDecimal("10"))));
+        // a segment of a constructor value is one segment with an equal one, as a fact of working memory is one fact
+        Period a = new Period(jan, mar, new ConstructorValue("onbekend", null)), b = new Period(jan, mar,
+                new ConstructorValue("Onbekend", null));
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
         assertEquals(List.of(new Period(jan, mar, null)), PeriodCondition.whereEqual(timeline, onbekend, true, true));
         assertEquals(List.of(new Period(Period.OPEN_FROM, jan, null), new Period(mar, Period.OPEN_TO, null)),
                 PeriodCondition.whereEqual(onbekend, timeline, false, false));
