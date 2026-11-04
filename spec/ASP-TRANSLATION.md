@@ -205,8 +205,8 @@ a defeasible producer — a defaults target, or a scalar target that only
 computing rules write (`Desugar.standing_targets`, the standing norm) — receives case
 input, that input enters as `inputval/3` instead of `val/3`, so the
 producer can defeat it. The input timeline of a timeline target that a
-computing rule writes enters as `inputtl/5` and stands on the days no
-writer decides (RS ch. 3.11). Everything else enters as plain facts.
+computing rule or a defaults group writes enters as `inputtl/5` and
+stands on the days no writer decides (RS ch. 3.11, 7.11). Everything else enters as plain facts.
 Case input on a computed scalar target that an initialisation, an
 allocation or a creation-time write writes as well is refused loudly
 (the hunted superset model of ch. 6d). Role
@@ -1694,6 +1694,19 @@ nothing (an empty defaults outcome, an empty computing rule) leaves the
 input standing — ref's no-write-on-empty. A condition-only body
 would encode v0's erase instead. The standing norm extends this to
 every scalar computing rule (S3).
+
+**Per day on a timeline target** (RS ch. 7.11): the chain and group
+predicates of the scalar lowering carry a period `(S,X,Y)` of the
+group's cut set `grpG_d_per/3`, which holds every bound of a
+justification's periods (`period_condition`), of a consequence's own
+cut set (the period arithmetic read as `p_val/4`, without its write) and
+of the input timeline. A default decides a period where it is reached,
+its justification holds and its consequence reads a value; the
+initialisation default's justification is a period the input leaves
+empty (`grpG_in/3`). The decided periods outside a conflict are written
+in maximal runs as `tl/5` and as the group's `wtl/6`, so the case input
+stands on every other period (S9). A deposit of a default stands where
+it decides on some period.
 
 Witnesses: `jutterswet-hardheid` (the §4.1 hardship pattern),
 `jutterswet-toelagegronden`, `jutterswet-uitsluiting`,
