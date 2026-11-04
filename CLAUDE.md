@@ -470,8 +470,11 @@ missing line makes `make gates` exit non-zero. Current gates:
     decides only on the days they leave, its consequence evaluated only
     where it can decide, and the root of the stack is one writer of the
     target, beside whose `Value` the input stands on the other days
-    (`Consequence.WritersUnion`); `decisionsOf` refuses a build with such a
-    stack. A golden whose forms the loader+transpiler carry
+    (`Consequence.WritersUnion`); `decisionsOf` has no record of such a stack,
+    and `periodDecisionsOf` gives per object and timeline target who
+    decided per period, a stack's default, its conflict, the rules or the
+    input (`PeriodDecisions`; card `decisions-per-period`, 2026-11-04,
+    witness `PeriodDecisionsWitnessTest`). A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
     (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
     over the corpus). Not-carried forms never vanish silently: per-form
