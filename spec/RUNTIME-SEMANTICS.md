@@ -430,7 +430,7 @@ This is the rule for a literal operand and for a unit conversion.
 | percentage van | left + 2 + right (the left operand is divided by 100); with a literal left operand L, the factor rule over the right operand with L/100; with a literal right operand R, the factor rule over left + 2 with R |
 | tot de macht, wortel, tijdsevenredig deel | ∞ (the language demands a rounding after a power and a root) |
 | minimum, maximum, eerste, laatste, som, een begrenzing, the branches of a conditional | the highest of the operands (a fallback and a bound included), restated into one unit as for plus |
-| totaal over a timeline | its operand, restated where the period of the rate is not the grid's own unit (ch. 2.6, rule 8); ∞ where the calendar integrates (ch. 3.6) — a rate per month, quarter or year over a grid of days or weeks, or per week over a grid of months, quarters or years — and the operand's own where a rate per day lies over such a grid, which weighs it by whole days |
+| totaal over a timeline | its operand, restated where the period of the rate is not the grid's own unit (ch. 2.6, rule 8); ∞ where the calendar integrates (ch. 3.6) — a rate per month, quarter or year over a grid of days or weeks, or per week over a grid of months, quarters or years — and the operand's own where a rate per day lies over such a grid, which weighs it by whole days; ∞ as well where the total can count a part of a period of its grid (below) |
 | aantal, tijdsduur, a date part | 0 |
 | absolute waarde | its operand |
 | afgerond op n | n |
@@ -448,6 +448,51 @@ during the time it is rentedragend has bound ∞, the calendar weighing a day by
 1/365 or 1/366, and is admitted into its target of 2 decimals through its
 rounding (`corpus/negative/wf023-precision-calendar-total` is the same total
 without it).
+
+**A part of a period.** Outside the calendar, the temporal total measures a
+segment in periods of its grid, a day counting 1/len of the period that holds
+it (ch. 3.6), so a segment that holds a part of a period gives a share no
+number of decimals bounds: 100 over 3 days of a storm year of 366 days and 2 of
+one of 365 is 6090/4453. A total that can count such a part has bound ∞. It
+cannot where every segment it totals lies on walls of its grid, and that is
+read from the document in three cases:
+
+1. the grid is the day grid, one day per period: every bound of a segment is
+   a day;
+2. the total has no clip and totals a timeline no rule and no defaults group
+   writes: the case puts every bound of a segment of such a timeline on its
+   declared grid (`uchar-case-v0`), and the asOfDate bucket is one period of
+   it; the filter of the per-element fold (ch. 3.6, §7.1) selects members and
+   is no clip;
+3. as in case 2, but with a clip by a comparison (no whole-period qualifier)
+   of an own time-dependent attribute that no rule and no defaults group
+   writes, both timelines lying on the calendar grid of one period (no start
+   point, no named timeline), the compared one's on a grid that fits the
+   grid of the total (the fit of WF-126: every wall of the compared grid a
+   wall of the grid of the total): the clip cuts where the compared timeline
+   or the totalled one changes, on walls only.
+
+Every other total counts as one that can split a period: a clip by a
+characteristic, which holds on periods of days whatever its granularity, or by
+a composite of characteristics; a clip by a comparison of a timeline on a grid
+that does not fit, on a grid of its own start point, or that a rule writes; and
+the total of a timeline a rule writes, which the rule cuts where its condition
+and its operands cut it. A writer or a clip that cuts on walls in some other way
+is not looked for. A clip that is an `Unresolved` makes no claim, as a value
+whose bound nothing declares (ch. 2.4, point 4). Examples (the verifier's negatives
+`corpus/negative/wf023-precision-partial-unit-*`, with the frontend's refusals
+of the same sources, `PrecisionGateTest`): a whole stormtoelage per storm year
+totalled over the weeks a Jutter is wachtplichtig, into a whole target, is
+refused (∞ > 0) and admitted through "rekenkundig afgerond op 0 decimalen"
+(`corpus/golden/jutterswet-vast-startpunt` rounds it to 2 decimals); without
+the clip it keeps bound 0; the total of a monthly wachttoelage a rule writes as
+30 on the days a Jutter is wachtplichtig is refused, whichever of the two rules
+stands first; a monthly wachtvergoeding totalled while a monthly or a yearly
+peilstand of the case exceeds 10 keeps bound 0 (as in
+`corpus/golden/jutterswet-peilwacht`, which compares a monthly peilstand with a
+drempelstand), and the same clip by a daily peilstand or by a peilstand a rule
+writes has bound ∞, as has a yearly jaarpremie clipped by a peilstand per storm
+year from 1 October.
 
 **The annotation.** The decimals a producer writes in the `type` of a composite
 node are the v0 claim, not the bound: maxDec for plus, min and verminderd met,
@@ -4001,7 +4046,7 @@ decide; "specified (delta)" = this chapter supplies semantics v0 lacks.
 | Two or more writers of one timeline target (ch. 5.7, per day) | **specified (delta) and executed** (`spec/proposals/IMPLICIT-TIME.md` point 5): `ref` and the ASP backend, witness `corpus/golden/jutterswet-wachtdagen-twee-schrijvers`, red case `corpus/red/jutterswet-wachtdagen-botsing` (EF-016), and both Drools branches, a read of such a target included. Two writers that decide one day with one value hold together; the ASP backend refuses that day by name ([V7]). A case input on such a target is refused by name in the ASP backend, and `ref` keeps it on the days no writer decides |
 | A timeline read per period on a finer grid than the target's | **ill-formed (WF-126**, maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 8): negatives `wf126-value-grid`, `wf126-condition-grid`, `wf126-whole-period-grid`; the RegelSpraak frontend refuses it (RGS-374), `ref` and the ASP backend fail fast in the verifier's terms |
 | The temporal total across the day and the month family of time units (ch. 3.6) | **specified (delta) and executed**: the calendar (maintainer decision 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 11), the actual length of the month, quarter or year; a declared factor between the two families is ill-formed (WF-009, negative `wf009-calendar-family-factor`). `ref` in every route of the total; the ASP backend under a rounding of the gedurende-clipped total, refusing it by name elsewhere; both Drools branches on every route of the subject's own total, refusing it by name in the per-element fold (DROOLS-228). Witness `corpus/golden/anchor/jutterswet-verzuimrente-dagen` |
-| The temporal total over a part of a unit of its grid, a plain operand, an absent timeline (ch. 3.6) | **specified (delta) and executed** (maintainer decisions 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 12): a part of a unit counts by its days over the days of the period of the grid that holds it, per clipped fragment (12a, where the pinned runtime floors whole units per fragment); a plain operand reads per unit of the grid (12b, where §7.1 asks a unit per time unit); an absent timeline totals 0 on every route (12c, spec typ. §4.20). `ref` on every route; the ASP backend over a denominator it divides away, under a rounding or exactly where it divides the total, refusing at solving by name a total it does not divide (`backends/clingo/README.md` [V8]). Witnesses `corpus/golden/jutterswet-getijdenwacht` (J4), `corpus/golden/jutterswet-vast-startpunt` (case 1 under a rounding, cases 4 and 6) and the absent totals of `jutterswet-kadetarief`, `jutterswet-penningjaar` and `jutterswet-tempototaal`; suite fixtures `partial-unit`. Both Drools branches on every route, exactly (a decimal or a rational). OPEN: the precision bound of ch. 2.3 gives the total its operand's decimals, where a part of a unit can give any rational; WF-023 and the frontend follow the table, and the write faults with EF-006 where the value does not fit |
+| The temporal total over a part of a unit of its grid, a plain operand, an absent timeline (ch. 3.6) | **specified (delta) and executed** (maintainer decisions 2026-11-03, `spec/proposals/IMPLICIT-TIME.md` point 12): a part of a unit counts by its days over the days of the period of the grid that holds it, per clipped fragment (12a, where the pinned runtime floors whole units per fragment); a plain operand reads per unit of the grid (12b, where §7.1 asks a unit per time unit); an absent timeline totals 0 on every route (12c, spec typ. §4.20). `ref` on every route; the ASP backend over a denominator it divides away, under a rounding or exactly where it divides the total, refusing at solving by name a total it does not divide (`backends/clingo/README.md` [V8]). Witnesses `corpus/golden/jutterswet-getijdenwacht` (J4), `corpus/golden/jutterswet-vast-startpunt` (case 1 under a rounding, cases 4 and 6) and the absent totals of `jutterswet-kadetarief`, `jutterswet-penningjaar` and `jutterswet-tempototaal`; suite fixtures `partial-unit`. Both Drools branches on every route, exactly (a decimal or a rational). The precision bound of ch. 2.3 is ∞ for a total that can count a part of a period (ch. 2.3, "A part of a period": every total except one over the day grid, one without a clip of a timeline no rule writes, and one clipped by a comparison of such a timeline on a fitting calendar grid); WF-023 refuses such a total into a bounded target without a rounding (negatives `wf023-precision-partial-unit-*`), and the RegelSpraak frontend with RGS-370 |
 | Open segments (ch. 3.1) | **specified**: a timeline divides all time, a segment may have an open bound, the case format omits `from` or `to` for one (`uchar-case-v0`); the total of ch. 3.6 counts an open segment of 0 as 0 and faults on any other value (EF-036, red case `jutterswet-totaal-open-segment`); a fold that walks the buckets of an open period (ch. 3.7, 3.8) is refused by name, and the whole-period qualifier answers on the bucket beside an open segment's finite bound (ch. 3.1, 3.9; since 2026-11-03, when the day count of ch. 3.8 became 0 over all time and the qualifier over it met open segments, `jutterswet-vast-startpunt`). A characteristic's true-periods (`characteristicTimelines`, and those a rule writes) carry no open bound |
 | Scalar operand of timeline arithmetic / unconditional temporal characteristic | the scalar operand of every operator is **specified and executed**, ch. 3.4 (one segment (−∞, +∞)), and since 2026-11-03 a scalar as the whole value of a timeline target as well (ch. 3.11); the unconditional temporal characteristic has the time domain since then and stays OPEN: a temporal characteristic is written within a window since 2026-11-03 (ch. 3.10, 3.11), and "always true" would hold on an open period |
 | `minimum`/`maximum`/`first`/`last` (min/max/eerste/laatste) over timelines | refused (mirrored); OPEN — the two readings (per-period vs over-time) must be defined apart |
