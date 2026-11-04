@@ -254,10 +254,9 @@ EXCLUDE_KNOWN=(
   #       waardering-v0vorm's non-termination was a CONSEQUENCE of the same gap (the leeg write and the
   #       INITIALISATIE's refill alternated); with the write suppressed the init decides once and the
   #       oscillation is gone — so the ratified PRIORITIZED-DEFAULTS-EVOLUTIE §9 Q11 note is discharged by
-  #       construction rather than by the CaseRunner-taxonomy revisit it was waiting for. Note the domain
-  #       gate is what carries this: with a SECOND computing rule on the target the v0 erase is unretired and
-  #       a leeg source still wipes the input (ref agrees) — pinned by StandingScalarNormWitnessTest, dual-branch since 2026-09-18 (BothBranches), with
-  #       the version flank beside it.
+  #       construction rather than by the CaseRunner-taxonomy revisit it was waiting for. Since 2026-11-04 a
+  #       computed leeg decides nothing on every scalar target, beside a second writer and with a validity
+  #       window too, and StandingTargets is gone (StandingScalarNormWitnessTest, both branches).
 )
 
 known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]:-}"; do [ -n "$e" ] || continue; [ "${e%%|*}" = "$n" ] && { echo "${e#*|}"; return 0; }; done; return 1; }

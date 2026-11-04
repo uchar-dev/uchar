@@ -201,17 +201,15 @@ refused — milliseconds since epoch exceed clingo's integer range.
 
 The standing-target routing is the one semantic decision made at
 input time (RS ch. 7.8; S10 carries the detail): if the target attribute of
-a defeasible producer — a defaults target, or a bare single-writer
-version-free scalar computing rule (the standing norm) — receives case
+a defeasible producer — a defaults target, or a scalar target that only
+computing rules write (`Desugar.standing_targets`, the standing norm) — receives case
 input, that input enters as `inputval/3` instead of `val/3`, so the
 producer can defeat it. The input timeline of a timeline target that a
 computing rule writes enters as `inputtl/5` and stands on the days no
 writer decides (RS ch. 3.11). Everything else enters as plain facts.
-Case input on a *non-standing* computed scalar target is refused loudly (ref overwrites; a monotone
-encoding would union — the hunted superset model of ch. 6d), except on
-a target of two or more co-writers (S3): there it enters as
-`inputval/3` and stands where none of them fires (RS ch. 5.7,
-`jutterswet-twee-schrijvers-aan-fixpunt`). Role
+Case input on a computed scalar target that an initialisation, an
+allocation or a creation-time write writes as well is refused loudly
+(the hunted superset model of ch. 6d). Role
 fillings are doubled as `inputrole/3` when object creation is present
 (the ch. 5.5 input-snapshot narrowing, S11). With recursive creation,
 every input instance gets `depth(L,0)` under the creation budget.
@@ -278,12 +276,14 @@ rather than truncating (a recorded loud asymmetry: ref writes the
 exact rational). Non-aligned scales fault at translation time. Units
 at the write boundary must be identical (S6's unit fence).
 
-A **standing** scalar target (S10) additionally emits an
-effectiveness atom carrying the full rule body, and the defeasible
+Every scalar computing rule also derives its value under its index in
+the document, `wval(S,a,⟨term⟩,i)`, with the full rule body, and
+`wdecides(S,a) :- wval(S,a,_,i).`; on a standing target the defeasible
 input rule `val(S,a,V) :- inputval(S,a,V), is_a(S,ot), not
-⟨eff⟩(S).` — the producer wins exactly where it decides; an empty
-result derives no effectiveness and the input stands (ref's
-no-write-on-empty, RS ch. 7.8).
+wdecides(S,a).` lets a writer win exactly where it decides. An empty
+result derives no `wval` and decides nothing, so the input stands (RS
+ch. 3.11, 7.8). Two writers of one concrete type that derive different
+`wval` values are the named EF-016 witness.
 
 **Initialisation** (`initialisation: true`). Inside the ch. 7.7
 desugaring domain — one unconditional, version-free initialisation
@@ -303,15 +303,10 @@ guard reads the input (RS ch. 5.4), so a supplied value stands, the
 initialisation's own write never switches the guard off, and the head is
 not its own negative premise. Beside one computing rule that writes a
 concrete type of the initialisation's chain as a rule too, that rule
-derives `comp_decides(S,a)` with its own val body and `comp_fires(S,a)`
-with its base and condition; the head needs `not comp_decides(S,a)`, so
-the computed value wins. Where `comp_fires` holds without
-`comp_decides`, v0 erases what the initialisation writes and the
-initialisation writes it again, and ref faults on its pass budget; there
-`viol("no fixpoint: a computing rule evaluating leeg erases what the
-initialisation of a writes, and the initialisation writes it again
-(ch. 5.7)",S)` fires as well, unless the rule is a standing one (S10),
-which writes nothing on leeg. The value's fences carry the write guard
+derives `comp_decides(S,a)` with its own val body; the head needs
+`not comp_decides(S,a)`, so the computed value wins, and a rule that
+evaluates leeg decides nothing (RS ch. 3.11), so the initialisation
+writes. The value's fences carry the write guard
 (`ctx.rule_guard`): ref evaluates the value only where it writes. Where
 the chain of a concrete type declares a defaults group on the target, the
 rule is folded into that type's stack as its initialisation default,
@@ -344,13 +339,12 @@ conditional literal `stempel`).
 A rule's **validity window** rides S1's validity gate: an excluded
 rule emits nothing and its target's case input stands untouched; an
 in-window rule translates as any version-free rule — including the
-ch. 6d fence when the case supplies its (never-standing) computed
-target. Witness: `jutterswet-vensterheffing`.
+standing domain of its target, like a version-free rule's. Witness: `jutterswet-vensterheffing`.
 
 Not translated, loudly (S19 carries the full list):
 temporal targets outside the two ch. 3.7/3.8 fold shapes; case input
-on a non-standing computed target that is no co-writer's; a `standing` target outside its own
-domain; boolean computed targets (above); the initialisation shapes the
+on a computed target beside an initialisation, an allocation or a
+creation-time write; boolean computed targets (above); the initialisation shapes the
 native arm has no guard for (above).
 
 ### S4. Expression terms
@@ -1699,7 +1693,7 @@ condition *and* value bindings, so a producer that fires but derives
 nothing (an empty defaults outcome, an empty computing rule) leaves the
 input standing — ref's no-write-on-empty. A condition-only body
 would encode v0's erase instead. The standing norm extends this to
-bare single-writer version-free scalar computing rules (S3).
+every scalar computing rule (S3).
 
 Witnesses: `jutterswet-hardheid` (the §4.1 hardship pattern),
 `jutterswet-toelagegronden`, `jutterswet-uitsluiting`,
@@ -2942,9 +2936,9 @@ a som fallback other than 0 — a NON-zero `emptyFallback` literal (the
 fallback-less som now translates via its presence guard, S8, and the
 fallback-0 facet rides `#sum`'s native 0); uniqueness key
 lists with more than one temporal component, and ever-unique keys
-served by a scalar; case input on non-standing SCALAR and TEMPORAL
-computed targets (the ch. 6d superset-model fence), a scalar target of
-two or more co-writers apart (S2) — an ALLOCATION
+served by a scalar; case input on a SCALAR computed target beside an
+initialisation, an allocation or a creation-time write (the ch. 6d
+superset-model fence, S2) — an ALLOCATION
 target now enters defeasibly instead (S10/S12, `jutterswet-veilinginvoer`),
 so what stays loud there is only the residual: a target attribute READ
 anywhere else (a feedback into the pot, weights, criteria or condition,
@@ -4102,7 +4096,7 @@ input timeline enters as `inputtl/5`, standing **whole** by NAF
 against the fold's per-bucket effectiveness atom (`prN_eff` carries
 the full bucket body incl. the exactness guard, so an empty fold
 derives no eff and the input stands — ref's no-write on an empty
-result, whole-timeline reading; per day since 2026-11-04, RS ch. 3.11). The adoption round also found and
+result, whole-timeline reading; per day since 2026-11-04, and for every scalar computing rule since the same day, RS ch. 3.11). The adoption round also found and
 closed the neighbouring gap this section missed: an allocation
 `doelAttribuut` supplied by the case was **unfenced** — the case
 `val/3` fact and the allocation's own head unioned into a superset
