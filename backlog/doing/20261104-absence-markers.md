@@ -56,7 +56,7 @@ Middel tot groot; twee stappen.
 
 ## Result
 
-*Bouwer stap A, 2026-11-04/05. Niet gemerged, niet gepusht. Logs onder `werk/absence-markers/logs/`, scripts onder
+*Bouwer stap A, 2026-11-04. Niet gemerged, niet gepusht. Logs onder `werk/absence-markers/logs/`, scripts onder
 `werk/absence-markers/scripts/`, proeven onder `werk/absence-markers/probes/` (buiten de repo).*
 
 ### Ontwerpnotitie (vóór de bouw)
@@ -95,20 +95,21 @@ Middel tot groot; twee stappen.
 
 **De leesregel en de nieuwe WF-regel.** RS ch. 9.5 (nieuw): een `PayloadAccess` op een andere constructor of op leeg is
 leeg, per dag op een tijdlijn. **WF-127** (één regel): een `PayloadAccess` staat onder een toets van zijn eigen
-constructor. Armen: `operand-not-sum` (de operand is geen somtype), `constructor-not-unary` (de constructor is geen
-gedeclareerde unaire constructor van dat domein), `type` (het `type` is niet de gedeclareerde payload), `unguarded` (geen
-toets ervoor). Een toets ervoor is: de knoop is zelf de operand van een gevuld- of leegtoets; of een conjunct van de
-voorwaarde van zijn vorm (regelversie, default, objectcreatie) is een niet-ontkende gevuldtoets van een `PayloadAccess`
-met dezelfde operand (structureel, de bron niet meegeteld) en dezelfde constructor — in de voorwaarde zelf een conjunct
-dat vóór de lezing staat (ch. 5.10); of, binnen een fold over leden, zo'n conjunct van het filter van die fold. Elke
-andere plaats is onbewaakt en geweigerd. De frontend weigert dezelfde lezing in de bron met **RGS-376**.
+constructor. Gebouwd met de armen `base-not-sum`, `base-untyped`, `domain-undeclared`, `constructor-undeclared`,
+`constructor-nullary`, `type-differs`, `access-untyped` (de vorm, naar het voorbeeld van WF-074) en `unguarded` (geen
+toets ervoor); het veld van de operand heet `base`, zoals bij `FieldAccess`. Een toets ervoor is: de knoop is zelf de
+operand van een gevuld- of leegtoets; of een conjunct van de voorwaarde van zijn vorm (regelversie, default,
+objectcreatie) is een niet-ontkende gevuldtoets van een `PayloadAccess` met dezelfde operand (structureel, de bron niet
+meegeteld) en dezelfde constructor — in de voorwaarde zelf een conjunct dat vóór de lezing staat (ch. 5.10); of, binnen
+een fold over leden, zo'n conjunct van het filter van die fold. Elke andere plaats is onbewaakt en geweigerd. De
+frontend weigert dezelfde lezing in de bron met **RGS-376**.
 
 **Caseformaat.** Geen nieuwe vorm: een marker en een waarde zijn constructorwaarden van de bestaande variant
 (`{"constructor": "onbekend"}`, `{"constructor": "waarde", "payload": {"number": "40.00"}}`), geen `null` (N3).
 
 **Datatypen.** WF-060 verruimd: een payload is een getal, tekst, boolean, datum (dag en milliseconde), enumeratie of
-gedeclareerd somtype (geen lijst of struct). Een enumeratie als payload: de enumeratiewandeling van WF-088 loopt al door
-somtypen.
+gedeclareerd somtype (geen lijst of struct). Een enumeratie als payload is een gebruiksplaats van haar domein; WF-088
+loopt daarom ook door de payload van een somtypedeclaratie (`wf088-sum-payload-drift`).
 
 **Aggregatie (aanbeveling, normvraag).** Een aggregatie over leden met markers eist een filter op de waarde
 ("die een waarde hebben"): de fold leest `PayloadAccess` per lid onder een gevuldtoets in zijn filter (WF-127, arm
@@ -118,5 +119,249 @@ zegt dat wie leest eerst toetst.
 **Per periode (stap A).** Een marker schrijven op een tijdlijndoel (een scalaire `Construct` in een venster), de invoer
 per dag, EF-016 per dag, en een toets per periode met `Comparison equal` (ch. 3.10, vergelijking met een scalaire
 grens). Een `PayloadAccess` op een tijdlijn heeft een lezing per dag (ch. 9.5), maar de bewaking per periode is een
-gevuldtoets per periode, en die is open (ch. 3.12 rij 5): ref en clingo weigeren hem bij naam, de frontend met de
-bestaande code voor die toets.
+gevuldtoets per periode, en die is open (ch. 3.12 rij 5): ref en clingo weigeren hem bij naam. *Gemeten na de bouw
+(`probes/rgs/p3.rgs`):* de frontend schrijft zo'n regel wel, met de `PayloadAccess` onder die toets, en de verifier laat
+hem toe; de weigering staat dus bij de uitvoerders.
+
+### Commits
+
+| hash | inhoud |
+|---|---|
+| `5e5a65ccc` | kaart naar `doing/` |
+| `01b085a20` | ontwerpnotitie |
+| `b60a59138` | corpus (rood eerst): golden `jutterswet-afwezigheidsmarkers`, rode tweeling `jutterswet-afwezigheidsmarkers-botsing`, negatieven `wf127-*` (10) en `wf088-sum-payload-drift`, fixtures `ref/test/fixtures/absence-markers/` (4); de hernoeming `wf060-text-payload` → `wf060-list-payload` |
+| `af829446a` | OCaml: AST, loader, verifier (WF-127, WF-060, WF-088), schema (beschermd, voorstel); ref; clingo; de arm van de Catala-frontend; ref-suite en clingo-suite |
+| `a4abcb53f` | frontend: grammatica, resolver, emitter, RGS-376 met catalogi, `AbsenceMarkerTest`, het rijke document van `ScenarioLoweringTest` |
+| `921915ede` | gates 8 en 12 (beschermd, voorstel): de golden en de rode tweeling met DROOLS-010 in het kanaal |
+| `54b9879fa` | RS ch. 9 en 9.5, IR-SPEC, ASP-TRANSLATION (voorstel) en DIVERGENCES |
+| `f377ce686` | ref: `PayloadAccess` in de nummering van de lezing (gate 17 was rood in `gates-1`) |
+| `249285cbf` | Drools: de lader weigert `PayloadAccess` bij naam, DROOLS-313 (gate 12 was rood in `gates-1`, VB-7) |
+| `69867d173` | DIVERGENCES: de lezing van een waarde per periode, zoals gemeten (de frontend schrijft haar) |
+| (deze) | Result |
+
+### Wat per laag veranderde
+
+- **IR (schema, AST, loader; beschermd, voorstel).** Nieuwe knoop `PayloadAccess {node, type, base, constructor,
+  source}` in de `expr`-unie; de beschrijvingen van `SumType` en `Construct` noemen de frontend als schrijver. Geen
+  nieuw veld op `Attribute`, geen nieuwe waarde in de waardeunie: de markers zijn constructoren.
+- **Verifier (beschermd, voorstel).** WF-127 (vormarmen in de expressiewandeling, de wachtarm in
+  `wf127_payload_guards`); een `PayloadAccess` over de `AttributeReference` van het element is een fold-bron (WF-037,
+  WF-047, de fold-bronregels op de base). WF-060 laat elk scalair datatype als payload toe; WF-088 loopt door de
+  payloads van een somtypedeclaratie. `precision` leest de payload als gedeclareerd.
+- **ref.** `PayloadAccess` (`payload_of`); de fold over leden met `PayloadAccess` als bron; een constructor van een
+  literal is een scalaire operand van de periode-aritmetiek, dus een marker in een venster op een tijdlijndoel; een
+  `PayloadAccess` op een tijdlijn weigert bij naam (scalair en als fold-bron). De rest (EF-016 per dag, de stapel per
+  dag, de vergelijking per periode) speelde al.
+- **clingo.** Een constructornaam met spaties wordt één symbool (`niet_van_toepassing`), met een weigering waar twee
+  constructoren in één symbool samenvallen; de payload als eigen lid (`val(O,"taxatie#waarde",P)`, projectieregels per
+  unaire constructor, `find_decl` kent het lid); `PayloadAccess` in `expr_term` en als fold-bron
+  (`cell_source_fold`); een tijdlijn van constructoren in de invoer, geschreven door een constructor van een literal
+  (`translate_period_arithmetic`), vergeleken per periode (`period_condition`); de modelcontrole leest een
+  tijdlijnverwachting met constructorwaarden (`canonical_timeline` generiek).
+- **Frontend.** Drie tokens en de regel `afwezigheidsmarkering`; `ObjectType.attributeMarkers`;
+  `RegelSpraakModel.absenceMarkerSites` (per knoop, op identiteit: marker, waardetoets, lezing van de waarde); de
+  marker als waarde in `RuleChecker.register`, de toetsen in `characteristicCheckPredicate`, "die een waarde hebben" in
+  `ExpressionBuilder.aggregationFilter`; de slotpas `AbsenceMarkers` (classificeert elke lezing en geeft RGS-376); de
+  emitter schrijft somtype, domein, `Construct` en `PayloadAccess`; de semantische tokens lezen de woorden van de
+  markers als sleutelwoord in een document met markers.
+- **Corpus en lijsten.** Zie de commits; gate 12 `EXPECTED_CHANNEL` +1 (DROOLS-010), gate 8 Drools-uitsluitingslijst
+  +1 (DROOLS-010); `EXPECTED_PLAYED` ongewijzigd (de golden speelt niet in Drools). Geen vloer verschoven.
+- **Drools.** Eén weigering erbij in de lader, `case "PayloadAccess"` met DROOLS-313 `expr-payload-access` (register,
+  beide catalogi, `UnknownNodeWitnessTest`): de suite loopt elke knoop van het schema af en eiste dat (VB-7). Verder
+  niets; de jar compileert met de nieuwe modelvelden, en beide branches weigeren beide documenten bij het laden met
+  `EXCLUDE DROOLS-010: loader: form not carried by the v0 Drools backend: Datatype:SumType`.
+
+### Rood eerst (letterlijk)
+
+- **verifier, ref, clingo op main** (`53605e865`, gebouwd in een losse worktree; `logs/06-red-golden-main.log`): op
+  elke case van de golden en de rode tweeling `IR LOAD ERROR at /rules/rules/3/versions/0/condition/operand/node:
+  unknown expr node "PayloadAccess"`, de verifier `LOAD ERROR at … unknown expr node "PayloadAccess"`.
+- **De somtypeweg zonder PayloadAccess op main** (`logs/07-red-probes-main.log`, `probes/sum`): de verifier
+  `WF-060.payload-not-admissible … constructor payload is text` (en boolean); clingo `constructor name "niet van
+  toepassing" does not normalise to a valid ASP functor symbol`; op een tijdlijn ref `temporal attribute
+  "maandinkomen" as a target: temporal writes are not implemented` en clingo `temporal sum carriage is a recorded
+  flank; no corpus case`.
+- **frontend op main** (`logs/20-red-frontend-main.log`): `ERROR (line 5): syntaxfout: extraneous input '('
+  expecting {<EOF>, …}`; zonder de markering (`golden/plain.rgs`) gaven "onbekend" en elke toets een WARNING
+  `onopgelost: …` en bleef "die een waarde hebben" `RGS-069`.
+- **gate 15 met de bron als `source.rgs`** (`logs/13-gate15-red.log`): `GraphSourceRouteTest … jutterswet-
+  afwezigheidsmarkers => dev.uchar.regelspraak.loader.IrLoader$Refusal: form not carried by the v0 Drools backend:
+  Datatype:SumType` — de reden dat de bron in stap A in `AbsenceMarkerTest` staat (VB-6).
+- **gate 7**: de eerste case 4 ("niets") overleefde `--noop` (gemeten: `oracle: PASS (4 expectations, NO-OP)`), en case 8
+  droeg evenzo alleen lege verwachtingen; beide kregen een afgeleide verwachting erbij (V2 met schatting; V2
+  `onbekend`), in plaats van een regel in de overleverslijst.
+
+### Groen
+
+ref-suite `test_ref: all 2444 worked examples pass` (was 2409); clingo-suite `test_clingo: 2633 checks, 0 failures`
+(was 2607); frontend-suite 1506 tests, 0 skipped, 0 failed (na de correctie van de regelverwachting in mijn eigen
+test); gate 3 `624 negative rejected …, 469 on their declared arm` (elf negatieven erbij, elk met `expect.txt`);
+Drools-suite in gate 12 (onder).
+
+### Tests die de kaart omdraait of uitbreidt (oud → nieuw)
+
+1. `corpus/negative/wf060-text-payload` (een `Text`-payload, WF-060) → `corpus/negative/wf060-list-payload` (een
+   `ListType`-payload): de kaart laat elk scalair datatype als payload toe, dus de oude getuige werd schoon; de nieuwe
+   houdt dezelfde arm `WF-060.payload-not-admissible`.
+2. `corpus/negative/wf088-functiondef-drift/NOTE.md`: de bijkomende regel `WF-060 … enumeration` valt weg (de
+   verifier meldt nu precies de twee WF-088-regels); de getuige zelf is ongewijzigd.
+3. `ScenarioLoweringTest.RIJK` kreeg een attribuut met `(of onbekend)` en een regel die de marker schrijft:
+   `a_scope_that_names_everything_is_the_production_document` eist dat het rijke document elke verzameling van het
+   model vult, ook de nieuwe `absenceMarkerSites`.
+4. Drools `UnknownNodeWitnessTest`: `PayloadAccess` in de lijst van de knopen die de lader als vorm weigert.
+
+### Voorgestelde tekst (huidige stand)
+
+**RUNTIME-SEMANTICS** ch. 9 (inleiding), ch. 9.4 (tijdlijnen) en het nieuwe ch. 9.5, **IR-SPEC** ch. 2.4 (tabelrij
+`SumType`, WF-060, WF-088, de declaratiezijde in WF-089 en zijn indexrij), ch. 4.7 (`PayloadAccess`, WF-127) en de
+WF-index (WF-060, WF-088, WF-127), **ASP-TRANSLATION** S14 en S19, **DIVERGENCES** "Afwezigheidsmarkeringen" en het
+**IR-schema** (`PayloadAccess`, de beschrijvingen van `SumType` en `Construct`): in `54b9879fa` en `af829446a`.
+
+**Case-schema** (`spec/schema/uchar-case-v0.schema.json`), de beschrijving van de constructorvariant van `value`, ter
+vervanging: "A sum-type constructor value (CONSTRUCTS row 36): a declared constructor tag plus, for a unary
+constructor, its one payload value; 'payload' is absent for a nullary constructor. An absence marker is such a value
+(spec/RUNTIME-SEMANTICS.md ch. 9.5): `{"constructor": "onbekend"}`, and a value of an attribute with markers is
+`{"constructor": "waarde", "payload": …}`; the format has no null." Geen structuurwijziging: de markers rijden op de
+bestaande variant (N3).
+
+**CONSTRUCTS rij 36**, in de kolom v0→v1 delta: "`SumType`/`Construct`/`Match` never emitter-produced" →
+"`Match` never emitter-produced; the RegelSpraak frontend writes `SumType`, `Construct` and `PayloadAccess` for an
+attribute with absence markers (row 47)"; "temporal sum carriage a recorded flank in the ASP inventory" → "a sum-typed
+timeline carried in ref and the ASP backend for the input, a write of a constructor of a literal and a comparison per
+period"; achteraan: "**The payload access (2026-11-04, card `absence-markers`):** `PayloadAccess` reads the payload of a
+unary constructor, leeg on another constructor or leeg (RUNTIME-SEMANTICS ch. 9.5), and WF-127 holds it under a test of
+its constructor; WF-060 admits every scalar datatype as a payload, and WF-088 walks the payload of a sum-type
+declaration. Executed in ref and the ASP backend (golden `jutterswet-afwezigheidsmarkers`); the Drools backend refuses
+the sum type at load (DROOLS-010) and the node by name (DROOLS-313)."
+
+**CONSTRUCTS, nieuwe rij 47:**
+
+> | 47 | Absence markers — onbekend and niet van toepassing as filled values, per attribute | the decisions of the
+> maintainer of 2026-11-04 (`spec/proposals/FLAVOURS-OF-EMPTY.md`, N1–N5); Codd's A- and I-marks; Catala's enumeration
+> with payload and L4's `MAYBE`, which make absence a type the author handles | dialect (RegelSpraak) over core | sugar
+> over row 36 | new (no v0 counterpart): `(of onbekend)`, `(of niet van toepassing)`, `(of onbekend of niet van
+> toepassing)` on an attribute lower it to a sum type of its own with the constructors `waarde` (the declared datatype
+> as payload), `onbekend` and `niet van toepassing`; a marker written is a `Construct` and decides as a number does
+> (the input, the stack of ch. 7.8, EF-016, per day on a timeline); a marker tested is an equality with it; the value
+> is read with `PayloadAccess` under a test of it (WF-127, RGS-376). Leeg stays the one absence | RUNTIME-SEMANTICS
+> ch. 9.5, `frontends/regelspraak/grammar/DIVERGENCES.md` "Afwezigheidsmarkeringen"; golden
+> `jutterswet-afwezigheidsmarkers`, red `jutterswet-afwezigheidsmarkers-botsing`, negatives `wf127-*`. Ref and the ASP
+> backend play scalar and per period (writing, input, EF-016, the test per period); the value read per period is
+> refused (ch. 3.12 row 5). Drools: step B of the card |
+
+**CLAUDE.md**, gate 3: na "… WF-082 judges the `statuteAnnotations` of a Default too …" toevoegen: "Since the card
+`absence-markers` (2026-11-04) WF-127 holds a `PayloadAccess` under a test of its constructor (IR-SPEC ch. 4.7), with
+one negative per arm." Gate 12, in de opsomming van de codes: geen; DROOLS-313 is een gewone weigering. Gate 15: na
+"ROUTE LEG: on every golden with a `source.rgs` …" toevoegen: "A golden whose `ir.json` the Drools loader refuses
+carries no `source.rgs` (`jutterswet-afwezigheidsmarkers`: its source is held by the frontend's suite)." Verder geen
+wijziging; de vloeren blijven ondergrenzen.
+
+### Wat stap B moet doen
+
+1. Het Drools-model (`model`, `ir` in de frontend, gedeeld met Drools) een somtype geven, en `Construct`, de
+   gelijkheid met een constructor en `PayloadAccess` laden en lowering geven, op beide branches; DROOLS-010 en
+   DROOLS-313 voor deze vormen `RETIRED` of smaller.
+2. De lezingen van ch. 5.12 voor `Construct`, `PayloadAccess` en de vergelijking met een marker (gate 17).
+3. De golden `jutterswet-afwezigheidsmarkers` en de rode tweeling uit de kanalen van gate 12 en 8 halen; de bron uit
+   `AbsenceMarkerTest.GOLDEN` als `source.rgs` in de golden zetten (gate 10, 15, 16), en de test inkorten tot wat
+   gate 10 dan niet al vasthoudt.
+4. Zodra de frontend-resolver het somtype in het gedeelde model zelf kan dragen: de zijtabel `absenceMarkerSites`
+   vervangen door knopen in het model.
+
+### Voorlopige besluiten
+
+- VB-1 (spelling): `(of onbekend)`, `(of niet van toepassing)`, `(of onbekend of niet van toepassing)` als hele tokens
+  op de plaats van `(mag opgegeven worden)`; schrijven als waarde, toetsen in beide woordvolgordes, "een waarde
+  heeft", "die een waarde hebben". Geen ontkende toets.
+- VB-2 (verlaging): het somtype met `PayloadAccess` als enige nieuwe knoop, niet een vlakke markering op het attribuut
+  (zie de ontwerpnotitie; de Drools-loader leest een onbekend veld als documentfout).
+- VB-3 (domein): één domein per attribuut, `<attribuut> van een <Objecttype>`, constructoren `waarde`, `onbekend`,
+  `niet van toepassing`; een marker gaat niet stil over naar een ander attribuut, ook niet bij gelijke datatypes.
+- VB-4 (WF-060): elk scalair datatype als payload, ook een enumeratie (WF-088 loopt dan door de declaratie); clingo
+  draagt een getal en een datum in dagen, de rest weigert hij bij naam.
+- VB-5 (wacht van WF-127): een gevuldtoets van dezelfde toegang als conjunct ervoor; geen ontkende vorm, geen
+  kwalificator, geen toets onder `of` of een tellende kwantor; een toegang over een andere base dan een
+  attribuutreferentie heeft geen wacht.
+- VB-6 (bron van de golden): de bron staat in stap A in `AbsenceMarkerTest.GOLDEN` en in de NOTE, niet als
+  `source.rgs`: gate 15 leest elke `source.rgs` terug door de Drools-loader (gemeten rood, boven). Alternatief: de
+  routetest van gate 15 een geweigerde golden laten melden zoals de spec-tak doet — een wijziging van een
+  Drools-test en van het gatescript.
+- VB-7 (DROOLS-313): één weigering bij naam in de Drools-lader, omdat de Drools-suite elke knoop van het schema
+  afloopt; geen andere wijziging in Drools.
+- VB-8 (per periode): een marker schrijven, de invoer per dag, EF-016 per dag en de vergelijking per periode; de
+  lezing van de waarde per periode weigert (ch. 3.12 rij 5).
+- VB-9 (gate 7): case 4 en 8 kregen een afgeleide verwachting erbij, zodat ze `--noop` niet overleven, in plaats van
+  een regel in de overleverslijst.
+- VB-10 (namen): golden `jutterswet-afwezigheidsmarkers`, rood `jutterswet-afwezigheidsmarkers-botsing`, negatieven
+  `wf127-<arm>`, fixtures `ref/test/fixtures/absence-markers/<geval>`; identifiers Engels, de constructoren Nederlands
+  (domeininhoud).
+
+### Normvraag (aggregatie over leden met markers)
+
+Leest een aggregatie over leden met markers alleen de leden die een waarde hebben, met een filter dat de auteur
+schrijft ("die een waarde hebben"), of slaat zij de markers over zoals een leeg lid, zonder filter? **Gebouwd: het
+filter** (WF-127, RGS-376 zonder filter). Reden: het besluit "wie leest, toetst eerst" en "zodat niets stil
+doorrekent"; overslaan maakt van een som met een onbekend lid stil de som van de bekende leden. Gevolg van het
+alternatief: WF-127 krijgt een uitzondering voor de fold-bron, en ch. 1.2's overslaan van lege bijdragers gaat ook voor
+markers gelden. Een tweede vraag in hetzelfde veld, nog niet gesteld: moet `aantal` (de telling van leden) markers
+anders tellen dan waarden? Het leest geen attribuut, dus het filter is daar nu niet nodig.
+
+### Mutaties (niet gecommit; `git worktree add --detach`, opgeruimd; `logs/18-mutations/`)
+
+| mutatie | rood |
+|---|---|
+| V1 WF-127: de wachtarm meldt niets | gate 3: `wf127-unguarded`, `wf127-guard-after-read`, `wf127-fold-unguarded` `passed the verifier (must violate WF-127)` |
+| V2 WF-127: de leden van een `all` bewaken elkaar in elke volgorde | gate 3: `wf127-guard-after-read` |
+| V3 WF-088: de payloads van een somtypedeclaratie niet gelopen | gate 3: `wf088-sum-payload-drift` |
+| V4 WF-127: een nullaire constructor gelezen als payload | gate 3: `wf127-constructor-nullary` |
+| R1 ref: de payload van een tijdlijn scalair gelezen | `FAIL WV-9.5-per-dag-payload-of-a-timeline` |
+| R2 ref: een som over de payloads van een tijdlijn gevouwen | **groen**: het filter van zo'n som leest dezelfde toegang en weigert eerst, met dezelfde zin; de weigering in de fold is een tweede lijn, die alleen een document zonder filter bereikt, en dat weigert de verifier (WF-127) |
+| C1 clingo: twee constructoren in één symbool niet geweigerd | `… meet in one ASP symbol … expected a loud fault, got a model` |
+| C2 clingo: geen projectieregels | `case1-schatting … V1.vindloon is underived (leeg), expected 3000` en meer |
+| C3 clingo: een som over de payloads van een tijdlijn gevouwen | `… a sum over the payloads of a timeline is refused faults loudly (temporal attribute "opslagkosten" in a scalar slot …)`: de naald mist |
+| C4 clingo: een somtijdlijn uit een andere producent geschreven | `… a copy of a timeline with markers is refused faults loudly (unscalable datatype …)`: de naald mist |
+| F1 frontend: RGS-376 nooit gemeld | `a_sum_without_the_subselection_is_refused`, `a_comparison_before_the_test_is_refused`, `a_read_without_the_test_is_refused` |
+| F2 frontend: de leden van een `alle` bewaken elkaar in elke volgorde | `a_comparison_before_the_test_is_refused` |
+| F3 frontend: een waarde zonder haar `Construct` geschreven | `the_golden_is_the_emission_of_its_source` |
+
+### make gates
+
+Een run aan het eind in de worktree op `69867d173` (`out/gates/20261104-225938/`, log `gates-3.log`); de commit daarna raakt
+alleen deze kaart. Twee runs ervoor: `gates-1` op `54b9879fa` had gate 12 rood (`UnknownNodeWitnessTest … expr
+PayloadAccess: … unknown expr node "PayloadAccess"`) en gate 17 rood (`the numbering of /rules/rules/3/versions/0 does
+not follow the document`), hersteld in `f377ce686` en `249285cbf`; `gates-2` op `249285cbf` was groen, en daarna
+veranderde alleen DIVERGENCES.
+
+```
+start 2026-11-04 22:59:38 69867d173 card/absence-markers
+ocaml rc=0 0s ocaml-build: fresh (stamp newer than 403 source files)
+frontend rc=0 0s frontend: fresh (out/ newer than every source, the tool jars present)
+jar rc=0 0s drools-jar: fresh (jar newer than 563 source files)
+01-self-contained rc=0 2s
+02-ir-schema rc=0 135s
+04-case-schema rc=0 7s
+03-verifier rc=0 42s
+05-oracle rc=0 25s
+06-clingo rc=0 288s
+07-noop rc=0 15s
+08-red rc=0 175s
+09-catala rc=0 5s
+10-regelspraak rc=0 258s
+11-toka-parity rc=0 241s
+12-drools rc=0 360s
+13-reftype rc=0 332s
+14-flogic rc=0 2s
+15-graph rc=0 52s
+16-scenario rc=0 42s
+17-readings rc=0 272s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-04 23:05:38 360s red=0
+```
+
+Gate 3: 446 goldens schoon, 624 negatieven op hun regel, 469 op hun arm. Gate 5: ref-suite 2444, 1088 cases (was 1078).
+Gate 6: clingo-suite 2633, 1084 cases (was 1074), 2 goldens in het weigeringskanaal (ongewijzigd). Gate 8: 73 rode
+cases (was 71), Drools-been 19 niet gedragen met reden, 17 met hun DROOLS-code. Gate 10: 1506 JUnit-tests, 194
+rgs-goldens. Gate 12: JUnit 1849 tests, `played 338` op beide branches (ongewijzigd), 49 niet-gespeelde goldens bij
+naam. Gate 17: 339 goldens en 949 case files vergeleken (ongewijzigd: de nieuwe golden is een `EXCLUDE`), ref
+traceerde 1088 case files.
+
