@@ -570,23 +570,24 @@ let typed_binder ((a, v, s) : string list * string * int) (t : datatype option) 
    "executors fault, never guess"): a point read needs the full-timeline
    case variant on every subject instance, and the temporal total needs
    the asOfDate-bucket scalar — a mismatch faults instead of silently
-   reading leeg through an unbound join. *)
+   reading leeg through an unbound join. A point read of an absent attribute
+   faults here, in translation and without a code; one of the asOfDate-bucket
+   scalar is EF-037 where the read is reached ([bucket_scalar_guard]), in the
+   same sentence. *)
+let point_read_sentence attr label =
+  Printf.sprintf
+    "the temporal read of %S needs the full timeline; the case supplies none for %S (the asOfDate-bucket scalar \
+     cannot serve a point read)"
+    attr label
+
 let require_attr_timeline ctx ~otype ~attr =
   Eval.SMap.iter
     (fun _ (i : Uchar_ref.World.instance) ->
       if
         isa ctx i.otype otype
         && Uchar_ref.World.timeline i attr = None
-      then
-        (* the asOfDate-bucket scalar is EF-037 (ch. 5.7b); an absent attribute is not *)
-        let fault =
-          if Uchar_ref.World.attr i attr = Value.Empty then fault
-          else faultc ~params:[ ("attribute", attr); ("label", i.label) ] "EF-037"
-        in
-        fault
-          "the temporal read of %S needs the full timeline; the case supplies none for %S \
-           (the asOfDate-bucket scalar cannot serve a point read)"
-          attr i.label)
+        && Uchar_ref.World.attr i attr = Value.Empty
+      then fault "%s" (point_read_sentence attr i.label))
     ctx.case.world.instances
 
 let refuse_attr_timeline ctx ~otype ~attr =
@@ -600,24 +601,6 @@ let refuse_attr_timeline ctx ~otype ~attr =
           "the temporal total of %S over a case-supplied full timeline is not exercised by any \
            corpus case; the asOfDate-bucket convention carries the total"
           attr)
-    ctx.case.world.instances
-
-(* A form that reads the timeline of [attr] whole — the period arithmetic, a
-   condition per period, the base of a pro-rata part, the compared timeline of a
-   gedurende clip and the timeline of a whole-period qualifier (ch. 3.4, 3.5,
-   3.6, 3.7, 3.9, 3.10) — needs the full timeline, and an instance of [otype]
-   whose case gives the asOfDate-bucket scalar faults (ch. 8.4, EF-037), in
-   [sentence] for the label of that instance; an absent attribute is the empty
-   timeline. Eager, over every instance of the type, where ref faults on the
-   instance it evaluates. *)
-let refuse_bucket_scalar ctx ~otype ~attr ~(sentence : string -> string) =
-  Eval.SMap.iter
-    (fun _ (i : Uchar_ref.World.instance) ->
-      if
-        isa ctx i.otype otype
-        && Uchar_ref.World.timeline i attr = None
-        && Uchar_ref.World.attr i attr <> Value.Empty
-      then faultc ~params:[ ("attribute", attr); ("label", i.label) ] "EF-037" "%s" (sentence i.label))
     ctx.case.world.instances
 
 (* ref's sentence for the whole-period qualifier over [attr], whose timeline [label] gives as the asOfDate-bucket scalar *)
@@ -889,6 +872,22 @@ let viol_code witness =
     Some ("EF-023", found "characteristic" (between "the periods in which the time-dependent characteristic " " holds have"))
   else if opens "the temporal total of \"" && holds "\" meets a segment with an open bound" then
     Some ("EF-036", found "attribute" (between "the temporal total of \"" "\" meets") @ label)
+  (* the sentences of [bucket_scalar_fault], the subject the instance read *)
+  else if holds "\" whole; the case supplies only the asOfDate-bucket scalar, which carries no period\"," then
+    (* [read_whole_sentence]: the attribute is the first name it quotes *)
+    Some ("EF-037", found "attribute" (between ~from:6 "\"" "\" of \"") @ label)
+  else if opens "the whole-period qualifier over \"" && holds "\" supplies only the asOfDate-bucket scalar (ch. 3.9" then
+    Some ("EF-037", found "attribute" (between "the whole-period qualifier over \"" "\" needs the full timeline") @ label)
+  else if opens "the gedurende clip of \"" && holds "\" compares \"" && holds "\" supplies only the asOfDate-bucket scalar"
+  then Some ("EF-037", found "attribute" (between "\" compares \"" "\" per segment") @ label)
+  else if opens "the gedurende clip of \"" && holds "\" supplies only the asOfDate-bucket scalar\"," then
+    Some ("EF-037", found "attribute" (between "the gedurende clip of \"" "\" needs the full timeline") @ label)
+  else if opens "the pro-rata base \"" && holds "\" supplies only the asOfDate-bucket scalar (ch. 3.7" then
+    Some ("EF-037", found "attribute" (between "the pro-rata base \"" "\" needs the full timeline") @ label)
+  else if opens "the temporal read of \"" && holds "(the asOfDate-bucket scalar cannot serve a point read)\"," then
+    Some ("EF-037", found "attribute" (between "the temporal read of \"" "\" needs the full timeline") @ label)
+  else if opens "the per-element temporal fold of \"" && holds "\": the case supplies an asOfDate-bucket scalar" then
+    Some ("EF-037", found "attribute" (between "the per-element temporal fold of \"" "\" over \"") @ label)
   else if opens "two writers of one target disagree: " then
     (* the rule names are quoted and joined by " and ": rules "A" and "B" write … *)
     let rules =
@@ -1549,6 +1548,60 @@ let unbound_param_guard ctx ~witness ~guard name =
               (String.concat ", " body'))
       (List.sort_uniq compare body)
   end
+
+(* the case instances of [otype] that give [attr] as the asOfDate-bucket scalar,
+   which carries no period; an absent attribute is the empty timeline *)
+let bucket_scalars ctx ~otype ~attr =
+  Eval.SMap.fold
+    (fun _ (i : Uchar_ref.World.instance) acc ->
+      if isa ctx i.otype otype && Uchar_ref.World.timeline i attr = None && Uchar_ref.World.attr i attr <> Value.Empty
+      then i :: acc
+      else acc)
+    ctx.case.world.instances []
+  |> List.rev
+
+(* whether an atom of [reach] hangs on the order of the members a creation adds
+   (ch. 3.9a/5.7a): a fold's matrix reach, a Let barrier or demand with a named
+   form, or a short circuit with a form in the pass before a creation. No one
+   body then says whether ref reaches the place. *)
+let order_dependent ctx reach = List.exists (fun a -> List.mem_assoc a ctx.named || List.mem_assoc a ctx.pre_reach) reach
+
+(* EF-037 (RUNTIME-SEMANTICS ch. 5.7b, ch. 8.4) where ref raises it: a form that
+   reads the timeline of [attr] whole — the period arithmetic, a condition per
+   period, the base of a pro-rata part, the value and the compared timeline of a
+   gedurende clip, a member of a per-element total, a point read, the timeline
+   of a whole-period qualifier, the input of an initialisation default per day
+   — finds the asOfDate-bucket scalar. ref raises it only where it evaluates
+   the form (ch. 5.11, 7.11): a default's
+   consequence where its justification holds on a day of its turn, a value
+   under its rule's condition, a condition where the walk reaches it. So the
+   fault is a viol/2 witness like every other fail-fast of this translator,
+   one per read instance, in [sentence] for its label and with that instance as
+   its subject, so the diagnosis names it: [reach] says that evaluation reaches
+   the read, and the atoms beside the instance say that the read is of it. Both
+   are built only for a document whose case gives such a scalar, so every
+   other document translates as before. Where [reach] is [order_dependent], the
+   fault is raised in translation, over every such instance. *)
+let bucket_scalar_fault ctx ~(reach : unit -> string list) ~attr ~(sentence : string -> string)
+    (reads : (Uchar_ref.World.instance * string list) list) =
+  if reads <> [] then begin
+    let reach = reach () in
+    let eager = order_dependent ctx reach in
+    List.iter
+      (fun ((i : Uchar_ref.World.instance), binds) ->
+        if eager then faultc ~params:[ ("attribute", attr); ("label", i.label) ] "EF-037" "%s" (sentence i.label)
+        else
+          emit ctx "viol(%s,%s) :- %s." (quote (sentence i.label)) (str_raw i.label) (String.concat ", " (reach @ binds)))
+      reads
+  end
+
+(* [bucket_scalar_fault] for a read of [attr] on the object [holder], a
+   variable of [reach], of type [otype] *)
+let bucket_scalar_guard ctx ~holder ~reach ~otype ~attr ~sentence =
+  bucket_scalar_fault ctx ~reach ~attr ~sentence
+    (List.map
+       (fun (i : Uchar_ref.World.instance) -> (i, [ Printf.sprintf "%s = %s" holder (str_raw i.label) ]))
+       (bucket_scalars ctx ~otype ~attr))
 
 (* ch. 5.11's evaluation order, as ref walks an expression: [visit] sees every
    node as it COMPLETES, a composite after its operands. A per-member part —
@@ -4462,8 +4515,9 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
     ~(gp : entire_period) : string =
   let a, hops =
     match operand with
-    | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings; _ })
+    | Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; navigation_bindings; _ } as op)
       when attr_temporal_decl ctx ~otype:ot ~attr:a ->
+        let reach () = rule_reach ctx ~subject ~subject_ot op in
         let hops =
           match navigation_bindings with
           | None ->
@@ -4473,7 +4527,7 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
                    subjectType is the subject type '%s' — '%s' names another type, which only a \
                    navigation reaches"
                   subject_ot ot;
-              refuse_bucket_scalar ctx ~otype:subject_ot ~attr:a ~sentence:(qualifier_sentence a);
+              bucket_scalar_guard ctx ~holder:subject ~reach ~otype:subject_ot ~attr:a ~sentence:(qualifier_sentence a);
               []
           | Some rbs ->
               let env =
@@ -4481,15 +4535,29 @@ let whole_period_empty_filled_fails ctx ~subject ~subject_ot ~variety ~negation 
                   as_of = None; locals = Eval.SMap.empty; btypes = Eval.SMap.empty; subj = None; form = None }
               in
               let roles = List.map (Eval.bound_role env) rbs in
-              (* the timeline at the end of the path is read whole: an instance of its type with the
-                 asOfDate-bucket scalar faults, the instance named *)
-              refuse_bucket_scalar ctx ~otype:ot ~attr:a ~sentence:(qualifier_sentence a);
               List.iter
                 (fun (r : role_ref) ->
                   if r.role_many then
                     fault "navigation over the to-many role %S in a scalar slot is refused"
                       (Option.value r.role_identifier ~default:"?"))
                 roles;
+              (* the timeline at the end of the path is read whole: an instance of its type with the
+                 asOfDate-bucket scalar faults where the path from a reached subject leads to it *)
+              (match bucket_scalars ctx ~otype:ot ~attr:a with
+              | [] -> ()
+              | ends ->
+                  let path, last =
+                    List.fold_left
+                      (fun (atoms, cur) (r : role_ref) ->
+                        let n = fresh ctx "N" in
+                        (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (str (role_canonical r)) n ], n))
+                      ([], subject) roles
+                  in
+                  bucket_scalar_fault ctx ~reach ~attr:a ~sentence:(qualifier_sentence a)
+                    (List.map
+                       (fun (i : Uchar_ref.World.instance) ->
+                         (i, path @ [ Printf.sprintf "%s = %s" last (str_raw i.label) ]))
+                       ends));
               roles
         in
         (a, hops)
@@ -5375,22 +5443,24 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   (Some []) components
             | _ -> None
           in
+          (* each subject with each of its suspect members *)
           let suspects =
-            List.filter
-              (fun (i : Uchar_ref.World.instance) ->
-                Uchar_ref.World.timeline i a = None && Uchar_ref.World.attr i a <> Value.Empty)
-              (Eval.SMap.fold
-                 (fun _ (self : Uchar_ref.World.instance) acc ->
-                   if not (isa ctx self.otype subject_ot) then acc
-                   else
-                     (* the MEMBERS, ch. 2.2-scoped like the join above: a
-                        linked instance the element type does not cover is
-                        not folded, so its missing timeline is not this
-                        fold's business to fault on *)
-                     Eval.fold_members ?binding:source_role ?path:source_path env ctx.case.world self
-                       ~element:el
-                     @ acc)
-                 ctx.case.world.instances [])
+            Eval.SMap.fold
+              (fun _ (self : Uchar_ref.World.instance) acc ->
+                if not (isa ctx self.otype subject_ot) then acc
+                else
+                  (* the MEMBERS, ch. 2.2-scoped like the join above: a
+                     linked instance the element type does not cover is
+                     not folded, so its missing timeline is not this
+                     fold's business to fault on *)
+                  List.filter_map
+                    (fun (i : Uchar_ref.World.instance) ->
+                      if Uchar_ref.World.timeline i a = None && Uchar_ref.World.attr i a <> Value.Empty then
+                        Some (self, i)
+                      else None)
+                    (Eval.fold_members ?binding:source_role ?path:source_path env ctx.case.world self ~element:el)
+                  @ acc)
+              ctx.case.world.instances []
           in
           let contributes =
             match filter with
@@ -5431,15 +5501,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   (try Eval.eval_cond env ctx.case.world i ~err:(fun _ -> ()) c
                    with Value.Fault _ -> true)
           in
-          List.iter
-            (fun (i : Uchar_ref.World.instance) ->
-              if contributes i then
-                faultc ~params:[ ("attribute", a); ("label", i.label) ] "EF-037"
-                  "the per-element temporal fold of %S over %S: the case supplies an \
-                   asOfDate-bucket scalar, which carries no period of its own; a set fold needs \
-                   each member's own timeline (ch. 3.6/§7.1, ch. 8.4)"
-                  a i.label)
-            suspects;
+          (* a contributing suspect faults where its subject's fold is reached *)
+          bucket_scalar_fault ctx
+            ~reach:(fun () -> rule_reach ctx ~subject ~subject_ot e)
+            ~attr:a
+            ~sentence:(fun label ->
+              Printf.sprintf
+                "the per-element temporal fold of %S over %S: the case supplies an asOfDate-bucket scalar, which \
+                 carries no period of its own; a set fold needs each member's own timeline (ch. 3.6/§7.1, ch. 8.4)"
+                a label)
+            (List.filter_map
+               (fun ((self : Uchar_ref.World.instance), (i : Uchar_ref.World.instance)) ->
+                 if contributes i then Some (i, [ Printf.sprintf "%s = %s" subject (str_raw self.label) ]) else None)
+               suspects);
           (* one entry PER (member, segment) — the multiplicity is
              load-bearing for the fence below, which must count the
              tuples the #sum accumulates, not the distinct calendar
@@ -5801,7 +5875,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* the clip needs full timelines where the attribute is carried at
          all — an ABSENT attribute clips to the empty sum (0, the v0
          nuance), but a bucket scalar would read silently wrong *)
-      refuse_bucket_scalar ctx ~otype:aot ~attr:a ~sentence:(fun label ->
+      let reach () = rule_reach ctx ~subject ~subject_ot e in
+      bucket_scalar_guard ctx ~holder:subject ~reach ~otype:aot ~attr:a ~sentence:(fun label ->
           Printf.sprintf "the gedurende clip of %S needs the full timeline; %S supplies only the asOfDate-bucket scalar"
             a label);
       let gran = attr_granularity ctx ~otype:aot ~attr:a in
@@ -5924,7 +5999,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               right_side = Some boundary; time_period = None; _ }
           when norm botn = norm aot && attr_temporal ctx ~otype:botn ~attr:b ->
             (* the compared timeline is read whole, per segment (ch. 3.6) *)
-            refuse_bucket_scalar ctx ~otype:aot ~attr:b ~sentence:(fun label ->
+            bucket_scalar_guard ctx ~holder:subject ~reach ~otype:aot ~attr:b ~sentence:(fun label ->
                 Printf.sprintf
                   "the gedurende clip of %S compares %S per segment and needs its full timeline; %S supplies only \
                    the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)"
@@ -6375,6 +6450,10 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           if not (attr_temporal ctx ~otype:otn ~attr:a) then
             fault "temporal read of %S, which is not a temporal attribute" a;
           require_attr_timeline ctx ~otype:otn ~attr:a;
+          (* ref reads the timeline only on a filled date *)
+          bucket_scalar_guard ctx ~holder:subject
+            ~reach:(fun () -> rule_reach ctx ~subject ~subject_ot e @ db)
+            ~otype:otn ~attr:a ~sentence:(point_read_sentence a);
           ( db
             @ [ Printf.sprintf "tl(%s,%s,%s,%s,%s), %s <= %s, %s < %s" subject (str a) f t v f
                   dt dt t ],
@@ -7767,14 +7846,14 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
     | Later_or_equal -> Earlier_or_equal
     | (Equal | Not_equal) as op -> op
   in
-  let a, bound, op =
+  let a, read, bound, op =
     match (temporal_own left_side, temporal_own right_side) with
     | Some _, Some _ ->
         fault
           "a whole-period comparison between TWO timelines is not translated: ch. 3.9 folds one \
            timeline against a scalar bound (no corpus case)"
-    | Some a, None -> (a, req "Comparison.right" right_side, op)
-    | None, Some a -> (a, req "Comparison.left" left_side, reverse op)
+    | Some a, None -> (a, req "Comparison.left" left_side, req "Comparison.right" right_side, op)
+    | None, Some a -> (a, req "Comparison.right" right_side, req "Comparison.left" left_side, reverse op)
     | None, None ->
         (* WF-043 on this node. The verifier rejects the form, so no
            verifier-clean document arrives here; the executor still refuses
@@ -7784,7 +7863,9 @@ and whole_period_fails ctx ~subject ~subject_ot ~op ~left_side ~right_side ~(gp 
            its operands"
           subject_ot
   in
-  refuse_bucket_scalar ctx ~otype:subject_ot ~attr:a ~sentence:(qualifier_sentence a);
+  bucket_scalar_guard ctx ~holder:subject
+    ~reach:(fun () -> rule_reach ctx ~subject ~subject_ot read)
+    ~otype:subject_ot ~attr:a ~sentence:(qualifier_sentence a);
   units_identical_ok ~what:"a whole-period comparison"
     (Option.bind left_side (eff_unit ctx))
     (Option.bind right_side (eff_unit ctx));
@@ -10752,10 +10833,14 @@ let fitted ?(unbounded = false) ctx ~subject ~what ~body term scale target =
    what ref reads. A qualifier holds on the periods of the buckets in which its
    test holds on every period, and outside the buckets laid over the case's
    span its test is constant, so there it holds where its test does. The true
-   periods are the maximal runs of periods on which the root holds. *)
+   periods are the maximal runs of periods on which the root holds. ref reads
+   the whole condition where it reads the condition at all, so [reached], the
+   enclosing guard on S (a default's reach, none on a rule), says where each
+   of its nodes is evaluated. *)
 let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
   let p = fresh ctx "pc" in
   let base = Printf.sprintf "isa(S,%s)" (str ot) in
+  let reached = ctx.rule_guard in
   let per = Printf.sprintf "%s_per(S,X,_)" p in
   let target =
     match target with Some g -> g | None -> Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) a
@@ -10841,7 +10926,7 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
           | _ -> ());
           units_identical_ok ~what:"a comparison in a condition per period" (attr_unit ctx ~otype:ot ~attr:b)
             (eff_unit ctx bound_e);
-          refuse_bucket_scalar ctx ~otype:ot ~attr:b
+          bucket_scalar_guard ctx ~holder:"S" ~reach:(fun () -> base :: reached) ~otype:ot ~attr:b
             ~sentence:(read_whole_sentence ~reads:"a condition per period reads the time-dependent attribute" ~attr:b);
           cuts_of_tl b;
           let gb, gt, gs = expr_term ctx ~subject:"S" ~subject_ot:ot bound_e in
@@ -11063,7 +11148,7 @@ let translate_pro_rata ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~b ~k ~(
     fault
       "pro-rata onto or from a grid that does not lie on the calendar is fenced (RUNTIME-SEMANTICS \
        ch. 3.2)";
-  refuse_bucket_scalar ctx ~otype:ot ~attr:b ~sentence:(fun label ->
+  bucket_scalar_guard ctx ~holder:subject ~reach:(fun () -> base :: cond) ~otype:ot ~attr:b ~sentence:(fun label ->
       Printf.sprintf
         "the pro-rata base %S needs the full timeline; %S supplies only the asOfDate-bucket scalar (ch. 3.7, ch. 8.4)" b
         label);
@@ -11336,7 +11421,8 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ct
             ot otn;
         Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" b)
           ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx otn) b) ~target ~attr:a;
-        refuse_bucket_scalar ctx ~otype:ot ~attr:b ~sentence:(read_whole_sentence ~reads:period_reads ~attr:b);
+        bucket_scalar_guard ctx ~holder:subject ~reach:(fun () -> base :: cond) ~otype:ot ~attr:b
+          ~sentence:(read_whole_sentence ~reads:period_reads ~attr:b);
         read_cuts [ base ] ~holder:subject ~attr:b;
         let q = fresh ctx (p ^ "_r") in
         emit ctx "%s(%s,X,V) :- %s, tl(%s,%s,F,T,V), F <= X, X < T." q subject at_x subject (str b);
@@ -11349,7 +11435,6 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ct
       when (source_role <> None || source_path <> None) && attr_temporal ctx ~otype:el ~attr:x ->
         Eval.refuse_finer ~what:(Printf.sprintf "the attribute %S" x)
           ~operand:(Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx el) x) ~target ~attr:a;
-        refuse_bucket_scalar ctx ~otype:el ~attr:x ~sentence:(read_whole_sentence ~reads:period_reads ~attr:x);
         let sx = pow10 (attr_decimals ctx ~otype:el ~attr:x) in
         let env =
           { Eval.doc = ctx.doc; params = ctx.case.params; param_tls = ctx.case.param_tls;
@@ -11357,6 +11442,9 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ct
         in
         let m = fresh ctx "M" in
         let join = base :: source_join ctx env ~subject ~subject_ot:ot ~el ~source_role ~source_path ~x:m in
+        (* a member's timeline is read where the subject's period arithmetic is *)
+        bucket_scalar_guard ctx ~holder:m ~reach:(fun () -> cond @ join) ~otype:el ~attr:x
+          ~sentence:(read_whole_sentence ~reads:period_reads ~attr:x);
         read_cuts join ~holder:m ~attr:x;
         let q = fresh ctx (p ^ "_s") in
         let reads = Printf.sprintf "tl(%s,%s,F,T,W), F <= X, X < T" m (str x) in
@@ -11442,11 +11530,16 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ct
         | Some { par_granularity = None; _ } -> scalar e
         | Some ({ par_datatype; _ } as decl) ->
             (* a time-dependent parameter is a timeline operand; its timeline is its
-               binding, so an absent one is an unbound parameter (ch. 5.7) *)
+               binding, so an absent one is an unbound parameter (ch. 5.7), which
+               faults where the period arithmetic is evaluated *)
             Eval.refuse_finer ~what:(Printf.sprintf "the parameter %S" n) ~operand:(Uchar_ref.Timeline.param_grid decl)
               ~target ~attr:a;
-            if not (Eval.SMap.mem (norm n) ctx.case.param_tls) then
-              faultc ~params:[ ("parameter", n) ] "EF-014" "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" n;
+            if not (Eval.SMap.mem (norm n) ctx.case.param_tls) then begin
+              let reach = base :: cond in
+              if order_dependent ctx reach then
+                faultc ~params:[ ("parameter", n) ] "EF-014" "%s" (unbound_param_reason n)
+              else emit ctx "viol(%s,%s) :- %s." (quote (unbound_param_reason n)) subject (String.concat ", " reach)
+            end;
             emit ctx "%s_cut(%s,X) :- %s, param_tl(%s,X,_,_)." p subject base (str n);
             emit ctx "%s_cut(%s,X) :- %s, param_tl(%s,_,X,_)." p subject base (str n);
             let q = fresh ctx (p ^ "_p") in
@@ -11490,7 +11583,12 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ct
     p subject p subject p subject p subject
     (String.concat "" (List.map (fun c -> ", " ^ c) cond));
   units_identical_ok ~what target_unit (period_unit value);
+  (* a scalar operand is read where the value is: under the condition that
+     gates the rule, or the reach of a default's consequence *)
+  let saved_guard = ctx.rule_guard in
+  ctx.rule_guard <- cond;
   let root0, _, root_scale = node value in
+  ctx.rule_guard <- saved_guard;
   (* the value restated once to the target's scale: a value with more decimals
      than the target fits only where the surplus is 0, the write boundary of
      ch. 2.4 on its segment (EF-006) *)
@@ -12739,6 +12837,13 @@ let rec translate_chain_days ctx ~g ~cuts ~subject ~origins ~base ~path ~a ~targ
     let reached = (base :: per :: displaced n) @ extra in
     let rch = Printf.sprintf "%s_rch%d" tag n in
     head_body ctx (Printf.sprintf "%s(%s)" rch subject) reached;
+    (* the initialisation default reads the input per day where it is reached
+       on some day, and the asOfDate-bucket scalar carries no day *)
+    if r.default_initialisation then
+      bucket_scalar_guard ctx ~holder:subject
+        ~reach:(fun () -> [ base; Printf.sprintf "%s(%s)" rch subject ])
+        ~otype:(ot_at n) ~attr:a
+        ~sentence:(read_whole_sentence ~reads:"the initialisation default of the timeline target reads the input" ~attr:a);
     let decany = Printf.sprintf "%s_any%d" tag n in
     emit ctx "#defined %s/1." decany;
     let saved_r = ctx.param_reach and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
@@ -12863,25 +12968,14 @@ and translate_group_days ctx ~g ~cuts ~subject ~subject_ot ~base ~group_path ~a 
    default of ch. 7.8 read per period. A period on which the members conflict
    writes nothing and deposits the one §9.5 fact of the rule × subject. A
    bucket scalar of the target stands as it is (the rules' VB-3); the
-   initialisation default reads the input per period, so it refuses one. *)
-let translate_defaults_timeline ctx gidx ~owner ~base ~target_form ~a
+   initialisation default reads the input per period, so it faults on one where
+   it is reached ([translate_chain_days]). *)
+let translate_defaults_timeline ctx gidx ~base ~target_form ~a
     (members : (prioritized_defaults * string list) list) =
   let subject = "S" in
   let g = Printf.sprintf "grp%d_d" gidx in
   let cuts = ref [] in
   let has_input = Printf.sprintf "grp%d_in" gidx in
-  let rec has_init (ds : default list) =
-    List.exists
-      (fun (d : default) ->
-        d.default_initialisation
-        || match d.default_exceptions with
-           | Some egs -> List.exists (fun (eg : exception_group) -> has_init eg.eg_defaults) egs.egs_members
-           | None -> false)
-      ds
-  in
-  if List.exists (fun ((l, _) : prioritized_defaults * string list) -> has_init l.defaults) members then
-    refuse_bucket_scalar ctx ~otype:owner ~attr:a
-      ~sentence:(read_whole_sentence ~reads:"the initialisation default of the timeline target reads the input" ~attr:a);
   emit ctx "val(%s,%s,V) :- inputval(%s,%s,V), %s." subject (str a) subject (str a) base;
   let per = Printf.sprintf "%s_per(%s,X,Y)" g subject in
   head_body ctx (Printf.sprintf "%s(%s,X,Y)" has_input subject)
@@ -13013,7 +13107,7 @@ let translate_defaults_group ctx gidx ~owner
     if ctx.desugared_group then
       fault "the ch. 7.7 desugaring of an initialisation on the timeline target %S is not translated (no corpus case)"
         target_name;
-    translate_defaults_timeline ctx gidx ~owner ~base ~target_form ~a:target_name members
+    translate_defaults_timeline ctx gidx ~base ~target_form ~a:target_name members
   end
   else
   (* the attribute arm's input scaffolding: the target scale, and the input

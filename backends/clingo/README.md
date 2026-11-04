@@ -334,14 +334,38 @@ spec bug.
   the members conflict, are written in maximal runs as `tl/5` and as
   the group's `wtl/6`, so the input stands on every other period as
   beside a rule. A deposit of a default stands where it decides on some
-  period. Refused by name: a consequence that is not period arithmetic
-  (the time-proportional part, the day count), and the ch. 7.7
-  desugaring of an initialisation on a timeline target.
+  period. A consequence is evaluated where its default is reached and
+  justified on some period (`ndN_jrK/1`), a justification and the input
+  the initialisation default reads where its default is reached on some
+  period (`ndN_rchK/1`), and a fail-fast in them fires only there
+  (`corpus/golden/jutterswet-gevolg-buiten-de-beurt`). Refused by name:
+  a consequence that is not period arithmetic (the time-proportional
+  part, the day count), and the ch. 7.7 desugaring of an initialisation
+  on a timeline target.
 - A fail-fast or a §9.5 deposit fires only where ref evaluates its place at
   the fixpoint (RUNTIME-SEMANTICS ch. 5.7): under a default that is reached,
   under the guard of an initialisation, and a deposit of a declared default
   only under its decision (ch. 7.1). A default the ch. 7.7 desugaring made
   from a v0 form deposits where it is evaluated, under its rule's name.
+- A form that reads the timeline of an attribute whole and finds the
+  asOfDate-bucket scalar faults with EF-037 (RUNTIME-SEMANTICS ch. 8.4):
+  the period arithmetic, a condition per period, the base of a pro-rata
+  part, the value and the compared timeline of a gedurende clip, a
+  member of a per-element total, a point read, the whole-period
+  qualifier, also at the end of a path, and the input of an
+  initialisation default per day. Each instance that gives the scalar
+  gets a `viol/2` witness in ref's sentence, with the instance as its
+  subject, whose body is the reach of the read: the condition that gates
+  the rule, the reach of a default's consequence or justification
+  above, or, inside a condition or a value, the reach of the
+  unbound-parameter guard (the taken arm, a composite's open prefix, the
+  Let barriers), with the path or the set from the subject to the
+  instance. An unbound parameter in the period arithmetic, time-dependent
+  or a scalar operand, faults (EF-014) under the same reach. Where an atom
+  of that reach hangs on the order of the members a creation adds, the
+  fault is raised in translation, over every instance that gives the
+  scalar. A point read of an absent attribute faults in translation,
+  without a code.
 - Two or more computing rules on one target whose populations share a
   concrete type (on one type, or on a type and its subtype) would give
   the target two values in one model wherever two of them apply to one

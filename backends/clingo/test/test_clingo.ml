@@ -1120,6 +1120,33 @@ let faults_with ~name ~ir ~case_text ~needle =
   | exception Uchar_ref.Value.Fault { text = m; _ } ->
       check (name ^ " faults loudly (" ^ m ^ ")") (Uchar_ref.Case.contains ~needle m)
 
+(* a fail-fast the program carries as a viol/2 witness, where ref raises it at
+   evaluation: the document translates, clingo finds it UNSATISFIABLE, and a
+   fired witness carries [needle] and, where [code] is given, the fault kind and
+   parameters [Translate.viol_code] reads off it *)
+let faults_at_solving ?code ~name ~ir ~case_text ~needle () =
+  let irf = write_temp ".ir.json" ir in
+  let casef = write_temp ".case.json" case_text in
+  let doc = Ir_v0.Loader.load_file irf in
+  let case = Uchar_ref.Case.load_file doc casef in
+  Sys.remove irf;
+  Sys.remove casef;
+  match translate doc case with
+  | exception Uchar_ref.Value.Fault { text = m; _ } ->
+      check (name ^ ": expected a fault at solving, got one in translation (" ^ m ^ ")") false
+  | program -> (
+      match Solve.run_clingo program with
+      | _, Unix.WEXITED 20 ->
+          let ws = Solve.diagnostic program in
+          check
+            (name ^ " faults at solving (" ^ String.concat "; " ws ^ ")")
+            (List.exists
+               (fun w ->
+                 Uchar_ref.Case.contains ~needle w
+                 && match code with None -> true | Some c -> Translate.viol_code w = Some c)
+               ws)
+      | _, _ -> check (name ^ ": expected a fault at solving, got a model") false)
+
 (* a document the loader refuses (B12, U2): since L2 a range is written in
    one spelling and never derived, so the refusal lands at load, before any
    translation, and the witness pins the loader's own sentence *)
@@ -1718,10 +1745,12 @@ let () =
      instead of folding an empty member set to 0. This is the decision's
      consequence in one frame: the reachability, not the fault, is what
      moved. *)
-  faults_with ~name:"§7.1 set operand, member reached through the reverse leg (ch. 5.7a)"
+  faults_at_solving ~name:"§7.1 set operand, member reached through the reverse leg (ch. 5.7a)"
     ~ir:setfold_zero ~case_text:(total_case ~bewaarlast:"0" "vondsttarief")
     ~needle:
-      {|the case supplies an asOfDate-bucket scalar, which carries no period of its own|};
+      {|the case supplies an asOfDate-bucket scalar, which carries no period of its own|}
+    ~code:("EF-037", [ ("attribute", "bewaartarief"); ("label", "J1") ])
+    ();
   (* no navigation written, but the operand is declared on another type: the
      ci-control the gedurende sister arm has always carried *)
   faults_with ~name:"temporal total, foreign-typed operand without navigation"
@@ -2097,12 +2126,14 @@ let () =
        \"bewaartarief\" of a set has no defined moment to fold";
   (* the horizon rule on this frame too: one member with an asOfDate-bucket
      scalar instead of a timeline, refused BY NAME — ref's own convention *)
-  faults_with ~name:"§7.1 horizon rule: a member with an asOfDate-bucket scalar (by name)"
+  faults_at_solving ~name:"§7.1 horizon rule: a member with an asOfDate-bucket scalar (by name)"
     ~ir:straight
     ~case_text:(set_fold_case ~v1:v1_bucket_scalar)
     ~needle:
       "the per-element temporal fold of \"bewaartarief\" over \"V1\": the case supplies an \
        asOfDate-bucket scalar"
+    ~code:("EF-037", [ ("attribute", "bewaartarief"); ("label", "V1") ])
+    ()
 
 (* --- the die/dat FILTER on the horizon fence (card diedat-filter, 2026-09-16)
 
@@ -17151,21 +17182,77 @@ let () =
       "rule \"najaarsmerk\" attributes a characteristic to the cell \"vondstgewicht[najaar]\": a cell is a cell of an \
        attribute, written by a computation or an initialisation (WF-022)"
 
+(* [ir] with every version of every rule behind the condition 1 > 2, conjoined
+   in front of its own: a condition that reads no timeline gates the rule
+   (RUNTIME-SEMANTICS ch. 3.10), and an `all` stops at its first member that
+   fails (ch. 5.11), so ref evaluates no value and no other condition *)
+let gated ir =
+  let open Yojson.Safe.Util in
+  let gate = pf_cmp "greater" (pf_l ~typ:pf_n0 "1") (pf_l ~typ:pf_n0 "2") in
+  let map_field k f = function
+    | `Assoc kv -> `Assoc (List.map (fun (k', v) -> if k' = k then (k', f v) else (k', v)) kv)
+    | j -> j
+  in
+  let version = function
+    | `Assoc kv ->
+        let condition =
+          match List.assoc_opt "condition" kv with
+          | None -> gate
+          | Some c -> pf_comp "all" [ gate; Yojson.Safe.to_string c ]
+        in
+        `Assoc (("condition", Yojson.Safe.from_string condition) :: List.remove_assoc "condition" kv)
+    | j -> j
+  in
+  let on_rule = map_field "versions" (fun vs -> `List (List.map version (to_list vs))) in
+  Yojson.Safe.to_string
+    (map_field "rules" (map_field "rules" (fun rs -> `List (List.map on_rule (to_list rs)))) (Yojson.Safe.from_string ir))
+
 (* RUNTIME-SEMANTICS ch. 3.1, 3.6, 3.11: period arithmetic over all time, on
    the documents of ref's own witnesses (ref/test/fixtures). A whole-period fold
    over a timeline with an open bound reads the bucket beside each finite bound
    for every bucket further out; a total over a timeline that reads a pro-rata
    part lays its whole-unit facts between the walls of the grid as well; an
-   unbound time-dependent parameter is refused. A condition without a timeline
-   on such a rule gates it, as ref plays it. *)
+   unbound time-dependent parameter faults where the value is evaluated. A
+   condition without a timeline on such a rule gates it, as ref plays it. *)
 let () =
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/period-arithmetic/" in
-  List.iter
-    (fun (fixture, needle) ->
-      faults_with ~name:("period arithmetic: " ^ fixture) ~ir:(read (dir ^ fixture ^ "/ir.json"))
-        ~case_text:(read (dir ^ fixture ^ "/case.json")) ~needle)
-    [ ("parameter-unbound", "parameter \"verzuimrentevoet\" is unbound in this case") ];
+  faults_at_solving ~name:"period arithmetic: parameter-unbound" ~ir:(read (dir ^ "parameter-unbound/ir.json"))
+    ~case_text:(read (dir ^ "parameter-unbound/case.json"))
+    ~needle:"parameter \"verzuimrentevoet\" is unbound in this case"
+    ~code:("EF-014", [ ("parameter", "verzuimrentevoet") ])
+    ();
+  both_answer ~name:"period arithmetic: parameter-unbound, behind a condition that fails"
+    ~ir:(gated (read (dir ^ "parameter-unbound/ir.json"))) ~case_text:(read (dir ^ "parameter-unbound/case.json"));
+  (* a scalar operand is read where the value is, under the condition that
+     gates the rule: "zijn strandloon plus de toeslag", the toeslag unbound *)
+  (let open Yojson.Safe.Util in
+   let map_field k f = function
+     | `Assoc kv -> `Assoc (List.map (fun (k', v) -> if k' = k then (k', f v) else (k', v)) kv)
+     | j -> j
+   in
+   let toeslag = {|{ "node": "Parameter", "name": "toeslag", "datatype": |} ^ pf_n0 ^ " }" in
+   let on_version = map_field "value" (map_field "right" (fun _ -> Yojson.Safe.from_string (pf_p "toeslag"))) in
+   let ir =
+     Yojson.Safe.from_string (read "ref/test/fixtures/bucket-scalar/arithmetic/ir.json")
+     |> map_field "model" (map_field "parameters" (fun _ -> `List [ Yojson.Safe.from_string toeslag ]))
+     |> map_field "rules"
+          (map_field "rules"
+             (fun rs -> `List (List.map (map_field "versions" (fun vs -> `List (List.map on_version (to_list vs)))) (to_list rs))))
+     |> Yojson.Safe.to_string
+   in
+   let case_text =
+     {|{ "format": "uchar-case-v0", "asOfDate": "2024-02-15", "input": { "instances": [
+         { "label": "J1", "objectType": "Jutter",
+           "attributes": { "strandloon": { "timeline": [ { "from": "2024-01-01", "to": "2025-01-01", "value": { "number": "130" } } ] } },
+           "roles": {}, "characteristics": [] } ], "parameters": {} },
+       "expected": [ { "kind": "consistent" } ] }|}
+   in
+   faults_at_solving ~name:"period arithmetic: a scalar parameter not bound" ~ir ~case_text ~needle:(pf_reason "toeslag")
+     ~code:("EF-014", [ ("parameter", "toeslag") ])
+     ();
+   both_answer ~name:"period arithmetic: a scalar parameter not bound, behind a condition that fails" ~ir:(gated ir)
+     ~case_text);
   List.iter
     (fun fixture ->
       let ir = read (dir ^ fixture ^ "/ir.json") and case_text = read (dir ^ fixture ^ "/case.json") in
@@ -17413,6 +17500,87 @@ let () =
     [ "case1-opgave-heel-2025"; "case2-opgave-januari-februari"; "case3-zonder-opgave"; "case4-invoer-op-het-doel";
       "case5-stormtoelage-per-dag" ]
 
+(* RUNTIME-SEMANTICS ch. 7.11, "The evaluation": a default is evaluated where it
+   is at its turn on some day, its consequence where its justification holds on
+   a day of its turn, so a read of the asOfDate-bucket scalar faults (EF-037)
+   only there. On ref's document defaults-per-day/lazy-consequence, the base 5,
+   "zijn kustloon indien hij kustwacht is" above it and 60 "indien hij
+   winterwacht is" above that, the kustloon the bucket scalar 40: without
+   kustwacht, or with kustwacht and winterwacht in April, the consequence is not
+   evaluated (WV-7.11-gevolg-buiten-de-beurt); with kustwacht from June to
+   August it is (-fout). The same holds for a justification read per period,
+   which faults where its default is reached on some day, and for the input that
+   the initialisation default reads per day (WV-7.11-initialisatie-emmerscalair) *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let doc = "ref/test/fixtures/defaults-per-day/lazy-consequence/" in
+  let ir = read (doc ^ "ir.json") in
+  both_answer ~name:"defaults per day: a consequence not evaluated" ~ir ~case_text:(read (doc ^ "case.json"));
+  faults_at_solving ~name:"defaults per day: a consequence evaluated" ~ir
+    ~case_text:(read "ref/test/fixtures/defaults-per-day-cases/lazy-consequence-reached/case.json")
+    ~needle:"the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"kustloon\" of \"J1\" whole"
+    ~code:("EF-037", [ ("attribute", "kustloon"); ("label", "J1") ])
+    ();
+  (* the kustwacht default justified by "zijn kustloon groter is dan 10", read
+     per period, and above it the winter default, or 60 on every day *)
+  let justified ~top =
+    let open Yojson.Safe.Util in
+    let map_field k f = function
+      | `Assoc kv -> `Assoc (List.map (fun (k', v) -> if k' = k then (k', f v) else (k', v)) kv)
+      | j -> j
+    in
+    let justification j = map_field "justification" (fun _ -> Yojson.Safe.from_string j) in
+    let kustloon = pf_cmp "greater" (pf_a "kustloon") (pf_l ~typ:pf_n0 "10") in
+    let on_defaults ds =
+      `List
+        (List.mapi
+           (fun i d ->
+             match i with
+             | 0 -> ( match top with `Winter -> d | `Always -> justification (pf_comp "all" []) d)
+             | 1 -> justification kustloon d
+             | _ -> d)
+           (to_list ds))
+    in
+    Yojson.Safe.to_string
+      (map_field "rules"
+         (map_field "prioritizedDefaults" (fun gs -> `List (List.map (map_field "defaults" on_defaults) (to_list gs))))
+         (Yojson.Safe.from_string ir))
+  in
+  let bucket_case expected =
+    Printf.sprintf
+      {|{ "format": "uchar-case-v0", "asOfDate": "2025-07-01", "input": { "instances": [
+          { "label": "J1", "objectType": "Jutter", "attributes": { "kustloon": { "number": "40" } }, "roles": {},
+            "characteristics": [], "characteristicTimelines": {} } ], "parameters": {} }, %s }|}
+      expected
+  in
+  both_answer ~name:"defaults per day: a justification of a default never at its turn" ~ir:(justified ~top:`Always)
+    ~case_text:
+      (bucket_case
+         {|"expected": [ { "kind": "attributeTimeline", "label": "J1", "attribute": "strandloon",
+             "timeline": [ { "value": { "number": "60" } } ] }, { "kind": "consistent" } ]|});
+  faults_at_solving ~name:"defaults per day: a justification of a default at its turn" ~ir:(justified ~top:`Winter)
+    ~case_text:(bucket_case {|"expected": [ { "kind": "consistent" } ]|})
+    ~needle:"a condition per period reads the time-dependent attribute \"kustloon\" of \"J1\" whole"
+    ~code:("EF-037", [ ("attribute", "kustloon"); ("label", "J1") ])
+    ();
+  (* the stormtoelage of the golden jutterswet-opgave-per-periode: the opgave
+     above the computation, the initialisation on 0 below it *)
+  let g = read "corpus/golden/jutterswet-opgave-per-periode/ir.json" in
+  faults_at_solving ~name:"defaults per day: the initialisation default reads a bucket scalar input" ~ir:g
+    ~case_text:(read "ref/test/fixtures/defaults-per-day-cases/bucket-input/case.json")
+    ~needle:"the initialisation default of the timeline target reads the input \"stormtoelage\" of \"J7\" whole"
+    ~code:("EF-037", [ ("attribute", "stormtoelage"); ("label", "J7") ])
+    ();
+  both_answer ~name:"defaults per day: an initialisation default never at its turn" ~ir:g
+    ~case_text:
+      {|{ "format": "uchar-case-v0", "asOfDate": "2025-07-01", "input": { "instances": [
+          { "label": "J7", "objectType": "Jutter",
+            "attributes": { "stormtoelage": { "number": "7" },
+              "opgegeven stormtoelage": { "timeline": [ { "value": { "number": "12" } } ] } },
+            "roles": {}, "characteristics": [], "characteristicTimelines": {} } ], "parameters": {} },
+        "expected": [ { "kind": "attributeTimeline", "label": "J7", "attribute": "stormtoelage",
+            "timeline": [ { "value": { "number": "12" } } ] }, { "kind": "consistent" } ] }|}
+
 (* RUNTIME-SEMANTICS ch. 2.6 rule 7, ch. 3.4, 3.5 and 8.4 on ref's documents
    (ref/test/fixtures/period-units, bucket-scalar): a percentage of a value with
    a unit carries that unit, scalar and per period, also as the left factor of a
@@ -17422,7 +17590,9 @@ let () =
    period of its members, the base of a pro-rata part, a point read, the value
    and the compared timeline of a gedurende clip, a per-element total, the
    whole-period qualifier — faults where the case gives the asOfDate-bucket
-   scalar, in ref's sentence *)
+   scalar, in ref's sentence, at solving: ref raises it where it evaluates the
+   form. Behind a rule condition that fails, ref does not evaluate it, and
+   neither executor faults *)
 let () =
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let pair d = (read (d ^ "/ir.json"), read (d ^ "/case.json")) in
@@ -17443,19 +17613,10 @@ let () =
   List.iter
     (fun (f, (attribute, label), needle) ->
       let ir, case_text = pair ("ref/test/fixtures/bucket-scalar/" ^ f) in
-      let irf = write_temp ".ir.json" ir and casef = write_temp ".case.json" case_text in
-      let doc = Ir_v0.Loader.load_file irf in
-      let case = Uchar_ref.Case.load_file doc casef in
-      Sys.remove irf;
-      Sys.remove casef;
       let name = "bucket scalar: " ^ f in
-      match translate doc case with
-      | (_ : string) -> check (name ^ ": expected a loud fault, got a model") false
-      | exception Uchar_ref.Value.Fault { code; params; text } ->
-          check (name ^ " faults with EF-037 (" ^ text ^ ")")
-            (code = Some "EF-037"
-            && params = [ ("attribute", attribute); ("label", label) ]
-            && Uchar_ref.Case.contains ~needle text))
+      faults_at_solving ~name ~ir ~case_text ~needle ~code:("EF-037", [ ("attribute", attribute); ("label", label) ]) ();
+      (* a condition per period is read wherever its rule is, so it has no gate *)
+      if f <> "condition" then both_answer ~name:(name ^ ", behind a condition that fails") ~ir:(gated ir) ~case_text)
     [ ( "condition", ("strandloon", "J1"),
         {|a condition per period reads the time-dependent attribute "strandloon" of "J1"|} ^ bucket );
       ( "arithmetic", ("strandloon", "J1"),
