@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.resolver;
 
+import dev.uchar.regelspraak.ir.Condition;
 import dev.uchar.regelspraak.ir.Expr;
 import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.Unit;
@@ -563,11 +564,15 @@ public final class Typing {
             case SOM, MINIMUM, MAXIMUM, EERSTE, LAATSTE, CONCATENATIE -> operands(f, model, binders);
             case TOTAAL -> {
                 if (ExpressionBuilder.setRead(args) || args.size() != 1) yield operands(f, model, binders);
-                // the temporal total adds whole periods of the grid (ch. 3.6); a rate whose period is not the grid's
-                // own unit is restated into it (ch. 2.6, rule 8)
+                // the temporal total adds the periods of the grid a segment holds (ch. 3.6); a rate whose period is
+                // not the grid's own unit is restated into it (ch. 2.6, rule 8)
                 Expr a = args.get(0);
+                // a clip that is a marker cuts where nothing says: no claim, as the verifier makes none
+                if (f.filter() instanceof Condition.Unresolved && !(a instanceof Expr.AttributeReference r && r.set()))
+                    yield null;
                 Precision operand = own(a, model, binders);
-                if (operand != null && calendarUnbounded(a, model)) operand = Precision.UNBOUNDED;
+                if (operand != null && (calendarUnbounded(a, model) || partialPeriod(f, a, model)))
+                    operand = Precision.UNBOUNDED;
                 Bounded total = bounded(scaled(operand, gridFactor(a, model)), unitOf(f));
                 yield f.emptyFallback() == null ? total
                         : combined(java.util.Arrays.asList(total, precision(f.emptyFallback(), model, binders)));
@@ -611,20 +616,91 @@ public final class Typing {
      *  keeps the bound of its operand (whole days). The rule of the verifier ({@code calendar_denominator} and the
      *  calendar clause of the temporal total in its precision bound, {@code spec/verifier/lib/checks.ml}). */
     private static boolean calendarUnbounded(Expr operand, dev.uchar.regelspraak.model.RegelSpraakModel model) {
+        Unit.Factor f = calendarFactor(operand, model);
+        return f != null && !dev.uchar.regelspraak.core.TimeCalculation.isDay(f.abbreviation());
+    }
+
+    /** The negative factor of the rate of {@code operand} that the calendar integrates over its grid (ch. 3.6): none
+     *  where a negative factor is of the grid's class, else the first one the calendar table puts in the other family
+     *  than the grid; null where the calendar does not integrate. */
+    private static Unit.Factor calendarFactor(Expr operand, dev.uchar.regelspraak.model.RegelSpraakModel model) {
         Unit u = unitOf(operand);
-        if (u == null || !(operand instanceof Expr.AttributeReference a) || a.objectType() == null) return false;
+        if (u == null || !(operand instanceof Expr.AttributeReference a) || a.objectType() == null) return null;
         dev.uchar.regelspraak.model.RegelSpraakModel.Granularity g = a.objectType().granularityOf(a.attribute());
-        if (g == null) return false;
+        if (g == null) return null;
         Unit grid = dev.uchar.regelspraak.core.TimeCalculation.gridUnit(g, model);
         if (grid != null)
             for (Unit.Factor f : u.negativeFactors())
-                if (f.quantityClass().equals(grid.factors().get(0).quantityClass())) return false;
+                if (f.quantityClass().equals(grid.factors().get(0).quantityClass())) return null;
         var gridFamily = dev.uchar.regelspraak.core.TimeCalculation.calendarFamily(g);
         for (Unit.Factor f : u.negativeFactors()) {
             var family = dev.uchar.regelspraak.core.TimeCalculation.calendarFamily(f.abbreviation());
-            if (family != null && family != gridFamily)
-                return !dev.uchar.regelspraak.core.TimeCalculation.isDay(f.abbreviation());
+            if (family != null && family != gridFamily) return f;
         }
+        return null;
+    }
+
+    /** Whether the temporal total {@code total} of {@code operand} can count a part of a period of its grid, which it
+     *  counts by its days (RUNTIME-SEMANTICS ch. 2.3, ch. 3.6): a share no number of decimals bounds. The calendar
+     *  measures in days or in the calendar unit and is {@link #calendarUnbounded}'s. A timeline the case gives lies on
+     *  the walls of its grid; a rule cuts the timeline it writes where its condition and its operands cut it, and a clip
+     *  cuts at the days its condition holds on, a characteristic holding on periods of days whatever its granularity.
+     *  So only the day grid, a total of a timeline no rule writes without a clip, and a clip by a comparison of an own
+     *  timeline no rule writes whose calendar grid fits the calendar grid of the total keep whole periods; a writer or a
+     *  clip that would cut on walls in some other way is not looked for. The filter of the per-element fold selects
+     *  members and cuts nothing. The writers are read from {@code model}: a gate that judges a rule before a later rule
+     *  has registered is judged again once every writer has ({@code RuleChecker}). The rule of the verifier
+     *  ({@code total_can_split} in {@code spec/verifier/lib/checks.ml}). */
+    private static boolean partialPeriod(Expr.FunctionCall total, Expr operand,
+                                         dev.uchar.regelspraak.model.RegelSpraakModel model) {
+        if (calendarFactor(operand, model) != null) return false;
+        if (!(operand instanceof Expr.AttributeReference a) || a.objectType() == null) return false;
+        dev.uchar.regelspraak.model.RegelSpraakModel.Granularity g = a.objectType().granularityOf(a.attribute());
+        if (g == null) return false;
+        if (g == dev.uchar.regelspraak.model.RegelSpraakModel.Granularity.DAG
+                && a.objectType().timelineCountOf(a.attribute()) == null) return false;
+        if (written(a.objectType(), a.attribute(), model)) return true;
+        Condition clip = a.set() ? null : total.filter();
+        return clip != null && !onWalls(clip, a, model);
+    }
+
+    /** Whether a clip cuts on the walls of the grid of {@code totalled} only: a comparison of an own timeline no rule
+     *  writes, both timelines on a calendar grid and the compared one's fitting the totalled one's (WF-126's fit). */
+    private static boolean onWalls(Condition clip, Expr.AttributeReference totalled,
+                                   dev.uchar.regelspraak.model.RegelSpraakModel model) {
+        if (!(clip instanceof Condition.Comparison k) || k.period() != null) return false;
+        if (!(k.left() instanceof Expr.AttributeReference b) || b.navigationRole() != null || b.objectType() == null)
+            return false;
+        dev.uchar.regelspraak.model.RegelSpraakModel.Granularity gb = calendarGrain(b), ga = calendarGrain(totalled);
+        return gb != null && ga != null && !written(b.objectType(), b.attribute(), model) && RuleChecker.fits(gb, ga);
+    }
+
+    /** The granularity of the timeline {@code a} reads where it lies on the calendar's own grid of one period: no start
+     *  point and no named timeline on the declaring chain; null elsewhere. */
+    private static dev.uchar.regelspraak.model.RegelSpraakModel.Granularity calendarGrain(Expr.AttributeReference a) {
+        dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType ot = a.objectType();
+        String m = a.attribute();
+        if (ot.granularityOf(m) == null || ot.timelineCountOf(m) != null || ot.fixedStartPointOf(m) != null) return null;
+        for (var t : ot.chain()) if (t.attributeTimelineName.containsKey(m)) return null;
+        return ot.granularityOf(m);
+    }
+
+    /** Whether a rule or a defaults group of {@code model} writes the attribute {@code attribute} on a population that
+     *  shares an object with {@code ot}: one of the two types is the other, or a type is both. */
+    private static boolean written(dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType ot, String attribute,
+                                   dev.uchar.regelspraak.model.RegelSpraakModel model) {
+        String name = dev.uchar.regelspraak.emit.IrEmitter.norm(attribute);
+        java.util.function.Predicate<dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType> overlaps = t -> t != null
+                && (t.isA(ot) || ot.isA(t) || model.objectTypes.values().stream().anyMatch(d -> d.isA(t) && d.isA(ot)));
+        for (dev.uchar.regelspraak.ir.ResolvedRule r : model.resolvedRules) {
+            if (r.kind() == dev.uchar.regelspraak.ir.ResolvedRule.Kind.KENMERKTOEKENNING) continue;
+            Expr target = r.target() instanceof Expr.DimensionCellRead c ? c.attribute() : r.target();
+            if (target instanceof Expr.AttributeReference t && name.equals(dev.uchar.regelspraak.emit.IrEmitter.norm(t.attribute()))
+                    && overlaps.test(t.objectType())) return true;
+        }
+        for (dev.uchar.regelspraak.ir.PrioritizedDefaults d : model.prioritizedDefaults)
+            if (d.attribute() != null && name.equals(dev.uchar.regelspraak.emit.IrEmitter.norm(d.attribute()))
+                    && overlaps.test(model.objectTypes.get(d.subject()))) return true;
         return false;
     }
 

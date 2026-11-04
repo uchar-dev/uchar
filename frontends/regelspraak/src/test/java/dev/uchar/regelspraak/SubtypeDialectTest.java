@@ -557,7 +557,7 @@ class SubtypeDialectTest {
 
             Regel wachtsom van een klipjutter
                 geldig altijd
-                    De wachtsom van een Klipjutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is).
+                    De wachtsom van een Klipjutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is) rekenkundig afgerond op 0 decimalen.
             """;
         RegelSpraakModel m = Resolver.resolve(src);
         assertTrue(m.errors().isEmpty(), () -> "onverwachte fouten: " + m.errors());

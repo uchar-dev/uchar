@@ -87,6 +87,14 @@ final class RuleChecker {
     /** The anchor members {@link #startPointAnchors} declared, by {@link #anchorKey}: an anchor of a name the author
      *  declared himself is not in here. */
     private final java.util.Set<String> generatedAnchors = new java.util.HashSet<>();
+    /** The writes the precision gate passed when they registered, judged again by {@link #precisionAfterWriters} once
+     *  every writer has registered: the bound of a temporal total depends on whether a rule writes the timeline it
+     *  totals ({@link Typing#precisionGate}), and that rule may stand further on. */
+    private final List<PassedGate> passedGates = new ArrayList<>();
+
+    /** A write the precision gate passed, and how its refusal is reported. */
+    private record PassedGate(Datatype target, boolean outside, Expr value,
+                              java.util.function.Function<Typing.Coded, Diagnostic> report) {}
     /** Per generated anchor, by {@link #anchorKey}, its type, its name and the form name of the first rule that
      *  writes it ({@link #startPointDetermination}). */
     private final Map<String, String[]> anchorRules = new LinkedHashMap<>();
@@ -140,6 +148,7 @@ final class RuleChecker {
         defaults(doc);        // §4 lift the base+exception families and unordered groups into PrioritizedDefaults nodes
         // §7 after the lift, so a tree or an unordered set of the dialect's blocks moves to 'berekende X' whole
         inputLowering(doc);
+        precisionAfterWriters();   // after every writer has registered and moved to where the emitter writes it
         // §7 a read of a generated member closes a cycle only once the writers have moved to 'berekende X'
         checkCycleReferenceAfterInput();
         checkWindowPositions(); // WF-112, over the conditions as emitted — after the lift, so defaults are covered
@@ -4266,9 +4275,13 @@ final class RuleChecker {
                 checkSign(targetType, t.value(), oc.getStart().getLine());   // §3.3.1 Teken-beperking, like registreer
                 Typing.Coded error = Typing.assignment(targetType, t.value().type(),
                         ExpressionBuilder.unitlessNumberLiteral(t.value()));
-                if (error == null) error = Typing.precisionGate(targetType, createdType.granularityOf(t.attribute()) != null, t.value(), model);
-                if (error != null)
-                    model.diagnostics.add(error.frame("object-creation").at(Severity.ERROR, oc.getStart().getLine()));
+                boolean outside = createdType.granularityOf(t.attribute()) != null;
+                int line = oc.getStart().getLine();
+                java.util.function.Function<Typing.Coded, Diagnostic> report =
+                        e -> e.frame("object-creation").at(Severity.ERROR, line);
+                if (error == null) error = Typing.precisionGate(targetType, outside, t.value(), model);
+                if (error == null) passedGates.add(new PassedGate(targetType, outside, t.value(), report));
+                else model.diagnostics.add(report.apply(error));
             }
 
         model.objectCreations.add(new ResolvedObjectCreation(name, createdType, subject, assignments, condition, validity,
@@ -4803,12 +4816,25 @@ final class RuleChecker {
         checkSign(targetType, peeledValue, line);   // §3.3.1 Teken-beperking, static over a literal value
         if (targetType.isUnknown() || valueType.isUnknown()) return; // not enough resolved to judge
         Typing.Coded error = Typing.assignment(targetType, valueType, ExpressionBuilder.unitlessNumberLiteral(valueExpr));
-        if (error == null)
-            error = Typing.precisionGate(targetType, timelineTarget(targetExpr) && proRata(valueExpr), valueExpr, model);
+        boolean outside = timelineTarget(targetExpr) && proRata(valueExpr);
+        java.util.function.Function<Typing.Coded, Diagnostic> report =
+                e -> e.frame("category", "category", category.name().toLowerCase()).at(Severity.ERROR, line);
+        if (error == null) error = Typing.precisionGate(targetType, outside, valueExpr, model);
         if (error == null && timelineTarget(targetExpr))
             error = gridFit((Expr.AttributeReference) targetExpr, valueExpr, condition);
-        if (error != null)
-            model.diagnostics.add(error.frame("category", "category", category.name().toLowerCase()).at(Severity.ERROR, line));
+        if (error == null) passedGates.add(new PassedGate(targetType, outside, valueExpr, report));
+        else model.diagnostics.add(report.apply(error));
+    }
+
+    /** The precision gate of every write it passed at registration, judged again over all writers: a temporal total of
+     *  a timeline a rule writes can count a part of a period, and the writer may have registered after the write that
+     *  totals it (RUNTIME-SEMANTICS ch. 2.3). Only such a total judges otherwise now, so a refusal here is one the
+     *  registration could not see yet. */
+    private void precisionAfterWriters() {
+        for (PassedGate g : passedGates) {
+            Typing.Coded error = Typing.precisionGate(g.target(), g.outside(), g.value(), model);
+            if (error != null) model.diagnostics.add(g.report().apply(error));
+        }
     }
 
     /** IR-SPEC WF-126 (RegelSpraak typeringen §3): a timeline that the value or the condition of a rule on a
@@ -4831,7 +4857,7 @@ final class RuleChecker {
         return null;
     }
 
-    private static boolean fits(Granularity operand, Granularity target) {
+    static boolean fits(Granularity operand, Granularity target) {
         if (target == Granularity.DAG || operand == target) return true;
         int o = months(operand), t = months(target);
         return o > 0 && t > 0 && o % t == 0;

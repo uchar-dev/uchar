@@ -312,6 +312,123 @@ class PrecisionGateTest {
                 "RGS-372 " + exceeds(6, 2)), errors(declared));
     }
 
+    // wf023-precision-partial-unit-clip
+    @Test void a_clip_by_a_characteristic_can_split_a_period_of_the_grid() {
+        String model = """
+            Tijdlijn het stormjaar heeft tijdvakken van een jaar startend op dag 1 van maand 10;
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                is wachtplichtig kenmerk (bijvoeglijk) voor elke week startend op 30-9-2024;
+                de stormtoelage Numeriek (geheel getal) voor elke stormjaar;
+                de toelagesom Numeriek (geheel getal);
+
+            Regel toelagesom van een jutter
+                geldig altijd
+                    De toelagesom van een Jutter moet gesteld worden op %s.
+            """;
+        String total = "het totaal van zijn stormtoelage gedurende de tijd dat hij wachtplichtig is";
+        // a characteristic holds on periods of days: 100 over five days around 1 October is 6090/4453
+        refused(model.formatted(total), "RGS-370", unbounded(0));
+        passes(model.formatted("(" + total + ") rekenkundig afgerond op 0 decimalen"));
+        // the same total without a clip: the case lays every segment on the walls of the storm year
+        passes(model.formatted("het totaal van zijn stormtoelage"));
+        // on the day grid every bound is a day, and no segment holds a part of a period
+        passes(model.replace("voor elke stormjaar", "voor elke dag").formatted(total));
+    }
+
+    /** The negative wf023-precision-partial-unit-written; {@code %s} stands where the total stands among the rules. */
+    private static final String WACHT = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
+            de wachttoelage Numeriek (geheel getal) voor elke maand;
+            de wachtsom Numeriek (geheel getal);
+            de vrije wachtsom Numeriek (getal);
+
+        %sRegel wachttoelage van een jutter
+            geldig altijd
+                De wachttoelage van een Jutter moet gesteld worden op 30 indien hij wachtplichtig is.
+        %s""";
+
+    // wf023-precision-partial-unit-written
+    @Test void the_total_of_a_timeline_a_rule_writes_can_split_a_period_of_the_grid() {
+        String total = """
+            Regel wachtsom van een jutter
+                geldig altijd
+                    De wachtsom van een Jutter moet gesteld worden op %s.
+
+            """;
+        String plain = total.formatted("het totaal van zijn wachttoelage");
+        // the rule writes 30 on the days a Jutter is wachtplichtig, so a part of a month counts by its days
+        refused(WACHT.formatted("", "\n" + plain), "RGS-370", unbounded(0));
+        // the writer may stand after the total: the gate is judged again once every writer has registered
+        refused(WACHT.formatted(plain, ""), "RGS-370", unbounded(0));
+        passes(WACHT.formatted(total.formatted("(het totaal van zijn wachttoelage) rekenkundig afgerond op 0 decimalen"), ""));
+        passes(WACHT.formatted(total.replace("De wachtsom", "De vrije wachtsom").formatted("het totaal van zijn wachttoelage"), ""));
+    }
+
+    /** {@code %s} is the grid of the peilstand, {@code %s} its rule, {@code %s} the clip of the total. */
+    private static final String PEIL = """
+        Tijdlijn het stormjaar heeft tijdvakken van een jaar startend op dag 1 van maand 10;
+
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
+            de peilstand Numeriek (geheel getal) voor %s;
+            de wachtvergoeding Numeriek (geheel getal) voor elke maand;
+            de jaarpremie Numeriek (geheel getal) voor elk jaar;
+            de peilsom Numeriek (geheel getal);
+
+        %sRegel peilsom van een jutter
+            geldig altijd
+                De peilsom van een Jutter moet gesteld worden op het totaal van zijn %s gedurende de tijd dat zijn peilstand groter is dan 10.
+        """;
+
+    // wf023-precision-partial-unit-compared-finer, -compared-written, -compared-other-start
+    @Test void a_clip_by_a_comparison_cuts_on_walls_where_the_compared_timeline_fits_the_grid() {
+        String writer = """
+            Regel peilstand van een jutter
+                geldig altijd
+                    De peilstand van een Jutter moet gesteld worden op 20 indien hij wachtplichtig is.
+
+            """;
+        // corpus/golden/jutterswet-peilwacht: both timelines monthly, the case lays both on the walls of the month
+        passes(PEIL.formatted("elke maand", "", "wachtvergoeding"));
+        // a year of the calendar is twelve months, so a clip by a yearly timeline cuts on walls of the month
+        passes(PEIL.formatted("elk jaar", "", "wachtvergoeding"));
+        refused(PEIL.formatted("elke dag", "", "wachtvergoeding"), "RGS-370", unbounded(0));
+        refused(PEIL.formatted("elke maand", writer, "wachtvergoeding"), "RGS-370", unbounded(0));
+        refused(PEIL.formatted("elke stormjaar", "", "jaarpremie"), "RGS-370", unbounded(0));
+        // a clip by a characteristic of the month: its periods are days
+        refused(PEIL.formatted("elke maand", "", "wachtvergoeding").replace("zijn peilstand groter is dan 10", "hij wachtplichtig is"),
+                "RGS-370", unbounded(0));
+    }
+
+    // corpus/golden/jutterswet-keurlast
+    @Test void the_filter_of_a_fold_over_a_set_selects_members_and_cuts_nothing() {
+        passes("""
+            Eenheidsysteem Munt
+                de euro (mv: euros) EUR €
+
+            Eenheidsysteem Keurtijd
+                de maand mnd
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                de keurlast Numeriek (geheel getal) met eenheid €;
+
+            Objecttype de Vondst (mv: Vondsten)
+                het keurtarief (mv: keurtarieven) Numeriek (geheel getal) met eenheid €/mnd voor elke maand;
+                is gekeurd kenmerk (bijvoeglijk);
+
+            Feittype keuring
+                de keurende jutter Jutter
+                de vondst (mv: vondsten) Vondst
+            Eén keurende jutter keurt meerdere vondsten
+
+            Regel keurlast van een jutter
+                geldig altijd
+                    De keurlast van een Jutter moet berekend worden als het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn.
+            """);
+    }
+
     @Test void a_sum_across_units_is_bound_in_the_unit_that_bounds_it_best() {
         String model = """
             Eenheidsysteem Termijn

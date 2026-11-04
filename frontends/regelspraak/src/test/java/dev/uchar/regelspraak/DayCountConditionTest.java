@@ -346,13 +346,13 @@ class DayCountConditionTest {
         RegelSpraakModel m = clip("""
             Regel wachtsom van een jutter
                 geldig altijd
-                    De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn vaartocht gestremd is).
+                    De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn vaartocht gestremd is) rekenkundig afgerond op 0 decimalen.
 
             Regel stilwachtsom van een jutter
                 geldig altijd
                     De stilwachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij aan alle volgende voorwaarden voldoet:
                     - hij wachtplichtig is
-                    - zijn leeftijd is groter dan 18).
+                    - zijn leeftijd is groter dan 18) rekenkundig afgerond op 0 decimalen.
             """);
         assertTrue(m.diagnostics.isEmpty(), m.diagnostics::toString);
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
@@ -364,7 +364,7 @@ class DayCountConditionTest {
         RegelSpraakModel m = clip("""
             Regel wachtsom van een jutter
                 geldig altijd
-                    De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is).
+                    De wachtsom van een Jutter moet gesteld worden op (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat hij wachtplichtig is) rekenkundig afgerond op 0 decimalen.
             """);
         assertTrue(m.diagnostics.isEmpty(), m.diagnostics::toString);
         String c = IrEmitter.emit(m).replaceAll("\\s+", "");
