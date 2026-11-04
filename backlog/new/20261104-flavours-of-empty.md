@@ -15,7 +15,12 @@ bekend is. Misschien zijn er meer soorten (niet aangeleverd, niet van toepassing
 ## Goal
 
 Een voorstel (`spec/proposals/`) dat de soorten afwezigheid opsomt die regelgeving en uitvoeringspraktijk onderscheiden, met per soort: of
-RegelSpraak, ALEF, Catala, DMN/FEEL, OpenFisca en de werkbank-regelsets haar kennen en hoe; wat ze met de semantiek van uchar zou doen
+RegelSpraak, ALEF en de werkbank-regelsets haar kennen en hoe, en vooral hoe de gevestigde, formeel gefundeerde regeltalen het doen (de
+eigenaar wil niet alleen ALEF zien): Catala (default logic, optietypes), DMN/FEEL (`null`, S-FEEL), answer set programming (`not p` als
+niet afleidbaar tegenover de klassieke negatie `-p` als bekend onwaar; s(CASP)), Datalog en Prolog (negation as failure, de gesloten
+wereld), SQL (`NULL` en driewaardige logica), de logica van Kleene en Łukasiewicz, LegalRuleML en LKIF (open textuur, weerlegbaarheid),
+L4, OpenFisca, en wat de literatuur over rules as code verder als gevestigd noemt. ALEF meet je in alle vier de routes met `alef-bridge`
+(`/Users/yeb/Developer/uchar-dev/alef-bridge`); maak daar zo nodig een kaart. Per soort ook wat ze met de semantiek van uchar zou doen
 (ch. 1 leeg, ch. 3.1 een gat, ch. 3.11 en 5.7 het schrijven, ch. 7 defaults, het §9.5-kanaal); en een aanbeveling: welke soorten de IR
 moet dragen, en of een regel er een moet kunnen schrijven. Normvragen naar de eigenaar.
 
