@@ -701,20 +701,17 @@ class TmsAllocationWitnessTest {
     // ---------------- H: a second writer of a target ----------------
 
     /**
-     * An allocation whose target another form writes is refused by name, never computed beside it: a computing rule and
-     * an initialisation on the share target are well-formed, and this branch does not carry them beside an allocation
-     * yet; two allocations on one target are ill-formed (WF-026). The case pins the share the allocation writes, 100
-     * (pot 100, J1 the only recipient, weight 1), beside a consistent channel. Measured 2026-10-09: the verifier passes
-     * the first two documents and refuses the third, "WF-026 FAIL /rules/allocations/0/versions/0: two allocations write
-     * target (Berger, bergingsaandeel)". The reference interpreter passes the initialisation pair (2 expectations), the
-     * share replacing the initialisation's 5, and fails the same case with 5 pinned, "MISMATCH: J1.bergingsaandeel =
-     * 100, expected 5". It faults the rule pair before any expectation, two writers that disagree as ch. 5.7 has them:
-     * "two writers of one target disagree: rule "bergingsaandeel van een berger" writes 5 and allocation "verdeel de
-     * opbrengst naar rato" writes 100 to the attribute bergingsaandeel of J1, a Berger". The ASP runner derives both
-     * values in both pairs, "MISMATCH: J1.bergingsaandeel = [5;100], expected 100" beside the initialisation and
-     * "[100;5]" beside the rule, a fault of that runner recorded with
-     * {@code 20261009-clingo-gemaakt-lid-met-twee-waarden}. Both runners pass the two allocations (2 expectations), whose
-     * values agree. Red before the change: all three on the refusal of the allocation as such.
+     * An allocation whose target another form writes stands in the target's stack (RUNTIME-SEMANTICS ch. 7.8): a
+     * computing rule is a writer of its rank, so the two that write one object with different values are the fault of
+     * ch. 5.7, and an initialisation is the lowest of the stack, whose guard reads the share; two allocations on one
+     * target are ill-formed (WF-026). The case pins the share the allocation writes, 100 (pot 100, J1 the only
+     * recipient, weight 1), beside a consistent channel. Measured 2026-10-09: the verifier passes the first two
+     * documents and refuses the third, "WF-026 FAIL /rules/allocations/0/versions/0: two allocations write target
+     * (Berger, bergingsaandeel)". The reference interpreter passes the initialisation pair (2 expectations), the share
+     * replacing the initialisation's 5, and faults the rule pair before any expectation, two writers that disagree as
+     * ch. 5.7 has them: "two writers of one target disagree: rule "bergingsaandeel van een berger" writes 5 and
+     * allocation "verdeel de opbrengst naar rato" writes 100 to the attribute bergingsaandeel of J1, a Berger". This
+     * branch gives the same: the fault on the rule pair and 100 beside the initialisation.
      */
     static final String H_RULE = computingRule("bergingsaandeel van een berger", "BEREKENING", "Berger",
             "bergingsaandeel", number("5"), "null");
@@ -727,19 +724,18 @@ class TmsAllocationWitnessTest {
                 List.of(value("J1", "bergingsaandeel", "100"), consistent()));
     }
 
-    @Test void h_a_second_writer_of_a_target_is_refused_loudly() throws Exception {
+    @Test void h_a_second_writer_of_a_target_stands_in_its_stack() throws Exception {
         JsonNode caseDocument = hCase();
         Map<String, String> outcomes = new LinkedHashMap<>();
         outcomes.put("regel", play(document(List.of(H_RULE), List.of(D_PROPORTIONAL), List.of()), caseDocument));
         outcomes.put("initialisatie", play(document(List.of(H_INITIALISATION), List.of(D_PROPORTIONAL), List.of()), caseDocument));
         outcomes.put("twee verdelingen", play(document(List.of(), List.of(D_PROPORTIONAL, D_EQUAL), List.of()), caseDocument));
-        String beside = "Excluded: transpiler SKIP: verdeling: verdeel de opbrengst naar rato — een verdeling naast de"
-                + " regel \"bergingsaandeel van een berger\" op het attribuut 'bergingsaandeel' van Berger: een verdeling"
-                + " naast een rekenende regel of een initialisatie op één doel; deze tak draagt deze vorm"
-                + " nog niet";
         Map<String, String> expected = new LinkedHashMap<>();
-        expected.put("regel", beside);
-        expected.put("initialisatie", beside);
+        expected.put("regel", "WritersConflict: geen fixpunt: twee schrijvers van één doel geven verschillende waarden"
+                + " — de regel \"bergingsaandeel van een berger\" schrijft 5 en de regel \"verdeel de opbrengst naar"
+                + " rato\" schrijft 100 in het attribuut bergingsaandeel van J1, een Berger; divergentie is een fout"
+                + " (RUNTIME-SEMANTICS ch. 5.7)");
+        expected.put("initialisatie", "gespeeld");
         expected.put("twee verdelingen", "Excluded: transpiler SKIP: verdeling: verdeel de opbrengst naar rato — twee"
                 + " verdelingen schrijven het attribuut 'bergingsaandeel' van Berger (ook \"verdeel de opbrengst gelijk\"):"
                 + " een doel heeft hoogstens één verdeling (WF-026)");

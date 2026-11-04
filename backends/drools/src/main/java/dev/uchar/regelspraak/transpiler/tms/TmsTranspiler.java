@@ -272,6 +272,8 @@ public final class TmsTranspiler {
      *  fixpoint takes, of writers that agree, the value of the first ({@link WritersConflict#inDocumentOrder}). A
      *  list, so that a plan carries the order itself and a DRL text can spell it. */
     private final List<String> documentOrder = new ArrayList<>();
+    /** The members an allocation writes, its share target or its rest ({@link #allocationWriters}). */
+    private final Set<ElementKey> allocationTargets = new LinkedHashSet<>();
     /** The object types of the document in its order ({@link #types}), and at the same place the simple name of each
      *  one's bean class (the one {@link #beanClass} loads): a sentence names an object by its own type. By name, so
      *  that building it loads no class. */
@@ -3238,8 +3240,9 @@ public final class TmsTranspiler {
 
     /**
      * The rules of {@link #differenceRule}, one per attribute on which two writers can stand at the fixpoint on one
-     * object: two or more computing rules. An initialisation beside a computing rule needs none: its guard keeps it from
-     * standing beside the rule's value, and the rule writes nothing for a computed leeg.
+     * object: two or more computing rules, or a computing rule and an allocation, writers of one rank of the target's
+     * stack (RUNTIME-SEMANTICS ch. 7.8). An initialisation beside them needs none: its guard keeps it from standing
+     * beside a writer's value, and a writer writes nothing for a computed leeg.
      */
     private List<RulePlan> differenceRules() {
         List<RulePlan> out = new ArrayList<>();
@@ -3247,7 +3250,8 @@ public final class TmsTranspiler {
             Member member = derived.get(e.getKey());
             // no writer of the attribute was lowered: the manifest names the refused forms, and the build fails on them
             if (member == null) continue;
-            if (e.getValue().size() > 1) out.add(differenceRule(member));
+            if (e.getValue().size() + (allocationTargets.contains(e.getKey()) ? 1 : 0) > 1)
+                out.add(differenceRule(member));
         }
         return out;
     }
@@ -3813,21 +3817,21 @@ public final class TmsTranspiler {
     }
 
     /**
-     * Refuses the allocation {@code v} where another form writes the attribute {@code member} that it writes on
-     * {@code type}, its share target or its rest, on an instance it writes too: on {@code type}, an ancestor or a
-     * descendant ({@link #related}), read per concrete type as WF-026 and WF-050 read it, so a form on a sister subtype
-     * does not count. Another allocation, not a version of {@code v}, is ill-formed beside it (WF-026), and so is a
-     * defaults group (WF-050). A rule beside it is well-formed, and refused until this branch carries it: a computing
-     * rule is a second equation of the target, whose value must agree at the fixpoint (RUNTIME-SEMANTICS ch. 5.7), a
-     * disagreement this branch keys on two computing rules only ({@link #differenceRule}); an initialisation is the
-     * lowest default beside the allocation (ch. 7.7), whose guard would read the allocation's shares as it reads every
-     * other writer's value, but no witness holds that pair against the reference interpreter yet. The member value an
-     * object creation sets is no writer here: it is the input of the object it makes, which a share replaces.
+     * Refuses the allocation {@code v} where another allocation or a defaults group writes the attribute {@code member}
+     * that it writes on {@code type}, its share target or its rest, on an instance it writes too: on {@code type}, an
+     * ancestor or a descendant ({@link #related}), read per concrete type as WF-026 and WF-050 read it, so a form on a
+     * sister subtype does not count. Another allocation, not a version of {@code v}, is ill-formed beside it (WF-026),
+     * and so is a defaults group (WF-050). A rule beside it stands in the target's stack (RUNTIME-SEMANTICS ch. 7.8): a
+     * computing rule is a writer of the allocation's rank, a second equation of the target whose value must agree at
+     * the fixpoint (ch. 5.7, {@link #differenceRule} over the {@link Value}s of both), and an initialisation is the
+     * lowest of the stack, whose guard reads the allocation's shares as it reads every other writer's value. The member
+     * value an object creation sets is no writer here: it is the input of the object it makes, which a share replaces.
+     * The member is recorded as written by an allocation ({@link #allocationTargets}).
      */
     private void allocationWriters(ResolvedAllocation v, ObjectType type, Member member) {
         ElementKey el = member.key();
         String own = ProducerConsumer.baseName(v.name());
-        Set<String> allocations = new LinkedHashSet<>(), groups = new LinkedHashSet<>(), rules = new LinkedHashSet<>();
+        Set<String> allocations = new LinkedHashSet<>(), groups = new LinkedHashSet<>();
         for (ResolvedAllocation o : model.allocations) {
             if (o.name() != null && ProducerConsumer.baseName(o.name()).equals(own)) continue;
             boolean writes = o.targetType() != null && o.targetAttribute() != null && related(o.targetType(), type)
@@ -3847,14 +3851,7 @@ public final class TmsTranspiler {
         }
         if (!groups.isEmpty())
             throw new Refusal(DroolsCode.ALLOCATION_BESIDE_DEFAULTS_GROUP.reason("groups", String.join(", ", groups), "attribute", member.name(), "objectType", type.name));
-        for (ResolvedRule r : model.resolvedRules)
-            if (r.kind() != ResolvedRule.Kind.KENMERKTOEKENNING
-                    && r.target() instanceof Expr.AttributeReference d && d.objectType() != null && d.attribute() != null
-                    && related(d.objectType(), type)
-                    && ProducerConsumer.elementOf(d.objectType(), d.attribute(), false).equals(el))
-                rules.add("\"" + nameOf(r.name()) + "\"");
-        if (!rules.isEmpty())
-            throw new Refusal(DroolsCode.ALLOCATION_BESIDE_COMPUTING_RULE.reason("rules", String.join(", ", rules), "attribute", member.name(), "objectType", type.name));
+        allocationTargets.add(el);
     }
 
     /**

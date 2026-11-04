@@ -163,7 +163,7 @@ public enum DroolsCode {
     ALLOCATION_NON_NUMERIC_MEMBER("DROOLS-139", Kind.REFUSAL, "allocation-non-numeric-member", "role,attribute,declarant,datatype", null),
     TWO_ALLOCATIONS_WRITE_TARGET("DROOLS-140", Kind.CONTRACT, "two-allocations-write-target", "attribute,objectType,allocations", null),
     ALLOCATION_BESIDE_DEFAULTS_GROUP("DROOLS-141", Kind.CONTRACT, "allocation-beside-defaults-group", "groups,attribute,objectType", null),
-    ALLOCATION_BESIDE_COMPUTING_RULE("DROOLS-142", Kind.REFUSAL, "allocation-beside-computing-rule", "rules,attribute,objectType", null),
+    ALLOCATION_BESIDE_COMPUTING_RULE("DROOLS-142", Kind.RETIRED, "allocation-beside-computing-rule", "rules,attribute,objectType", null),
     CONNECTING_ROLE_UNDECLARED("DROOLS-143", Kind.CONTRACT, "connecting-role-undeclared", "factType,role", null),
     ALLOCATION_SHARED_BEAN_FIELD("DROOLS-144", Kind.LIMIT, "allocation-shared-bean-field", "recipientRole,sourceRole", null),
     ROLE_WITHOUT_BEAN_FIELD("DROOLS-145", Kind.LIMIT, "role-without-bean-field", "reason", null),
