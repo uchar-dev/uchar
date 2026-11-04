@@ -252,7 +252,28 @@ missing line makes `make gates` exit non-zero. Current gates:
    translates every corpus case to ASP-Core-2 and clingo's stable model
    must match the same absolute expectations gate 5 pins for `ref/`
    (ref ≡ Clingo over the corpus, anchored to hand-written values); an
-   empty case set is a failure, never silently green. It also runs the
+   empty case set is a failure, never silently green. Played is the
+   default. A golden whose form the ASP encoding does not carry stands by
+   name in the reason-carrying list `EXPECTED_CHANNEL` IN THE SCRIPT,
+   `<golden>|CLINGO-###|<reason>`, and refuses on every case with that
+   code at the head of the runner's report (`TRANSLATION FAULT:
+   CLINGO-032: …`, or `CLINGO-031: clingo: UNSATISFIABLE — …` for a guard
+   at solving), a code of `backends/clingo/codes.tsv` of the kind
+   `refusal` or `limit`; a `fallback` code is named by no pin, as in gate
+   8. The gate compares the code and fails by golden name on a golden
+   that refuses without a line, on a line whose golden plays every case,
+   refuses with another code or has no case file (stale in both
+   directions), and on a golden whose cases partly play and partly
+   refuse. A case that fails without a register code at its head, with an
+   EF code, with two codes or with a mismatch fails whether or not its
+   golden is listed: only a refusal of the backend is listable. The list
+   refuses a golden named twice, a line without a reason and a code that
+   is no refusal or limit of the register, and the judge passes eighteen
+   rows of its own before it judges the corpus. The list has no floor: it
+   is name-carrying and held in both directions, and the count of
+   replayed cases is the case set gate 5 floors. It names
+   `anchor/jutterswet-verzuimrente-dagen` (CLINGO-032, the calendar total
+   outside a rounding, `backends/clingo/README.md` [V6]). It also runs the
    backend's own unit suite — the normalisation fault modes no corpus
    witness can exercise — demanding its check-count line and holding
    that count to a floor; an un-run or shrunken suite is a silent green,
@@ -562,7 +583,9 @@ missing line makes `make gates` exit non-zero. Current gates:
     transpiler branches (the exec-model gate-12 path and, since
     2026-09-04, the DRL-text branch behind the runner's own flag — since
     2026-10-14 the second rendering of the same analysis) MUST all
-    reproduce the pinned, untwisted outcomes — consumers
+    reproduce the pinned, untwisted outcomes (for a golden in gate 6's
+    refusal channel, clingo's refusal of the untouched run, byte for
+    byte) — consumers
     derive units from declarations and the effective-type law
     (`RUNTIME-SEMANTICS.md` §2.10), never from the wire annotation.
     Each leg is compared against its OWN untouched status line. Since

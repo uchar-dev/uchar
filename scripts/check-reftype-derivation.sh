@@ -887,8 +887,9 @@ mention() {
 # or `ERROR <detail>`. Each leg compares the line of a run on a changed copy with the line of the run on the
 # untouched ir.json, so two runs whose JVMs both crashed, were killed or did not start would compare equal,
 # empty against empty. An untouched run that ends in any other line therefore fails the gate by golden, leg
-# and executor, and the leg compares nothing with it. ref and clingo need no such check: the legs judge them
-# by their exit status, and a process that crashed, was killed or did not start does not end with 0.
+# and executor, and the leg compares nothing with it. ref needs no such check: the legs judge it by its exit
+# status, and a process that crashed, was killed or did not start does not end with 0. clingo is judged the
+# same way, except on a golden in gate 6's refusal channel (clingo_same below).
 drools_status() {
     case $1 in
         "PLAYED "*)
@@ -901,6 +902,21 @@ no_status() {   # <golden> <leg> <executor> <line>
     printf "FAIL: %s — the untouched run of %s in the %s leg ends in '%s', no status line of DroolsBackendMain (PLAYED, FAIL, EXCLUDE, ERROR): its JVM crashed, was killed or did not start\n" \
         "$1" "$3" "$2" "$4" >&2
     status=1
+}
+
+# clingo on a changed copy gives the answer it gives on the untouched ir.json. That answer is exit 0 where
+# gate 6 pins the golden as played. For a golden in gate 6's refusal channel it is a refusal with a register
+# code at the head of the report (`TRANSLATION FAULT: CLINGO-032: …`, `CLINGO-031: clingo: …`), and the copy
+# must give that report byte for byte. An untouched run that ends in anything else is no answer to
+# reproduce (two runs that both crashed would compare equal), so the copy then fails as a non-zero exit.
+clingo_same() {   # <untouched ir.json> <changed copy> <case>; the copy's report in $report_line
+    report_line=$("$RUNNER_CLINGO" "$2" "$3" 2>&1) && return 0
+    untouched=$("$RUNNER_CLINGO" "$1" "$3" 2>&1) && return 1
+    case $untouched in
+        "TRANSLATION FAULT: CLINGO-"[0-9][0-9][0-9]": "*|"CLINGO-"[0-9][0-9][0-9]": clingo: "*) ;;
+        *) return 1 ;;
+    esac
+    [ "$untouched" = "$report_line" ]
 }
 
 # --- monotone floors (maintainer decision 2026-09-09) --------------------------------------------
@@ -983,7 +999,8 @@ leg_twist() {
         n_twists=$((n_twists + hits_list))
 
         # ref and clingo: exit 0 on the untouched ir.json is what gates 5 and 6 pin, so the twisted
-        # run must exit 0 too. Any other outcome is the executor reading the repetition.
+        # run must exit 0 too, or, for a golden in gate 6's refusal channel, give clingo's refusal of
+        # the untouched run (clingo_same). Any other outcome is the executor reading the repetition.
         while IFS= read -r case; do
             n_checked=$((n_checked + 2))
             if ! report_line=$("$RUNNER_REF" "$tw" "$case" 2>&1); then
@@ -994,7 +1011,7 @@ leg_twist() {
                     status=1
                 fi
             fi
-            if ! report_line=$("$RUNNER_CLINGO" "$tw" "$case" 2>&1); then
+            if ! clingo_same "$ir" "$tw" "$case"; then
                 if mention "$ident" clingo; then
                     n_survivors=$((n_survivors + 1)); echo "$ident|clingo" >> "$HITS"
                 else
@@ -1090,7 +1107,7 @@ leg_vocabulary() {
                     printf 'FAIL: %s — ref answers differently on the %s copy (vocabulary leg):\n%s\n' "$case" "$variant" "$report_line" >&2
                     status=1
                 fi
-                if ! report_line=$("$RUNNER_CLINGO" "$vir" "$case" 2>&1); then
+                if ! clingo_same "$ir" "$vir" "$case"; then
                     printf 'FAIL: %s — clingo answers differently on the %s copy (vocabulary leg):\n%s\n' "$case" "$variant" "$report_line" >&2
                     status=1
                 fi
@@ -1136,7 +1153,7 @@ leg_origin() {
                 printf 'FAIL: %s — ref answers differently on the stripped copy (origin leg):\n%s\n' "$case" "$report_line" >&2
                 status=1
             fi
-            if ! report_line=$("$RUNNER_CLINGO" "$hir" "$case" 2>&1); then
+            if ! clingo_same "$ir" "$hir" "$case"; then
                 printf 'FAIL: %s — clingo answers differently on the stripped copy (origin leg):\n%s\n' "$case" "$report_line" >&2
                 status=1
             fi
@@ -1193,7 +1210,7 @@ leg_name() {
                 printf 'FAIL: %s — ref answers differently on the stripped copy (name leg):\n%s\n' "$case" "$report_line" >&2
                 status=1
             fi
-            if ! report_line=$("$RUNNER_CLINGO" "$nir" "$case" 2>&1); then
+            if ! clingo_same "$ir" "$nir" "$case"; then
                 printf 'FAIL: %s — clingo answers differently on the stripped copy (name leg):\n%s\n' "$case" "$report_line" >&2
                 status=1
             fi
