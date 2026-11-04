@@ -8350,7 +8350,7 @@ and dk_seen_days ctx : int list =
    days on which the condition faults (it reads a parameter the case does
    not bind, EF-014, or tests a day kind on another day, EF-022): no match,
    and a fault where a walk or a count reaches it, as in ref, one predicate
-   per sentence. Returns (predicate, far-predicate, lo-edge fact, hi-edge
+   per sentence, `fp(D,M)` with M the number of matching days before D. Returns (predicate, far-predicate, lo-edge fact, hi-edge
    fact, window, the fault predicates with their sentences). *)
 and dk_table ctx (name : string) :
     string * string * string * string * (int * int) * (string * string) list =
@@ -8377,7 +8377,7 @@ and dk_table ctx (name : string) :
         | exception Value.Fault { code = Some ("EF-014" | "EF-022"); text; _ } ->
             if not (Hashtbl.mem seen (d, text)) then begin
               Hashtbl.replace seen (d, text) ();
-              faults := (d, text) :: !faults
+              faults := (d, text, !rank) :: !faults
             end;
             false
       in
@@ -8422,13 +8422,13 @@ and dk_table ctx (name : string) :
         emit ctx "%s_r(0) :- #false." p
       end;
       if !fars = 0 then emit ctx "%s(0) :- #false." far;
-      let sentences = List.sort_uniq compare (List.map snd !faults) in
+      let sentences = List.sort_uniq compare (List.map (fun (_, t, _) -> t) !faults) in
       let days = List.sort compare !faults in
       let fault_preds =
         List.mapi
           (fun k text ->
             let fp = Printf.sprintf "dke%d_%d" n (k + 1) in
-            List.iter (fun (d, t) -> if t = text then emit ctx "%s(%d)." fp d) days;
+            List.iter (fun (d, t, m) -> if t = text then emit ctx "%s(%d,%d)." fp d m) days;
             (fp, text))
           sentences
       in
@@ -8468,7 +8468,7 @@ and dk_duration ctx ~subject ~subject_ot ~kind ~absolute ~(node : expr) a b =
         (fun (lo, hi) ->
           reach_guard ctx ~witness:subject ~reason ~order_reason:(reached_order_reason reason)
             (rule_reach ctx ~subject ~subject_ot node @ ba @ bb
-            @ [ Printf.sprintf "%s(%s)" fp f; Printf.sprintf "%s < %s" lo f; Printf.sprintf "%s <= %s" f hi ]))
+            @ [ Printf.sprintf "%s(%s,_)" fp f; Printf.sprintf "%s < %s" lo f; Printf.sprintf "%s <= %s" f hi ]))
         [ (ta, tb); (tb, ta) ])
     faults;
   ctx.fresh <- ctx.fresh + 1;
@@ -8530,16 +8530,16 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
      fewer days of the kind than the count lie between the start and it *)
   List.iter
     (fun (fp, reason) ->
-      let f = fresh ctx "DKF" and k = fresh ctx "DKC" in
+      let f = fresh ctx "DKF" and m = fresh ctx "DKG" and k = fresh ctx "DKC" and r = fresh ctx "DKQ" in
       List.iter
-        (fun (sign, after, before) ->
+        (fun (sign, start, ahead) ->
           reach_guard ctx ~witness:subject ~reason ~order_reason:(reached_order_reason reason)
             (rule_reach ctx ~subject ~subject_ot node @ bd @ bn
             @ [ Printf.sprintf "%s = %s(%s)" k sign n_term; Printf.sprintf "%s > 0" k;
-                Printf.sprintf "%s(%s)" fp f; after f;
-                Printf.sprintf "#count { DKX : %s(DKX,DKJ), %s } < %s" tbl (before "DKX" f) k ]))
-        [ ("", (fun f -> Printf.sprintf "%s > %s" f td), fun x f -> Printf.sprintf "%s > %s, %s < %s" x td x f);
-          ("0-", (fun f -> Printf.sprintf "%s < %s" f td), fun x f -> Printf.sprintf "%s < %s, %s > %s" x td x f) ])
+                Printf.sprintf "%s = #count { DKX : %s(DKX,DKJ), DKX %s %s }" r tbl start td;
+                Printf.sprintf "%s(%s,%s)" fp f m; ahead f m r k ]))
+        [ ("", "<=", fun f m r k -> Printf.sprintf "%s > %s, %s - %s < %s" f td m r k);
+          ("0-", "<", fun f m r k -> Printf.sprintf "%s < %s, %s - %s < %s" f td r m k) ])
     faults;
   ctx.fresh <- ctx.fresh + 1;
   let id = ctx.fresh in
@@ -8586,12 +8586,10 @@ and dk_date_plus ctx ~subject ~subject_ot ~kind ~minus ~datetime ~(node : expr) 
       let x = Printf.sprintf "dkx%d" id in
       List.iter
         (fun (fp, _) ->
-          emit ctx
-            "%s(%s) :- %s(%s,DKD,DKM), %s(DKF), DKF > DKD, #count { DKX : %s(DKX,DKJ), DKX > DKD, DKX < DKF } < DKM."
-            x subject fwd subject fp tbl;
-          emit ctx
-            "%s(%s) :- %s(%s,DKD,DKM), %s(DKF), DKF < DKD, #count { DKX : %s(DKX,DKJ), DKX < DKD, DKX > DKF } < DKM."
-            x subject bwd subject fp tbl)
+          emit ctx "%s(%s) :- %s(%s,DKD,DKM), %s(%s,DKR), %s(DKF,DKG), DKF > DKD, DKG - DKR < DKM." x subject fwd
+            subject rnk subject fp;
+          emit ctx "%s(%s) :- %s(%s,DKD,DKM), %s(%s,DKR), %s(DKF,DKG), DKF < DKD, DKR - DKG < DKM." x subject bwd
+            subject rnk subject fp)
         faults;
       [ Printf.sprintf "not %s(%s)" x subject ]
     end
