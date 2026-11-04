@@ -3795,6 +3795,7 @@ and in the READMEs of the backends.
 | 7 | **A time-dependent characteristic outside a window** | ch. 3.3, 3.10, 3.11 | The write of a characteristic is defined within a window. No meaning: periods with an open bound (EF-023), so an unconditional characteristic and a negated check outside a window. Not defined: a write without a window, two rules on one characteristic, a case-supplied timeline of a characteristic a rule writes, a navigated characteristic in the condition of the write, and a time-dependent characteristic as the operand of the point read (the case format). A defaults group on a time-dependent characteristic is ill-formed (`IR-SPEC.md` WF-086). Open: each of these. |
 | 8 | **The period window and the axis of versions** | ch. 3.10 | (a) A rule version's validity window on a temporal write mixes the selection of versions with the timeline axis; it belongs to the single-axis decision of ch. 8 (PLAN §9, decision 2), and no golden carries a validity window on a temporal rule; a defaults group's validity on a timeline target gates by the evaluation date in the same way (ch. 7.11, `WV-7.11-versie`). (b) A window in the `filter` of an `all` quantifier fold in a session without an evaluation date never matches, so the member is filtered out and the fold is vacuously waar; WF-112 is not widened to it (`corpus/golden/jutterswet-wachtvenster`, `bevoegd` in `case3-tijdvrij`). (c) A clip that cuts a bucket has no corpus carrier, because the case format pins every expected timeline to the declared grid; the alternative, a WF rule that demands bounds on the grid for a clip, is not taken. Open: (a), the reading of (b), and a case format that releases expected timelines from the grid. |
 | 9 | **The subject's own total of a case-supplied timeline** | ch. 3.6, 8.4 | It reads the asOfDate bucket, one period of the grid that holds the evaluation date, while a timeline a rule writes is totalled whole, so the meaning of "het totaal van zijn X" depends on who wrote X. Open: whether the own total of a case timeline reads the whole timeline, as every other timeline is read over all time, which changes the case convention of ch. 8.4. |
+| 10 | **The stack of a timeline target beyond its computing rules** | ch. 3.11, 7.8 | An initialisation outside a defaults group, an allocation and the member value of a creation write a scalar target; on a timeline target each is refused by name in every executor, in the reference interpreter and the ASP backend in the words "temporal attribute … as a target: temporal writes are not implemented". The initialisation default of a defaults group is read per day (ch. 7.11). Open: their reading per day in the stack of ch. 7.8. |
 
 ---
 
@@ -8295,8 +8296,8 @@ stack is read per day (ch. 3.3): a writer decides the days on which its timeline
 reads a value, the input stands on every other day, and two writers that decide
 one day with different values are EF-016 (ch. 3.11, 5.7). An initialisation, an
 allocation and the member value of a creation write a scalar target; on a
-timeline target each is refused by name, and the initialisation default of a
-defaults group is read per day (ch. 7.11).
+timeline target each is refused by name (ch. 3.12 row 10), and the
+initialisation default of a defaults group is read per day (ch. 7.11).
 
 Worked example `WV-7.8-stapel` (absolute; `ref/test/` verbatim, the golden
 `jutterswet-invoer-naast-initialisatie` and the documents of
