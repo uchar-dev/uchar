@@ -258,11 +258,6 @@ EXCLUDE_KNOWN=(
   #       gate is what carries this: with a SECOND computing rule on the target the v0 erase is unretired and
   #       a leeg source still wipes the input (ref agrees) — pinned by StandingScalarNormWitnessTest, dual-branch since 2026-09-18 (BothBranches), with
   #       the version flank beside it.
-  "jutterswet-getijdenwacht|12a: naar rato; Drools volgt in stap B. The temporal total counts a part of a unit of its grid by its days (RUNTIME-SEMANTICS ch. 3.6; maintainer decision 2026-11-03, spec/proposals/IMPLICIT-TIME.md 12a); measured 2026-11-03 (card total-over-partial-unit, step A): both branches count whole units per clipped fragment, so the two halves of J4's year total 0 where the pin is 10"
-  "jutterswet-kadetarief|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 on every route (RUNTIME-SEMANTICS ch. 3.6; spec/proposals/IMPLICIT-TIME.md 12c); measured 2026-11-03 (card total-over-partial-unit, step A): both branches total H2's absent havengeldtarief leeg"
-  "jutterswet-penningjaar|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 on every route (RUNTIME-SEMANTICS ch. 3.6; spec/proposals/IMPLICIT-TIME.md 12c); measured 2026-11-03 (card total-over-partial-unit, step A): both branches total J3's absent aantal aangemelde vondsten leeg"
-  "jutterswet-tempototaal|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 on every route (RUNTIME-SEMANTICS ch. 3.6; spec/proposals/IMPLICIT-TIME.md 12c); measured 2026-11-03 (card total-over-partial-unit, step A): both branches total J2's absent bewaarvergoeding per maand leeg"
-  "jutterswet-vast-startpunt|12a: naar rato; Drools volgt in stap B; 12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The temporal total counts a part of a unit of its grid by its days, and the total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6; spec/proposals/IMPLICIT-TIME.md 12a, 12c); measured 2026-11-03 (card total-over-partial-unit, step A): both branches give toelagesom 0.00 in case 1 (pin 1.37) and total the absent maandtoelage, weektoelage and kwartaaltoelage leeg in cases 4 and 6"
 )
 
 known_reason() { local n="$1"; for e in "${EXCLUDE_KNOWN[@]:-}"; do [ -n "$e" ] || continue; [ "${e%%|*}" = "$n" ] && { echo "${e#*|}"; return 0; }; done; return 1; }
@@ -312,10 +307,8 @@ EXPECTED_CHANNEL=(
   "jutterswet-aanspraakherziening|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
   "jutterswet-dossierrecht-catala|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-dossierspelling|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
-  "jutterswet-getijdenwacht|DIVERGE|12a: naar rato; Drools volgt in stap B (EXCLUDE_KNOWN)"
   "jutterswet-halfstokspelling|EXCLUDE DROOLS-054|bean name collision: the characteristic 'half stok' of Sein falls on the bean property Sein.halfStok of the attribute 'half-stok', has no field of its own, and a rule writes it. Measured 2026-09-28 before the refusal: both branches played the golden and answered two wrong values (a rouwmelding of 1 where ref and clingo keep it leeg, and the characteristic read from the registration), so its pins are a ref = clingo pair"
   "jutterswet-havenrooster|EXCLUDE DROOLS-179|transpiler SKIP: a duration in day kinds whose day kind 'havendag' reads the parameter 'openingsdatum' in its definition, which the branch does not read in a day-kind definition (WF-031 admits it). The destructive lowering refused the same rule until card tms-omschakeling (2026-10-10): its day-kind predicate compiler (kern.DayKinds) carries no PARAMETER operand. Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
-  "jutterswet-kadetarief|DIVERGE|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B (EXCLUDE_KNOWN)"
   "jutterswet-kamerheffing-catala|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
   "jutterswet-kamerhuishouden-catala|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
   "jutterswet-ketenkwantor|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Vondst) has no bean field: the many-to-many 'berging' of anchor/jutterswet-bootberging and jutterswet-muntketen above. Measured 2026-10-20 (card frontend-kwantor-over-een-pad) in both branches, same sentence: since that card the loader carries a QuantifierFold's sourcePath and both branches plan it as a value fold's, so the refusal moved one layer deeper, as the pin of 2026-09-22 inferred; until then the loader refused the range itself (DROOLS-026, now retired). The quantifier over a path plays where the bean model carries the steps: jutterswet-dringende-melding. Its flat-count pins are a ref = clingo pair"
@@ -330,15 +323,12 @@ EXPECTED_CHANNEL=(
   "jutterswet-meldplichtspoor|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
   "jutterswet-meldtermijnen|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-penningbeschikking-catala|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
-  "jutterswet-penningjaar|DIVERGE|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B (EXCLUDE_KNOWN)"
   "jutterswet-penningstaffel-catala|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-postenheffing|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-premiespelling|EXCLUDE DROOLS-070|bean name collision: the object types 'RechtOpPremie' and 'Recht op premie' fall on one fact class, dev.uchar.regelspraak.facts.RechtOpPremie. Measured 2026-09-28 before the refusal: both branches crashed compiling the generated beans (cyclic inheritance), so its pins are a ref = clingo pair"
-  "jutterswet-tempototaal|DIVERGE|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B (EXCLUDE_KNOWN)"
   "jutterswet-vaarwaterspelling|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
-  "jutterswet-vast-startpunt|DIVERGE|12a: naar rato; Drools volgt in stap B; 12c: een afwezige tijdlijn telt 0; Drools volgt in stap B (EXCLUDE_KNOWN)"
   "jutterswet-waarderingsinvoer|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "synth3-armlichaam|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
   "synth3-besluitschakel|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
@@ -1538,7 +1528,12 @@ EXPECTED_CHANNEL=(
 # grid by its days and totals an absent timeline 0 (RUNTIME-SEMANTICS ch. 3.6; IMPLICIT-TIME 12a, 12c), which neither
 # branch does yet, so the five goldens whose totals changed (jutterswet-getijdenwacht, jutterswet-kadetarief,
 # jutterswet-penningjaar, jutterswet-tempototaal, jutterswet-vast-startpunt) are value divergences until step B.
-EXPECTED_PLAYED=323
+# 328 since the card total-over-partial-unit (step B, 2026-11-04): both branches measure a segment of the total in
+# units of its grid, a part of a unit by its days, on the calendar or from a fixed start point, the calendar over the
+# whole segment, and total an absent timeline 0 on every route, a member of the per-element fold included
+# (RUNTIME-SEMANTICS ch. 3.6), so the five play again: jutterswet-getijdenwacht, jutterswet-kadetarief,
+# jutterswet-penningjaar, jutterswet-tempototaal and jutterswet-vast-startpunt, with PLAYED 1, 1, 1, 1 and 7.
+EXPECTED_PLAYED=328
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

@@ -70,35 +70,9 @@ fail() { echo "check-readings: FAIL — $*" >&2; exit 1; }
 
 # --- the reason-carrying lists (each fails when stale, in both directions) -----------------------------
 # A golden case file whose trace and readings differ, per branch: '<golden>/<case file>|<branch>|<reason>',
-# branch `exec` or `drl`. The temporal total counts a part of a unit by its days and totals an absent timeline 0
-# (IMPLICIT-TIME 12a, 12c), which the backend does not do until card total-over-partial-unit step B: on the case
-# files of the five goldens gate 12 lists as DIVERGE for it the totals differ, and in jutterswet-muntbewaring and
-# jutterswet-tempovouw a member without a timeline contributes 0 to the per-element fold in the trace.
+# branch `exec` or `drl`. Empty since the gate began (2026-10-21): on every case file both branches read,
+# the two executors agree.
 DEVIATIONS=(
-  "jutterswet-getijdenwacht/case.json|drl|12a: naar rato; Drools volgt in stap B. The clip counts the two parts of J4's year by their days, 10 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12a), where the backend counts whole units per fragment, 0"
-  "jutterswet-getijdenwacht/case.json|exec|12a: naar rato; Drools volgt in stap B. The clip counts the two parts of J4's year by their days, 10 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12a), where the backend counts whole units per fragment, 0"
-  "jutterswet-kadetarief/case.json|drl|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-kadetarief/case.json|exec|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-muntbewaring/case.json|drl|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. A member without a timeline contributes its total 0 to the per-element fold, which the trace records as a contributor (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c); the backend leaves the member out, and the fold's value is the same"
-  "jutterswet-muntbewaring/case.json|exec|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. A member without a timeline contributes its total 0 to the per-element fold, which the trace records as a contributor (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c); the backend leaves the member out, and the fold's value is the same"
-  "jutterswet-penningjaar/case.json|drl|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of J3's absent aantal aangemelde vondsten is 0, and so is its read in the drempel condition (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c); the backend reads leeg in both"
-  "jutterswet-penningjaar/case.json|exec|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of J3's absent aantal aangemelde vondsten is 0, and so is its read in the drempel condition (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c); the backend reads leeg in both"
-  "jutterswet-tempototaal/case.json|drl|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-tempototaal/case.json|exec|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-tempovouw/case.json|drl|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. A member without a timeline contributes its total 0 to the per-element fold, which the trace records as a contributor (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c); the backend leaves the member out, and the fold's value is the same"
-  "jutterswet-tempovouw/case.json|exec|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. A member without a timeline contributes its total 0 to the per-element fold, which the trace records as a contributor (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c); the backend leaves the member out, and the fold's value is the same"
-  "jutterswet-vast-startpunt/case1-stormjaargrens.json|drl|12a: naar rato; Drools volgt in stap B; 12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The clip counts five days of two storm years by their days, 6090/4453 rounded to 1.37 (IMPLICIT-TIME 12a), where the backend counts whole units, 0; and the totals of the absent maandtoelage, weektoelage and kwartaaltoelage are 0 (12c), where the backend reads leeg"
-  "jutterswet-vast-startpunt/case1-stormjaargrens.json|exec|12a: naar rato; Drools volgt in stap B; 12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The clip counts five days of two storm years by their days, 6090/4453 rounded to 1.37 (IMPLICIT-TIME 12a), where the backend counts whole units, 0; and the totals of the absent maandtoelage, weektoelage and kwartaaltoelage are 0 (12c), where the backend reads leeg"
-  "jutterswet-vast-startpunt/case2-heel-stormjaar.json|drl|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-vast-startpunt/case2-heel-stormjaar.json|exec|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-vast-startpunt/case3-schrikkelmaand.json|drl|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-vast-startpunt/case3-schrikkelmaand.json|exec|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-vast-startpunt/case4-geen-wacht.json|drl|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-vast-startpunt/case4-geen-wacht.json|exec|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-vast-startpunt/case5-geklemde-maand.json|drl|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-vast-startpunt/case5-geklemde-maand.json|exec|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-vast-startpunt/case6-heel-kalenderjaar.json|drl|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
-  "jutterswet-vast-startpunt/case6-heel-kalenderjaar.json|exec|12c: een afwezige tijdlijn telt 0; Drools volgt in stap B. The total of an absent timeline is 0 (RUNTIME-SEMANTICS ch. 3.6, IMPLICIT-TIME 12c), where the backend reads leeg"
 )
 # A golden whose `--readings` ends in ERROR on both branches, with the reason; its plain replay must exclude
 # it. Empty since card reading-after-refusal (2026-10-21). Until then four goldens stood here,
