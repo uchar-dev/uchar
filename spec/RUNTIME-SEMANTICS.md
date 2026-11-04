@@ -8998,14 +8998,15 @@ empty: **EF-037**, attribute `stormtoelage`, label `J7`.
 ## 9. Sum types and match
 
 *A v1 kernel extension (CONSTRUCTS row 36; design and ratified decisions:
-`spec/proposals/PHASE5B-KERNEL.md` §2). No v0 counterpart exists — the
-toolchain has no source construct that produces these forms — so this
-chapter mirrors nothing; it is normative from first writing. Node forms
-and well-formedness: IR-SPEC ch. 2.4 (`SumType`, the keuzetype family
-and its WF-087 normalisation) and ch. 4.7 (`Construct`, `Match`,
-`BinderRef`), WF-060..064. `Match` is the one node of this chapter that
-also serves the family's other wire variant, the enumeration — its
-evaluation is ch. 9.2; everything else here is sum-only.*
+`spec/proposals/PHASE5B-KERNEL.md` §2). No v0 counterpart exists, so this
+chapter mirrors nothing; it is normative from first writing. The
+RegelSpraak dialect lowers its absence markers to these forms (ch. 9.5).
+Node forms and well-formedness: IR-SPEC ch. 2.4 (`SumType`, the keuzetype
+family and its WF-087 normalisation) and ch. 4.7 (`Construct`, `Match`,
+`BinderRef`, `PayloadAccess`), WF-060..064 and WF-127. `Match` is the one
+node of this chapter that also serves the family's other wire variant,
+the enumeration — its evaluation is ch. 9.2; everything else here is
+sum-only.*
 
 ### 9.1 Constructor values
 
@@ -9159,14 +9160,133 @@ Worked (the anchor's condition rules — `bevoorschot` iff `beschikking`
   union (input attributes, parameters, expectations); the loaders
   fail fast on an undeclared constructor or a payload against the
   wrong datatype (the WF-059/WF-018 backstop, widened).
-- **Timelines — recorded flank, not yet carried.** The value model
-  admits a sum-typed temporal attribute and the case format can write
-  one; no anchor exercises it, and the ASP case emission does not yet
-  carry constructor-valued segments (it faults loudly). Until a case
-  wants one, temporal sum carriage is a recorded OPEN in the ASP
-  inventory — never a silent divergence. Timeline *arithmetic* and
-  temporal totals stay numeric-only regardless (ch. 3.4–3.6), as for
-  text and enumeration members.
+- **Timelines.** A sum-typed temporal attribute holds a constructor
+  value per segment, in the case format as in the end state. A
+  constructor of a literal is a scalar operand of ch. 3.11, which holds
+  on every day, so a rule writes it in the periods of its condition;
+  input, writers and EF-016 are read per day as for every timeline target
+  (ch. 3.11, 5.7, 7.8), and a comparison of such a timeline with a
+  constructor is a condition per period (ch. 3.10). Timeline *arithmetic*
+  and temporal totals stay numeric-only (ch. 3.4–3.6), as for text and
+  enumeration members. Corpus witness: the golden
+  `jutterswet-afwezigheidsmarkers` (ch. 9.5).
+
+### 9.5 Absence markers and the payload access
+
+*Status: proposal of the card `absence-markers` (2026-11-04), after the
+decisions of the maintainer of that day recorded in
+`spec/proposals/FLAVOURS-OF-EMPTY.md`.* The IR has one absence, leeg
+(ch. 1.1): not yet derived, or not supplied. Beside it a document may
+give an attribute **absence markers**: values without a number that a
+rule writes and that decide like a number does. **onbekend** says that
+the attribute has a value that cannot be established; **niet van
+toepassing** that it has none. A marker is a filled value: it is no
+second absence, and ch. 1.2 does not change.
+
+**The lowering.** An attribute of datatype T with markers is an
+attribute of a sum type of its own, over a domain the producer names,
+with the constructors `waarde` (payload T) and then the markers it
+admits, `onbekend` and `niet van toepassing`, as nullary constructors.
+The RegelSpraak dialect writes them on the declaration
+(`frontends/regelspraak/grammar/DIVERGENCES.md`,
+"Afwezigheidsmarkeringen"). Every rule of ch. 9.1–9.4 applies:
+
+- **Writing.** A value v is written as `Construct waarde(v)`; a leeg v
+  leaves the Construct leeg (ch. 9.1), which decides nothing (ch. 3.11).
+  A marker is written as the Construct of the marker, and decides: it
+  displaces the input (ch. 7.8, rank 1 over rank 2), it yields where a
+  defaults group puts an opgave above it (ch. 7.1), and against a writer
+  of another value on the same object, or the same day of a timeline, the
+  session faults with EF-016 (ch. 5.7, ch. 3.11).
+- **Testing a marker.** An equality with the Construct of the marker
+  (ch. 9.3): waar where the attribute holds that marker, onwaar on leeg
+  and on every other value.
+- **Reading the value.** The node `PayloadAccess(base, c)` (`IR-SPEC.md`
+  ch. 4.7) evaluates `base`, a sum-typed expression, and is the payload
+  where the value carries the unary constructor `c`, and leeg where it
+  carries another constructor or is leeg — a failed access, as a failed
+  to-one navigation is leeg (ch. 1.2). On a timeline the access is read
+  per day.
+- **Testing for a value.** A gevuld test of `PayloadAccess(X, waarde)`
+  holds where X carries a value; leeg and the markers fail it.
+
+**The reading rule.** A failed access is leeg, and plus, min and maal
+count leeg as 0 (ch. 1.2): an unknown amount would count on as nothing.
+So every `PayloadAccess` stands under a test of its own constructor —
+`IR-SPEC.md` WF-127: as the operand of a leeg or gevuld test, or after a
+gevuld test of the same access that holds as a conjunct before it (in the
+condition of its form for the form's value; earlier in the same `all` for
+a condition, whose members are read in order, ch. 5.10; in the filter of
+a fold over members for the fold's per-member positions; in the condition
+of an IfThenElse for its then branch). Under such a test the access never
+fails, and its leeg reaches no operator.
+
+**An aggregation over members with markers** reads each member's
+payload, so its filter tests that each member holds a value ("de som van
+de taxatie van alle vondsten die een waarde hebben"); the members with a
+marker are no contributors, and where no member holds a value the
+aggregation reads as over an empty source (ch. 1.2). *Normvraag, open:*
+the alternative skips the markers as leeg contributors without a filter
+in the source; this chapter takes the filter, the reading of the decision
+"wie leest, toetst eerst".
+
+**Executed.** In ref and the ASP backend: writing, testing, reading the
+value in arithmetic, comparisons and a fold over members, scalar and the
+write and the test per period. Not executed, refused by name in both: a
+`PayloadAccess` of a timeline, whose test per period is a gevuld test per
+period without a reading (ch. 3.12 row 5); the ASP backend writes a
+sum-typed timeline from a constructor of a literal only. The Drools
+backend refuses the sum type at load.
+
+Worked examples (absolute; `ref/test/` verbatim, the golden
+`jutterswet-afwezigheidsmarkers` and its red twin
+`jutterswet-afwezigheidsmarkers-botsing`). A Vondst whose `taxatie`
+(2 decimals) and `opslagkosten` (whole, for every month) carry both
+markers, with the rules "taxatie := zijn schatting", "taxatie :=
+onbekend indien hij onleesbaar is", "taxatie := niet van toepassing
+indien hij drijfhout is", "vindloon := zijn taxatie gedeeld door 10
+rekenkundig afgerond op 2 decimalen indien zijn taxatie een waarde
+heeft", "vindloon := 25,00 indien zijn taxatie onbekend is", "vindloon :=
+0,00 indien zijn taxatie niet van toepassing is", "kostbaar indien zijn
+taxatie een waarde heeft en zijn taxatie groter is dan 1000,00", for a
+Jutter "getaxeerd totaal := de som van de taxatie van alle vondsten die
+een waarde hebben", and "opslagkosten := onbekend van 01-01-2025 tot
+01-03-2025", "opslagkosten := niet van toepassing gedurende de tijd dat
+hij verkocht is", "opslagtoeslag := 7 gedurende de tijd dat zijn
+opslagkosten onbekend zijn".
+
+- `WV-9.5-payload`: the payload access to `waarde` of `waarde(300)` is
+  **300**, of `onbekend` **leeg**, of leeg **leeg**.
+- `WV-9.5-markeringen-schatting`: schatting 300,00 → taxatie
+  **waarde(300.00)**, vindloon **30,00**, not kostbaar.
+- `WV-9.5-markeringen-onbekend-verdringt-invoer`: onleesbaar, input
+  taxatie waarde(40.00) → taxatie **onbekend**, vindloon **25,00**.
+- `WV-9.5-markeringen-niet-van-toepassing`: drijfhout → **niet van
+  toepassing**, vindloon **0,00**.
+- `WV-9.5-markeringen-niets`: no input → taxatie and vindloon **leeg**.
+- `WV-9.5-markeringen-onbekend-in-de-invoer`: input taxatie onbekend →
+  **onbekend** (the rule from the schatting fires with leeg and decides
+  nothing), vindloon **25,00**.
+- `WV-9.5-markeringen-kostbaar`: schatting 2000,00 → **kostbaar**,
+  vindloon **200,00**.
+- `WV-9.5-markeringen-som-van-de-waarden`: vondsten with schatting
+  300,00, onleesbaar and schatting 100,00 → getaxeerd totaal **400,00**;
+  `-geen-waarde-in-de-som`: only the onleesbare → **leeg**.
+- `WV-9.5-markeringen-per-maand`: opslagkosten waarde(10) on 2025 in the
+  input → **onbekend** on [2025-01-01, 2025-03-01) and **waarde(10)** on
+  [2025-03-01, 2026-01-01); opslagtoeslag **7** on [2025-01-01,
+  2025-03-01). `-na-verkoop`: verkocht from 2025-06-01 as well →
+  **onbekend**, **waarde(10)** on [2025-03-01, 2025-06-01) and **niet van
+  toepassing** on [2025-06-01, 2026-01-01).
+- `WV-9.5-botsing-scalair`: onleesbaar with schatting 300,00 → **EF-016**,
+  attribute `taxatie`, label V1, the values waarde(300) and onbekend;
+  `WV-9.5-botsing-per-dag`: verkocht from 2025-02-01 → **EF-016** in
+  February 2025, attribute `opslagkosten`, the values onbekend and niet
+  van toepassing.
+- `WV-9.5-per-dag-*`: a payload access to the opslagkosten in a scalar
+  slot, and a sum over the payloads of their timelines, are refused by
+  name; `WV-9.5-kopie-van-een-tijdlijn`: a timeline of the same sum type
+  copied whole reads **onbekend**, **waarde(10)** as its source.
 
 ## 10. Folds and function values
 

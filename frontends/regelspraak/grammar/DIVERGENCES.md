@@ -2653,6 +2653,96 @@ golden itself.
 
 ---
 
+## Afwezigheidsmarkeringen — `(of onbekend)`, `(of niet van toepassing)` on an attribute
+
+Origin: the decisions of the maintainer of 2026-11-04 recorded in `spec/proposals/FLAVOURS-OF-EMPTY.md` (N1–N5), and
+the card `absence-markers`, which built it. Beside leeg, which says that no value is derived or supplied, an
+attribute may admit two markers: **onbekend** (it has a value that cannot be established) and **niet van toepassing**
+(it has none). A marker is a filled value: a rule writes it and it decides, as a number does. Official RegelSpraak
+v2.3.0 has no form for either; §12 writes `n.v.t.` only in a cell of a decision table, as a condition that does not
+apply. This extension gives the dialect one, lowered to the sum type of `spec/RUNTIME-SEMANTICS.md` ch. 9.5.
+
+### Surface syntax (additive; one optional element in an existing production)
+
+```
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (getal met 2 decimalen) (of onbekend of niet van toepassing);
+    de opslagkosten Numeriek (geheel getal) voor elke maand (of niet van toepassing);
+```
+
+Three new tokens, each a whole token with its parentheses like the opgave marker: `OF_ONBEKEND` `'(of onbekend)'`,
+`OF_NIET_VAN_TOEPASSING` `'(of niet van toepassing)'` and `OF_ONBEKEND_OF_NIET_VAN_TOEPASSING` `'(of onbekend of niet
+van toepassing)'`; the parser rule `afwezigheidsmarkering` takes one of them. It stands at the end of
+`attribuutSpecificatie`, after the optional timeline, in the place of the opgave marker: an attribute carries one of
+the two or neither, so `(of onbekend) (mag opgegeven worden)` is a syntax error, and so is a marker on a
+characteristic, whose production does not take it. The tokens reserve no word: `of`, `onbekend`, `niet`, `van` and
+`toepassing` lex as before everywhere else.
+
+A rule writes a marker as the whole value of a gelijkstelling, "… moet gesteld worden op onbekend", "… op niet van
+toepassing". A condition tests one in both registers, "zijn taxatie onbekend is" / "zijn taxatie is niet van
+toepassing", and tests for a value, "zijn taxatie een waarde heeft" / "zijn taxatie heeft een waarde"; the grammar
+reads each as the characteristic check of an expression it already parses, and the resolver reads it as a test of the
+markers where the expression is an attribute with markers. An aggregation over members selects the members that hold
+a value with the subselection "die een waarde hebben": "de som van de taxatie van alle vondsten van de Jutter die een
+waarde hebben".
+
+### Inertness — measured, not assumed
+
+None of the 292 RegelSpraak sources of the corpus and the parity zone writes `(of ` (counted 2026-11-04), and gates 10
+and 11 re-emit every one of them byte for byte with the extension in the frontend. A word of the markers in a
+document without markers reads as before: "hij onbekend is" stays the check of a characteristic named onbekend, and
+an attribute named waarde stays that attribute (witness: `AbsenceMarkerTest.without_markers_the_words_are_names`).
+
+### Lowering (resolver and emitter)
+
+| Piece | Lowered to |
+|---|---|
+| the attribute X of T with markers M | an attribute whose datatype is a `SumType` over the domain `X van een T`, with the constructors `waarde` (payload: X's declared datatype) and the markers of M, `onbekend` before `niet van toepassing`; the domain is declared in `domains` after the declared domains. One domain per attribute, so a marker never passes from one attribute to another (WF-061) |
+| a marker written into X | `Construct` of the marker |
+| any other value v written into X, by a rule or a default's consequence | `Construct waarde(v)`; a leeg v leaves it leeg, which decides nothing |
+| "zijn X onbekend is" | `Comparison equal` of X and the `Construct onbekend` |
+| "zijn X een waarde heeft" | `Predicate filled` of `PayloadAccess(X, waarde)` |
+| a read of the value of X in arithmetic, a comparison or an aggregation | `PayloadAccess(X, waarde)` |
+| "die een waarde hebben" on an aggregation over X | the filter `Predicate filled` of `PayloadAccess` of the element's X |
+
+The resolver records each node it reads as a marker, a test or a read of the value in a side table of the model
+(`absenceMarkerSites`), and the emitter writes the nodes of the table in the forms above. The model keeps X's declared
+datatype, so typing reads a read of the value as before.
+
+### Fail-fast refusals (resolver, loud diagnostics)
+
+One code, RGS-376: a read of the value of an attribute with markers without a test before it, the frontend's half of
+WF-127. The test before it is a value test that holds as a conjunct before the read: of the condition of the rule for
+its value, earlier in the same `alle` for a read in a condition, of the subselection of the aggregation for its
+operand. The ERROR names the attribute, its type and the read (witnesses: `AbsenceMarkerTest`, a computation, a
+comparison before the test, a sum without the subselection).
+
+A marker the attribute does not declare stays the unresolved name or check it is without the markers, with its
+WARNING (RGS-092); so does a test of a value under the whole-period qualifier.
+
+### Emission
+
+The domains, the sum-typed attributes and the nodes of the table go out through the writers every other form uses. A
+document without markers emits what it emits without the extension.
+
+### Scope / limitations of this card
+
+- The reading of a value per period is not lowered: its test per period is a gevuld test per period, which has no
+  reading (`spec/RUNTIME-SEMANTICS.md` ch. 3.12 row 5), so such a condition stays refused as before. A marker written
+  per period, the input per day and a test of a marker per period are lowered.
+- The Drools backend refuses the sum type at load; the golden `jutterswet-afwezigheidsmarkers` carries no `source.rgs`
+  until it plays there, since the route leg of gate 15 reads every `source.rgs` back through that loader. Its source
+  is `AbsenceMarkerTest.GOLDEN`, held against the golden's `ir.json` byte for byte.
+- No negation of a test ("geen waarde heeft") and no marker in a decision table cell is lowered; a marker on a
+  dimensioned attribute is not measured.
+- The ASP backend scales a number and a day-precision date into a constructor term; markers on an attribute of
+  another datatype play in ref and are refused by name in the ASP backend (`spec/ASP-TRANSLATION.md` S19).
+- The semantic tokens read the words of the markers as keywords in a document that declares markers.
+
+Golden: `jutterswet-afwezigheidsmarkers` (scalar and per month; ten cases), with the red twin
+`jutterswet-afwezigheidsmarkers-botsing` (EF-016, scalar and per day). Measured 2026-11-04: ref and clingo replay
+every case exactly; the Drools backend refuses both documents at load (`EXCLUDE DROOLS-010`).
+
 ## Vocabulaires en benamingen — named vocabularies and designations
 
 Origin: the card `vocabulaires-benamingen` (maintainer decision 2026-09-27,

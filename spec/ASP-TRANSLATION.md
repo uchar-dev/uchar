@@ -1971,12 +1971,44 @@ target attribute (`ctor_value_term` reads the payload's decimals from
 the `SumType` declaration; a money payload's cents come from the
 payload, not the write site). The functor is an ASP *symbol*, not a
 string: the constructor name must normalise (`Ir_v0.Checks.norm`
-lowercases and collapses whitespace) to a valid symbolic constant
-`[a-z][a-z0-9_]*`, or the emitted program would be syntactically broken
-unfenced — `ctor_functor` faults on a name that does not, the quote
-fence's kin for the sum world (WF-060 admits the declaration; this is
-the ASP-side backstop). `translate_case` emits a sum-typed input
-attribute as `val(label, attr, term)`.
+lowercases and collapses whitespace, and a space becomes an underscore,
+so `niet van toepassing` is `niet_van_toepassing`) to a valid symbolic
+constant `[a-z][a-z0-9_]*`, or the emitted program would be
+syntactically broken unfenced — `ctor_functor` faults on a name that
+does not, the quote fence's kin for the sum world (WF-060 admits the
+declaration; this is the ASP-side backstop). Two constructors of one
+sum type that meet in one symbol (`a b` and `a_b`) are refused at the
+declaration (`refuse_functor_collisions`): the model would hold them as
+one value. `translate_case` emits a sum-typed input attribute as
+`val(label, attr, term)`, and a sum-typed timeline as `tl`/`inputtl`
+segments whose value is the constructor term.
+
+**The payload access** (`PayloadAccess`, RUNTIME-SEMANTICS ch. 9.5) is
+a member of its own. For every unary constructor of every scalar
+sum-typed attribute the program carries one projection rule,
+
+```
+val(O,"taxatie#waarde",P) :- val(O,"taxatie",waarde(P)).
+```
+
+and a `PayloadAccess` over an attribute read is the read of that member
+(`payload_member`, `find_decl` gives it the payload's declaration): in
+an operator, a comparison, a gevuld test and as the set source of a fold
+over members (`cell_source_fold`, the cell's sibling), at the payload's
+scale. Where the attribute holds another constructor or is leeg, no atom
+binds — the failed access is leeg for free, and WF-127 keeps it under
+the test that makes that unreachable in a value position. The name
+carries a `#`, which no declared name does.
+
+**A sum-typed timeline.** A rule writes it from a constructor of a
+literal, which holds on every day (`translate_period_arithmetic`, a node
+whose value is the ground term at scale 0), cut to the periods of its
+condition; writers and the input are read per day as for every timeline
+target (S9, S10), EF-016 per day included. A comparison of such a
+timeline with a `Construct` in a condition per period compares the
+segment term with the ground term (`period_condition`); an ordering
+over it is refused. The model check reads a timeline expectation of
+constructor values through the same `ctor_value_term`.
 
 **Total match** (`Match`, ch. 9.2) lowers to **one rule per arm** into a
 `matchN(S,Result)` helper — the scrutinee's `val/3` atom carries the
@@ -3083,13 +3115,26 @@ the §9.8 composition and both executors evaluate it, which is what WF-085's
 reference graph is about.
 
 *Sum types (S14) — carriage and shapes without a corpus case:*
-**temporal sum carriage** is a recorded flank — the value model admits a
-sum-typed temporal attribute and the case format can write one, but no
-case exercises it, so the ASP case emission (and any sum scrutinee or
-operand over an own temporal attribute) faults with the literal reason
-`temporal sum carriage is a recorded flank; no corpus case` rather than
-silently omitting the constructor-valued segments (RUNTIME-SEMANTICS
-ch. 9.4). A **non-literal `Construct` payload** meets SIX distinct places
+**temporal sum carriage** is carried for the case input, a write of a
+constructor of a literal and a comparison with a `Construct` per period
+(the golden `jutterswet-afwezigheidsmarkers`); a sum scrutinee or a sum
+operand over an own temporal attribute in a scalar position still
+faults with the literal reason `temporal sum carriage is a recorded
+flank; no corpus case`, and a sum-typed timeline written by any other
+producer (a copy of another sum-typed timeline, which ref reads whole)
+faults with `the sum-typed timeline … is written with a constructor of a
+literal; another producer of a constructor value per period is not
+translated (no corpus case)`. A **payload access to a time-dependent
+attribute** has a reading per day (RUNTIME-SEMANTICS ch. 9.5) that is not
+encoded: in a scalar position it is refused as every temporal attribute
+in a scalar slot is, and as the source of a fold over members with
+`a payload access to the time-dependent attribute … is read per day
+(ch. 9.5), which this translation does not execute (no corpus case)`;
+ref refuses both in the same words. A **payload of another datatype than
+a number or a day-precision date** (WF-060 admits every scalar) has no
+scaling into the constructor term and faults where it is emitted. Two
+**constructors that meet in one ASP symbol** are refused at the
+declaration (S14). A **non-literal `Construct` payload** meets SIX distinct places
 in the translator: THREE carry it — the positions that can hold the payload's
 binding atoms — and THREE refuse it, each for a different reason. A SEVENTH
 place, the fold-init source fence, refuses a shape that need not contain a
