@@ -1,0 +1,87 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "kustwacht": [
+            {
+              "from": "2025-01-01",
+              "to": "2025-07-01"
+            }
+          ],
+          "stormwacht": [
+            {
+              "from": "2025-04-01",
+              "to": "2025-05-01"
+            }
+          ],
+          "havenwacht": [
+            {
+              "from": "2025-04-01",
+              "to": "2025-05-01"
+            }
+          ],
+          "winterwacht": [
+            {
+              "from": "2025-04-01",
+              "to": "2025-05-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "strandloon",
+      "timeline": [
+        {
+          "to": "2025-01-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-01-01",
+          "to": "2025-04-01",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2025-04-01",
+          "to": "2025-05-01",
+          "value": {
+            "number": "60"
+          }
+        },
+        {
+          "from": "2025-05-01",
+          "to": "2025-07-01",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2025-07-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

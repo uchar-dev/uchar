@@ -12757,15 +12757,18 @@ let () =
    on 2025: 10, the input 5 in March and April, where they differ, 20, 5, and
    one fact Jutter.toelage. A form-a default 30 with unordered exception groups
    40 and 50 above the base 5: 5, 30, 40, nothing in April, where the groups
-   differ and settle the default, 50, 30, 5, and one fact Jutter.strandloon/0. A
-   group "geldig vanaf 2025" on 2025-07-01: 5, 30, 5 *)
+   differ and settle the default, 50, 30, 5, and one fact Jutter.strandloon/0.
+   The same with 60 while winterwacht above it, the exception groups differing
+   in April only and winterwacht in April: 5, 30, 60, 30, 5 and no fact, since
+   the higher default displaces the conflict on its days. A group "geldig vanaf
+   2025" on 2025-07-01: 5, 30, 5 *)
 let () =
   let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
   let dir = "ref/test/fixtures/defaults-per-day/" in
   List.iter
     (fun (ident, d) -> plays ~ident ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
     [ ("WV-7.11-uitzondering", "uitzondering"); ("WV-7.11-ongeordend", "ongeordend"); ("WV-7.11-afwijking", "afwijking");
-      ("WV-7.11-versie", "geldig-vanaf") ]
+      ("WV-7.11-verdrongen-conflict", "verdrongen-conflict"); ("WV-7.11-versie", "geldig-vanaf") ]
 
 (* WV-5.12-voorwaarde-per-periode: a condition read per period has, at each of
    its nodes, the part of all time in which it holds, and the value of the rule

@@ -17385,7 +17385,8 @@ let () =
 (* RUNTIME-SEMANTICS ch. 7.11: a defaults group on a timeline target decides per
    day, the highest default that decides on a day winning that day; ref's
    documents (ref/test/fixtures/defaults-per-day: an exception, an unordered
-   pair with its conflict per day, a form-a default with exception groups, a
+   pair with its conflict per day, a form-a default with exception groups, the
+   same below a higher default that displaces their conflict on its days, a
    group with a validity window), and the cases of the golden
    jutterswet-opgave-per-periode, played in both executors *)
 let () =
@@ -17396,7 +17397,7 @@ let () =
       let ir = read (dir ^ f ^ "/ir.json") and case_text = read (dir ^ f ^ "/case.json") in
       ref_matches ~name:("defaults per day: " ^ f) ~ir ~case_text;
       clingo_matches ~name:("defaults per day: " ^ f) ~ir ~case_text)
-    [ "uitzondering"; "ongeordend"; "afwijking"; "geldig-vanaf" ];
+    [ "uitzondering"; "ongeordend"; "afwijking"; "verdrongen-conflict"; "geldig-vanaf" ];
   let g = "corpus/golden/jutterswet-opgave-per-periode/" in
   let ir = read (g ^ "ir.json") in
   List.iter

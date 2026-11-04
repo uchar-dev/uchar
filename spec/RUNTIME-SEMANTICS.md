@@ -8803,6 +8803,12 @@ backend plays as well), each a whole number for every month:
   April, where the exception groups differ and settle their default, **50**
   in May, **30** in June and **5** on [2025-07-01, +∞); the channel carries
   one fact `Jutter.strandloon/0`.
+- `WV-7.11-verdrongen-conflict`: the same, with 60 "indien hij winterwacht
+  is" above it; kustwacht on [2025-01-01, 2025-07-01), and stormwacht,
+  havenwacht and winterwacht in April 2025: **5**, **30**, **60** in April,
+  **30** in May and June, **5**, and no fact — the higher default settles
+  April, so the conflict of the exception groups below it is displaced there
+  and stands on no day.
 - `WV-7.11-versie`: the base 5 and the exception 30 "indien hij kustwacht is",
   both "geldig vanaf 2025", on 2025-07-01, kustwacht in spring: **5**, **30**,
   **5**.
