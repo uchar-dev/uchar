@@ -2340,6 +2340,17 @@ appends the rule, the group and the consistency behind the authored forms of
 their lists. A read of X elsewhere stays a read of X: it reads the resolved
 value.
 
+On a time-dependent X the marker lowers pieces 1 to 3: `opgegeven X` and
+`berekende X` carry X's timeline (its granularity, count and start point), and
+the group on X is read per day (`spec/RUNTIME-SEMANTICS.md` ch. 7.11): on every
+day the opgave decides where it reads a value, the computation below it where
+it does, then the initialisation and the input of X itself. Pieces 4 and 5 are
+not generated: the condition of `afwijkende opgave X` compares two timelines and
+tests a timeline for filled, which have no reading per period (ch. 3.12 row 5),
+and a scalar characteristic cannot hold where the two differ on some days only.
+A rule that reads `afwijkende opgave X` on such an X is refused (RGS-375, below),
+and the two form names of pieces 4 and 5 are free.
+
 The initialisation stays on X. Its justification is "X is empty in the input
 facts" (ch. 7.3); on `berekende X`, which the case never supplies, it would
 always hold, and an initialisation would then beat an input value of X and
@@ -2444,8 +2455,12 @@ reason that holds, and the marker then generates nothing (witness:
   in the three executors. A unit clause after a date gets no sentence of the
   marker: it is refused where the datatype is read ("… een Datum in dagen
   draagt geen eenheid"), and that ERROR is the only one;
-- a time-dependent attribute (WF-086) and a dimensioned one (a defaults group
-  on a dimensioned attribute does not play in every executor);
+- a dimensioned attribute (a defaults group on a dimensioned attribute does not
+  play in every executor);
+- on a time-dependent attribute, a rule that reads `afwijkende opgave X`, which
+  the marker does not generate there ("… '(mag opgegeven worden)' maakt op een
+  tijdsafhankelijk attribuut geen kenmerk 'afwijkende opgave X', maar het model
+  leest het — …");
 - an allocation, or an object creation's initialisation, that writes X: the
   marker moves neither, and beside the group each is a second writer (WF-050);
 - two initialisations of X in one inheritance line where at least one stands
@@ -2519,6 +2534,8 @@ above stated as a property.
   ct and a scenario input in ct beside an amount in €).
 - No marker on a characteristic: the three-valued opgave of the proposal's §5.8
   is a card of its own.
+- On a time-dependent attribute no deviation characteristic and no consistency:
+  an opgave that differs from the computation leaves no §9.5 fact there.
 - No retargeting of allocations and object creations. Writers of X on the
   subtypes of T are lowered (above); on a subtype, two initialisations in one
   inheritance line and an initialisation with a window or with versions are
@@ -2606,6 +2623,12 @@ other date the computation decides nothing and the initialisation below it
 decides. Measured the same day on the computation alone, without the marker, on
 a Vondst without the other date: the target stays empty in ref (`oracle: PASS`),
 clingo (`clingo: PASS`) and the Drools exec branch (`PLAYED 1`).
+`jutterswet-opgave-per-periode` puts the marker on two whole numbers for every
+month: a computation in a window of three months, and a computation per period
+of a monthly characteristic with an initialisation of 0; five cases, among them
+the two of the worked example of RUNTIME-SEMANTICS ch. 7.11 and one with input on
+the marked attribute itself. ref and clingo replay the five cases exactly; the
+Drools backend refuses the golden on both branches (DROOLS-271).
 `jutterswet-opgave-subtype` puts the marker on a date of the Vondst whose
 writers stand on its subtypes: an `Uitzondering op` tree on the Strandvondst,
 an own base on the Barnsteenvondst below it, the initialisation on the Vondst,

@@ -429,7 +429,6 @@ RGS-146	{head}: de // Bron:-annotatie '{annotation}' boven de kop hoort bij geen
 RGS-147	Uitzondering op: de {role} '{name}' heeft meer dan één regelversie — meerdere versies op één defaults-groep worden in deze kaart nog niet ondersteund (§4)
 RGS-148	kenmerk '{characteristic}' van {objectType}: {marking} staat alleen op een attribuut — casusinvoer op een kenmerk staat al tegen elk besluit van een defaults-groep (RUNTIME-SEMANTICS ch. 7.8), en een opgave 'niet aanwezig' boven een berekende toekenning vraagt een opgave met drie waarden, die de casus voor een kenmerk niet kent (dialect §7)
 RGS-149	{head}: '(mag opgegeven worden)' staat alleen op een Numeriek attribuut zonder eenheid of met één eenheid, of op een Datum in dagen, en '{attribute}' is {datatype} — een defaults-groep op een attribuut van een ander datatype of met een samengestelde eenheid is nog niet in alle drie de uitvoerders gemeten (dialect §7)
-RGS-150	{head}: '(mag opgegeven worden)' staat niet op een tijdsafhankelijk attribuut — een defaults-groep beslist één keer en heeft geen tijdlijn om op te schrijven (WF-086) (dialect §7)
 RGS-151	{head}: '(mag opgegeven worden)' staat niet op een gedimensioneerd attribuut, en '{attribute}' is gedimensioneerd met {dimensions} — een defaults-groep op een gedimensioneerd attribuut speelt nog niet in alle drie de uitvoerders (dialect §7)
 RGS-152	{head}: '(mag opgegeven worden)' genereert niets, omdat geen regel '{attribute}' berekent of vaststelt, maar het model leest '{read}' — die naam bestaat alleen waar de markering een berekening van '{attribute}' verlegt (dialect §7)
 RGS-153	{head}: '(mag opgegeven worden)' staat op een attribuut dat geen regel berekent of vaststelt — '{attribute}' is al invoer, en de markering genereert niets (dialect §7)
@@ -690,3 +689,4 @@ RGS-373	eenheidstelsel '{unitSystem}': de eenheid '{unit}' uit {unitFamily} is g
 RGS-373.day-family	de dagfamilie (dag, week)
 RGS-373.month-family	de maandfamilie (maand, kwartaal, jaar)
 RGS-374	de tijdlijn van {operand} ligt op het raster per {operandGrid}, dat niet past in het raster per {targetGrid} van het doel {target}: het doel kan haar knips niet dragen (WF-126)
+RGS-375	{head}: '(mag opgegeven worden)' maakt op een tijdsafhankelijk attribuut geen kenmerk '{characteristic}', maar het model leest het — de voorwaarde van dat kenmerk vergelijkt twee tijdlijnen en toetst een tijdlijn op gevuld, wat geen lezing per periode heeft (RUNTIME-SEMANTICS ch. 3.12 rij 5) (dialect §7)

@@ -429,7 +429,6 @@ RGS-146	{head}: the // Bron:-annotation '{annotation}' above the head belongs to
 RGS-147	Uitzondering op: the {role} '{name}' has more than one rule version — multiple versions on one defaults group are not yet supported in this card (§4)
 RGS-148	characteristic '{characteristic}' of {objectType}: {marking} stands only on a member — case input on a characteristic is already against every decision of a defaults group (RUNTIME-SEMANTICS ch. 7.8), and an input 'not present' above a computed assignment asks for an input with three values, which the case does not know for a characteristic (dialect §7)
 RGS-149	{head}: '(mag opgegeven worden)' stands only on a 'Numeriek' member without a unit or with one unit, or on a 'Datum' in days, and '{attribute}' is {datatype} — a defaults group on a member of another datatype or with a compound unit has not yet been measured in all three executors (dialect §7)
-RGS-150	{head}: '(mag opgegeven worden)' does not stand on a time-dependent member — a defaults group decides once and has no timeline to write to (WF-086) (dialect §7)
 RGS-151	{head}: '(mag opgegeven worden)' does not stand on a dimensioned member, and '{attribute}' is dimensioned with {dimensions} — a defaults group on a dimensioned member does not yet play in all three executors (dialect §7)
 RGS-152	{head}: '(mag opgegeven worden)' generates nothing, because no rule computes or establishes '{attribute}', but the model reads '{read}' — that name exists only where the marking redirects a computation of '{attribute}' (dialect §7)
 RGS-153	{head}: '(mag opgegeven worden)' stands on a member that no rule computes or establishes — '{attribute}' is already input, and the marking generates nothing (dialect §7)
@@ -690,3 +689,4 @@ RGS-373	unit system '{unitSystem}': the unit '{unit}' of {unitFamily} is declare
 RGS-373.day-family	the day family (dag, week)
 RGS-373.month-family	the month family (maand, kwartaal, jaar)
 RGS-374	the timeline of {operand} lies on the grid of every {operandGrid}, which does not fit the grid of every {targetGrid} of the target {target}: the target cannot carry its cuts (WF-126)
+RGS-375	{head}: '(mag opgegeven worden)' makes no characteristic '{characteristic}' on a time-dependent attribute, but the model reads it — the condition of that characteristic compares two timelines and tests a timeline for filled, which has no reading per period (RUNTIME-SEMANTICS ch. 3.12 row 5) (dialect §7)

@@ -696,14 +696,49 @@ class InputMarkingTest {
         assertEquals(5, d.line());
     }
 
-    @Test void the_marking_on_a_time_dependent_attribute_is_refused() {
+    /** On a time-dependent X the group is read per day (RUNTIME-SEMANTICS ch. 7.11): the opgave and the computation
+     *  carry X's timeline, and the deviation characteristic, its rule and the consistency are not generated, because
+     *  their conditions have no reading per period (ch. 3.12 rows 5 and 7). */
+    @Test void on_a_time_dependent_attribute_the_marking_builds_the_two_attributes_and_the_group() {
         RegelSpraakModel m = Resolver.resolve(VONDST.replace("(getal met 2 decimalen) (mag",
-                "(getal met 2 decimalen) voor elk jaar (mag"));
+                "(getal met 2 decimalen) voor elk jaar (mag") + WAARDERING);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        ObjectType v = m.objectTypes.get("Vondst");
+        assertEquals(List.of("taxatie", "waarde", "opgegeven waarde", "berekende waarde"),
+                List.copyOf(v.attributes.keySet()));
+        assertEquals(v.attributeGranularity.get("waarde"), v.attributeGranularity.get("opgegeven waarde"));
+        assertEquals(v.attributeGranularity.get("waarde"), v.attributeGranularity.get("berekende waarde"));
+        assertEquals("berekende waarde", targetOf(rule(m, "waardering")));
+        PrioritizedDefaults g = group(m, "opgave boven berekening waarde");
+        assertEquals("waarde", g.attribute());
+        assertEquals(List.of("opgegeven waarde", "berekende waarde"),
+                g.defaults().stream().map(d -> read(d.consequence())).toList(), "van hoog naar laag");
+        assertEquals(List.of(), v.characteristics, "geen afwijkingskenmerk op een tijdlijn");
+        assertEquals(List.of("waardering"), m.resolvedRules.stream().map(ResolvedRule::name).toList());
+        assertTrue(m.consistencies.isEmpty(), "geen consistentie op een tijdlijn");
+        String ir = IrEmitter.emit(m);
+        Report.assertAccountedFor(ir);
+        assertTrue(compact(ir).contains(compact("""
+                "name": "opgegeven waarde",
+                "datatype": {"node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"},
+                "timeline": {"node": "TimelineFacet", "granularity": "year", "count": 1}""")), ir);
+    }
+
+    @Test void on_a_time_dependent_attribute_a_read_of_the_deviation_characteristic_is_refused() {
+        RegelSpraakModel m = Resolver.resolve(VONDST.replace("(getal met 2 decimalen) (mag",
+                "(getal met 2 decimalen) voor elk jaar (mag").replace("(mv: Vondsten)\n",
+                "(mv: Vondsten)\n    de toeslag Numeriek (getal met 2 decimalen);\n") + WAARDERING + """
+
+                Regel toeslag
+                    geldig altijd
+                        De toeslag van een Vondst moet gesteld worden op 1,00 indien hij afwijkende opgave waarde heeft.
+                """);
         Diagnostic d = onlyError(m);
-        assertEquals("attribuut 'waarde' van Vondst: '(mag opgegeven worden)' staat niet op een tijdsafhankelijk "
-                + "attribuut — een defaults-groep beslist één keer en heeft geen tijdlijn om op te schrijven (WF-086) "
-                + "(dialect §7)", d.message());
-        assertEquals(3, d.line());
+        assertEquals("attribuut 'waarde' van Vondst: '(mag opgegeven worden)' maakt op een tijdsafhankelijk attribuut "
+                + "geen kenmerk 'afwijkende opgave waarde', maar het model leest het — de voorwaarde van dat kenmerk "
+                + "vergelijkt twee tijdlijnen en toetst een tijdlijn op gevuld, wat geen lezing per periode heeft "
+                + "(RUNTIME-SEMANTICS ch. 3.12 rij 5) (dialect §7)", d.message());
+        assertEquals(4, d.line());
     }
 
     @Test void the_marking_on_a_dimensioned_attribute_is_refused() {

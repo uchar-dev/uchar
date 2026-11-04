@@ -148,7 +148,6 @@ RGS-146	annotation-above-head-without-rule	WARNING	annotation,head,reference
 RGS-147	multiple-versions-in-defaults-group	ERROR	name,role
 RGS-148	input-marking-on-characteristic	ERROR	characteristic,marking,objectType
 RGS-149	defaults-group-on-unsupported-datatype	ERROR	attribute,datatype,head
-RGS-150	defaults-group-on-time-dependent-attribute	ERROR	head
 RGS-151	defaults-group-on-dimensioned-attribute	ERROR	attribute,dimensions,head
 RGS-152	marking-generates-nothing-but-read	ERROR	attribute,head,read
 RGS-153	marking-on-input-attribute-generates-nothing	WARNING	attribute,head
@@ -363,3 +362,4 @@ RGS-371	allocation-share-precision-unbounded	ERROR	targetDecimals
 RGS-372	assignment-precision-exceeds	ERROR	targetDecimals,valueDecimals
 RGS-373	calendar-family-factor	ERROR	canonical,canonicalFamily,unit,unitFamily,unitSystem
 RGS-374	timeline-grid-finer	ERROR	operand,operandGrid,target,targetGrid
+RGS-375	marking-deviation-on-timeline-read	ERROR	characteristic,head

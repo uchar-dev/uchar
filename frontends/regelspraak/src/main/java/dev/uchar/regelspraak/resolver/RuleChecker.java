@@ -2461,6 +2461,14 @@ final class RuleChecker {
         String ruleName() { return "afwijking opgave " + attribute; }
         String consistencyCheck() { return "controle opgave " + attribute; }
         Msg head() { return Msg.frontend("PART.input-head", "attribute", attribute, "type", type.name); }
+        /** Whether X is time-dependent. The group on X is then read per day (RUNTIME-SEMANTICS ch. 7.11); the deviation
+         *  characteristic, its rule and the consistency are not generated, because the condition of the characteristic
+         *  compares two timelines and tests a timeline for filled, which have no reading per period (ch. 3.12 row 5),
+         *  and a scalar characteristic cannot hold where the two differ on some days only. */
+        boolean timeline() { return type.attributeGranularity.containsKey(attribute); }
+        /** The generated form names: the group, and the attribution rule and the consistency where X is not
+         *  time-dependent. */
+        List<String> forms() { return timeline() ? List.of(group()) : List.of(group(), ruleName(), consistencyCheck()); }
     }
 
     private static final String MARKING = "'(mag opgegeven worden)'";
@@ -2472,7 +2480,7 @@ final class RuleChecker {
     private final List<Input> lowered = new ArrayList<>();
 
     /** The declaration half, before any rule resolves. A marker on a characteristic is refused. A marked attribute
-     *  must be a Numeriek without a unit or with one unit, or a Datum in dagen, not time-dependent and not dimensioned,
+     *  must be a Numeriek without a unit or with one unit, or a Datum in dagen, and not dimensioned,
      *  and none of the member names it generates may exist yet in the inheritance line of its type; then its two
      *  attributes are
      *  declared right after it and its characteristic at the end of the type's characteristics. One ERROR per marker,
@@ -2526,10 +2534,22 @@ final class RuleChecker {
                     t.attributes.put(o.computed(), dt);
                 }
             }
+            // the opgave and the computation of a time-dependent X carry X's timeline: the group reads them per day
+            for (String g : List.of(o.supplied(), o.computed())) {
+                copyEntry(t.attributeGranularity, o.attribute(), g);
+                copyEntry(t.attributeTimelineCount, o.attribute(), g);
+                copyEntry(t.attributeTimelineName, o.attribute(), g);
+                copyEntry(t.attributeFixedStartPoint, o.attribute(), g);
+            }
             t.characteristics.add(o.deviating());
             t.characteristicKinds.put(o.deviating(), ObjectType.CharacteristicKind.BEZITTELIJK);
             inputs.add(o);
         }
+    }
+
+    private static <V> void copyEntry(Map<String, V> table, String from, String to) {
+        V value = table.get(from);
+        if (value != null) table.put(to, value);
     }
 
     static boolean markedMember(ObjectTypeMemberContext member) {
@@ -2571,8 +2591,6 @@ final class RuleChecker {
             return new Typing.Coded("RGS-149",
                     params("head", o.head(), "attribute", x, "datatype", named));
         }
-        if (t.attributeGranularity.containsKey(x))
-            return new Typing.Coded("RGS-150", params("head", o.head()));
         List<String> dimensions = t.attributeDimensions.get(x);
         if (dimensions != null && !dimensions.isEmpty())
             return new Typing.Coded("RGS-151",
@@ -2649,7 +2667,7 @@ final class RuleChecker {
                 o.type().attributes.remove(o.computed());
                 o.type().characteristics.remove(o.deviating());
                 o.type().characteristicKinds.remove(o.deviating());
-                String read = readGenerated(o);
+                String read = readGenerated(o, List.of(o.supplied(), o.computed(), o.deviating()));
                 if (read != null)
                     error(o.line(),
                             "RGS-152", params("head", o.head(), "attribute", o.attribute(), "read", read));
@@ -2661,7 +2679,13 @@ final class RuleChecker {
             if (reason == null) reason = formNameError(o, forms, generated);
             if (reason == null) reason = initialisationError(o, init);
             if (reason == null) reason = subtypeInitialisationError(o, init, subInit);
+            if (reason == null && o.timeline() && readGenerated(o, List.of(o.deviating())) != null)
+                reason = new Typing.Coded("RGS-375", params("head", o.head(), "characteristic", o.deviating()));
             if (reason != null) { error(o.line(), reason); continue; }
+            if (o.timeline()) {
+                t.characteristics.remove(o.deviating());
+                t.characteristicKinds.remove(o.deviating());
+            }
 
             // 2. the computing writers keep their names and shapes and write 'berekende X'
             for (int i : computing) {
@@ -2696,6 +2720,11 @@ final class RuleChecker {
             }
             model.prioritizedDefaults.add(new PrioritizedDefaults(o.group(), t.name, null, o.attribute(), false,
                     defaults, null, Validity.ALTIJD));
+            if (o.timeline()) {
+                generated.put(dev.uchar.regelspraak.emit.IrEmitter.norm(o.group()), o);
+                lowered.add(o);
+                continue;
+            }
             // 4. the deviation characteristic, spelled as the frontend emits the hand-written rule
             String p0 = "zijn " + o.supplied() + " is gevuld";
             String p1 = "zijn " + o.computed() + " is gevuld";
@@ -2846,6 +2875,7 @@ final class RuleChecker {
         Object[][] names = {{Msg.frontend("PART.generated-form.defaults-group"), o.group()}, {Msg.frontend("PART.generated-form.rule"), o.ruleName()},
                 {Msg.frontend("PART.generated-form.consistency"), o.consistencyCheck()}};
         for (Object[] form : names) {
+            if (!o.forms().contains((String) form[1])) continue;
             String key = dev.uchar.regelspraak.emit.IrEmitter.norm((String) form[1]);
             Object[] site = forms.get(key);
             if (site != null)
@@ -2918,8 +2948,8 @@ final class RuleChecker {
     /** The first generated member name the model reads, or null: a reference to one of the two attributes on a type
      *  of the inheritance line, a check of the characteristic, or an allocation naming one of the attributes. The
      *  walk reaches every condition and value the emitter writes, conditions nested in expressions included. */
-    private String readGenerated(Input o) {
-        for (String g : List.of(o.supplied(), o.computed(), o.deviating())) {
+    private String readGenerated(Input o, List<String> names) {
+        for (String g : names) {
             String key = dev.uchar.regelspraak.emit.IrEmitter.norm(g);
             java.util.function.Predicate<Expr> ref = e -> e instanceof Expr.AttributeReference r
                     && sameName(r.attribute(), g) && (r.objectType() == null || inLine(o.type(), r.objectType()));
