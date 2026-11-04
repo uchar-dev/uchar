@@ -9880,6 +9880,75 @@ let combined (xs : bounded list) : bounded option =
 
 let all_of xs = List.fold_right (fun x acc -> Option.bind acc (fun l -> Option.map (fun y -> y :: l) x)) xs (Some [])
 
+(* The granularity of the timeline of the attribute [a] of [otn] where it lies
+   on the calendar's own grid of one period: no start point, no named timeline. *)
+let calendar_grain ctx otn a =
+  match object_type ctx otn with
+  | Some ot -> (
+      match find_ci ot.attribute_granularity a with
+      | Some (Some g) ->
+          let period = find_ci ot.attribute_timeline_count a in
+          let count = Option.value (Option.bind period (fun p -> p.tv_count)) ~default:1 in
+          let start = Option.bind period (fun p -> p.tv_fixed_start_point) in
+          let named = Option.join (find_ci ot.attribute_timeline_names a) <> None in
+          if count = 1 && start = None && not named then Some g else None
+      | _ -> None)
+  | None -> None
+
+(* Whether a rule or a defaults group writes the attribute [a] of [otn]. *)
+let attribute_written ctx otn a =
+  let writes otn' a' = norm a' = norm a && populations_overlap ctx.doc otn' otn in
+  List.exists
+    (fun (r : resolved_rule) ->
+      match written_reference r.objective with
+      | Some (Attribute_reference { attribute_ref = Some a'; object_type = Some otn'; _ }) -> writes otn' a'
+      | _ -> false)
+    ctx.doc.resolved_rules
+  || List.exists
+       (fun (l : prioritized_defaults) -> match l.pd_attribute with Some a' -> writes l.pd_subject a' | None -> false)
+       ctx.doc.prioritized_defaults
+
+(* Whether a temporal total of the attribute [a] of [otn] can count a part of a
+   period of its grid (RUNTIME-SEMANTICS ch. 2.3, ch. 3.6): a day of a grid of
+   periods longer than a day counts 1/len of the period that holds it, so a
+   segment that holds part of a period gives a share no number of decimals
+   bounds. A timeline the case gives lies on the walls of its grid (the case
+   format puts every bound of a segment on the declared grid, and the asOfDate
+   bucket is one period of it); a rule cuts the timeline it writes where its
+   condition and its operands cut it, and a clip cuts at the days its condition
+   holds on: a characteristic holds on periods of days whatever its granularity.
+   The one clip that cuts on walls only is a comparison of an own timeline no
+   rule writes, whose calendar grid fits the calendar grid of the total
+   ([grid_fits], WF-126): it cuts where that timeline or the totalled one changes.
+   A writer or a clip that would cut on walls in some other way is not looked
+   for: it counts as one that can split. [clip] is the condition of the
+   subject's own total; the filter of the per-element fold selects members and
+   cuts nothing. *)
+let total_can_split ctx ~(clip : condition_expr option) otn a =
+  let day_grid =
+    match object_type ctx otn with
+    | Some ot -> (
+        match find_ci ot.attribute_granularity a with
+        | Some (Some Day) ->
+            Option.value (Option.bind (find_ci ot.attribute_timeline_count a) (fun p -> p.tv_count)) ~default:1 = 1
+        | _ -> false)
+    | None -> false
+  in
+  let on_walls (c : condition_expr) =
+    match c with
+    | Comparison
+        { left_side =
+            Some (Attribute_reference { attribute_ref = Some b; object_type = Some botn; navigation_bindings = None; _ });
+          time_period = None; _ } -> (
+        match (calendar_grain ctx botn b, calendar_grain ctx otn a) with
+        | Some gb, Some ga ->
+            (not (attribute_written ctx botn b)) && grid_fits ~operand:(gb, None) ~target:(ga, None)
+        | _ -> false)
+    | _ -> false
+  in
+  (not day_grid)
+  && (attribute_written ctx otn a || match clip with Some c -> not (on_walls c) | None -> false)
+
 (* The bound of an expression, [None] where it makes no claim: a value that is
    no number, or a node whose operands nothing declares. [env] carries the
    enclosing binders with their bound and declared datatype; [calls] the
@@ -9992,7 +10061,7 @@ let rec precision ctx ?(calls = []) ~env (e : expr) : bounded option =
               let* b = own r in
               make (added (added a (Finite 2)) b)))
   | Binary _ -> None
-  | Function_call { kind; call_arguments; empty_fallback; source_role; source_path; _ } -> (
+  | Function_call { kind; call_arguments; empty_fallback; source_role; source_path; filter; _ } -> (
       let operands () =
         match call_arguments with [] -> None | args -> combine (args @ Option.to_list empty_fallback)
       in
@@ -10006,11 +10075,15 @@ let rec precision ctx ?(calls = []) ~env (e : expr) : bounded option =
           | None -> None
           | Some true -> operands ()
           | Some false -> (
-              (* the temporal total adds whole periods of the grid (ch. 3.6);
-                 a rate whose period is not the grid's own atom is restated
-                 into it (ch. 2.6, rule 8) *)
-              match call_arguments with
-              | [ a0 ] ->
+              (* the temporal total adds the periods of the grid a segment
+                 holds (ch. 3.6); a rate whose period is not the grid's own
+                 atom is restated into it (ch. 2.6, rule 8) *)
+              let ranged = source_role <> None || source_path <> None in
+              let clip = if ranged then None else filter in
+              match (call_arguments, clip) with
+              (* a clip that is a marker cuts where nothing says: no claim *)
+              | [ _ ], Some (Condition_unresolved _) -> None
+              | [ a0 ], _ ->
                   let own_class =
                     match (unit a0, fold_grid ctx call_arguments) with
                     | Some u, Some g -> Option.map (fun f -> (g, f)) (Units.negative_of_grid g u)
@@ -10034,13 +10107,29 @@ let rec precision ctx ?(calls = []) ~env (e : expr) : bounded option =
                         | None -> false)
                     | _ -> false
                   in
+                  (* the calendar measures in days or in the calendar unit; every
+                     other total measures in periods of its grid, a part of one by
+                     its days *)
+                  let calendar =
+                    match (own_class, unit a0, fold_grain ctx call_arguments) with
+                    | None, Some u, Some gr -> calendar_denominator gr u <> None
+                    | _ -> false
+                  in
+                  let partial_unit =
+                    (not calendar)
+                    &&
+                    match a0 with
+                    | Attribute_reference { object_type = Some otn; attribute_ref = Some a; _ } ->
+                        total_can_split ctx ~clip otn a
+                    | _ -> false
+                  in
                   let* f = grid_factor in
                   let* b0 = own a0 in
-                  let b0 = if calendar_unbounded then Unbounded else b0 in
+                  let b0 = if calendar_unbounded || partial_unit then Unbounded else b0 in
                   let* total = make (scaled b0 f) in
                   let* rest = all_of (List.map p (Option.to_list empty_fallback)) in
                   combined (total :: rest)
-              | _ -> None))
+              | _, _ -> None))
       | Square_root | Time_proportional_part -> make Unbounded
       | Absolute_value -> ( match call_arguments with [ a ] -> p a | _ -> None)
       | Easter_sunday | Date_with | Date_time_with -> None)
