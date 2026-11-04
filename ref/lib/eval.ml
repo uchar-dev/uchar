@@ -118,15 +118,18 @@ let rec filter_in_order p = function
    of a whole-period test, the base of a temporal total or of a
    time-proportional part, which the evaluation reads whole ([timeline],
    None for an absent one), and a condition it reads over a timeline, the
-   part of that timeline in which the condition holds ([periods]); and
-   [reached] is told, per node that reads a member over a path of roles
-   (ch. 5.8), the label of the object the path reached, None where a link on
-   it is absent. With no
+   part of that timeline in which the condition holds ([periods]);
+   [period_members] is told, for the sum per period over a set (ch. 3.5),
+   which the evaluation reads as a timeline as well, the timeline each member
+   contributes; and [reached] is told, per node that reads a member over a
+   path of roles (ch. 5.8), the label of the object the path reached, None
+   where a link on it is absent. With no
    observer, as in every session, the evaluation is the one it always was;
    with one, a quantifier fold also evaluates its matrix on the contributors
    the evaluation does not reach, for the observer alone (ch. 5.12). *)
 type member_found =
   | Member_value of Value.t (* a value fold: what the member contributes; Empty for a count *)
+  | Member_timeline of Timeline.t (* the sum per period: the timeline the member contributes *)
   | Member_verdict of bool (* a quantifier fold: the matrix's verdict on the member *)
   | Member_fault of string option (* the matrix faulted on the member, with the EF code *)
 
@@ -144,6 +147,7 @@ type observer = {
   member : string -> contribution -> unit;
   timeline : expr -> Timeline.t option -> unit;
   periods : condition_expr -> Timeline.t -> unit;
+  period_members : expr -> (string * contribution) list -> unit;
   reached : navigating -> string option -> unit;
 }
 
@@ -152,6 +156,7 @@ let contribute ?(reached = true) label found =
   match !observer with None -> () | Some o -> o.member label { found; reached }
 let read_whole e tl = match !observer with None -> () | Some o -> o.timeline e tl
 let held_over c tl = match !observer with None -> () | Some o -> o.periods c tl
+let read_period_members e cs = match !observer with None -> () | Some o -> o.period_members e cs
 let object_reached node target = match !observer with None -> () | Some o -> o.reached node target
 
 (* EF-037 (ch. 5.7b, ch. 8.4): a form that reads the timeline of [attr] of [i]
@@ -3508,7 +3513,15 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
         ~target ~attr;
       let members = fold_members ?binding:source_role ?path:source_path env w self ~element:el in
       let fallback = Option.map (eval_expr env w self ~err) empty_fallback in
-      seen (Timeline.summed ?fallback ~target_unit (List.map (fun i -> whole i x) members))
+      let timelines = List.map (fun (i : World.instance) -> (i.label, whole i x)) members in
+      (* the node of a fold over a set carries its contributors (ch. 5.12), here
+         each member with the timeline it contributes; a member without one
+         contributes nothing, as a leeg member of a value fold does *)
+      read_period_members e
+        (List.filter_map
+           (fun (label, tl) -> if tl = [] then None else Some (label, { found = Member_timeline tl; reached = true }))
+           timelines);
+      seen (Timeline.summed ?fallback ~target_unit (List.map snd timelines))
   | Rounding { base_expr = Some b; mode_kind; decimal_places; _ } when is_period_arithmetic b ->
       (* ch. 2.5 per day: each segment of the base rounded, its leeg periods
          gaps as before *)

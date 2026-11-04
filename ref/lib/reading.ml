@@ -292,6 +292,11 @@ let observing (nodes : node list) f =
           match !stack with `Node n :: _ -> n.members <- (label, c) :: n.members | _ -> ());
       timeline = (fun e tl -> read (S_expr e) (Whole tl));
       periods = (fun c tl -> read (S_cond c) (Over tl));
+      period_members =
+        (fun e cs ->
+          match (!stack, List.find_opt (fun n -> same n.site (S_expr e)) nodes) with
+          | (`Node _ :: _ | []), Some n when n.own -> n.members <- List.rev_append cs n.members
+          | _ -> ());
       reached =
         (fun node target ->
           let site = match node with Eval.Navigated_read e -> S_expr e | Navigated_check c -> S_cond c in
@@ -450,11 +455,11 @@ let rules json env ~world =
               else if not temporal then [ read_on ~form ~numbered env world self ~condition ~value ]
               else
                 let v = Ir_v0.Checks.let_bound_value (Eval.req "RuleVersion.value" r.value_node) in
-                (* the value of a rule with a condition is the timeline its
-                   producer writes; the period arithmetic of a rule without one
-                   is read through the pro-rata arm, which refuses it *)
+                (* the value is the timeline its producer writes, with or
+                   without a condition, so its nodes read what the session's
+                   producer reads and computes *)
                 let write ?periods () =
-                  if Eval.is_period_arithmetic v && condition <> None then
+                  if Eval.is_period_arithmetic v then
                     ignore (Eval.run_period_arithmetic ?periods env world self ~err:drop ~form ~ot ~attr v)
                   else ignore (Eval.run_pro_rata ?periods env world self ~err:drop ~form ~ot ~attr v)
                 in
@@ -956,6 +961,7 @@ let lines env ~world (rs : reading list) =
         ^ (match c.found with
           | Member_value _ when counts -> canonical Value.Empty
           | Member_value v -> canonical v
+          | Member_timeline tl -> timeline_text tl
           | Member_verdict v -> string_of_bool v
           | Member_fault code -> fault_text code)
         ^ if c.reached then " reached" else " unreached"

@@ -12682,6 +12682,63 @@ let () =
   check "WV-5.12-voorwaarde-per-periode" (got = expected);
   if got <> expected then List.iter (Printf.printf "  got: %s\n") got
 
+(* WV-5.12-maandloon: the period arithmetic of a rule without a condition is
+   read as with one: the root of the value has the timeline the rule writes,
+   an operand read whole its timeline, [] where it is absent, a scalar its
+   value, and the sum per period the timeline it computes, with its
+   contributors, each member with the timeline it contributes; a member
+   without a timeline contributes nothing. The golden jutterswet-maandloon,
+   case 1 (the worked examples of ch. 3.4 and 3.5) and case 3 (no timeline
+   and no vondst), computed by hand from its NOTE, and case 1 with V2 without
+   an opbrengst *)
+let () =
+  let golden = "corpus/golden/jutterswet-maandloon/" in
+  let line form cell = Printf.sprintf "/rules/rules/%d/versions/0 \"J1\" %s" form cell in
+  let rows ?(case_dir = golden) file expected =
+    let got = readings_of (corpus_file (golden ^ "ir.json")) (corpus_file (case_dir ^ file)) in
+    let expected = List.sort compare (List.map (fun (f, c) -> line f c) expected) in
+    check ("WV-5.12-maandloon " ^ file) (got = expected);
+    if got <> expected then List.iter (Printf.printf "  got: %s\n") got
+  in
+  let strandloon = "[[2024-01-01 2024-07-01 100]]" and stormtoeslag = "[[2024-04-01 2024-10-01 30]]" in
+  let maandloon = "[[- 2024-01-01 0], [2024-01-01 2024-04-01 100], [2024-04-01 2024-07-01 130], [2024-07-01 2024-10-01 30], [2024-10-01 - 0]]" in
+  let vondsten =
+    " contributors [\"V1\" [[2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 60]] reached; \"V2\" [[2024-02-01 2024-03-01 10], [2024-03-01 2024-04-01 10]] reached]"
+  in
+  rows "case1-voorbeeld.json"
+    [ (0, "0 Binary " ^ maandloon); (0, "1 AttributeReference " ^ strandloon);
+      (0, "2 AttributeReference " ^ stormtoeslag); (0, "HOLDS");
+      (1, "0 Binary [[- 2024-01-01 0], [2024-01-01 2024-04-01 100], [2024-04-01 2024-07-01 70], [2024-07-01 2024-10-01 -30], [2024-10-01 - 0]]");
+      (1, "1 AttributeReference " ^ strandloon); (1, "2 AttributeReference " ^ stormtoeslag); (1, "HOLDS");
+      (2, "0 Binary [[- 2024-01-01 5], [2024-01-01 2024-07-01 105], [2024-07-01 - 5]]"); (2, "1 Literal 5");
+      (2, "2 AttributeReference " ^ strandloon); (2, "HOLDS");
+      (3, "0 Aggregation [[2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 70], [2024-03-01 2024-04-01 10]]"
+          ^ vondsten);
+      (3, "HOLDS");
+      (4, "0 Aggregation [[- 2024-01-01 0], [2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 70], [2024-03-01 2024-04-01 10], [2024-04-01 - 0]]"
+          ^ vondsten);
+      (4, "2 Literal 0"); (4, "HOLDS");
+      (5, "0 Aggregation 780"); (5, "1 AttributeReference " ^ maandloon); (5, "HOLDS") ];
+  let v1 = " contributors [\"V1\" [[2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 60]] reached]" in
+  rows ~case_dir:"ref/test/fixtures/period-arithmetic/sum-member-without-timeline/" "case.json"
+    [ (0, "0 Binary " ^ maandloon); (0, "1 AttributeReference " ^ strandloon);
+      (0, "2 AttributeReference " ^ stormtoeslag); (0, "HOLDS");
+      (1, "0 Binary [[- 2024-01-01 0], [2024-01-01 2024-04-01 100], [2024-04-01 2024-07-01 70], [2024-07-01 2024-10-01 -30], [2024-10-01 - 0]]");
+      (1, "1 AttributeReference " ^ strandloon); (1, "2 AttributeReference " ^ stormtoeslag); (1, "HOLDS");
+      (2, "0 Binary [[- 2024-01-01 5], [2024-01-01 2024-07-01 105], [2024-07-01 - 5]]"); (2, "1 Literal 5");
+      (2, "2 AttributeReference " ^ strandloon); (2, "HOLDS");
+      (3, "0 Aggregation [[2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 60]]" ^ v1); (3, "HOLDS");
+      (4, "0 Aggregation [[- 2024-01-01 0], [2024-01-01 2024-02-01 50], [2024-02-01 2024-03-01 60], [2024-03-01 - 0]]" ^ v1);
+      (4, "2 Literal 0"); (4, "HOLDS");
+      (5, "0 Aggregation 780"); (5, "1 AttributeReference " ^ maandloon); (5, "HOLDS") ];
+  rows "case3-zonder-tijdlijnen.json"
+    [ (0, "0 Binary [[- - 0]]"); (0, "1 AttributeReference []"); (0, "2 AttributeReference []"); (0, "HOLDS");
+      (1, "0 Binary [[- - 0]]"); (1, "1 AttributeReference []"); (1, "2 AttributeReference []"); (1, "HOLDS");
+      (2, "0 Binary [[- - 5]]"); (2, "1 Literal 5"); (2, "2 AttributeReference []"); (2, "HOLDS");
+      (3, "0 Aggregation []"); (3, "HOLDS");
+      (4, "0 Aggregation [[- - 0]]"); (4, "2 Literal 0"); (4, "HOLDS");
+      (5, "0 Aggregation 0"); (5, "1 AttributeReference [[- - 0]]"); (5, "HOLDS") ]
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;

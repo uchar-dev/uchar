@@ -30,6 +30,11 @@
   ../../corpus/golden/anchor/jutterswet-nestuitzondering/case1-alleen-y.json
   ../../corpus/golden/anchor/jutterswet-nestuitzondering/case9-verdrongen-conflict.json
   (glob_files ../../corpus/golden/anchor/jutterswet-vondstwaardering/*.json)
+  ; the reading of period arithmetic without a condition is a golden's
+  ../../corpus/golden/jutterswet-maandloon/ir.json
+  ../../corpus/golden/jutterswet-maandloon/case1-voorbeeld.json
+  ../../corpus/golden/jutterswet-maandloon/case3-zonder-tijdlijnen.json
+  fixtures/period-arithmetic/sum-member-without-timeline/case.json
   ; the examples of ch. 5.8c over one dimension are goldens
   ../../corpus/golden/jutterswet-seizoenvondst/ir.json
   ../../corpus/golden/jutterswet-seizoenvondst/case1-voorjaarscel.json
