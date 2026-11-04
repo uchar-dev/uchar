@@ -3890,6 +3890,10 @@ let run_rule ?only env world (r : resolved_rule) =
         | Some Characteristic_attribution ->
             characteristic_value_constant_true r ~ot ~attr;
             if temporal_characteristic then characteristic_window_refusals env r ~ot ~attr
+        (* an initialisation is the lowest default of a scalar target (ch. 5.4,
+           7.8); on a timeline target only a defaults group carries it (ch. 7.11) *)
+        | Some Initialisation when temporal_target ->
+            Value.fault "temporal attribute %S as a target: temporal writes are not implemented" attr
         | _ ->
             if temporal_target then
               match Option.map Ir_v0.Checks.let_bound_value r.value_node with
@@ -4014,6 +4018,13 @@ let run_allocation env world (v : resolved_allocation) =
     let source_attr = req "AllocationVersion.sourceAttribute" v.source_attribute in
     let target_attr = req "AllocationVersion.targetAttribute" v.target_attribute in
     let method_name = req "AllocationVersion.method" v.vd_method in
+    (* the shares and the rest are scalar writes (ch. 4) *)
+    List.iter
+      (fun (t, a) ->
+        if Ir_v0.Checks.attr_temporal (object_type env t) a then
+          Value.fault "temporal attribute %S as a target: temporal writes are not implemented" a)
+      ((objective_type_name, target_attr)
+      :: Option.fold ~none:[] ~some:(fun ra -> [ (source_type, ra) ]) v.remainder_attribute);
     over_subjects env world ~form:v.vd_pointer ~otype:source_type ~rule:name (fun w src cond_err ->
         (* what the allocation writes from [src] is held under this name, so
            where it does not decide on [src] it gives back (ch. 6.1) *)
@@ -4239,6 +4250,13 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
     let subject = req "ObjectCreationVersion.subject" oc.oc_subject in
     let env = { env with subj = Some subject } in
     let pair = creation_pair env oc in
+    (* a member value is a scalar write, the input of the object it makes (ch. 5.5, 7.8) *)
+    List.iter
+      (fun (t : assignment) ->
+        let m = init_member env ~created t in
+        if (not t.to_characteristic) && Ir_v0.Checks.attr_temporal (object_type env created) m then
+          Value.fault "temporal attribute %S as a target: temporal writes are not implemented" m)
+      oc.assignments;
     over_subjects ~read env world ~form:oc.oc_pointer ~otype:subject ~rule:name (fun w self err ->
         (* A subject that a higher stratum minted cannot occur: a creation
            reads its subject's population strictly (ch. 6.1), so it sits at

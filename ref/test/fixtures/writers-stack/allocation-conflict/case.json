@@ -1,0 +1,55 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Berging",
+        "attributes": {
+          "opbrengst": {
+            "number": "100"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Berger",
+        "attributes": {
+          "bergingsaandeel": {
+            "number": "7"
+          },
+          "vaste aandeel": {
+            "number": "30"
+          }
+        },
+        "roles": {
+          "berging": [
+            "G1"
+          ]
+        },
+        "characteristics": [
+          "vast"
+        ]
+      },
+      {
+        "label": "B2",
+        "objectType": "Berger",
+        "attributes": {},
+        "roles": {
+          "berging": [
+            "G1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-016",
+    "params": {}
+  }
+}

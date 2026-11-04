@@ -1,0 +1,122 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Berging",
+        "animate": false,
+        "plural": "Bergingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "opbrengst",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Berger",
+        "animate": true,
+        "plural": "Bergers",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bergingsaandeel",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "bergingsaandelen",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "bergingsdeelname",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "berging",
+            "objectType": "Berging",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "berger",
+            "objectType": "Berger",
+            "plural": "bergers",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [
+      {
+        "node": "Allocation",
+        "name": "verdeel de opbrengst van een berging",
+        "versions": [
+          {
+            "sourceType": "Berging",
+            "sourceAttribute": "opbrengst",
+            "targetType": "Berger",
+            "targetAttribute": "bergingsaandeel",
+            "method": "equalShares",
+            "roundingDecimals": 0,
+            "descending": false,
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "bergingsdeelname",
+              "role": "berger"
+            }
+          }
+        ]
+      }
+    ],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": [
+    {
+      "node": "Diagnostic",
+      "severity": "warning",
+      "message": "verdeling met afronding/maximum zonder herkenbare onverdeelde rest (\u00a79.7.3/\u00a79.7.4): het restant wordt niet vastgelegd (regel 'verdeel de opbrengst van een berging')",
+      "line": 14
+    }
+  ]
+}

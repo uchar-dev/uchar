@@ -1,0 +1,23 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de vangst Numeriek (geheel getal);
+    de terug Numeriek (geheel getal);
+
+Objecttype de Melding (mv: Meldingen)
+    de waarde Numeriek (geheel getal);
+
+Feittype jutmelding
+    de melder Jutter
+    de melding (mv: meldingen) Melding
+Eén melder heeft meerdere meldingen
+
+Regel meld de vangst
+    geldig altijd
+        Een Jutter heeft een melding met waarde gelijk aan zijn vangst.
+
+Regel standaardwaarde
+    geldig altijd
+        De waarde van een Melding moet geïnitialiseerd worden op 5.
+
+Regel terug van een jutter
+    geldig altijd
+        De terug van een Jutter moet berekend worden als de som van de waarde van alle meldingen van de Jutter.

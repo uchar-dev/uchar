@@ -12725,6 +12725,57 @@ let () =
     [ ("WV-3.11-leeg-beslist-niets", "one-fires-empty"); ("WV-3.11-leeg-beslist-niets-versie", "versioned-fires-empty");
       ("WV-3.11-leeg-beslist-niets-naast-waarde", "empty-and-value") ]
 
+(* WV-7.8-stapel: every writer of a scalar target stands in one stack
+   (RUNTIME-SEMANTICS ch. 7.8), its writers — computing rules and an
+   allocation — of one rank, then the input of the object, the case's or the
+   values of a making, then the initialisation. On the golden
+   jutterswet-invoer-naast-initialisatie: a Vondst with taxatie 40 in the input,
+   "op zijn opgave indien hij gemeld is", "op zijn schatting indien hij erkend
+   is" and the initialisation "op 25 indien hij gemeld is": opgave 50 gives 50,
+   schatting 60 gives 60, neither gives the input 40; without the input the
+   initialisation gives 25. On the documents of ref/test/fixtures/writers-stack:
+   beside an equal-shares allocation of 100 over B1 and B2 the initialisation "op
+   5 indien hij vast is" gives the share 50 on B1 and on B2 over its input 7, 5
+   on an unlinked B3, the input 7 on an unlinked B4 and leeg on B5, which is not
+   vast; the initialisation "op 5" of the waarde of a Melding finds the waarde 7
+   a creation gives it filled (terug 7), fills it where the making gives none
+   (terug 5) and finds the input 40 of an input Melding filled; the rule "op
+   zijn vaste aandeel indien hij vast is" writing 30 where the allocation writes
+   50 is EF-016. An initialisation, an allocation and the member value of a
+   creation on a timeline target have no meaning and are refused by name *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let golden = "corpus/golden/jutterswet-invoer-naast-initialisatie/" in
+  List.iter
+    (fun (ident, c) -> plays ~ident ~ir:(read (golden ^ "ir.json")) ~case_data:(read (golden ^ c)) (fun _ -> ()))
+    [ ("WV-7.8-stapel", "case1-invoer.json"); ("WV-7.8-stapel-zonder-invoer", "case2-zonder-invoer.json") ];
+  let dir = "ref/test/fixtures/writers-stack/" in
+  List.iter
+    (fun (ident, d) -> plays ~ident ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
+    [ ("WV-7.8-stapel-verdeling", "allocation-initialisation"); ("WV-7.8-stapel-creatie", "creation-initialisation") ];
+  with_files ~ir:(read (dir ^ "allocation-conflict/ir.json")) ~case_data:(read (dir ^ "allocation-conflict/case.json"))
+    (fun findings _ evaluate ->
+      check "WV-7.8-stapel-verdeling-botsing: verifier-clean" (findings = []);
+      check "WV-7.8-stapel-verdeling-botsing"
+        (match evaluate () with
+        | exception Value.Fault { code = Some "EF-016"; params; _ } ->
+            List.assoc_opt "values" params = Some "30, 50" && List.assoc_opt "label" params = Some "B1"
+        | _ -> false));
+  List.iter
+    (fun (d, attribute) ->
+      let ident = "WV-7.8-stapel-tijdlijn-" ^ d in
+      with_files ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json"))
+        (fun findings _ evaluate ->
+          check (ident ^ ": verifier-clean") (findings = []);
+          check ident
+            (match evaluate () with
+            | exception Value.Fault { text; _ } ->
+                text
+                = Printf.sprintf "temporal attribute %S as a target: temporal writes are not implemented" attribute
+            | _ -> false)))
+    [ ("timeline-initialisation", "strandloon"); ("timeline-allocation", "bergingsaandeel");
+      ("timeline-creation", "waarde") ]
+
 (* WV-7.11-opgave-per-dag: a defaults group on a timeline target decides per
    day: on every day the highest default that decides that day wins
    (RUNTIME-SEMANTICS ch. 7.11), on the golden jutterswet-opgave-per-periode. The

@@ -1,0 +1,24 @@
+Objecttype de Berging (mv: Bergingen)
+    de opbrengst Numeriek (geheel getal);
+    de onverdeelde rest Numeriek (geheel getal);
+
+Objecttype de Berger (mv: Bergers) (bezield)
+    het bergingsaandeel (mv: bergingsaandelen) Numeriek (geheel getal);
+    het vaste aandeel Numeriek (geheel getal);
+    is vast kenmerk (bijvoeglijk);
+
+Feittype bergingsdeelname
+    de berging Berging
+    de berger (mv: bergers) Berger
+Eén berging heeft meerdere bergers
+
+Regel verdeel de opbrengst van een berging
+    geldig altijd
+        De opbrengst van een berging wordt verdeeld over de bergingsaandelen van alle bergers van de berging, waarbij wordt verdeeld:
+        - in gelijke delen,
+        - afgerond op 0 decimalen naar beneden.
+        Als onverdeelde rest blijft de onverdeelde rest van de berging over.
+
+Regel vast bergingsaandeel
+    geldig altijd
+        Het bergingsaandeel van een Berger moet gesteld worden op zijn vaste aandeel indien hij vast is.

@@ -1,0 +1,14 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de vangst Numeriek (geheel getal);
+
+Objecttype de Melding (mv: Meldingen)
+    de waarde Numeriek (geheel getal) voor elke maand;
+
+Feittype jutmelding
+    de melder Jutter
+    de melding (mv: meldingen) Melding
+Eén melder heeft meerdere meldingen
+
+Regel meld de vangst
+    geldig altijd
+        Een Jutter heeft een melding met waarde gelijk aan zijn vangst.
