@@ -295,7 +295,7 @@ EXPECTED_CHANNEL=(
   "anchor-depth-two|EXCLUDE DROOLS-293|transpiler SKIP: an anchored node in the filter or the test of a fold that stands in the filter of another fold and is read per member of it (the anchor two folds deep, IR-SPEC ch. 4.1a): the rules of the inner fold bind no form subject, so the branch refuses the rule by name, as both branches do (card subselection-reads-subject, step 3). Written in fix round A of that card as the positive witness of the depth review A asked for; ref and clingo play it, so its pins are a ref = clingo pair"
   "anchor/jutterswet-aanmeldquotum|EXCLUDE DROOLS-023|loader Refusal: Expr:TemporalRead — the v0 backend has no temporal-read lowering"
   "anchor/jutterswet-aanspraaktelling|EXCLUDE DROOLS-002|loader Refusal: functionDefs — no function section in the v0 backend"
-  "anchor/jutterswet-beschikkingsom|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "anchor/jutterswet-beschikkingsom|EXCLUDE DROOLS-021|loader Refusal: Expr:Match — the loader carries the sum type and the Construct (card absence-markers, step B), and the match over it is refused"
   "anchor/jutterswet-bootberging|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Vondst) has no bean field: the role 'geborgen vondst' on Boot is to-many, so its storage is the field at the far end, and the bean model derives none there either, both ends being to-many (§13.3.9). The WF-102 path itself is CARRIED since 2026-09-18 (card drools-bronpad); the middle relation 'berging' declares BOTH roles to-many, and lifting that is a bean-model change (a collection-valued representation for many-to-many) with channel consequences of its own. Since card tms-omschakeling (2026-10-10) the exec-model branch is the lowering with truth maintenance and refuses the golden in this sentence, as the destructive lowering did"
   "anchor/jutterswet-gemeenteberging|EXCLUDE DROOLS-161|transpiler SKIP: the path of the fact creation 'berging door de kustgemeente' steps over 'aanmelding', both of whose roles are to-many, and the bean model has no field for that (§13.3.9). Until card tms-omschakeling (2026-10-10) the destructive lowering refused the golden on another form first, the count 'aantal bergende gemeenten van een vondst' over a to-one element role whose sister role is to-many: one bean field carries both directions, a CONSERVATIVE refusal since 2026-09-10 whose old ground (the directed reading) RUNTIME-SEMANTICS ch. 5.7a withdrew"
   "anchor/jutterswet-penningvintage|EXCLUDE DROOLS-023|loader Refusal: Expr:TemporalRead"
@@ -306,7 +306,6 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-vondstdossier|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "closed-runtime-division-by-zero|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a red case until card zero-division-channel (2026-10-19), excluded in check-red.sh on the same refusal"
   "jutterswet-aanspraakherziening|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
-  "jutterswet-afwezigheidsmarkers|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType — an attribute with absence markers lowers to a sum type (RUNTIME-SEMANTICS ch. 9.5), which the loader does not carry; measured 2026-11-04 on both branches (card absence-markers, step A). Its pins are a ref = clingo pair until the Drools carriage of sum types"
   "jutterswet-dossierrecht-catala|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-dossierspelling|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-halfstokspelling|EXCLUDE DROOLS-054|bean name collision: the characteristic 'half stok' of Sein falls on the bean property Sein.halfStok of the attribute 'half-stok', has no field of its own, and a rule writes it. Measured 2026-09-28 before the refusal: both branches played the golden and answered two wrong values (a rouwmelding of 1 where ref and clingo keep it leeg, and the characteristic read from the registration), so its pins are a ref = clingo pair"
@@ -322,9 +321,9 @@ EXPECTED_CHANNEL=(
   "jutterswet-kindermacht|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-kinderprocent|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-muntketen|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Munt) has no bean field: the same many-to-many 'berging' as bootberging above — NOT the subtype landing it was written for, which the walk does carry (SourcePathChainWitnessTest pins a strict-subtype landing, both branches). The one-step narrowing IS played here, by jutterswet-munttelling and jutterswet-muntpiek"
-  "jutterswet-meldplichtspoor|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "jutterswet-meldplichtspoor|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — the loader carries the sum type (card absence-markers, step B), and reaches the list type next"
   "jutterswet-meldtermijnen|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
-  "jutterswet-penningbeschikking-catala|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "jutterswet-penningbeschikking-catala|EXCLUDE DROOLS-021|loader Refusal: Expr:Match — the loader carries the sum type (card absence-markers, step B), and the match over it is refused"
   "jutterswet-penningstaffel-catala|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-postenheffing|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "jutterswet-premiespelling|EXCLUDE DROOLS-070|bean name collision: the object types 'RechtOpPremie' and 'Recht op premie' fall on one fact class, dev.uchar.regelspraak.facts.RechtOpPremie. Measured 2026-09-28 before the refusal: both branches crashed compiling the generated beans (cyclic inheritance), so its pins are a ref = clingo pair"
@@ -333,12 +332,12 @@ EXPECTED_CHANNEL=(
   "jutterswet-vangstwaardering|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-waarderingsinvoer|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "synth3-armlichaam|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
-  "synth3-besluitschakel|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "synth3-besluitschakel|EXCLUDE DROOLS-021|loader Refusal: Expr:Match — the loader carries the sum type (card absence-markers, step B), and the match over it is refused"
   "synth3-keuringtal|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
-  "synth3-letbeslag|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "synth3-letbeslag|EXCLUDE DROOLS-021|loader Refusal: Expr:Match — the loader carries the sum type (card absence-markers, step B), and the match over it is refused"
   "synth3-metingtal|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "synth3-nestwaarde|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
-  "synth3-standtarief|EXCLUDE DROOLS-010|loader Refusal: Datatype:SumType"
+  "synth3-standtarief|EXCLUDE DROOLS-021|loader Refusal: Expr:Match — the loader carries the sum type (card absence-markers, step B), and the match over it is refused"
   "synth3-vangstsom|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType"
   "synth3-vondststaat|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
 )
@@ -1558,7 +1557,10 @@ EXPECTED_CHANNEL=(
 # (PLAYED 2), jutterswet-invoer-naast-verdeling (PLAYED 2, an allocation beside a computing rule, which both branches
 # carry since that card), jutterswet-invoer-naast-objectcreatie and jutterswet-invoer-op-keurklasse (PLAYED 1 each),
 # the input of a target in the stack of its writers (RUNTIME-SEMANTICS ch. 7.8).
-EXPECTED_PLAYED=338
+# 339 since the card absence-markers (step B, 2026-11-04): the golden jutterswet-afwezigheidsmarkers, an attribute with
+# absence markers, a sum type written, tested and read with PayloadAccess, scalar and per period (RUNTIME-SEMANTICS
+# ch. 9.5), which both branches carry since that step. It plays on both with PLAYED 10.
+EXPECTED_PLAYED=339
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
