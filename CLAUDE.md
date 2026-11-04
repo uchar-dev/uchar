@@ -476,7 +476,15 @@ missing line makes `make gates` exit non-zero. Current gates:
     and `periodDecisionsOf` gives per object and timeline target who
     decided per period, a stack's default, its conflict, the rules or the
     input (`PeriodDecisions`; card `decisions-per-period`, 2026-11-04,
-    witness `PeriodDecisionsWitnessTest`). A golden whose forms the loader+transpiler carry
+    witness `PeriodDecisionsWitnessTest`). Since the card `absence-markers`
+    (2026-11-04) both branches carry a sum type (RUNTIME-SEMANTICS ch. 9): its
+    value is a `ConstructorValue` on a bean, in a fact and in a segment, built
+    by `Construct`, compared by equality and read by `PayloadAccess`, also as
+    the source of a fold over members; on a timeline target of a sum type a
+    rule writes a constructor of a literal in the periods of its condition,
+    and a comparison with a constructor value is read per period. A `Match`
+    stays refused (DROOLS-021), and the payload of a timeline is refused by
+    name (DROOLS-314). A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
     (clingo) verify — a played pass IS the square (ref ≡ clingo ≡ Drools
     over the corpus). Not-carried forms never vanish silently: per-form
@@ -511,7 +519,8 @@ missing line makes `make gates` exit non-zero. Current gates:
     `timeline-arithmetic-per-period` (2026-11-03) DROOLS-030, DROOLS-036,
     DROOLS-304 and DROOLS-307, since the card `conditions-per-period`
     (2026-11-03) DROOLS-302, DROOLS-104 and DROOLS-311, since the card
-    `writers-as-one-defaults-stack` (2026-11-04) DROOLS-142; every raised code
+    `writers-as-one-defaults-stack` (2026-11-04) DROOLS-142, since the card
+    `absence-markers` (2026-11-04) DROOLS-010, DROOLS-012 and DROOLS-313; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
     `EXPECTED_MIN_DROOLS_CODES=289`. Since the card `message-catalogues`
@@ -695,9 +704,7 @@ missing line makes `make gates` exit non-zero. Current gates:
     forms' lists and its reason, stale-failing in both directions; a golden
     the loader refuses cannot be compared and is reported with its form.
     ROUTE LEG: on every golden with a `source.rgs` the graph from the source
-    route equals the graph from the wire route byte for byte, (a golden whose `ir.json` the Drools loader
-    refuses carries no `source.rgs`: `jutterswet-afwezigheidsmarkers`,
-    whose source the frontend's suite holds), and the
+    route equals the graph from the wire route byte for byte, and the
     graph's own unit tests (under `backends/drools/src/source-route`, compiled
     by the gate against the frontend and the backend jar) pass with a
     non-zero count. Floors in the script (measured 2026-09-26 at the wave's
@@ -780,6 +787,9 @@ missing line makes `make gates` exit non-zero. Current gates:
     filled segments within the justification's periods, the status `HOLDS`
     where it is at its turn on some day and `DISPLACED` where on none; its
     lines are compared verbatim as every other, and no floor moved.
+    Since the card `absence-markers` (2026-11-04) a constructor value is
+    written as its tag quoted and, for a unary constructor, its payload in
+    parentheses (ch. 5.12).
     The jar is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`). The
     traces run on one process per core, the readings and the plain
     replays on one per two cores with the replay flags of
