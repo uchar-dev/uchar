@@ -12823,6 +12823,11 @@ let () =
     (same
        (Timeline.canonical [ seg (day "2024-01-01") (day "2024-02-01") (n "50"); seg (day "2024-02-01") (day "2024-03-01") (n "70") ])
        [ seg (day "2024-01-01") (day "2024-02-01") (n "50"); seg (day "2024-02-01") (day "2024-03-01") (n "70") ]);
+  (* the unbounded form: 10/3 and 20/6 are one value, so one run *)
+  check "WV-3.1-canonical-rational"
+    (same
+       (Timeline.canonical [ seg (day "2024-01-01") (day "2024-02-01") (n "10/3"); seg (day "2024-02-01") (day "2024-03-01") (n "20/6") ])
+       [ seg (day "2024-01-01") (day "2024-03-01") (n "10/3") ]);
   check "WV-3.1-canonical-only-leeg" (Timeline.canonical [ seg (day "2024-04-01") (day "2024-05-01") Value.Empty ] = []);
   check "WV-3.1-canonical-degenerate" (Timeline.canonical [ seg (day "2024-05-01") (day "2024-04-01") (n "1") ] = []);
   let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
