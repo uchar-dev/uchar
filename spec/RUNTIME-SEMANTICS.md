@@ -1053,7 +1053,7 @@ time semantics of their own. It is organised by the role of each section:
 | the principle | ch. 3.3 the reading per day, the periods of a condition, the clip, the scalar contexts |
 | producers of a timeline | ch. 3.4 arithmetic per day; ch. 3.5 the sum per period; ch. 3.7 the time-proportional part; ch. 3.8 the day count, with the calendar arithmetic of dates it rests on; ch. 3.10 a condition per period, the period window, and the characteristic a condition writes |
 | collapses to a scalar | ch. 3.6 the temporal total; ch. 3.9 the whole-period qualifier |
-| writing | ch. 3.11 the write of a timeline: replacement, the write boundary per segment, leeg, two writers, what 0 means |
+| writing | ch. 3.11 the write of a timeline: a writer's own days beside the input, the write boundary per segment, leeg, two writers, what 0 means |
 | folds over linked instances | ch. 3.4a–3.4d and ch. 3.9a: the scalar folds over a set of instances, which ch. 3.5, 3.6 and 3.9 apply per member |
 | open decisions | ch. 3.12 |
 
@@ -3482,8 +3482,8 @@ another version or producer gives them — a gap, absent other writers.
 - **An empty window writes an empty timeline.** A leeg bound puts no day in
   the window, and a window whose `from` lies after its `to` has no days
   either. A window that misses the produced timeline leaves nothing of it.
-  The clipped result is then the empty timeline, which a standing target
-  does not write (ch. 3.11, ch. 7.8), as for any producer.
+  The clipped result is then the empty timeline, which decides no day of the
+  target (ch. 3.11, ch. 7.8), as for any producer.
 
 `corpus/golden/jutterswet-pachtvenster` pins every clause whose case lies on
 the declared grid. *v0 mirror note:* v0 refuses the window on a temporal
@@ -3615,9 +3615,12 @@ producers:
 A **time-dependent value in a scalar slot** is refused except through the
 collapses (ch. 3.3); that boundary is never crossed by silent coercion.
 
-**Replacement and change.** A write replaces the target's previous timeline;
-whether that is a change is decided by segment-wise equality (ch. 3.1), which
-makes rewriting to a fixpoint idempotent (ch. 5).
+**A writer's own days and change.** A write replaces what its rule wrote
+before. The target is the union of the segments its writers write, and on a
+day none of them decides it holds what it held before them, its input or leeg
+("Leeg in a write", below). Whether a write is a change is decided by
+segment-wise equality of the target's timeline (ch. 3.1), which makes
+rewriting to a fixpoint idempotent (ch. 5).
 
 **The write boundary per segment.** The write boundary of ch. 2.4 point 1
 holds per segment of a timeline target: a segment whose value does not fit
@@ -3641,26 +3644,41 @@ one segment is 18 × 38/365 = 684/365, which does not fit: **EF-006**, place
 unbounded form it is **684/365**. The red case
 `corpus/red/jutterswet-tijdsevenredig-past-niet` pins the fault.
 
-**Leeg in a write.** What a leeg value does depends on the kind of target, and
-three rules stand side by side:
+**Leeg in a write.** What a leeg value does depends on the kind of target:
 
 - On a **scalar** target a writer that fires with a leeg value writes leeg
   (ch. 1.2, Assignment; ch. 5.7), except a standing writer, which writes
   nothing on leeg (ch. 7.8).
-- On a **timeline** target of **one** writer the timeline it writes replaces
-  what the target held, its leeg days included (ch. 5.7). A standing writer
-  (ch. 7.8) decides only where its result reads a value on at least one day:
-  an empty result writes nothing and a case-supplied input timeline stands
-  whole, while a result with a value displaces the input timeline entirely,
-  so input and computed segments never interleave.
-- On a timeline target of **two or more** writers a writer decides only the
-  days on which its timeline reads a value; on a day none decides, the target
+- On a **timeline** target a writer, also its only one, decides only the days
+  on which its timeline reads a value; on a day no writer decides, the target
   holds what it held before any of them wrote, its input or leeg (ch. 5.7,
-  "Two writers per day").
+  "Two writers per day"; decided by the maintainer 2026-11-04,
+  `spec/proposals/IMPLICIT-TIME.md` point 5: the specification is silent, and
+  the reading follows ALEF). An empty result decides no day, so the input
+  stands whole; a result with a value on some days leaves the input standing
+  on the others, so input and computed segments interleave per day.
 
 A scalar is the timeline (−∞, +∞) (ch. 3.1), so one leeg value writes leeg
-into a scalar target and decides no day of a timeline target beside a second
-writer; whether one rule should govern the three is open (ch. 3.12).
+into a scalar target and decides no day of a timeline target; whether a leeg
+value of a writer that is not standing should write nothing on a scalar target
+as well is open (ch. 3.12).
+
+Worked example (`WV-3.11-per-dag-invoer`; `ref/` tests verbatim, on the
+documents of `ref/test/fixtures/writers-per-day`, which the suites of the ASP
+and the Drools backend play as well): a Jutter whose `strandloon` is a whole
+number for each month, the input 10 on [2025-01-01, 2026-01-01), and the one
+rule "Het strandloon van een Jutter moet gesteld worden op 20 van dd.
+01-03-2025 tot dd. 01-06-2025". The strandloon is **10** on [2025-01-01,
+2025-03-01), **20** on [2025-03-01, 2025-06-01) and **10** on [2025-06-01,
+2026-01-01); without the input it is 20 on [2025-03-01, 2025-06-01) and leeg
+on every other day. With 10 in place of 20 it is **10** on [2025-01-01,
+2026-01-01). With the one rule "Het strandloon van een Jutter moet berekend
+worden als zijn basisloon" and the basisloon 20 on [2025-03-01, 2025-06-01)
+and a gap elsewhere, it is again 10, 20 and 10: the rule reads leeg outside
+the spring and decides none of those days. Beside a second rule "… gesteld
+worden op 30 van dd. 01-09-2025 tot dd. 01-11-2025" (and 20 in spring) the
+input stands on the days neither decides: 10, 20, 10, 30 on [2025-09-01,
+2025-11-01) and 10 (`WV-5.7-per-dag-twee-schrijvers-invoer`).
 
 **Two writers per day.** Two or more writers of one timeline target each
 decide the days of their own segments, and the target is their union per day;
@@ -3687,9 +3705,10 @@ that writes a value on every day of all time has three consequences:
    maandwachtdagen gedurende de gehele maand groter is dan 0", is **leeg**: 0
    is not greater than 0 in any month. A count without segments would touch no
    bucket, pass both tests vacuously and give `maandpremie` 20.
-2. **Standing.** A standing target (ch. 7.8) that such a producer writes is
-   decided on every day, and its input timeline stands only where the rule's
-   condition cuts the producer to no period at all (ch. 3.10).
+2. **Beside the input.** A target that such a producer writes is decided on
+   every day of the periods of its rule's condition, and its input timeline
+   stands only on the days outside them (ch. 3.10); without a condition, on no
+   day.
 3. **Beside a second writer.** Such a producer decides every day of the
    periods of its rule's condition, so it stands beside another writer of the
    same target without EF-016 only where the two have disjoint periods or
@@ -3757,7 +3776,7 @@ and in the READMEs of the backends.
 | 7 | **A time-dependent characteristic outside a window** | ch. 3.3, 3.10, 3.11 | The write of a characteristic is defined within a window. No meaning: periods with an open bound (EF-023), so an unconditional characteristic and a negated check outside a window. Not defined: a write without a window, two rules on one characteristic, a case-supplied timeline of a characteristic a rule writes, a navigated characteristic in the condition of the write, and a time-dependent characteristic as the operand of the point read (the case format). Open: each of these. |
 | 8 | **The period window and the axis of versions** | ch. 3.10 | (a) A rule version's validity window on a temporal write mixes the selection of versions with the timeline axis; it belongs to the single-axis decision of ch. 8 (PLAN §9, decision 2), and no golden carries a validity window on a temporal rule. (b) A window in the `filter` of an `all` quantifier fold in a session without an evaluation date never matches, so the member is filtered out and the fold is vacuously waar; WF-112 is not widened to it (`corpus/golden/jutterswet-wachtvenster`, `bevoegd` in `case3-tijdvrij`). (c) A clip that cuts a bucket has no corpus carrier, because the case format pins every expected timeline to the declared grid; the alternative, a WF rule that demands bounds on the grid for a clip, is not taken. Open: (a), the reading of (b), and a case format that releases expected timelines from the grid. |
 | 9 | **The subject's own total of a case-supplied timeline** | ch. 3.6, 8.4 | It reads the asOfDate bucket, one period of the grid that holds the evaluation date, while a timeline a rule writes is totalled whole, so the meaning of "het totaal van zijn X" depends on who wrote X. Open: whether the own total of a case timeline reads the whole timeline, as every other timeline is read over all time, which changes the case convention of ch. 8.4. |
-| 10 | **Leeg in a write across target kinds** | ch. 3.11, 5.7, 7.8 | A leeg value writes leeg into a scalar target (a standing writer writes nothing); a sole writer's timeline replaces a timeline target whole, its leeg days included (a standing writer with an empty result writes nothing); beside a second writer a day a writer reads leeg is not decided, and the input stands there. Open: whether one rule governs the three, since a day of a timeline target reads the input or leeg depending on whether a second writer exists. |
+| 10 | **Leeg in a write on a scalar target** | ch. 3.11, 5.7, 7.8 | A writer that fires with a leeg value writes leeg into a scalar target, except a standing writer, which writes nothing (ch. 7.8); on a timeline target a day a writer reads leeg is a day it does not decide, for one writer as for two or more (decided 2026-11-04). Open: whether a leeg value of a writer that is not standing writes nothing on a scalar target as well, as ALEF's default evaluation reads it. |
 
 ---
 
@@ -4609,20 +4628,21 @@ Drools branches answered as above in both orders.
 
 **Two writers per day** (`spec/proposals/IMPLICIT-TIME.md` point 5; the
 specification is silent, and the reading follows ALEF). On a timeline
-target of two or more writers the paragraphs above hold per day: a writer
-decides the days of the segments it writes — its value restricted to the
-periods of its condition (ch. 3.10) — and a day on which its timeline reads
-leeg it does not decide (IMPLICIT-TIME VB 5.1). The target is the union of
-the writers' segments: on a day one writer decides, its value; on a day
-none decides, what the target held before any of them wrote, its input or
-leeg; on a day two decide with different values, no fact base satisfies
-both equations and the session faults with EF-016, once per attribute and
-object, naming the writers in the order of the document and their values
-on the first such day (VB 5.2). Two that decide a day with one value hold
-together; each writer's segments stand as it wrote them, and a shared day
-lies in the segment of the writer the document names first. On a target of
-one writer the timeline it writes replaces what the target held, as
-before. Worked example `WV-5.7-per-dag` (absolute; `ref/` tests verbatim,
+target the paragraphs above hold per day, for one writer as for two or more:
+a writer decides the days of the segments it writes — its value restricted
+to the periods of its condition (ch. 3.10) — and a day on which its timeline
+reads leeg it does not decide (IMPLICIT-TIME VB 5.1). The target is the
+union of the writers' segments: on a day one writer decides, its value; on a
+day none decides, what the target held before any of them wrote, its input
+or leeg (ch. 3.11, "Leeg in a write", with the worked example
+`WV-3.11-per-dag-invoer` of one writer beside the input); on a day two
+decide with different values, no fact base satisfies both equations and the
+session faults with EF-016, once per attribute and object, naming the
+writers in the order of the document and their values on the first such
+day (VB 5.2). Two that decide a day with one value hold together; each
+writer's segments stand as it wrote them, and a shared day lies in the
+segment of the writer the document names first. Worked example
+`WV-5.7-per-dag` (absolute; `ref/` tests verbatim,
 the fixtures `ref/test/fixtures/conditions-per-period/afdracht` and
 `afdracht-botsing`, shared by the ASP backend's suite): `rentedragend` on
 [2025-11-16, 2026-03-13); writer 1 sets the rentedagen to 30 gedurende de
@@ -8158,25 +8178,21 @@ predicate is shared between the executors (one definition), the ASP
 entry is the defaults group's `inputval/3` with an effectiveness atom
 carrying condition **and** value bindings (a condition-only atom would encode
 the v0 erase instead — the atom's body is the semantic choice).
-**The timeline arm (decided by the maintainer 2026-08-21, the
-temporal-standing card's numbered question — whole-timeline over
-per-bucket):** the norm extends to a **standing temporal target** — a
-temporal attribute carried by exactly one version-free computing rule
-(in practice the ch. 3.7 pro-rata fold or the ch. 3.8 day
-count) as its only writer. The rule
-decides only when its result timeline is **gevuld** (at least one
-segment); an empty result is the temporal leeg (empty == never-written,
-ch. 3.1) and **writes nothing**, so a case-supplied input timeline
-stands — **whole**: the defaults reading is per target, never per bucket
-(a default decides once, and ch. 3.11's timeline write replaces the whole
-attribute timeline), so input and computed segments never interleave. A
-deciding fold displaces the input timeline entirely (worked, absolute —
-the anchor `jutterswet-borgdeel` verbatim: a non-deciding fold over
-input [2024-03-01, 2024-05-01) = 7 leaves exactly that timeline, a
-reason-carrying gate-7 survivor; a fold deciding Jan–Feb 12 over an
-input March segment yields Jan–Feb 12 and nothing else). **Multi-writer
-targets stay fenced** on the ASP side (v0 meaning: agenda order), as do
-versioned targets (selection is temporal, ch. 7.4 — never defeasible).
+**The timeline arm:** on a timeline target the norm holds per day, for
+every writer of the target, versioned or not, one or more: a writer decides
+only the days on which its result timeline reads a value, and on every other
+day the target keeps what the fact base holds, the case-supplied input
+timeline or leeg (ch. 3.11, "Leeg in a write"; ch. 5.7, "Two writers per
+day"); the maintainer decided the arm for the whole timeline on 2026-08-21
+and revised it to per day on 2026-11-04 (`spec/proposals/IMPLICIT-TIME.md`
+point 5). An empty result is the temporal leeg (ch. 3.1) and decides no day,
+so the input stands whole; a result with a value on some days leaves the
+input standing on the others. Worked, absolute — the anchor
+`jutterswet-borgdeel` verbatim: a fold without a true period over the input
+[2024-03-01, 2024-05-01) = 7 leaves exactly that timeline, a reason-carrying
+gate-7 survivor; a fold that decides January and February 2024 with 12 over
+the input [2024-03-01, 2024-04-01) = 99 yields **12** on
+[2024-01-01, 2024-03-01) and **99** on [2024-03-01, 2024-04-01).
 
 ### 7.9 Nested exception groups (design — the Phase-5c gate)
 
