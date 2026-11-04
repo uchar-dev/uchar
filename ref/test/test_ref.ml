@@ -12908,8 +12908,12 @@ let () =
     let p = "/rules/prioritizedDefaults/" in
     List.filter (fun l -> String.length l > String.length p && String.sub l 0 (String.length p) = p) got
   in
-  let rows ident ir case label expected =
+  (* [of_label]: the readings of [label] alone, on a case with more subjects *)
+  let rows ?(of_label = false) ident ir case label expected =
     let got = defaults_of (readings_of (corpus_file ir) (corpus_file case)) in
+    let got =
+      if of_label then List.filter (fun l -> Case.contains ~needle:(Printf.sprintf " \"%s\" " label) l) got else got
+    in
     let expected =
       List.sort compare
         (List.map (fun (form, cell) -> Printf.sprintf "/rules/prioritizedDefaults/%s \"%s\" %s" form label cell) expected)
@@ -12946,6 +12950,49 @@ let () =
     [ ("0/defaults/0", "0 CharacteristicCheck []"); ("0/defaults/0", "1 Literal unreached"); ("0/defaults/0", "HOLDS");
       ("0/defaults/1", always); ("0/defaults/1", "1 AttributeReference [[2025-01-01 2026-01-01 10]]");
       ("0/defaults/1", "HOLDS") ];
+  (* the kustwacht default of J2 is justified in April only, which is not its
+     turn: its consequence is read all the same, and its read of the
+     asOfDate-bucket scalar faults there, where the evaluation raised nothing *)
+  let lazy_golden = "corpus/golden/jutterswet-gevolg-buiten-de-beurt/" in
+  rows ~of_label:true "WV-5.12-default-per-dag-gevolg-faalt" (lazy_golden ^ "ir.json") (lazy_golden ^ "case1-buiten-de-beurt.json") "J2"
+    [ ("0/defaults/0", "0 CharacteristicCheck [[2025-04-01 2025-05-01 empty]]");
+      ("0/defaults/0", "1 Literal [[2025-04-01 2025-05-01 60]]"); ("0/defaults/0", "HOLDS");
+      ("0/defaults/1", "0 CharacteristicCheck [[2025-04-01 2025-05-01 empty]]");
+      ("0/defaults/1", "1 AttributeReference fault EF-037"); ("0/defaults/1", "HOLDS"); ("0/defaults/2", always);
+      ("0/defaults/2", "1 Literal [[- - 5]]"); ("0/defaults/2", "HOLDS") ];
+  (* the same with the consequence "zijn kustloon plus 1": the read raises the
+     fault, the sum passes it on, and its right operand is not reached *)
+  (let map_field k f = function
+     | `Assoc kv -> `Assoc (List.map (fun (k', v) -> if k' = k then (k', f v) else (k', v)) kv)
+     | j -> j
+   in
+   let number = {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }|} in
+   let plus c =
+     Yojson.Safe.from_string
+       (Printf.sprintf
+          {|{ "node": "Binary", "op": "plus", "left": %s, "right": { "node": "Literal", "value": { "number": "1" },
+              "type": %s, "source": { "snippet": "1" } }, "type": %s, "source": { "snippet": "zijn kustloon plus 1" } }|}
+          (Yojson.Safe.to_string c) number number)
+   in
+   let on_defaults ds =
+     `List (List.mapi (fun i d -> if i = 1 then map_field "consequence" plus d else d) (Yojson.Safe.Util.to_list ds))
+   in
+   let doc =
+     map_field "rules"
+       (map_field "prioritizedDefaults"
+          (fun gs -> `List (List.map (map_field "defaults" on_defaults) (Yojson.Safe.Util.to_list gs))))
+       (Yojson.Safe.from_file (corpus_file (lazy_golden ^ "ir.json")))
+   in
+   let f = Filename.temp_file "ref-gevolg-faalt" ".ir.json" in
+   Yojson.Safe.to_file f doc;
+   rows ~of_label:true "WV-5.12-default-per-dag-gevolg-faalt-som" f (lazy_golden ^ "case1-buiten-de-beurt.json") "J2"
+     [ ("0/defaults/0", "0 CharacteristicCheck [[2025-04-01 2025-05-01 empty]]");
+       ("0/defaults/0", "1 Literal [[2025-04-01 2025-05-01 60]]"); ("0/defaults/0", "HOLDS");
+       ("0/defaults/1", "0 CharacteristicCheck [[2025-04-01 2025-05-01 empty]]");
+       ("0/defaults/1", "1 Binary fault EF-037"); ("0/defaults/1", "2 AttributeReference fault EF-037");
+       ("0/defaults/1", "3 Literal unreached"); ("0/defaults/1", "HOLDS"); ("0/defaults/2", always);
+       ("0/defaults/2", "1 Literal [[- - 5]]"); ("0/defaults/2", "HOLDS") ];
+   Sys.remove f);
   let member m cell = ("0/defaults/1/exceptions/members/" ^ string_of_int m ^ "/defaults/0", cell) in
   rows "WV-5.12-default-per-dag-uitzonderingsgroepen" (fixtures ^ "verdrongen-conflict/ir.json")
     (fixtures ^ "verdrongen-conflict/case.json") "J1"

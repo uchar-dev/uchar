@@ -3471,10 +3471,20 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
     if not root then read_whole e (Some tl);
     tl
   in
+  (* a node read as a timeline that faults, or passes a fault on, records it,
+     the root as well (ch. 5.12): the reading of a default's consequence on a
+     day that is not its turn reads where the evaluation does not. A scalar
+     operand records its own through [eval_expr] *)
+  let faulted f =
+    match !observer with
+    | None -> f ()
+    | Some o -> ( try f () with Value.Fault _ as ex -> ignore (o.expr e (fun () -> raise ex)); raise ex)
+  in
   match e with
   | Binary
       { op = (Plus | Min | Reduced_by | Times | Divided_by | Divided_by_abs | Percentage_of) as op;
         left_side = Some l; right_side = Some r; _ } ->
+      faulted @@ fun () ->
       (* a period where an operand is leeg coalesces it into its declared unit *)
       let units = (period_unit env l, period_unit env r) in
       let a = period_timeline env w self ~err ~target ~attr ~target_unit:(fst units) l in
@@ -3498,7 +3508,7 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
           a otn self.otype;
       refuse_finer ~what:(Printf.sprintf "the attribute %S" a) ~operand:(Timeline.attr_grid env.doc (object_type env otn) a)
         ~target ~attr;
-      seen (whole self a)
+      seen (faulted (fun () -> whole self a))
   | Function_call
       { kind = Sum_function;
         call_arguments = [ Attribute_reference { attribute_ref = Some x; navigation_bindings = None; anchor = None; _ } ];
@@ -3509,7 +3519,7 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
         ~target ~attr;
       let members = fold_members ?binding:source_role ?path:source_path env w self ~element:el in
       let fallback = Option.map (eval_expr env w self ~err) empty_fallback in
-      let timelines = List.map (fun (i : World.instance) -> (i.label, whole i x)) members in
+      let timelines = faulted (fun () -> List.map (fun (i : World.instance) -> (i.label, whole i x)) members) in
       (* the node of a fold over a set carries its contributors (ch. 5.12), here
          each member with the timeline it contributes; a member without one
          contributes nothing, as a leeg member of a value fold does *)
@@ -3521,7 +3531,7 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
   | Rounding { base_expr = Some b; mode_kind; decimal_places; _ } when is_period_arithmetic b ->
       (* ch. 2.5 per day: each segment of the base rounded, its leeg periods
          gaps as before *)
-      let tl = period_timeline env w self ~err ~target ~attr ~target_unit b in
+      let tl = faulted (fun () -> period_timeline env w self ~err ~target ~attr ~target_unit b) in
       seen
         (Timeline.coalesce
            (List.map
@@ -3540,8 +3550,9 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
           match SMap.find_opt (norm p) env.param_tls with
           | Some tl -> seen tl
           | None ->
-              Value.faultc ~params:[ ("parameter", p) ] "EF-014"
-                "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" p)
+              faulted (fun () ->
+                  Value.faultc ~params:[ ("parameter", p) ] "EF-014"
+                    "parameter %S is unbound in this case (binding is fail-fast, ch. 5.7)" p))
       | None -> Value.fault "unknown parameter %S" p)
   | _ ->
       Value.fault
