@@ -3661,9 +3661,10 @@ decides no day, so the input stands whole; a result with a value on some days
 leaves the input standing on the others, so input and computed segments
 interleave per day. A scalar is the timeline (−∞, +∞) (ch. 3.1), so on a
 **scalar** target the same rule reads: a writer that fires with a leeg value
-decides nothing, and the target holds another writer's value, its input or
-leeg — for the target's only writer, beside a second writer and with a
-validity window alike (ch. 1.2, Assignment; ch. 5.7; ch. 7.8).
+decides nothing, and the target holds another writer's value, its input, its
+initialisation's value or leeg — for the target's only writer, beside a second
+writer and with a validity window alike (ch. 1.2, Assignment; ch. 5.7; the
+stack of ch. 7.8).
 
 Worked example (`WV-3.11-leeg-beslist-niets`, `-versie` and `-naast-waarde`;
 `ref/` tests verbatim, on the documents of `ref/test/fixtures/empty-write`,
@@ -4165,7 +4166,10 @@ subject, else a per-(rule, subject) creation marker): **one creation per
 rule per subject** unless the fact base itself changed the question.
 Executed: for each subject whose condition holds, a
 deterministic instance of the created type is minted, the member
-initialisations apply (values evaluated on the subject; a characteristic
+initialisations apply (values evaluated on the subject, the input of the
+object made: a writer of the member displaces such a value where it
+decides, and an initialisation of the member finds it filled, the stack of
+ch. 7.8, `corpus/golden/jutterswet-invoer-naast-objectcreatie`; a characteristic
 initialisation's boolean-typed value sets the mark when it evaluates
 true and, evaluating false **or empty**, leaves it unset — equivalent to
 an absent initialisation, the closed-world reading characteristic checks
@@ -4617,10 +4621,12 @@ date; V with both dates on 02-03-2026 gets **02-03-2026**.
 **The writers that decide at the fixpoint** (decided by the maintainer
 2026-11-02). The value of a target with two or more writers is that of the
 writers that decide at the fixpoint, in every order of the rules: where
-none decides, the target keeps its input value or stays leeg; where one
-decides, it takes that writer's value, and a writer that fires with a leeg
-value does not decide (ch. 3.11); where two decide with different
-values, the session faults as above. A value a writer wrote on a state
+none decides, the target keeps its input value, takes its initialisation's
+value or stays leeg; where one decides, it takes that writer's value, and a
+writer that fires with a leeg value does not decide (ch. 3.11); where two
+decide with different values, the session faults as above. This is the stack
+of ch. 7.8, in which an allocation is a writer of the same rank as the
+computing rules. A value a writer wrote on a state
 between, where its condition held on a value another rule replaces, does
 not stand (ch. 6.1, "A write is read at the fixpoint"). Worked example
 (absolute; the golden `jutterswet-twee-schrijvers-aan-fixpunt` with the
@@ -8263,15 +8269,71 @@ the fact base holds" — every outcome of ch. 7.3 and 7.6.2 derives from
 "the highest default that decides wins" alone — and it generalises beyond
 declared defaults. On a timeline target it is read per day: it is
 justified on a day on which the input timeline reads a value, and its
-consequence is that day's value (ch. 7.11):
+consequence is that day's value (ch. 7.11).
 
-**The standing norm.** A **scalar computing rule
-(Gelijkstelling/Berekening)** — its target's only writer or one of
-several, with or without a validity window — decides **like a default**:
-its justification is its condition, and it decides only when its value
-evaluates **gevuld**. A **leeg evaluation writes nothing**: the target
-keeps what the fact base holds — another writer's value, the
-case-supplied input value, or leeg (ch. 3.11). The maintainer decided the
+**The stack of a target** (decided by the maintainer 2026-11-04). Every
+writer of an attribute target stands in one implicit stack of defaults,
+highest first:
+
+1. the **writers**: the computing rules (Gelijkstelling/Berekening) and the
+   allocation (ch. 4) that write the target, of one rank. A writer decides
+   where its condition holds and its value is gevuld; one that fires with a
+   leeg value decides nothing (ch. 3.11). Where one decides, the target takes
+   its value; where two decide with different values, no fact base satisfies
+   both and the session faults with EF-016 (ch. 5.7);
+2. the **input of the object**, the virtual input default: the value the case
+   supplies, or, on an object a creation made, the value of its making
+   (ch. 5.5) — a creation gives the object it makes its member values as the
+   case gives an input object its attributes;
+3. the **initialisation** (§9.6, ch. 5.4, 7.3), justified where the input
+   leaves the target empty, which decides where no writer does.
+
+Where none of them decides, the target is leeg. A defaults group is a stack of
+its own (ch. 7.1), whose virtual input default is rank 2 of this one; beside it
+no writer of its level stands (`IR-SPEC.md` WF-050). On a timeline target the
+stack is read per day (ch. 3.3): a writer decides the days on which its timeline
+reads a value, the input stands on every other day, and two writers that decide
+one day with different values are EF-016 (ch. 3.11, 5.7). An initialisation, an
+allocation and the member value of a creation write a scalar target; on a
+timeline target each is refused by name, and the initialisation default of a
+defaults group is read per day (ch. 7.11).
+
+Worked example `WV-7.8-stapel` (absolute; `ref/test/` verbatim, the golden
+`jutterswet-invoer-naast-initialisatie` and the documents of
+`ref/test/fixtures/writers-stack`, which the suite of the ASP backend plays as
+well): a Vondst whose `taxatie` three forms write, "De taxatie van een Vondst
+moet gesteld worden op zijn opgave indien hij gemeld is", "… op zijn schatting
+indien hij erkend is" and "De taxatie van een Vondst moet geïnitialiseerd worden
+op 25 indien hij gemeld is". Gemeld and erkend with taxatie 40 in the input:
+with opgave 50 the taxatie is **50** (the second rule fires with leeg), with
+schatting 60 **60**, with neither **40** — the input stands and the
+initialisation does not write; without the input, with neither, **25**; erkend
+alone and without the input, **leeg**. Beside an equal-shares allocation of 100
+over B1 and B2, the initialisation "Het bergingsaandeel van een Berger moet
+geïnitialiseerd worden op 5 indien hij vast is" gives B1 and B2, both vast, the
+share **50**, also over B2's input 7, an unlinked vast B3 **5**, an unlinked
+vast B4 with input 7 **7**, and B5, not vast, **leeg**; with the rule "Het
+bergingsaandeel van een Berger moet gesteld worden op zijn vaste aandeel indien
+hij vast is" in place of the initialisation and a vaste aandeel 30 on B1, the
+session faults with EF-016, B1, the values 30 and 50
+(`WV-7.8-stapel-verdeling-botsing`). Beside the creation "Een Jutter heeft een
+melding met waarde gelijk aan zijn vangst", the initialisation "De waarde van een
+Melding moet geïnitialiseerd worden op 5" finds the waarde 7 of the making
+filled and fills it where the making gives none: a Jutter with vangst 7 has a
+terug, the sum of the waarde of its meldingen, of **7**, one without a vangst
+**5**. The goldens `jutterswet-invoer-naast-verdeling`,
+`jutterswet-invoer-naast-objectcreatie` and `jutterswet-invoer-op-keurklasse`
+pin the stack with case input beside an allocation, beside a creation and on an
+enumeration and a text target, through all three executors.
+
+**The standing norm** is rank 1 of the stack read for a computing rule. A
+**scalar computing rule (Gelijkstelling/Berekening)** — its target's only
+writer or one of several, with or without a validity window — decides
+**like a default**: its justification is its condition, and it decides only
+when its value evaluates **gevuld**. A **leeg evaluation writes nothing**:
+the target keeps what the rest of its stack gives it — another writer's
+value, the input of the object, the initialisation's value, or leeg
+(ch. 3.11). The maintainer decided the
 norm on 2026-08-20 for a version-free rule that is its target's only
 writer and widened it on 2026-11-04 to every computing rule. The v0
 mirror wrote the computed leeg over the input (ch. 1.2); that erase is
@@ -8294,12 +8356,11 @@ computed leeg never displaces an input value — the delta pin); no
 input, computing 50 → **50**. The two standing outcomes satisfy a
 do-nothing executor by construction — the standing *is* what they
 test — so they are reason-carrying gate-7 survivors. In the ASP backend
-the input of a target that only computing rules write enters as the
-defaults group's `inputval/3` and stands where no writer's value atom
-holds, an atom that carries condition **and** value bindings (a
-condition-only atom would encode the v0 erase instead — the atom's body is
-the semantic choice; `Ir_v0.Desugar.standing_targets` names those
-targets).
+the input of a target that a writer of its stack writes enters as
+`inputval/3` and stands where no writer's value atom holds, an atom that
+carries condition **and** value bindings (a condition-only atom would
+encode the v0 erase instead — the atom's body is the semantic choice;
+`spec/ASP-TRANSLATION.md` S10).
 **The timeline arm:** on a timeline target the norm holds per day, for
 every writer of the target, versioned or not, one or more: a writer decides
 only the days on which its result timeline reads a value, and on every other

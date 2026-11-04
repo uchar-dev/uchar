@@ -113,11 +113,10 @@ gate; a non-date bound faults naming position and lexeme, and a
 non-date `asOfDate` is refused by the shared case loader; a *bounded* window in a
 time-free session (`asOfDate` null) faults with ref's own reason
 (`a validity-bounded form needs an evaluation date; this session is
-time-free`), so the two executors refuse identically. Windowed forms
-never collide with the defeasible-input machinery: the ch. 7.7
-desugaring and the ch. 7.8 standing norm both demand *version-free*
-forms, so an excluded rule's target simply keeps its case input as
-the plain `val/3` fact — with one seam handled explicitly: a defaults
+time-free`), so the two executors refuse identically. An excluded rule
+is no writer of its target's stack (S10), so a target whose writers are
+all excluded keeps its case input as the plain `val/3` fact — with one
+seam handled explicitly: a defaults
 *group* whose members are all excluded still emits the unconditional
 pass-through `val(S,a,V) :- inputval(S,a,V), is_a(S,ot).`, because
 the defeasible entry keys on the unfiltered defaults list (S10/S17).
@@ -199,25 +198,28 @@ empty operand false, in particular both-empty (v0's Tabel-38 guard on
 the date shape; S7 carries the routing). A `dateTime` value stays
 refused — milliseconds since epoch exceed clingo's integer range.
 
-The standing-target routing is the one semantic decision made at
-input time (RS ch. 7.8; S10 carries the detail): if the target attribute of
-a defeasible producer — a defaults target, or a scalar target that only
-computing rules write (`Desugar.standing_targets`, the standing norm) — receives case
-input, that input enters as `inputval/3` instead of `val/3`, so the
-producer can defeat it. The input timeline of a timeline target that a
-computing rule or a defaults group writes enters as `inputtl/5` and
-stands on the days no writer decides (RS ch. 3.11, 7.11). Everything else enters as plain facts.
-Case input on a computed scalar target that an initialisation, an
-allocation or a creation-time write writes as well is refused loudly
-(the hunted superset model of ch. 6d). Role
+The routing into the stack of a target is the one semantic decision made
+at input time (RS ch. 7.8; S10 carries the detail): if a defaults group or,
+on a scalar target, a writer of the stack — a computing rule that applies on
+the case's date or an allocation — writes the attribute
+(`defeasible_input`), its case input enters as `inputval/3` instead of
+`val/3`, whatever its datatype, so the writers can defeat it; where an
+initialisation writes it, the input also enters as `inputfilled/2`, the
+input world the initialisation's guard reads (S3). The input timeline of a
+timeline target that a computing rule or a defaults group writes enters as
+`inputtl/5` and stands on the days no writer decides (RS ch. 3.11, 7.11).
+Everything else enters as plain facts. Role
 fillings are doubled as `inputrole/3` when object creation is present
 (the ch. 5.5 input-snapshot narrowing, S11). With recursive creation,
 every input instance gets `depth(L,0)` under the creation budget.
 
 Witnesses: every golden case exercises this section (gate 6);
 standing routing by the defaults anchors, `jutterswet-waardestelling`
-(the scalar standing norm) and `jutterswet-borgdeel` (a timeline
-writer beside its input); vintages by `jutterswet-aanmeldquotum`,
+(the scalar standing norm), `jutterswet-invoer-naast-initialisatie`,
+`jutterswet-invoer-naast-verdeling`, `jutterswet-invoer-naast-objectcreatie`
+and `jutterswet-invoer-op-keurklasse` (the stack beside an initialisation,
+an allocation, a creation, and on an enumeration and a text target) and
+`jutterswet-borgdeel` (a timeline writer beside its input); vintages by `jutterswet-aanmeldquotum`,
 `jutterswet-penningvintage` and `corpus/red/vintage-uncovered-date`;
 the symbolic carriage by `jutterswet-vondstetiket` (text),
 `jutterswet-keurstaat` (enum, including the case2 norm-insensitive
@@ -255,9 +257,9 @@ a `DimensionCellRead` writes the `val/3` of the cell under its own name,
 `val(S,"vondstgewicht[najaar]",⟨term⟩)`, the name the case input and the
 cell read use (S2, S4), and every declaration the arms below read — the
 datatype, the decimals, the unit — is the attribute's (`find_decl`). The
-cell is a target of its own in the ch. 7.8 standing domain and in the
-initialisation arm, so its input enters as `inputval/3` where the cell is a
-standing target and as `inputfilled/2` where an initialisation writes it.
+cell is a target of its own in the stack of RS ch. 7.8 and in the
+initialisation arm, so its input enters as `inputval/3` where a writer writes
+the cell and as `inputfilled/2` where an initialisation writes it.
 The pair of a computing rule and an initialisation on one cell is in the
 ch. 7.7 desugaring's domain as on an attribute: `Ir_v0.Desugar.document`
 rewrites it into a defaults group on the cell's name, which only this backend
@@ -276,14 +278,17 @@ rather than truncating (a recorded loud asymmetry: ref writes the
 exact rational). Non-aligned scales fault at translation time. Units
 at the write boundary must be identical (S6's unit fence).
 
-Every scalar computing rule also derives its value under its index in
-the document, `wval(S,a,⟨term⟩,i)`, with the full rule body, and
-`wdecides(S,a) :- wval(S,a,_,i).`; on a standing target the defeasible
+Every scalar computing rule, of every datatype, is a writer of its
+target's stack (RS ch. 7.8): it derives its value under its index in the
+document, `wval(S,a,⟨term⟩,i)`, with the full rule body, and
+`wdecides(S,a) :- wval(S,a,_,i).`; where an object of the target's chain
+has an input — the case's, or a creation's member value — the defeasible
 input rule `val(S,a,V) :- inputval(S,a,V), is_a(S,ot), not
 wdecides(S,a).` lets a writer win exactly where it decides. An empty
 result derives no `wval` and decides nothing, so the input stands (RS
 ch. 3.11, 7.8). Two writers of one concrete type that derive different
-`wval` values are the named EF-016 witness.
+`wval` values are the named EF-016 witness, an allocation among them
+(S12).
 
 **Initialisation** (`initialisation: true`). Inside the ch. 7.7
 desugaring domain — one unconditional, version-free initialisation
@@ -295,17 +300,18 @@ translates natively, as ref replays it (RS ch. 5.4):
 
 ```
 val(S,a,⟨term⟩) :- isa(S,ot), ⟨exclusions⟩, ⟨condition⟩, not inputfilled(S,a)
-                   [, not comp_decides(S,a)], ⟨bindings⟩, ⟨fit guards⟩.
+                   [, not wdecides(S,a)], ⟨bindings⟩, ⟨fit guards⟩.
 ```
 
-`inputfilled/2` is a case fact beside the untouched input `val/3`: the
+`inputfilled/2` is a case fact beside the input, and on an object a
+creation made the creation derives it with its member value (S11): the
 guard reads the input (RS ch. 5.4), so a supplied value stands, the
 initialisation's own write never switches the guard off, and the head is
-not its own negative premise. Beside one computing rule that writes a
-concrete type of the initialisation's chain as a rule too, that rule
-derives `comp_decides(S,a)` with its own val body; the head needs
-`not comp_decides(S,a)`, so the computed value wins, and a rule that
-evaluates leeg decides nothing (RS ch. 3.11), so the initialisation
+not its own negative premise. Beside the writers of its stack — the
+computing rules that write a concrete type of the initialisation's chain
+as a rule too, any number of them, and an allocation of the target — the
+head needs `not wdecides(S,a)`, so a writer's value wins, and a rule that
+evaluates leeg decides nothing (RS ch. 3.11, 7.8), so the initialisation
 writes. The value's fences carry the write guard
 (`ctx.rule_guard`): ref evaluates the value only where it writes. Where
 the chain of a concrete type declares a defaults group on the target, the
@@ -317,17 +323,20 @@ branches of the guard), `jutterswet-wrakinitialisatie` (the folded
 initialisation beside the rule on the supertype's own instances) and
 `jutterswet-initialisatievolgorde` (a value that a rule written later
 computes, conditional through this arm and unconditional through the
-desugaring); the co-writer and divergence shapes are pinned in the
-backend's own suite.
+desugaring), `jutterswet-invoer-naast-initialisatie` (two computing
+rules and the input above the initialisation); the co-writer and
+divergence shapes are pinned in the backend's own suite.
 
 A **text/enum scalar target** takes the sum/struct-target route: the
 value — a text/enum literal or an own-subject text/enum attribute
 read, lowered by `symbolic_term` (S2's ground terms) — rides straight
 into the `val` head, no scale, no unit, no fit. A leeg source read
 binds no atom, so the rule does not fire and the target is leeg
-(propagation for free). A case-supplied text/enum *computed* target
-has no monotone encoding here (the sum-target sibling) and is fenced
-loudly. A **boolean computed target** is refused with its reason: a
+(propagation for free). The rule is a writer of its target's stack, as
+every computing rule is, and so is one on a sum, struct or date-time
+target: a case-supplied value enters as `inputval/3` and stands where the
+rule decides nothing (`jutterswet-invoer-op-keurklasse`; the sum, struct and
+date-time frames of the backend's own suite). A **boolean computed target** is refused with its reason: a
 boolean is a characteristic in v0, so rule forms *read* it
 closed-world through `has/2` (the WF-027 `bool_atoms` guard, S11),
 which a derived `val/3` would not feed — the two encodings would
@@ -338,14 +347,13 @@ conditional literal `stempel`).
 
 A rule's **validity window** rides S1's validity gate: an excluded
 rule emits nothing and its target's case input stands untouched; an
-in-window rule translates as any version-free rule — including the
-standing domain of its target, like a version-free rule's. Witness: `jutterswet-vensterheffing`.
+in-window rule translates as any version-free rule, a writer of its
+target's stack. Witness: `jutterswet-vensterheffing`.
 
 Not translated, loudly (S19 carries the full list):
-temporal targets outside the two ch. 3.7/3.8 fold shapes; case input
-on a computed target beside an initialisation, an allocation or a
-creation-time write; boolean computed targets (above); the initialisation shapes the
-native arm has no guard for (above).
+temporal targets outside the two ch. 3.7/3.8 fold shapes; boolean
+computed targets (above); the initialisation shapes the native arm has no
+guard for (above).
 
 ### S4. Expression terms
 
@@ -1704,7 +1712,7 @@ decision as well (RS ch. 7.1, 7.5), and is keyed by the target form; a
 default the ch. 7.7 desugaring made from a v0 form deposits where it is
 evaluated (RS ch. 7.8), under the name of its rule. The native arm of a
 conditional or windowed initialisation puts `not inputfilled(S,a)` and,
-beside a computing rule, `not comp_decides(S,a)` on the fences and deposits
+beside a writer of its stack, `not wdecides(S,a)` on the fences and deposits
 of its condition and its value. An `initialisation`
 default additionally requires `not grpG_has_input(S)`: initialisation
 yields to case input by definition (RS ch. 7.3, and the virtual
@@ -1722,8 +1730,18 @@ effectiveness atom's body **is** the semantic choice: it carries
 condition *and* value bindings, so a producer that fires but derives
 nothing (an empty defaults outcome, an empty computing rule) leaves the
 input standing — ref's no-write-on-empty. A condition-only body
-would encode v0's erase instead. The standing norm extends this to
-every scalar computing rule (S3).
+would encode v0's erase instead. The stack of RS ch. 7.8 extends this to
+every writer of a scalar target: each computing rule (S3) and each
+allocation (S12) derives `wval/4` under its own writer, its index in the
+document or `vdI`, with the body of its `val` head, and `wdecides/2` from it;
+the input stands where no writer decides, two writers that derive different
+values on one object are the EF-016 witness (`writer_conflicts`), and an
+initialisation writes where neither `inputfilled/2` nor `wdecides/2` holds
+(S3). The member value of a creation is the input of the object it makes:
+on a member that a writer, a defaults group or an initialisation writes, the
+creation derives `inputval/3` and `inputfilled/2` on its term in place of
+`val/3` (S11), so a writer displaces it as it displaces case input and an
+initialisation finds it filled.
 
 **Per day on a timeline target** (RS ch. 7.11): the chain and group
 predicates of the scalar lowering carry a period `(S,X,Y)` of the
@@ -1746,8 +1764,8 @@ there (`corpus/golden/jutterswet-gevolg-buiten-de-beurt`,
 Witnesses: `jutterswet-hardheid` (the §4.1 hardship pattern),
 `jutterswet-toelagegronden`, `jutterswet-uitsluiting`,
 `jutterswet-vondstwaardering` (conflict), `jutterswet-waardestelling`
-(scalar standing); the
-WF-050/051 negatiefs pin defaults well-formedness; gate 7's
+(scalar standing), the four `jutterswet-invoer-*` goldens (the stack, S2);
+the WF-050/051 negatiefs pin defaults well-formedness; gate 7's
 reason-carrying no-op survivors pin exactly the cases where standing
 input must survive an ineffective producer.
 
@@ -1757,7 +1775,12 @@ input must survive an ineffective producer.
 deterministic function term `ocI(S)` — set semantics gives
 idempotence for free (re-deriving the same head is the same atom).
 `is_a(ocI(S),new) :- ⟨body⟩.`, member initialisations as
-`val(ocI(S),m,⟨term⟩)`/`has(ocI(S),m)` — a member with `labels` as
+`val(ocI(S),m,⟨term⟩)`/`has(ocI(S),m)` — the input of the object made, so
+`inputval(ocI(S),m,⟨term⟩)` with `inputfilled(ocI(S),m)` on a member a
+writer, a defaults group or an initialisation writes (S10,
+`jutterswet-invoer-naast-objectcreatie`); a member on a timeline target is
+refused in ref's words, `temporal attribute "a" as a target: temporal
+writes are not implemented` — a member with `labels` as
 `val(ocI(S),"vangstgewicht[najaar]",⟨term⟩)`, the cell of the made object
 (ch. 5.8c) —, and the back-link doubled
 in both directions (`role(S,new_role,ocI(S))` and
@@ -1849,22 +1872,24 @@ multipliers a misaligned form introduces (46340² < 2^31; equal
 scales keep the historical 46340 everywhere). The wrap fences stay
 UNGATED by the voorwaarde — grounding computes the scaled products
 whether or not the condition turns out true — so clingo refuses
-loudly where ref would merely skip the source. **Case input on the
-allocation's target** enters defeasibly (S10): the value rides
-`inputval/3`, a per-allocation `vdI_eff(X)` fires with the SAME body
-as each val head — so it holds exactly where the allocation writes
-recipient X — and `val(D,da,V) :- inputval(D,da,V), is_a(D,dt), not
-vdI_eff(D)` re-admits the input on any target instance the allocation
-does not reach: a non-recipient, or a recipient the method excludes
-(a weightless proportional share — ref leaves those standing, never
-0). ref overwrites where it writes and leaves the input where it does
-not (`World.write_attr`, ch. 4); the layer is exactly that. It is
-engaged only where the case supplies the target, and fenced loudly
-where that target attribute is READ anywhere else (a feedback into the
-pot, weights, criteria or condition has no stratified `not vdI_eff`
-encoding — the read set is the verifier's own, `dep_forms`) or WRITTEN
-by a second form (the overlap's overwrite order is unpinned) — the
-narrowest acyclic form.
+loudly where ref would merely skip the source. The allocation is a
+**writer of the stacks** of its share target and its rest (S10, RS ch. 7.8):
+beside each `val` head it derives `wval(X,da,⟨share⟩,vdI)` and
+`wval(B,ra,⟨rest⟩,vdI)` with the SAME body, and `wdecides/2` from them.
+**Case input on the allocation's target and rest** enters defeasibly
+(`inputval/3`), and `val(D,da,V) :- inputval(D,da,V), isa(D,dt), not
+wdecides(D,da)` re-admits the input on any instance no writer reaches: a
+non-recipient, or a recipient the method excludes (a weightless
+proportional share — ref leaves those standing, never 0). A computing rule
+on the same target is a writer of the same rank, its different value on one
+object the EF-016 witness, and an initialisation writes below both. The
+negation is stratified as a computing rule's is: the allocation never reads
+its own target, and a read of the target that feeds its pot, weights,
+criteria or condition is a dependency cycle WF-045 refuses. A share target
+or rest on a timeline is refused in ref's words (`temporal attribute "a" as
+a target: temporal writes are not implemented`). Witnesses
+`jutterswet-veilinginvoer` and `jutterswet-invoer-naast-verdeling` (a rule
+beside the allocation, the input on the target and on the rest).
 
 **Uniqueness** (ch. 5.9): a collision is a pairwise join —
 `inconsistent("name",S1) :- is_a(S1,ot), is_a(S2,ot), S1 != S2,
@@ -2663,9 +2688,9 @@ WF-077 is what makes this sound: a value-position `IfThenElse` condition
 reads only binders, parameters and literals, never a bare attribute read,
 so its operands are total (never leeg) and the positive/complement pair
 partitions cleanly (the S7 closed-body argument, now at rule level). Each
-branch emits its own `val(S,attr,·)` head; on a standing target (S10)
-each branch also emits the effectiveness atom — the rule decides if *any*
-branch fires — and the input-stands rule is emitted once.
+branch emits its own `val(S,attr,·)` head and its own `wval/4` (S10): the
+rule decides where *any* branch does, and the input-stands rule is emitted
+once.
 
 **(c) Decimals and the split money multiplication.** Catala decimals are
 exact rationals of the unbounded form (RUNTIME-SEMANTICS ch. 2.9): this
@@ -2929,8 +2954,7 @@ every other numeric slot); the symbolic-term fences of S2/S3: a
 text/enum/boolean operand that is neither an own-subject attribute
 read nor a literal (navigated reads await a case), temporal
 text/enum/boolean carriage (a recorded flank, the sum/struct
-sibling), a case-supplied text/enum *computed* target (the ch. 6d
-superset-model fence), and a **boolean computed target** (the
+sibling), and a **boolean computed target** (the
 closed-world `has/2` read and a derived `val/3` would split — S3);
 unscalable datatypes in the integer encoding (a
 datatype-less *declaration* is since 2026-08-21 rejected by WF-059
@@ -2986,14 +3010,9 @@ a som fallback other than 0 — a NON-zero `emptyFallback` literal (the
 fallback-less som now translates via its presence guard, S8, and the
 fallback-0 facet rides `#sum`'s native 0); uniqueness key
 lists with more than one temporal component, and ever-unique keys
-served by a scalar; case input on a SCALAR computed target beside an
-initialisation, an allocation or a creation-time write (the ch. 6d
-superset-model fence, S2) — an ALLOCATION
-target now enters defeasibly instead (S10/S12, `jutterswet-veilinginvoer`),
-so what stays loud there is only the residual: a target attribute READ
-anywhere else (a feedback into the pot, weights, criteria or condition,
-which `not vdI_eff` cannot stratify) or WRITTEN by a second form (an
-unpinned overwrite order); to-many navigation in scalar slots (WF-053);
+served by a scalar; an allocation's share target or rest and a
+creation's member value on a timeline target (S11, S12); to-many
+navigation in scalar slots (WF-053);
 bean-field-only fact creations (the symbolic ch. 3.4 form is what
 executes); the expression/condition catch-alls ("not translated — no
 corpus case exercises it") — narrowed 2026-08-25: the *scalar*
@@ -3273,10 +3292,9 @@ What remains loud is a **sum-typed field** or a **list-typed field** — a
 constructor or list value has no integer encoding in the flat record term,
 so `struct_value_term` faults with `a nested sum/list field value has no
 integer encoding in the ASP struct term (no corpus case)` (a day-precision
-date field *does* translate — `decimals_of_datatype` scales it at 0). A **case-supplied struct computed target** has no monotone
-encoding (the case fact and the rule head would union into a superset
-model — the ch. 6d fence): `a case-supplied struct-typed computed target
-"…" has no encoding here (no corpus case)`. A **struct-in-struct field
+date field *does* translate — `decimals_of_datatype` scales it at 0). A
+case-supplied value of a struct computed target enters the target's stack
+as every case input does (S2, S3). A **struct-in-struct field
 access** now **does** translate — `struct_base` recurses on a
 struct-typed field-access base, one projection unification per level
 (S16, golden `jutterswet-vangstwaardering`) — so what remains loud is a
@@ -3392,18 +3410,14 @@ writers that no guard on the fact base reproduces (no corpus case)`) —
 WF-079's initialisation arm refuses such a pair first, flat and through
 the chain, so on verifier-clean input the fault is a backstop, while two
 initialisations the fold takes into one stack are no pair (the stack's
-block order ranks them, RS ch. 7.10); an initialisation beside **two
-computing rules** on its target (`the initialisation of "a" sits beside
-… computing rules on its target: their v0 meaning is the order in which
-they fire (no corpus case)`) — a guarded case split WF-079 admits,
-whose firing order this arm has no guard for; an initialisation beside
-**an allocation, a creation-time write or a defaults group of its own
-level** (`the initialisation of "a" shares its target with an
-allocation, an object creation or a defaults group of its own level:
-ch. 5.4 places an initialisation beside ordinary rules only (no corpus
-case)`) — the last is WF-050's single-writer lift, refused first, and a
-defaults group on another level of the chain is no co-writer because the
-fold takes the initialisation into that stack; a target that is
+block order ranks them, RS ch. 7.10); an initialisation beside **a
+defaults group of its own level** (`the initialisation of "a" shares its
+target with a defaults group of its own level: WF-050 admits no writer
+beside a defaults group`) — WF-050's single-writer lift, refused first, and
+a defaults group on another level of the chain is no co-writer because the
+fold takes the initialisation into that stack, while computing rules, any
+number of them, an allocation and a creation's member value stand in the
+initialisation's stack (S3, S10); a target that is
 **neither a number nor a date** (`the initialisation of "a" writes a
 target that is neither a number nor a date, and only those are
 translated here (no corpus case)`) — text, enumeration, boolean, sum,
