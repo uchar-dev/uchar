@@ -248,15 +248,15 @@ gives leeg (or the fallback). The two rules coexist in v0; ch. 3 names
 them apart as the **period-coalescing rule** (ch. 3.4) and the
 **contributor-skipping rule** (ch. 3.5).
 
-**Assignment.** Writing empty is a real write when it changes state (the
-fixpoint machinery of ch. 5 compares old and new value; empty-over-empty
-is a no-op, empty-over-value is a change). Worked example: target holds 5,
-computed value leeg → the write happens, target becomes leeg; target leeg,
-computed leeg → no-op. **Exception (ch. 7.8, decided 2026-08-20):** on a
-standing target — a bare scalar computing rule as its target's only
-writer — a computed leeg does not write and the input value stands (a
-tracked delta from the v0 mirror, `CONSTRUCTS.md` rows 8/18). The
-initialisation form writes only when the target
+**Assignment.** A writer that fires with a leeg value writes nothing and
+decides nothing (ch. 3.11, 7.8): the target keeps what the fact base
+holds — another writer's value, its input or leeg. A write of a value is
+a real write when it changes state (the fixpoint machinery of ch. 5
+compares old and new value). Worked example: target holds 5 from the
+input, computed value leeg → no write, the target stays 5; computed value
+7 → the target becomes 7. The v0 mirror wrote the computed leeg over the
+input (5 became leeg); that erase is a tracked delta (`CONSTRUCTS.md` rows
+8/18). The initialisation form writes only when the target
 is empty (§9.6) — specified as a defeasible default in ch. 7
 (`CONSTRUCTS.md` row 7).
 
@@ -3644,24 +3644,37 @@ one segment is 18 × 38/365 = 684/365, which does not fit: **EF-006**, place
 unbounded form it is **684/365**. The red case
 `corpus/red/jutterswet-tijdsevenredig-past-niet` pins the fault.
 
-**Leeg in a write.** What a leeg value does depends on the kind of target:
+**Leeg in a write.** A writer that fires with a leeg value decides nothing,
+on every target (decided by the maintainer 2026-11-04: the specification gives
+an equation with a leeg value a leeg result, §9.1, and says nothing of the
+input of a target, §9.3; the reading follows the default evaluation of ALEF).
+On a **timeline** target a writer, also its only one, decides only the days on
+which its timeline reads a value; on a day no writer decides, the target holds
+what it held before any of them wrote, its input or leeg (ch. 5.7, "Two
+writers per day"; `spec/proposals/IMPLICIT-TIME.md` point 5). An empty result
+decides no day, so the input stands whole; a result with a value on some days
+leaves the input standing on the others, so input and computed segments
+interleave per day. A scalar is the timeline (−∞, +∞) (ch. 3.1), so on a
+**scalar** target the same rule reads: a writer that fires with a leeg value
+decides nothing, and the target holds another writer's value, its input or
+leeg — for the target's only writer, beside a second writer and with a
+validity window alike (ch. 1.2, Assignment; ch. 5.7; ch. 7.8).
 
-- On a **scalar** target a writer that fires with a leeg value writes leeg
-  (ch. 1.2, Assignment; ch. 5.7), except a standing writer, which writes
-  nothing on leeg (ch. 7.8).
-- On a **timeline** target a writer, also its only one, decides only the days
-  on which its timeline reads a value; on a day no writer decides, the target
-  holds what it held before any of them wrote, its input or leeg (ch. 5.7,
-  "Two writers per day"; decided by the maintainer 2026-11-04,
-  `spec/proposals/IMPLICIT-TIME.md` point 5: the specification is silent, and
-  the reading follows ALEF). An empty result decides no day, so the input
-  stands whole; a result with a value on some days leaves the input standing
-  on the others, so input and computed segments interleave per day.
-
-A scalar is the timeline (−∞, +∞) (ch. 3.1), so one leeg value writes leeg
-into a scalar target and decides no day of a timeline target; whether a leeg
-value of a writer that is not standing should write nothing on a scalar target
-as well is open (ch. 3.12).
+Worked example (`WV-3.11-leeg-beslist-niets`, `-versie` and `-naast-waarde`;
+`ref/` tests verbatim, on the documents of `ref/test/fixtures/empty-write`,
+which the suites of the ASP and the Drools backend play as well): a Vondst
+with whole numbers `taxatie`, `opgave` and `schatting` and the rules "De
+taxatie van een Vondst moet gesteld worden op zijn opgave indien hij gemeld
+is" and "… op zijn schatting indien hij niet gemeld is". V1, gemeld, with
+taxatie 40 in the input and no opgave: the first rule fires with leeg and the
+second does not fire, so the taxatie is **40**; V2 with opgave 50 as well:
+**50**; V3 without input: **leeg**. The one rule "De taxatie van een Vondst
+moet gesteld worden op zijn opgave" with "geldig vanaf 2020", on 2025-07-01,
+gives the same: **40**, **50**, **leeg**. Beside "… op zijn schatting indien
+hij erkend is", a Vondst gemeld and erkend with taxatie 40, schatting 50 and
+no opgave: **50**, without a fault; without the taxatie: **50**; with taxatie
+40 and neither opgave nor schatting: **40**. Two writers with different values
+stay EF-016 (ch. 5.7).
 
 Worked example (`WV-3.11-per-dag-invoer`; `ref/` tests verbatim, on the
 documents of `ref/test/fixtures/writers-per-day`, which the suites of the ASP
@@ -3776,7 +3789,6 @@ and in the READMEs of the backends.
 | 7 | **A time-dependent characteristic outside a window** | ch. 3.3, 3.10, 3.11 | The write of a characteristic is defined within a window. No meaning: periods with an open bound (EF-023), so an unconditional characteristic and a negated check outside a window. Not defined: a write without a window, two rules on one characteristic, a case-supplied timeline of a characteristic a rule writes, a navigated characteristic in the condition of the write, and a time-dependent characteristic as the operand of the point read (the case format). Open: each of these. |
 | 8 | **The period window and the axis of versions** | ch. 3.10 | (a) A rule version's validity window on a temporal write mixes the selection of versions with the timeline axis; it belongs to the single-axis decision of ch. 8 (PLAN §9, decision 2), and no golden carries a validity window on a temporal rule. (b) A window in the `filter` of an `all` quantifier fold in a session without an evaluation date never matches, so the member is filtered out and the fold is vacuously waar; WF-112 is not widened to it (`corpus/golden/jutterswet-wachtvenster`, `bevoegd` in `case3-tijdvrij`). (c) A clip that cuts a bucket has no corpus carrier, because the case format pins every expected timeline to the declared grid; the alternative, a WF rule that demands bounds on the grid for a clip, is not taken. Open: (a), the reading of (b), and a case format that releases expected timelines from the grid. |
 | 9 | **The subject's own total of a case-supplied timeline** | ch. 3.6, 8.4 | It reads the asOfDate bucket, one period of the grid that holds the evaluation date, while a timeline a rule writes is totalled whole, so the meaning of "het totaal van zijn X" depends on who wrote X. Open: whether the own total of a case timeline reads the whole timeline, as every other timeline is read over all time, which changes the case convention of ch. 8.4. |
-| 10 | **Leeg in a write on a scalar target** | ch. 3.11, 5.7, 7.8 | A writer that fires with a leeg value writes leeg into a scalar target, except a standing writer, which writes nothing (ch. 7.8); on a timeline target a day a writer reads leeg is a day it does not decide, for one writer as for two or more (decided 2026-11-04). Open: whether a leeg value of a writer that is not standing writes nothing on a scalar target as well, as ALEF's default evaluation reads it. |
 
 ---
 
@@ -4580,10 +4592,9 @@ error (ch. 5.8c).
 
 **Divergence by two writers of one target.** Two rules that write one
 attribute and whose conditions both hold on one instance demand, by
-ch. 5.1, that the attribute equal each of their values. Where the values
-differ — a writer that fires with a leeg value writes leeg (ch. 1.2g),
-except a standing writer (ch. 7.8), which writes nothing on leeg — no
-fact base satisfies both equations: there is no fixpoint, and the session
+ch. 5.1, that the attribute equal each of their values; a rule whose value
+is leeg demands nothing (ch. 3.11). Where the values differ, no fact base
+satisfies both equations: there is no fixpoint, and the session
 faults. The fault names the writers, the values they write and the
 attribute and instance; it names no cycle, since the dependency graph has
 none (WF-045). Where at most one of the conditions holds, or the writers
@@ -4602,8 +4613,8 @@ date; V with both dates on 02-03-2026 gets **02-03-2026**.
 2026-11-02). The value of a target with two or more writers is that of the
 writers that decide at the fixpoint, in every order of the rules: where
 none decides, the target keeps its input value or stays leeg; where one
-decides, it takes that writer's value, a leeg one included where the
-writer is not standing (ch. 1.2g, 7.8); where two decide with different
+decides, it takes that writer's value, and a writer that fires with a leeg
+value does not decide (ch. 3.11); where two decide with different
 values, the session faults as above. A value a writer wrote on a state
 between, where its condition held on a value another rule replaces, does
 not stand (ch. 6.1, "A write is read at the fixpoint"). Worked example
@@ -4620,7 +4631,7 @@ getuigen". V with aantal getuigen 10 and input meldingsgetal 3 gives
 **4**; aantal getuigen 2, meldingsgetal 30 and boete 4 give **1**; aantal
 getuigen 10, meldingsgetal 30, boete 4 and input spoedpremie 7 give **7**;
 aantal getuigen 30, meldingsgetal 3, no boete and input spoedpremie 7 give
-**leeg**. Measured 2026-11-02 before the decision: with the rules in this
+**7**: the second rule fires without a boete and decides nothing. Measured 2026-11-02 before the decision: with the rules in this
 order the reference interpreter answered the first, second and fifth case
 with the value a writer had written on the input meldingsgetal (1, 1, 4),
 the ASP backend refused every case with an input spoedpremie, and both
@@ -5438,8 +5449,8 @@ chapter follows ALEF (IR-SPEC ch. 2.7, the norm source).
    object creation's member with `labels` writes that cell of the object it
    makes (ch. 5.5). A cell is a target of its own in the standing norm
    (ch. 7.8) and in the domain of the v0 desugaring (ch. 7.7): a computing
-   rule that is the only writer of its cell displaces the input of that cell
-   when its value is gevuld and leaves it standing when it is leeg, and a
+   rule on a cell displaces the input of that cell when its value is gevuld
+   and leaves it standing when it is leeg, and a
    computing rule beside an initialisation on one cell decides like the
    default above the initialisation default. On the wire the two forms stay
    as written, since a defaults group names its attribute whole (WF-125); an
@@ -8074,17 +8085,18 @@ two forms, since a defaults group names its attribute whole (WF-125); a
 backend that lowers the pair into a defaults group names the cell in it.
 
 The initialisation is what the desugaring exists for — and what keeps
-the two readings extensionally equal on the confluent domain. A **bare
-computation without one stays outside the desugaring** — but no longer
-native-v0: the ch. 7.8 standing norm (decided 2026-08-20) gives it the
-defaults reading directly — a computed leeg leaves the input standing —
-with the v0 erase-on-leeg retired as a tracked delta. What this
+the two readings extensionally equal on the confluent domain. A
+**computation without one stays outside the desugaring** — but no longer
+native-v0: the ch. 7.8 standing norm gives it the defaults reading
+directly — a computed leeg leaves the input standing — with the v0
+erase-on-leeg retired as a tracked delta. What this
 chapter could not do silently, ch. 7.8 does openly. (The v0 erase
 itself had no absence encoding on the ASP native path — the recorded
 backend limitation that, with the ch. 6d fence, kept the corner free
 of cases and the change cheap; see `backends/clingo/README.md`.)
 
-Outside the desugaring's domain the v0 forms are left as they are; a
+Outside the desugaring's domain the v0 forms are left as they are, a
+computing rule among them deciding like a default (ch. 7.8); a
 consumer that cannot carry a form faults on it, and where a form's v0
 meaning is order-dependent the reference interpreter faults on the
 fixpoint budget — no gate ever admits a case on which the executors
@@ -8110,10 +8122,10 @@ evaluates **leeg** beside an initialisation was *divergent* in the v0
 reading: the empty write (ch. 1.2g) and the refill alternate and no
 fixpoint exists, so `ref/`'s native replay faulted on the pass budget
 while the desugared defaults answered cleanly — a corner only prose
-could pin (a fault is not an expectation). **Closed with ch. 7.8
-(2026-08-20):** `ref/` now carries the defaults reading natively on the
-desugaring domain too — the leeg-evaluating rule writes nothing (the
-shared `desugared_targets` predicate), the init or input decides, and
+could pin (a fault is not an expectation). **Closed with ch. 7.8:**
+`ref/` carries the defaults reading natively — the leeg-evaluating rule
+writes nothing (ch. 3.11), also beside a conditional initialisation,
+the init or input decides, and
 the corner is machine-pinned by the anchor's
 `case5-leeg-doorval-init` (erkend, no basisbedrag → **25**) and
 `case6-leeg-doorval-input` (idem over input 40 → **40**, a
@@ -8145,24 +8157,24 @@ the fact base holds" — every outcome of ch. 7.3 and 7.6.2 derives from
 "the highest default that decides wins" alone — and it generalises beyond
 declared defaults:
 
-**The standing norm.** A **version-free scalar computing rule
-(Gelijkstelling/Berekening) that is its target's only writer** — no
-second rule, no initialisation beside it (that pair is the ch. 7.7
-desugaring's domain), no defaults group, no allocation, no creation-time
-write — decides **like a default**: its justification is its condition,
-and it decides only when its value evaluates **gevuld**. A **leeg
-evaluation writes nothing**: the target keeps what the fact base
-holds — the case-supplied input value, or leeg. The v0 mirror wrote
-the computed leeg over the input (ch. 1.2g); that erase is retired on
-this domain as a **tracked delta** (`CONSTRUCTS.md` rows 8/18) —
-decided openly where ch. 7.7 records it as the reason the bare form
-could not be desugared silently. Channel deposits of the evaluation at
-the fixpoint stand as in any ordinary evaluation (ch. 5.7) — prioritized
-defaults remain the one sanctioned speculative context (ch. 7.1). Together
-with ch. 7.7, every
-scalar single-writer form now carries the defaults reading:
+**The standing norm.** A **scalar computing rule
+(Gelijkstelling/Berekening)** — its target's only writer or one of
+several, with or without a validity window — decides **like a default**:
+its justification is its condition, and it decides only when its value
+evaluates **gevuld**. A **leeg evaluation writes nothing**: the target
+keeps what the fact base holds — another writer's value, the
+case-supplied input value, or leeg (ch. 3.11). The maintainer decided the
+norm on 2026-08-20 for a version-free rule that is its target's only
+writer and widened it on 2026-11-04 to every computing rule. The v0
+mirror wrote the computed leeg over the input (ch. 1.2); that erase is
+retired as a **tracked delta** (`CONSTRUCTS.md` rows 8/18) — decided
+openly where ch. 7.7 records it as the reason the bare form could not be
+desugared silently. Channel deposits of the evaluation at the fixpoint
+stand as in any ordinary evaluation (ch. 5.7) — prioritized defaults
+remain the one sanctioned speculative context (ch. 7.1). Together with
+ch. 7.7, every scalar form of a computation carries the defaults reading:
 initialisation alone and initialisation-beside-computation through the
-desugaring, the bare computation through this norm.
+desugaring, every other computation through this norm.
 
 Worked examples (absolute; the anchor `jutterswet-waardestelling`
 verbatim, all four through both executors): one conditional rule "de
@@ -8173,11 +8185,13 @@ condition holds, taxatiewaarde leeg → **40** (the fall-through: a
 computed leeg never displaces an input value — the delta pin); no
 input, computing 50 → **50**. The two standing outcomes satisfy a
 do-nothing executor by construction — the standing *is* what they
-test — so they are reason-carrying gate-7 survivors. The domain
-predicate is shared between the executors (one definition), the ASP
-entry is the defaults group's `inputval/3` with an effectiveness atom
-carrying condition **and** value bindings (a condition-only atom would encode
-the v0 erase instead — the atom's body is the semantic choice).
+test — so they are reason-carrying gate-7 survivors. In the ASP backend
+the input of a target that only computing rules write enters as the
+defaults group's `inputval/3` and stands where no writer's value atom
+holds, an atom that carries condition **and** value bindings (a
+condition-only atom would encode the v0 erase instead — the atom's body is
+the semantic choice; `Ir_v0.Desugar.standing_targets` names those
+targets).
 **The timeline arm:** on a timeline target the norm holds per day, for
 every writer of the target, versioned or not, one or more: a writer decides
 only the days on which its result timeline reads a value, and on every other
