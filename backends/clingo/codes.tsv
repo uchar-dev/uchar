@@ -30,3 +30,4 @@ CLINGO-028	refusal	aggregate-in-element-condition-outer-variable		element_aggreg
 CLINGO-029	limit	date-construction-year-range		viol_code
 CLINGO-030	refusal	not-exactly-one-stable-model	models	one_model
 CLINGO-031	limit	nested-non-exact-division		viol_code
+CLINGO-032	limit	calendar-total-outside-rounding	attribute	expr_term

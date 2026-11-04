@@ -5790,7 +5790,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         grid_strip ctx ~what:(Printf.sprintf "the gedurende-clipped total of %S" a) ~gran (attr_unit ctx ~otype:aot ~attr:a)
       in
       if calendar <> None && not calendar_ok then
-        fault
+        faultc ~params:[ ("attribute", a) ] "CLINGO-032"
           "the gedurende-clipped total of %S integrates its rate by the calendar (ch. 3.6): a day weighs 1/len of \
            its calendar unit, so the total has a denominator that no decimal scale of this encoding holds, and \
            it is translated only as the base of a rounding"

@@ -467,10 +467,10 @@ Recorded limitations:
   scale holds. The backend lays the weights over the least common multiple
   D of their denominators, carries the total at the scale of its
   value times D, and translates it only as the base of a rounding, which
-  divides D away; anywhere else it refuses the total by name, where ref
-  holds the exact value: the anchor `jutterswet-verzuimrente-dagen` with
-  its verzuimrente in the unbounded form and without the rounding is
-  139 13/73 € in ref (suite fixture `calendar-total-unrounded`).
+  divides D away; anywhere else it refuses the total by name (CLINGO-032),
+  where ref holds the exact value: the verzuimrente of the anchor
+  `jutterswet-verzuimrente-dagen`, of the unbounded form, is 139 13/73 € in
+  ref (gate 6's channel list; suite fixture `calendar-total-unrounded`).
 - [V7] Two writers of one timeline target that decide one day with one
   value (RUNTIME-SEMANTICS ch. 5.7 per day) hold together. Ref writes the
   day in the segment of the writer the document names first; this backend
