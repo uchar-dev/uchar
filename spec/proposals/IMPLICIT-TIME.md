@@ -392,6 +392,12 @@ het besluit van 2026-11-02 per dag gelezen.
   zwijgt, §9.3 zet invoer buiten haar bereik) en herziet voor het tijdlijndoel het besluit van 2026-08-21 (RS ch. 7.8, "the
   timeline arm": de hele tijdlijn, invoer en berekende segmenten mengen nooit). Meting: `werk/writers-and-input/verslag.md`
   (buiten de repo). Kaart `20261104-writers-per-day-beside-input`.
+- **Besluit van de eigenaar (2026-11-04), invoer tegen een schrijver op één dag.** Op een dag die een schrijver beslist, staat
+  zijn waarde, ook waar de invoer iets anders zegt. Gemeten met de echte ALEF (generator en interpreter, lazy en eager; repo
+  `alef-bridge`, kaart `20261104-alef-in-a-container`): invoer 10, een schrijver 20 in maart–mei geeft in april leeg
+  (gegenereerd lazy, de botsing gaat verloren), 20 (gegenereerd eager), een fout voor de hele case (interpreter lazy) en leeg
+  (interpreter eager); ALEF geeft geen eenduidig antwoord. Bij een scalair vervangt de regel de invoer in alle vier de routes;
+  uchar leest een scalair als één segment over alle tijd, dus per dag is het dezelfde regel. Gevolgde afwijking van ALEF.
 - VB 5.2 — Eén fout EF-016 per (attribuut, onderwerp), met de schrijvers en de waarden van de eerste
   dag waarop ze verschillen; het register van ch. 5.7b verandert niet. Waar op een dag geen schrijver
   beslist, staat de invoertijdlijn van die dag of leeg (ch. 5.7, ch. 7.8 per dag).
