@@ -365,3 +365,182 @@ rgs-goldens. Gate 12: JUnit 1849 tests, `played 338` op beide branches (ongewijz
 naam. Gate 17: 339 goldens en 949 case files vergeleken (ongewijzigd: de nieuwe golden is een `EXCLUDE`), ref
 traceerde 1088 case files.
 
+
+## Result van stap B
+
+*Bouwer stap B, 2026-11-04. Niet gemerged, niet gepusht. Logs `werk/absence-markers/logs/b*.log` en `gates-b1.log`,
+het mutatiescript `werk/absence-markers/scripts/mutations-b.py` (buiten de repo). Punt 1 tot en met 3 van "Wat stap B
+moet doen" zijn gebouwd; punt 4 niet (vraag 1).*
+
+### Commits
+
+| hash | inhoud |
+|---|---|
+| `48711cc1c` | gedeeld model (`Datatype.SumType`, `Expr.Construct`, `Expr.PayloadAccess`) en de armen van resolver en emitter; Drools: lader, `ConstructorValue`, analyse op beide branches, lezingen, case-lezer, DROOLS-314, DROOLS-010/-012/-313 `RETIRED`, README; `AbsenceMarkerWitnessTest` en de aangepaste tests |
+| `4161023d3` | corpus: de bron als `source.rgs`, NOTE's, `AbsenceMarkerTest` ingekort, DIVERGENCES |
+| `968802179` | gates 8 en 12 (beschermd, voorstel): kanaal- en uitsluitingslijst, `EXPECTED_PLAYED` |
+| `a789b00b8` | RS ch. 5.12 (de constructorwaarde in de canonieke tekst) en ch. 9.5 (Drools uitvoerder), voorstel |
+| `eddd2503b` | getuigen voor twee bewakingen zonder rode mutatie (som zonder filter, segmentgelijkheid) |
+| (deze) | Result |
+| (laatste) | kaart naar `done/` |
+
+### Wat er in Drools en de lezingen veranderde
+
+- **Gedeeld model** (`frontends/regelspraak` `model` en `ir`, die de Drools-pom meecompileert): `Datatype.SumType(domain,
+  constructors)` met `Datatype.Constructor(name, payload)`, `Expr.Construct(type, constructor, argument)` en
+  `Expr.PayloadAccess(base, constructor, type)`. De resolver bouwt ze niet. De wandelaars van resolver, emitter en
+  Drools lopen erdoorheen; de emitter weigert ze luid, zoals `IfThenElse`, omdat hij de markeringen uit
+  `absenceMarkerSites` schrijft.
+- **Lader.** `SumType` op de declaratie van een domein en op elke gebruiksplaats, `Construct` en `PayloadAccess`; een
+  constructor-literal met de zin van WF-114 (`a SumType`); `PayloadAccess` als vouwbron voor som, minimum, maximum,
+  eerste, laatste en de gevulde telling, niet voor telling en totaal (WF-037, als de verifier).
+- **Waarde.** `ConstructorValue(constructor, payload)`: gelijk waar de tags één gedeclareerde naam zijn (genormaliseerd,
+  zoals ref) en de payloads één waarde, getallen op waarde; de hash past daarbij (EQUALITY). Op een bean (veldtype
+  `Object`), in een `Value` of `State`, en in een segment: `Period.value` is `Object` (getal of constructorwaarde,
+  andere waarden geweigerd), `Period.number()` voor de numerieke lezers, en de gegenereerde `Segment` houdt
+  `Object waarde` met naast de constructor van de runtime een van `(LocalDate, LocalDate, Object)`.
+- **Analyse** (één plan, twee weergaven): `CONSTRUCTOR_VALUE`, `CONSTRUCT` (leeg argument: leeg), `PAYLOAD` (andere tag
+  of leeg: leeg); de gelijkheid met een constructorwaarde door `TEXT_EQUAL`; een vouw over leden draagt de payload van
+  elk lid bij (`MemberValue.payload`, in de DRL-tekst de route `PAYLOAD`). Per periode: een constructor van een
+  literal op een tijdlijndoel van een somtype (`PERIOD_SCALAR`, `PERIOD_CLIPPED`, `PERIOD_WRITTEN_VALUES`), de
+  vergelijking met een constructorwaarde per periode (`PERIOD_WHERE_EQUAL`), EF-016 per dag en de vereniging met de
+  invoer door `Period.sameValue`; `PeriodDecisions.Span.input` is `Object`.
+- **Lezingen (ch. 5.12).** `SessionDump.canonical` schrijft `"onbekend"` en `"waarde"(300)`, zoals ref. Op alle tien
+  case files zijn de regels van beide branches gelijk aan ref's trace (`b/ref-*.txt` tegen `b/exec-*.txt` en
+  `b/drl-*.txt`, nul verschillen); gate 17 vergelijkt de golden nu.
+- **Case-lezer.** Een constructorwaarde in invoer, verwachting en tijdlijn; tag en payload tegen de declaratie
+  (`constructorFits`, een fout van de case), zoals ref's lader.
+- **Geweigerd bij naam:** de payload van een tijdlijn, scalair en als vouwbron (DROOLS-314, ref's zin); een `Match`
+  (DROOLS-021); elke andere waarde op een tijdlijndoel van een somtype (bestaande codes; de kopie van een somtijdlijn,
+  ref's fixture `copy-of-a-timeline`, met DROOLS-303, zoals clingo weigert).
+
+### Rood eerst (letterlijk, per branch)
+
+- Main `d9c218ce1` (`logs/b02-red-drools-main.log`): exec-model en DRL-tekst, ook met `--readings`, op de golden
+  `EXCLUDE DROOLS-010: loader: form not carried by the v0 Drools backend: Datatype:SumType (unknown datatype node)`;
+  `DroolsRedMain` op beide cases van de tweeling dezelfde regel.
+- `AbsenceMarkerWitnessTest` op main in een losse worktree (`logs/b22-red-witness-main.log`): `Tests run: 4,
+  Failures: 2, Errors: 2` (`Refusal vorm niet gedragen door de v0-Drools-backend: Datatype:SumType`; `expected:
+  <FAULT> but was: <EXCLUDE>`; de weigering kwam als `IrLoader.Refusal`, niet als de verwachte uitsluiting).
+- Na de bouw: `PLAYED 10` op beide branches; de tweeling `FAULT EF-016 {…"attribute":"taxatie","label":"V1"…}` en
+  `{…"attribute":"opslagkosten","label":"V1"…}`.
+
+### Mutaties (niet gecommit; één `git worktree add --detach`, opgeruimd; `logs/b29-mutations`, `b31`)
+
+| mutatie | rood |
+|---|---|
+| M1 `ConstructorValue`: payload met `Objects.equals` | `a_constructor_value_compares_and_reads_as_ch_9_says`: `expected: <waarde(300)> but was: <Waarde(300.00)>` |
+| M2 `payload` negeert de tag | idem: `expected: <null> but was: <300>` |
+| M3 `construct` laat een lege payload door | idem, en de golden: `WritersConflict … schrijft waarde en … onbekend` |
+| M4 `whereEqual` leest altijd gelijk | `a_timeline_of_constructor_values_is_compared_per_day` |
+| M5 de canonieke tekst zonder aanhalingstekens | `the_readings_write_a_constructor_value_as_the_trace_does` |
+| M6 de exec-model-bijdrage zonder payload | de golden: `ClassCast … ConstructorValue cannot be cast to … BigDecimal` |
+| M7 de DRL-tekstbijdrage zonder payload | idem |
+| M8 geen weigering van de scalaire payload van een tijdlijn | `the_payload_of_a_timeline_is_refused_by_name`: `expected: <PAYLOAD_ACCESS_OF_TIMELINE> but was: <TIMED_MEMBER_SINGLE_PLACE>` |
+| M9 geen weigering van de vouwbron op een tijdlijn | eerst **groen**: het filter leest dezelfde toegang en weigert eerst (zoals ref's R2 in stap A); met de rij "som zonder filter" (`eddd2503b`) rood: `but was: <TEMPORAL_TOTAL_NON_NUMBER>` |
+| M10 `constructorFits` aanvaardt een onbekende tag | `a_constructor_the_sum_type_does_not_declare_is_a_defect_of_the_case`: `NullPointerException` |
+| M11 de lader laat `PayloadAccess` als telbron toe | `CountSourceArmWitnessTest.a_constructor_or_a_payload_as_count_source_is_refused` |
+| M12 de vergelijking per periode van een somtijdlijn weigert | de golden en de weigeringsrij |
+| M13 `Period.sameValue` op identiteit | eerst **groen**; met de rij segmentgelijkheid (`eddd2503b`) rood: `expected: <…=onbekend> but was: <…=Onbekend>` |
+
+### Codes en pins (oud → nieuw)
+
+- DROOLS-010 `datatype-sum`, DROOLS-012 `expr-construct` en DROOLS-313 `expr-payload-access`: `REFUSAL` → `RETIRED`
+  (geen plaats raakt ze meer); nieuw DROOLS-314 `payload-access-of-timeline` (`REFUSAL`, parameter `attribute`), beide
+  catalogi. De zin van DROOLS-038 (een limiet die blijft): "non-numeric timeline value … the generated Segment holds a
+  BigDecimal waarde" → "a timeline value on '{attribute}' that is neither a number nor a constructor value is not
+  carried by the v0 backend". Register 314 codes, 25 retired.
+- Gate 12 `EXPECTED_CHANNEL`: `jutterswet-afwezigheidsmarkers` eruit; `anchor/jutterswet-beschikkingsom`,
+  `jutterswet-penningbeschikking-catala`, `synth3-besluitschakel`, `synth3-letbeslag`, `synth3-standtarief`:
+  `EXCLUDE DROOLS-010` → `EXCLUDE DROOLS-021` (de `Match`); `jutterswet-meldplichtspoor`: `EXCLUDE DROOLS-010` →
+  `EXCLUDE DROOLS-008` (zijn `ListType`). `EXPECTED_PLAYED` 338 → 339; het kanaal 49 → 48 goldens.
+- Gate 8: de Drools-uitsluiting van de tweeling eruit; het Drools-been 54 → 56 fault-gepind, 19 → 17 niet gedragen.
+  Geen vloer verschoven.
+- Tests die de kaart omdraait of aanpast: `UnknownNodeWitnessTest` (`Construct`, `PayloadAccess` en `SumType` uit de
+  geweigerde vormen); `CountSourceArmWitnessTest` (`Construct` uit de lijst van niet-gedragen knopen, nieuwe rij: een
+  `Construct` en een `PayloadAccess` als telbron weigeren met de zin van WF-037); `RouteWitnessTest` (+ `PAYLOAD`);
+  `AbsenceMarkerTest` (de bron naar `source.rgs`, `the_golden_is_the_emission_of_its_source` weg, die gate 10 houdt, de
+  onopgeloste-woordenlus weg, die `SemanticTokensCorpusTest` houdt); `PeriodDecisionsWitnessTest`,
+  `TmsTimelineWitnessTest`, `FormsPlan` (de API: `Period.number()`, `MemberValue.payload`, de waarde per dag ook een
+  constructorwaarde).
+
+### Groen
+
+Drools-suite 1857 tests, 0 skipped (was 1849); frontend-suite 1505 (was 1506: één emissietest weg); ref-suite 2444 en
+clingo-suite 2633 ongewijzigd. Eén `make gates` op `eddd2503b` (`out/gates/20261104-235137/`, `gates-b1.log`); de
+commits daarna raken alleen deze kaart:
+
+```
+start 2026-11-04 23:51:37 eddd2503b card/absence-markers
+jar rc=0 3s drools-jar: rebuilt (11 source path(s) newer than the jar, …; 3s)
+01-self-contained rc=0 2s     02-ir-schema rc=0 131s    04-case-schema rc=0 7s    03-verifier rc=0 41s
+05-oracle rc=0 23s            06-clingo rc=0 283s       07-noop rc=0 14s          08-red rc=0 178s
+09-catala rc=0 5s             10-regelspraak rc=0 253s  11-toka-parity rc=0 240s  12-drools rc=0 355s
+13-reftype rc=0 326s          14-flogic rc=0 1s         15-graph rc=0 51s         16-scenario rc=0 40s
+17-readings rc=0 270s
+after-run rc=0 0s the three builds fresh, no product newer than the end of the build step
+end 2026-11-04 23:57:35 358s red=0
+```
+
+Gate 12: `played 339` op beide branches, 48 niet-gespeelde goldens bij naam, JUnit 1857. Gate 17: 340 goldens en 959
+case files vergeleken (was 339 en 949), 0 afwijkingen. Gate 15: routepoot 195 goldens met een `source.rgs` (was 194),
+specpoot 350 van 387. Gate 10: 195 rgs-goldens. Gate 8: 73 rode cases.
+
+### Voorgestelde tekst (huidige stand)
+
+**RUNTIME-SEMANTICS** ch. 5.12 (de canonieke tekst van een constructorwaarde) en ch. 9.5 ("Executed"): in `a789b00b8`.
+
+**CONSTRUCTS rij 36** (vervangt het voorstel van stap A): in de kolom v0→v1 delta "`SumType`/`Construct`/`Match` never
+emitter-produced" → "`Match` never emitter-produced; the RegelSpraak frontend writes `SumType`, `Construct` and
+`PayloadAccess` for an attribute with absence markers (row 47)"; "temporal sum carriage a recorded flank in the ASP
+inventory" → "a sum-typed timeline carried in ref, the ASP backend and the Drools backend for the input, a write of a
+constructor of a literal and a comparison per period"; achteraan: "**The payload access (2026-11-04, card
+`absence-markers`):** `PayloadAccess` reads the payload of a unary constructor, leeg on another constructor or leeg
+(RUNTIME-SEMANTICS ch. 9.5), and WF-127 holds it under a test of its constructor; WF-060 admits every scalar datatype as
+a payload, and WF-088 walks the payload of a sum-type declaration. Executed in ref, the ASP backend and both branches of
+the Drools backend (golden `jutterswet-afwezigheidsmarkers`); the Drools backend refuses a `Match` (DROOLS-021) and the
+payload of a timeline (DROOLS-314)."
+
+**CONSTRUCTS rij 47**, de laatste kolom (vervangt "Ref and the ASP backend play … Drools: step B of the card"): "Ref,
+the ASP backend and both branches of the Drools backend play scalar and per period (writing, input, EF-016, the test
+per period, the readings of ch. 5.12); the value read per period is refused (ch. 3.12 row 5)." De rest van de rij als
+in het voorstel van stap A.
+
+**CLAUDE.md**, gate 12: na "… the standing of a timeline target of two writers is their union with its input
+(`Consequence.WritersUnion`)." toevoegen: "Since the card `absence-markers` (step B, 2026-11-04) both branches carry a
+sum type (RUNTIME-SEMANTICS ch. 9): its value is a `ConstructorValue` on a bean, in a fact and in a segment, built by
+`Construct`, compared by equality and read by `PayloadAccess`, also as the source of a fold over members; on a timeline
+target of a sum type a rule writes a constructor of a literal in the periods of its condition, and a comparison with a
+constructor value is read per period. A `Match` stays refused (DROOLS-021), and the payload of a timeline is refused by
+name (DROOLS-314)." In de opsomming van de gepensioneerde codes, na "… DROOLS-302, DROOLS-104 and DROOLS-311":
+", since the card `absence-markers` (2026-11-04) DROOLS-010, DROOLS-012 and DROOLS-313". Gate 15: geen wijziging; het
+voorstel van stap A (een golden zonder `source.rgs`) vervalt, de golden draagt er nu een. Gate 17: na de alinea over
+`readings-of-displaced-defaults` toevoegen: "Since the card `absence-markers` (2026-11-04) a constructor value is
+written as its tag quoted and, for a unary constructor, its payload in parentheses (ch. 5.12)." Geen vloer verschuift.
+
+### Voorlopige besluiten (stap B)
+
+- VB-B1 (DROOLS-010): `RETIRED`, niet smaller. De lader draagt elk somtype dat de wire schrijft, met elke scalaire
+  payload en een genest somtype; een lijst- of structpayload laat WF-060 niet toe en weigert onder DROOLS-008/009. Er
+  blijft voor DROOLS-010 niets over; een `Match` weigert bij zijn eigen knoop (DROOLS-021), zodat vijf goldens van pin
+  wisselen. Een `Match` dragen was voor de golden niet nodig en is niet gebouwd.
+- VB-B2 (representatie): één waardeklasse `ConstructorValue` voor scalair en tijdlijn, en `Period.value` als `Object`
+  in plaats van een tweede segmentklasse, zodat de bestaande per-dagmachine (vereniging, EF-016, knip, lezing) zonder
+  tweede pad werkt; de numerieke lezers lezen `Period.number()`, die faalt op een constructorwaarde.
+- VB-B3 (codes): één nieuwe code, DROOLS-314, in de zin van ref; elke andere vorm op een somtijdlijn weigert onder een
+  bestaande code.
+- VB-B4 (tag): de tag houdt de spelling van zijn bron (case of IR) en vergelijkt genormaliseerd, zoals ref; de case-lezer
+  eist een gedeclareerde tag.
+
+### Vragen
+
+1. **Punt 4, de zijtabel `absenceMarkerSites`.** Het gedeelde model draagt nu `SumType`, `Construct` en
+   `PayloadAccess`, maar de resolver typeert een attribuut met markeringen als zijn payloaddatatype, zodat "zijn taxatie
+   gedeeld door 10" door de typering gaat; de emitter schrijft de somtypevorm uit de zijtabel. De tabel vervangen door
+   knopen vraagt dat de resolver elke lezing als `PayloadAccess` bouwt en typeert, de toets als `Construct`, en RGS-376
+   op die knopen zet: een frontendkaart van eigen omvang. Een eigen kaart?
+2. **Pin-bump van de distributie.** `Period.value`, `Segment.getWaarde()` en `PeriodDecisions.Span.input` zijn nu
+   `Object`. De `Verbaliser` van de toolchain neemt de invoer al als `Object` (compileert), maar hoe hij een
+   constructorwaarde van een somtypeattribuut weergeeft, is werk voor de toolchainkaart.
+3. **De kopie van een somtijdlijn** (ref's fixture `copy-of-a-timeline`): ref speelt hem, clingo en Drools weigeren bij
+   naam. Dragen, of zo laten tot een golden erom vraagt?
