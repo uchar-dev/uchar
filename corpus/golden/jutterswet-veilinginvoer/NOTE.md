@@ -33,17 +33,12 @@ The three overwrites (`7 → 33`) and the written remainder (`∅ → 1`) each
 differ from the raw input, so `runner --noop` fails (gate 7): the golden is
 no survivor — it pins the overwrite, not a standing input.
 
-## Red-first (clingo)
+## The ASP encoding
 
-Before this card the clingo translator refused any allocation whose case
-supplies the target — `TRANSLATION FAULT: the case supplies input for
-allocation target "veilingdeel"…` (exit 1). Now the S10 layer carries it:
-`veilingdeel` case input enters as `inputval/3`, the per-allocation
-effectiveness helper `vd0_eff/1` fires exactly on the reached jutters, and
-`val(D,veilingdeel,V) :- inputval(D,veilingdeel,V), is_a(D,Jutter), not
-vd0_eff(D)` re-admits the input on J4. ref ≡ clingo over all six
+In the ASP backend the allocation is a writer of its target's stack
+(ASP-TRANSLATION S12, RUNTIME-SEMANTICS ch. 7.8): `veilingdeel` case input
+enters as `inputval/3`, the allocation derives `wval(X,veilingdeel,V,vd0)` and
+`wdecides/2` exactly on the reached jutters, and
+`val(D,veilingdeel,V) :- inputval(D,veilingdeel,V), isa(D,Jutter), not
+wdecides(D,veilingdeel)` re-admits the input on J4. ref ≡ clingo over all six
 expectations (gate 5 ≡ gate 6).
-
-The stratification fence stays loud: were `veilingdeel` read anywhere that
-could feed back into the pot, weights, criteria or condition, the translator
-would refuse rather than emit an unstratifiable `not vd0_eff` cycle.

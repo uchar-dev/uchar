@@ -1,0 +1,166 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "staat",
+            "datatype": {
+              "node": "Enumeration",
+              "domain": "Keurklasse",
+              "values": [
+                "gaaf",
+                "beschadigd"
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "herkeuring",
+            "datatype": {
+              "node": "Enumeration",
+              "domain": "Keurklasse",
+              "values": [
+                "gaaf",
+                "beschadigd"
+              ]
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "opmerking",
+            "datatype": {
+              "node": "Text"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "notitie",
+            "datatype": {
+              "node": "Text"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gemeld",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "Keurklasse",
+        "datatype": {
+          "node": "Enumeration",
+          "values": [
+            "gaaf",
+            "beschadigd"
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "staat uit herkeuring",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "staat",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De staat van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "herkeuring",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn herkeuring"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "gemeld",
+              "negated": false,
+              "source": {
+                "snippet": "hij gemeld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "opmerking uit notitie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "opmerking",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De opmerking van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "notitie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn notitie"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "gemeld",
+              "negated": false,
+              "source": {
+                "snippet": "hij gemeld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -1,0 +1,18 @@
+Domein Keurklasse is van het type Enumeratie
+    'gaaf'
+    'beschadigd'
+
+Objecttype de Vondst (mv: Vondsten)
+    de staat Keurklasse;
+    de herkeuring Keurklasse;
+    de opmerking Tekst;
+    de notitie Tekst;
+    is gemeld kenmerk (bijvoeglijk);
+
+Regel staat uit herkeuring
+    geldig altijd
+        De staat van een Vondst moet gesteld worden op zijn herkeuring indien hij gemeld is.
+
+Regel opmerking uit notitie
+    geldig altijd
+        De opmerking van een Vondst moet gesteld worden op zijn notitie indien hij gemeld is.

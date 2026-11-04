@@ -1,0 +1,156 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Berging",
+        "attributes": {
+          "opbrengst": {
+            "number": "101"
+          },
+          "onverdeelde rest": {
+            "number": "9"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Berger",
+        "attributes": {
+          "bergingsaandeel": {
+            "number": "7"
+          }
+        },
+        "roles": {
+          "berging": [
+            "G1"
+          ]
+        },
+        "characteristics": [
+          "vast"
+        ]
+      },
+      {
+        "label": "B2",
+        "objectType": "Berger",
+        "attributes": {
+          "bergingsaandeel": {
+            "number": "7"
+          },
+          "vaste aandeel": {
+            "number": "50"
+          }
+        },
+        "roles": {
+          "berging": [
+            "G1"
+          ]
+        },
+        "characteristics": [
+          "vast"
+        ]
+      },
+      {
+        "label": "B3",
+        "objectType": "Berger",
+        "attributes": {
+          "bergingsaandeel": {
+            "number": "7"
+          },
+          "vaste aandeel": {
+            "number": "30"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "vast"
+        ]
+      },
+      {
+        "label": "B4",
+        "objectType": "Berger",
+        "attributes": {
+          "bergingsaandeel": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "vast"
+        ]
+      },
+      {
+        "label": "B5",
+        "objectType": "Berger",
+        "attributes": {
+          "bergingsaandeel": {
+            "number": "7"
+          },
+          "vaste aandeel": {
+            "number": "30"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "onverdeelde rest",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "bergingsaandeel",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B2",
+      "attribute": "bergingsaandeel",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B3",
+      "attribute": "bergingsaandeel",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B4",
+      "attribute": "bergingsaandeel",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B5",
+      "attribute": "bergingsaandeel",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

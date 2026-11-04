@@ -1,0 +1,152 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "staat": {
+            "enumeration": "gaaf"
+          },
+          "herkeuring": {
+            "enumeration": "beschadigd"
+          },
+          "opmerking": {
+            "text": "oud"
+          },
+          "notitie": {
+            "text": "nieuw"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemeld"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "staat": {
+            "enumeration": "gaaf"
+          },
+          "opmerking": {
+            "text": "oud"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemeld"
+        ]
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "staat": {
+            "enumeration": "gaaf"
+          },
+          "herkeuring": {
+            "enumeration": "beschadigd"
+          },
+          "opmerking": {
+            "text": "oud"
+          },
+          "notitie": {
+            "text": "nieuw"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "herkeuring": {
+            "enumeration": "beschadigd"
+          },
+          "notitie": {
+            "text": "nieuw"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemeld"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "staat",
+      "value": {
+        "enumeration": "beschadigd"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "opmerking",
+      "value": {
+        "text": "nieuw"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "staat",
+      "value": {
+        "enumeration": "gaaf"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "opmerking",
+      "value": {
+        "text": "oud"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "staat",
+      "value": {
+        "enumeration": "gaaf"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "opmerking",
+      "value": {
+        "text": "oud"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "staat",
+      "value": {
+        "enumeration": "beschadigd"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V4",
+      "attribute": "opmerking",
+      "value": {
+        "text": "nieuw"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

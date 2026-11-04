@@ -1,0 +1,114 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Berging",
+        "attributes": {
+          "opbrengst": {
+            "number": "101"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "B1",
+        "objectType": "Berger",
+        "attributes": {},
+        "roles": {
+          "berging": [
+            "G1"
+          ]
+        },
+        "characteristics": [
+          "vast"
+        ]
+      },
+      {
+        "label": "B2",
+        "objectType": "Berger",
+        "attributes": {
+          "vaste aandeel": {
+            "number": "50"
+          }
+        },
+        "roles": {
+          "berging": [
+            "G1"
+          ]
+        },
+        "characteristics": [
+          "vast"
+        ]
+      },
+      {
+        "label": "B3",
+        "objectType": "Berger",
+        "attributes": {
+          "vaste aandeel": {
+            "number": "30"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "vast"
+        ]
+      },
+      {
+        "label": "B4",
+        "objectType": "Berger",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "vast"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "G1",
+      "attribute": "onverdeelde rest",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B1",
+      "attribute": "bergingsaandeel",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B2",
+      "attribute": "bergingsaandeel",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "B3",
+      "attribute": "bergingsaandeel",
+      "value": {
+        "number": "30"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "B4",
+      "attribute": "bergingsaandeel"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

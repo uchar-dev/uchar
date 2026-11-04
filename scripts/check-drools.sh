@@ -1553,7 +1553,11 @@ EXPECTED_CHANNEL=(
 # 334 since the same card: the goldens bound-day-behind-a-failing-condition, context-value-behind-a-failing-condition
 # and unresolved-behind-a-failing-condition, a fault kind behind a condition that does not hold, which raises no
 # fault (RUNTIME-SEMANTICS ch. 5.11). Each plays on both with PLAYED 1.
-EXPECTED_PLAYED=334
+# 338 since the card writers-as-one-defaults-stack (2026-11-04): the goldens jutterswet-invoer-naast-initialisatie
+# (PLAYED 2), jutterswet-invoer-naast-verdeling (PLAYED 2, an allocation beside a computing rule, which both branches
+# carry since that card), jutterswet-invoer-naast-objectcreatie and jutterswet-invoer-op-keurklasse (PLAYED 1 each),
+# the input of a target in the stack of its writers (RUNTIME-SEMANTICS ch. 7.8).
+EXPECTED_PLAYED=338
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
