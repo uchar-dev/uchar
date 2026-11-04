@@ -1644,6 +1644,7 @@ public final class IrLoader {
             // carry (the temporal read's keys are checked all the same, see EXPRESSION)
             case "TemporalRead" -> throw new Refusal(DroolsCode.EXPR_TEMPORAL_READ.reason("node", node), "Expr:" + node);
             case "Construct" -> throw new Refusal(DroolsCode.EXPR_CONSTRUCT.reason("node", node), "Expr:" + node);
+            case "PayloadAccess" -> throw new Refusal(DroolsCode.EXPR_PAYLOAD_ACCESS.reason("node", node), "Expr:" + node);
             case "Match" -> throw new Refusal(DroolsCode.EXPR_MATCH.reason("node", node), "Expr:" + node);
             case "StructLiteral" -> throw new Refusal(DroolsCode.EXPR_STRUCT_LITERAL.reason("node", node), "Expr:" + node);
             case "FieldAccess" -> throw new Refusal(DroolsCode.EXPR_FIELD_ACCESS.reason("node", node), "Expr:" + node);

@@ -51,8 +51,8 @@ class UnknownNodeWitnessTest {
     private record Union(String def, String path, String formPrefix, String sentence, Set<String> notCarried) {}
 
     private static final Union EXPRESSION = new Union("expr", W, "Expr:", "unknown expr node",
-            Set.of("TemporalRead", "Construct", "Match", "StructLiteral", "FieldAccess", "ListLiteral", "Lambda",
-                    "Invoke", "Fold", "MapList", "FilterList", "ListLength"));
+            Set.of("TemporalRead", "Construct", "Match", "PayloadAccess", "StructLiteral", "FieldAccess", "ListLiteral",
+                    "Lambda", "Invoke", "Fold", "MapList", "FilterList", "ListLength"));
     private static final Union CONDITION = new Union("condition", V, "Conditie:", "unknown condition node", Set.of());
     private static final Union DATATYPE = new Union("datatype", D, "Datatype:", "unknown datatype node",
             Set.of("SumType", "ListType", "StructType"));

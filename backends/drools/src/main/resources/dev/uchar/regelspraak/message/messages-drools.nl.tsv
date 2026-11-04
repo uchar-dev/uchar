@@ -347,6 +347,7 @@ DROOLS-309	een voorwaarde per periode op het tijdsafhankelijke doel '{attribute}
 DROOLS-310	'{operand}' ligt op een raster van {operandGranularity}, dat niet past in het {targetGranularity}-raster van het tijdsafhankelijke doel '{attribute}': het doel kan de knips van een voorwaarde per periode niet dragen (IR-SPEC WF-126)
 DROOLS-311	een lezing van het tijdsafhankelijke doel '{attribute}' van {declarant}, dat twee of meer regels schrijven, elk de dagen van zijn eigen segmenten (RUNTIME-SEMANTICS ch. 5.7): zijn stand zou de vereniging van hun segmenten per dag zijn, die deze tak niet bouwt; geen golden met cases leest er een
 DROOLS-312	het rekenen per periode van ch. 3.4 schrijft {value} op [{from}, {to}) in de tijdlijn van '{attribute}', van de onbegrensde vorm: de waarde eindigt niet, en een segment van deze tak houdt een decimaal
+DROOLS-313	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)

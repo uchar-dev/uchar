@@ -347,6 +347,7 @@ DROOLS-309	a condition read per period on the time-dependent target '{attribute}
 DROOLS-310	'{operand}' lies on a grid of {operandGranularity}, which does not fit the {targetGranularity} grid of the time-dependent target '{attribute}': the target cannot carry the cuts of a condition read per period (IR-SPEC WF-126)
 DROOLS-311	a read of the time-dependent target '{attribute}' of {declarant}, which two or more rules write, each the days of its own segments (RUNTIME-SEMANTICS ch. 5.7): its standing would be the union of their segments per day, which this branch does not build; no golden with cases reads one
 DROOLS-312	the period arithmetic of ch. 3.4 writes {value} on [{from}, {to}) into the timeline of '{attribute}', of the unbounded form: the value does not terminate, and a segment of this branch holds a decimal
+DROOLS-313	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	input {place} = {value} does not fit {decimals} decimals: a case value whose exact value its declaration cannot hold is refused at the input (RUNTIME-SEMANTICS ch. 2.4, 5.7)
