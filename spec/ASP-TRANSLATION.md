@@ -1628,8 +1628,7 @@ of disjoint fragments. No decimal scale holds a value with such a
 denominator, so the translator carries this total only as the base of a
 rounding, marked for that base alone (`calendar_rounding`); the rounding
 takes `t·10^d/(scale·D)` to a whole number by the mode's integer formula,
-the negative range fenced as in S6. A calendar total elsewhere is refused
-by name (`backends/clingo/README.md` [V6]), and so is a declared factor
+the negative range fenced as in S6. A calendar total elsewhere is refused by name (CLINGO-032, `backends/clingo/README.md` [V6]; the anchor `jutterswet-verzuimrente-dagen` stands in gate 6's channel), and so is a declared factor
 between the two families met in the integration (WF-009). Witness: the
 anchor `jutterswet-verzuimrente-dagen`, D = 365 in case 1 and 366 in
 case 2.
