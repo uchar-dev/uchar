@@ -1273,7 +1273,13 @@ and the total `Q = #sum { W*N,V,T : clN_seg(S,V,T,W), clN_wu(V,T,N)
 every total of an absent timeline (RS ch. 3.6). Fences: |W| ≤ 46340, the endpoint span at 46340 whole
 units (segments are disjoint slices of one timeline, so |ΣW×N| ≤
 46340² holds); with D > 1 the guard on W is 2^31 − 1 over the weight
-of the full span; and the comparison harmonisation bounds of S6.
+of the full span; and the comparison harmonisation bounds of S6. A clip
+member that carries an owner or a whole-period qualifier (WF-097, the
+fence of all three clips, RS ch. 3.6) is refused at translation, also
+where the rule's condition is false for every subject: the translation
+is eager, while `ref` evaluates lazily and refuses the member, in the
+same words, only where it evaluates the clip. The verifier rejects such
+a document either way.
 
 **The negated clip member** (`negated: true` on a characteristic
 check, either as the whole condition or as a member of the composite

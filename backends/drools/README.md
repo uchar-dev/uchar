@@ -781,9 +781,9 @@ a rule needs the place of a member that has none. Witness `TmsInputWitnessTest`.
 to-many role whose matrix compares or tests an attribute under the whole-period qualifier reads them, whether or not the
 input holds a bucket scalar, as in golden `jutterswet-reddingsvloot`: that matrix can fault per member on a bucket
 scalar, so the fold reads its members in order (`MemberTest`, above); a characteristic check under the qualifier cannot
-fault and asks no places. The reference interpreter and the ASP backend read a pro-rata base, a compared timeline and a
-timeline under the whole-period qualifier given as a bucket scalar as no timeline today; this branch follows ch. 8.4
-there, and they follow with a card. The own total without a clip in a session without an evaluation date has no bucket
+fault and asks no places. Over a bucket scalar a pro-rata base, a compared timeline and a timeline under the
+whole-period qualifier fault with EF-037, as in the reference interpreter and the ASP backend (ch. 8.4). The own total
+without a clip in a session without an evaluation date has no bucket
 to take and faults, as in the reference interpreter ("the temporal total of "bedrag" needs the evaluation date: the case
 carries the asOfDate bucket's value"), where the evaluation reaches it. Witnesses `TmsInputFormWitnessTest` and
 `TmsTotalEvaluationDateWitnessTest`.
@@ -799,9 +799,9 @@ through its standing at the end of the path as well, so the fold reads it whole 
 scalar (above), naming the object through the path ("the werf of "S1""). The grid is the
 qualifier's own, never the member's nor the session's: no rule of the qualifier binds the evaluation date, and a
 session without one answers. A timeline without segments, and the null timeline of a path whose link is absent, touch
-no bucket and pass, and the qualifier's own negation complements the fold. A leeg bound fails every day, never a
-fault, the inequality included, as ch. 3.9 says; the reference interpreter answers "ongelijk aan" against a leeg bound
-as true on every day (measured 2026-10-09; no golden has it). In a quantifier fold (ch. 3.9a) the qualified comparison
+no bucket and pass, and the qualifier's own negation complements the fold. Each day reads its comparison by ch. 1.2, a
+gap day and a leeg bound as leeg sides, never a fault (ch. 3.9): "ongelijk aan" holds on a gap day against a filled
+bound and on every filled day against a leeg bound (golden `jutterswet-gehele-jaar-lege-grens`). In a quantifier fold (ch. 3.9a) the qualified comparison
 is the matrix, so each member's verdict is a contribution of the fold, with its short circuit, and the qualifier's
 negation is read per member: a counting quantifier counts the members for which the fold fails. Witness
 `TmsWholePeriodWitnessTest`, over timelines that a rule derives later, in every order of the rules.
@@ -946,7 +946,7 @@ never as a silent fall:
   components on a timeline, and a pro-rata part over a base with a unit or finer than the bucket, or onto or from a
   fixed start point. Witness `TmsTimelineRefusalWitnessTest`;
 - of the whole-period qualifier, with no golden with cases: the negation inside the qualifier of a characteristic
-  check ("gedurende het gehele jaar niet …", ch. 3.12) on a scalar target, where the qualifier folds; and what the
+  check ("gedurende het gehele jaar niet …", ch. 3.9) on a scalar target, where the qualifier folds; and what the
   reference interpreter does not fold either: a comparison over a timeline read over a path, between two timelines or
   with none, and a date ordering (ch. 3.9, 3.12);
 - of day kinds: the dayKind predicate as a condition, which the reference interpreter and the ASP backend refuse
