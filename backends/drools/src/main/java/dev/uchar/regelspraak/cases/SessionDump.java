@@ -560,6 +560,10 @@ final class SessionDump {
         if (v instanceof java.time.LocalDateTime d)
             return DATE_TIME.format(d) + (d.getNano() == 0 ? "" : String.format(".%03d", d.getNano() / 1_000_000));
         if (v instanceof String s) return quote(s);
+        // a constructor value as its tag quoted and, for a unary one, its payload in parentheses (RUNTIME-SEMANTICS
+        // ch. 9.1, 5.12), as the reference interpreter's trace writes it
+        if (v instanceof dev.uchar.regelspraak.transpiler.tms.ConstructorValue c)
+            return quote(c.constructor()) + (c.payload() == null ? "" : "(" + canonical(c.payload()) + ")");
         // an open bound as "-", as the reference interpreter's trace writes it (RUNTIME-SEMANTICS ch. 3.1, 5.12)
         if (v instanceof Period p)
             return "[" + (p.from().equals(Period.OPEN_FROM) ? "-" : p.from().toString()) + " "

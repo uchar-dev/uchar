@@ -37,7 +37,7 @@ DROOLS-034	a variable-start grid is laid per object from the anchor its start-po
 DROOLS-035	bucketing is defined for month and year only (ch. 3.2)
 DROOLS-036	{site}: the declared grid is day, which every day boundary sits on, yet this loader checks a timeline's grid through the calendar bucketing and v0 defines buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the case
 DROOLS-037	{site}: the declared grid is {granularity}, and v0 defines calendar buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so this loader has no {granularity} grid to check the segment boundaries against: refused as a v0 limit, not as a defect of the case
-DROOLS-038	non-numeric timeline value on '{attribute}' is not carried by the v0 backend — the generated Segment holds a BigDecimal waarde
+DROOLS-038	een tijdlijnwaarde op '{attribute}' die geen getal en geen constructorwaarde is, draagt de v0-backend niet
 DROOLS-039	unknown expectation kind: {kind}
 DROOLS-040	teruglezing van een attribuut met dimensie '{attribute}' (§3.6, een Map-beanlid) wordt niet gedragen door de v0-backend
 DROOLS-041	scalar read-back of temporal attribute '{attribute}' is not carried by the v0 backend — the bean holds a List<Segment>; use an attributeTimeline expectation
@@ -348,6 +348,7 @@ DROOLS-310	'{operand}' ligt op een raster van {operandGranularity}, dat niet pas
 DROOLS-311	een lezing van het tijdsafhankelijke doel '{attribute}' van {declarant}, dat twee of meer regels schrijven, elk de dagen van zijn eigen segmenten (RUNTIME-SEMANTICS ch. 5.7): zijn stand zou de vereniging van hun segmenten per dag zijn, die deze tak niet bouwt; geen golden met cases leest er een
 DROOLS-312	het rekenen per periode van ch. 3.4 schrijft {value} op [{from}, {to}) in de tijdlijn van '{attribute}', van de onbegrensde vorm: de waarde eindigt niet, en een segment van deze tak houdt een decimaal
 DROOLS-313	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
+DROOLS-314	een payloadtoegang tot het tijdsafhankelijke attribuut '{attribute}' wordt per dag gelezen (RUNTIME-SEMANTICS ch. 9.5), wat deze backend niet uitvoert
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)

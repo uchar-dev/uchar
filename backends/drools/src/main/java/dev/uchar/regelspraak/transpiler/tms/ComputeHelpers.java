@@ -8,6 +8,7 @@ import dev.uchar.regelspraak.ir.ResolvedAllocation;
 import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.runtime.Breuk;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.plan.Consequence;
 
 import java.math.BigDecimal;
@@ -403,6 +404,30 @@ public final class ComputeHelpers {
         else cells.put(List.copyOf(labels), value);
     }
 
+    // ---------------- sum types ----------------
+
+    /** The value of a nullary constructor {@code tag} (RUNTIME-SEMANTICS ch. 9.1): filled by construction. */
+    public static ConstructorValue constructorValue(String tag) {
+        return new ConstructorValue(tag, null);
+    }
+
+    /** The value of the unary constructor {@code tag} with the payload {@code payload}, and leeg where the payload is
+     *  (RUNTIME-SEMANTICS ch. 9.1): a constructor value never carries a leeg payload. */
+    public static ConstructorValue construct(String tag, Object payload) {
+        return payload == null ? null : new ConstructorValue(tag, payload);
+    }
+
+    /** The payload of {@code value} where it carries the constructor {@code tag}, and leeg where it carries another or
+     *  is leeg (RUNTIME-SEMANTICS ch. 9.5): a failed access. A value that is no constructor value breaks the contract
+     *  of a sum-typed base (WF-127) and is thrown, never read as leeg. */
+    public static Object payload(Object value, String tag) {
+        if (value == null) return null;
+        if (!(value instanceof ConstructorValue c))
+            throw new IllegalStateException("a payload access reads a constructor value, not a "
+                    + value.getClass().getName());
+        return Namen.norm(c.constructor()).equals(Namen.norm(tag)) ? c.payload() : null;
+    }
+
     /** {@code value}, or {@code fallback} where it is leeg: a sum's {@code emptyFallback} (§5.8.2), which is evaluated
      *  whether it is used or not (RUNTIME-SEMANTICS ch. 5.11). */
     public static Object fallback(Object value, Object fallback) {
@@ -473,8 +498,9 @@ public final class ComputeHelpers {
         return v instanceof java.time.LocalDate || v instanceof java.time.LocalDateTime ? v : null;
     }
 
-    /** The equality of a text, an enumeration label or a truth value with its leeg tables: equal only where both are
-     *  filled and the same, unequal where exactly one is leeg or the two differ; {@code equal} false asks unequal. */
+    /** The equality of a text, an enumeration label, a truth value or a constructor value (RUNTIME-SEMANTICS ch. 9.3)
+     *  with its leeg tables: equal only where both are filled and the same, unequal where exactly one is leeg or the two
+     *  differ; {@code equal} false asks unequal. */
     public static boolean textEqual(Object a, Object b, boolean equal) {
         boolean bothEmpty = a == null && b == null;
         boolean same = Objects.equals(a, b);
@@ -771,7 +797,7 @@ public final class ComputeHelpers {
             for (Object o : (List<?>) base) {
                 Period b = (Period) o;
                 if (!b.from().isAfter(start) && b.to().isAfter(start)) {
-                    value = b.value();
+                    value = b.number();
                     break;
                 }
             }
@@ -802,9 +828,11 @@ public final class ComputeHelpers {
     }
 
     /** A value as a bean holds it: an exact rational as its decimal, exact where it terminates and at sixteen
-     *  significant digits rounded half to even where it does not ({@link Breuk#naarDecimal()}), any other value as it
-     *  is. The write-back puts a value on its bean so, and a reading prints it so (RUNTIME-SEMANTICS ch. 2.4, 5.12). */
+     *  significant digits rounded half to even where it does not ({@link Breuk#naarDecimal()}), also as the payload of a
+     *  constructor value, any other value as it is. The write-back puts a value on its bean so, and a reading prints it so (RUNTIME-SEMANTICS ch. 2.4, 5.12). */
     public static Object collapse(Object v) {
+        if (v instanceof ConstructorValue c && c.payload() instanceof Breuk b)
+            return new ConstructorValue(c.constructor(), b.naarDecimal());
         return v instanceof Breuk b ? b.naarDecimal() : v;
     }
 

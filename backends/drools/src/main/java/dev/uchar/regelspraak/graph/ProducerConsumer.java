@@ -458,6 +458,9 @@ public final class ProducerConsumer {
                 case Expr.BinderRef ignored -> { }
                 case Expr.Constant ignored -> { }
                 case Expr.Unresolved ignored -> { }
+                // a constructor value reads its payload, and a payload access reads its base (IR-SPEC ch. 4.7)
+                case Expr.Construct c -> expr(c.argument(), subject);
+                case Expr.PayloadAccess p -> expr(p.base(), subject);
             }
         }
     }

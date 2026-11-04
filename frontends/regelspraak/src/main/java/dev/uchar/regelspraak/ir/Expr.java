@@ -66,6 +66,8 @@ public sealed interface Expr {
             // exactly as a FunctionCall's filter is.
             case InstanceSetUnion u -> u.branches().stream()
                                         .anyMatch(t -> Condition.containsExpr(t.filter(), test));
+            case Construct c   -> contains(c.argument(), test);
+            case PayloadAccess p -> contains(p.base(), test);
             case Literal ignored      -> false;
             case AttributeReference ignored -> false;
             case ParameterRef ignored -> false;
@@ -374,6 +376,21 @@ public sealed interface Expr {
      */
     record IfThenElse(Condition condition, Expr then, Expr otherwise, Datatype type, Source source) implements Expr {}
 
+    /**
+     * IR-SPEC ch. 4.7 / RUNTIME-SEMANTICS ch. 9.1: a constructor value of the sum type {@code type}, the constructor
+     * {@code constructor} with, for a unary one, the payload {@code argument}; null for a nullary one. A leeg argument
+     * makes the whole node leeg. The resolver builds none: a backend's IR loader reads it off the wire, where the
+     * frontend writes one for a value or a marker of an attribute with absence markers (ch. 9.5).
+     */
+    record Construct(Datatype.SumType type, String constructor, Expr argument, Source source) implements Expr {}
+
+    /**
+     * IR-SPEC ch. 4.7 / RUNTIME-SEMANTICS ch. 9.5: the payload of {@code base}, a sum-typed value, where it carries the
+     * unary constructor {@code constructor}; leeg where it carries another constructor or is leeg. {@code type} is the
+     * payload's datatype as the wire writes it. Built, like {@link Construct}, by a backend's IR loader only.
+     */
+    record PayloadAccess(Expr base, String constructor, Datatype type, Source source) implements Expr {}
+
     /** A built-in reckoning constant or referent: Rekendatum, Rekenjaar, hij, de dag. */
     record Constant(String name, Datatype type, Source source) implements Expr {}
 
@@ -413,6 +430,8 @@ public sealed interface Expr {
                                    collectUnresolved(k.then(), result); collectUnresolved(k.otherwise(), result); }
             case InstanceSetUnion u -> u.branches()
                     .forEach(t -> Condition.collectUnresolved(t.filter(), result));
+            case Construct c -> collectUnresolved(c.argument(), result);
+            case PayloadAccess p -> collectUnresolved(p.base(), result);
             case Literal ignored -> { }
             case AttributeReference ignored -> { }
             case ParameterRef ignored -> { }

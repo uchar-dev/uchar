@@ -401,6 +401,9 @@ final class ExpressionBuilder {
             case Expr.BinderRef x -> { return e; }
             case Expr.Constant x -> { return e; }
             case Expr.Unresolved x -> { return e; }
+            // the two nodes of the absence markers, which the resolver builds nowhere (IR-SPEC ch. 4.7)
+            case Expr.Construct c -> { why[0] = Msg.frontend("PART.subject-no-anchor", "expression", c.source()); return e; }
+            case Expr.PayloadAccess p -> { why[0] = Msg.frontend("PART.subject-no-anchor", "expression", p.source()); return e; }
         }
     }
 
@@ -806,6 +809,9 @@ final class ExpressionBuilder {
             case Expr.TextComposition ignored -> null;
             case Expr.InstanceSetUnion ignored -> null;
             case Expr.Unresolved ignored -> null;        // no claim: the marker carries its own diagnostic
+            // the resolver builds neither: a constructor value is no count, and a payload is as its declaration
+            case Expr.Construct ignored -> null;
+            case Expr.PayloadAccess p -> typeRational(p);
         };
     }
 

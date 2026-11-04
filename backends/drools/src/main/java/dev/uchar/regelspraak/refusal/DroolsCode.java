@@ -31,9 +31,9 @@ public enum DroolsCode {
     START_POINT_ON_ANCESTOR("DROOLS-007", Kind.LIMIT, "start-point-on-ancestor", "objectType", null),
     DATATYPE_LIST("DROOLS-008", Kind.REFUSAL, "datatype-list", "node", null),
     DATATYPE_STRUCT("DROOLS-009", Kind.REFUSAL, "datatype-struct", "node", null),
-    DATATYPE_SUM("DROOLS-010", Kind.REFUSAL, "datatype-sum", "node", null),
+    DATATYPE_SUM("DROOLS-010", Kind.RETIRED, "datatype-sum", "node", null),
     INSTANCE_UNION_ONE_BRANCH("DROOLS-011", Kind.CONTRACT, "instance-union-one-branch", "branchCount", null),
-    EXPR_CONSTRUCT("DROOLS-012", Kind.REFUSAL, "expr-construct", "node", null),
+    EXPR_CONSTRUCT("DROOLS-012", Kind.RETIRED, "expr-construct", "node", null),
     EXPR_FIELD_ACCESS("DROOLS-013", Kind.REFUSAL, "expr-field-access", "node", null),
     EXPR_FILTER_LIST("DROOLS-014", Kind.REFUSAL, "expr-filter-list", "node", null),
     EXPR_FOLD("DROOLS-015", Kind.REFUSAL, "expr-fold", "node", null),
@@ -334,7 +334,8 @@ public enum DroolsCode {
     PERIOD_CONDITION_GRID("DROOLS-310", Kind.REFUSAL, "period-condition-grid", "operand,operandGranularity,attribute,targetGranularity", null),
     TIMELINE_WRITERS_READ("DROOLS-311", Kind.RETIRED, "timeline-writers-read", "attribute,declarant", null),
     NON_TERMINATING_SEGMENT("DROOLS-312", Kind.LIMIT, "non-terminating-segment", "value,from,to,attribute", null),
-    EXPR_PAYLOAD_ACCESS("DROOLS-313", Kind.REFUSAL, "expr-payload-access", "node", null);
+    EXPR_PAYLOAD_ACCESS("DROOLS-313", Kind.RETIRED, "expr-payload-access", "node", null),
+    PAYLOAD_ACCESS_OF_TIMELINE("DROOLS-314", Kind.REFUSAL, "payload-access-of-timeline", "attribute", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

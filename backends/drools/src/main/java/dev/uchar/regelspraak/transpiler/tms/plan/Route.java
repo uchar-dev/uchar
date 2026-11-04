@@ -44,6 +44,9 @@ public enum Route {
     /** The input of a cell of a dimensioned attribute, the entry of its key in the map of the attribute's cells, which
      *  {@link Consequence.State} carries where it names a cell. */
     CELL(ComputeHelpers.class, "cell"),
+    /** The payload of a member's constructor value where it carries a constructor, which
+     *  {@link Consequence.Input.MemberValue} contributes where it names one (RUNTIME-SEMANTICS ch. 9.5). */
+    PAYLOAD(ComputeHelpers.class, "payload"),
     /** The fault EF-020 of the form of an input, the component of an ever-unique key given as the asOfDate-bucket
      *  scalar, its sentence around the object, named in a rule, which {@link Consequence.InputFormFault} inserts. */
     INPUT_FORM_FAULT(ComputeHelpers.class, "inputFormFault"),

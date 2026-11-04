@@ -51,11 +51,11 @@ class UnknownNodeWitnessTest {
     private record Union(String def, String path, String formPrefix, String sentence, Set<String> notCarried) {}
 
     private static final Union EXPRESSION = new Union("expr", W, "Expr:", "unknown expr node",
-            Set.of("TemporalRead", "Construct", "Match", "PayloadAccess", "StructLiteral", "FieldAccess", "ListLiteral",
+            Set.of("TemporalRead", "Match", "StructLiteral", "FieldAccess", "ListLiteral",
                     "Lambda", "Invoke", "Fold", "MapList", "FilterList", "ListLength"));
     private static final Union CONDITION = new Union("condition", V, "Conditie:", "unknown condition node", Set.of());
     private static final Union DATATYPE = new Union("datatype", D, "Datatype:", "unknown datatype node",
-            Set.of("SumType", "ListType", "StructType"));
+            Set.of("ListType", "StructType"));
     private static final Union PART = new Union("TextCompositionPart", W + "/parts/0", "TekstReeks.Deel:",
             "unknown TextCompositionPart node", Set.of());
 

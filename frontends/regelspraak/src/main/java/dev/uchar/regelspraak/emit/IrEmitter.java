@@ -825,6 +825,11 @@ public final class IrEmitter {
                 w.key("domain").value(e.domain());
                 w.key("values"); stringList(e.values());
             }
+            // the resolver gives no attribute, parameter or expression a sum type: the sum type of an attribute with
+            // absence markers is written beside its numeric declaration (sumType), so this arm is unreachable and
+            // refuses rather than serialising a shape no gate reads
+            case Datatype.SumType s -> throw new UnsupportedOperationException("IrEmitter: de resolver typeert niets met"
+                    + " het somtype '" + s.domain() + "'; een attribuut met afwezigheidsmarkeringen schrijft sumType");
             // the resolver's "no claim" has no wire spelling: a derived position the frontend cannot type is
             // written null (derivedType) and a marker leaves its type out, so an unknown datatype reaching
             // this arm stands at a declaration, a payload or a literal, and a document there would be refused
@@ -925,6 +930,8 @@ public final class IrEmitter {
             case Datatype.DateInDays d -> "date";
             case Datatype.DateTime d -> "dateTime";
             case Datatype.Enumeration e -> "enumeration";
+            case Datatype.SumType s -> throw new IllegalStateException("IrEmitter: de literal '" + l.source().snippet()
+                    + "' heeft het somtype '" + s.domain() + "'; een constructorwaarde is een Construct, geen literal");
             case Datatype.Unknown o -> throw unknownType(o);
         };
     }
@@ -1105,6 +1112,13 @@ public final class IrEmitter {
             case Expr.IfThenElse ignored -> throw new UnsupportedOperationException(
                     "IfThenElse is never emitter-produced (IR-SPEC ch. 4.10): the resolver builds none, "
                             + "so this emitter has no verified wire shape for it");
+            // the two nodes of the absence markers that a backend's loader builds (IR-SPEC ch. 4.7): the resolver
+            // builds neither, and expr writes them from the absence-marker sites, so these arms refuse for the
+            // reason the IfThenElse arm does
+            case Expr.Construct ignored -> throw new UnsupportedOperationException(
+                    "IrEmitter: de resolver maakt geen Construct; expr schrijft hem uit de plaatsen van de markeringen");
+            case Expr.PayloadAccess ignored -> throw new UnsupportedOperationException(
+                    "IrEmitter: de resolver maakt geen PayloadAccess; expr schrijft hem uit de plaatsen van de markeringen");
             // the §5.7 concatenation as an instance set (IR-SPEC ch. 4.3, WF-110). No "type" key:
             // the node denotes INSTANCES and carries no datatype, which is why the verifier's type
             // prologue exempts it the way it exempts a Lambda. Each selection's filter is emitted

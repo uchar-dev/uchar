@@ -252,7 +252,7 @@ class TmsTimelineWitnessTest {
         List<String> out = new ArrayList<>();
         for (Period t : Period.list((List<?>) l))
             out.add("[" + t.from() + ", " + t.to() + ")=" + (t.value() == null ? "leeg"
-                    : t.value().stripTrailingZeros().toPlainString()));
+                    : t.number().stripTrailingZeros().toPlainString()));
         return out;
     }
 

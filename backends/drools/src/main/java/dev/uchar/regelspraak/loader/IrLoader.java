@@ -534,6 +534,8 @@ public final class IrLoader {
             case Expr.BinderRef x -> { }
             case Expr.Constant x -> { }
             case Expr.Unresolved x -> { }
+            case Expr.Construct c -> checkValue(c.argument(), s);
+            case Expr.PayloadAccess p -> checkValue(p.base(), s);
         }
     }
 
@@ -1089,7 +1091,25 @@ public final class IrLoader {
             valueDesignations(dt, dp, name, values);
             return new Datatype.Enumeration(name, values);
         }
+        if (domainKind.equals("SumType")) return new Datatype.SumType(name, constructors(dt, dp));
         return datatype(dt, dp, true);
+    }
+
+    /** IR-SPEC ch. 2.4: the constructors of a sum type, in declared order, each a name and its payload datatype, read
+     *  at a declaration position, or null for a nullary one. A list without a constructor, a name twice and a payload
+     *  WF-060 does not admit are the verifier's. */
+    private List<Datatype.Constructor> constructors(JsonNode dt, String dp) {
+        JsonNode cs = dt.get("constructors");
+        if (!cs.isArray()) throw new DocumentError(dp + "/constructors", "expected an array, got " + shortQuote(cs));
+        List<Datatype.Constructor> out = new ArrayList<>();
+        for (int i = 0; i < cs.size(); i++) {
+            String cp = dp + "/constructors/" + i;
+            JsonNode c = cs.get(i);
+            if (!c.isObject()) throw new DocumentError(cp, "expected a constructor object, got " + shortQuote(c));
+            fields(c, cp, null, List.of("name", "payload"), List.of());
+            out.add(new Datatype.Constructor(textAt(c, cp, "name"), datatype(c.get("payload"), cp + "/payload", true)));
+        }
+        return out;
     }
 
     /** The key set of each datatype kind at the declaration position {@code Domain.datatype}, as the OCaml loader's
@@ -1110,7 +1130,8 @@ public final class IrLoader {
     private static final Map<String, List<String>> DATATYPE = Map.ofEntries(
             Map.entry("Text", List.of("node")),
             Map.entry("Boolean", List.of("node")),
-            Map.entry("Enumeration", List.of("node", "domain", "values")));
+            Map.entry("Enumeration", List.of("node", "domain", "values")),
+            Map.entry("SumType", List.of("node", "domain", "constructors")));
 
     /** IR-SPEC ch. 2.10: a parameter, its datatype, and when it is time-dependent its timeline facet. The datatype is
      *  required, and the facet carries no timeline name and a count of 1: a parameter's timeline is one period while
@@ -1335,11 +1356,12 @@ public final class IrLoader {
             case "Text" -> new Datatype.Text();
             case "Boolean" -> new Datatype.BooleanType();
             case "Enumeration" -> new Datatype.Enumeration(text(n, "domain"), stringList(n.get("values")));
+            // repeated whole at a use site, with its domain's name (IR-SPEC ch. 2.4)
+            case "SumType" -> new Datatype.SumType(textAt(n, path, "domain"), constructors(n, path));
             // the members of IR-SPEC ch. 2.4's datatype union that have no record here: a form this backend does not
             // carry
             case "ListType" -> throw new Refusal(DroolsCode.DATATYPE_LIST.reason("node", node), "Datatype:" + node);
             case "StructType" -> throw new Refusal(DroolsCode.DATATYPE_STRUCT.reason("node", node), "Datatype:" + node);
-            case "SumType" -> throw new Refusal(DroolsCode.DATATYPE_SUM.reason("node", node), "Datatype:" + node);
             // any other name is no node of this format, refused at the discriminator in the shared loader's words:
             // Onbekend among them, because the union has no member for an unknown type (a marker leaves its type out
             // and a derived position the producer could not type is null), the four datatype nodes of the L2 shape
@@ -1468,7 +1490,9 @@ public final class IrLoader {
             keyNames("Let", List.of("node", "type", "binder", "value", "body"), "source"),
             keyNames("BinderRef", List.of("node", "name"), "source"),
             keyNames("IfThenElse", List.of("node", "type", "condition", "then", "else"), "source"),
-            keyNames("InstanceSetUnion", List.of("node", "branches"), "source"));
+            keyNames("InstanceSetUnion", List.of("node", "branches"), "source"),
+            keyNames("Construct", List.of("node", "type", "constructor", "argument"), "source"),
+            keyNames("PayloadAccess", List.of("node", "type", "base", "constructor"), "source"));
 
     /** Every condition node this loader reads, with the schema's keys. The condition marker carries no type: that
      *  field is the expression marker's alone. */
@@ -1640,11 +1664,22 @@ public final class IrLoader {
                     throw new Refusal(DroolsCode.INSTANCE_UNION_ONE_BRANCH.reason("branchCount", branches.size()), "InstanceSetUnion.branches");
                 yield new Expr.InstanceSetUnion(List.copyOf(branches), source(n));
             }
+            // IR-SPEC ch. 4.7: a constructor value and the payload access of the absence markers (RUNTIME-SEMANTICS
+            // ch. 9.1, 9.5); the constructor's and the type's agreement is the verifier's (WF-062, WF-127)
+            case "Construct" -> {
+                String p = pathOf(n);
+                if (!(typeField(n) instanceof Datatype.SumType type))
+                    throw new DocumentError(p + "/type", "the type of a Construct is a SumType");
+                yield new Expr.Construct(type, textAt(n, p, "constructor"), expr(nodeField(n, "argument")), source(n));
+            }
+            case "PayloadAccess" -> {
+                String p = pathOf(n);
+                yield new Expr.PayloadAccess(required("PayloadAccess", "base", expr(nodeField(n, "base"))),
+                        textAt(n, p, "constructor"), required("PayloadAccess", "type", typeField(n)), source(n));
+            }
             // the members of IR-SPEC ch. 4's expression union that have no record here: a form this backend does not
             // carry (the temporal read's keys are checked all the same, see EXPRESSION)
             case "TemporalRead" -> throw new Refusal(DroolsCode.EXPR_TEMPORAL_READ.reason("node", node), "Expr:" + node);
-            case "Construct" -> throw new Refusal(DroolsCode.EXPR_CONSTRUCT.reason("node", node), "Expr:" + node);
-            case "PayloadAccess" -> throw new Refusal(DroolsCode.EXPR_PAYLOAD_ACCESS.reason("node", node), "Expr:" + node);
             case "Match" -> throw new Refusal(DroolsCode.EXPR_MATCH.reason("node", node), "Expr:" + node);
             case "StructLiteral" -> throw new Refusal(DroolsCode.EXPR_STRUCT_LITERAL.reason("node", node), "Expr:" + node);
             case "FieldAccess" -> throw new Refusal(DroolsCode.EXPR_FIELD_ACCESS.reason("node", node), "Expr:" + node);
@@ -1782,6 +1817,10 @@ public final class IrLoader {
         // it; a count counts instances and a total integrates a timeline, which a cell does not carry
         if (operandKind.equals("DimensionCellRead") && !aggregationKind.equals("count") && !aggregationKind.equals("total"))
             return null;
+        // the payload of each contributor (RUNTIME-SEMANTICS ch. 9.5), read under the filter's test of its constructor
+        // (WF-127): the value folds and the filled count read it, a count and a total do not
+        if (operandKind.equals("PayloadAccess") && !aggregationKind.equals("count") && !aggregationKind.equals("total"))
+            return null;
         return head + " and " + ("AEIOU".indexOf(operandKind.charAt(0)) >= 0 ? "an " : "a ") + operandKind
                 + " operand: the source of an instance fold is an AttributeReference";
     }
@@ -1896,8 +1935,8 @@ public final class IrLoader {
             + " string} or {\"constructor\": string}, without a payload";
 
     /** WF-114 (IR-SPEC ch. 4.1), the shared loader's sentence: null when {@code variant} is the one {@code type}
-     *  names. Every datatype this backend carries names a variant; a sum, list or struct type is refused as a form
-     *  before a literal reaches here. */
+     *  names. Every datatype this backend carries names a variant; a list or struct type is refused as a form before
+     *  a literal reaches here. */
     static String literalVariantRefusal(String variant, Datatype type) {
         String named, phrase;
         switch (type) {
@@ -1908,6 +1947,7 @@ public final class IrLoader {
             case Datatype.DateInDays x -> { named = "date"; phrase = "a day-precision Date"; }
             case Datatype.DateTime x -> { named = "dateTime"; phrase = "a millisecond-precision Date"; }
             case Datatype.Enumeration x -> { named = "enumeration"; phrase = "an Enumeration"; }
+            case Datatype.SumType x -> { named = "constructor"; phrase = "a SumType"; }
             case Datatype.Unknown x -> throw new IllegalStateException("IrLoader: an Onbekend datatype is refused"
                     + " while it is read, before a literal is crossed against it");
         }
@@ -2949,6 +2989,8 @@ public final class IrLoader {
             case Expr.BinderRef x -> { }
             case Expr.Constant x -> { }
             case Expr.Unresolved x -> { }
+            case Expr.Construct c -> checkTypes(c.argument(), types);
+            case Expr.PayloadAccess p -> checkTypes(p.base(), types);
         }
     }
 
@@ -3049,6 +3091,7 @@ public final class IrLoader {
             case Datatype.DateInDays x -> "date-day";
             case Datatype.DateTime x -> "date-ms";
             case Datatype.Enumeration x -> "enumeration";
+            case Datatype.SumType x -> "sumtype";
             case Datatype.Unknown x -> throw new IllegalArgumentException("an unknown type defers and is never named");
         };
     }

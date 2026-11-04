@@ -13,7 +13,7 @@ import java.util.List;
  */
 public sealed interface Datatype
         permits Datatype.Numeric, Datatype.Percentage, Datatype.Text, Datatype.BooleanType,
-                Datatype.DateInDays, Datatype.DateTime, Datatype.Enumeration, Datatype.Unknown {
+                Datatype.DateInDays, Datatype.DateTime, Datatype.Enumeration, Datatype.SumType, Datatype.Unknown {
 
     /** §13.3.3.2 Numeriek (geheel/decimaal) with an optional unit. */
     record Numeric(boolean wholeNumber, int decimals, Sign sign, Unit unit) implements Datatype {
@@ -38,6 +38,17 @@ public sealed interface Datatype
     /** §13.3.4.2 Enumeratie domain: the declaring domain's NAME (its identity — Tabel 36/43/61 rij 7
      *  require the SAME enumeration on both sides, not merely any enumeration) plus the declared value set. */
     record Enumeration(String domain, List<String> values) implements Datatype {}
+    /** The sum type of IR-SPEC ch. 2.4 (RUNTIME-SEMANTICS ch. 9): the declaring domain's NAME, its identity (WF-061),
+     *  and its constructors in declared order. The resolver builds none: the IR loader of a backend reads it off the
+     *  wire, where the RegelSpraak frontend writes one for an attribute with absence markers (ch. 9.5). */
+    record SumType(String domain, List<Constructor> constructors) implements Datatype {
+        public SumType {
+            constructors = List.copyOf(constructors);
+        }
+    }
+    /** A constructor of a {@link SumType}: its tag and, for a unary constructor, its payload datatype; null for a
+     *  nullary one. */
+    record Constructor(String name, Datatype payload) {}
     /** A reference that could not be resolved to a concrete datatype. */
     record Unknown(String reason) implements Datatype {}
 
@@ -87,6 +98,7 @@ public sealed interface Datatype
             case DateInDays d -> "Datum in dagen";
             case DateTime d  -> "Datum-tijd";
             case Enumeration e -> "Enumeratie " + e.domain();
+            case SumType s   -> "Somtype " + s.domain();
             case Unknown o   -> "onbekend(" + o.reason() + ")";
         };
     }

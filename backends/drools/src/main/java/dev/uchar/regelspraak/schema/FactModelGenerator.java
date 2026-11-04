@@ -867,6 +867,7 @@ public final class FactModelGenerator {
     public static String javaType(Datatype t) {
         if (t.isPercentage() || t.isNumber()) return "java.math.BigDecimal";
         if (t.isText() || t instanceof Datatype.Enumeration) return "String";   // an enumeratiewaarde is its String label
+        if (t instanceof Datatype.SumType) return "Object";                        // a ConstructorValue of the branch
         if (t instanceof Datatype.BooleanType) return "Boolean";                   // nullable: a leegwaarde is a real state
         if (t instanceof Datatype.DateInDays) return "java.time.LocalDate";
         if (t instanceof Datatype.DateTime) return "java.time.LocalDateTime";
@@ -911,14 +912,18 @@ public final class FactModelGenerator {
             import java.math.BigDecimal;
             import java.time.LocalDate;
 
-            /** One tijdvak [van, tot) of a §13.3.6 temporal attribute's Tijdreeks (generated, the explicit fact-model contract). */
+            /** One tijdvak [van, tot) of a §13.3.6 temporal attribute's Tijdreeks (generated, the explicit fact-model contract):
+             *  a number, or a constructor value on a timeline of a sum type (RUNTIME-SEMANTICS ch. 9.4). */
             public class Segment {
                 private LocalDate van;
                 private LocalDate tot;
-                private BigDecimal waarde;
+                private Object waarde;
 
                 public Segment() {}
                 public Segment(LocalDate van, LocalDate tot, BigDecimal waarde) {
+                    this.van = van; this.tot = tot; this.waarde = waarde;
+                }
+                public Segment(LocalDate van, LocalDate tot, Object waarde) {
                     this.van = van; this.tot = tot; this.waarde = waarde;
                 }
 
@@ -926,8 +931,8 @@ public final class FactModelGenerator {
                 public void setVan(LocalDate v) { this.van = v; }
                 public LocalDate getTot() { return tot; }
                 public void setTot(LocalDate v) { this.tot = v; }
-                public BigDecimal getWaarde() { return waarde; }
-                public void setWaarde(BigDecimal v) { this.waarde = v; }
+                public Object getWaarde() { return waarde; }
+                public void setWaarde(Object v) { this.waarde = v; }
             }
             """;
 

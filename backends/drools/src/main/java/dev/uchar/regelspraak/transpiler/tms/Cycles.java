@@ -892,6 +892,9 @@ public final class Cycles {
                 case Expr.BinderRef ignored -> { }
                 case Expr.Constant ignored -> { }
                 case Expr.Unresolved ignored -> { }
+                // the verifier's dep_expr: a constructor value reads its payload, a payload access its base
+                case Expr.Construct c -> expr(c.argument(), subject, at, out);
+                case Expr.PayloadAccess p -> expr(p.base(), subject, at, out);
             }
         }
 

@@ -20,11 +20,12 @@ import java.util.Objects;
  * ({@link #list}) and back where the write-back puts it on one ({@link #beans}); nothing in between sees a
  * {@code Segment}.
  *
- * <p>Two segments are equal where they have the same {@code from}, the same {@code to}, and values that are equal as
- * numbers or both leeg: 7 and 7.00 are one value, as in the reference interpreter's comparison of two timelines
- * ({@code World.write_timeline}, {@code Arith.equal}) and the change detection of ch. 3.1. The hash code is taken over
- * the value without trailing zeros, so that it agrees with that equality: a record's own hash code is that of
- * {@code BigDecimal}, which depends on the scale, and would give two facts for one value. Two timelines are equal
+ * <p>A value is a number, or a constructor value ({@link ConstructorValue}) on a timeline of a sum type (ch. 9.4). Two
+ * segments are equal where they have the same {@code from}, the same {@code to}, and values that are equal as numbers,
+ * equal constructor values or both leeg: 7 and 7.00 are one value, as in the reference interpreter's comparison of two
+ * timelines ({@code World.write_timeline}, {@code Arith.equal}) and the change detection of ch. 3.1. The hash code is
+ * taken over a number without trailing zeros, so that it agrees with that equality: a record's own hash code is that
+ * of {@code BigDecimal}, which depends on the scale, and would give two facts for one value. Two timelines are equal
  * where they hold equal segments in the same order; a timeline cut differently is a different value, also where it
  * reads the same on every day, since ch. 3.1 makes the segment-wise comparison the change detection, and the
  * reference interpreter compares so.
@@ -33,7 +34,8 @@ import java.util.Objects;
  * others) read a segment through {@code getVan()},
  * {@code getTot()} and {@code getWaarde()} ({@link RegelSpraakRuntime#get}) and make one through the public constructor
  * of {@code (LocalDate, LocalDate, BigDecimal)} ({@link RegelSpraakRuntime#newSegment}): given this class as their
- * segment class they compute with it as with the bean model's, and nothing in {@code runtime/} changes.
+ * segment class they compute with it as with the bean model's, and nothing in {@code runtime/} changes. They compute
+ * with numbers only, so a timeline of constructor values never reaches them.
  *
  * <p>A timeline divides all time (ch. 3.1), so a segment may have an open bound: an open {@code from} is
  * {@link #OPEN_FROM}, before every day, and an open {@code to} is {@link #OPEN_TO}, past every day. The two ends of the
@@ -42,7 +44,7 @@ import java.util.Objects;
  * or counts its units has to ask for one ({@link #open}). On a bean an open bound is null, as the case format leaves
  * the bound out.
  */
-public record Period(LocalDate from, LocalDate to, BigDecimal value) {
+public record Period(LocalDate from, LocalDate to, Object value) {
 
     /** The open {@code from} of a segment that begins before every day. */
     public static final LocalDate OPEN_FROM = LocalDate.MIN;
@@ -52,6 +54,19 @@ public record Period(LocalDate from, LocalDate to, BigDecimal value) {
     public Period {
         Objects.requireNonNull(from, "van");
         Objects.requireNonNull(to, "to");
+        if (value != null && !(value instanceof BigDecimal) && !(value instanceof ConstructorValue))
+            throw new IllegalArgumentException("a segment holds a decimal or a constructor value, not a "
+                    + value.getClass().getName());
+    }
+
+    /** The constructor the runtime's timeline helpers make a segment through ({@link RegelSpraakRuntime#newSegment}). */
+    public Period(LocalDate from, LocalDate to, BigDecimal value) {
+        this(from, to, (Object) value);
+    }
+
+    /** The value of this segment as a number, which a segment of a numeric timeline holds; leeg is null. */
+    public BigDecimal number() {
+        return (BigDecimal) value;
     }
 
     /** Whether this segment has an open bound (ch. 3.1). */
@@ -63,20 +78,26 @@ public record Period(LocalDate from, LocalDate to, BigDecimal value) {
 
     public LocalDate getTot() { return to; }
 
-    public BigDecimal getWaarde() { return value; }
+    public Object getWaarde() { return value; }
 
     @Override public boolean equals(Object o) {
-        return o instanceof Period t && t.from.equals(from) && t.to.equals(to)
-                && (value == null ? t.value == null : t.value != null && t.value.compareTo(value) == 0);
+        return o instanceof Period t && t.from.equals(from) && t.to.equals(to) && sameValue(t.value, value);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(from, to, value == null ? null : value.stripTrailingZeros());
+        return Objects.hash(from, to, value instanceof BigDecimal d ? d.stripTrailingZeros() : value);
+    }
+
+    /** Whether two values of segments are one value: numbers by value, constructor values by their equality, leeg
+     *  only with leeg. */
+    public static boolean sameValue(Object a, Object b) {
+        if (a instanceof BigDecimal x) return b instanceof BigDecimal y && x.compareTo(y) == 0;
+        return Objects.equals(a, b);
     }
 
     @Override public String toString() {
         return "[" + (from.equals(OPEN_FROM) ? "-inf" : from) + ", " + (to.equals(OPEN_TO) ? "+inf" : to) + ")="
-                + (value == null ? "empty" : value.toPlainString());
+                + (value == null ? "empty" : value instanceof BigDecimal d ? d.toPlainString() : value);
     }
 
     /** The timeline {@code segments} as this branch carries it, immutable and in the given order: from the segments a
@@ -92,7 +113,7 @@ public record Period(LocalDate from, LocalDate to, BigDecimal value) {
             }
             LocalDate from = (LocalDate) RegelSpraakRuntime.get(s, "van"), to = (LocalDate) RegelSpraakRuntime.get(s, "tot");
             out.add(new Period(from == null ? OPEN_FROM : from, to == null ? OPEN_TO : to,
-                    (BigDecimal) RegelSpraakRuntime.get(s, "waarde")));
+                    RegelSpraakRuntime.get(s, "waarde")));
         }
         return List.copyOf(out);
     }
@@ -102,8 +123,21 @@ public record Period(LocalDate from, LocalDate to, BigDecimal value) {
     public static List<Object> beans(List<Period> timeline, Class<?> segmentClass) {
         List<Object> out = new ArrayList<>(timeline.size());
         for (Period t : timeline)
-            out.add(RegelSpraakRuntime.newSegment(segmentClass, t.from.equals(OPEN_FROM) ? null : t.from,
-                    t.to.equals(OPEN_TO) ? null : t.to, t.value));
+            out.add(bean(segmentClass, t.from.equals(OPEN_FROM) ? null : t.from, t.to.equals(OPEN_TO) ? null : t.to,
+                    t.value));
         return out;
+    }
+
+    /** One segment of the bean model's {@code segmentClass}: a number through the runtime's constructor, and a
+     *  constructor value through the one of {@code (LocalDate, LocalDate, Object)} the bean model generates beside it
+     *  for a timeline of a sum type (ch. 9.4). */
+    public static Object bean(Class<?> segmentClass, LocalDate from, LocalDate to, Object value) {
+        if (value == null || value instanceof BigDecimal)
+            return RegelSpraakRuntime.newSegment(segmentClass, from, to, (BigDecimal) value);
+        try {
+            return segmentClass.getConstructor(LocalDate.class, LocalDate.class, Object.class).newInstance(from, to, value);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("no segment of a constructor value on " + segmentClass.getName(), e);
+        }
     }
 }

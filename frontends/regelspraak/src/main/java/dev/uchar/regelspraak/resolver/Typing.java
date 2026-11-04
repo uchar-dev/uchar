@@ -495,6 +495,10 @@ public final class Typing {
             case Expr.InstanceSetUnion u -> null;
             case Expr.VariableRef v -> null;
             case Expr.Unresolved o -> null;
+            // the resolver builds neither (Expr.Construct, Expr.PayloadAccess): a constructor value is no number, and
+            // a payload is bounded as its declaration
+            case Expr.Construct c -> null;
+            case Expr.PayloadAccess p -> declaredBound(p.type());
         };
     }
 
@@ -928,6 +932,7 @@ public final class Typing {
             case Datatype.DateInDays d -> "Date";
             case Datatype.DateTime d -> "Date";
             case Datatype.Enumeration e -> "Enumeration";
+            case Datatype.SumType s -> "SumType";
             case Datatype.Unknown o -> throw new IllegalStateException("Typering: een onbekend type heeft geen typenaam");
         };
     }
@@ -959,6 +964,7 @@ public final class Typing {
             case Datatype.DateInDays d -> "date-day";
             case Datatype.DateTime d -> "date-ms";
             case Datatype.Enumeration e -> "enumeration";
+            case Datatype.SumType s -> "sumtype";
             case Datatype.Unknown o -> throw new IllegalStateException("Typering: een onbekend type heeft geen soortwoord");
         };
     }

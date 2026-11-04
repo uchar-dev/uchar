@@ -208,9 +208,26 @@ public final class PeriodArithmetic {
         List<Period> joined = new ArrayList<>();
         for (Period s : out) {
             Period last = joined.isEmpty() ? null : joined.get(joined.size() - 1);
-            if (last != null && last.to().equals(s.from()) && last.value().compareTo(s.value()) == 0)
+            if (last != null && last.to().equals(s.from()) && last.number().compareTo(s.number()) == 0)
                 joined.set(joined.size() - 1, new Period(last.from(), s.to(), last.value()));
             else joined.add(s);
+        }
+        return List.copyOf(joined);
+    }
+
+    /**
+     * The timeline a rule writes into a target of a sum type (RUNTIME-SEMANTICS ch. 9.4, 3.11): the filled segments of
+     * {@code timeline}, constructor values, adjacent equal ones one segment. A constructor value has no decimals, so no
+     * write boundary applies.
+     */
+    public static List<Period> writtenValues(Object timeline) {
+        List<Period> joined = new ArrayList<>();
+        for (Exact p : pieces(timeline)) {
+            if (p.value() == null) continue;
+            Period last = joined.isEmpty() ? null : joined.get(joined.size() - 1);
+            if (last != null && last.to().equals(p.from()) && Period.sameValue(last.value(), p.value()))
+                joined.set(joined.size() - 1, new Period(last.from(), p.to(), last.value()));
+            else joined.add(new Period(p.from(), p.to(), p.value()));
         }
         return List.copyOf(joined);
     }
@@ -231,7 +248,7 @@ public final class PeriodArithmetic {
             Period p = (Period) o;
             if (p.value() == null) continue;
             if (p.open()) {
-                if (p.value().signum() != 0) throw new OpenSegmentFault(attribute, object, p.value());
+                if (p.number().signum() != 0) throw new OpenSegmentFault(attribute, object, p.number());
                 continue;
             }
             closed.add(p);
@@ -315,7 +332,7 @@ public final class PeriodArithmetic {
         if (!(timeline instanceof List<?> l)) return false;
         for (Object o : l) {
             Period p = (Period) o;
-            if (p.open() && p.value() != null && p.value().signum() != 0) return true;
+            if (p.open() && p.value() != null && p.number().signum() != 0) return true;
         }
         return false;
     }
@@ -326,7 +343,7 @@ public final class PeriodArithmetic {
         List<Period> out = new ArrayList<>();
         for (Object o : timeline) {
             Period p = (Period) o;
-            if (p.open() && (p.value() == null || p.value().signum() == 0)) continue;
+            if (p.open() && (p.value() == null || p.number().signum() == 0)) continue;
             out.add(p);
         }
         return out;
@@ -338,8 +355,8 @@ public final class PeriodArithmetic {
     public static OpenSegmentFault openSegmentFault(String attribute, Object member, Object timeline) {
         for (Object o : (List<?>) timeline) {
             Period p = (Period) o;
-            if (p.open() && p.value() != null && p.value().signum() != 0)
-                return new OpenSegmentFault(attribute, member, p.value());
+            if (p.open() && p.value() != null && p.number().signum() != 0)
+                return new OpenSegmentFault(attribute, member, p.number());
         }
         throw new IllegalStateException("de tijdlijn van " + attribute + " op " + FactNames.object(member)
                 + " heeft geen open segment met een waarde ongelijk aan 0, en de lidfout noemt er een");
@@ -394,8 +411,12 @@ public final class PeriodArithmetic {
         return List.copyOf(out);
     }
 
+    /** Whether two values are one: numbers as exact numbers, a constructor value by its equality (RUNTIME-SEMANTICS
+     *  ch. 9.3), leeg only with leeg. */
     static boolean sameValue(Object a, Object b) {
-        return a == null ? b == null : b != null && Breuk.van(a).compareTo(Breuk.van(b)) == 0;
+        if (a == null || b == null) return a == b;
+        if (a instanceof Number && b instanceof Number) return Breuk.van(a).compareTo(Breuk.van(b)) == 0;
+        return a.equals(b);
     }
 
     /** {@code t} as exact segments: a timeline of working memory ({@link Period}), one an operator returned, or an

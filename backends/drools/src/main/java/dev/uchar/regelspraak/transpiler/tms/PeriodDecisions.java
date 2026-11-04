@@ -1,6 +1,5 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -90,7 +89,7 @@ public record PeriodDecisions(Object object, String member, List<List<String>> r
      *                 asOfDate-bucket scalar (ch. 8.4), which carries no period
      */
     public record Span(LocalDate from, LocalDate to, DefaultsDecision.Decider decider, DefaultsDecision.Conflict conflict,
-                       List<DefaultsDecision.Decider> rules, BigDecimal input) {
+                       List<DefaultsDecision.Decider> rules, Object input) {
 
         public Span {
             Objects.requireNonNull(from, "from");

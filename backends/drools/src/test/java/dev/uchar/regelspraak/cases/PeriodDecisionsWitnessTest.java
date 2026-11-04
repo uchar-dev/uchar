@@ -569,7 +569,7 @@ class PeriodDecisionsWitnessTest {
                     if (!x.from().isAfter(previous) && x.to().isAfter(previous)) s = x;
                 Object value = s == null ? null : s.decider() != null ? s.decider().decision()
                         : !s.rules().isEmpty() ? s.rules().get(0).decision() : s.input();
-                BigDecimal want = valueOn(held, previous);
+                Object want = valueOn(held, previous);
                 if (!same(value, want))
                     differences.add(at + ": op " + previous + " geven de perioden " + value + ", het fixpunt " + want);
             }
@@ -660,7 +660,7 @@ class PeriodDecisionsWitnessTest {
         return null;
     }
 
-    private static BigDecimal valueOn(List<Period> timeline, LocalDate d) {
+    private static Object valueOn(List<Period> timeline, LocalDate d) {
         for (Period p : timeline) if (!p.from().isAfter(d) && p.to().isAfter(d)) return p.value();
         return null;
     }
@@ -669,8 +669,11 @@ class PeriodDecisionsWitnessTest {
         return new DefaultsDecision.Decider(d.pointer(), ComputeHelpers.collapse(d.decision()));
     }
 
+    /** Numbers as exact numbers, a constructor value of a timeline of a sum type by its equality. */
     private static boolean same(Object a, Object b) {
-        return a == null ? b == null : b != null && Breuk.van(a).compareTo(Breuk.van(b)) == 0;
+        if (a == null || b == null) return a == b;
+        if (a instanceof Number && b instanceof Number) return Breuk.van(a).compareTo(Breuk.van(b)) == 0;
+        return a.equals(b);
     }
 
     /** {@code span} after {@code spans}, joined with the last where it renders alike. */

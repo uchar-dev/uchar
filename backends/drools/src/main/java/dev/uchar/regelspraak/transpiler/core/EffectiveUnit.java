@@ -153,6 +153,15 @@ public final class EffectiveUnit {
 
     private static final Datatype UNKNOWN = new Datatype.Unknown("geen type op de wire");
 
+    /** The payload datatype of the constructor {@code constructor} of the sum type {@code t}, or null where {@code t} is
+     *  none or declares no such unary constructor. */
+    public static Datatype payloadOf(Datatype t, String constructor) {
+        if (!(t instanceof Datatype.SumType s) || constructor == null) return null;
+        for (Datatype.Constructor c : s.constructors())
+            if (Namen.norm(c.name()).equals(Namen.norm(constructor))) return c.payload();
+        return null;
+    }
+
     /** {@code Expr.Rounding.type()}, over the base's datatype as {@link #typeOf} reads it. */
     private static Datatype rounded(Datatype b, int decimals) {
         if (b instanceof Datatype.Numeric n) return new Datatype.Numeric(decimals == 0, decimals, n.sign(), n.unit());
@@ -222,6 +231,12 @@ public final class EffectiveUnit {
             return decl == null ? annotation : decl.unitOf();
         }
         if (e instanceof Expr.DimensionCellRead c) return unit(c.attribute(), environment, depth + 1);
+        // the payload of a sum-typed value has the unit of its constructor's payload in the declaration of the base's
+        // type (RUNTIME-SEMANTICS ch. 9.5); a constructor value has none
+        if (e instanceof Expr.PayloadAccess p) {
+            Datatype payload = payloadOf(typeOf(p.base()), p.constructor());
+            return payload == null ? annotation : payload.unitOf();
+        }
         if (e instanceof Expr.ParameterRef p) {
             Datatype decl = p.parameter() == null ? null : p.parameter().datatype();
             return decl == null ? annotation : decl.unitOf();
@@ -424,6 +439,8 @@ public final class EffectiveUnit {
             case Expr.Let ignored        -> throw clusterNode();
             case Expr.BinderRef ignored  -> throw clusterNode();
             case Expr.IfThenElse ignored -> throw clusterNode();
+            case Expr.Construct c        -> childrenOf(c.argument());
+            case Expr.PayloadAccess p    -> childrenOf(p.base());
         };
     }
 

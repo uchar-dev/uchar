@@ -37,7 +37,7 @@ DROOLS-034	a variable-start grid is laid per object from the anchor its start-po
 DROOLS-035	bucketing is defined for month and year only (ch. 3.2)
 DROOLS-036	{site}: the declared grid is day, which every day boundary sits on, yet this loader checks a timeline's grid through the calendar bucketing and v0 defines buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12): refused as a v0 limit, not as a defect of the case
 DROOLS-037	{site}: the declared grid is {granularity}, and v0 defines calendar buckets for month and year only (RUNTIME-SEMANTICS ch. 3.2, OPEN in ch. 3.12), so this loader has no {granularity} grid to check the segment boundaries against: refused as a v0 limit, not as a defect of the case
-DROOLS-038	non-numeric timeline value on '{attribute}' is not carried by the v0 backend — the generated Segment holds a BigDecimal waarde
+DROOLS-038	a timeline value on '{attribute}' that is neither a number nor a constructor value is not carried by the v0 backend
 DROOLS-039	unknown expectation kind: {kind}
 DROOLS-040	dimensioned attribute read-back '{attribute}' (§3.6, a Map bean member) is not carried by the v0 backend
 DROOLS-041	scalar read-back of temporal attribute '{attribute}' is not carried by the v0 backend — the bean holds a List<Segment>; use an attributeTimeline expectation
@@ -348,6 +348,7 @@ DROOLS-310	'{operand}' lies on a grid of {operandGranularity}, which does not fi
 DROOLS-311	a read of the time-dependent target '{attribute}' of {declarant}, which two or more rules write, each the days of its own segments (RUNTIME-SEMANTICS ch. 5.7): its standing would be the union of their segments per day, which this branch does not build; no golden with cases reads one
 DROOLS-312	the period arithmetic of ch. 3.4 writes {value} on [{from}, {to}) into the timeline of '{attribute}', of the unbounded form: the value does not terminate, and a segment of this branch holds a decimal
 DROOLS-313	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
+DROOLS-314	a payload access to the time-dependent attribute '{attribute}' is read per day (RUNTIME-SEMANTICS ch. 9.5), which this backend does not execute
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	input {place} = {value} does not fit {decimals} decimals: a case value whose exact value its declaration cannot hold is refused at the input (RUNTIME-SEMANTICS ch. 2.4, 5.7)

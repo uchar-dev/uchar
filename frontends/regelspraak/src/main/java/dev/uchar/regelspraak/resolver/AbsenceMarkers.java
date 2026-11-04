@@ -156,6 +156,9 @@ final class AbsenceMarkers {
             case Expr.BinderRef ignored -> { }
             case Expr.Constant ignored -> { }
             case Expr.Unresolved ignored -> { }
+            // the resolver builds neither: the emitter writes them from the sites this pass records
+            case Expr.Construct c -> expr(c.argument(), tests);
+            case Expr.PayloadAccess p -> expr(p.base(), tests);
         }
     }
 

@@ -1433,8 +1433,10 @@ final class DrlRendering {
                 case Consequence.Input.MemberValue l -> {
                     b.append("    Object v = ").append(route(Route.CONTRIBUTION)).append("(").append(str(x.fold()))
                             .append(", ").append(x.subject()).append(", ").append(variable(x.member())).append(", ")
-                            .append(l.cell() == null ? variable(l.value()) : route(Route.CELL) + "("
-                                    + variable(l.value()) + ", " + consequenceConstant(l.cell()).text() + ")")
+                            .append(l.cell() != null ? route(Route.CELL) + "(" + variable(l.value()) + ", "
+                                    + consequenceConstant(l.cell()).text() + ")"
+                                    : l.payload() != null ? route(Route.PAYLOAD) + "(" + variable(l.value()) + ", "
+                                    + str(l.payload()) + ")" : variable(l.value()))
                             .append(", ")
                             .append(l.total() == null ? "null" : str(l.total())).append(", ")
                             .append(l.fixed() == null ? "null" : str(l.fixed())).append(", ").append(l.filled())

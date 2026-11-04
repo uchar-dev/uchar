@@ -27,6 +27,7 @@ import dev.uchar.regelspraak.transpiler.tms.EvaluationFaults;
 import dev.uchar.regelspraak.transpiler.tms.InputFormFault;
 import dev.uchar.regelspraak.transpiler.tms.OpenSegmentFault;
 import dev.uchar.regelspraak.transpiler.tms.CharacteristicPeriodsFault;
+import dev.uchar.regelspraak.transpiler.tms.ConstructorValue;
 import dev.uchar.regelspraak.transpiler.tms.Period;
 import dev.uchar.regelspraak.transpiler.tms.WriteBoundaryFault;
 import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
@@ -891,11 +892,12 @@ public final class CaseRunner {
         return Spelling.GRANULARITY.spelling(gran);
     }
 
-    /** The numeric value of one segment. The generated {@code Segment} holds a {@code BigDecimal} waarde, so a
-     *  non-numeric timeline value has no bean representation — a reason-carrying not-carried, never a coercion. */
-    BigDecimal segmentValue(JsonNode w, String field) {
+    /** The value of one segment: a number, or a constructor value on a timeline of a sum type (RUNTIME-SEMANTICS
+     *  ch. 9.4). The analysis computes per period with numbers and compares constructor values, so a timeline of any
+     *  other value has no reading here — a reason-carrying not-carried, never a coercion. */
+    Object segmentValue(JsonNode w, String field) {
         Object v = valueToArg(w, field);
-        if (v == null || v instanceof BigDecimal) return (BigDecimal) v;
+        if (v == null || v instanceof BigDecimal || v instanceof ConstructorValue) return v;
         throw new Excluded(DroolsCode.TIMELINE_VALUE_NON_NUMERIC.reason("attribute", field));
     }
 
@@ -908,12 +910,11 @@ public final class CaseRunner {
         return caseWireDate(d.asText(), where + "." + field);
     }
 
-    /** One {@code Segment} fact of the generated bean model, built through the runtime's own reflective
-     *  constructor — the Segment class is a runtime objecttype, unknown at compile time. */
-    Object segment(LocalDate van, LocalDate to, BigDecimal value) {
+    /** One {@code Segment} fact of the generated bean model, built reflectively ({@link Period#bean}) — the Segment
+     *  class is a runtime objecttype, unknown at compile time. */
+    Object segment(LocalDate van, LocalDate to, Object value) {
         try {
-            return RegelSpraakRuntime.newSegment(
-                    Class.forName(FactModelGenerator.PACKAGE + ".Segment", true, cl), van, to, value);
+            return Period.bean(Class.forName(FactModelGenerator.PACKAGE + ".Segment", true, cl), van, to, value);
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("de gegenereerde Segment-factklasse ontbreekt", e);
         }
@@ -989,6 +990,7 @@ public final class CaseRunner {
         Object actual = invokeGetter(labelToBean.get(label), Namen.getter(attributeName(ot, attr)));
         if (emptyExpected)
             return actual == null ? null : "verwacht leeg, werkelijk " + actual;
+        if (ot.attribute(attr) instanceof Datatype.SumType s) constructorFits(v.get("value"), s, "expected " + label + "." + attr);
         Object expected = valueToArg(v.get("value"), attr);
         return equalValue(v.get("value"), expected, actual) ? null
                 : "attribuut " + attr + ": verwacht " + render(expected) + ", werkelijk " + render(actual);
@@ -1035,7 +1037,7 @@ public final class CaseRunner {
 
     /** The §13.3.6 timeline read-back: the doel's {@code List<Segment>} against the pinned segment list, both in
      *  the canonical form of RUNTIME-SEMANTICS ch. 3.1 ({@link #canonical}), then equal length, van/tot EXACT,
-     *  waarde scale-safe ({@code compareTo == 0}), compared index-for-index. The expectation pins what the
+     *  waarde scale-safe ({@code compareTo == 0}) or a constructor value by its equality, compared index-for-index. The expectation pins what the
      *  timeline reads on each day, not how the backend or the case divides a run of equal values into segments.
      *  A never-written target (a null field) matches an explicitly empty expectation: both read leeg on every day
      *  (ch. 3.1), exactly as ref and clingo pin it. */
@@ -1050,6 +1052,8 @@ public final class CaseRunner {
         if (!temporal(ot, attr))
             throw new IllegalArgumentException("attributeTimeline-verwachting op niet-temporeel attribuut '" + attr + "'");
         ownField(ot, attr, false, "reads");
+        if (ot.attribute(attr) instanceof Datatype.SumType s)
+            for (JsonNode segment : v.get("timeline")) constructorFits(segment.get("value"), s, "expected " + label + "." + attr);
         List<TimelineSegment> expected = canonical(segments(timelineSegments(v.get("timeline"), attr,
                 "expected " + label + "." + attr, grid(ot, attr), true)));
         Object read = labelToBean.containsKey(label)
@@ -1072,14 +1076,14 @@ public final class CaseRunner {
     }
 
     /** One segment of a timeline as the read-back compares it: a null bound is open, a null value leeg. */
-    record TimelineSegment(LocalDate from, LocalDate to, BigDecimal value) {}
+    record TimelineSegment(LocalDate from, LocalDate to, Object value) {}
 
     /** The {@code Segment} facts of a timeline, in their order, as the read-back compares them. */
     private static List<TimelineSegment> segments(List<?> facts) {
         List<TimelineSegment> out = new ArrayList<>();
         for (Object s : facts)
             out.add(new TimelineSegment((LocalDate) segField(s, "van"), (LocalDate) segField(s, "tot"),
-                    (BigDecimal) segField(s, "waarde")));
+                    segField(s, "waarde")));
         return out;
     }
 
@@ -1087,7 +1091,7 @@ public final class CaseRunner {
      *  open bound as it stands. A leeg segment reads as a gap does, so it goes before the runs are merged and never
      *  joins its two neighbours; so does a segment whose {@code tot} does not lie after its {@code van}. Two
      *  well-formed timelines read alike on every day exactly when their canonical forms are equal. Values merge by
-     *  {@code compareTo}, the equality the read-back compares them with. */
+     *  {@link #equal}, the equality the read-back compares them with. */
     static List<TimelineSegment> canonical(List<TimelineSegment> segments) {
         List<TimelineSegment> filled = new ArrayList<>();
         for (TimelineSegment s : segments)
@@ -1096,7 +1100,7 @@ public final class CaseRunner {
         List<TimelineSegment> out = new ArrayList<>();
         for (TimelineSegment s : filled) {
             TimelineSegment last = out.isEmpty() ? null : out.get(out.size() - 1);
-            if (last != null && last.to() != null && last.to().equals(s.from()) && last.value().compareTo(s.value()) == 0)
+            if (last != null && last.to() != null && last.to().equals(s.from()) && equal(last.value(), s.value()))
                 out.set(out.size() - 1, new TimelineSegment(last.from(), s.to(), last.value()));
             else out.add(s);
         }
@@ -1287,6 +1291,8 @@ public final class CaseRunner {
 
     // ---------------- value helpers ----------------
 
+    /** Value equality of the read-back: numbers by value, any other value, a constructor value among them, by its
+     *  equality. */
     private static boolean equal(Object expectation, Object actual) {
         if (expectation == null) return actual == null;
         if (expectation instanceof BigDecimal b) return actual instanceof BigDecimal w && b.compareTo(w) == 0;
@@ -1324,6 +1330,10 @@ public final class CaseRunner {
         if (w.has("boolean")) return w.get("boolean").asBoolean();
         if (w.has("text")) return w.get("text").asText();
         if (w.has("enumeration")) return w.get("enumeration").asText();
+        // a constructor value of a sum type (RUNTIME-SEMANTICS ch. 9.1), its tag as the case spells it; that it is a
+        // declared constructor with the payload it declares is asked against the declaration (inputFits)
+        if (w.has("constructor"))
+            return new ConstructorValue(w.get("constructor").asText(), valueToArg(w.get("payload"), field));
         if (w.has("timeline")) throw new Excluded(DroolsCode.TIMELINE_VALUE_SCALAR_POSITION.reason("field", field));
         throw new Excluded(DroolsCode.VALUE_FORM_NOT_CARRIED.reason("field", field, "value", w));
     }
@@ -1394,7 +1404,16 @@ public final class CaseRunner {
      * same fence and can tell the refusal from a defect.
      */
     public static void inputFits(JsonNode w, Datatype dt, String place) {
-        if (w == null || w.isNull() || dt == null || !dt.isNumberLike() || dt.unbounded()) return;
+        if (w == null || w.isNull() || dt == null) return;
+        if (dt instanceof Datatype.SumType s) {
+            if (w.has("timeline")) {
+                for (JsonNode segment : w.get("timeline")) inputFits(segment.get("value"), dt, place);
+                return;
+            }
+            constructorFits(w, s, place);
+            return;
+        }
+        if (!dt.isNumberLike() || dt.unbounded()) return;
         if (w.has("timeline")) {
             for (JsonNode segment : w.get("timeline")) inputFits(segment.get("value"), dt, place);
             return;
@@ -1409,6 +1428,27 @@ public final class CaseRunner {
                 .equals(java.math.BigInteger.ONE))
             throw new InputPrecisionFault(place, q.isTerminerend() ? q.naarDecimal().stripTrailingZeros().toPlainString()
                     : q.teller() + "/" + q.noemer(), decimals);
+    }
+
+    /** A constructor value of the case against the sum type {@code s} it is a value of (RUNTIME-SEMANTICS ch. 9.4, the
+     *  WF-059/WF-018 backstop widened, as the reference interpreter's case loader holds it): its tag names a declared
+     *  constructor, it carries a payload exactly where that constructor is unary, and the payload fits the declared
+     *  payload datatype. A defect of the case, so a hard error. */
+    private static void constructorFits(JsonNode w, Datatype.SumType s, String place) {
+        if (!w.has("constructor"))
+            throw new IllegalArgumentException(place + ": a value of the sum type '" + s.domain()
+                    + "' is a constructor value, not " + w);
+        String tag = w.get("constructor").asText();
+        Datatype.Constructor declared = null;
+        for (Datatype.Constructor c : s.constructors())
+            if (Namen.norm(c.name()).equals(Namen.norm(tag))) declared = c;
+        if (declared == null)
+            throw new IllegalArgumentException(place + ": \"" + tag + "\" is not a declared constructor of the sum type '"
+                    + s.domain() + "'");
+        if ((declared.payload() == null) != (w.get("payload") == null || w.get("payload").isNull()))
+            throw new IllegalArgumentException(place + ": the " + (declared.payload() == null ? "nullary" : "unary")
+                    + " constructor \"" + tag + "\" " + (declared.payload() == null ? "carries a payload" : "carries no payload"));
+        if (declared.payload() != null) inputFits(w.get("payload"), declared.payload(), place);
     }
 
     /** The refusal of a case value its declaration cannot hold (RUNTIME-SEMANTICS ch. 5.7b, EF-004): a defect of the

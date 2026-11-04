@@ -105,7 +105,7 @@ class CountSourceArmWitnessTest {
      *  eleven kinds, where the verifier, ref and the ASP backend gave this sentence (measured on the union of the six
      *  cards of 2026-09-25). Only the discriminator is read, and a temporal read's keys, so each node here is that. */
     @Test void a_non_carried_node_as_count_source_is_refused_as_form_and_not_as_node() throws Exception {
-        for (String node : List.of("Lambda", "ListLength", "Match", "Construct", "StructLiteral", "FieldAccess",
+        for (String node : List.of("Lambda", "ListLength", "Match", "StructLiteral", "FieldAccess",
                 "Invoke", "Fold", "MapList", "FilterList", "TemporalRead")) {
             ObjectNode ir = negative("wf037-count-element-type-literal");
             ObjectNode arg = ((ObjectNode) value(ir)).putArray("arguments").addObject().put("node", node);
@@ -117,6 +117,22 @@ class CountSourceArmWitnessTest {
             }
             refuses(ir, "a count aggregation carries elementType \"Vondst\" and "
                     + ("AEIOU".indexOf(node.charAt(0)) >= 0 ? "an " : "a ") + node + SOURCE_ARM);
+        }
+    }
+
+    /** The two nodes of the absence markers are carried (RUNTIME-SEMANTICS ch. 9.5): written whole they load, and at
+     *  a count's source the shape is refused, a constructor value as every value is, and the payload of each
+     *  contributor as well, which a value fold reads and a count, which folds instances, does not. */
+    @Test void a_constructor_or_a_payload_as_count_source_is_refused() throws Exception {
+        String sum = "{\"node\":\"SumType\",\"domain\":\"d\",\"constructors\":[{\"name\":\"waarde\",\"payload\":"
+                + WHOLE + "},{\"name\":\"onbekend\",\"payload\":null}]}";
+        String construct = "{\"node\":\"Construct\",\"type\":" + sum + ",\"constructor\":\"onbekend\",\"argument\":null}";
+        String payload = "{\"node\":\"PayloadAccess\",\"type\":" + WHOLE + ",\"base\":{\"node\":\"AttributeReference\","
+                + "\"attribute\":\"x\",\"subjectType\":\"Vondst\"},\"constructor\":\"waarde\"}";
+        for (String[] row : new String[][] { { "Construct", construct }, { "PayloadAccess", payload } }) {
+            ObjectNode ir = negative("wf037-count-element-type-literal");
+            ((ObjectNode) value(ir)).putArray("arguments").add(JSON.readTree(row[1]));
+            refuses(ir, "a count aggregation carries elementType \"Vondst\" and a " + row[0] + SOURCE_ARM);
         }
     }
 

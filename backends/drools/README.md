@@ -26,7 +26,7 @@ in tests.
   `ir/Spelling.java` that the emitter writes with — into the frontend IR record types the
   transpiler consumes, which keep their v0 form. A form the backend does not carry
   (another `format`, the `functionDefs` section, a node of the schema's expression or
-  datatype union with no record here — a v1 struct/list/match, a temporal read, …) is a
+  datatype union with no record here — a v1 struct, a list, a match, a temporal read, …) is a
   **loud per-form `Refusal`**; a document that is not well-formed — a node name outside
   the schema's union at its position, a v0 node name among them, or a v0 key, list or
   enumeration value — is a `DocumentError` naming its JSON pointer, in the shared OCaml
@@ -683,6 +683,20 @@ timeline is input only, read as its true periods, unless a rule writes it within
 within a window"); the case reader refuses one given in the flat list of characteristics, for every branch. Witnesses
 `PeriodTest`, `TmsTimelineWitnessTest`, `TmsTimelineFoldWitnessTest`, `TmsEverUniquenessWitnessTest`, and for the
 refusals below `TmsTimelineRefusalWitnessTest`.
+
+**Sum types and absence markers.** A sum type (RUNTIME-SEMANTICS ch. 9) is carried as a datatype, and its value is a
+`ConstructorValue`, its tag and, for a unary constructor, its payload, on a bean, in a fact and in a segment of a
+timeline; two are equal where their tags are one declared name and their payloads one value, numbers by value, and
+their hash code agrees with it. A `Construct` builds one, leeg where its argument is (ch. 9.1); an equality with one
+is the equality of a text (ch. 9.3); a `PayloadAccess` is the payload where the value carries its constructor and leeg
+elsewhere (ch. 9.5), also as the source of a fold over members, whose contribution takes the member's payload. The
+absence markers of the RegelSpraak dialect are such values. On a timeline of a sum type a rule writes a constructor
+of a literal in the periods of its condition (`PeriodArithmetic.writtenValues`), a comparison with a constructor
+value is read per period (`PeriodCondition.whereEqual`), the input and the writers are read per day as on every
+timeline target, and the generated `Segment` holds the constructor value. Refused by name: a `Match`
+(DROOLS-021), the payload of a timeline (DROOLS-314), whose reading per day this backend does not execute, and every
+other value on a timeline of a sum type. Witness `AbsenceMarkerWitnessTest`, golden
+`jutterswet-afwezigheidsmarkers`.
 
 **Period arithmetic over all time.** A timeline divides all time (RUNTIME-SEMANTICS ch. 3.1), so a segment may have an
 open bound: in a `Period` an open `from` is `Period.OPEN_FROM` (`LocalDate.MIN`) and an open `to` `Period.OPEN_TO`

@@ -1241,6 +1241,9 @@ final class RuleChecker {
             case Expr.BinderRef ignored -> { }
             case Expr.Constant ignored -> { }
             case Expr.Unresolved ignored -> { }
+            // the two nodes of the absence markers, which a backend's loader builds and the resolver does not
+            case Expr.Construct c -> navigation(c.argument(), subject, reported);
+            case Expr.PayloadAccess p -> navigation(p.base(), subject, reported);
         }
     }
 
@@ -1997,6 +2000,14 @@ final class RuleChecker {
             case Expr.BinderRef b -> b;
             case Expr.Constant k -> k;
             case Expr.Unresolved o -> o;
+            case Expr.Construct c -> {
+                Expr a = opSubtype(c.argument(), sup, sub);
+                yield a == c.argument() ? c : new Expr.Construct(c.type(), c.constructor(), a, c.source());
+            }
+            case Expr.PayloadAccess p -> {
+                Expr b = opSubtype(p.base(), sup, sub);
+                yield b == p.base() ? p : new Expr.PayloadAccess(b, p.constructor(), p.type(), p.source());
+            }
         };
     }
 
@@ -3339,6 +3350,9 @@ final class RuleChecker {
             case Expr.BinderRef ignored -> { }
             case Expr.Constant ignored -> { }
             case Expr.Unresolved ignored -> { }
+            case Expr.Construct c -> checkSetRead(c.argument(), subject, false);
+            // a payload of each contributor is a fold source as its base is (IR-SPEC ch. 4.3, WF-037)
+            case Expr.PayloadAccess p -> checkSetRead(p.base(), subject, foldSource, countSource);
         }
     }
 
@@ -3847,6 +3861,8 @@ final class RuleChecker {
             case Expr.VariableRef ignored -> { }
             case Expr.BinderRef ignored -> { }
             case Expr.Unresolved ignored -> { }
+            case Expr.Construct c -> dayKindExpr(c.argument(), report, day, rule);
+            case Expr.PayloadAccess p -> dayKindExpr(p.base(), report, day, rule);
         }
     }
 
@@ -5908,6 +5924,8 @@ final class RuleChecker {
             case Expr.BinderRef x -> null;
             case Expr.Constant x -> null;
             case Expr.Unresolved x -> null;
+            case Expr.Construct c -> subjectRead(c.argument(), explicit);
+            case Expr.PayloadAccess p -> subjectRead(p.base(), explicit);
         };
     }
 

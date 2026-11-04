@@ -318,11 +318,16 @@ public sealed interface Consequence {
          *  the slot holds the map of the cells of a dimensioned attribute of the member, and the value is the cell of
          *  that key ({@code ComputeHelpers.cell}): a cell of each member, which no form writes. Where {@code whole} the
          *  slot holds the member's timeline, which contributes itself whole to the sum per period of RUNTIME-SEMANTICS
-         *  ch. 3.5, and nothing where the case gives it as the asOfDate-bucket scalar. */
-        record MemberValue(int value, String total, String fixed, boolean filled, List<String> cell, boolean whole)
-                implements Input {
+         *  ch. 3.5, and nothing where the case gives it as the asOfDate-bucket scalar. Where {@code payload} is not null
+         *  the slot holds a constructor value of the member, and the value is its payload where it carries the
+         *  constructor of that name ({@code ComputeHelpers.payload}, RUNTIME-SEMANTICS ch. 9.5). */
+        record MemberValue(int value, String total, String fixed, boolean filled, List<String> cell, String payload,
+                           boolean whole) implements Input {
             public MemberValue {
                 cell = cell == null ? null : List.copyOf(cell);
+                if (payload != null && (total != null || cell != null || whole))
+                    throw new IllegalArgumentException("een payload van een lid draagt geen totaal over de tijd, geen cel"
+                            + " en geen hele tijdlijn bij");
                 if (whole && (total != null || filled || cell != null))
                     throw new IllegalArgumentException("een lid dat zijn tijdlijn heel bijdraagt, telt niet, draagt geen"
                             + " totaal over de tijd bij en geen cel");
