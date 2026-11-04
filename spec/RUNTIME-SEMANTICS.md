@@ -6686,8 +6686,10 @@ and the gaps where a leeg side satisfies it; its operands have the
 timelines and values they read (`ref/` test
 `WV-5.12-voorwaarde-per-periode`). The value of a
 rule on a timeline target is the timeline it writes; under period
-arithmetic with a condition, each node below the value's root has the
-timeline it reads or computes, or its value where it is a scalar. Of the clip of a
+arithmetic (ch. 3.4, 3.5), with a condition or without one, each node
+below the value's root has the timeline it reads or computes — an operand
+read whole its timeline, `[]` where it is absent — or its value where it is
+a scalar (`ref/` test `WV-5.12-maandloon`). Of the clip of a
 temporal total, a check of a characteristic has its true periods, a negated
 check the periods outside them within each segment of the totalled
 timeline, and a composite the intersection of its members' periods, each
@@ -6771,7 +6773,9 @@ carries its **contributors** instead,
 the members of its range that pass its filter: for a count each instance it
 counts, for the filled count (ch. 3.4c) each member whose value is filled;
 for a value fold each member with the value it contributes, where a
-member whose value is leeg contributes nothing (ch. 1.2e); for a quantifier
+member whose value is leeg contributes nothing (ch. 1.2e); for the sum per
+period over a set (ch. 3.5) each member with the timeline it contributes,
+where a member without a timeline contributes nothing; for a quantifier
 fold each member with the verdict of the matrix on it, or its fault — the
 table of ch. 3.9a's `test(m)` over the contributors, evaluated on the
 fixpoint world as a reading evaluates, depositing nothing — and whether the
@@ -7141,7 +7145,11 @@ displaced, an initialisation default at its turn and displaced by a higher
 default and by the input). `WV-5.12-peilwacht` (the example of a gap in a
 comparison clip above) pins the gaps of a comparison clip in `ref/`, and
 the backend's `ReadingsWitnessTest` the same readings of the comparison on
-both its branches. Gate 17
+both its branches. `WV-5.12-maandloon` (the golden `jutterswet-maandloon`,
+period arithmetic without a condition: the timeline of each node, and the
+contributors of the sum per period, a member without a timeline among
+them) pins the reading of period arithmetic in `ref/`, and the backend's
+`TmsPeriodArithmeticWitnessTest` the same lines on both its branches. Gate 17
 (`scripts/check-readings.sh`) holds the readings of `runner --trace`, per
 golden case file, to those of the Drools backend on both its branches: per
 contributor the member and its verdict, value or fault verbatim, the
