@@ -7262,6 +7262,32 @@ let () =
      table — the backend must fault in ref's terms where the step walks that
      day, not answer Empty and ship a confident table. (The corpus witness is
      red case day-kind-parameter-unbound.) *)
+  let unbound_doc =
+    dk_doc
+      ~precondition:
+        (Printf.sprintf
+           {|{ "node": "Comparison", "op": "later",
+               "left": %s,
+               "right": { "node": "ParameterReference", "parameter": "grensdatum",
+                           "source": { "snippet": "de grensdatum" } },
+               "source": { "snippet": "de dag later is dan de grensdatum" } }|}
+           the_day)
+      ~parameters:
+        {|{ "node": "Parameter", "name": "grensdatum",
+            "datatype": { "node": "Date", "precision": "day" } }|}
+      ~value_node:(step_item ()) ()
+  in
+  (* every day of the table faults, so none is of the kind: the walk stops at
+     the first day it reads, before the reach fence would *)
+  (let doc, c = load_pair ~ir:unbound_doc ~case_text:dk_case in
+   let name = "unbound parameter in a day-kind condition: the walk passes no reach fence" in
+   match translate doc c with
+   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (translation fault: " ^ m ^ ")") false
+   | program ->
+       let ws = Solve.diagnostic program in
+       check
+         (name ^ " (" ^ String.concat "; " ws ^ ")")
+         (ws <> [] && not (List.exists (fun w -> Uchar_ref.Case.contains ~needle:"day-kind walk: no day of the kind" w) ws)));
   faults_at_solving ~code:("EF-014", [ ("parameter", "grensdatum") ])
     ~name:"unbound parameter in a day-kind condition fails fail-fast"
     ~ir:
