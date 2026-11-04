@@ -1,0 +1,19 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is kustwacht kenmerk (bijvoeglijk) voor elke maand;
+    is winterwacht kenmerk (bijvoeglijk) voor elke maand;
+    het strandloon Numeriek (geheel getal) voor elke maand;
+    het kustloon Numeriek (geheel getal) voor elke maand;
+
+Regel strandloon
+    geldig altijd
+        Het strandloon van een Jutter moet gesteld worden op 5.
+
+Uitzondering op strandloon: strandloon voor kustwachters
+    geldig altijd
+        Het strandloon van een Jutter moet berekend worden als zijn kustloon
+        indien hij kustwacht is.
+
+Uitzondering op strandloon: strandloon in de winter
+    geldig altijd
+        Het strandloon van een Jutter moet gesteld worden op 60
+        indien hij winterwacht is.

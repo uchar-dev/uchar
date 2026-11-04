@@ -1544,7 +1544,10 @@ EXPECTED_CHANNEL=(
 # 329 since the card defaults-per-period-on-timeline (step B, 2026-11-04): a defaults group on a timeline target
 # decides per day on both branches (RUNTIME-SEMANTICS ch. 7.11), so the golden jutterswet-opgave-per-periode plays,
 # with PLAYED 5.
-EXPECTED_PLAYED=329
+# 330 since the card clingo-lazy-bucket-scalar-fault (2026-11-04): the golden jutterswet-gevolg-buiten-de-beurt, a
+# consequence that reads the asOfDate-bucket scalar and is not evaluated, so it raises no fault (RUNTIME-SEMANTICS
+# ch. 7.11). It plays on both with PLAYED 1.
+EXPECTED_PLAYED=330
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
