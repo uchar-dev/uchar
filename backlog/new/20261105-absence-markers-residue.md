@@ -1,4 +1,4 @@
-# absence-markers-residue: de zijtabel van de frontend en de kopie van een tijdlijn met markers
+# absence-markers-residue: de zijtabel van de frontend, markers in scenario en cel, en de kopie van een tijdlijn met markers
 
 *Opgesteld door de hoofdsessie op 2026-11-05, uit de vragen van stap B van `absence-markers`. Starten op sein van de eigenaar.*
 
@@ -11,6 +11,10 @@
    WF-127); het gaat om de vorm binnen de frontend: een tweede bron voor wat de typering zou moeten dragen.
 2. Een kopie van een tijdlijn met markers (ref's fixture `copy-of-a-timeline`) speelt in ref; clingo en de Drools-backend weigeren haar
    bij naam (Drools: DROOLS-303). Geen golden vraagt er nu om.
+3. (Uit de toolchain-kaart `absence-markers-in-service`.) De scenariolaag heeft geen vorm voor een marker in een situatie of een
+   verwachting (`ResolvedScenario.ScenarioValue`), zodat een toetsdocument er geen geeft; en de frontend herkent een marker die een
+   regel op een cel van een gedimensioneerd attribuut schrijft niet ("Het gewicht in voorjaar van een Vondst moet gesteld worden op
+   onbekend" geeft een WARNING `onopgelost`).
 
 Besloten zonder kaart (hoofdsessie, technisch): een `Match` blijft in de Drools-backend geweigerd (DROOLS-021) tot een golden die het
 sum type zonder markers draagt erom vraagt; hoe de toolchain een constructorwaarde in de uitleg weergeeft, hoort bij haar pin.
@@ -19,6 +23,8 @@ sum type zonder markers draagt erom vraagt; hoe de toolchain een constructorwaar
 
 - (1) De resolver bouwt en typeert elke lezing van een attribuut met markers als `PayloadAccess`, een geschreven of getoetste marker als
   `Construct`, en zet RGS-376 op die knopen; de zijtabel `absenceMarkerSites` verdwijnt. De emissie blijft byte-gelijk.
+- (3) Een marker in een situatie en een verwachting van een scenario (gate 16), en een marker die een regel op een cel schrijft (een
+  golden met een gedimensioneerd attribuut met markers, ref, clingo en Drools), of een fout met code waar de vorm niet gedragen wordt.
 - (2) clingo en Drools dragen de kopie van een tijdlijn met markers, met een golden die ref, clingo en beide Drools-branches speelt, of
   het blijft een weigering bij naam als het dragen buiten verhouding is (met de gemeten reden in het Result).
 
@@ -28,7 +34,7 @@ sum type zonder markers draagt erom vraagt; hoe de toolchain een constructorwaar
 - (b) Bij (1): gate 10 en de frontend-suite groen zonder de zijtabel; geen golden verandert.
 - (c) `make gates` groen.
 
-May touch: `frontends/regelspraak/`, `backends/clingo/`, `backends/drools/**`, `corpus/`, kaartverplaatsing.
+May touch: `frontends/regelspraak/` (ook de scenariolaag), `backends/clingo/`, `backends/drools/**`, `corpus/`, kaartverplaatsing.
 
 ## Omvang
 
