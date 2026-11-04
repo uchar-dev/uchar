@@ -3613,9 +3613,10 @@ let () =
      under a condition per period count half of April by its days, 30 × (15/30 +
      1) = 45 and 30 × 15/30 + 30 × 15/30 = 30; 120 per year over five days of
      2024 is 100/61 in the unbounded form; and the calendar measures a part of a
-     month in days, 10 €/dg over 14 days of January and 20 of February, 340 €;
-     and a timeline a rule of ch. 3.4 does not write, its condition false, is
-     absent and totals 0 (point 12c) *)
+     month in days, 10 €/dg over 14 days of January and 20 of February, 340 €,
+     which as whole days fits a whole target without a rounding (ch. 2.3, "A
+     part of a period"); and a timeline a rule of ch. 3.4 does not write, its
+     condition false, is absent and totals 0 (point 12c) *)
   let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
   let dir = "ref/test/fixtures/partial-unit/" in
   List.iter
@@ -3625,6 +3626,7 @@ let () =
       ("WV-3.6-naar-rato-gesplitste-maand", "exact", "case2-gesplitste-maand.json");
       ("WV-3.6-naar-rato-onafgerond", "unrounded", "case.json");
       ("WV-3.6-naar-rato-kalender", "calendar", "case.json");
+      ("WV-3.6-naar-rato-hele-dagen", "whole-days", "case.json");
       ("WV-3.6-afwezig-geschreven", "absent-written", "case.json") ]
 
 (* WV-3.2: anchored month walls clamp from the anchor, never from the

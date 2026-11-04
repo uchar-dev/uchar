@@ -492,7 +492,9 @@ peilstand of the case exceeds 10 keeps bound 0 (as in
 `corpus/golden/jutterswet-peilwacht`, which compares a monthly peilstand with a
 drempelstand), and the same clip by a daily peilstand or by a peilstand a rule
 writes has bound ∞, as has a yearly jaarpremie clipped by a peilstand per storm
-year from 1 October.
+year from 1 October. A whole dagtarief in €/dg over a monthly grid, clipped by a
+characteristic, keeps bound 0: the calendar counts it by whole days
+(`ref/test/fixtures/partial-unit/whole-days`).
 
 **The annotation.** The decimals a producer writes in the `type` of a composite
 node are the v0 claim, not the bound: maxDec for plus, min and verminderd met,

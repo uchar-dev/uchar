@@ -336,6 +336,28 @@ class PrecisionGateTest {
         passes(model.replace("voor elke stormjaar", "voor elke dag").formatted(total));
     }
 
+    // ref/test/fixtures/partial-unit/calendar without its rounding
+    @Test void a_rate_per_day_counts_whole_days_whatever_the_clip_cuts() {
+        // the calendar measures the clipped segments in days, not in months
+        passes("""
+            Eenheidsysteem Munt
+                de euro (mv: euros) EUR €
+
+            Eenheidsysteem Tijd
+                de dag (mv: dagen) dg
+                de maand (mv: maanden) mnd
+
+            Objecttype de Jutter (mv: Jutters) (bezield)
+                is wachtplichtig kenmerk (bijvoeglijk) voor elke maand;
+                het dagtarief Numeriek (geheel getal) met eenheid €/dg voor elke maand;
+                de dagsom Numeriek (geheel getal) met eenheid €;
+
+            Regel dagsom van een jutter
+                geldig altijd
+                    De dagsom van een Jutter moet gesteld worden op het totaal van zijn dagtarief gedurende de tijd dat hij wachtplichtig is.
+            """);
+    }
+
     /** The negative wf023-precision-partial-unit-written; {@code %s} stands where the total stands among the rules. */
     private static final String WACHT = """
         Objecttype de Jutter (mv: Jutters) (bezield)
