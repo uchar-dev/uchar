@@ -9910,10 +9910,14 @@ let () =
   (* ref faults on V2's filter before it integrates any member, so V2's bucket
      scalar raises nothing beside it *)
   (let doc, case = load_pair ~ir ~case_text:unbound in
-   let ws = Solve.diagnostic (translate doc case) in
-   check
-     ("horizon fence: a member whose filter faults is no contributor (" ^ String.concat "; " ws ^ ")")
-     (ws <> [] && not (List.exists (fun w -> Uchar_ref.Case.contains ~needle:"asOfDate-bucket scalar" w) ws)));
+   let name = "horizon fence: a member whose filter faults is no contributor" in
+   match translate doc case with
+   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (translation fault: " ^ m ^ ")") false
+   | program ->
+       let ws = Solve.diagnostic program in
+       check
+         (name ^ " (" ^ String.concat "; " ws ^ ")")
+         (ws <> [] && not (List.exists (fun w -> Uchar_ref.Case.contains ~needle:"asOfDate-bucket scalar" w) ws)));
   (* where the rule's condition fails ref never reads the filter, and neither
      does this backend *)
   let behind =
