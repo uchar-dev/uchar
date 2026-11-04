@@ -184,10 +184,9 @@ class ReadingsCorpusWitnessTest {
         labels.forEach((l, o) -> label.put(o, l));
         Fixpoint fp = DroolsBackend.fixpointOf(build, session, label::get);
         List<ConditionReading> readings = DroolsBackend.readingsOf(build, session);
-        // a stack on a timeline target decides per day and has no record (RUNTIME-SEMANTICS ch. 7.11): its readings are
-        // held below as every other reading is, without the decider
-        List<DefaultsDecision> decisions = DefaultsDecisionCorpusWitnessTest.perDay(build) ? List.of()
-                : DroolsBackend.decisionsOf(build, session);
+        // a stack on a timeline target decides per day and has no record here (RUNTIME-SEMANTICS ch. 7.11): its readings
+        // are held below as every other reading is, without the decider
+        List<DefaultsDecision> decisions = DroolsBackend.decisionsOf(build, session);
         Map<String, ConditionReading> byKey = new HashMap<>();
         for (ConditionReading r : readings) byKey.put(r.form() + " " + System.identityHashCode(r.object()), r);
         List<Value> values = new ArrayList<>();

@@ -816,7 +816,8 @@ public final class TmsTranspiler {
      * and the control facts name it, whether it took the general form (exception groups, or more than one group at the
      * root) or the simple one, the number of Drools rules it consists of, the kinds of control fact those rules
      * insert ({@link ControlFact}), and whether it decides per day, on a timeline target (RUNTIME-SEMANTICS ch. 7.11),
-     * which takes the general form and has no record of {@link #decisionsOf}. The standing rules of the target are
+     * which takes the general form and has its records in {@link #periodDecisionsOf}, not in {@link #decisionsOf}. The
+     * standing rules of the target are
      * shared with every other reader and not counted.
      */
     public record DefaultsGroup(String name, boolean general, int rules, List<String> controlFacts, boolean perDay) {}
@@ -1003,9 +1004,10 @@ public final class TmsTranspiler {
     }
 
     /**
-     * What every effective defaults stack decided at the fixpoint of {@code session}: one record per object of the
-     * session and effective stack of its concrete type, the objects being the beans of the input and the objects the
-     * creations made ({@link Fixpoint#objects}), read off the control facts the stack left standing
+     * What every effective defaults stack on a target that holds one value decided at the fixpoint of {@code session}:
+     * one record per object of the session and such stack of its concrete type, the objects being the beans of the
+     * input and the objects the creations made ({@link Fixpoint#objects}), read off the control facts the stack left
+     * standing
      * ({@link ControlFact}) and the analysis that placed them, without evaluating anything again. A record with neither
      * a decider nor a conflict is one on which no default decided, and the target keeps its input; like every record it
      * carries the root chains of its stack. Under truth maintenance only the end state counts: a decision that a higher
@@ -1020,26 +1022,27 @@ public final class TmsTranspiler {
      * deciding members that differ are a conflict; deciding members that agree decide, and the first of them in member
      * order is named, the one whose decision the reconciliation takes.
      *
+     * <p>A stack on a timeline target decides per day (RUNTIME-SEMANTICS ch. 7.11), so that on every day another default
+     * can decide: it has no record here, and {@link #periodDecisionsOf} gives its decisions per period.
+     *
      * <p>It refuses the sessions {@link #readOf} refuses, with the same sentences. An evaluation fault that stands means
      * the session has no answer ({@link Fixpoint#faults}); this gives what the control facts say all the same, and a
      * consumer reads the faults first. The list is in no particular order.
      */
     public List<DefaultsDecision> decisionsOf(KieSession session) {
         requireFixpoint(session);
-        // a record names one default per object and stack, and a stack on a timeline target decides per day: it has no
-        // such record (RUNTIME-SEMANTICS ch. 7.11)
-        for (Map.Entry<String, StackLayout> e : layouts.entrySet())
-            if (e.getValue().perDay())
-                throw new IllegalStateException("decisionsOf leest per object en stapel één beslisser, en de stapel "
-                        + e.getKey() + " op een tijdlijndoel beslist per dag (RUNTIME-SEMANTICS ch. 7.11)");
-        // a stack runs on instances of exactly its owner (ch. 7.10), so the stacks of an object are those of its class
+        // a stack runs on instances of exactly its owner (ch. 7.10), so the stacks of an object are those of its class;
+        // a record names one default per object and stack, which a stack per day does not have
         Map<Class<?>, List<String>> stacksOf = new HashMap<>();
-        layouts.forEach((name, s) -> stacksOf.computeIfAbsent(s.javaClass(), k -> new ArrayList<>()).add(name));
+        layouts.forEach((name, s) -> {
+            if (!s.perDay()) stacksOf.computeIfAbsent(s.javaClass(), k -> new ArrayList<>()).add(name);
+        });
         Map<String, Map<Object, List<ControlFact>>> perStack = new LinkedHashMap<>();
         for (Object f : session.getObjects(o -> o instanceof ControlFact)) {
             ControlFact c = (ControlFact) f;
             if (!layouts.containsKey(c.stack()))
                 throw new IllegalStateException(c + " in de sessie, maar dit model verlaagde geen stapel " + c.stack());
+            if (layouts.get(c.stack()).perDay()) continue;
             perStack.computeIfAbsent(c.stack(), k -> new IdentityHashMap<>())
                     .computeIfAbsent(c.subject(), k -> new ArrayList<>()).add(c);
         }
@@ -1083,6 +1086,308 @@ public final class TmsTranspiler {
                         + " object van het type waarop de stapel loopt: " + rest.values());
         });
         return out;
+    }
+
+    /**
+     * Who decided every attribute on a timeline that a defaults stack or computing rules write, per object and period,
+     * at the fixpoint of {@code session} (RUNTIME-SEMANTICS ch. 3.11, 7.11): one {@link PeriodDecisions} per object of
+     * the session whose type has the member and per such member, read off the facts the lowering left standing, without
+     * evaluating anything again.
+     *
+     * <p>Where a stack decides the member on the object's concrete type ({@link #dayStackRules}), the {@link Outcome} of
+     * each default and of each reconciliation of exception groups carries the days it settled ({@link PeriodDefaults.Days}),
+     * and per day the reading follows them from the root down as {@link #decisionsOf} follows the outcomes of a stack on
+     * a target that holds one value: the first conflict in member order passes on unchanged; deciding members that
+     * differ are a conflict; deciding members that agree decide, and the first of them in member order is named; at a
+     * default with exception groups the day is its members' where one of them settled it, and the default's own, its
+     * fall-back, where none did. Every day it decides agrees with the {@link Value} the stack wrote, unless a fault of
+     * the stack stands on the object. Elsewhere the {@link Value}s of the computing rules carry the days each decides,
+     * the filled segments of its timeline. On a day no writer decides, the input stands as the standing of the target
+     * reads it ({@link #union}): the bean's, and none where a {@link BucketInput} of the target stands on the object.
+     *
+     * <p>It refuses the sessions {@link #readOf} refuses, with the same sentences. An evaluation fault that stands means
+     * the session has no answer ({@link Fixpoint#faults}); this gives what the facts say all the same, and a consumer
+     * reads the faults first. The list is in no particular order.
+     */
+    public List<PeriodDecisions> periodDecisionsOf(KieSession session) {
+        requireFixpoint(session);
+        List<Member> targets = new ArrayList<>();
+        for (Member m : derived.values()) {
+            if (!timelineAttribute(m) || !timelineWriters(m.key())) continue;
+            if (m.cell() != null)
+                throw new IllegalStateException("een cel op een tijdlijn, " + m.spelled() + ", die het model afleidt,"
+                        + " waar de lowering een gedimensioneerd attribuut op een tijdlijn weigert");
+            targets.add(m);
+        }
+        // a stack runs on instances of exactly its owner (ch. 7.10): the stack per day of a bean class and a member
+        Map<Class<?>, Map<ElementKey, String>> stackOf = new HashMap<>();
+        layouts.forEach((name, s) -> {
+            if (s.perDay()) stackOf.computeIfAbsent(s.javaClass(), k -> new HashMap<>()).put(s.member().key(), name);
+        });
+        Map<Object, Map<ElementKey, List<Value>>> written = new IdentityHashMap<>();
+        for (Object f : session.getObjects(new ClassObjectFilter(Value.class))) {
+            Value w = (Value) f;
+            written.computeIfAbsent(w.subject(), o -> new HashMap<>())
+                    .computeIfAbsent(w.attribute(), a -> new ArrayList<>()).add(w);
+        }
+        Map<String, Map<Object, List<Outcome>>> outcomes = new HashMap<>();
+        for (Object f : session.getObjects(new ClassObjectFilter(Outcome.class))) {
+            Outcome o = (Outcome) f;
+            StackLayout s = layouts.get(o.stack());
+            if (s == null)
+                throw new IllegalStateException(o + " in de sessie, maar dit model verlaagde geen stapel " + o.stack());
+            if (!s.perDay()) continue;
+            outcomes.computeIfAbsent(o.stack(), k -> new IdentityHashMap<>())
+                    .computeIfAbsent(o.subject(), k -> new ArrayList<>()).add(o);
+        }
+        Map<Object, Set<ElementKey>> buckets = new IdentityHashMap<>();
+        for (Object f : session.getObjects(new ClassObjectFilter(BucketInput.class))) {
+            BucketInput b = (BucketInput) f;
+            buckets.computeIfAbsent(b.subject(), o -> new HashSet<>()).add(b.attribute());
+        }
+        Map<String, Set<Object>> faulted = new HashMap<>();
+        for (Object f : session.getObjects(new ClassObjectFilter(Fault.class))) {
+            Fault x = (Fault) f;
+            faulted.computeIfAbsent(x.rule(), k -> Collections.newSetFromMap(new IdentityHashMap<>())).add(x.subject());
+        }
+        // a Value names its rule by name; a name two rules share names neither, which ruleSpans refuses
+        Map<String, ResolvedRule> rulesByName = new HashMap<>();
+        Set<String> shared = new HashSet<>();
+        for (ResolvedRule r : model.resolvedRules)
+            if (r.name() != null && rulesByName.putIfAbsent(r.name(), r) != null) shared.add(r.name());
+        shared.forEach(rulesByName::remove);
+        List<PeriodDecisions> out = new ArrayList<>();
+        for (Member m : targets)
+            for (Object subject : session.getObjects(o -> m.javaClass().isInstance(o))) {
+                List<Value> values = new ArrayList<>(written.getOrDefault(subject, Map.of()).getOrDefault(m.key(), List.of()));
+                values.sort(WritersConflict.inDocumentOrder(documentOrder));
+                Object onBean = buckets.getOrDefault(subject, Set.of()).contains(m.key()) ? null
+                        : Accessors.leesEigenschap(subject, Namen.property(m.name()));
+                List<Period> input = onBean == null ? List.of() : Period.list((List<?>) onBean);
+                String stack = stackOf.getOrDefault(subject.getClass(), Map.of()).get(m.key());
+                if (stack == null) {
+                    out.add(new PeriodDecisions(subject, m.name(), List.of(), ruleSpans(m, values, input, rulesByName)));
+                    continue;
+                }
+                StackLayout s = layouts.get(stack);
+                List<List<String>> chains = s.roots().stream()
+                        .map(chain -> chain.stream().map(k -> pointerOf(k.d())).toList()).toList();
+                out.add(new PeriodDecisions(subject, m.name(), chains, stackSpans(stack, s, subject,
+                        outcomes.getOrDefault(stack, Map.of()).getOrDefault(subject, List.of()), values, input,
+                        faulted.getOrDefault(stack, Set.of()).contains(subject))));
+            }
+        return out;
+    }
+
+    /** The spans of the member {@code m} on a timeline that computing rules write on one object: per day the rules
+     *  whose {@link Value}s {@code values}, in the order of the document, read a value there, and the input
+     *  {@code input} where none does (ch. 3.11). */
+    private List<PeriodDecisions.Span> ruleSpans(Member m, List<Value> values, List<Period> input,
+                                                 Map<String, ResolvedRule> rulesByName) {
+        List<List<Period>> timelines = new ArrayList<>();
+        List<String> pointers = new ArrayList<>();
+        for (Value w : values) {
+            ResolvedRule r = rulesByName.get(w.writer());
+            if (r == null)
+                throw new IllegalStateException(w + " in de sessie, en " + w.writer() + " noemt geen regel van het model"
+                        + " (of meer dan één), waar alleen rekenende regels en een stapel " + m.spelled() + " op een"
+                        + " tijdlijn schrijven");
+            timelines.add(Period.list((List<?>) w.value()));
+            pointers.add(rulePointer(r));
+        }
+        List<List<Period>> all = new ArrayList<>(timelines);
+        all.add(input);
+        List<PeriodDecisions.Span> out = new ArrayList<>();
+        LocalDate previous = null;
+        for (LocalDate c : dayCuts(all)) {
+            if (previous != null) {
+                List<DefaultsDecision.Decider> rules = new ArrayList<>();
+                for (int i = 0; i < timelines.size(); i++) {
+                    BigDecimal v = valueOn(timelines.get(i), previous);
+                    if (v != null) rules.add(new DefaultsDecision.Decider(pointers.get(i), v));
+                }
+                spanOn(out, new PeriodDecisions.Span(previous, c, null, null, rules,
+                        rules.isEmpty() ? valueOn(input, previous) : null));
+            }
+            previous = c;
+        }
+        return out;
+    }
+
+    /**
+     * The spans of a member on a timeline that the stack per day {@code name}, laid out as {@code s}, decides on
+     * {@code subject}: per day what {@code outcomes}, the subject's outcomes of the stack, settled at the root
+     * ({@link #settledOn}), and the input {@code input} where the stack decided nothing (ch. 7.11). The days the stack
+     * decides agree with its {@link Value} among {@code values}, which stands unless a fault of the stack stands on the
+     * object ({@code faulted}): a segment that does not fit the target's decimals writes nothing (ch. 3.11).
+     */
+    private List<PeriodDecisions.Span> stackSpans(String name, StackLayout s, Object subject, List<Outcome> outcomes,
+                                                  List<Value> values, List<Period> input, boolean faulted) {
+        Map<Integer, List<Outcome>> perChain = new HashMap<>();
+        List<List<Period>> all = new ArrayList<>();
+        for (Outcome o : outcomes) {
+            if (o.conflict() || !(o.value() instanceof PeriodDefaults.Days days))
+                throw new IllegalStateException(o + " in de sessie, en een stapel per dag zet alleen een uitkomst met de"
+                        + " dagen die zij beslist (" + name + ")");
+            perChain.computeIfAbsent(o.chain(), k -> new ArrayList<>()).add(o);
+            List<Period> bounds = new ArrayList<>();
+            for (PeriodArithmetic.Exact e : days.decided()) bounds.add(new Period(e.from(), e.to(), null));
+            for (PeriodDefaults.Conflicted k : days.conflicted()) bounds.addAll(k.periods());
+            all.add(bounds);
+        }
+        List<Period> wrote = null;
+        for (Value w : values) {
+            if (!w.writer().equals(name) || wrote != null)
+                throw new IllegalStateException(w + " in de sessie, en de stapel " + name + " is de ene schrijver van "
+                        + FactNames.member(s.member().key()) + " op " + FactNames.object(subject) + ": " + values);
+            wrote = Period.list((List<?>) w.value());
+            all.add(wrote);
+        }
+        all.add(input);
+        List<PeriodDecisions.Span> out = new ArrayList<>();
+        LocalDate previous = null;
+        for (LocalDate c : dayCuts(all)) {
+            if (previous != null) {
+                Settling settled = settledOn(name, previous, s.roots(), 0, perChain, null, s.targetForm());
+                DefaultsDecision.Decider decider = settled == null ? null : settled.decider();
+                // where a fault of the stack stands and it wrote nothing, its outcomes are all there is to read
+                BigDecimal value = wrote == null ? null : valueOn(wrote, previous);
+                boolean comparable = wrote != null || !faulted;
+                if (comparable && !PeriodArithmetic.sameValue(decider == null ? null : decider.decision(), value))
+                    throw new IllegalStateException("de stapel " + name + " schreef op " + FactNames.object(subject)
+                            + " op " + previous + " " + value + ", en haar uitkomsten geven daar " + settled);
+                DefaultsDecision.Conflict conflict = settled == null || settled.conflict() == null ? null
+                        : new DefaultsDecision.Conflict(settled.conflict().pointer(), settled.conflict().key(),
+                                settled.conflict().deciders().stream().map(TmsTranspiler::atRest).toList());
+                spanOn(out, new PeriodDecisions.Span(previous, c, atRest(decider), conflict, List.of(),
+                        decider == null ? valueOn(input, previous) : null));
+            }
+            previous = c;
+        }
+        return out;
+    }
+
+    /** What the stack {@code name} settled on day {@code d}: the reconciliation of {@code chains}, numbered from
+     *  {@code first}, as {@link #reconciled} reads the outcomes of a stack on a target that holds one value, read on
+     *  that day; the conflict a default {@code at} (null at the root) records under {@code key}. Null where no member
+     *  settled the day. A decision is the exact value of the outcome. */
+    private Settling settledOn(String name, LocalDate d, List<List<Node>> chains, int first,
+                               Map<Integer, List<Outcome>> perChain, String at, String key) {
+        List<DefaultsDecision.Decider> deciders = new ArrayList<>();
+        for (int m = 0; m < chains.size(); m++) {
+            Settling settled = chainOn(name, d, chains.get(m), perChain.getOrDefault(first + m, List.of()), perChain);
+            if (settled == null) continue;
+            if (settled.conflict() != null) return settled;
+            deciders.add(settled.decider());
+        }
+        if (deciders.isEmpty()) return null;
+        for (DefaultsDecision.Decider x : deciders)
+            if (!PeriodArithmetic.sameValue(x.decision(), deciders.get(0).decision()))
+                return new Settling(null, new DefaultsDecision.Conflict(at, key, deciders));
+        return new Settling(deciders.get(0), null);
+    }
+
+    /** What one chain settled on day {@code d}: the outcome of the one position of {@code chain} that settled it, among
+     *  {@code mine}, the chain's outcomes; at a default with exception groups the settling of its members where one of
+     *  them settled the day, which its outcome must agree with, and else its own decision, the fall-back. */
+    private Settling chainOn(String name, LocalDate d, List<Node> chain, List<Outcome> mine,
+                             Map<Integer, List<Outcome>> perChain) {
+        Outcome on = null;
+        for (Outcome o : mine) {
+            if (!settles((PeriodDefaults.Days) o.value(), d)) continue;
+            // a lower default of a chain decides only the days the defaults above it leave (ch. 7.11)
+            if (on != null)
+                throw new IllegalStateException(on + " en " + o + " beslissen allebei " + d + " van " + name
+                        + ", waar een keten een dag één keer beslist");
+            on = o;
+        }
+        if (on == null) return null;
+        PeriodDefaults.Days days = (PeriodDefaults.Days) on.value();
+        Node k = knot(chain, on.position(), name);
+        if (k.chain() != on.chain())
+            throw new IllegalStateException(on + " ligt niet op keten " + k.chain() + " van " + name);
+        Settling members = k.hasMembers()
+                ? settledOn(name, d, k.members(), k.firstMember(), perChain, pointerOf(k.d()), k.key()) : null;
+        String conflictKey = conflictOn(days, d);
+        Object decided = valueOnExact(days.decided(), d);
+        if (members == null) {
+            if (conflictKey != null)
+                throw new IllegalStateException(on + " in de sessie, maar onder default " + k.label() + " van " + name
+                        + " staat op " + d + " geen conflict");
+            return new Settling(new DefaultsDecision.Decider(pointerOf(k.d()), decided), null);
+        }
+        boolean agrees = members.conflict() != null ? members.conflict().key().equals(conflictKey)
+                : conflictKey == null && PeriodArithmetic.sameValue(members.decider().decision(), decided);
+        if (!agrees)
+            throw new IllegalStateException(on + " in de sessie, en de leden van default " + k.label() + " van " + name
+                    + " geven op " + d + " " + members);
+        return members;
+    }
+
+    /** Whether {@code days} settles day {@code d}: decides it or conflicts on it. */
+    private static boolean settles(PeriodDefaults.Days days, LocalDate d) {
+        return valueOnExact(days.decided(), d) != null || conflictOn(days, d) != null;
+    }
+
+    /** The key under which the members {@code days} reconciled differ on day {@code d}, null where they do not; the two
+     *  sets of days of {@link PeriodDefaults.Days} are disjoint, and the keys' days too. */
+    private static String conflictOn(PeriodDefaults.Days days, LocalDate d) {
+        for (PeriodDefaults.Conflicted c : days.conflicted())
+            for (Period p : c.periods()) if (!p.from().isAfter(d) && p.to().isAfter(d)) return c.key();
+        return null;
+    }
+
+    /** The bounds of every segment of {@code timelines} and the two open ends of all time, ordered. */
+    private static TreeSet<LocalDate> dayCuts(List<List<Period>> timelines) {
+        TreeSet<LocalDate> cuts = new TreeSet<>(List.of(Period.OPEN_FROM, Period.OPEN_TO));
+        for (List<Period> t : timelines)
+            for (Period p : t) {
+                cuts.add(p.from());
+                cuts.add(p.to());
+            }
+        return cuts;
+    }
+
+    /** The value of {@code timeline} on day {@code d}, null where it is leeg there. */
+    private static BigDecimal valueOn(List<Period> timeline, LocalDate d) {
+        for (Period p : timeline) if (!p.from().isAfter(d) && p.to().isAfter(d)) return p.value();
+        return null;
+    }
+
+    /** The exact value of {@code segments} on day {@code d}, null where none covers it. */
+    private static Object valueOnExact(List<PeriodArithmetic.Exact> segments, LocalDate d) {
+        for (PeriodArithmetic.Exact s : segments) if (!s.from().isAfter(d) && s.to().isAfter(d)) return s.value();
+        return null;
+    }
+
+    /** {@code span} after {@code spans}, joined with the last of them where it has the same outcome: the spans are the
+     *  maximal periods with one outcome. */
+    private static void spanOn(List<PeriodDecisions.Span> spans, PeriodDecisions.Span span) {
+        PeriodDecisions.Span last = spans.isEmpty() ? null : spans.get(spans.size() - 1);
+        if (last != null && sameOutcome(last, span))
+            spans.set(spans.size() - 1, new PeriodDecisions.Span(last.from(), span.to(), last.decider(), last.conflict(),
+                    last.rules(), last.input()));
+        else spans.add(span);
+    }
+
+    /** Whether two spans have one outcome: the same writers with the same values, the same conflict, the same input;
+     *  numbers compared by value. */
+    private static boolean sameOutcome(PeriodDecisions.Span a, PeriodDecisions.Span b) {
+        if (!PeriodArithmetic.sameValue(a.input(), b.input()) || !sameDecider(a.decider(), b.decider())) return false;
+        if (a.rules().size() != b.rules().size()) return false;
+        for (int i = 0; i < a.rules().size(); i++) if (!sameDecider(a.rules().get(i), b.rules().get(i))) return false;
+        if (a.conflict() == null || b.conflict() == null) return a.conflict() == b.conflict();
+        if (!Objects.equals(a.conflict().pointer(), b.conflict().pointer()) || !a.conflict().key().equals(b.conflict().key())
+                || a.conflict().deciders().size() != b.conflict().deciders().size())
+            return false;
+        for (int i = 0; i < a.conflict().deciders().size(); i++)
+            if (!sameDecider(a.conflict().deciders().get(i), b.conflict().deciders().get(i))) return false;
+        return true;
+    }
+
+    private static boolean sameDecider(DefaultsDecision.Decider a, DefaultsDecision.Decider b) {
+        if (a == null || b == null) return a == b;
+        return a.pointer().equals(b.pointer()) && PeriodArithmetic.sameValue(a.decision(), b.decision());
     }
 
     /** The lowered form of one effective stack: its target, its bare conflict key (the target on the type that declares

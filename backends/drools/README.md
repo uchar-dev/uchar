@@ -421,10 +421,22 @@ of the target: its `Value` is the timeline of the days it decides, each segment 
 target's input stands on every other day, as beside a computing rule (below, "Writers per day"); a conflict deposits
 one EF-027 fact per key on the subject. In a build with readings each default reads its justification per period and
 its consequence where that holds on some day, and is `HOLDS` where it is at its turn on some day and `DISPLACED`
-where on none (ch. 5.12). `decisionsOf` refuses a build with such a stack, which has no record per object. Refused
-by name: a consequence that is no period arithmetic (DROOLS-105) and a target that is no number (DROOLS-303).
-Witnesses `TmsDefaultsPerDayWitnessTest` (the documents of `ref/test/fixtures/defaults-per-day` and the cases of
-`ref/test/fixtures/defaults-per-day-cases`), golden `jutterswet-opgave-per-periode`.
+where on none (ch. 5.12). Refused by name: a consequence that is no period arithmetic (DROOLS-105) and a target that
+is no number (DROOLS-303). Witnesses `TmsDefaultsPerDayWitnessTest` (the documents of
+`ref/test/fixtures/defaults-per-day` and the cases of `ref/test/fixtures/defaults-per-day-cases`), golden
+`jutterswet-opgave-per-periode`.
+
+**Who decided per period.** `decisionsOf` has no record of a stack per day, which decides per day and has no
+decider per object. `DroolsBackend.periodDecisionsOf(build, session)` gives, per object and per attribute on a
+timeline that a stack or computing rules write, a `PeriodDecisions` (`transpiler/tms`): the maximal periods with one
+outcome over all time, each with the default that decided with the value it wrote, the conflict of the stack's
+members, the rules whose timelines read a value there, or none of them, and then the input that stands, or leeg. It
+reads the `Outcome` days of the stack and the `Value`s of the writers, follows the outcomes per day from the root
+down as `decisionsOf` follows them once, and evaluates nothing again; a default and a rule are named by the JSON
+pointers of `DefaultsDecision`. Witness `PeriodDecisionsWitnessTest`: on both branches, over every golden the
+exec-model branch plays, the red corpus and the fixtures of `defaults-per-day`, `-cases` and `writers-per-day`, the
+spans are those the readings per day give by the rule of ch. 7.11 (the reference interpreter's `decide_days`, read
+off the readings that gate 17 holds to its trace), and their values with the input are the fixpoint's timeline.
 
 **The write-back.** After a fire that reached its fixpoint, `DroolsBackend.setDerivedValues(build, session)` puts
 the derivations on the beans: `setX(true)` per `HasCharacteristic`, the attribute's setter per `Value`. Input on a

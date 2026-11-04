@@ -8,8 +8,10 @@ import java.util.Objects;
  * the stack left standing ({@link ControlFact}), never computed again ({@code DroolsBackend.decisionsOf}): which default
  * decided, with its decision, which conflict stood, or that no default decided. Every object of the session, the beans
  * of the input and the objects the creations made ({@link Fixpoint#objects}), has one record per effective stack of its
- * concrete type. A record with neither a decider nor a conflict is one on which no default decided: its target keeps
- * its input (RUNTIME-SEMANTICS ch. 7.1), and its {@link #rootChains} still name the defaults of the stack in their order.
+ * concrete type on a target that holds one value. A record with neither a decider nor a conflict is one on which no
+ * default decided: its target keeps its input (RUNTIME-SEMANTICS ch. 7.1), and its {@link #rootChains} still name the
+ * defaults of the stack in their order. A stack on a timeline target decides per day (ch. 7.11), and its records are
+ * {@link PeriodDecisions}, one per object with a decider, a conflict or neither per period.
  *
  * <p>A default is named by a JSON pointer (RFC 6901) into the IR document the build was made from: the {@code Default}
  * node, {@code /rules/prioritizedDefaults/3/defaults/1/exceptions/members/0/defaults/0}, on any depth of nesting

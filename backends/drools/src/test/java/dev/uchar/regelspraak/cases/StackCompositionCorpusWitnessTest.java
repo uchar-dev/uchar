@@ -57,8 +57,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>against {@code decisionsOf}: on every case of every golden with a defaults group that the exec-model branch
  *       plays, the root chains of each record are the chains at the root of its stack's composition, pointer for
  *       pointer. The stack of a record is the one whose type ({@code Stack.type}) is the object's type and whose member
- *       ({@code generated}) is the record's: no name is read. A golden with a stack on a timeline target, which decides
- *       per day (RUNTIME-SEMANTICS ch. 7.11) and of which {@code decisionsOf} has no record, is left out here.</li>
+ *       ({@code generated}) is the record's: no name is read. A stack on a timeline target decides per day
+ *       (RUNTIME-SEMANTICS ch. 7.11) and has no record of {@code decisionsOf}; {@code PeriodDecisionsWitnessTest}
+ *       holds the root chains of its records per period.</li>
  * </ul>
  *
  * <p>Floors, measured 2026-10-24 at the card: {@value #EXPECTED_MIN_GOLDENS} carried goldens with a stack,
@@ -388,8 +389,6 @@ class StackCompositionCorpusWitnessTest {
         for (Path casePath : casePaths) {
             String which = name + "/" + casePath.getFileName();
             runner.withSession(TmsDocuments.JSON.readTree(casePath.toFile()), (build, session, labels) -> {
-                // a stack on a timeline target decides per day and has no record (RUNTIME-SEMANTICS ch. 7.11)
-                if (DefaultsDecisionCorpusWitnessTest.perDay(build)) return null;
                 DroolsBackend.fire(build, session);
                 TmsTranspiler t = build.execModelTranspiler();
                 for (DefaultsDecision d : DroolsBackend.decisionsOf(build, session)) {

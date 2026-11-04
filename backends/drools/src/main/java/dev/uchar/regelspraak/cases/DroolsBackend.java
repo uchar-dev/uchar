@@ -27,6 +27,7 @@ import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
 import dev.uchar.regelspraak.transpiler.tms.BucketInput;
 import dev.uchar.regelspraak.transpiler.tms.ConditionReading;
 import dev.uchar.regelspraak.transpiler.tms.DefaultsDecision;
+import dev.uchar.regelspraak.transpiler.tms.PeriodDecisions;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
 import dev.uchar.regelspraak.transpiler.tms.ComputeFault;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
@@ -667,7 +668,8 @@ public final class DroolsBackend {
      * characteristics a decision agrees with: an attribution with the characteristic derived, a do-not-attribute
      * decision with none, an attribute's decision with its derived value, a conflict with the §9.5 deposit of its
      * key, and a record without either with nothing derived on the target. Where an evaluation fault stands the
-     * session has no answer, which {@link #fixpointOf} gives.
+     * session has no answer, which {@link #fixpointOf} gives. A stack on a timeline target decides per day
+     * (RUNTIME-SEMANTICS ch. 7.11) and has no record here: {@link #periodDecisionsOf} gives its decisions per period.
      *
      * @throws IllegalStateException the sessions {@link #fixpointOf} refuses, in its sentences
      */
@@ -675,6 +677,28 @@ public final class DroolsBackend {
         Objects.requireNonNull(build, "build");
         Objects.requireNonNull(session, "session");
         return build.execModelTranspiler().decisionsOf(session);
+    }
+
+    /**
+     * Who decided each attribute on a timeline that a defaults stack or computing rules write, per object and per
+     * period, in {@code session} after a {@link #fire} that reached its fixpoint (RUNTIME-SEMANTICS ch. 3.11, 7.11): one
+     * {@link PeriodDecisions} per object whose type has the member, the objects being the beans of the input and the
+     * objects the creations made ({@link Fixpoint#objects}), and per such member. Its spans divide all time into the
+     * maximal periods with one outcome: where a stack decides the member on the object's concrete type, the default that
+     * decided with the value it wrote, the conflict of its members, or neither; elsewhere the rules whose timelines
+     * read a value there; and where no writer decided, the input that stands, or leeg. A default and a rule are named
+     * by the JSON pointers of {@link DefaultsDecision}. It reads the facts the lowering left standing, the outcomes per
+     * day of a stack and the values its writers wrote, and evaluates nothing again; how it follows them is
+     * {@link TmsTranspiler#periodDecisionsOf}. Read without writing anything, beside {@link #fixpointOf}, whose timeline
+     * of the member the spans give per day: the value of the decider, of the rules or of the input, and leeg where a
+     * span has none. Where an evaluation fault stands the session has no answer, which {@link #fixpointOf} gives.
+     *
+     * @throws IllegalStateException the sessions {@link #fixpointOf} refuses, in its sentences
+     */
+    public static List<PeriodDecisions> periodDecisionsOf(Build build, KieSession session) {
+        Objects.requireNonNull(build, "build");
+        Objects.requireNonNull(session, "session");
+        return build.execModelTranspiler().periodDecisionsOf(session);
     }
 
     /**

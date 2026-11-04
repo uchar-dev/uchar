@@ -3,6 +3,8 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.uchar.regelspraak.transpiler.tms.PeriodDecisions;
+
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -12,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A defaults group on a timeline target decides per day (RUNTIME-SEMANTICS ch. 7.11), on both branches of the lowering
@@ -35,7 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       day, its root the filled segments within its periods, the status HOLDS where the default is at its turn on
  *       some day and DISPLACED where on none, and the initialisation default without nodes where the input fills its
  *       target on every day; line by line the reference interpreter's trace;</li>
- *   <li>{@code decisionsOf} refuses a build with such a stack, which has no record per object.</li>
+ *   <li>{@code decisionsOf} has no record of such a stack, which has none per object, and {@code periodDecisionsOf}
+ *       has one per object and target ({@code PeriodDecisionsWitnessTest} holds its periods).</li>
  * </ul>
  */
 class TmsDefaultsPerDayWitnessTest {
@@ -158,15 +159,19 @@ class TmsDefaultsPerDayWitnessTest {
                 expected);
     }
 
-    @Test void decisions_of_a_stack_per_day_are_refused() throws Exception {
+    @Test void a_stack_per_day_has_its_decisions_per_period() throws Exception {
         CaseRunner runner = CaseRunner.forMeasurement(GOLDEN.resolve("ir.json"), DroolsBackend.Branch.EXEC_MODEL);
         JsonNode c = JSON.readTree(Files.readString(GOLDEN.resolve("case2-opgave-januari-februari.json")));
-        String message = runner.withSession(c, (build, session, labels) -> {
+        runner.withSession(c, (build, session, labels) -> {
             DroolsBackend.fire(build, session);
-            return assertThrows(IllegalStateException.class, () -> DroolsBackend.decisionsOf(build, session))
-                    .getMessage();
+            assertEquals(List.of(), DroolsBackend.decisionsOf(build, session));
+            List<String> stacks = new ArrayList<>();
+            for (PeriodDecisions d : DroolsBackend.periodDecisionsOf(build, session))
+                if (d.object() == labels.get("J2") && !d.rootChains().isEmpty()) stacks.add(d.member());
+            stacks.sort(null);
+            assertEquals(List.of("stormtoelage", "strandloon"), stacks);
+            return null;
         });
-        assertTrue(message.contains("op een tijdlijndoel beslist per dag"), message);
     }
 
     /** Both branches fault on the red case {@code c} over {@code ir} with EF-037 for {@code attribute} of {@code label}. */

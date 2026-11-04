@@ -53,9 +53,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * fails here and not in its explanation.
  *
  * A record on an object and member that is no stack's fails too. The two branches render one analysis, so they must
- * check the same count. A golden with a stack on a timeline target, which decides per day (RUNTIME-SEMANTICS ch. 7.11)
- * and of which {@code decisionsOf} has no record, is not checked: {@code ReadingsCorpusWitnessTest} and gate 17 hold its
- * readings.
+ * check the same count. A stack on a timeline target decides per day (RUNTIME-SEMANTICS ch. 7.11) and has no record
+ * here, so a record of one fails as a record on no stack: {@code PeriodDecisionsWitnessTest} holds its records per
+ * period, {@code ReadingsCorpusWitnessTest} and gate 17 its readings.
  *
  * <p>Floors, measured 2026-10-21: {@value #EXPECTED_MIN_CHECKED} (case, stack, object) checked per branch, over
  * {@value #EXPECTED_MIN_GOLDENS} goldens, {@value #EXPECTED_MIN_UNDECIDED} of them on which no default decided, and
@@ -121,8 +121,6 @@ class DefaultsDecisionCorpusWitnessTest {
                     String which = branch + " " + name + "/" + casePath.getFileName();
                     JsonNode c = TmsDocuments.JSON.readTree(casePath.toFile());
                     int n = runner.withSession(c, (build, session, labels) -> {
-                        // a stack on a timeline target decides per day and has no record (RUNTIME-SEMANTICS ch. 7.11)
-                        if (perDay(build)) return 0;
                         DroolsBackend.fire(build, session);
                         return check(which, ir, build, targets, labels, DroolsBackend.fixpointOf(build, session),
                                 DroolsBackend.decisionsOf(build, session), differences,
@@ -153,12 +151,6 @@ class DefaultsDecisionCorpusWitnessTest {
                 + " aangemaakt object getoetst: " + kinds);
     }
 
-    /** Whether {@code build} has a stack on a timeline target, which decides per day (RUNTIME-SEMANTICS ch. 7.11):
-     *  {@code decisionsOf} has no record of one per object, and refuses such a build. */
-    static boolean perDay(DroolsBackend.Build build) {
-        return build.execModelTranspiler().defaultsGroups().stream().anyMatch(g -> g.perDay());
-    }
-
     /** The checks of one case: per object of the session and target of a group its type is an instance of. Returns the
      *  number of (stack, object) checked. */
     private static int check(String which, JsonNode ir, DroolsBackend.Build build, List<Target> targets,
@@ -179,6 +171,8 @@ class DefaultsDecisionCorpusWitnessTest {
             for (Target t : targets) {
                 ObjectType subject = model.objectTypeByName(t.subject());
                 if (subject == null || !type.isA(subject)) continue;
+                // a stack on a timeline target decides per day and has its records in periodDecisionsOf
+                if (!t.characteristic() && onTimeline(type, t.member())) continue;
                 if (!seen.add((t.characteristic() ? "K:" : "A:") + Namen.norm(t.member()))) continue;
                 n++;
                 String where = which + " " + name(label, o) + " " + t.member();
@@ -299,6 +293,13 @@ class DefaultsDecisionCorpusWitnessTest {
     private static boolean sameValue(Object a, Object b) {
         if (a instanceof BigDecimal x && b instanceof BigDecimal y) return x.compareTo(y) == 0;
         return Objects.equals(a, b);
+    }
+
+    /** Whether the attribute {@code member} of {@code type} lies on a timeline. */
+    private static boolean onTimeline(ObjectType type, String member) {
+        ObjectType declarant = type.declarantOf(member);
+        return declarant != null && declarant.attributeGranularity.entrySet().stream()
+                .anyMatch(e -> e.getKey().equalsIgnoreCase(member) && e.getValue() != null);
     }
 
     /** The object type whose bean class {@code o} is. */
