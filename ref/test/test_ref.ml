@@ -6279,6 +6279,42 @@ let () =
      = [ seg "2024-07-01" "2025-01-01" "10"; seg "2025-01-01" "2025-04-01" "12" ]);
   (* a window that misses the produced timeline leaves nothing of it *)
   check "WV-3.10-clip-gemist" (written_value (window ~up_to:"2024-01-01" ()) = []);
+  (* a leeg bound puts no day in the window (ch. 3.10), on either side: the
+     bound is the subject's own scalar date attribute, which V1 leaves leeg,
+     and the rule writes nothing; filled, it cuts as a literal does *)
+  let dated ~from_side ~filled =
+    let d =
+      doc
+        (Time_window
+           { starting_at = (if from_side then Some (aref "grensdatum" "Vondst") else Some (litv "2024-07-01" date_value));
+             up_to = (if from_side then None else Some (aref "grensdatum" "Vondst"));
+             to_inclusive = false; source_name = None })
+    in
+    let d =
+      { d with
+        object_types =
+          List.map
+            (fun (name, (o : Ir_v0.Ast.object_type)) ->
+              (name, { o with attributes = o.attributes @ [ ("grensdatum", Some date_value) ] }))
+            d.object_types }
+    in
+    let w =
+      if not filled then w
+      else
+        let i = World.get w "V1" in
+        World.add_instance World.empty
+          { i with attrs = World.SMap.add "grensdatum" (Value.Date (day_number "2025-04-01")) i.attrs }
+    in
+    let w', _ = Eval.run_rule (env_of d) w (List.hd d.resolved_rules) in
+    List.map
+      (fun (s : Timeline.segment) -> (s.s_from, s.s_to, Value.to_string s.s_value))
+      (Option.value (World.timeline (World.get w' "V1") "vergoeding") ~default:[])
+  in
+  check "WV-3.10-clip-lege-van-grens" (dated ~from_side:true ~filled:false = []);
+  check "WV-3.10-clip-lege-tot-grens" (dated ~from_side:false ~filled:false = []);
+  check "WV-3.10-clip-gevulde-van-grens" (dated ~from_side:true ~filled:true = [ seg "2025-04-01" "2026-01-01" "12" ]);
+  check "WV-3.10-clip-gevulde-tot-grens"
+    (dated ~from_side:false ~filled:true = [ seg "2024-07-01" "2025-01-01" "10"; seg "2025-01-01" "2025-04-01" "12" ]);
   (* the window as a MEMBER of a composite on a temporal target holds on its
      days, as every member holds on its periods (ch. 3.10): alone under all it
      cuts as the whole window does *)

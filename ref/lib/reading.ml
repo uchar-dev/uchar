@@ -352,30 +352,12 @@ let read_on ?compute ~form ~numbered env world (self : World.instance) ~conditio
   in
   { form; subject = self.label; status; nodes }
 
-(* The reading of a period window that is the whole condition of a rule on a
-   timeline target (ch. 3.10's clip): it gates nothing, so the rule holds; its
-   bounds are read, the window is the part of the timeline it keeps, and the
-   value is the timeline the rule writes, cut to it. *)
-let read_clip ~form ~numbered env world (self : World.instance) ~condition ~bounds ~compute =
-  let nodes = fresh numbered in
-  let starting_at, up_to, to_inclusive = bounds in
-  observing nodes (fun () ->
-      let window =
-        match Eval.window_bounds env world self ~err:drop starting_at up_to with
-        | Some None, _ | _, Some None -> (0, 0)
-        | dv, dt ->
-            ( (match dv with Some (Some z) -> z | _ -> min_int),
-              match dt with Some (Some z) -> if to_inclusive then z + 1 else z | _ -> max_int )
-      in
-      Eval.held_over condition (if fst window < snd window then Eval.as_periods [ window ] else []);
-      compute window);
-  { form; subject = self.label; status = Holds; nodes }
-
 (* The reading of a condition read per period on a rule of a timeline target
-   (ch. 3.10's clip generalised): it gates nothing, so the rule holds; each of
-   its nodes has the part of all time in which it holds, and the value is the
-   timeline the rule writes, cut to the root's. A fault in the condition
-   stands at its nodes and fails the reading. *)
+   (ch. 3.10's clip generalised), a period window that is the whole condition
+   among them: it gates nothing, so the rule holds; each of its nodes has the
+   part of all time in which it holds, and the value is the timeline the rule
+   writes, cut to the root's. A fault in the condition stands at its nodes and
+   fails the reading. *)
 let read_periods ~form ~numbered env world (self : World.instance) ~condition ~target ~attr ~compute =
   let nodes = fresh numbered in
   let status =
@@ -464,10 +446,6 @@ let rules json env ~world =
                   else ignore (Eval.run_pro_rata ?periods env world self ~err:drop ~form ~ot ~attr v)
                 in
                 match condition with
-                | Some (Time_window { starting_at; up_to; to_inclusive; _ } as condition) ->
-                    [ read_clip ~form ~numbered env world self ~condition
-                        ~bounds:(starting_at, up_to, to_inclusive)
-                        ~compute:(fun (lo, hi) -> write ~periods:(if lo < hi then [ (lo, hi) ] else []) ()) ]
                 | Some c when Eval.read_per_period env.doc ~ot c ->
                     let target = Timeline.attr_grid env.doc (Eval.object_type env ot) attr in
                     [ read_periods ~form ~numbered env world self ~condition:c ~target ~attr

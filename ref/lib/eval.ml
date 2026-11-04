@@ -2561,7 +2561,7 @@ and eval_dimension_fold env world self ~err ~kind ~call_arguments ~empty_fallbac
   | _ -> Value.fault "a dimension fold takes one argument, the reference of a dimensioned attribute"
 
 (* ch. 3.10's two bounds, read once for BOTH of the chapter's cases — the
-   scalar gate in [eval_cond] and the clip in [run_rule] — so the two can
+   scalar gate in [eval_cond] and the clip in [cond_periods] — so the two can
    never disagree about what a bound may be or what it reads. Each bound
    comes back as [None] (absent: open), [Some None] (leeg: no day matches)
    or [Some (Some day)].
@@ -3064,11 +3064,11 @@ and eval_cond_node env world (self : World.instance) ~err (c : condition_expr) :
          "tot en met" inclusive, an absent bound open, an UNSET evaluation
          date never matching, a LEEG bound never matching. The chapter's
          other case, the temporal target's clip, never reaches this arm:
-         [run_rule] takes the window off the condition position before a
-         subject is taken, because the case distinction is on the rule's
-         TARGET and a condition sees none. The bounds are read by
-         [window_bounds], the one reader both cases share, and BEFORE the
-         verdict looks at the evaluation date. *)
+         [run_rule] reads the condition of a timeline target per period
+         ([cond_periods]) instead of gating the rule with it, because the
+         case distinction is on the rule's TARGET and a condition sees none.
+         The bounds are read by [window_bounds], the one reader both cases
+         share, and BEFORE the verdict looks at the evaluation date. *)
       let dv, dt = window_bounds env world self ~err starting_at up_to in
       (match (env.as_of, dv, dt) with
        | None, _, _ -> false (* an unset evaluation date never matches *)
@@ -3877,28 +3877,6 @@ let run_rule ?only env world (r : resolved_rule) =
           | Some Characteristic_attribution -> characteristic_temporal (object_type env ot) attr
           | _ -> temporal_target
         in
-        (* ch. 3.10's CLIP: on a timeline attribute target a window that is
-           the whole condition is taken off the condition position — it gates
-           nothing — and cuts the producer's result per subject instead. A
-           window as a member of a composite is read per period with the
-           other members ([cond_periods]), and so is every condition of a
-           time-dependent characteristic target ([write_characteristic]). *)
-        let clip =
-          match (r.rr_presentation, r.rr_condition) with
-          | Some Characteristic_attribution, _ -> None
-          | _, Some (Time_window { starting_at; up_to; to_inclusive; _ }) when target_timeline ->
-              Some (starting_at, up_to, to_inclusive)
-          | _ -> None
-        in
-        (* the window for one subject: a leeg bound puts no day in it *)
-        let window_of w self ~err (starting_at, up_to, incl) =
-          match window_bounds env w self ~err starting_at up_to with
-          | Some None, _ | _, Some None -> (0, 0)
-          | dv, dt ->
-              let lo = match dv with Some (Some z) -> z | _ -> min_int in
-              let hi = match dt with Some (Some z) -> if incl then z + 1 else z | _ -> max_int in
-              (lo, hi)
-        in
         (* ch. 3.11: the implemented temporal writes are the ch. 3.7 pro-rata
            and ch. 3.8 day-count targets and the period arithmetic of ch. 3.4
            and 3.5; every other temporal target refuses — never silently coerce
@@ -3917,13 +3895,14 @@ let run_rule ?only env world (r : resolved_rule) =
                   Value.fault
                     "temporal attribute %S as a target: temporal writes are not implemented"
                     attr);
-        (* a condition that reads a timeline is read per period on a timeline
-           target: the rule writes where it holds (ch. 3.10's clip generalised,
-           spec/proposals/IMPLICIT-TIME.md points 3 and 4); one that reads none
-           holds on every day or on none and gates the rule as before *)
+        (* a condition that reads a timeline or holds a period window is read
+           per period on a timeline target: the rule writes where it holds
+           (ch. 3.10's clip generalised, spec/proposals/IMPLICIT-TIME.md points
+           3 and 4), a window that is the whole condition included; one that
+           reads none holds on every day or on none and gates the rule as
+           before *)
         let per_period =
-          temporal_target && clip = None
-          && Option.fold ~none:false ~some:(read_per_period env.doc ~ot) r.rr_condition
+          temporal_target && Option.fold ~none:false ~some:(read_per_period env.doc ~ot) r.rr_condition
         in
         let several = temporal_target && List.length (timeline_writers env ~ot ~attr) >= 2 in
         (* SUBTYPING §4.1 rules 1 and 4: where inheritance brings a defaults
@@ -3957,11 +3936,10 @@ let run_rule ?only env world (r : resolved_rule) =
             let fire =
               (not blocked)
               &&
-              match (clip, r.rr_condition) with
-              | Some _, _ -> true
-              | None, Some _ when per_period || temporal_characteristic -> true
-              | None, Some c -> eval_cond env w self ~err c
-              | None, None -> true
+              match r.rr_condition with
+              | Some _ when per_period || temporal_characteristic -> true
+              | Some c -> eval_cond env w self ~err c
+              | None -> true
             in
             if not fire then release ()
             else
@@ -3987,11 +3965,8 @@ let run_rule ?only env world (r : resolved_rule) =
               | Some Characteristic_attribution -> World.set_char_by w ~form ~label:self.label ~char:attr
               | Some (Equation | Calculation) when temporal_target ->
                   let periods =
-                    match (clip, r.rr_condition) with
-                    | Some window, _ ->
-                        let lo, hi = window_of w self ~err window in
-                        Some (if hi <= lo then [] else [ (lo, hi) ])
-                    | None, Some c when per_period ->
+                    match r.rr_condition with
+                    | Some c when per_period ->
                         let target = Timeline.attr_grid env.doc (object_type env ot) attr in
                         Some (cond_periods env w self ~err ~target ~attr c)
                     | _ -> None
