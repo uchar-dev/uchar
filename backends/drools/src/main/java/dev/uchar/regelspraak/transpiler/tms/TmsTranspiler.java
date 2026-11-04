@@ -2400,8 +2400,10 @@ public final class TmsTranspiler {
             Term whole = complete(timeline, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \""
                     + operand.name() + "\" of ", subjectType, "; the case supplies only the asOfDate-bucket scalar, which"
                     + " carries no period", operand.name(), true, source);
-            // read whole, an absent timeline is the empty one, as the reference interpreter's trace reads it
+            // read whole, an absent timeline is the empty one, as the reference interpreter's trace reads it, in the unit
+            // of the attribute's declaration (RUNTIME-SEMANTICS ch. 5.12)
             noteDerived(a, List.of(whole), x -> x.get(0) == null ? List.of() : x.get(0));
+            if (noted != null && memberwise == 0) notedUnits.put(a, eff.unitOf(a));
             return whole;
         }
         if (e instanceof Expr.Literal || e instanceof Expr.ParameterRef) return scalarOperand(e, reads);
