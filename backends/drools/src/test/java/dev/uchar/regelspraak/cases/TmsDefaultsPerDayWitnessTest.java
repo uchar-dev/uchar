@@ -60,6 +60,8 @@ class TmsDefaultsPerDayWitnessTest {
         plays.add(new Path[]{GOLDEN.resolve("ir.json"), CASES.resolve("turn-on-no-day").resolve("case.json")});
         plays.add(new Path[]{DOCUMENTS.resolve("uitzondering").resolve("ir.json"),
                 CASES.resolve("justified-on-no-day").resolve("case.json")});
+        plays.add(new Path[]{DOCUMENTS.resolve("deposit").resolve("ir.json"),
+                CASES.resolve("deposit-dropped").resolve("case.json")});
         for (Path[] p : plays) {
             JsonNode c = JSON.readTree(Files.readString(p[1]));
             for (boolean viaDrl : new boolean[]{false, true}) {

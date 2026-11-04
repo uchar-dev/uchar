@@ -1,0 +1,71 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "basisloon": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "20"
+                }
+              }
+            ]
+          },
+          "deler": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2025-04-01",
+                "value": {
+                  "number": "0"
+                }
+              },
+              {
+                "from": "2025-04-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "2"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "kustwacht": [
+            {
+              "from": "2025-03-01",
+              "to": "2025-04-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "strandloon",
+      "timeline": [
+        {
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

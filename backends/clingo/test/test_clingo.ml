@@ -17399,6 +17399,10 @@ let () =
       ref_matches ~name:("defaults per day: " ^ f) ~ir ~case_text;
       clingo_matches ~name:("defaults per day: " ^ f) ~ir ~case_text)
     [ "uitzondering"; "ongeordend"; "afwijking"; "verdrongen-conflict"; "geldig-vanaf"; "deposit" ];
+  (let ir = read (dir ^ "deposit/ir.json")
+   and case_text = read "ref/test/fixtures/defaults-per-day-cases/deposit-dropped/case.json" in
+   ref_matches ~name:"defaults per day: a deposit of a default that decides no day" ~ir ~case_text;
+   clingo_matches ~name:"defaults per day: a deposit of a default that decides no day" ~ir ~case_text);
   let g = "corpus/golden/jutterswet-opgave-per-periode/" in
   let ir = read (g ^ "ir.json") in
   List.iter

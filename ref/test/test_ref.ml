@@ -12769,7 +12769,10 @@ let () =
     (fun (ident, d) -> plays ~ident ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
     [ ("WV-7.11-uitzondering", "uitzondering"); ("WV-7.11-ongeordend", "ongeordend"); ("WV-7.11-afwijking", "afwijking");
       ("WV-7.11-verdrongen-conflict", "verdrongen-conflict"); ("WV-7.11-versie", "geldig-vanaf");
-      ("WV-7.11-gevolg-buiten-de-beurt", "lazy-consequence"); ("WV-7.11-deponering", "deposit") ]
+      ("WV-7.11-gevolg-buiten-de-beurt", "lazy-consequence"); ("WV-7.11-deponering", "deposit") ];
+  (* the deposit of a default that decides no day does not stand *)
+  plays ~ident:"WV-7.11-deponering-vervalt" ~ir:(read (dir ^ "deposit/ir.json"))
+    ~case_data:(read "ref/test/fixtures/defaults-per-day-cases/deposit-dropped/case.json") (fun _ -> ())
 
 (* WV-7.11-gevolg-buiten-de-beurt-fout and WV-7.11-initialisatie-emmerscalair:
    a default's evaluation (RUNTIME-SEMANTICS ch. 7.11). The consequence "zijn
