@@ -1,0 +1,81 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J6",
+        "objectType": "Jutter",
+        "attributes": {
+          "opgegeven strandloon": {
+            "timeline": [
+              {
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          },
+          "opgegeven stormtoelage": {
+            "timeline": [
+              {
+                "value": {
+                  "number": "12"
+                }
+              }
+            ]
+          },
+          "stormtoelage": {
+            "timeline": [
+              {
+                "value": {
+                  "number": "7"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "stormwacht": [
+            {
+              "from": "2025-10-01",
+              "to": "2026-01-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J6",
+      "attribute": "strandloon",
+      "timeline": [
+        {
+          "value": {
+            "number": "10"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J6",
+      "attribute": "stormtoelage",
+      "timeline": [
+        {
+          "value": {
+            "number": "12"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

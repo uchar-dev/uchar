@@ -654,12 +654,131 @@ let defaults json env ~world0 ~world =
               (* the defaults [ds] below the one that decided, the first of
                  them at index [from] of its chain *)
               let displace ~env_at ~from ds = List.iteri (fun k d -> displace_all (env_at (from + k)) d) ds in
+              let per_day =
+                match l.pd_attribute with
+                | Some a when Ir_v0.Checks.attr_temporal (Eval.object_type env owner) a -> Some a
+                | _ -> None
+              in
               match admitted env l.pd_validity with
               | (Some false | None) as a ->
                   let status = if a = None then Faults else Outside_validity in
                   List.iter
                     (fun d -> List.iter (fun form -> emit (without ~form status self)) (every d))
                     l.defaults
+              | Some true when per_day <> None ->
+                  let a = Option.get per_day in
+                  let otype = Eval.object_type env owner in
+                  let target = Timeline.attr_grid doc otype a in
+                  let target_unit = Eval.unit_of_datatype (Eval.attr_decl env ~otype:owner ~attr:a) in
+                  let target_form =
+                    Option.value
+                      (Ir_v0.Checks.declaring_type doc ~from:owner ~kind:`Attribute ~member:a)
+                      ~default:l.pd_subject
+                    ^ "." ^ a
+                  in
+                  let path_key = function
+                    | [] -> target_form
+                    | path -> target_form ^ "/" ^ String.concat "/" (List.map string_of_int path)
+                  in
+                  (* On a timeline target a default is read per day (ch. 7.11): its
+                     justification per period, as the condition of a rule on a
+                     timeline target; its consequence, where the justification
+                     holds on some day, as a producer of ch. 3.11, its root the
+                     filled segments within the periods of the justification; its
+                     status HOLDS where it is at its turn on some day and
+                     DISPLACED where on none, with the same nodes. The days of its
+                     turn are those no strictly higher default of its chain
+                     settled, within those of the default whose exception group
+                     its chain is, and for the initialisation default the days of
+                     them on which the input leaves the target empty; where the
+                     input fills it on every day, it has no nodes. The walk is
+                     the session's ([Eval.run_defaults_timeline]); it reads every
+                     default, also one below a default that settled all time,
+                     whose turn is then empty. Returns what the default decides. *)
+                  let read_own env (d : default) ~reach =
+                    match reading_of l d with
+                    | None -> Eval.no_days
+                    | Some (form, condition, value, numbered) -> (
+                        let empty_days =
+                          if not d.default_initialisation then Some Timeline.all_time
+                          else
+                            match Eval.input_empty_days ~world0 self a with
+                            | days -> Some days
+                            | exception Value.Fault _ -> None
+                        in
+                        match empty_days with
+                        | None ->
+                            emit (without ~form Faults self);
+                            Eval.no_days
+                        | Some [] ->
+                            emit (without ~form Displaced self);
+                            Eval.no_days
+                        | Some empty_days ->
+                            let turn = Timeline.merge_periods (Timeline.intersect_periods reach empty_days) in
+                            let nodes = fresh numbered in
+                            let decided = ref Eval.no_days in
+                            let faulted =
+                              observing nodes (fun () ->
+                                  match
+                                    Option.map (Eval.cond_periods env world self ~err:drop ~target ~attr:a) condition
+                                  with
+                                  | exception Value.Fault _ -> true
+                                  | justified ->
+                                      let justified = Option.value justified ~default:Timeline.all_time in
+                                      (match value with
+                                      | Some c when justified <> [] -> (
+                                          match
+                                            Eval.period_timeline env world self ~err:drop ~target ~attr:a ~target_unit
+                                              ~root:true c
+                                          with
+                                          | exception Value.Fault _ -> ()
+                                          | tl ->
+                                              let filled =
+                                                List.filter (fun (s : Timeline.segment) -> s.s_value <> Value.Empty) tl
+                                              in
+                                              Eval.read_whole c (Some (Timeline.clip filled justified));
+                                              let days =
+                                                Timeline.merge_periods (Timeline.intersect_periods turn justified)
+                                              in
+                                              if days <> [] then
+                                                decided := { Eval.no_days with Eval.decided = Timeline.clip filled days })
+                                      | _ -> ());
+                                      false)
+                            in
+                            let status = if turn = [] then Displaced else if faulted then Faults else Holds in
+                            emit { form; subject = self.label; status; nodes };
+                            !decided)
+                  in
+                  let rec walk ~env_at ~reach ~path (ds : default list) =
+                    let rec go i reach acc = function
+                      | [] -> acc
+                      | (d : default) :: rest ->
+                          let env = env_at i in
+                          let res =
+                            match d.default_exceptions with
+                            | Some egs ->
+                                let sub_path = path @ [ i ] in
+                                let sub =
+                                  Eval.reconcile_days ~key:(path_key sub_path)
+                                    (List.map
+                                       (fun (eg : exception_group) ->
+                                         walk ~env_at:(fun _ -> env) ~reach ~path:sub_path eg.eg_defaults)
+                                       egs.egs_members)
+                                in
+                                if d.default_decision <> None || d.default_consequence <> None then
+                                  Eval.join_days sub
+                                    (read_own env d ~reach:(Eval.days_minus reach (Eval.settled_days sub)))
+                                else sub
+                            | None -> read_own env d ~reach
+                          in
+                          go (i + 1) (Eval.days_minus reach (Eval.settled_days res)) (Eval.join_days acc res) rest
+                    in
+                    go 0 reach Eval.no_days ds
+                  in
+                  ignore
+                    (walk
+                       ~env_at:(fun i -> { env with Eval.subj = Some (List.nth origins i) })
+                       ~reach:Timeline.all_time ~path:[] l.defaults)
               | Some true ->
                   let is_char = l.pd_characteristic <> None in
                   (* whether the default's own justification and consequence decide,

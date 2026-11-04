@@ -4394,6 +4394,24 @@ let reconcile_days ~key (results : day_decisions list) =
   in
   { r with decided = Timeline.coalesce r.decided }
 
+(* The days on which the input facts [world0] leave the timeline target [a] of
+   [self] empty: the justification of the initialisation default per day
+   (ch. 7.3, 7.11), all time where the subject has no input on it; the
+   asOfDate-bucket scalar carries no period, and faults with EF-037 *)
+let input_empty_days ~(world0 : World.t) (self : World.instance) a =
+  match SMap.find_opt self.label world0.World.instances with
+  | None -> Timeline.all_time
+  | Some (i0 : World.instance) -> (
+      match World.timeline i0 a with
+      | Some tl -> Timeline.complement_all (spans (List.filter (fun (s : Timeline.segment) -> s.s_value <> Value.Empty) tl))
+      | None ->
+          if World.attr i0 a = Value.Empty then Timeline.all_time
+          else
+            bucket_scalar ~attr:a i0
+              "the initialisation default of the timeline target %S reads the input per day; the case supplies only \
+               the asOfDate-bucket scalar of %S, which carries no period"
+              a i0.label)
+
 (* The defaults group of a timeline attribute target (ch. 7.11): the scalar
    reading of ch. 7.1, 7.2, 7.3 and 7.9 on every day (ch. 3.3). A default is
    justified on the periods of its justification (ch. 3.10), and its consequence
@@ -4425,22 +4443,7 @@ let run_defaults_timeline ?only env world ~world0 ~owner ~form ~target_form
         let r = f (fun m -> buf := m :: !buf) in
         (r, fun () -> List.iter cond_err (List.rev !buf))
       in
-      let input_empty =
-        lazy
-          (match SMap.find_opt self.label world0.World.instances with
-          | None -> Timeline.all_time
-          | Some (i0 : World.instance) -> (
-              match World.timeline i0 a with
-              | Some tl ->
-                  Timeline.complement_all (spans (List.filter (fun (s : Timeline.segment) -> s.s_value <> Value.Empty) tl))
-              | None ->
-                  if World.attr i0 a = Value.Empty then Timeline.all_time
-                  else
-                    bucket_scalar ~attr:a i0
-                      "the initialisation default of the timeline target %S reads the input per day; the case supplies \
-                       only the asOfDate-bucket scalar of %S, which carries no period"
-                      a i0.label))
-      in
+      let input_empty = lazy (input_empty_days ~world0 self a) in
       let own_days env (r : default) ~reach =
         let justified, flush_j =
           speculate (fun err ->

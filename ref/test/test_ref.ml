@@ -12768,7 +12768,34 @@ let () =
   List.iter
     (fun (ident, d) -> plays ~ident ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json")) (fun _ -> ()))
     [ ("WV-7.11-uitzondering", "uitzondering"); ("WV-7.11-ongeordend", "ongeordend"); ("WV-7.11-afwijking", "afwijking");
-      ("WV-7.11-verdrongen-conflict", "verdrongen-conflict"); ("WV-7.11-versie", "geldig-vanaf") ]
+      ("WV-7.11-verdrongen-conflict", "verdrongen-conflict"); ("WV-7.11-versie", "geldig-vanaf");
+      ("WV-7.11-gevolg-buiten-de-beurt", "lazy-consequence"); ("WV-7.11-deponering", "deposit") ]
+
+(* WV-7.11-gevolg-buiten-de-beurt-fout and WV-7.11-initialisatie-emmerscalair:
+   a default's evaluation (RUNTIME-SEMANTICS ch. 7.11). The consequence "zijn
+   kustloon", whose input is the asOfDate-bucket scalar, is evaluated only where
+   the default is justified on a day of its turn: without kustwacht, or with
+   kustwacht in April below "60 indien hij winterwacht is" in April, it is not
+   (the document ref/test/fixtures/defaults-per-day/lazy-consequence, above),
+   and with kustwacht from June to August it is, and faults with EF-037. The
+   initialisation default of the stormtoelage of the golden
+   jutterswet-opgave-per-periode reads the input per day, and the bucket scalar
+   7 carries no period: EF-037 *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let faults ident ~ir ~case_data attribute label =
+    with_files ~ir ~case_data (fun findings _ evaluate ->
+        check (ident ^ ": verifier-clean") (findings = []);
+        check ident
+          (match evaluate () with
+          | exception Value.Fault { code = Some "EF-037"; params; _ } ->
+              params = [ ("attribute", attribute); ("label", label) ]
+          | _ -> false))
+  in
+  faults "WV-7.11-gevolg-buiten-de-beurt-fout" ~ir:(read "ref/test/fixtures/defaults-per-day/lazy-consequence/ir.json")
+    ~case_data:(read "ref/test/fixtures/defaults-per-day-cases/lazy-consequence-reached/case.json") "kustloon" "J1";
+  faults "WV-7.11-initialisatie-emmerscalair" ~ir:(read "corpus/golden/jutterswet-opgave-per-periode/ir.json")
+    ~case_data:(read "ref/test/fixtures/defaults-per-day-cases/bucket-input/case.json") "stormtoelage" "J7"
 
 (* WV-5.12-voorwaarde-per-periode: a condition read per period has, at each of
    its nodes, the part of all time in which it holds, and the value of the rule
@@ -12856,6 +12883,79 @@ let () =
       (3, "0 Aggregation []"); (3, "HOLDS");
       (4, "0 Aggregation [[- - 0]]"); (4, "2 Literal 0"); (4, "HOLDS");
       (5, "0 Rounding 0"); (5, "1 Aggregation 0"); (5, "2 AttributeReference [[- - 0]]"); (5, "HOLDS") ]
+
+(* WV-5.12-default-per-dag: a default of a group on a timeline target is read
+   per day (RUNTIME-SEMANTICS ch. 5.12, ch. 7.11): its justification per period,
+   each node the part of all time in which it holds; its consequence, where the
+   justification holds on some day, as a producer of ch. 3.11, the root the
+   filled segments within the periods of the justification; HOLDS where it is
+   at its turn on some day, DISPLACED where on none, with the same nodes, and
+   the initialisation default without nodes where the input fills its target on
+   every day. On the golden jutterswet-opgave-per-periode, case 2 (the opgave in
+   January and February) and case 5 (the stormtoelage); on its document with an
+   opgave on all time and the input 7 on all time on the stormtoelage, where
+   the computation is at its turn on no day; on the document of
+   ref/test/fixtures/defaults-per-day/uitzondering without kustwacht, where the
+   exception's justification holds on no day and its consequence is not
+   reached; and on ref/test/fixtures/defaults-per-day/verdrongen-conflict, a
+   default with exception groups below a default of April *)
+let () =
+  let golden = "corpus/golden/jutterswet-opgave-per-periode/" in
+  let defaults_of got =
+    let p = "/rules/prioritizedDefaults/" in
+    List.filter (fun l -> String.length l > String.length p && String.sub l 0 (String.length p) = p) got
+  in
+  let rows ident ir case label expected =
+    let got = defaults_of (readings_of (corpus_file ir) (corpus_file case)) in
+    let expected =
+      List.sort compare
+        (List.map (fun (form, cell) -> Printf.sprintf "/rules/prioritizedDefaults/%s \"%s\" %s" form label cell) expected)
+    in
+    check ident (got = expected);
+    if got <> expected then List.iter (Printf.printf "  got: %s\n") got
+  in
+  let always = "0 Compound [[- - empty]]" in
+  rows "WV-5.12-default-per-dag" (golden ^ "ir.json") (golden ^ "case2-opgave-januari-februari.json") "J2"
+    [ ("0/defaults/0", always); ("0/defaults/0", "1 AttributeReference [[2025-01-01 2025-03-01 10]]");
+      ("0/defaults/0", "HOLDS"); ("0/defaults/1", always);
+      ("0/defaults/1", "1 AttributeReference [[2025-03-01 2025-06-01 20]]"); ("0/defaults/1", "HOLDS");
+      ("1/defaults/0", always); ("1/defaults/0", "1 AttributeReference []"); ("1/defaults/0", "HOLDS");
+      ("1/defaults/1", always); ("1/defaults/1", "1 AttributeReference []"); ("1/defaults/1", "HOLDS");
+      ("1/defaults/2", "0 Literal [[- - 0]]"); ("1/defaults/2", "HOLDS") ];
+  rows "WV-5.12-default-per-dag-initialisatie" (golden ^ "ir.json") (golden ^ "case5-stormtoelage-per-dag.json") "J5"
+    [ ("0/defaults/0", always); ("0/defaults/0", "1 AttributeReference []"); ("0/defaults/0", "HOLDS");
+      ("0/defaults/1", always); ("0/defaults/1", "1 AttributeReference [[2025-03-01 2025-06-01 20]]");
+      ("0/defaults/1", "HOLDS"); ("1/defaults/0", always);
+      ("1/defaults/0", "1 AttributeReference [[2025-11-01 2025-12-01 12]]"); ("1/defaults/0", "HOLDS");
+      ("1/defaults/1", always); ("1/defaults/1", "1 AttributeReference [[2025-10-01 2026-01-01 30]]");
+      ("1/defaults/1", "HOLDS"); ("1/defaults/2", "0 Literal [[- - 0]]"); ("1/defaults/2", "HOLDS") ];
+  rows "WV-5.12-default-per-dag-verdrongen" (golden ^ "ir.json")
+    "ref/test/fixtures/defaults-per-day-cases/turn-on-no-day/case.json" "J6"
+    [ ("0/defaults/0", always); ("0/defaults/0", "1 AttributeReference [[- - 10]]"); ("0/defaults/0", "HOLDS");
+      ("0/defaults/1", always); ("0/defaults/1", "1 AttributeReference [[2025-03-01 2025-06-01 20]]");
+      ("0/defaults/1", "DISPLACED"); ("1/defaults/0", always);
+      ("1/defaults/0", "1 AttributeReference [[- - 12]]"); ("1/defaults/0", "HOLDS"); ("1/defaults/1", always);
+      ("1/defaults/1", "1 AttributeReference [[2025-10-01 2026-01-01 30]]"); ("1/defaults/1", "DISPLACED");
+      ("1/defaults/2", "DISPLACED") ];
+  let fixtures = "ref/test/fixtures/defaults-per-day/" in
+  rows "WV-5.12-default-per-dag-niet-gerechtvaardigd" (fixtures ^ "uitzondering/ir.json")
+    "ref/test/fixtures/defaults-per-day-cases/justified-on-no-day/case.json" "J3"
+    [ ("0/defaults/0", "0 CharacteristicCheck []"); ("0/defaults/0", "1 Literal unreached"); ("0/defaults/0", "HOLDS");
+      ("0/defaults/1", always); ("0/defaults/1", "1 AttributeReference [[2025-01-01 2026-01-01 10]]");
+      ("0/defaults/1", "HOLDS") ];
+  let member m cell = ("0/defaults/1/exceptions/members/" ^ string_of_int m ^ "/defaults/0", cell) in
+  rows "WV-5.12-default-per-dag-uitzonderingsgroepen" (fixtures ^ "verdrongen-conflict/ir.json")
+    (fixtures ^ "verdrongen-conflict/case.json") "J1"
+    [ ("0/defaults/0", "0 CharacteristicCheck [[2025-04-01 2025-05-01 empty]]");
+      ("0/defaults/0", "1 Literal [[2025-04-01 2025-05-01 60]]"); ("0/defaults/0", "HOLDS");
+      ("0/defaults/1", "0 CharacteristicCheck [[2025-01-01 2025-07-01 empty]]");
+      ("0/defaults/1", "1 Literal [[2025-01-01 2025-07-01 30]]"); ("0/defaults/1", "HOLDS");
+      member 0 "0 Compound [[2025-04-01 2025-05-01 empty]]"; member 0 "1 CharacteristicCheck [[2025-01-01 2025-07-01 empty]]";
+      member 0 "2 CharacteristicCheck [[2025-04-01 2025-05-01 empty]]"; member 0 "3 Literal [[2025-04-01 2025-05-01 40]]";
+      member 0 "HOLDS"; member 1 "0 Compound [[2025-04-01 2025-05-01 empty]]";
+      member 1 "1 CharacteristicCheck [[2025-01-01 2025-07-01 empty]]";
+      member 1 "2 CharacteristicCheck [[2025-04-01 2025-05-01 empty]]"; member 1 "3 Literal [[2025-04-01 2025-05-01 50]]";
+      member 1 "HOLDS"; ("0/defaults/2", always); ("0/defaults/2", "1 Literal [[- - 5]]"); ("0/defaults/2", "HOLDS") ]
 
 (* WV-5.12-rekenen-per-dag-eenheid: an operand read whole has its timeline in
    the unit of its declaration, the product the unit of both factors: the

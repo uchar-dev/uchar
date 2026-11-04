@@ -1,0 +1,60 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2025-07-01",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "kustloon": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "kustwacht": [
+            {
+              "from": "2025-06-01",
+              "to": "2025-08-01"
+            }
+          ]
+        }
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "kustloon": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "kustwacht": [
+            {
+              "from": "2025-04-01",
+              "to": "2025-05-01"
+            }
+          ],
+          "winterwacht": [
+            {
+              "from": "2025-04-01",
+              "to": "2025-05-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-037",
+    "params": {
+      "attribute": "kustloon",
+      "label": "J1"
+    }
+  }
+}

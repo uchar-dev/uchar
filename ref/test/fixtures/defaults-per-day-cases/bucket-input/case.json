@@ -1,0 +1,28 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2025-07-01",
+  "input": {
+    "instances": [
+      {
+        "label": "J7",
+        "objectType": "Jutter",
+        "attributes": {
+          "stormtoelage": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {}
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-037",
+    "params": {
+      "attribute": "stormtoelage",
+      "label": "J7"
+    }
+  }
+}
