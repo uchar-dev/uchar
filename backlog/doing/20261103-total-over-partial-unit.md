@@ -261,3 +261,165 @@ rode cases, Drools-been 46 fault-gepind, 15 EXCLUDE met code; gate 12 `played ma
 5, kanaalvloer 51 met naam, JUnit 1826 tests (nul skips, floor 1573); gate 17 328 goldens en 919 casebestanden op beide
 takken vergeleken, 24 afwijkingen gelijst. De eerste run (`logs/gates-1.log`, op `234874de5`) was rood in gate 12: vier
 Drools-tests speelden de veranderde goldens (`3c6b1aa0d` lost dat op). De kaart blijft in `doing/` voor stap B.
+
+## Result: stap B (bouwer, 2026-11-04)
+
+Branch `card/total-over-partial-unit`, gestart op main `a956aaa45`, gerebased op main `7e16cb14c` (de fixronde
+time-followups; één conflict in `ClosureRendering`, de regels van `OWN_TOTAL` en `COMPLETE`, beide wijzigingen
+gehouden). Niet gemerged, niet gepusht. Beschermd in deze branch, dus **voorstel**: `scripts/check-drools.sh`,
+`scripts/check-readings.sh`, `spec/RUNTIME-SEMANTICS.md`. Logs onder `werk/total-over-partial-unit-drools/logs/`.
+
+### Commits
+
+- `a259d724a` drools: het totaal meet een deel van een eenheid naar zijn dagen (productiecode, tests, README)
+- `c599c699f` gates 12 en 17: Drools telt een deel van een eenheid en een afwezig totaal mee (voorstel)
+- `080eabf30` spec: RS ch. 3.6 en 3.12, Drools telt het totaal als ref (voorstel)
+- het commit van dit Result
+
+### Rood eerst (op `a956aaa45`, `logs/01-red-five-goldens.log`, beide takken dezelfde regel)
+
+| golden | DIVERGE-regel van gate 12 (letterlijk) | uitkomst van beide takken |
+|---|---|---|
+| `jutterswet-getijdenwacht` | `12a: naar rato; Drools volgt in stap B (EXCLUDE_KNOWN)` | `FAIL case.json: attribuut premiesom: verwacht 10, werkelijk 0` |
+| `jutterswet-kadetarief` | `12c: een afwezige tijdlijn telt 0; Drools volgt in stap B (EXCLUDE_KNOWN)` | `FAIL case.json: attribuut havengeld per meter: verwacht 0, werkelijk leeg` |
+| `jutterswet-penningjaar` | `12c: een afwezige tijdlijn telt 0; Drools volgt in stap B (EXCLUDE_KNOWN)` | `FAIL case.json: attribuut totaal aangemelde vondsten: verwacht 0, werkelijk leeg` |
+| `jutterswet-tempototaal` | `12c: een afwezige tijdlijn telt 0; Drools volgt in stap B (EXCLUDE_KNOWN)` | `FAIL case.json: attribuut bewaargeld: verwacht 0, werkelijk leeg` |
+| `jutterswet-vast-startpunt` | `12a: naar rato; Drools volgt in stap B; 12c: een afwezige tijdlijn telt 0; Drools volgt in stap B (EXCLUDE_KNOWN)` | `FAIL case1-stormjaargrens.json: attribuut toelagesom: verwacht 1.37, werkelijk 0.00 \| case4-geen-wacht.json: attribuut maandtoelagesom: verwacht 0, werkelijk leeg; attribuut weektoelagesom: verwacht 0, werkelijk leeg; attribuut kwartaaltoelagesom: verwacht 0, werkelijk leeg \| case6-heel-kalenderjaar.json: attribuut maandtoelagesom: verwacht 0, werkelijk leeg` |
+
+Na de wijziging (`logs/05-green-goldens.log`), beide takken: `PLAYED 1`, `1`, `1`, `1`, `7`; `jutterswet-muntbewaring`
+en `jutterswet-tempovouw` `PLAYED 1`, en hun `--readings` zijn op de kaderregels na gelijk aan de trace van ref.
+
+### Wat er veranderde
+
+- **De lengte** (`PeriodArithmetic`): `weighed(segments, granularity, fixed, calendar)` telt elk segment als waarde ×
+  lengte, exact (een decimaal waar die eindigt, anders een `Breuk`). De lengte is `gridMeasure(granularity, fixed, …)`:
+  op de kalender `measure` (dag 1, week 1/7 per dag, maand, kwartaal en jaar 1/len van de kalendereenheid), met een
+  vast startpunt per periode van `FixedStartPoint.period`, dezelfde functie waarmee `CaseRunner.bucket` de emmer legt.
+  Met een kalendernoemer meet `measure(calendar, …)` de hele span in plaats van tot het eind van de hele rastereenheden.
+  Een open segment in `weighed` is een gebroken contract (`IllegalStateException`): `total` en de bijdrage halen ze er
+  eerst uit.
+- **De routes**: `PeriodArithmetic.total` (de klip en de tijdlijn die rekenen per periode schrijft) en
+  `ComputeHelpers.ownTotal` (de emmer van de peildatum) krijgen het vaste startpunt als constante mee
+  (`TmsTranspiler.ownTotal`); `ownTotal` geeft 0 voor een afwezige invoer (was leeg). De vouw per element:
+  `Consequence.Input.MemberValue` kreeg de component `fixed`, `ComputeHelpers.contribution` meet met `weighed` en geeft
+  een lid zonder tijdlijn de bijdrage 0 (was geen bijdrage), zodat `de som van` over alleen zulke leden 0 is (VB-2 van
+  stap A). `DrlRendering` en `PatternDslRendering` geven `fixed` door; `ClosureRendering` en `StaticFunction` volgen de
+  signaturen.
+- **De runtime**: `rsTijdTotaal` en `heleMaanden` zijn weg uit `RegelSpraakRuntime`, met `StaticFunction.RS_TIME_TOTAL`
+  en zijn regel in `ClosureRendering` (VB-B1).
+- **Documentatie**: javadoc van `TmsTranspiler` (vouw, eigen totaal, klip, `integrable`, `calendar`), `CaseInput`,
+  `Period`; `backends/drools/README.md` (nieuwe alinea "The length of a segment", de kalender, de vouw per element).
+- **Spec** (voorstel, in de branch): RS ch. 3.6 uitvoerdersnoot en de rij van ch. 3.12 (tekst hieronder).
+- Geen nieuwe weigercode: niets in deze kaart weigert de tak.
+
+### Tests, oud → nieuw
+
+- Door de kaart omgedraaid:
+  - `PeriodArithmeticTest.the_calendar_integrates_between_the_day_and_the_month_family`: 10 €/dg over
+    [2024-01-10, 2024-01-20) op een maandraster: **0 → 100** (de kalender over de hele span); "without a calendar the
+    whole units of the grid" heet nu "the length in units of the grid" (120, onveranderd).
+  - `TimeTotalClampWitnessTest` verhuisd van `runtime/` naar `transpiler/tms/` en meet nu met `PeriodArithmetic.weighed`
+    op het raster van het vaste startpunt (`--01-31`, `--05-31`, `--02-29`) in plaats van `rsTijdTotaal` zonder raster;
+    de twee tests van een periode tussen geklemde muren blijven 10, 10, 10 en 30, 100, die van de duur 0 en 10. `a_day_too_short_is_no_whole_unit`
+    → `a_part_of_a_period_counts_its_days`: [2024-01-31, 2024-02-28) **0 → 280/29**, [2024-02-29, 2025-02-27)
+    **0 → 7280/73**, twee perioden 20 → 20, en nieuw de kalendermaand: 8970/899.
+  - `PeriodTest.the_runtime_computes_with_a_period_as_segment_class`: de regel `rsTijdTotaal(timeline, "MAAND") = 21`
+    → `rsOoitWaarden(timeline) = {10, 11}` (de runtime leest de waarde van een `Period`; `rsTijdTotaal` is weg).
+  - `TmsInputFormWitnessTest.the_own_total_without_clip_takes_the_bucket_scalar`: J4 (geen bedrag) topsom **leeg → 0**.
+  - `TmsTotalEvaluationDateWitnessTest`: J3 (geen bedrag, met datum) topsom **leeg → 0**.
+  - `TmsTimelineFoldWitnessTest.a_total_and_a_sum_per_member_over_a_derived_timeline…`: J3 (alleen V4 zonder tarief)
+    som **leeg → 0** (VB-2); de javadoc noemde dit vroeger de mutatie die rood moest maken. Ref op de documenten die
+    `main` schrijft: `oracle: PASS (11 expectations)` (`logs/08-ref-on-witness-docs.log`, ook de twee andere getuigen:
+    `PASS (4 expectations)` en `PASS (3 expectations)`).
+  - Signaturen: `FormsPlan` (`MemberValue` met `fixed`, DRL-fragment `"\"MAAND\", null, true, false)"`),
+    `RouteWitnessTest` (`contribution[…, String, String, boolean, boolean]`).
+- Terug naar groen (de pins van stap A): de lijst `TOTAL_OVER_PARTIAL_UNIT` uit `TmsCorpusWitnessTest` en
+  `DrlTextCorpusWitnessTest`; `MorePeriodicGateWitnessTest.the_total_of_a_time_sequence_plays_at_count_one` en
+  `TimelineDateFoldWitnessTest.the_numeric_originals_stay_playing` weer `playBothBranches`/`BothBranches.green`. De vier
+  bestanden zijn gelijk aan hun stand vóór `3c6b1aa0d`.
+- Nieuw: `PeriodArithmeticTest.a_part_of_a_unit_counts_by_its_days` (`WV-3.6-naar-rato`: 140, 100/61, 100, 45,
+  6090/4453 op het stormjaar, een week van het weekraster vanaf 2024-09-30, 3/7 van een kalenderweek) en
+  `an_absent_timeline_totals_zero` (`total`, `ownTotal`, `contribution`);
+  `TmsTimelineFoldWitnessTest.a_total_and_a_sum_per_member_on_a_fixed_start_grid_in_every_order_of_the_rules` (de vouw
+  per element over leden op het stormjaarraster `--10-01`, beide takken: J1 22/22, J2 met één lid zonder tijdlijn 0/0,
+  J3 zonder leden 0/leeg; verifier `PASS`, ref `oracle: PASS (7 expectations)`).
+- JUnit: gate 12 meldt na de rebase 1831 tests, nul skips (1826 op `a956aaa45`; deze branch voegt er drie toe, de
+  rest komt van main).
+
+### Mutaties (niet gecommit; `logs/12-mutations.log`, `logs/mut-*`, in een losse worktree)
+
+| # | mutatie | rood |
+|---|---|---|
+| M1 | kalenderraster: hele eenheden (de lengte naar beneden afgerond) | `PeriodArithmeticTest.a_part_of_a_unit_counts_by_its_days: expected: <140/1> but was: <0/1>`; getijdenwacht beide takken `FAIL case.json: attribuut premiesom: verwacht 10, werkelijk 0` |
+| M2 | het vaste startpunt genegeerd, elk raster als de kalender | `PeriodArithmeticTest` (`expected: <6090/4453> but was: <250/183>`), alle vier `TimeTotalClampWitnessTest` (`expected: <10/1> but was: <8970/899>` …), de nieuwe vouwgetuige (`J1.last: de waarde 1469398/66795 past niet …`); vast-startpunt beide takken `ERROR WriteBoundaryFault: … J1.maandtoelagesom: value 8970/899 does not fit the declared 0 decimals` |
+| M3 | de kalender meet 0 van een segment korter dan een rastereenheid | `the_calendar_integrates_between_the_day_and_the_month_family: expected: <100/1> but was: <0/1>` |
+| M4 | eigen totaal van een afwezige invoer leeg | `TmsInputFormWitnessTest` (`case: attribuut topsom: verwacht 0, werkelijk leeg`), `TmsTotalEvaluationDateWitnessTest`; tempototaal, kadetarief, penningjaar beide takken hun FAIL-regel van hierboven |
+| M5 | een lid zonder tijdlijn draagt niets bij | beide vouwgetuigen `case: attribuut som: verwacht 0, werkelijk leeg` (elke volgorde, beide takken), `an_absent_timeline_totals_zero` (NPE) |
+| M6 | het vaste startpunt niet in de bijdrage (`fixed = null` in `contributionRules`) | de nieuwe vouwgetuige: `J1.last: de waarde 1469398/66795 past niet in de gedeclareerde 0 decimalen` |
+| M7 | het vaste startpunt niet in het eigen totaal (`fixed = null` in `ownTotal`) | vast-startpunt beide takken `ERROR WriteBoundaryFault: … J1.maandtoelagesom: value 8970/899 …` |
+
+### Pins en lijsten, oud → nieuw (voorstel)
+
+- Gate 12: `EXCLUDE_KNOWN` 5 → **0** regels (leeg met zijn bewaking); `EXPECTED_CHANNEL` 51 → **46** (de vijf
+  `DIVERGE`-regels weg); `EXPECTED_PLAYED` 323 → **328**, met een regel in het commentaarblok die de vijf goldens en hun
+  PLAYED (1, 1, 1, 1, 7) noemt.
+- Gate 17: `DEVIATIONS` 24 → **0**; `scripts/check-readings.sh` is weer byte-gelijk aan main ("Empty since the gate
+  began" klopt op main: de 24 regels landden nooit).
+- Drools-tests: `TOTAL_OVER_PARTIAL_UNIT` (twee getuigen) weg, twee `BothBranches.red` weer groen (hierboven).
+- Geen floor veranderd. Geen nieuwe EF-, REF-, CLINGO-, RGS- of DROOLS-code.
+
+### Voorgestelde tekst
+
+- **RS ch. 3.6**, uitvoerdersnoot (in de branch): "They still count whole grid units per fragment and total an absent
+  timeline leeg, so the five goldens … (card `20261103-total-over-partial-unit`, step B)." → "On every route, the
+  per-element fold included, they measure a segment in units of its grid, a part of a unit by its days on the calendar
+  or from a fixed start point, and total an absent timeline 0."
+- **RS ch. 3.12**, de rij van het totaal (in de branch): "Both Drools branches count whole units per fragment and total
+  an absent timeline leeg (value divergences in gate 12, card `20261103-total-over-partial-unit` step B)." → "Both
+  Drools branches on every route, exactly (a decimal or a rational)."
+- **CONSTRUCTS rij 11**, in de voorgestelde tekst van stap A: de zin "The Drools backend counts whole units per
+  fragment and totals an absent timeline leeg until step B (value divergences in gate 12)." vervalt, en na de zin van
+  de ASP-backend komt "Both Drools branches execute it on every route, the per-element fold included.".
+- **CLAUDE.md**: geen wijziging; het voorstel van stap A voor gate 17 ("24 entries … until its step B") vervalt, "empty
+  since the gate began" klopt weer.
+- Buiten mijn may-touch: `frontends/regelspraak/.../resolver/ExpressionBuilder.java` r. 3124 noemt in commentaar
+  "rsTijdTotaal at the attribute's granularity" → "the total over time on the attribute's own grid".
+
+### Voorlopige besluiten
+
+- VB-B1 — `rsTijdTotaal` (met `heleMaanden` en `StaticFunction.RS_TIME_TOTAL`) is uit de runtime verwijderd in plaats
+  van omgebouwd: geen route van het totaal riep het nog aan, het kende geen raster met een vast startpunt (de runtime
+  kent `FixedStartPoint` niet, en een BigDecimal houdt 100/61 niet), en een functie die hele eenheden en een afwezig
+  totaal leeg telt, zou ch. 3.6 tegenspreken. Geen code buiten de submodule roept haar aan (gezocht in de toolchain).
+- VB-B2 — Het vaste startpunt gaat als derde constante mee naar `total` en `ownTotal` en als component `fixed` van
+  `MemberValue`; de periode komt van `FixedStartPoint.period`, zodat de emmerscalair op zo'n raster precies 1 meet.
+  Een raster van meer perioden of een variabel startpunt bereikt het totaal niet: `timeMember` weigert het al.
+- VB-B3 — Een afwezige invoer zonder peildatum blijft in het eigen totaal de fout "needs the evaluation date" geven,
+  zoals ref en clingo (open punt 2 van stap A ongemoeid).
+
+### Open punten
+
+1. De drie open punten van stap A blijven (de precisiegrens, de peildatum vóór de afwezigheid, de tekstvoorstellen).
+2. Het commentaar in `ExpressionBuilder` (hierboven).
+
+### Gates
+
+Losse gates op `080eabf30` (na de rebase): gate 12 `check-drools: PASS` (`logs/11-gate12.log`), gate 13
+`check-reftype-derivation: PASS` (`logs/14-gate13.log`), gate 17 `check-readings: PASS` met `deviations 0`
+(`logs/15-gate17.log`; de eerste run, `logs/13-gate17.log`, stopte op "Another Dune instance is currently running"
+omdat ik gate 13 en 17 tegelijk startte op een verouderde dune-stempel).
+
+`make gates` groen op `080eabf30` (`logs/gates-1.log`, `out/gates/20261104-074126/`), 361 s:
+
+```
+01-self-contained rc=0 2s     02-ir-schema rc=0 133s   04-case-schema rc=0 8s   03-verifier rc=0 39s
+05-oracle rc=0 23s            06-clingo rc=0 291s      07-noop rc=0 13s         08-red rc=0 158s
+09-catala rc=0 5s             10-regelspraak rc=0 260s 11-toka-parity rc=0 233s 12-drools rc=0 361s
+13-reftype rc=0 322s          14-flogic rc=0 2s        15-graph rc=0 48s        16-scenario rc=0 40s
+17-readings rc=0 269s         after-run rc=0 0s        end 2026-11-04 07:47:27 361s red=0
+```
+
+Gemeten: gate 12 `played matches the pinned 328`, DRL-tekst 328, value-divergence 0, kanaalvloer 46 met naam, JUnit
+1831 tests (nul skips, floor 1573); gate 17 328 goldens en 931 casebestanden op beide takken vergeleken, 7348
+lezingen, 0 afwijkingen; gate 5 ref-suite 2317 voorbeelden en 1058 cases, gate 6 clingo-suite 2462 checks en 1058 cases
+ref = clingo. De kaart blijft in `doing/`.
