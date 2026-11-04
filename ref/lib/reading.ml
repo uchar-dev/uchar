@@ -122,6 +122,7 @@ let rec walk_expr ~own ?(scope = []) acc (e : expr) =
       List.fold_left (fun acc (_, _, body) -> sub acc body) (sub acc scrutinee) arms
   | Struct_literal { field_list; _ } -> List.fold_left (fun acc (_, x) -> sub acc x) acc field_list
   | Field_access { base; _ } -> sub acc base
+  | Payload_access { base; _ } -> sub acc base
   | List_literal { elements; _ } -> List.fold_left sub acc elements
   | Lambda { body; _ } -> sub ~own:false acc body
   | If_then_else { condition; then_; else_; _ } -> sub (sub (walk_cond ~own acc condition) then_) else_

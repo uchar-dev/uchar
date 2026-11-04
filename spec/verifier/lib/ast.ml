@@ -308,6 +308,15 @@ type expr =
       source_name : string option;
     }
   | Binder_ref of { ident : string; source_name : string option }
+  (* Extension node (v1): the payload of the sum-typed [base] where its value
+     carries the unary constructor [constructor_], leeg where it carries
+     another constructor or is leeg (IR-SPEC ch. 4.7; RUNTIME-SEMANTICS
+     ch. 9.5). [typ] is required on the wire, the declared payload datatype.
+     The RegelSpraak frontend writes it for a read of an attribute with
+     absence markers; WF-127 holds every one under a test of its
+     constructor, since the leeg of a failed access would otherwise count on
+     in an operator that coalesces leeg. *)
+  | Payload_access of { typ : datatype option; base : expr; constructor_ : string; source_name : string option }
   (* Extension nodes (v1, Phase 5c): the record expression forms
      (IR-SPEC ch. 4.9; semantics RUNTIME-SEMANTICS ch. 11). [typ] is required
      on the wire (non-null, the TemporalRead pattern). [Struct_literal]'s

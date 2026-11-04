@@ -18084,6 +18084,39 @@ let () =
   (* no allowed order reads S1's peil *)
   both_answer ~name:"EF-037, no order: S1 of 8 settles the fold at itself" ~ir:every_order ~case_text:(case "8" keur)
 
+(* RUNTIME-SEMANTICS ch. 9.5, the absence markers: the golden
+   jutterswet-afwezigheidsmarkers in both executors, the constructor name of
+   several words as one ASP symbol, the payload of a sum-typed attribute as a
+   member of its own (the read, the comparison and the sum over members), a
+   sum-typed timeline in the input and written by a constructor of a literal,
+   and the refusals beside them, on ref's documents
+   (ref/test/fixtures/absence-markers) *)
+let () =
+  let read f = In_channel.with_open_bin f In_channel.input_all in
+  let g = "corpus/golden/jutterswet-afwezigheidsmarkers/" in
+  let ir = read (g ^ "ir.json") in
+  List.iter
+    (fun c -> both_answer ~name:("absence markers: " ^ c) ~ir ~case_text:(read (g ^ c ^ ".json")))
+    [ "case1-schatting"; "case2-onbekend-verdringt-invoer"; "case3-niet-van-toepassing"; "case4-niets";
+      "case5-onbekend-in-de-invoer"; "case6-kostbaar"; "case7-som-van-de-waarden"; "case8-geen-waarde-in-de-som";
+      "case9-onbekend-per-maand"; "case10-niet-van-toepassing-na-verkoop" ];
+  let dir = "ref/test/fixtures/absence-markers/" in
+  let fixture d = (read (dir ^ d ^ "/ir.json"), read (dir ^ d ^ "/case.json")) in
+  let ir, case_text = fixture "constructors-in-one-symbol" in
+  ref_matches ~name:"absence markers: two constructors in one symbol, ref" ~ir ~case_text;
+  faults_with ~name:"absence markers: two constructors that meet in one ASP symbol are refused" ~ir ~case_text
+    ~needle:"meet in one ASP symbol \"niet_van_toepassing\"";
+  let ir, case_text = fixture "payload-of-a-timeline" in
+  faults_with ~name:"absence markers: the payload of a timeline in a scalar slot is refused" ~ir ~case_text
+    ~needle:"temporal attribute \"opslagkosten\" in a scalar slot is refused";
+  let ir, case_text = fixture "sum-of-a-timeline" in
+  faults_with ~name:"absence markers: a sum over the payloads of a timeline is refused" ~ir ~case_text
+    ~needle:"a payload access to the time-dependent attribute \"opslagkosten\" is read per day";
+  let ir, case_text = fixture "copy-of-a-timeline" in
+  ref_matches ~name:"absence markers: a copy of a timeline with markers, ref" ~ir ~case_text;
+  faults_with ~name:"absence markers: a copy of a timeline with markers is refused" ~ir ~case_text
+    ~needle:"is written with a constructor of a literal"
+
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
   else begin

@@ -697,6 +697,16 @@ let rec expr path j : expr =
   | "BinderRef" ->
       check_keys path kvs ~ext:[ "source" ] [ "node"; "name" ];
       Binder_ref { ident = str (path / "name") (f "name"); source_name = source_name () }
+  | "PayloadAccess" ->
+      (* extension node: all fields required, none nullable *)
+      check_keys path kvs ~ext:[ "source" ] [ "node"; "type"; "base"; "constructor" ];
+      Payload_access
+        {
+          typ = typ ();
+          base = expr (path / "base") (f "base");
+          constructor_ = str (path / "constructor") (f "constructor");
+          source_name = source_name ();
+        }
   | "StructLiteral" ->
       (* extension node (v1, Phase 5c): the fields map name to a value expr,
          in declaration order (WF-073); type required not-null *)

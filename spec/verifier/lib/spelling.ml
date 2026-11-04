@@ -224,6 +224,7 @@ let expr_node (e : expr) : string =
   | Construct _ -> "Construct"
   | Match _ -> "Match"
   | Binder_ref _ -> "BinderRef"
+  | Payload_access _ -> "PayloadAccess"
   | Struct_literal _ -> "StructLiteral"
   | Field_access _ -> "FieldAccess"
   | Let _ -> "Let"

@@ -957,6 +957,9 @@ let rec is_period_arithmetic (e : expr) =
   | Binary { op = Plus | Min | Reduced_by | Times | Divided_by | Divided_by_abs | Percentage_of; _ } -> true
   | Function_call { kind = Sum_function; element_object_type = Some _; _ } -> true
   | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } | Parameter_ref _ -> true
+  (* a constructor of a literal holds on every day, as the literal does
+     (ch. 9.5): a marker written in a period window *)
+  | Construct { argument = None | Some (Literal _); _ } -> true
   | Rounding { base_expr = Some b; _ } -> is_period_arithmetic b
   | _ -> false
 
@@ -1100,6 +1103,14 @@ let literal_value (variant : literal_variant) (typ : datatype option) =
    binder's binding. A characteristic is no attribute and has no value
    type (WF-080), so its name types to None, as in the verifier. Every
    other node carries its own annotation. *)
+(* the payload of [v] where it carries the constructor [c] (ch. 9.5), and
+   leeg where it carries another constructor or is leeg *)
+let payload_of c (v : Value.t) =
+  match v with
+  | Value.Ctor (tag, Some p) when norm tag = norm c -> p
+  | Value.Empty | Value.Ctor _ -> Value.Empty
+  | v -> Value.fault "payload access base is %s, not a constructor value" (Value.to_string v)
+
 let rec static_type env (e : expr) : datatype option =
   match e with
   | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (
@@ -1129,6 +1140,7 @@ let rec static_type env (e : expr) : datatype option =
   | Let { typ; _ }
   | Struct_literal { typ; _ }
   | Field_access { typ; _ }
+  | Payload_access { typ; _ }
   | List_literal { typ; _ }
   | If_then_else { typ; _ }
   | Invoke { typ; _ }
@@ -1749,6 +1761,21 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
                 "field %S is not present on the record value (unreachable on a verifier-clean document)"
                 field_name)
       | v -> Value.fault "field access base is %s, not a record value" (Value.to_string v))
+  | Payload_access { base; constructor_; _ } ->
+      (* ch. 9.5: the payload where the value carries the constructor, and
+         leeg where it carries another one or is leeg, as a failed to-one
+         navigation is leeg; WF-127 holds the node under a test of its
+         constructor, so that leeg never counts on as 0. A time-dependent
+         attribute has a reading per day, which is not executed here *)
+      (match base with
+      | Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ }
+        when Ir_v0.Checks.attr_temporal (object_type env otn) a ->
+          Value.fault
+            "a payload access to the time-dependent attribute %S is read per day (ch. 9.5), which this \
+             interpreter does not execute (no corpus case)"
+            a
+      | _ -> ());
+      payload_of constructor_ (eval_expr env world self ~err base)
   | List_literal { elements; _ } ->
       (* ch. 10.1: a list value; an element evaluating leeg propagates —
          the whole literal evaluates leeg (a list carries no hole) *)
@@ -2404,6 +2431,29 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
           filter_in_order keep (fold_members ?binding:source_role ?path:source_path env world self ~element:el)
         in
         `Values (contributing_values members (List.map (fun i -> World.attr i member) members))
+    (* the payload of each member (ch. 9.5): the set source reads the
+       attribute of the element type and takes the constructor's payload out
+       of it, leeg where the member carries another constructor; WF-127 holds
+       the filter to a gevuld test of it, so a member with a marker is no
+       contributor. A time-dependent attribute has a reading per day, which
+       is not executed here *)
+    | ( Some el,
+        [ Payload_access
+            { base = Attribute_reference { attribute_ref = Some name; navigation_bindings = None; anchor = None; _ };
+              constructor_; _ } ] )
+      when ranged
+           && (match kind with
+              | Sum_function | Minimum | Maximum | First | Last | Filled_count -> true
+              | _ -> false) ->
+        if Ir_v0.Checks.attr_temporal (object_type env el) name then
+          Value.fault
+            "a payload access to the time-dependent attribute %S is read per day (ch. 9.5), which this \
+             interpreter does not execute (no corpus case)"
+            name;
+        let members =
+          filter_in_order keep (fold_members ?binding:source_role ?path:source_path env world self ~element:el)
+        in
+        `Values (contributing_values members (List.map (fun i -> payload_of constructor_ (World.attr i name)) members))
     (* WF-037, the fold-source arm, in the verifier's sentence: the one
        argument of an aggregation that carries an elementType is an
        AttributeReference, and any other node there is refused by name. A
@@ -3537,7 +3587,8 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
            (List.map
               (fun (s : Timeline.segment) -> { s with s_value = Arith.round_v mode_kind decimal_places s.s_value })
               tl))
-  | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } ->
+  | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ }
+  | Construct { argument = None | Some (Literal _); _ } ->
       scalar_everywhere env w self ~err ~root e
   | Parameter_ref { parameter = Some p; _ } -> (
       match Ir_v0.Checks.find_ci env.doc.parameters p with
@@ -4965,6 +5016,7 @@ let vintage_read_params (doc : document) : string list =
         List.iter (fun (_, _, body) -> expr body) arms
     | Struct_literal { field_list; _ } -> List.iter (fun (_, e) -> expr e) field_list
     | Field_access { base; _ } -> expr base
+    | Payload_access { base; _ } -> expr base
     | Let { value; body; _ } -> expr value; expr body
     | List_literal { elements; _ } -> List.iter expr elements
     | Lambda { body; _ } -> expr body

@@ -2595,7 +2595,7 @@ let annotation = function
   | Function_call { typ; _ } | Rounding { typ; _ } | Clamp { typ; _ }
   | Context_value { typ; _ } | Bound_day { typ; _ } | Expr_unresolved { typ; _ }
   | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
-  | Struct_literal { typ; _ } | Field_access { typ; _ }
+  | Struct_literal { typ; _ } | Field_access { typ; _ } | Payload_access { typ; _ }
   | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
   | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
   | Filter_list { typ; _ } | List_length { typ; _ } -> typ
@@ -3781,6 +3781,7 @@ let day_kind_scan at (c0 : condition_expr) : violation list * string list =
     | Rounding { base_expr; _ } -> opt base_expr
     | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr; opt minimum; opt maximum
     | Field_access { base; _ } -> ex base
+    | Payload_access { base; _ } -> ex base
     | Struct_literal { field_list; _ } -> List.iter (fun (_, e) -> ex e) field_list
     | List_literal { elements; _ } -> List.iter ex elements
     | Construct { argument; _ } -> opt argument
@@ -4727,6 +4728,7 @@ let rec mentions_binder b (e : expr) : bool =
   | Rounding { base_expr; _ } -> opt base_expr
   | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr || opt minimum || opt maximum
   | Field_access { base; _ } -> mentions_binder b base
+  | Payload_access { base; _ } -> mentions_binder b base
   | Struct_literal { field_list; _ } -> List.exists (fun (_, e) -> mentions_binder b e) field_list
   | List_literal { elements; _ } -> List.exists (mentions_binder b) elements
   | Construct { argument; _ } -> opt argument
@@ -5118,6 +5120,42 @@ let wf125_bare_read ctx at (e : expr) =
       | _ -> [])
   | _ -> []
 
+(* WF-127, the shape arms (IR-SPEC ch. 4.7): the base is sum-typed, the
+   constructor is a declared unary constructor of its domain, and the node type
+   is that constructor's declared payload. Shared by the expression walk and by
+   the fold-source position of an aggregation, which reads its base on the
+   contributor. *)
+let payload_access_shape ctx ~at ~ty typ base constructor_ =
+  let sub f = at ^ "/" ^ f in
+  match ty base with
+  | Some (Sum_type { domain_spec; _ }) -> (
+      match sum_decl ctx domain_spec with
+      | None ->
+          [ v ~params:[("domain", domain_spec)] "WF-127.domain-undeclared" (sub "base")
+              ("payload access base names sum-type domain '" ^ domain_spec
+             ^ "', which is not a declared sum type") ]
+      | Some ctors -> (
+          match List.find_opt (fun (n, _) -> norm n = norm constructor_) ctors with
+          | None ->
+              [ v ~params:[("constructor", constructor_); ("domain", domain_spec)] "WF-127.constructor-undeclared" at
+                  ("'" ^ constructor_ ^ "' is not a declared constructor of sum type '" ^ domain_spec ^ "'") ]
+          | Some (_, None) ->
+              [ v ~params:[("constructor", constructor_); ("domain", domain_spec)] "WF-127.constructor-nullary" at
+                  ("'" ^ constructor_ ^ "' is a nullary constructor of sum type '" ^ domain_spec
+                 ^ "': it carries no payload to read") ]
+          | Some (_, Some pdt) -> (
+              match typ with
+              | Some t when not (same_datatype t pdt) ->
+                  [ v ~params:[("accessType", detail_vs t ~against:pdt); ("declaredType", detail_vs pdt ~against:t)] "WF-127.type-differs" (sub "type")
+                      ("payload access type " ^ detail_vs t ~against:pdt
+                     ^ " differs from the declared payload " ^ detail_vs pdt ~against:t) ]
+              | None -> [ v "WF-127.access-untyped" (sub "type") "payload access carries no type" ]
+              | _ -> [])))
+  | Some d ->
+      [ v ~params:[("type", datatype_kind d)] "WF-127.base-not-sum" (sub "base")
+          ("payload access base is " ^ datatype_kind d ^ ", not a sum-type value") ]
+  | None -> [ v "WF-127.base-untyped" (sub "base") "payload access base carries no type" ]
+
 let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?(cell_owner = false) at
     (e : expr) : violation list =
   match unanchored_expr e with
@@ -5333,6 +5371,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
                ch. 4.3): its reference is the set source, read on the element
                type; a count counts instances and reads no cell *)
             | Dimension_cell_read { attribute_ref = Some (Attribute_reference _); _ }
+              when f.dimension_selections = None && List.mem f.kind dimension_fold_kinds ->
+                None
+            (* the payload of each contributor (RUNTIME-SEMANTICS ch. 9.5): its
+               reference is the set source, read on the element type, and the
+               filter tests the constructor (WF-127) *)
+            | Payload_access { base = Attribute_reference _; _ }
               when f.dimension_selections = None && List.mem f.kind dimension_fold_kinds ->
                 None
             | _ -> Some (el, a))
@@ -5825,6 +5869,14 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
                     | None -> [])
                    @ aggregation_source_check ctx (p ^ "/attribute") ~element_type:el ~subject ~kind:f.kind
                        ~ranged inner
+               (* the payload of each contributor as the set source: the access
+                  is judged as any other, and its reference by the fold-source
+                  rules *)
+               | Payload_access { typ; base = Attribute_reference _ as inner; constructor_; _ }, Some el
+                 when source_position && non_source = None ->
+                   payload_access_shape ctx ~at:p ~ty typ inner constructor_
+                   @ wf125_bare_read ctx (p ^ "/base") inner
+                   @ aggregation_source_check ctx (p ^ "/base") ~element_type:el ~subject ~kind:f.kind ~ranged inner
                | _ ->
                    (* the union's admissible position (WF-110 (a)): the SINGLE
                       argument of a count. Keyed on the kind and the arity and
@@ -5989,7 +6041,7 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
                    | Src_count | Src_role_under_value_fold -> Some (el, `Role_name a)
                    | _ -> Some (el, `Member))
                | None -> Some (el, `Member))
-           | Some el, [ Dimension_cell_read _ ] when source_position && ranged && non_source = None ->
+           | Some el, [ (Dimension_cell_read _ | Payload_access _) ] when source_position && ranged && non_source = None ->
                Some (el, `Member)
            | _ -> None
          in
@@ -6628,6 +6680,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
            [ v ~params:[("type", datatype_kind d)] "WF-074.base-not-struct" (sub "base")
                ("field access base is " ^ datatype_kind d ^ ", not a struct value") ]
        | None -> [ v "WF-074.base-untyped" (sub "base") "field access base carries no type" ])
+      @ walk_expr ctx ~binders ~subject ~body (sub "base") base
+  | Payload_access { typ; base; constructor_; _ } ->
+      (* WF-127, the shape arms; the guard arm needs the condition the node
+         stands under, which this walk does not carry: it is
+         [wf127_payload_guards] *)
+      payload_access_shape ctx ~at ~ty typ base constructor_
       @ walk_expr ctx ~binders ~subject ~body (sub "base") base
   | Let { typ; binder; value; body = lbody; _ } ->
       (* WF-076: the Let binding (IR-SPEC ch. 4.10). The node type equals the
@@ -8128,6 +8186,7 @@ let rec dep_expr_at ctx ~subject ~at acc (e : expr) =
   | Struct_literal { field_list; _ } ->
       List.fold_left (fun acc (_, value) -> dep_expr_at ctx ~subject ~at acc value) acc field_list
   | Field_access { base; _ } -> dep_expr_at ctx ~subject ~at acc base
+  | Payload_access { base; _ } -> dep_expr_at ctx ~subject ~at acc base
   (* the Let binding (Phase 5c): its reads live in the value and the body; the
      binder is lexical, contributing no attribute/parameter edge of its own.
      Call-by-need does not narrow this: a read that never happens still needs
@@ -9974,7 +10033,7 @@ let rec precision ctx ?(calls = []) ~env (e : expr) : bounded option =
   | Filter_list _ ->
       None
   | Context_value { typ; _ } -> Option.bind typ declared
-  | Attribute_reference _ | Dimension_cell_read _ | Parameter_ref _ -> Option.bind (ty e) declared
+  | Attribute_reference _ | Dimension_cell_read _ | Parameter_ref _ | Payload_access _ -> Option.bind (ty e) declared
   | Temporal_read { base_expr; _ } -> p base_expr
   | Binder_ref { ident; _ } -> (
       match List.find_opt (fun (b, _) -> norm b = norm ident) env with
@@ -10826,9 +10885,12 @@ let domain_reaches ctx ~target ~visited name =
 
 (* WF-060: a SumType declaration (a domain whose datatype is a SumType) MUST
    carry at least one constructor, unique constructor names, admissible
-   payload datatypes (Number, day-precision Date, or a declared SumType),
-   and an acyclic payload graph — shared with WF-071's struct fields (IR-SPEC
-   ch. 2.4 — no recursive sum types). *)
+   payload datatypes (every scalar datatype — a number, a text, a boolean, a
+   date of either precision, an enumeration — or a declared SumType; a list
+   or a struct is no payload), and an acyclic payload graph — shared with
+   WF-071's struct fields (IR-SPEC ch. 2.4 — no recursive sum types). An
+   enumeration payload is a use site of its domain, which WF-088 walks in the
+   declaration too. *)
 let wf060 ctx =
   List.concat_map
     (fun (name, dt) ->
@@ -10846,7 +10908,9 @@ let wf060 ctx =
           @ List.concat_map
               (fun (_, payload) ->
                 match payload with
-                | None | Some (Number _) | Some Date_in_days -> []
+                | None | Some (Number _) | Some (Percentage _) | Some Date_in_days | Some Date_time_type
+                | Some Text_type | Some Boolean | Some (Enumeration _) ->
+                    []
                 | Some (Sum_type { domain_spec; _ }) -> (
                     match sum_decl ctx domain_spec with
                     | Some _ -> []
@@ -10857,8 +10921,8 @@ let wf060 ctx =
                 | Some d ->
                     [ v ~params:[("type", datatype_kind d)] "WF-060.payload-not-admissible" at
                         ("constructor payload is " ^ datatype_kind d
-                       ^ ", which is not an admissible sum-type payload (number, day-precision \
-                          date, or a declared sum type)") ])
+                       ^ ", which is not an admissible sum-type payload (a scalar datatype or a \
+                          declared sum type)") ])
               constructor_list
           @
           if domain_reaches ctx ~target:name ~visited:[ norm name ] name then
@@ -10937,8 +11001,9 @@ let wf061 ctx =
 (* WF-088: the model-layer half of the enumeration use-site rule (the
    expression half rides walk_expr's type prologue, where WF-007 collects
    every expression `type` — the same "every datatype in the document" split).
-   The declarations in [domain_specs] are the source of truth and are therefore
-   not walked here. *)
+   An enumeration declaration in [domain_specs] is the source of truth and is
+   not walked; a payload of a sum-type declaration is a use site of the
+   domain it names, and is. *)
 let wf088 ctx =
   let site at = function Some d -> enum_use_site ctx at d | None -> [] in
   List.concat_map
@@ -10960,6 +11025,17 @@ let wf088 ctx =
                 fd.fd_parameters)
            @ enum_use_site ctx (at ^ "/result") fd.fd_result)
          ctx.doc.function_defs)
+  @ List.concat_map
+      (fun (dn, dt) ->
+        match dt with
+        | Some (Sum_type { constructor_list; _ }) ->
+            List.concat
+              (List.mapi
+                 (fun j (_, payload) ->
+                   site (Printf.sprintf "/domeinen/%s/constructors/%d/payload" dn j) payload)
+                 constructor_list)
+        | _ -> [])
+      ctx.doc.domain_specs
 
 (* WF-071: a StructType declaration (a domain whose datatype is a StructType)
    MUST carry at least one field, ci-unique field names, admissible field
@@ -11144,6 +11220,7 @@ let rec invoked_expr acc (e : expr) : string list =
   | Struct_literal { field_list; _ } ->
       List.fold_left (fun acc (_, value) -> invoked_expr acc value) acc field_list
   | Field_access { base; _ } -> invoked_expr acc base
+  | Payload_access { base; _ } -> invoked_expr acc base
   | Let { value; body = lbody; _ } -> invoked_expr (invoked_expr acc value) lbody
   | Text_composition { pieces; _ } ->
       List.fold_left
@@ -11465,6 +11542,7 @@ let rec markers_expr acc (e : expr) : string option list =
       List.fold_left (fun acc (_, _, b) -> markers_expr acc b) (markers_expr acc scrutinee) arms
   | Struct_literal { field_list; _ } -> List.fold_left (fun acc (_, x) -> markers_expr acc x) acc field_list
   | Field_access { base; _ } -> markers_expr acc base
+  | Payload_access { base; _ } -> markers_expr acc base
   | Let { value; body; _ } -> markers_expr (markers_expr acc value) body
   | List_literal { elements; _ } -> List.fold_left markers_expr acc elements
   | Lambda { body; _ } -> markers_expr acc body
@@ -12549,6 +12627,207 @@ let wf126 ctx =
            | _ -> [])
          ctx.doc.prioritized_defaults)
 
+(* WF-127, the guard arm (IR-SPEC ch. 4.7; RUNTIME-SEMANTICS ch. 9.5): every
+   PayloadAccess stands under a test of its own constructor. A failed access
+   is leeg, and plus, min and maal count leeg as 0 (ch. 1.2), so without the
+   test a marker would compute on silently. The test is the access as the
+   operand of a leeg or gevuld test, or a gevuld test of the same access that
+   holds as a conjunct before it: in the condition of its form for the form's
+   value, earlier in the same `all` for a condition, in the filter of a fold
+   over members for the fold's per-member positions, in the condition of an
+   IfThenElse for its then branch. Two accesses are the same when they take
+   the same constructor out of the same attribute read (attribute, subject
+   type, path and anchor); an access over any other base has no test and is
+   refused. A closed body (a lambda, a function) and a per-member position
+   start without the tests outside them. *)
+let payload_key = function
+  | Payload_access
+      { base = Attribute_reference { attribute_ref; object_type; navigation_bindings; anchor; _ }; constructor_; _ } ->
+      Some
+        ( norm constructor_,
+          Option.map norm attribute_ref,
+          Option.map norm object_type,
+          Option.map (List.map (fun b -> (norm b.rb_fact_type, norm b.rb_role))) navigation_bindings,
+          anchor )
+  | _ -> None
+
+let filled_test = function
+  | Predicate { variety = Filled; negation = false; operand = Some p; time_period = None; _ }
+  | Predicate { variety = Empty_predicate; negation = true; operand = Some p; time_period = None; _ } ->
+      payload_key p
+  | _ -> None
+
+let rec conjunct_tests = function
+  | Compound { quantifier_kind = All; components; _ } -> List.concat_map conjunct_tests components
+  | c -> Option.to_list (filled_test c)
+
+let wf127_payload_guards ctx =
+  let unguarded at c =
+    v ~params:[("constructor", c)] "WF-127.unguarded" at
+      ("payload access to '" ^ c
+     ^ "' stands under no test of its constructor: a gevuld test of the same access as a conjunct before it, or \
+        the access as the operand of a leeg or gevuld test")
+  in
+  let rec ex tests at (e : expr) =
+    let sub f = at ^ "/" ^ f in
+    let opt f = function Some e -> ex tests (sub f) e | None -> [] in
+    let each f es = List.concat (List.mapi (fun i e -> ex tests (Printf.sprintf "%s/%s/%d" at f i) e) es) in
+    match e with
+    | Payload_access { base; constructor_; _ } ->
+        (match payload_key e with Some k when List.mem k tests -> [] | _ -> [ unguarded at constructor_ ])
+        @ ex tests (sub "base") base
+    | Literal _ | Attribute_reference _ | Parameter_ref _ | Variable_reference _ | Context_value _ | Bound_day _
+    | Expr_unresolved _ | Binder_ref _ ->
+        []
+    | Text_composition { pieces; _ } ->
+        List.concat
+          (List.mapi
+             (fun i -> function
+               | Embedded_expression { expr = Some e } -> ex tests (Printf.sprintf "%s/parts/%d/expr" at i) e
+               | _ -> [])
+             pieces)
+    | Binary { left_side; right_side; _ } -> opt "left" left_side @ opt "right" right_side
+    | Function_call { call_arguments; empty_fallback; filter; element_object_type; source_role; source_path; _ } ->
+        let per_member = element_object_type <> None && (source_role <> None || source_path <> None) in
+        let inner, filter_tests =
+          match filter with
+          | Some c when per_member -> (co [] (sub "filter") c, conjunct_tests c)
+          | Some c -> (co tests (sub "filter") c, [])
+          | None -> ([], [])
+        in
+        let arg_tests = if per_member then filter_tests else tests in
+        inner
+        @ List.concat
+            (List.mapi (fun i e -> ex arg_tests (Printf.sprintf "%s/arguments/%d" at i) e) call_arguments)
+        @ opt "emptyFallback" empty_fallback
+    | Instance_set_union { branches; _ } ->
+        List.concat
+          (List.mapi
+             (fun i (b : instance_set_branch) ->
+               match b.isb_filter with
+               | Some c -> co [] (Printf.sprintf "%s/branches/%d/filter" at i) c
+               | None -> [])
+             branches)
+    | Rounding { base_expr; _ } -> opt "base" base_expr
+    | Clamp { base_expr; minimum; maximum; _ } -> opt "base" base_expr @ opt "minimum" minimum @ opt "maximum" maximum
+    | Dimension_cell_read { attribute_ref; _ } -> opt "attribute" attribute_ref
+    | Temporal_read { base_expr; date_value; _ } -> ex tests (sub "base") base_expr @ ex tests (sub "date") date_value
+    | Construct { argument; _ } -> opt "argument" argument
+    | Match { scrutinee; arms; _ } ->
+        ex tests (sub "scrutinee") scrutinee
+        @ List.concat (List.mapi (fun i (_, _, b) -> ex tests (Printf.sprintf "%s/arms/%d/body" at i) b) arms)
+    | Struct_literal { field_list; _ } ->
+        List.concat (List.mapi (fun i (_, e) -> ex tests (Printf.sprintf "%s/fields/%d/value" at i) e) field_list)
+    | Field_access { base; _ } -> ex tests (sub "base") base
+    | Let { value; body; _ } -> ex tests (sub "value") value @ ex tests (sub "body") body
+    | List_literal { elements; _ } -> each "elements" elements
+    | Lambda { body; _ } -> ex [] (sub "body") body
+    | If_then_else { condition; then_; else_; _ } ->
+        co tests (sub "condition") condition
+        @ ex (conjunct_tests condition @ tests) (sub "then") then_
+        @ ex tests (sub "else") else_
+    | Invoke { arguments; _ } -> each "arguments" arguments
+    | Fold { list; function_name; init; _ } -> ex tests (sub "list") list @ fn (sub "function") function_name @ ex tests (sub "init") init
+    | Map_list { list; function_name; _ } -> ex tests (sub "list") list @ fn (sub "function") function_name
+    | Filter_list { list; condition; _ } -> ex tests (sub "list") list @ co [] (sub "condition") condition
+    | List_length { list; _ } -> ex tests (sub "list") list
+  and fn at = function Fn_lambda { body; _ } -> ex [] (at ^ "/body") body | Fn_name _ -> []
+  and co tests at (c : condition_expr) =
+    let sub f = at ^ "/" ^ f in
+    let opt f = function Some e -> ex tests (sub f) e | None -> [] in
+    match c with
+    | Predicate { variety = Filled | Empty_predicate; operand = Some (Payload_access { base; _ }); _ } ->
+        ex tests (sub "operand/base") base
+    | Predicate { operand; _ } -> opt "operand" operand
+    | Comparison { left_side; right_side; _ } -> opt "left" left_side @ opt "right" right_side
+    | Time_window { starting_at; up_to; _ } -> opt "from" starting_at @ opt "to" up_to
+    | Compound { quantifier_kind = All; components; _ } ->
+        (* the members are read in order and the first that fails stops the
+           rest (ch. 5.10), so a member is tested by the members before it *)
+        let rec go i seen = function
+          | [] -> []
+          | part :: rest -> co seen (Printf.sprintf "%s/parts/%d" at i) part @ go (i + 1) (seen @ conjunct_tests part) rest
+        in
+        go 0 tests components
+    | Compound { components; _ } ->
+        List.concat (List.mapi (fun i part -> co tests (Printf.sprintf "%s/parts/%d" at i) part) components)
+    | Quantifier_fold { kv_filter; kv_test; _ } ->
+        (match kv_filter with Some f -> co [] (sub "filter") f | None -> [])
+        @ (match kv_test with
+          | Some t -> co (match kv_filter with Some f -> conjunct_tests f | None -> []) (sub "test") t
+          | None -> [])
+    | Characteristic_check _ | Role_membership _ | Identity_check _ | Rule_status_check _ | Condition_unresolved _ -> []
+  in
+  let form ?condition ~cat ~values () =
+    let tests = match condition with Some c -> conjunct_tests c | None -> [] in
+    (match condition with Some c -> co [] cat c | None -> [])
+    @ List.concat_map (fun (at, e) -> ex tests at e) values
+  in
+  List.concat_map
+    (fun (r : resolved_rule) ->
+      form ?condition:r.rr_condition ~cat:(r.rr_pointer ^ "/condition")
+        ~values:(match r.value_node with Some e -> [ (r.rr_pointer ^ "/value", e) ] | None -> [])
+        ())
+    ctx.doc.resolved_rules
+  @ List.concat_map
+      (fun (r : resolved_object_creation) ->
+        form ?condition:r.oc_condition ~cat:(r.oc_pointer ^ "/condition")
+          ~values:
+            (List.concat
+               (List.mapi
+                  (fun j t ->
+                    match t.to_value with
+                    | Some e -> [ (Printf.sprintf "%s/initialisations/%d/value" r.oc_pointer j, e) ]
+                    | None -> [])
+                  r.assignments))
+          ())
+      ctx.doc.object_creations
+  @ List.concat_map
+      (fun (r : resolved_allocation) ->
+        match r.vd_condition with Some c -> co [] (r.vd_pointer ^ "/condition") c | None -> [])
+      ctx.doc.allocations
+  @ List.concat_map
+      (fun (r : resolved_consistency) ->
+        match r.assertion with Some c -> co [] (r.cons_pointer ^ "/assertion") c | None -> [])
+      ctx.doc.consistencies
+  @ List.concat
+      (List.mapi
+         (fun i (r : resolved_day_kind) ->
+           match r.rd_condition with
+           | Some c -> co [] (Printf.sprintf "/dayKindDefinitions/%d/condition" i) c
+           | None -> [])
+         ctx.doc.resolved_day_kind_definitions)
+  @ List.concat_map
+      (fun (r : resolved_fact_creation) ->
+        match r.fc_condition with Some c -> co [] (r.fc_pointer ^ "/condition") c | None -> [])
+      ctx.doc.fact_creations
+  @ List.concat
+      (List.mapi
+         (fun i (l : prioritized_defaults) ->
+           let rec walk prefix (d : default) =
+             form ?condition:d.default_justification ~cat:(prefix ^ "/justification")
+               ~values:(match d.default_consequence with Some e -> [ (prefix ^ "/consequence", e) ] | None -> [])
+               ()
+             @
+             match d.default_exceptions with
+             | Some egs ->
+                 List.concat
+                   (List.mapi
+                      (fun k (eg : exception_group) ->
+                        List.concat
+                          (List.mapi
+                             (fun m d -> walk (Printf.sprintf "%s/exceptions/members/%d/defaults/%d" prefix k m) d)
+                             eg.eg_defaults))
+                      egs.egs_members)
+             | None -> []
+           in
+           List.concat (List.mapi (fun j d -> walk (Printf.sprintf "/prioritizedDefaults/%d/defaults/%d" i j) d) l.defaults))
+         ctx.doc.prioritized_defaults)
+  @ List.concat
+      (List.mapi
+         (fun i (fd : function_def) -> ex [] (Printf.sprintf "/functionDefs/%d/body" i) fd.fd_body)
+         ctx.doc.function_defs)
+
 let all (doc : document) : violation list =
   let ctx = ctx_of doc in
   List.map (fun x -> { x with at = m1_named doc x.at })
@@ -12566,4 +12845,4 @@ let all (doc : document) : violation list =
       wf047_allocations ctx; wf050 ctx; wf051 ctx; wf052 ctx; wf079 ctx; wf082 ctx; wf054 ctx;
       wf057 ctx; wf059 ctx; wf060 ctx; wf087 ctx; wf061 ctx; wf088 ctx; wf065 ctx; wf067 ctx;
       wf071 ctx; wf072 ctx; wf075 ctx; wf086 ctx; wf113 ctx; expression_layer ctx;
-      wf040_writes ctx; wf125 ctx; wf126 ctx ]
+      wf040_writes ctx; wf125 ctx; wf126 ctx; wf127_payload_guards ctx ]

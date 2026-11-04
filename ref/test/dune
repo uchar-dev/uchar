@@ -91,5 +91,12 @@
   ; jutterswet-maandloon above
   (glob_files fixtures/canonical-timeline/*.json)
   ../../corpus/golden/anchor/jutterswet-borgdeel/ir.json
-  ../../corpus/golden/anchor/jutterswet-dagentelling/ir.json)
+  ../../corpus/golden/anchor/jutterswet-dagentelling/ir.json
+  ; the worked examples of the absence markers, RUNTIME-SEMANTICS ch. 9.5
+  (glob_files ../../corpus/golden/jutterswet-afwezigheidsmarkers/*.json)
+  (glob_files ../../corpus/red/jutterswet-afwezigheidsmarkers-botsing/*.json)
+  (glob_files fixtures/absence-markers/payload-of-a-timeline/*.json)
+  (glob_files fixtures/absence-markers/sum-of-a-timeline/*.json)
+  (glob_files fixtures/absence-markers/constructors-in-one-symbol/*.json)
+  (glob_files fixtures/absence-markers/copy-of-a-timeline/*.json))
  (libraries uchar_ref uchar-ir-v0 zarith yojson))

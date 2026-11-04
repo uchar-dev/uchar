@@ -338,7 +338,7 @@
           }
         }
       },
-      "description": "Extension node (IR-SPEC Method; wire node SumType, never emitter-produced): the payload-carrying variant family of CONSTRUCTS row 36 — a declared, nominal sum type, declared as a Domain in 'model.domains' (there without its 'domain' self-name: DomainSumType) and repeated whole at every use site. Each constructor carries a 'name' and either one 'payload' datatype (unary) or null (nullary). See spec/IR-SPEC.md ch. 2.4 (WF-060/061)."
+      "description": "Extension node (IR-SPEC Method; wire node SumType): the payload-carrying variant family of CONSTRUCTS row 36 — a declared, nominal sum type, declared as a Domain in 'model.domains' (there without its 'domain' self-name: DomainSumType) and repeated whole at every use site. Each constructor carries a 'name' and either one 'payload' datatype (unary) or null (nullary). The RegelSpraak frontend writes one for an attribute with absence markers (spec/RUNTIME-SEMANTICS.md ch. 9.5). See spec/IR-SPEC.md ch. 2.4 (WF-060/061)."
     },
     "ListType": {
       "type": "object",
@@ -1371,7 +1371,7 @@
           "$ref": "#/$defs/sourceReference"
         }
       },
-      "description": "Extension node (IR-SPEC Method; wire node Construct, never emitter-produced): builds a sum-type constructor value (CONSTRUCTS row 36; spec/RUNTIME-SEMANTICS.md ch. 9.1). 'argument' is an expr iff the constructor is unary, null for a nullary constructor. 'type' (the SumType) is required and non-null."
+      "description": "Extension node (IR-SPEC Method; wire node Construct): builds a sum-type constructor value (CONSTRUCTS row 36; spec/RUNTIME-SEMANTICS.md ch. 9.1); the RegelSpraak frontend writes one for a write into an attribute with absence markers (ch. 9.5). 'argument' is an expr iff the constructor is unary, null for a nullary constructor. 'type' (the SumType) is required and non-null."
     },
     "Match": {
       "type": "object",
@@ -1513,6 +1513,34 @@
         }
       },
       "description": "Extension node (IR-SPEC Method; wire node FieldAccess, never emitter-produced): reads one declared field of a record (spec/proposals/PHASE5C-TUTORIAL.md §2; spec/RUNTIME-SEMANTICS.md ch. 11). 'base' is struct-typed and 'field' is one of its declared fields; the node 'type' is that field's datatype — WF-074. A leeg base propagates. 'type' and 'base' are required and non-null."
+    },
+    "PayloadAccess": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "type",
+        "base",
+        "constructor"
+      ],
+      "properties": {
+        "node": {
+          "const": "PayloadAccess"
+        },
+        "type": {
+          "$ref": "#/$defs/datatype"
+        },
+        "base": {
+          "$ref": "#/$defs/expr"
+        },
+        "constructor": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/sourceReference"
+        }
+      },
+      "description": "Extension node (IR-SPEC ch. 4.7): reads the payload of a sum-type value (CONSTRUCTS row 36; spec/RUNTIME-SEMANTICS.md ch. 9.5). 'base' is sum-typed and 'constructor' is one of its declared unary constructors; the node 'type' is that constructor's payload datatype. Where the value of 'base' carries another constructor, or is leeg, the node is leeg. WF-127 holds the node under a test of its constructor. The RegelSpraak frontend writes it for a read of an attribute with absence markers (spec/RUNTIME-SEMANTICS.md ch. 9.5). 'type' and 'base' are required and non-null."
     },
     "LambdaParameter": {
       "type": "object",
@@ -1961,6 +1989,9 @@
         },
         {
           "$ref": "#/$defs/BinderRef"
+        },
+        {
+          "$ref": "#/$defs/PayloadAccess"
         },
         {
           "$ref": "#/$defs/StructLiteral"

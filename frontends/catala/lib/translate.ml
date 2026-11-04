@@ -276,7 +276,7 @@ let ir_typ (e : I.expr) : I.datatype option =
   | Function_call { typ; _ } | Rounding { typ; _ } | Clamp { typ; _ }
   | Context_value { typ; _ } | Bound_day { typ; _ } | Expr_unresolved { typ; _ }
   | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ }
-  | Struct_literal { typ; _ } | Field_access { typ; _ }
+  | Struct_literal { typ; _ } | Field_access { typ; _ } | Payload_access { typ; _ }
   | List_literal { typ; _ } | If_then_else { typ; _ } | Let { typ; _ }
   | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ }
   | Filter_list { typ; _ } | List_length { typ; _ } -> typ
@@ -2318,6 +2318,7 @@ let scope_to_function_def (enums : enum_ctx) (structs : struct_ctx)
         fence_expr scrutinee; List.iter (fun (_, _, b) -> fence_expr b) arms
     | Struct_literal { field_list; _ } -> List.iter (fun (_, v) -> fence_expr v) field_list
     | Field_access { base; _ } -> fence_expr base
+    | Payload_access { base; _ } -> fence_expr base
     | Let { value; body; _ } -> fence_expr value; fence_expr body
     | List_literal { elements; _ } -> List.iter fence_expr elements
     | Lambda { body; _ } -> fence_expr body

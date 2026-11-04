@@ -14,7 +14,10 @@
             {
               "name": "Toegekend",
               "payload": {
-                "node": "Text"
+                "node": "ListType",
+                "element": {
+                  "node": "Text"
+                }
               }
             },
             {

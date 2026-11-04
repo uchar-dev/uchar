@@ -190,7 +190,7 @@ let val_present model label attr =
    the case divides a run of equal values into segments is not observed. A
    gap between two segments keeps them apart; this encoding writes no leeg
    segment, so there is none to drop. *)
-let canonical_timeline (segs : (int * int * int) list) : (int * int * int) list =
+let canonical_timeline (segs : (int * int * 'v) list) : (int * int * 'v) list =
   List.filter (fun (v, t, _) -> t > v) segs
   |> List.sort compare
   |> List.fold_left
@@ -416,7 +416,11 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
             canonical_timeline
               (List.map
                  (fun (s : Uchar_ref.Timeline.segment) ->
-                   (s.s_from, s.s_to, scaled_expect ~label ~attr s.s_value))
+                   ( s.s_from,
+                     s.s_to,
+                     match s.s_value with
+                     | Value.Ctor _ -> A_term (ctor_expect ~label ~attr s.s_value)
+                     | v -> A_int (scaled_expect ~label ~attr v) ))
                  tl)
           in
           (* a bound is a day number, or #inf / #sup for an open bound
@@ -431,7 +435,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
             List.filter_map
               (fun a ->
                 match a with
-                | { name = "tl"; args = [ A_str l; A_str at; v; t; A_int w ] }
+                | { name = "tl"; args = [ A_str l; A_str at; v; t; w ] }
                   when String.equal l label && String.equal at (norm attr) -> (
                     match (bound v, bound t) with
                     | Some v, Some t -> Some (v, t, w)
@@ -447,7 +451,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
               else
                 String.concat " "
                   (List.map
-                     (fun (v, t, w) -> Printf.sprintf "[%s,%s)=%d" (Translate.bound_term v) (Translate.bound_term t) w)
+                     (fun (v, t, w) -> Printf.sprintf "[%s,%s)=%s" (Translate.bound_term v) (Translate.bound_term t) (render_arg w))
                      l)
             in
             Some

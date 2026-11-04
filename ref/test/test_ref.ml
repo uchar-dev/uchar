@@ -13145,6 +13145,90 @@ let () =
         "J1.vondstopbrengst = [2024-01-01,2024-02-01)=50 [2024-02-01,2024-03-01)=70 [2024-03-01,2024-04-01)=10, \
          expected [2024-01-01,2024-02-01)=50 [2024-02-01,2024-03-01)=60 [2024-03-01,2024-04-01)=10" ) ]
 
+(* WV-9.5-payload: a PayloadAccess is the payload where the value carries its
+   constructor, and leeg where it carries another one or is leeg
+   (RUNTIME-SEMANTICS ch. 9.5) *)
+let () =
+  let waarde = Value.Ctor ("waarde", Some (Value.Num (Q.of_string "300", Value.Unitless))) in
+  check "WV-9.5-payload-waarde" (Eval.payload_of "waarde" waarde = Value.Num (Q.of_string "300", Value.Unitless));
+  check "WV-9.5-payload-marker" (Eval.payload_of "waarde" (Value.Ctor ("onbekend", None)) = Value.Empty);
+  check "WV-9.5-payload-leeg" (Eval.payload_of "waarde" Value.Empty = Value.Empty)
+
+(* WV-9.5-markeringen: the absence markers on the golden
+   jutterswet-afwezigheidsmarkers (RUNTIME-SEMANTICS ch. 9.5). The taxatie of a
+   Vondst is waarde(300.00) from a schatting of 300,00 and its vindloon 30,00; a
+   Vondst that is onleesbaar has the taxatie onbekend over its input waarde(40.00)
+   and the vindloon 25,00; one that is drijfhout niet van toepassing and 0,00; one
+   without input leeg and leeg; an input onbekend stands, the vindloon 25,00; a
+   schatting of 2000,00 makes it kostbaar; the sum of the taxaties of the
+   vondsten that hold a value, 300,00 and 100,00 beside an onleesbare, is 400,00,
+   and leeg where none does. The opslagkosten for every month over the input
+   waarde(10) on 2025 are onbekend in January and February, and from June
+   niet van toepassing where it is verkocht from then; the opslagtoeslag is 7
+   where the opslagkosten are onbekend *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let g = "corpus/golden/jutterswet-afwezigheidsmarkers/" in
+  List.iter
+    (fun (ident, c) -> plays ~ident ~ir:(read (g ^ "ir.json")) ~case_data:(read (g ^ c ^ ".json")) (fun _ -> ()))
+    [ ("WV-9.5-markeringen-schatting", "case1-schatting");
+      ("WV-9.5-markeringen-onbekend-verdringt-invoer", "case2-onbekend-verdringt-invoer");
+      ("WV-9.5-markeringen-niet-van-toepassing", "case3-niet-van-toepassing");
+      ("WV-9.5-markeringen-niets", "case4-niets");
+      ("WV-9.5-markeringen-onbekend-in-de-invoer", "case5-onbekend-in-de-invoer");
+      ("WV-9.5-markeringen-kostbaar", "case6-kostbaar");
+      ("WV-9.5-markeringen-som-van-de-waarden", "case7-som-van-de-waarden");
+      ("WV-9.5-markeringen-geen-waarde-in-de-som", "case8-geen-waarde-in-de-som");
+      ("WV-9.5-markeringen-per-maand", "case9-onbekend-per-maand");
+      ("WV-9.5-markeringen-na-verkoop", "case10-niet-van-toepassing-na-verkoop") ]
+
+(* WV-9.5-botsing: a marker decided against another value is the fault of two
+   writers (EF-016), on a scalar target and per day, on the red twin
+   jutterswet-afwezigheidsmarkers-botsing: the taxatie onbekend beside
+   waarde(300), and in February 2025 the opslagkosten onbekend beside
+   niet van toepassing *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let r = "corpus/red/jutterswet-afwezigheidsmarkers-botsing/" in
+  List.iter
+    (fun (ident, c, attribute, values) ->
+      with_files ~ir:(read (r ^ "ir.json")) ~case_data:(read (r ^ c ^ ".json")) (fun findings _ evaluate ->
+          check (ident ^ ": verifier-clean") (findings = []);
+          check ident
+            (match evaluate () with
+            | exception Value.Fault { code = Some "EF-016"; params; _ } ->
+                List.assoc_opt "attribute" params = Some attribute
+                && List.assoc_opt "label" params = Some "V1"
+                && List.assoc_opt "values" params = Some values
+            | _ -> false)))
+    [ ("WV-9.5-botsing-scalair", "case1-onbekend-tegen-schatting", "taxatie", "waarde(300), onbekend");
+      ( "WV-9.5-botsing-per-dag", "case2-niet-van-toepassing-in-de-winter", "opslagkosten",
+        "onbekend, niet van toepassing" ) ]
+
+(* WV-9.5-per-dag: the payload of a timeline has a reading per day
+   (RUNTIME-SEMANTICS ch. 9.5), which this interpreter does not execute: a read of
+   it in a scalar slot and a sum over the members are refused by name, on the
+   documents of ref/test/fixtures/absence-markers *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let dir = "ref/test/fixtures/absence-markers/" in
+  List.iter
+    (fun d ->
+      with_files ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json")) (fun findings _ evaluate ->
+          check ("WV-9.5-per-dag-" ^ d ^ ": verifier-clean") (findings = []);
+          check ("WV-9.5-per-dag-" ^ d)
+            (match evaluate () with
+            | exception Value.Fault { text; _ } ->
+                text
+                = "a payload access to the time-dependent attribute \"opslagkosten\" is read per day (ch. 9.5), which \
+                   this interpreter does not execute (no corpus case)"
+            | _ -> false)))
+    [ "payload-of-a-timeline"; "sum-of-a-timeline" ];
+  plays ~ident:"WV-9.5-twee-namen-een-symbool" ~ir:(read (dir ^ "constructors-in-one-symbol/ir.json"))
+    ~case_data:(read (dir ^ "constructors-in-one-symbol/case.json")) (fun _ -> ());
+  plays ~ident:"WV-9.5-kopie-van-een-tijdlijn" ~ir:(read (dir ^ "copy-of-a-timeline/ir.json"))
+    ~case_data:(read (dir ^ "copy-of-a-timeline/case.json")) (fun _ -> ())
+
 let () =
   if !failures > 0 then begin
     Printf.printf "%d failure(s)\n" !failures;
