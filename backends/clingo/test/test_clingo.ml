@@ -17570,7 +17570,17 @@ let () =
         ~name:(Printf.sprintf "the stack of a timeline target: %s, %s" f c)
         ~ir:(read (dir ^ f ^ "/ir.json")) ~case_text:(read (dir ^ f ^ "/" ^ c)))
     [ ("timeline-initialisation", "case.json"); ("timeline-initialisation-deposit", "case.json");
-      ("timeline-initialisation-deposit", "case-decides.json"); ("timeline-creation", "case.json") ];
+      ("timeline-initialisation-deposit", "case-decides.json"); ("timeline-creation", "case.json");
+      ("timeline-initialisation-window", "case.json") ];
+  (* the total of a timeline an initialisation writes over all time meets its
+     open segments; the question which rules write it is asked of the document
+     before the ch. 7.7 desugaring, as ref asks it *)
+  faults_at_solving
+    ~code:("EF-036", [ ("attribute", "strandloon"); ("label", "J1") ])
+    ~name:"the stack of a timeline target: the total of an initialisation over all time"
+    ~ir:(read (dir ^ "timeline-initialisation-total/ir.json"))
+    ~case_text:(read (dir ^ "timeline-initialisation-total/case.json"))
+    ~needle:"the temporal total of \"strandloon\" meets a segment with an open bound" ();
   faults_at_solving
     ~code:("EF-037", [ ("attribute", "strandloon"); ("label", "J1") ])
     ~name:"the stack of a timeline target: an initialisation over an asOfDate-bucket scalar"

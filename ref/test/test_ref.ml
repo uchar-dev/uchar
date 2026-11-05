@@ -12796,7 +12796,10 @@ let () =
    input 10 in January gives 5, 10, 5, 20, 5; over an asOfDate-bucket scalar of
    its target it faults with EF-037; an initialisation whose writers and input
    leave it no day is not evaluated, and one that decides some day keeps the
-   EF-005 its value deposits on a day it does not decide; the creation of a
+   EF-005 its value deposits on a day it does not decide; "op 5" written over
+   all time has no total (EF-036), "op 5 van dd. 01-01-2025 tot dd.
+   01-01-2026" beside 20 in spring gives 5, 20, 5 within 2025 and the total
+   105; the creation of a
    melding with the waarde of the scalar vangst 7 gives a terug of 7 on every
    day; a creation that gives a sum-typed timeline the marker onbekend beside 10
    in spring gives the made object onbekend, waarde(10), onbekend; an
@@ -12820,7 +12823,15 @@ let () =
     [ ("WV-7.8-stapel-per-dag-voorwaarde", fixture "timeline-initialisation" "case.json");
       ("WV-7.8-stapel-per-dag-niet-geevalueerd", fixture "timeline-initialisation-deposit" "case.json");
       ("WV-7.8-stapel-per-dag-deponering", fixture "timeline-initialisation-deposit" "case-decides.json");
-      ("WV-7.8-stapel-per-dag-creatie-scalair", fixture "timeline-creation" "case.json") ];
+      ("WV-7.8-stapel-per-dag-creatie-scalair", fixture "timeline-creation" "case.json");
+      ("WV-7.8-stapel-per-dag-venster", fixture "timeline-initialisation-window" "case.json") ];
+  (let ir, case_data = fixture "timeline-initialisation-total" "case.json" in
+   with_files ~ir ~case_data (fun _ _ evaluate ->
+       check "WV-7.8-stapel-per-dag-totaal"
+         (match evaluate () with
+         | exception Value.Fault { code = Some "EF-036"; params; _ } ->
+             List.assoc_opt "attribute" params = Some "strandloon" && List.assoc_opt "label" params = Some "J1"
+         | _ -> false)));
   (let ir, case_data = fixture "timeline-initialisation" "case-bucket-scalar.json" in
    with_files ~ir ~case_data (fun _ _ evaluate ->
        check "WV-7.8-stapel-per-dag-emmerscalair"

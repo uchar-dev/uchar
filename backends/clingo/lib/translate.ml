@@ -397,6 +397,10 @@ type sign_src =
 
 type ctx = {
   doc : document;
+  (* the document before the ch. 7.7 desugaring, the forms ref replays: a
+     question about the rules that write a target asks it, since the
+     desugaring turns an initialisation and its computation into a group *)
+  wire_doc : document;
   case : Case.t;
   buf : Buffer.t;
   mutable fresh : int;
@@ -5988,7 +5992,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           a;
       (* the timeline a rule of ch. 3.4/3.5 writes has the bounds of the timelines
          its value reads: those of the case, unless one of them is derived *)
-      let period_arithmetic = Eval.period_arithmetic_target ctx.doc ~otype:aot ~attr:a in
+      let period_arithmetic = Eval.period_arithmetic_target ctx.wire_doc ~otype:aot ~attr:a in
       (if period_arithmetic then
          match period_bounds_not_case ctx ~seen:[] ~otype:aot ~attr:a with
          | Some (b, who) ->
@@ -6371,7 +6375,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         call_arguments = [ Attribute_reference { attribute_ref = Some a; object_type = Some aot; navigation_bindings = None; _ } ];
         filter = None; source_role = None; source_path = None; _ }
     when norm aot = norm subject_ot && attr_temporal ctx ~otype:aot ~attr:a
-         && Eval.period_arithmetic_target ctx.doc ~otype:aot ~attr:a ->
+         && Eval.period_arithmetic_target ctx.wire_doc ~otype:aot ~attr:a ->
       (* ch. 3.6 over the timeline a rule of ch. 3.4/3.5 writes, as ref totals
          it: the written timeline whole, no asOfDate bucket, 0 where nothing is
          written. Its finite bounds are bounds of case timelines, or walls of
@@ -14786,9 +14790,10 @@ let translate (doc : document) (case : Case.t) : string =
      negative edges, and would move strata *)
   let oc_strata = if has_recursive_creation doc then object_creation_strata doc else [] in
   let doc = Normalise.document doc in
+  let wire_doc = doc in
   let doc = Ir_v0.Desugar.document doc in
   let ctx =
-    { doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; deposit_guard = []; write_scale = 1;
+    { doc; wire_doc; case; buf = Buffer.create 4096; fresh = 0; rule_guard = []; deposit_guard = []; write_scale = 1;
       write_unbounded = false; write_value = None; desugared_group = false; rule_name = "?"; binders = []; param_reach = (fun _ -> []); deposit_subject = None; let_needs = [];
       value_of = None;
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; named = []; hoisted = [];
