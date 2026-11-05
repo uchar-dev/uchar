@@ -4882,7 +4882,9 @@ parameters, the clause that defines it and its witnesses.
 - **Parameters.** The column names the parameters that identify the object of a
   fault; their values are declared names, labels and lexemes as they stand in
   the document and the case, untranslated, and the writers or values of a list
-  (EF-016) are its elements joined by `, `. An executor emits them as data
+  (EF-016) are its elements joined by `, `, each writer by its declared name
+  alone, a rule's or an allocation's (`corpus/red/jutterswet-verdeling-botsing`).
+  An executor emits them as data
   beside its report and never inside the text: on the machine line of its
   runner, `CODE EF-014 {"parameter": "…"}`, one JSON object of strings per code
   (the red run of the Drools backend puts the object after each code of its
@@ -6452,7 +6454,17 @@ consequence "zijn kustloon plus 1" the sum passes the fault on and its right
 operand is not reached: `1 Binary fault EF-037`, `2 AttributeReference fault
 EF-037`, `3 Literal unreached` (`-som`; the golden
 `jutterswet-gevolg-buiten-de-beurt-som`, whose readings gate 17 holds on both
-branches of the Drools backend).
+branches of the Drools backend). On the golden
+`jutterswet-voorwaarde-buiten-de-beurt` a default "indien hij vrijgesteld is"
+decides every day of a vrijgesteld J1, and the default below it, justified
+by "zijn kustloon is groter dan 30" and "zijn kustloon is kleiner dan 100",
+is at its turn on no day; the case gives J1's kustloon as the
+asOfDate-bucket scalar. Its justification is read all the same, and faults
+at the read: `0 Compound fault EF-037`, `1 Comparison fault EF-037`, `2
+AttributeReference fault EF-037`, `3 Literal unreached` and every later node
+`unreached`, `DISPLACED`, where the session raises nothing
+(`WV-5.12-default-per-dag-voorwaarde-faalt`; gate 17 holds the readings on
+both branches).
 
 **A reading deposits nothing and writes nothing.** A §9.5 deposit the
 evaluation makes is dropped, a value it computes is written nowhere, and no
@@ -6496,18 +6508,35 @@ time-proportional part or a day count (ch. 3.7, 3.8) — the periods of a
 characteristic, the segments of a compared timeline — and a period window
 that cuts a timeline target (ch. 3.10), the window itself. A condition read
 per period on a rule of a timeline target (ch. 3.10, the clip generalised)
-holds, so the form holds, and each of its nodes has the part of all time in
-which it holds: a check, a qualifier per bucket, a composite and a node
+holds where it does not fault, so the form holds, and each of its nodes has
+the part of all time in which it holds: a check, a qualifier per bucket, a composite and a node
 that reads no timeline its periods, each a period without a value, a
 comparison the segments of its compared timeline there, with their values,
 and the gaps where a leeg side satisfies it; its operands have the
 timelines and values they read (`ref/` test
-`WV-5.12-voorwaarde-per-periode`). The value of a
+`WV-5.12-voorwaarde-per-periode`). A node of such a condition that faults,
+or passes a fault on, carries the fault, as a node of a scalar condition
+does: a read of a timeline that the case gives as the asOfDate-bucket
+scalar faults (EF-037), the comparison and the composite above it pass the
+fault on, and nothing after it is reached; the condition then faults, and
+so does the form (`FAULTS`; for a default on a timeline target, **A default
+on a timeline target**, below). The value of a
 rule on a timeline target is the timeline it writes; under period
 arithmetic (ch. 3.4, 3.5), with a condition or without one, each node
 below the value's root has the timeline it reads or computes — an operand
 read whole its timeline, `[]` where it is absent — or its value where it is
-a scalar (`ref/` test `WV-5.12-maandloon`). Of the clip of a
+a scalar (`ref/` test `WV-5.12-maandloon`). Such a rule reads its producer
+through every `Let` whose body reads its binder and nothing else ("Daarbij
+geldt: de getelde dagen is …"). That `Let` stands for its bound value,
+which it evaluates once, at that read (ch. 10.6), so the `Let`, the read of
+its binder and the producer have one reading, the timeline the rule
+writes: rule 2 of the golden `jutterswet-verzuimrente-30-360-afgerond`,
+"de rentedagen … moet berekend worden als de getelde dagen gedurende de
+tijd dat hij niet gedurende de gehele maand rentedragend is", reads on
+case 1 node 1 `Let`, node 2 `BuiltinCall` (the day count) and node 7
+`BinderRef` each `[[- 2025-11-01 0], [2025-11-01 2025-12-01 15],
+[2026-03-01 2026-04-01 12], [2026-04-01 - 0]]` (`ref/` test
+`WV-5.12-let-op-tijdlijndoel`). Of the clip of a
 temporal total, a check of a characteristic has its true periods, a negated
 check the periods outside them within each segment of the totalled
 timeline, and a composite the intersection of its members' periods, each
@@ -7018,11 +7047,14 @@ a fold of one cell of each member.
 Three boundaries, recorded rather than left implicit. The status `FAULTS`
 and a fault at a node stay outside that differential: a golden does not
 fault at its fixpoint, and `runner --trace` refuses a case that pins one.
-Neither does a displaced default of a golden fault in its reading
-(measured 2026-10-27: none of the 207 displaced readings with nodes on the
-case files gate 17 compares carries a fault), so the fault at the nodes of
-a displaced default is pinned by `WV-5.12-fout-in-een-verdrongen-default`
-and its twin in `ReadingsWitnessTest` only.
+A fault at the nodes of a default stands in a golden only where the session
+did not evaluate the node: the consequence of a default on a timeline target
+outside the days of its turn (`jutterswet-gevolg-buiten-de-beurt`, `-som`)
+and the justification of a default at its turn on no day
+(`jutterswet-voorwaarde-buiten-de-beurt`), each inside the differential; the
+fault at the nodes of a displaced default on a scalar target is pinned by
+`WV-5.12-fout-in-een-verdrongen-default` and its twin in
+`ReadingsWitnessTest` only.
 A fault of a contributor after the stop is inside it for one kind: the
 golden `jutterswet-keurtermijn` (card
 `clingo-day-kind-walk-after-fold-stop`, 2026-10-21) reads `"W2" fault
