@@ -18119,8 +18119,8 @@ let () =
    jutterswet-afwezigheidsmarkers in both executors, the constructor name of
    several words as one ASP symbol, the payload of a sum-typed attribute as a
    member of its own (the read, the comparison and the sum over members), a
-   sum-typed timeline in the input and written by a constructor of a literal,
-   and the refusals beside them, on ref's documents
+   sum-typed timeline in the input, written by a constructor of a literal and
+   copied whole, and the refusals beside them, on ref's documents
    (ref/test/fixtures/absence-markers) *)
 let () =
   let read f = In_channel.with_open_bin f In_channel.input_all in
@@ -18144,9 +18144,7 @@ let () =
   faults_with ~name:"absence markers: a sum over the payloads of a timeline is refused" ~ir ~case_text
     ~needle:"a payload access to the time-dependent attribute \"opslagkosten\" is read per day";
   let ir, case_text = fixture "copy-of-a-timeline" in
-  ref_matches ~name:"absence markers: a copy of a timeline with markers, ref" ~ir ~case_text;
-  faults_with ~name:"absence markers: a copy of a timeline with markers is refused" ~ir ~case_text
-    ~needle:"is written with a constructor of a literal"
+  both_answer ~name:"absence markers: a copy of a timeline with markers" ~ir ~case_text
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

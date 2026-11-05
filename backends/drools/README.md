@@ -690,13 +690,15 @@ timeline; two are equal where their tags are one declared name and their payload
 their hash code agrees with it. A `Construct` builds one, leeg where its argument is (ch. 9.1); an equality with one
 is the equality of a text (ch. 9.3); a `PayloadAccess` is the payload where the value carries its constructor and leeg
 elsewhere (ch. 9.5), also as the source of a fold over members, whose contribution takes the member's payload. The
-absence markers of the RegelSpraak dialect are such values. On a timeline of a sum type a rule writes a constructor
-of a literal in the periods of its condition (`PeriodArithmetic.writtenValues`), a comparison with a constructor
-value is read per period (`PeriodCondition.whereEqual`), the input and the writers are read per day as on every
-timeline target, and the generated `Segment` holds the constructor value. Refused by name: a `Match`
-(DROOLS-021), the payload of a timeline (DROOLS-314), whose reading per day this backend does not execute, and every
-other value on a timeline of a sum type. Witness `AbsenceMarkerWitnessTest`, golden
-`jutterswet-afwezigheidsmarkers`.
+absence markers of the RegelSpraak dialect are such values, in an attribute and in a cell of a dimensioned one. On a
+timeline of a sum type a rule writes a constructor of a literal, or a copy of an own timeline of the same sum type,
+in the periods of its condition (`PeriodArithmetic.writtenValues`), a comparison with a constructor value is read per
+period (`PeriodCondition.whereEqual`), the input and the writers are read per day as on every timeline target, and
+the generated `Segment` holds the constructor value. Refused by name: a `Match` (DROOLS-021), the payload of a
+timeline (DROOLS-314), whose reading per day this backend does not execute, and every other value on a timeline of a
+sum type (DROOLS-303). Witness `AbsenceMarkerWitnessTest`, goldens `jutterswet-afwezigheidsmarkers`,
+`jutterswet-afwezigheidsmarkers-cel`, `jutterswet-afwezigheidsmarkers-creatie` and
+`jutterswet-afwezigheidsmarkers-kopie`.
 
 **Period arithmetic over all time.** A timeline divides all time (RUNTIME-SEMANTICS ch. 3.1), so a segment may have an
 open bound: in a `Period` an open `from` is `Period.OPEN_FROM` (`LocalDate.MIN`) and an open `to` `Period.OPEN_TO`

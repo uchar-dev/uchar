@@ -2659,14 +2659,22 @@ public final class TmsTranspiler {
      * or without a condition, as the reference interpreter's trace reads them (RUNTIME-SEMANTICS ch. 5.12); the root has
      * the timeline the rule writes.
      *
-     * <p>Refused by name: a target that is no number, and as a limit of this branch a value whose unit needs a
-     * restatement into the target's ({@link #periodUnit}).
+     * <p>On a target of a sum type the value is the copy of an own timeline of a sum type, which the verifier holds to
+     * the target's domain (IR-SPEC WF-023): read whole as an own timeline is above, restricted to the periods of the
+     * condition, its filled segments written as they stand (RUNTIME-SEMANTICS ch. 9.4, {@link PeriodArithmetic#writtenValues}).
+     *
+     * <p>Refused by name: any other value on a target that is no number, and as a limit of this branch a value whose
+     * unit needs a restatement into the target's ({@link #periodUnit}).
      */
     private Term periodArithmetic(Expr value, Member target, ObjectType subject, Reads reads, Term periods) {
-        if (!target.datatype().isNumberLike())
+        boolean copy = target.datatype() instanceof Datatype.SumType && value instanceof Expr.AttributeReference a
+                && a.attribute() != null && a.objectType() != null && subject.chain().contains(a.objectType())
+                && declared(subject, a.attribute(), false).time() != null;
+        if (!target.datatype().isNumberLike() && !copy)
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(value.source())));
         Term timeline = periodOperand(value, target, subject, reads);
         if (periods != null) timeline = new Term.Call(StaticFunction.PERIOD_CLIPPED, List.of(periods, timeline), null);
+        if (copy) return new Term.Call(StaticFunction.PERIOD_WRITTEN_VALUES, List.of(timeline), source(value.source()));
         periodUnit(periodUnitOf(value), unitCarrier(value), target.datatype().unitOf());
         return new Term.Call(StaticFunction.PERIOD_WRITTEN, List.of(timeline, constant(ceiling(target.datatype())),
                 constant(target.spelled())), source(value.source()));
@@ -2749,9 +2757,11 @@ public final class TmsTranspiler {
     }
 
     /** {@code member}, an attribute on a timeline that the period arithmetic into {@code target} reads at {@code read},
-     *  where it may: a number, on a grid as coarse as the target's or coarser (RUNTIME-SEMANTICS ch. 3.4). */
+     *  where it may: a number, or a sum type copied into a target of a sum type, on a grid as coarse as the target's or
+     *  coarser (RUNTIME-SEMANTICS ch. 3.4, 9.4). */
     private void periodMember(Member member, Expr read, Member target) {
-        if (!member.datatype().isNumberLike())
+        if (!member.datatype().isNumberLike()
+                && !(member.datatype() instanceof Datatype.SumType && target.datatype() instanceof Datatype.SumType))
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(read.source())));
         if (member.time().ordinal() < target.time().ordinal())
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_FINER_OPERAND.reason("attribute", member.name(),

@@ -7171,8 +7171,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          the access is leeg *)
       let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member:(payload_member a constructor_) base in
       (atoms, v, value_scale typ)
+  | Payload_access { base = Dimension_cell_read { attribute_ref = Some inner; labels; _ }; constructor_; typ; _ } ->
+      (* the payload of a cell (ch. 5.8c, 9.5): the member a projection rule
+         derives from the cell's constructor term ([payload_projections]) *)
+      let a, ot = dimensioned_reference inner in
+      let cell = Eval.cell_member (doc_env ctx) ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member:(payload_member cell constructor_) inner in
+      (atoms, v, value_scale typ)
   | Payload_access _ ->
-      fault "a payload access is translated over an attribute read (no corpus case for more)"
+      fault "a payload access is translated over an attribute read or a cell read (no corpus case for more)"
   | Construct _ ->
       faultc "CLINGO-006"
         "a Construct payload other than a literal or an own attribute read is not translated at \
@@ -9799,10 +9806,17 @@ and sum_term ctx ~subject ~subject_ot (e : expr) : string list * string =
         fault "temporal sum carriage is a recorded flank; no corpus case";
       let v = fresh ctx "V" in
       ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v)
+  (* a cell of a sum-typed attribute (ch. 5.8c): the val/3 of the cell's member
+     on the object its reference reaches *)
+  | Dimension_cell_read { attribute_ref = Some inner; labels; _ } ->
+      let a, ot = dimensioned_reference inner in
+      let member = Eval.cell_member (doc_env ctx) ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
+      let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member inner in
+      (atoms, v)
   | _ ->
       faultc "CLINGO-013"
-        "a sum-typed operand here is an own-subject attribute read or a Construct (no corpus case \
-         for more)"
+        "a sum-typed operand here is an own-subject attribute read, a cell read or a Construct (no corpus \
+         case for more)"
 
 (* positional field projection (RUNTIME-SEMANTICS ch. 11.1): given the base's
    already-bound struct TERM and the base expr (for its StructType), unify the
@@ -11543,16 +11557,21 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ct
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   let target = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) a in
   (* a sum-typed timeline target takes a constructor of a literal, which holds
-     on every day (ch. 9.5): a marker written in a window; its value is a
-     ground term with no scale *)
+     on every day (ch. 9.5): a marker written in a window; or an own timeline of
+     a sum type, copied whole (WF-023 holds it to the target's domain); its
+     value is a ground term with no scale *)
   let sum_target = attr_sum_typed ctx ~otype:ot ~attr:a in
   (if sum_target then
      match value with
      | Construct { argument = None | Some (Literal _); _ } -> ()
+     | Attribute_reference
+         { attribute_ref = Some b; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
+       when attr_temporal ctx ~otype:otn ~attr:b && attr_sum_typed ctx ~otype:otn ~attr:b ->
+         ()
      | _ ->
          fault
-           "the sum-typed timeline %S is written with a constructor of a literal; another producer of a \
-            constructor value per period is not translated (no corpus case)"
+           "the sum-typed timeline %S is written with a constructor of a literal or a copy of an own timeline of \
+            a sum type; another producer of a constructor value per period is not translated (no corpus case)"
            a);
   let target_scale = if sum_target then 0 else pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
   let target_unit = attr_unit ctx ~otype:ot ~attr:a in
@@ -11654,7 +11673,8 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ct
         read_cuts [ base ] ~holder:subject ~attr:b;
         let q = fresh ctx (p ^ "_r") in
         emit ctx "%s(%s,X,V) :- %s, tl(%s,%s,F,T,V), F <= X, X < T." q subject at_x subject (str b);
-        (q, false, pow10 (attr_decimals ctx ~otype:otn ~attr:b))
+        (* a constructor term carries no scale *)
+        (q, false, if attr_sum_typed ctx ~otype:otn ~attr:b then 0 else pow10 (attr_decimals ctx ~otype:otn ~attr:b))
     | Function_call
         { kind = Sum_function;
           call_arguments = [ Attribute_reference { attribute_ref = Some x; navigation_bindings = None; anchor = None; _ } ];
@@ -14582,10 +14602,24 @@ let object_creation_strata (doc : document) : (string * int) list =
 
 (* ch. 9.5: the payload of every unary constructor of a sum-typed scalar
    attribute as a member of its own, val(O,"taxatie#waarde",P) beside
-   val(O,"taxatie",waarde(P)), which a PayloadAccess reads ([expr_term]). A
-   time-dependent attribute has no scalar val/3, and its payload is not read
-   (ch. 9.5, per day; refused where it is read) *)
+   val(O,"taxatie",waarde(P)), which a PayloadAccess reads ([expr_term]); of a
+   dimensioned one, per cell, val(O,"gewicht[najaar]#waarde",P) beside the
+   cell's val/3 (ch. 5.8c). A time-dependent attribute has no scalar val/3,
+   and its payload is not read (ch. 9.5, per day; refused where it is read) *)
 let payload_projections ctx =
+  (* the members that hold a value of [a]: the attribute, or each of its cells *)
+  let members (ot : object_type) a =
+    match Ir_v0.Checks.attr_dimensions ot a with
+    | None -> [ a ]
+    | Some dims ->
+        let labels d =
+          match Ir_v0.Checks.find_ci ctx.doc.dimensions d with
+          | Some dim -> Ir_v0.Checks.some_names dim.dim_values
+          | None -> fault "the dimension %S of %S is not declared" d a
+        in
+        List.map (Uchar_ref.World.cell a)
+          (List.fold_right (fun d tails -> List.concat_map (fun l -> List.map (fun t -> l :: t) tails) (labels d)) dims [ [] ])
+  in
   List.iter
     (fun (otn, (ot : object_type)) ->
       List.iter
@@ -14593,11 +14627,14 @@ let payload_projections ctx =
           match dt with
           | Some (Sum_type { constructor_list; _ }) when not (attr_temporal ctx ~otype:otn ~attr:a) ->
               List.iter
-                (function
-                  | c, Some _ ->
-                      emit ctx "val(O,%s,P) :- val(O,%s,%s(P))." (str (payload_member a c)) (str a) (ctor_functor c)
-                  | _, None -> ())
-                constructor_list
+                (fun m ->
+                  List.iter
+                    (function
+                      | c, Some _ ->
+                          emit ctx "val(O,%s,P) :- val(O,%s,%s(P))." (str (payload_member m c)) (str m) (ctor_functor c)
+                      | _, None -> ())
+                    constructor_list)
+                (members ot a)
           | _ -> ())
         ot.attributes)
     ctx.doc.object_types

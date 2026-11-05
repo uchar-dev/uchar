@@ -395,10 +395,24 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                 (Printf.sprintf "%s.%s = [%s], expected %s" label member
                    (String.concat ";" (List.map render_arg got))
                    (render_arg because)))
+      (* a cell of a sum-typed attribute (ch. 9.4, 9.5): the constructor term,
+         built as an attribute's is from the declaration of the cell's
+         attribute *)
+      | Cell_value { label; attr; labels; value = Value.Ctor _ as value } -> (
+          let member = Uchar_ref.World.cell attr labels in
+          let because = ctor_expect ~label ~attr value in
+          match term_of model label member with
+          | [ got ] when got = because -> None
+          | [] -> Some (Printf.sprintf "%s.%s is underived (leeg), expected %s" label member (render_term because))
+          | got ->
+              Some
+                (Printf.sprintf "%s.%s = [%s], expected %s" label member
+                   (String.concat ";" (List.map render_term got))
+                   (render_term because)))
       | Cell_value { value; _ } ->
           fault
             "a cellValue expectation of %s is not checked here: this encoding carries a cell of a number, a date, a \
-             text, an enumeration or a boolean"
+             text, an enumeration, a boolean or a constructor value"
             (Value.to_string value)
       | Cell_empty { label; attr; labels } -> (
           let member = Uchar_ref.World.cell attr labels in
