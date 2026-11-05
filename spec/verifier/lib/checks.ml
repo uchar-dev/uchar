@@ -5120,6 +5120,128 @@ let wf125_bare_read ctx at (e : expr) =
       | _ -> [])
   | _ -> []
 
+(* WF-023 (the shallow slice), at every attribute WRITE position — a rule's
+   target, an object creation's attribute member, a defaults consequence:
+   assignment typing between the target's DECLARED type and the value's
+   static type ([expr_type]: a reference's declaration, every other value's
+   annotation) — same family (numeric kinds count as one), compatible
+   units (a unitless literal adopts), no contradictory sign restriction, and
+   the DOMAIN clause: a keuzetype-typed side names the same keuzetype
+   (variant and domain, ci, through a ListType element) as the other. The
+   domain clause is the write half of WF-089's domain identity — WF-089
+   crosses what a fold hands through, this crosses what is WRITTEN into a
+   declaration — and the two together make ref's "match has no arm"
+   fault unreachable on a verifier-clean document (fix round 1 of the card:
+   without it a Literal or Construct of another domain, a ghost-domain
+   literal and a list of another domain entered the read declaration
+   verifier-clean at all three positions, and the object-creation and
+   defaults positions crossed no soort at all). The precision gate is
+   [wf023_precision] below, over the bound of ch. 2.3 rather than the static
+   type. [target]/[value] are the expressions, for literal unit adoption
+   (a defaults consequence and a member initialisation have no target
+   expression). WF-062 reads the argument of a Construct with this function
+   as a write into the declared payload. *)
+let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype) =
+  let sign_conflict d w =
+    match (d, w) with
+    | Number { sign_char = Some (Non_negative | Positive); _ },
+      Number { sign_char = Some Negative; _ }
+    | Number { sign_char = Some Negative; _ },
+      Number { sign_char = Some (Non_negative | Positive); _ } ->
+        true
+    | _ -> false
+  in
+  let same_family =
+    datatype_kind dt = datatype_kind wt || (is_number_like dt && is_number_like wt)
+  in
+  (if not same_family then
+     [ v ~params:[("valueKind", datatype_kind wt); ("targetKind", datatype_kind dt)] "WF-023.datatype-family-mismatch" at
+         (Printf.sprintf "a %s value is assigned to a %s target" (datatype_kind wt)
+            (datatype_kind dt)) ]
+   else [])
+  @ (* WF-039's target clause, invoked from here (IR-SPEC ch. 4.6): a numeric
+       literal written into a declaration satisfies the sign restriction the
+       declaration carries. The literal's own annotation is crossed in the
+       expression walk; this reads the target's, and stands aside where the
+       literal's own restriction already refuses the value, and where that
+       restriction contradicts the target's — the sign clause below reports
+       it — so one defect gives one report. *)
+  (match (value, dt) with
+   | Some (Literal { variant = Lv_number w; typ; _ }), Number { sign_char = Some t; _ } -> (
+       let own =
+         match typ with
+         | Some (Number { sign_char = Some o; _ }) -> literal_sign_refusal ~target:false o w
+         | _ -> None
+       in
+       match (own, literal_sign_refusal ~target:true t w) with
+       | None, Some (slug, sentence) when not (sign_conflict dt wt) ->
+           [ v ~params:[("lexeme", w)] ("WF-039." ^ slug) (value_at ^ "/value") sentence ]
+       | _ -> [])
+   | _ -> [])
+  @ (if
+       is_number_like dt && is_number_like wt
+       && not (units_compatible_adopting target value (unit_of dt) (unit_of wt))
+     then
+       (let value_unit = unit_spelling (unit_of wt) and target_unit = unit_spelling (unit_of dt) in
+        [ v ~params:[("valueUnit", value_unit); ("targetUnit", target_unit)] "WF-023.incompatible-units" at
+            (Printf.sprintf "assignment across incompatible units: value unit '%s', target unit '%s'"
+               value_unit target_unit) ])
+     else [])
+  @ (if sign_conflict dt wt then
+       [ v "WF-023.sign-restriction-conflict" at "the value's sign restriction contradicts the target's" ]
+     else [])
+  @ (* WF-090's write half (struct-domain identity, ch. 2.4): the same
+       three write positions, the struct sibling of the keuzetype clause
+       below. Its own rule number, so the two are falsifiable apart; the
+       one-sided arms follow the keuzetype clause and report only within
+       one family. *)
+  (match (struct_domain dt, struct_domain wt) with
+   | None, None -> []
+   | Some a, Some b when norm a = norm b -> []
+   | Some a, Some b ->
+       [ v ~params:[("sourceDomain", b); ("targetDomain", a)] "WF-090.assignment-domain-mismatch" at
+           (Printf.sprintf
+              "a value of the struct domain '%s' is assigned to a target of the struct domain \
+               '%s'"
+              b a) ]
+   | Some a, None when same_family ->
+       [ v ~params:[("type", datatype_kind wt); ("targetDomain", a)] "WF-090.assignment-value-unnamed" at
+           (Printf.sprintf
+              "a %s value naming no struct domain is assigned to a target of the struct domain \
+               '%s'"
+              (datatype_kind wt) a) ]
+   | None, Some b when same_family ->
+       [ v ~params:[("sourceDomain", b); ("type", datatype_kind dt)] "WF-090.assignment-target-unnamed" at
+           (Printf.sprintf
+              "a value of the struct domain '%s' is assigned to a %s target naming no struct \
+               domain"
+              b (datatype_kind dt)) ]
+   | _ -> [])
+  @
+  (* the domain clause; a one-sided keuzetype is reported only within
+     one family (a list of a keuzetype against a list of something else,
+     an enumeration without a domain) — across families the family
+     message already names the defect *)
+  match (choice_type_domain dt, choice_type_domain wt) with
+  | None, None -> []
+  | Some a, Some b when choice_type_same a b -> []
+  | Some a, Some b ->
+      [ v ~params:[("valueVariant", choice_type_variant b); ("valueName", choice_type_name b); ("targetVariant", choice_type_variant a); ("targetName", choice_type_name a)] "WF-023.choice-domain-mismatch" at
+          (Printf.sprintf "a value of the %s '%s' is assigned to a target of the %s '%s'"
+             (choice_type_variant b) (choice_type_name b) (choice_type_variant a)
+             (choice_type_name a)) ]
+  | Some a, None when same_family ->
+      [ v ~params:[("valueKind", datatype_kind wt); ("targetVariant", choice_type_variant a); ("targetName", choice_type_name a)] "WF-023.untyped-to-choice" at
+          (Printf.sprintf
+             "a %s value naming no keuzetype domain is assigned to a target of the %s '%s'"
+             (datatype_kind wt) (choice_type_variant a) (choice_type_name a)) ]
+  | None, Some b when same_family ->
+      [ v ~params:[("valueVariant", choice_type_variant b); ("valueName", choice_type_name b); ("targetKind", datatype_kind dt)] "WF-023.choice-to-untyped" at
+          (Printf.sprintf
+             "a value of the %s '%s' is assigned to a %s target naming no keuzetype domain"
+             (choice_type_variant b) (choice_type_name b) (datatype_kind dt)) ]
+  | _ -> []
+
 (* WF-127, the shape arms (IR-SPEC ch. 4.7): the base is sum-typed, the
    constructor is a declared unary constructor of its domain, and the node type
    is that constructor's declared payload. Shared by the expression walk and by
@@ -6407,8 +6529,12 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
       @ walk_expr ctx ~binders ~subject (sub "date") date_value
   | Construct { typ; constructor_; argument; _ } ->
       (* WF-062: the constructor is declared in the node's sum type; the
-         argument is present iff the constructor is unary; the argument's
-         static type equals the declared payload datatype *)
+         argument is present iff the constructor is unary; the argument is
+         written into the declared payload, so its static type is assignable
+         to it as WF-023 reads a write (family, units, sign, keuzetype and
+         struct domain), and a numeric literal satisfies the payload's sign
+         restriction (WF-039). The precision gate on the argument stands with
+         WF-023's at the write positions ([wf062_precision]). *)
       (match typ with
        | None -> [ v "WF-062.construct-no-type" (sub "type") "construct carries no sum type" ]
        | Some (Sum_type { domain_spec; _ }) -> (
@@ -6429,12 +6555,21 @@ let rec walk_expr ctx ~binders ~subject ?(body = Rule_pos) ?(union_ok = false) ?
                        (match payload, argument with
                         | Some pd, Some a -> (
                             match ty a with
-                            | Some ad when not (same_datatype ad pd) ->
-                                [ v ~params:[("argument", detail_vs ad ~against:pd); ("payload", detail_vs pd ~against:ad)] "WF-062.argument-type-mismatch" at
-                                    ("argument type " ^ detail_vs ad ~against:pd
-                                   ^ " does not match the declared payload "
-                                   ^ detail_vs pd ~against:ad) ]
-                            | _ -> [])
+                            | Some ad -> (
+                                let sign, typing =
+                                  List.partition
+                                    (fun x -> x.wf = "WF-039")
+                                    (wf023_assignment at ~target:None ~value:(Some a) ~value_at:(sub "argument") pd ad)
+                                in
+                                (match typing with
+                                 | [] -> []
+                                 | _ ->
+                                     [ v ~params:[("argument", detail_vs ad ~against:pd); ("payload", detail_vs pd ~against:ad)] "WF-062.argument-type-mismatch" at
+                                         ("argument type " ^ detail_vs ad ~against:pd
+                                        ^ " is not assignable to the declared payload "
+                                        ^ detail_vs pd ~against:ad) ])
+                                @ sign)
+                            | None -> [])
                         | _ -> [])
                    | None, Some _ ->
                        [ v ~params:[("constructor", constructor_)] "WF-062.nullary-with-argument" at
@@ -10289,6 +10424,43 @@ let precision_gate at ~share (dt : datatype) (value : bounded option) =
       | _ -> [])
   | _ -> []
 
+(* WF-062's precision gate (IR-SPEC ch. 4.7): a Construct written at a write
+   position of the gate below writes its argument into the declared payload,
+   so the argument's bound (ch. 2.3), restated into the payload's unit, fits
+   the payload's declared decimals as a value written into an attribute of that
+   datatype does; a payload of the unbounded form has no ceiling, and an
+   argument that makes no claim defers. Cited at the argument. *)
+let payload_gate ctx at (w : expr) =
+  match w with
+  | Construct { typ = Some (Sum_type { domain_spec; _ }); constructor_; argument = Some a; _ } -> (
+      match
+        Option.bind (sum_decl ctx domain_spec) (fun cs ->
+            Option.join (Option.map snd (List.find_opt (fun (n, _) -> norm n = norm constructor_) cs)))
+      with
+      | Some pd -> (
+          match (declared_precision pd, precision ctx ~env:[] a) with
+          | Some (Finite td), Some x -> (
+              let payload = string_of_int td in
+              match in_unit x (unit_of pd) with
+              | Some Unbounded ->
+                  [ v ~params:[ ("payloadDecimals", payload) ] "WF-062.argument-precision-unbounded" (at ^ "/argument")
+                      (Printf.sprintf
+                         "the argument has no finite precision bound (RUNTIME-SEMANTICS ch. 2.3) and the payload \
+                          of '%s' declares %d decimals: it is written through an explicit rounding, or into the \
+                          unbounded form"
+                         constructor_ td) ]
+              | Some (Finite d) when d > td ->
+                  [ v ~params:[ ("argumentDecimals", string_of_int d); ("payloadDecimals", payload) ]
+                      "WF-062.argument-precision-exceeds" (at ^ "/argument")
+                      (Printf.sprintf
+                         "the argument can carry %d decimals, more than the %d the payload of '%s' declares \
+                          (RUNTIME-SEMANTICS ch. 2.3): it is written through an explicit rounding"
+                         d td constructor_) ]
+              | _ -> [])
+          | _ -> [])
+      | None -> [])
+  | _ -> []
+
 (* The four write positions of the gate: a rule version (a cell target reads its
    attribute's declaration), an object creation's attribute member, a defaults
    consequence with its exception groups, and the share of an allocation, whose
@@ -10300,9 +10472,10 @@ let precision_gate at ~share (dt : datatype) (value : bounded option) =
    stands outside it: no executor carries a rounding around it, so the gate would
    leave that write no form (RUNTIME-SEMANTICS ch. 2.8). A defaults consequence on a
    target with a timeline stands in it the same way (ch. 7.11); an object creation
-   writes no timeline. *)
+   writes no timeline. At the first three positions a written Construct passes
+   WF-062's gate on its argument as well ([payload_gate]). *)
 let wf023_precision ctx =
-  let value_gate at dt w = precision_gate at ~share:false dt (precision ctx ~env:[] w) in
+  let value_gate at dt w = precision_gate at ~share:false dt (precision ctx ~env:[] w) @ payload_gate ctx at w in
   let scalar ot a = not (attr_temporal ot a) in
   let pro_rata = function Function_call { kind = Time_proportional_part; _ } -> true | _ -> false in
   List.concat_map
@@ -10380,127 +10553,6 @@ let wf023_precision ctx =
             | _ -> [])
         | _ -> [])
       ctx.doc.allocations
-
-(* WF-023 (the shallow slice), at every attribute WRITE position — a rule's
-   target, an object creation's attribute member, a defaults consequence:
-   assignment typing between the target's DECLARED type and the value's
-   static type ([expr_type]: a reference's declaration, every other value's
-   annotation) — same family (numeric kinds count as one), compatible
-   units (a unitless literal adopts), no contradictory sign restriction, and
-   the DOMAIN clause: a keuzetype-typed side names the same keuzetype
-   (variant and domain, ci, through a ListType element) as the other. The
-   domain clause is the write half of WF-089's domain identity — WF-089
-   crosses what a fold hands through, this crosses what is WRITTEN into a
-   declaration — and the two together make ref's "match has no arm"
-   fault unreachable on a verifier-clean document (fix round 1 of the card:
-   without it a Literal or Construct of another domain, a ghost-domain
-   literal and a list of another domain entered the read declaration
-   verifier-clean at all three positions, and the object-creation and
-   defaults positions crossed no soort at all). The precision gate is
-   [wf023_precision] above, over the bound of ch. 2.3 rather than the static
-   type. [target]/[value] are the expressions, for literal unit adoption
-   (a defaults consequence and a member initialisation have no target
-   expression). *)
-let wf023_assignment at ~target ~value ~value_at (dt : datatype) (wt : datatype) =
-  let sign_conflict d w =
-    match (d, w) with
-    | Number { sign_char = Some (Non_negative | Positive); _ },
-      Number { sign_char = Some Negative; _ }
-    | Number { sign_char = Some Negative; _ },
-      Number { sign_char = Some (Non_negative | Positive); _ } ->
-        true
-    | _ -> false
-  in
-  let same_family =
-    datatype_kind dt = datatype_kind wt || (is_number_like dt && is_number_like wt)
-  in
-  (if not same_family then
-     [ v ~params:[("valueKind", datatype_kind wt); ("targetKind", datatype_kind dt)] "WF-023.datatype-family-mismatch" at
-         (Printf.sprintf "a %s value is assigned to a %s target" (datatype_kind wt)
-            (datatype_kind dt)) ]
-   else [])
-  @ (* WF-039's target clause, invoked from here (IR-SPEC ch. 4.6): a numeric
-       literal written into a declaration satisfies the sign restriction the
-       declaration carries. The literal's own annotation is crossed in the
-       expression walk; this reads the target's, and stands aside where the
-       literal's own restriction already refuses the value, and where that
-       restriction contradicts the target's — the sign clause below reports
-       it — so one defect gives one report. *)
-  (match (value, dt) with
-   | Some (Literal { variant = Lv_number w; typ; _ }), Number { sign_char = Some t; _ } -> (
-       let own =
-         match typ with
-         | Some (Number { sign_char = Some o; _ }) -> literal_sign_refusal ~target:false o w
-         | _ -> None
-       in
-       match (own, literal_sign_refusal ~target:true t w) with
-       | None, Some (slug, sentence) when not (sign_conflict dt wt) ->
-           [ v ~params:[("lexeme", w)] ("WF-039." ^ slug) (value_at ^ "/value") sentence ]
-       | _ -> [])
-   | _ -> [])
-  @ (if
-       is_number_like dt && is_number_like wt
-       && not (units_compatible_adopting target value (unit_of dt) (unit_of wt))
-     then
-       (let value_unit = unit_spelling (unit_of wt) and target_unit = unit_spelling (unit_of dt) in
-        [ v ~params:[("valueUnit", value_unit); ("targetUnit", target_unit)] "WF-023.incompatible-units" at
-            (Printf.sprintf "assignment across incompatible units: value unit '%s', target unit '%s'"
-               value_unit target_unit) ])
-     else [])
-  @ (if sign_conflict dt wt then
-       [ v "WF-023.sign-restriction-conflict" at "the value's sign restriction contradicts the target's" ]
-     else [])
-  @ (* WF-090's write half (struct-domain identity, ch. 2.4): the same
-       three write positions, the struct sibling of the keuzetype clause
-       below. Its own rule number, so the two are falsifiable apart; the
-       one-sided arms follow the keuzetype clause and report only within
-       one family. *)
-  (match (struct_domain dt, struct_domain wt) with
-   | None, None -> []
-   | Some a, Some b when norm a = norm b -> []
-   | Some a, Some b ->
-       [ v ~params:[("sourceDomain", b); ("targetDomain", a)] "WF-090.assignment-domain-mismatch" at
-           (Printf.sprintf
-              "a value of the struct domain '%s' is assigned to a target of the struct domain \
-               '%s'"
-              b a) ]
-   | Some a, None when same_family ->
-       [ v ~params:[("type", datatype_kind wt); ("targetDomain", a)] "WF-090.assignment-value-unnamed" at
-           (Printf.sprintf
-              "a %s value naming no struct domain is assigned to a target of the struct domain \
-               '%s'"
-              (datatype_kind wt) a) ]
-   | None, Some b when same_family ->
-       [ v ~params:[("sourceDomain", b); ("type", datatype_kind dt)] "WF-090.assignment-target-unnamed" at
-           (Printf.sprintf
-              "a value of the struct domain '%s' is assigned to a %s target naming no struct \
-               domain"
-              b (datatype_kind dt)) ]
-   | _ -> [])
-  @
-  (* the domain clause; a one-sided keuzetype is reported only within
-     one family (a list of a keuzetype against a list of something else,
-     an enumeration without a domain) — across families the family
-     message already names the defect *)
-  match (choice_type_domain dt, choice_type_domain wt) with
-  | None, None -> []
-  | Some a, Some b when choice_type_same a b -> []
-  | Some a, Some b ->
-      [ v ~params:[("valueVariant", choice_type_variant b); ("valueName", choice_type_name b); ("targetVariant", choice_type_variant a); ("targetName", choice_type_name a)] "WF-023.choice-domain-mismatch" at
-          (Printf.sprintf "a value of the %s '%s' is assigned to a target of the %s '%s'"
-             (choice_type_variant b) (choice_type_name b) (choice_type_variant a)
-             (choice_type_name a)) ]
-  | Some a, None when same_family ->
-      [ v ~params:[("valueKind", datatype_kind wt); ("targetVariant", choice_type_variant a); ("targetName", choice_type_name a)] "WF-023.untyped-to-choice" at
-          (Printf.sprintf
-             "a %s value naming no keuzetype domain is assigned to a target of the %s '%s'"
-             (datatype_kind wt) (choice_type_variant a) (choice_type_name a)) ]
-  | None, Some b when same_family ->
-      [ v ~params:[("valueVariant", choice_type_variant b); ("valueName", choice_type_name b); ("targetKind", datatype_kind dt)] "WF-023.choice-to-untyped" at
-          (Printf.sprintf
-             "a value of the %s '%s' is assigned to a %s target naming no keuzetype domain"
-             (choice_type_variant b) (choice_type_name b) (datatype_kind dt)) ]
-  | _ -> []
 
 let wf023 ctx =
   (* position 1: the rule target — the attribute declaration it writes
@@ -12637,18 +12689,26 @@ let wf126 ctx =
    over members for the fold's per-member positions, in the condition of an
    IfThenElse for its then branch. Two accesses are the same when they take
    the same constructor out of the same attribute read (attribute, subject
-   type, path and anchor); an access over any other base has no test and is
-   refused. A closed body (a lambda, a function) and a per-member position
-   start without the tests outside them. *)
-let payload_key = function
-  | Payload_access
-      { base = Attribute_reference { attribute_ref; object_type; navigation_bindings; anchor; _ }; constructor_; _ } ->
+   type, path and anchor), or out of the same cell of it (that read and the
+   same labels); an access over any other base has no test and is refused. A
+   closed body (a lambda, a function) and a per-member position start without
+   the tests outside them. *)
+let rec payload_base_key = function
+  | Attribute_reference { attribute_ref; object_type; navigation_bindings; anchor; _ } ->
       Some
-        ( norm constructor_,
-          Option.map norm attribute_ref,
+        ( Option.map norm attribute_ref,
           Option.map norm object_type,
           Option.map (List.map (fun b -> (norm b.rb_fact_type, norm b.rb_role))) navigation_bindings,
-          anchor )
+          anchor,
+          None )
+  | Dimension_cell_read { attribute_ref = Some (Attribute_reference _ as a); labels; _ } ->
+      Option.map
+        (fun (attr, otn, path, anchor, _) -> (attr, otn, path, anchor, Some (List.map (Option.map norm) labels)))
+        (payload_base_key a)
+  | _ -> None
+
+let payload_key = function
+  | Payload_access { base; constructor_; _ } -> Option.map (fun k -> (norm constructor_, k)) (payload_base_key base)
   | _ -> None
 
 let filled_test = function

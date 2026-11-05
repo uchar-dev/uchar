@@ -1,0 +1,3 @@
+WF-062.argument-precision-exceeds
+argumentDecimals=3
+payloadDecimals=2
