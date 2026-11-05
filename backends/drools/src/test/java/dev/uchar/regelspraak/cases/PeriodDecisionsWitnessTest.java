@@ -66,7 +66,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       reference interpreter's trace): a default decides a day of its turn on which the root of its consequence, the
  *       filled segments within its justification's periods, reads a value, the initialisation default only where the
  *       input leaves the target empty; unordered members and exception groups reconcile per day. For rules, per day the
- *       rules whose readings write a value there (ch. 3.11). On a day no writer decides, the input; maximal periods;</li>
+ *       rules whose readings write a value there (ch. 3.11), and on a day none does and the input reads no value, the
+ *       initialisation whose reading writes one (ch. 7.8). On a day no writer decides, the input; maximal periods;</li>
  *   <li>the union of the values of the spans with the input is the timeline of the fixpoint: per day the value of the
  *       decider, of the first rule or of the input, and leeg where a span has none, is what {@code fixpointOf} gives
  *       the member, or the input where it derives none.</li>
@@ -511,6 +512,10 @@ class PeriodDecisionsWitnessTest {
                                                         Object o, List<Period> input, List<String> differences) {
         List<String> pointers = new ArrayList<>();
         List<List<?>> timelines = new ArrayList<>();
+        // the initialisation, the lowest layer of the target's stack, decides a day that no rule decides and on which
+        // the input reads no value (ch. 7.8), the root of its reading the filled segments of its value
+        String initialiser = null;
+        List<?> initialised = null;
         JsonNode rules = document.path("rules").path("rules");
         for (int k = 0; k < rules.size(); k++)
             for (int v = 0; v < rules.get(k).path("versions").size(); v++) {
@@ -521,20 +526,28 @@ class PeriodDecisionsWitnessTest {
                 String pointer = "/rules/rules/" + k + "/versions/" + v;
                 ConditionReading r = reading.get(pointer + " " + System.identityHashCode(o));
                 if (r == null) continue;
-                if (version.path("initialisation").asBoolean(false) || version.path("target").has("path"))
-                    differences.add(at + ": " + pointer + " is een initialisatie of schrijft over een pad, wat deze"
-                            + " getuige niet per dag leest");
+                if (version.path("target").has("path"))
+                    differences.add(at + ": " + pointer + " schrijft over een pad, wat deze getuige niet per dag leest");
                 if (r.status() != ConditionReading.Status.HOLDS) continue;
                 Object c = p.positions().at(pointer + "/condition");
                 int root = (c == null ? 0 : p.positions().subtree(c).size()) + throughLets(version.get("value"));
+                boolean initialisation = version.path("initialisation").asBoolean(false);
                 for (ConditionReading.NodeReading x : r.nodes())
                     if (x.node() == root && x.reached() && x.fault() == null && x.value() != null) {
+                        if (initialisation && initialised != null)
+                            differences.add(at + ": twee initialisaties schrijven " + member + " (WF-079)");
+                        if (initialisation) {
+                            initialiser = pointer;
+                            initialised = (List<?>) x.value();
+                            continue;
+                        }
                         pointers.add(pointer);
                         timelines.add((List<?>) x.value());
                     }
             }
         TreeSet<LocalDate> cuts = cuts(d, input);
         for (List<?> t : timelines) bounds(t, cuts);
+        if (initialised != null) bounds(initialised, cuts);
         List<PeriodDecisions.Span> out = new ArrayList<>();
         LocalDate previous = null;
         for (LocalDate c : cuts) {
@@ -544,6 +557,9 @@ class PeriodDecisionsWitnessTest {
                     Object v = exactOn(timelines.get(i), previous);
                     if (v != null) deciders.add(atRest(new DefaultsDecision.Decider(pointers.get(i), v)));
                 }
+                Object init = initialised == null ? null : exactOn(initialised, previous);
+                if (deciders.isEmpty() && valueOn(input, previous) == null && init != null)
+                    deciders.add(atRest(new DefaultsDecision.Decider(initialiser, init)));
                 add(out, new PeriodDecisions.Span(previous, c, null, null, deciders,
                         deciders.isEmpty() ? valueOn(input, previous) : null));
             }

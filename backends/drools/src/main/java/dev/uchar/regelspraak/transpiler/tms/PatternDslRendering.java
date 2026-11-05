@@ -470,6 +470,7 @@ final class PatternDslRendering {
                 Object value = v[z.initialisation()];
                 if (value == null) continue;
                 if (z.cell() != null) ComputeHelpers.setCell(fresh, z.field().property(), z.cell(), value);
+                else if (z.timeline()) ComputeHelpers.setTimeline(fresh, z.field().property(), value);
                 else setters.get(j).accept(fresh, value);
             }
             int phase = (Integer) w[g.phase()];

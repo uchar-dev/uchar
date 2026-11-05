@@ -376,6 +376,9 @@ final class ClosureRendering {
             case DAYS_DECIDED -> x -> PeriodDefaults.decided(x[0], x[1]);
             case DAYS_FILLED_WITHIN -> x -> PeriodDefaults.filledWithin(x[0], x[1]);
             case DAYS_INPUT_EMPTY -> x -> PeriodDefaults.inputEmpty(x[0], x[1], (String) x[2], x[3]);
+            case DAYS_INITIALISATION -> x -> PeriodDefaults.initialisationDays(x[0], x[1], x[2], (String) x[3], x[4]);
+            case DAYS_INITIALISED -> x -> PeriodDefaults.initialised(x[0], x[1], (Integer) x[2], (String) x[3]);
+            case DAYS_INITIALISED_VALUES -> x -> PeriodDefaults.initialisedValues(x[0], x[1]);
             case DAYS_RECONCILED -> x -> PeriodDefaults.reconciled((String) x[0], x[1]);
             case DAYS_DECIDED_OF -> x -> PeriodDefaults.decidedOf(x[0]);
             case DAYS_CONFLICTED -> x -> PeriodDefaults.conflicted(x[0], (String) x[1]);

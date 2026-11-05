@@ -788,6 +788,25 @@ where the case gives the input as the asOfDate-bucket scalar. Witnesses `TmsCond
 `jutterswet-wachtdagen-twee-schrijvers`, `jutterswet-verzuimrente-30-360-afgerond` and the anchor `jutterswet-borgdeel`,
 red case `jutterswet-wachtdagen-botsing`.
 
+**The stack of a timeline target per day.** An initialisation on a timeline target is the lowest layer of the target's
+stack (RUNTIME-SEMANTICS ch. 7.8): it decides every day on which no other writer decides and the input reads no value,
+over all time, open segments included. Its rule reads the `Value` facts of the other writers and the input on the bean,
+never its own write (`PeriodDefaults.initialisationDays`), reads its condition as a rule on a timeline target does,
+per period where it reads a timeline or holds a window, and decides, of the days left to it, those on which its value,
+the period arithmetic of ch. 3.4 and 3.5 or the constructor of a literal, reads a value (`PeriodDefaults.initialised`).
+Where no day is left its value is not evaluated, a `Let` whose binder ends the evaluation, and where it decides no day
+it inserts nothing and what its value deposited does not stand (`Consequence.Decision`). It is one writer of the target
+beside the rules, and the target stands as their union with its input. Over the asOfDate-bucket scalar of its target it
+faults with EF-037, and a total of the timeline it writes meets its open segments (EF-036). Its reading is `DISPLACED`
+without nodes where the writers and the input leave it no day, and else that of its condition and of its value, the root
+the filled segments of its value within the periods of its condition. The member value of an object creation on a
+time-dependent attribute is the input of the made object per day: the period arithmetic read on the creation's subject,
+a scalar on every day, or the constructor of a literal, set on the new bean as its segments (`ComputeHelpers.setTimeline`).
+A sum per period over the relation a creation makes reads the made objects through their links, and a made object has
+no input that could be the asOfDate-bucket scalar. Witness `TmsTimelineStackWitnessTest` (the documents of
+`ref/test/fixtures/writers-stack`), goldens `jutterswet-initialisatie-per-dag`, `jutterswet-creatie-per-dag` and
+`jutterswet-afwezigheidsmarkers-initialisatie`.
+
 **A characteristic within a window.** A rule may write a time-dependent characteristic within a period window
 (RUNTIME-SEMANTICS ch. 3.10, 3.11): its condition, the window alone or a composite with the window among its members,
 is read per period, and the periods in which it holds are the characteristic's true periods, the `Value` of the
@@ -964,7 +983,9 @@ never as a silent fall:
   `TmsTimelineRefusalWitnessTest` for a dimensioned attribute on a timeline, by its cell and by its total, and
   `DimensionCellWitnessTest` for the unbounded form and for labels that name no cell;
 - of timelines, each with no golden with cases unless one is named: a writer of a timeline target other than a
-  computing rule beside another writer, which ch. 7.8 keeps fenced, and an initialisation of one; a characteristic on a
+  computing rule or an initialisation beside another writer (DROOLS-103), which ch. 7.8 keeps fenced, and a value of
+  an initialisation or of a creation's member on one that is neither the period arithmetic of ch. 3.4 and 3.5 nor the
+  constructor of a literal (DROOLS-316, ch. 3.12 row 10); a characteristic on a
   timeline as the target of a rule without a period window (DROOLS-102) or of two rules (DROOLS-103), and read over a
   path where a rule writes it (DROOLS-268); a day count over another condition than one characteristic with day-kind
   tests (DROOLS-114); any value of a timeline target other than a pro-rata part, a day count or
@@ -1008,7 +1029,9 @@ never as a silent fall:
   relation that is not one of two roles, a division or a square root in a member initialisation, whose §6.5 or §6.6
   deposit the branch does not make, a fold whose range of more than one step goes over a created relation, a fold
   whose filter can fault over a created relation and a quantifier fold whose matrix can fault or deposit over one,
-  whose made links have no place in the fold order, and the scope of a uniqueness over a created relation;
+  whose made links have no place in the fold order, a fold over a time-dependent member over a created relation
+  (DROOLS-212) but a sum per period over one whose made links all reach objects a creation made, and the scope of a
+  uniqueness over a created relation;
 - a binder of a `Let` around a fold, read in the fold's filter or matrix: the contribution rules compute the filter
   and the matrix per member and do not bind the `Let`'s value, which carrying it would bind, read on the fold's
   subject, in every contribution rule, with a leeg value ending the `Let` across the rule boundary (ch. 10.6). A
@@ -1038,7 +1061,9 @@ never as a silent fall:
   not a writer on a sister subtype), a second allocation (WF-026) or a defaults group (WF-050), both ill-formed, and a
   computing rule or an initialisation, which this branch does not carry beside an allocation yet; a pot, share, rest,
   weight or cap that is no number; a to-one recipient role whose sibling is to-many, and a join the bean model gives
-  no field, as a fold over such a role is refused; and the combinations of method and fields that WF-025 refuses;
+  no field, as a fold over such a role is refused; the combinations of method and fields that WF-025 refuses; and a
+  field that names a time-dependent attribute, which WF-128 makes ill-formed (DROOLS-315), as the reference interpreter
+  and the ASP backend run that check again;
 - every cycle of the dependency graph that the verifier refuses, refused by `Cycles` with an `exec-model:` sentence
   over the verifier's own graph (`checks.ml`, the nodes of IR-SPEC ch. 5.1: attribute, characteristic, channel,
   population, relation): a cycle that does not pass through a creation member of a recursive rule group (WF-045), and a

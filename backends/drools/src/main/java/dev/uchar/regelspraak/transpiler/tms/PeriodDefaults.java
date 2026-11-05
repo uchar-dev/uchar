@@ -111,6 +111,54 @@ public final class PeriodDefaults {
     }
 
     /**
+     * The days an initialisation of the timeline target {@code attribute} of {@code subject} may decide, the lowest
+     * layer of the target's stack (ch. 7.8): those on which no other writer's {@link Value} among {@code values} reads a
+     * value and the input on the bean, {@code input}, reads none, over all time; null where it leaves none, so that the
+     * initialisation is not evaluated. It reads the other writers and the input, never its own write. Where the case
+     * gives the input as the asOfDate-bucket scalar ({@code bucket}, the number of {@link BucketInput} facts of the
+     * target on the subject, above 0), it carries no period, and the initialisation faults with EF-037 in the reference
+     * interpreter's words.
+     */
+    public static List<Period> initialisationDays(Object values, Object input, Object bucket, String attribute,
+                                                  Object subject) {
+        if (((Number) bucket).longValue() > 0)
+            throw InputFormFault.bucketScalar(attribute, true, "the initialisation of the timeline target \"" + attribute
+                    + "\" reads the input per day, and the case supplies for ", subject,
+                    " only the asOfDate-bucket scalar, which carries no period");
+        List<Period> decided = new ArrayList<>();
+        for (Object v : (List<?>) values) decided.addAll(filled(((Value) v).value()));
+        decided.addAll(filled(input));
+        List<Period> out = PeriodCondition.complement(PeriodCondition.merged(decided));
+        return out.isEmpty() ? null : out;
+    }
+
+    /** What an initialisation on a numeric timeline target of {@code decimals} declared decimals, the attribute
+     *  {@code attribute}, writes on the days {@code days} (ch. 7.8): the filled segments of its value's timeline
+     *  {@code timeline} cut to them, under the write boundary of those segments ({@link PeriodArithmetic#written}); null
+     *  where its value reads leeg on every one of them, so that it decides no day and what its value deposited does not
+     *  stand. */
+    public static List<Period> initialised(Object days, Object timeline, Integer decimals, String attribute) {
+        List<PeriodArithmetic.Exact> cut = cut(timeline, PeriodCondition.periodsOf(days));
+        return cut.isEmpty() ? null : PeriodArithmetic.written(cut, decimals, attribute);
+    }
+
+    /** As {@link #initialised}, on a timeline target of a sum type, whose constructor values have no decimals
+     *  ({@link PeriodArithmetic#writtenValues}, ch. 9.4). */
+    public static List<Period> initialisedValues(Object days, Object timeline) {
+        List<PeriodArithmetic.Exact> cut = cut(timeline, PeriodCondition.periodsOf(days));
+        return cut.isEmpty() ? null : PeriodArithmetic.writtenValues(cut);
+    }
+
+    /** The days on which {@code timeline}, a timeline of working memory, reads a value, as periods without one; none
+     *  for an absent timeline. */
+    private static List<Period> filled(Object timeline) {
+        List<Period> out = new ArrayList<>();
+        for (Period p : timeline == null ? List.<Period>of() : Period.list((List<?>) timeline))
+            if (p.value() != null) out.add(new Period(p.from(), p.to(), null));
+        return out;
+    }
+
+    /**
      * The reconciliation per day of the chains of {@code outcomes}, the outcomes of the member chains of a default or of
      * the groups at the root of a stack (ch. 7.2, 7.9, 7.11): per chain, in the order of the chains, what its defaults
      * settled; and on every period between two of their bounds, the first conflict of a chain, in that order, where

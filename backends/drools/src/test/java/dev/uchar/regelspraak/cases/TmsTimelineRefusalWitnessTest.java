@@ -48,9 +48,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * confirms where it answers.
  *
  * <ul>
- * <li><b>An initialisation of a timeline target</b>: the reference interpreter and the ASP runner refuse it, "a
- * granularity-bucketed builtin call is executed only as the whole value of a rule on a temporal target (ch. 3.7,
- * 3.8)".
+ * <li><b>An initialisation of a timeline target whose value is a time-proportional part</b>: the reference interpreter
+ * refuses it, "the value of the initialisation of the timeline target "jaardeel" is not period arithmetic of ch. 3.4/3.5
+ * (…); the time-proportional part and the day count are not executed in an initialisation (no corpus case)"
+ * (RUNTIME-SEMANTICS ch. 3.12 row 10).
  * <li><b>A characteristic on a timeline as the target of a rule without a period window</b>: both refuse it, "the
  * time-dependent characteristic "borgplichtig" of "Jutter" is written within a period window (ch. 3.10, 3.11); without
  * one it is not executed (no corpus case)".
@@ -123,9 +124,11 @@ class TmsTimelineRefusalWitnessTest {
                                 List.of(), Map.of("borgplichtig", List.of(period("2024-03-01", "2025-01-01"))), Map.of())),
                         List.of(expectedTimeline("J1", "jaardeel", List.of(segment("2024-01-01", "2025-01-01",
                                 "306"))))),
-                List.of("transpiler SKIP: regel: jaardeel init — een initialisatie van het tijdsafhankelijke"
-                        + " attribuut 'jaardeel' van Jutter: deze tak draagt deze vorm nog niet; geen"
-                        + " golden met cases heeft er een")));
+                List.of("transpiler SKIP: regel: jaardeel init — de waarde van een initialisatie op het"
+                        + " tijdsafhankelijke attribuut 'jaardeel' van Jutter is geen rekenen per periode van ch. 3.4 en"
+                        + " 3.5 en geen constructor van een literal ('het tijdsevenredig deel per year van zijn"
+                        + " jaartarief'): deze tak schrijft haar per dag alleen"
+                        + " als een van die twee (RUNTIME-SEMANTICS ch. 3.12 rij 10, 7.8)")));
         // a characteristic on a timeline as the target, without a period window
         out.add(new Row("kenmerk-als-doel", TmsTimelineDocuments.ir(MODEL_JAARDEEL, List.of(
                         TmsDocuments.characteristicRule("borgplicht", "Jutter", "borgplichtig",

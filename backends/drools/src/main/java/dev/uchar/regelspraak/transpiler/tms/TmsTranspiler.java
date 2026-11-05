@@ -2322,16 +2322,18 @@ public final class TmsTranspiler {
      * value produces, restricted to the periods of all time in which the condition holds ({@link #periodCondition},
      * ch. 3.10, the clip generalised); a condition that reads none gates the rule as on a scalar target.
      *
-     * <p>Refused by name, each with no golden that has cases: a writer of the target other than a computing rule beside
-     * another writer, an initialisation, a defaults group or an allocation, which ch. 3.11 does not define on a timeline
+     * <p>An initialisation beside the rule is the lowest layer of the target's stack ({@link #timelineInitialisationRule}).
+     * Refused by name, each with no golden that has cases: a writer of the target other than a computing rule or an
+     * initialisation, a defaults group or an allocation, which ch. 3.11 does not define beside a rule on a timeline
      * target; and any other value,
      * among them a power over timelines, which the reference interpreter refuses as well (RUNTIME-SEMANTICS ch. 3.4).
      */
     private List<RulePlan> timelineRule(ResolvedRule r, Expr.AttributeReference target) {
         Member member = timeMember(target.objectType(), target.attribute(), false, Msg.drools("PART.desc.time-dependent-target"));
-        // other computing rules decide their own days (ch. 5.7, "Two writers per day"); any other writer stays fenced
+        // other computing rules decide their own days (ch. 5.7, "Two writers per day") and an initialisation the days
+        // they and the input leave (ch. 7.8); any other writer stays fenced
         List<String> others = new ArrayList<>(otherWriters(r, target.objectType(), member.key()));
-        for (ResolvedRule x : computeRules.getOrDefault(member.key(), List.of()))
+        for (ResolvedRule x : timelineForms(member.key()))
             if (related(writtenReference(x.target()).objectType(), target.objectType()))
                 others.remove(ProducerConsumer.baseName(x.name()));
         if (!others.isEmpty())
@@ -2589,17 +2591,25 @@ public final class TmsTranspiler {
                 || e instanceof Expr.AttributeReference a && !navigationBindings.containsKey(a) && !anchored.contains(a);
     }
 
-    /** Whether computing rules or a defaults stack write the timeline target {@code key}: each decides the days of its
-     *  own segments, and the target is the union of their segments with its input on the days none decides
-     *  (RUNTIME-SEMANTICS ch. 3.11, ch. 5.7, "Two writers per day", ch. 7.11), its standing ({@link #writersUnionRules})
-     *  and its write-back ({@link #readFixpoint}), for one writer as for two or more. */
+    /** Whether computing rules, an initialisation or a defaults stack write the timeline target {@code key}: each
+     *  decides the days of its own segments, the initialisation those the others and the input leave, and the target is
+     *  the union of their segments with its input on the days none decides (RUNTIME-SEMANTICS ch. 3.11, ch. 5.7, "Two
+     *  writers per day", ch. 7.8, 7.11), its standing ({@link #writersUnionRules}) and its write-back
+     *  ({@link #readFixpoint}), for one writer as for two or more. */
     private boolean timelineWriters(ElementKey key) {
         if (dayStackTargets.contains(key)) return true;
-        for (ResolvedRule r : computeRules.getOrDefault(key, List.of())) {
+        for (ResolvedRule r : timelineForms(key)) {
             Expr.AttributeReference a = writtenReference(r.target());
             if (temporal(a.objectType(), a.attribute(), false)) return true;
         }
         return false;
+    }
+
+    /** The computing rules and the initialisations of the document that write {@code key}. */
+    private List<ResolvedRule> timelineForms(ElementKey key) {
+        List<ResolvedRule> out = new ArrayList<>(computeRules.getOrDefault(key, List.of()));
+        out.addAll(initialisations.getOrDefault(key, List.of()));
+        return out;
     }
 
     /** Whether the member {@code name} that {@code holder}'s chain declares lies on a timeline; false where the chain
@@ -2634,10 +2644,10 @@ public final class TmsTranspiler {
                 source(value.source()));
     }
 
-    /** Whether a rule writes {@code member} by period arithmetic ({@link #isPeriodArithmetic}): such a timeline divides
-     *  all time, so the subject's own total reads it whole (RUNTIME-SEMANTICS ch. 3.6). */
+    /** Whether a rule or an initialisation writes {@code member} by period arithmetic ({@link #isPeriodArithmetic}):
+     *  such a timeline divides all time, so the subject's own total reads it whole (RUNTIME-SEMANTICS ch. 3.6, 7.8). */
     private boolean periodArithmeticTarget(Member member) {
-        return computeRules.getOrDefault(member.key(), List.of()).stream().anyMatch(x -> isPeriodArithmetic(x.value()));
+        return timelineForms(member.key()).stream().anyMatch(x -> isPeriodArithmetic(x.value()));
     }
 
     /**
@@ -2667,17 +2677,28 @@ public final class TmsTranspiler {
      * unit needs a restatement into the target's ({@link #periodUnit}).
      */
     private Term periodArithmetic(Expr value, Member target, ObjectType subject, Reads reads, Term periods) {
+        ProducedTimeline produced = producedTimeline(value, target, subject, reads);
+        Term timeline = produced.term();
+        if (periods != null) timeline = new Term.Call(StaticFunction.PERIOD_CLIPPED, List.of(periods, timeline), null);
+        if (produced.values())
+            return new Term.Call(StaticFunction.PERIOD_WRITTEN_VALUES, List.of(timeline), source(value.source()));
+        return new Term.Call(StaticFunction.PERIOD_WRITTEN, List.of(timeline, constant(ceiling(target.datatype())),
+                constant(target.spelled())), source(value.source()));
+    }
+
+    /** The timeline of the period arithmetic {@code value} into {@code target} of {@code subject} before it is cut and
+     *  written ({@link #periodArithmetic}): on a number target its operand timeline, and on a target of a sum type the
+     *  copy of an own timeline of a sum type, whose values are constructor values. Refused by name as
+     *  {@link #periodArithmetic} refuses. */
+    private ProducedTimeline producedTimeline(Expr value, Member target, ObjectType subject, Reads reads) {
         boolean copy = target.datatype() instanceof Datatype.SumType && value instanceof Expr.AttributeReference a
                 && a.attribute() != null && a.objectType() != null && subject.chain().contains(a.objectType())
                 && declared(subject, a.attribute(), false).time() != null;
         if (!target.datatype().isNumberLike() && !copy)
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(value.source())));
         Term timeline = periodOperand(value, target, subject, reads);
-        if (periods != null) timeline = new Term.Call(StaticFunction.PERIOD_CLIPPED, List.of(periods, timeline), null);
-        if (copy) return new Term.Call(StaticFunction.PERIOD_WRITTEN_VALUES, List.of(timeline), source(value.source()));
-        periodUnit(periodUnitOf(value), unitCarrier(value), target.datatype().unitOf());
-        return new Term.Call(StaticFunction.PERIOD_WRITTEN, List.of(timeline, constant(ceiling(target.datatype())),
-                constant(target.spelled())), source(value.source()));
+        if (!copy) periodUnit(periodUnitOf(value), unitCarrier(value), target.datatype().unitOf());
+        return new ProducedTimeline(timeline, copy);
     }
 
     /**
@@ -2892,12 +2913,21 @@ public final class TmsTranspiler {
                 snippet(f.source())));
         periodMember(member, a, target);
         RoleBindingRef source = roleBindings.get(f);
-        if (source != null && source.factType() != null && createdRelations.contains(Namen.norm(source.factType())))
+        // a member the case gives as the asOfDate-bucket scalar faults, the first in fold order; where every made link
+        // of the relation reaches an object a creation made, which has no input, only the links of the input reach such
+        // a member, and their places are its order
+        RegelSpraakModel.Role[] pair = source == null ? null : FactModelGenerator.boundRolePair(model, source);
+        boolean created = source != null && source.factType() != null
+                && createdRelations.contains(Namen.norm(source.factType()));
+        if (created && (pair == null || !madeOnlyIn(source.factType(), pair[0])))
             throw new Refusal(DroolsCode.CREATED_LINK_FOLD_ORDER.reason("kind", f.kind(), "attribute", a.attribute(), "factType", source.factType(), "snippet", snippet(f.source())));
         Fold v = foldFor(f, reads, (key, name) -> {
             List<RulePlan> rules = new ArrayList<>();
             List<Reads> readings = new ArrayList<>();
-            contributionRules(key, name, Expr.FunctionKind.SOM, reads.subject, elem, range(f, reads.subject, elem), 0,
+            Range range = range(f, reads.subject, elem);
+            if (created) range = new Range(range.join(),
+                    fieldRange(pair, reads.subject, elem, snippet(f.source())).perRoute());
+            contributionRules(key, name, Expr.FunctionKind.SOM, reads.subject, elem, range, 0,
                     null, a, null, null, rules, readings, true);
             return new Fold(key, List.copyOf(rules), List.copyOf(readings), false, false, false, false, true);
         });
@@ -3142,18 +3172,12 @@ public final class TmsTranspiler {
      * guard, so only an initialisation that decides at the fixpoint reports it (ch. 5.7).
      */
     private List<RulePlan> initialisationRule(ResolvedRule r, Expr.AttributeReference target, Member cell) {
-        if (cell == null) {
-            Member time = declared(target.objectType(), target.attribute(), false);
-            if (time.time() != null)
-                throw new Refusal(DroolsCode.INITIALISATION_OF_TIME_ATTRIBUTE.reason("attribute", time.name(), "declarant", time.declarant().name));
-        }
+        if (cell == null && declared(target.objectType(), target.attribute(), false).time() != null)
+            return timelineInitialisationRule(r, target);
         Member member = cell != null ? cell : member(target.objectType(), target.attribute(), false);
         ElementKey key = member.key();
         Set<Class<?>> absorbed = absorbed(target, member);
-        List<ResolvedRule> writing = initialisations.get(key).stream()
-                .filter(x -> related(writtenReference(x.target()).objectType(), target.objectType())).toList();
-        if (writing.size() > 1)
-            throw new Refusal(DroolsCode.MULTIPLE_INITIALISATIONS_ON_TARGET.reason("attribute", member.spelled(), "declarant", member.declarant().name, "rules", String.join(", ", writing.stream().map(x -> "\"" + x.name() + "\"").toList())));
+        oneInitialisation(member, target);
         String name = r.name();
         Alpha.FieldTest ofTarget = new Alpha.FieldTest("attribute", Alpha.Comparator.GELIJK, key);
         Alpha.FieldTest ofOther = new Alpha.FieldTest("writer", Alpha.Comparator.NOT_EQUAL, name);
@@ -3176,6 +3200,116 @@ public final class TmsTranspiler {
             return out;
         }, absorbed);
     }
+
+    /** Refuses a second initialisation of {@code member} on an instance the initialisation on {@code target} writes
+     *  (IR-SPEC WF-079), read per concrete type as WF-079 reads it ({@link #initialisationRule}). */
+    private void oneInitialisation(Member member, Expr.AttributeReference target) {
+        List<ResolvedRule> writing = initialisations.get(member.key()).stream()
+                .filter(x -> related(writtenReference(x.target()).objectType(), target.objectType())).toList();
+        if (writing.size() > 1)
+            throw new Refusal(DroolsCode.MULTIPLE_INITIALISATIONS_ON_TARGET.reason("attribute", member.spelled(), "declarant", member.declarant().name, "rules", String.join(", ", writing.stream().map(x -> "\"" + x.name() + "\"").toList())));
+    }
+
+    /**
+     * An initialisation on a timeline target (RUNTIME-SEMANTICS ch. 7.8 per day): the lowest layer of the target's stack,
+     * which decides every day on which no other writer decides and the input reads no value, over all time, open
+     * segments included. Its rule reads the {@link Value} facts the other writers put on the subject and the input on
+     * the bean, never its own write, so the order of the forms in the document does not move it and truth maintenance
+     * withdraws and computes its value again where a writer's days change; it is one writer of the target, and the
+     * target stands as the union of its writers with its input ({@link #timelineWriters}, {@link #writersUnionRules}).
+     *
+     * <p>Its condition is read as the condition of a rule on a timeline target (ch. 3.10): per period where it reads a
+     * timeline or holds a window, and else as a gate. Of the periods of the condition it decides the days the other
+     * writers and the input leave ({@link PeriodDefaults#initialisationDays}), a {@code Let} whose binder ends the
+     * evaluation where none is left, so that its value is not evaluated there; and of those the days on which its value,
+     * the period arithmetic of ch. 3.4 and 3.5 or the constructor of a literal, a scalar on every day, reads a value
+     * ({@link PeriodDefaults#initialised}). Its consequence is a decision ({@link Consequence.Decision}): where it decides
+     * no day it inserts nothing, and what its value deposited does not stand, as a default's (ch. 7.11). The
+     * asOfDate-bucket scalar of its target carries no day, and the initialisation faults with EF-037.
+     *
+     * <p>In a build with readings its reading is {@code DISPLACED} without nodes where the writers and the input leave it
+     * no day, and else that of its condition and of its value where the periods of its condition hold a day left to it,
+     * the root the filled segments of its value within those periods (ch. 5.12).
+     *
+     * <p>Refused by name: a value that is neither of those producers ({@link DroolsCode#TIME_TARGET_PRODUCER_VALUE},
+     * ch. 3.12 row 10), and a second initialisation on the target (WF-079).
+     */
+    private List<RulePlan> timelineInitialisationRule(ResolvedRule r, Expr.AttributeReference target) {
+        ObjectType subject = target.objectType();
+        Member member = timeMember(subject, target.attribute(), false, Msg.drools("PART.desc.time-dependent-target"));
+        ElementKey key = member.key();
+        Set<Class<?>> absorbed = absorbed(target, member);
+        oneInitialisation(member, target);
+        Expr produced = letBound(r.value());
+        boolean constructor = constructorOfLiteral(produced, member);
+        if (!isPeriodArithmetic(produced) && !constructor)
+            throw new Refusal(DroolsCode.TIME_TARGET_PRODUCER_VALUE.reason("form",
+                    DroolsCode.TIME_TARGET_PRODUCER_VALUE.part("initialisation"), "attribute", member.name(),
+                    "declarant", member.declarant().name, "snippet", snippet(r.value() == null ? null : r.value().source())));
+        String name = r.name();
+        String ruleName = model.emittedRuleName(name);
+        Supplier<Reads> fresh = () -> readings(subject, absorbed).valid(r.validity());
+        Reads reads = fresh.get();
+        Set<Integer> read = reads.follow();
+        beginReading();
+        boolean perPeriod = r.condition() != null && readsTimeline(r.condition(), subject);
+        Term testTerm = r.condition() == null || perPeriod ? null : conditionTerm(r.condition(), reads);
+        boolean canFail = reads.canFail();
+        reads.stop();
+        Set<Integer> use = reads.follow();
+        // the condition first, then the days the stack leaves, then the value, as the reference interpreter reads them
+        Term periods = perPeriod ? periodCondition(r.condition(), member, reads) : null;
+        int others = reads.otherValues(member, name), input = reads.dayInput(member),
+                bucket = reads.bucketInputs(member), self = reads.member();
+        reads.markFail();
+        Term left = new Term.Call(StaticFunction.DAYS_INITIALISATION, List.of(new Term.SlotValue(others, null),
+                new Term.SlotValue(input, null), new Term.SlotValue(bucket, null), constant(member.name()),
+                new Term.SlotValue(self, null)), null);
+        Term days = periods == null ? left : new Term.Call(StaticFunction.DAYS_WITHIN, List.of(periods, left), null);
+        ProducedTimeline timeline = constructor
+                ? new ProducedTimeline(new Term.Call(StaticFunction.PERIOD_SCALAR, List.of(value(produced, reads)), null), true)
+                : producedTimeline(produced, member, subject, reads);
+        Term value = dayLet(reads, "beslissende dagen", days, d -> timeline.values()
+                ? new Term.Call(StaticFunction.DAYS_INITIALISED_VALUES, List.of(d, timeline.term()), source(produced.source()))
+                : new Term.Call(StaticFunction.DAYS_INITIALISED, List.of(d, timeline.term(),
+                        constant(ceiling(member.datatype())), constant(member.spelled())), source(produced.source())));
+        // the reading: where a day is left to it, the timeline it reads and computes, its root the filled segments of
+        // its value within the periods of its condition (RUNTIME-SEMANTICS ch. 5.12)
+        Term root = new Term.Call(StaticFunction.DAYS_FILLED_WITHIN, List.of(periods == null ? constant(null) : periods,
+                timeline.term()), null);
+        Term reading = dayLet(reads, "beslissende dagen", days, d -> new Term.Choice(new Term.Call(
+                StaticFunction.DAYS_AT_TURN, List.of(d), null), root, constant(null), null));
+        // a Let whose body reads its binder and nothing else stands for its bound value (RUNTIME-SEMANTICS ch. 10.6)
+        for (Expr e = r.value(); e != produced; e = ((Expr.Let) e).value()) {
+            note(e, root);
+            note(((Expr.Let) e).body(), root);
+        }
+        note(produced, root);
+        Noted noted = endReading();
+        reads.stop();
+        int depositFlag = reads.depositFlagSlot();
+        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
+        Consequence decision = new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), false,
+                new Consequence.FaultName(name, ruleName),
+                depositFlag < 0 ? null : new Consequence.Deposit(depositFlag, name),
+                List.of(new Consequence.StackFact.Value(key, name, null)), Consequence.Insertion.LOGICAL);
+        derived.put(key, member);
+        reads.recorder();
+        List<RulePlan> out = new ArrayList<>();
+        out.add(as(RuleOrigin.Role.OWN, reads.rulePlan(ruleName, items, decision)));
+        if (noted != null)
+            readingRule(ruleName, positions.versionOf(r), reads, reads.readingPlan(List.of(), false), null, testTerm,
+                    periods, reading, r.condition(), r.value(), noted, r.validity(), false, null, left);
+        if (perPeriod) return out;
+        if (canFail) out.add(conditionFaultRule(name, ruleName, fresh, r.condition(), null));
+        RulePlan deposit = depositRule(name, ruleName, fresh, r.condition(), null);
+        if (deposit != null) out.add(deposit);
+        return out;
+    }
+
+    /** The timeline that a producer writes into a timeline target before its days are cut ({@link #producedTimeline}),
+     *  and whether its values are constructor values, which have no decimals (RUNTIME-SEMANTICS ch. 9.4). */
+    private record ProducedTimeline(Term term, boolean values) {}
 
     /** The input of {@code member} on the bean of the object bound at slot {@code subject}, as a test that reads it where it
      *  evaluates takes it ({@link Term.Input}): the field of an attribute as it is, and of a cell the entry its key names
@@ -3768,6 +3902,22 @@ public final class TmsTranspiler {
      * are ill-formed (WF-026), so is a defaults group beside an allocation (WF-050), and a rule beside one, a computing
      * rule or an initialisation, this branch does not carry yet.
      */
+    /** WF-128, which the verifier holds and this backend does not run, as the reference interpreter and the ASP backend
+     *  run it again: an allocation distributes one amount at one moment (RUNTIME-SEMANTICS ch. 4, 7.8), so one whose
+     *  field names a time-dependent attribute is ill-formed, refused at the first such field in the verifier's order. */
+    private void overTimelines(ResolvedAllocation v) {
+        Object[][] fields = {{v.sourceType(), "sourceAttribute", v.sourceAttribute()},
+                {v.targetType(), "targetAttribute", v.targetAttribute()},
+                {v.sourceType(), "remainderAttribute", v.remainderAttribute()},
+                {v.targetType(), "ratioAttribute", v.ratioAttribute()},
+                {v.targetType(), "maximumAttribute", v.maximumAttribute()},
+                {v.targetType(), "orderingAttribute", v.orderingAttribute()}};
+        for (Object[] f : fields)
+            if (f[2] != null && temporal((ObjectType) f[0], (String) f[2], false))
+                throw new Refusal(DroolsCode.ALLOCATION_TIME_DEPENDENT_ATTRIBUTE.reason("allocation", v.name(), "field",
+                        f[1], "attribute", f[2], "objectType", ((ObjectType) f[0]).name));
+    }
+
     private List<RulePlan> allocation(ResolvedAllocation v) {
         String name = v.name();
         // the rules of a form are named by the form, and the deposits and shares carry that name
@@ -3776,6 +3926,7 @@ public final class TmsTranspiler {
         ResolvedAllocation.Method method = v.method();
         if (source == null || target == null || v.sourceAttribute() == null || v.targetAttribute() == null || method == null)
             throw new Refusal(DroolsCode.ALLOCATION_UNRESOLVED_OPERAND.reason());
+        overTimelines(v);
         RoleBindingRef rb = roleBindings.get(v);
         if (rb == null) throw new Refusal(DroolsCode.ALLOCATION_WITHOUT_CONNECTING_ROLE.reason());
         // WF-025, which the verifier holds and this backend does not run: the fields each method carries
@@ -4003,6 +4154,11 @@ public final class TmsTranspiler {
             String squareRoot = squareRoot(t.value());
             if (squareRoot != null)
                 throw new Refusal(DroolsCode.MEMBER_INIT_SQUARE_ROOT.reason("squareRoot", squareRoot));
+            if (t.labels() == null && !t.characteristic() && declared(fresh, t.attribute(), false).time() != null) {
+                Member member = timeMember(fresh, t.attribute(), false, Msg.drools("PART.desc.time-dependent-target"));
+                inits.add(new Initialisation(member, madeTimeline(t.value(), member, subject, reads)));
+                continue;
+            }
             // a member with labels writes one cell of a dimensioned attribute of the new object (IR-SPEC ch. 3.3); a
             // characteristic has no cell, and the attribute its name does not declare is refused by name
             Member member = t.labels() != null
@@ -4046,7 +4202,7 @@ public final class TmsTranspiler {
             else if (createdExactValues.contains(member.key()))
                 insertions.add(new Consequence.Insert.Exact(i, oc.name(), Consequence.Insertion.STATED));
             else settings.add(new Consequence.Construction.Setting(i, new Binding.Field(member.javaClass(), member.name()),
-                    member.cell()));
+                    member.cell(), member.time() != null));
         }
         // a creation fires on a fixpoint of the rule layer, so a fault in an initialisation is the session's at the
         // making, as in the reference interpreter, which then makes nothing; the fault is stated like everything a
@@ -4074,6 +4230,22 @@ public final class TmsTranspiler {
         RulePlan withoutDate = validityFault(ruleName, name, oc.validity());
         if (withoutDate != null) out.add(withoutDate);
         return out;
+    }
+
+    /** The timeline that the member value {@code value} of an object creation gives the time-dependent attribute
+     *  {@code member} of the object it makes, read on the creation's subject {@code subject} (RUNTIME-SEMANTICS ch. 7.8):
+     *  the period arithmetic of ch. 3.4 and 3.5, a scalar on every day, or the constructor of a literal on every day,
+     *  its filled segments written ({@link #periodArithmetic}, {@link #constructorTimeline}). It is the input of the
+     *  made object per day, which a rule on the member displaces on the days it decides and an initialisation finds
+     *  filled. Refused by name: any other value ({@link DroolsCode#TIME_TARGET_PRODUCER_VALUE}, ch. 3.12 row 10). */
+    private Term madeTimeline(Expr value, Member member, ObjectType subject, Reads reads) {
+        Expr produced = letBound(value);
+        if (constructorOfLiteral(produced, member)) return constructorTimeline(produced, reads, null);
+        if (!isPeriodArithmetic(produced))
+            throw new Refusal(DroolsCode.TIME_TARGET_PRODUCER_VALUE.reason("form",
+                    DroolsCode.TIME_TARGET_PRODUCER_VALUE.part("member"), "attribute", member.name(), "declarant",
+                    member.declarant().name, "snippet", snippet(value.source())));
+        return periodArithmetic(produced, member, subject, reads, null);
     }
 
     /** {@link #typePairRelation(Objecttype, Objecttype, FactModelGenerator.CreationLink)} for the object creation
@@ -7534,6 +7706,12 @@ public final class TmsTranspiler {
         if (pair == null) throw new Refusal(DroolsCode.RANGE_WITHOUT_ROLE_PAIR.reason("description", description));
         if (rb.factType() != null && createdRelations.contains(Namen.norm(rb.factType())))
             return linkRange(rb, pair[0], description);
+        return fieldRange(pair, subject, elem, description);
+    }
+
+    /** The one-step range over the bean fields of the role pair {@code pair}, the member's role first, as
+     *  {@link #oneStepRange} lays it over a relation no form creates: the links of the input. */
+    private Range fieldRange(RegelSpraakModel.Role[] pair, ObjectType subject, ObjectType elem, Object description) {
         String elemRole = pair[0].name(), backRoleName = pair[1].name();
         boolean forward = !model.toManyRole(subject, elem, elemRole);
         if (forward && model.toManyRole(elem, subject, backRoleName))
@@ -7563,6 +7741,25 @@ public final class TmsTranspiler {
         return new Range(member -> member.addToRangePlan(linkExists(r)), member -> {
             throw new Refusal(DroolsCode.CREATED_RELATION_FAILING_FILTER.reason("factType", rb.factType(), "description", description));
         });
+    }
+
+    /** Whether every link a form makes in the relation {@code factType} puts an object a creation made in the role
+     *  {@code memberRole}: no fact creation makes one, and every object creation that does links the object it makes in
+     *  that role. A member that a made link reaches is then an object a creation made, which the case gives no input. */
+    private boolean madeOnlyIn(String factType, RegelSpraakModel.Role memberRole) {
+        String relation = Namen.norm(factType);
+        for (ResolvedFactCreation c : model.factCreations)
+            if (c.factType() != null && Namen.norm(c.factType()).equals(relation)) return false;
+        for (ResolvedObjectCreation oc : model.objectCreations) {
+            if (oc.name() == null || oc.createdType() == null || oc.subject() == null) return false;
+            RoleBindingRef vr = roleBindings.get(oc);
+            FactModelGenerator.CreationLink k = FactModelGenerator.creationLink(model, oc.createdType(), oc.subject(), vr,
+                    oc.name());
+            RegelSpraakModel.FactType ft = vr != null ? factType(vr.factType()) : typePairRelation(oc);
+            if (ft == null || !Namen.norm(ft.name).equals(relation)) continue;
+            if (k.fwdRole() == null || !Namen.norm(k.fwdRole()).equals(Namen.norm(memberRole.name()))) return false;
+        }
+        return true;
     }
 
     /** A relation a form creates, as a one-step range over it walks it: by its normalised name, and whether the member
@@ -8771,6 +8968,24 @@ public final class TmsTranspiler {
             bindSubject(new Binding(w, List.of(), new Binding.Field(member.javaClass(), member.name()),
                     Binding.ReadForm.PERIODS, null));
             return allocateSlot(ReadKind.INPUT, key, w);
+        }
+
+        /** The {@link Value} facts of {@code member} on this rule's subject that a writer other than {@code writer} put
+         *  there, bound as a list off an accumulate, which over no fact binds the empty list: the writers an
+         *  initialisation on a timeline target reads, never its own write ({@link TmsTranspiler#timelineInitialisationRule}). */
+        int otherValues(Member member, String writer) {
+            notAtForm(member.name());
+            String key = "andere schrijvers " + member.key();
+            int known = existing(key);
+            if (known >= 0) return known;
+            String o = "$andere_schrijver_" + id("schrijvers");
+            String list = "$andere_schrijvers_" + id("schrijvers");
+            states(new Accumulation(new FactPattern(Value.class, o, List.of(new Alpha(id("andere-schrijver"), List.of(
+                    new Alpha.FieldTest("attribute", Alpha.Comparator.GELIJK, member.key()),
+                    new Alpha.FieldTest("writer", Alpha.Comparator.NOT_EQUAL, writer)))),
+                    List.of(onSubjectHere(id("andere-schrijver-onderwerp"))), List.of()),
+                    List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, list))));
+            return allocateSlot(ReadKind.VALUES, key, list);
         }
 
         /** The number of {@link BucketInput} facts of {@code member} on this rule's subject, off an accumulate: above 0

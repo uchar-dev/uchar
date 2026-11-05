@@ -1647,6 +1647,9 @@ final class DrlRendering {
                 if (z.cell() != null)
                     f.append("    ").append(route(Route.SET_CELL)).append("(nieuw, ").append(str(z.field().property())).append(", ")
                             .append(constant(z.cell()).text()).append(", i").append(z.initialisation()).append(");\n");
+                else if (z.timeline())
+                    f.append("    ").append(route(Route.SET_TIMELINE)).append("(nieuw, ").append(str(z.field().property()))
+                            .append(", i").append(z.initialisation()).append(");\n");
                 else
                     f.append("    ").append(route(Route.SET)).append("(nieuw, ").append(str(z.field().property()))
                             .append(", i").append(z.initialisation()).append(");\n");

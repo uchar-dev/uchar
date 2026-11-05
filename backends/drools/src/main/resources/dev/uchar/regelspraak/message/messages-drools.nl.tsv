@@ -349,6 +349,10 @@ DROOLS-311	een lezing van het tijdsafhankelijke doel '{attribute}' van {declaran
 DROOLS-312	het rekenen per periode van ch. 3.4 schrijft {value} op [{from}, {to}) in de tijdlijn van '{attribute}', van de onbegrensde vorm: de waarde eindigt niet, en een segment van deze tak houdt een decimaal
 DROOLS-313	vorm niet gedragen door de v0-Drools-backend: Expr:{node} (onbekend expressieknooppunt)
 DROOLS-314	een payloadtoegang tot het tijdsafhankelijke attribuut '{attribute}' wordt per dag gelezen (RUNTIME-SEMANTICS ch. 9.5), wat deze backend niet uitvoert
+DROOLS-315	de verdeling "{allocation}" noemt in haar veld {field} het tijdsafhankelijke attribuut '{attribute}' van {objectType}: een verdeling verdeelt één bedrag op één moment, en het document is niet welgevormd (IR-SPEC WF-128)
+DROOLS-316	{form} op het tijdsafhankelijke attribuut '{attribute}' van {declarant} is geen rekenen per periode van ch. 3.4 en 3.5 en geen constructor van een literal ('{snippet}'): deze tak schrijft haar per dag alleen als een van die twee (RUNTIME-SEMANTICS ch. 3.12 rij 10, 7.8)
+DROOLS-316.initialisation	de waarde van een initialisatie
+DROOLS-316.member	de lidwaarde van een objectcreatie
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
 EF-004	invoer {place} = {value} past niet in {decimals} decimalen: een casewaarde waarvan de declaratie de exacte waarde niet kan houden, wordt bij de invoer geweigerd (RUNTIME-SEMANTICS ch. 2.4, 5.7)

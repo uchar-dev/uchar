@@ -81,6 +81,9 @@ public enum Route {
     /** An initialisation of a cell of a dimensioned attribute put into the map of the new bean of an object creation
      *  where its value is not null ({@link Consequence.Construction.Setting} with a cell). */
     SET_CELL(ComputeHelpers.class, "setCell"),
+    /** The timeline of an initialisation of a time-dependent attribute set on the new bean of an object creation as the
+     *  bean model's segments where it holds one ({@link Consequence.Construction.Setting} of a timeline). */
+    SET_TIMELINE(ComputeHelpers.class, "setTimeline"),
     /** Whether the outcome of an evaluation is an evaluation fault, which a consequence inserts as a fault. */
     IS_EVALUATION_FAULT(ComputeHelpers.class, "isEvaluationFault"),
     /** An exception caught in an evaluation as its outcome where it is an evaluation fault; any other passes on. */

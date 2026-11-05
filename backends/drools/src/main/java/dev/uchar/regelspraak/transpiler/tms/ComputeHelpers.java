@@ -1406,6 +1406,24 @@ public final class ComputeHelpers {
         if (value != null) Accessors.eigenschapSetter(object.getClass(), property).accept(object, value);
     }
 
+    /** Sets the timeline {@code value}, a {@code List<Period>} of this branch, on the bean property {@code property} of
+     *  {@code object}, the new bean of an object creation, as the bean model's segments of the class loader of that
+     *  bean: the member value of a creation on a time-dependent attribute, the input of the made object per day
+     *  (RUNTIME-SEMANTICS ch. 7.8). A timeline without a segment leaves the member unset, leeg on every day. */
+    public static void setTimeline(Object object, String property, Object value) {
+        List<Period> timeline = Period.list((List<?>) value);
+        if (timeline == null || timeline.isEmpty()) return;
+        Class<?> segment;
+        try {
+            segment = Class.forName(dev.uchar.regelspraak.schema.FactModelGenerator.PACKAGE + ".Segment", true,
+                    object.getClass().getClassLoader());
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("geen beanklasse Segment naast " + object.getClass().getName()
+                    + " voor de tijdlijn van " + property, e);
+        }
+        Accessors.eigenschapSetter(object.getClass(), property).accept(object, Period.beans(timeline, segment));
+    }
+
     /** The object a chain of to-one reference fields {@code fields}, bean properties, reaches from {@code start}, each
      *  read as {@link #readProperty} reads it; a broken link reads as null. */
     private static Object walk(Object start, List<?> fields) {

@@ -139,7 +139,7 @@ public enum DroolsCode {
     CLIP_OWNED_WHOLE_PERIOD("DROOLS-115", Kind.REFUSAL, "clip-owned-whole-period", "description,snippet", null),
     CLIP_NEGATED_OR_NAVIGATED("DROOLS-116", Kind.REFUSAL, "clip-negated-or-navigated", "description,characteristic", null),
     RULE_BESIDE_DEFAULTS_GROUP("DROOLS-117", Kind.CONTRACT, "rule-beside-defaults-group", "attribute,objectType", null),
-    INITIALISATION_OF_TIME_ATTRIBUTE("DROOLS-118", Kind.REFUSAL, "initialisation-of-time-attribute", "attribute,declarant", null),
+    INITIALISATION_OF_TIME_ATTRIBUTE("DROOLS-118", Kind.RETIRED, "initialisation-of-time-attribute", "attribute,declarant", null),
     MULTIPLE_INITIALISATIONS_ON_TARGET("DROOLS-119", Kind.REFUSAL, "multiple-initialisations-on-target", "attribute,declarant,rules", null),
     INITIALISATION_DIVISION_SHARED_TARGET("DROOLS-120", Kind.RETIRED, "initialisation-division-shared-target", "division,attribute,declarant,writers", null),
     CONSISTENCY_WITHOUT_NAME("DROOLS-121", Kind.CONTRACT, "consistency-without-name", "", null),
@@ -335,7 +335,9 @@ public enum DroolsCode {
     TIMELINE_WRITERS_READ("DROOLS-311", Kind.RETIRED, "timeline-writers-read", "attribute,declarant", null),
     NON_TERMINATING_SEGMENT("DROOLS-312", Kind.LIMIT, "non-terminating-segment", "value,from,to,attribute", null),
     EXPR_PAYLOAD_ACCESS("DROOLS-313", Kind.RETIRED, "expr-payload-access", "node", null),
-    PAYLOAD_ACCESS_OF_TIMELINE("DROOLS-314", Kind.REFUSAL, "payload-access-of-timeline", "attribute", null);
+    PAYLOAD_ACCESS_OF_TIMELINE("DROOLS-314", Kind.REFUSAL, "payload-access-of-timeline", "attribute", null),
+    ALLOCATION_TIME_DEPENDENT_ATTRIBUTE("DROOLS-315", Kind.CONTRACT, "allocation-time-dependent-attribute", "allocation,field,attribute,objectType", null),
+    TIME_TARGET_PRODUCER_VALUE("DROOLS-316", Kind.REFUSAL, "time-target-producer-value", "form,attribute,declarant,snippet", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

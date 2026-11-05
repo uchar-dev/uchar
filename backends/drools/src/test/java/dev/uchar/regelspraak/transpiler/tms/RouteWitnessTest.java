@@ -87,6 +87,7 @@ class RouteWitnessTest {
                 "NEW_OBJECT: Object ComputeHelpers.newObject[Object, String]",
                 "SET: void ComputeHelpers.set[Object, String, Object]",
                 "SET_CELL: void ComputeHelpers.setCell[Object, String, List, Object]",
+                "SET_TIMELINE: void ComputeHelpers.setTimeline[Object, String, Object]",
                 "IS_EVALUATION_FAULT: boolean ComputeHelpers.isEvaluationFault[Object]",
                 "CAUGHT: RuntimeException ComputeHelpers.caught[RuntimeException]",
                 "DESIGNATE: RuntimeException ComputeHelpers.designate[Object, String]",

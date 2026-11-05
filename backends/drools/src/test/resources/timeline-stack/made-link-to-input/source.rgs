@@ -1,0 +1,19 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het loon Numeriek (geheel getal) voor elke maand;
+
+Objecttype de Melding (mv: Meldingen)
+    het meldloon Numeriek (geheel getal) voor elke maand;
+    het meldnummer Numeriek (geheel getal);
+
+Feittype jutmelding
+    de melder (mv: melders) Jutter
+    de melding (mv: meldingen) Melding
+Eén melder heeft meerdere meldingen
+
+Regel meld de jutter
+    geldig altijd
+        Een Jutter heeft een melding met meldnummer gelijk aan 1.
+
+Regel meldloon
+    geldig altijd
+        Het meldloon van een Melding moet berekend worden als de som van het loon van alle melders van de Melding.

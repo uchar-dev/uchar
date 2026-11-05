@@ -183,6 +183,17 @@ public enum StaticFunction {
      *  {@code BucketInput} facts, the attribute, a {@code String} constant, and the subject: the fault of the
      *  asOfDate-bucket scalar (EF-037). */
     DAYS_INPUT_EMPTY(PeriodDefaults.class, "inputEmpty", true),
+    /** The days an initialisation on a timeline target may decide, the lowest layer of its stack (ch. 7.8), from the
+     *  {@code Value} facts of the other writers, the input on the bean, the number of its {@code BucketInput} facts,
+     *  the attribute, a {@code String} constant, and the subject, null where none is left: the fault of the
+     *  asOfDate-bucket scalar (EF-037). */
+    DAYS_INITIALISATION(PeriodDefaults.class, "initialisationDays", true),
+    /** What an initialisation on a numeric timeline target writes on its days from the timeline of its value, the
+     *  decimals an {@code Integer} and the attribute a {@code String} constant, null where it decides none: the fault of
+     *  a segment that does not fit (ch. 2.4 point 1). */
+    DAYS_INITIALISED(PeriodDefaults.class, "initialised", true),
+    /** As {@link #DAYS_INITIALISED}, on a timeline target of a sum type. */
+    DAYS_INITIALISED_VALUES(PeriodDefaults.class, "initialisedValues", false),
     /** The reconciliation per day of the outcomes of member chains under a conflict key, a {@code String} constant
      *  (ch. 7.2, 7.9, 7.11), null where it settles no day. */
     DAYS_RECONCILED(PeriodDefaults.class, "reconciled", false),
