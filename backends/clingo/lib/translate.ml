@@ -13903,10 +13903,20 @@ let translate_uniqueness ctx (u : resolved_uniqueness) =
     (Printf.sprintf "isa(S1,%s), isa(S2,%s), S1 != S2, %s" (str subject_ot) (str subject_ot)
        (String.concat ", " (joins "S1" @ joins "S2" @ scope_atoms)))
 
+(* the scale of a key of a uniqueness union: the declared decimals of a number,
+   a percentage and a day date, which the union harmonises across its sources;
+   None for every other datatype (a text, an enumeration, a date-time), whose
+   values compare as the ground terms they are, as in the single uniqueness *)
+let union_key_scale ctx ~otype ~attr =
+  match attr_datatype ctx ~otype ~attr with
+  | Some (Number _ | Percentage _ | Date_in_days) as dt -> Some (decimals_of_datatype dt)
+  | _ -> None
+
 (* the uniqueness union (ch. 5.9): every source feeds one shared key
    predicate — a duplicate may arise across two different source types.
-   Key positions harmonise to the maximum declared scale across sources,
-   so 5 and 5.00 collide exactly as the runtime's value equality does. *)
+   Numeric key positions harmonise to the maximum declared scale across
+   sources, so 5 and 5.00 collide exactly as the runtime's value equality
+   does. *)
 let translate_uniqueness_union ctx i (u : resolved_uniqueness_union) =
   (* the allocation-window sibling: loud, never silently unwindowed *)
   (match u.uu_validity with
@@ -13924,7 +13934,7 @@ let translate_uniqueness_union ctx i (u : resolved_uniqueness_union) =
       (fun m (b : uniqueness_union_source) ->
         let t = req "Source.objectType" b.uub_type in
         let k = req "Source.keys entry" (List.nth b.uub_keys pos) in
-        max m (attr_decimals ctx ~otype:t ~attr:k))
+        match union_key_scale ctx ~otype:t ~attr:k with Some d -> max m d | None -> m)
       0 u.source_list
   in
   let scales = List.init arity max_scale in
@@ -13938,12 +13948,16 @@ let translate_uniqueness_union ctx i (u : resolved_uniqueness_union) =
       (* the shared ever-uniqueness guards and key atoms (ch. 5.9):
          one reading for the union and the single form alike *)
       uni_key_guards ctx ~otype:t ~keys:(List.map (req "Source.keys entry") b.uub_keys);
+      (* the factor that brings the key at [pos] to the scale of its position *)
+      let factor pos k =
+        match union_key_scale ctx ~otype:t ~attr:(req "Source.keys entry" k) with
+        | Some d -> pow10 (List.nth scales pos - d)
+        | None -> 1
+      in
       let head_args =
         List.mapi
           (fun pos k ->
-            let k = req "Source.keys entry" k in
-            let d = attr_decimals ctx ~otype:t ~attr:k in
-            let m = pow10 (List.nth scales pos - d) in
+            let m = factor pos k in
             if m = 1 then Printf.sprintf "K%d" pos else Printf.sprintf "(K%d*%d)" pos m)
           b.uub_keys
       in
@@ -13957,9 +13971,7 @@ let translate_uniqueness_union ctx i (u : resolved_uniqueness_union) =
          the raw key against the compile-time factor *)
       List.iteri
         (fun pos k ->
-          let k = req "Source.keys entry" k in
-          let d = attr_decimals ctx ~otype:t ~attr:k in
-          let m = pow10 (List.nth scales pos - d) in
+          let m = factor pos k in
           if m > 1 then
             emit ctx
               "viol(\"arithmetic range exceeded (clingo grounds in machine integers)\",S) :- \

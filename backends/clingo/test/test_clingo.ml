@@ -17896,6 +17896,34 @@ let () =
   }|} ~by:{|"expected": [ { "kind": "consistent" } ]|}
          (corpus "corpus/red/uniqueness-two-temporal-keys/case1.json"))
     ~needle:"at most one temporal key component" ();
+  (* a uniqueness union harmonises the decimals of a numeric key position
+     across its sources; a text key has none and compares as its term: the
+     union "eenmalige reekscode" (the text reeks and the volgnummer on a year
+     grid) over a type without instances, and with a key across the two types *)
+  let text_key = corpus "corpus/red/ever-unique-temporal-key-bucket-scalar/ir.json" in
+  let vondst label otype reeks volgnummer =
+    Printf.sprintf
+      {|{ "label": "%s", "objectType": "%s", "attributes": { "reeks": { "text": "%s" }, "volgnummer": { "timeline": [
+        { "from": "2024-01-01", "to": "%s", "value": { "number": "1" } } ] } }, "roles": {}, "characteristics": [] }|}
+      label otype reeks volgnummer
+  in
+  let text_key_case instances expected =
+    Printf.sprintf
+      {|{ "format": "uchar-case-v0", "asOfDate": "2024-06-01", "input": { "instances": [ %s ], "parameters": {} },
+  "expected": [ %s ] }|}
+      (String.concat ", " instances) (String.concat ", " expected)
+  in
+  let reekscode label =
+    Printf.sprintf {|{ "kind": "inconsistent", "rule": "eenmalige reekscode", "label": "%s", "code": "EF-026" }|} label
+  in
+  both_answer ~name:"a uniqueness union with a text key over a type without instances" ~ir:text_key
+    ~case_text:(text_key_case [ vondst "S1" "Strandvondst" "A" "2025-01-01" ] [ {|{ "kind": "consistent" }|} ]);
+  both_answer ~name:"a uniqueness union with a text key across two types" ~ir:text_key
+    ~case_text:
+      (text_key_case
+         [ vondst "S1" "Strandvondst" "A" "2025-01-01"; vondst "W1" "Wrakvondst" "A" "2026-01-01";
+           vondst "W2" "Wrakvondst" "B" "2026-01-01" ]
+         [ reekscode "S1"; reekscode "W1" ]);
   (* EF-011 in the justification of a default below the one that decides: the
      zeer zware vondst of 150 is oud by the higher default, so ref never reads
      the Rekenjaar of the lower one; of 50 it does (the red case) *)

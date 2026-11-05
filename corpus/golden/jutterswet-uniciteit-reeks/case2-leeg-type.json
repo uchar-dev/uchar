@@ -1,0 +1,45 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "reeks": {
+            "text": "A"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "reeks": {
+            "text": "A"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalige reeks",
+      "label": "S1",
+      "code": "EF-026"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "eenmalige reeks",
+      "label": "S2",
+      "code": "EF-026"
+    }
+  ]
+}

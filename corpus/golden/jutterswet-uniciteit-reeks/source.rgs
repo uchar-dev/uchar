@@ -1,0 +1,9 @@
+Objecttype de Strandvondst (mv: Strandvondsten)
+    de reeks Tekst;
+
+Objecttype de Wrakvondst (mv: Wrakvondsten)
+    de reeks Tekst;
+
+Regel eenmalige reeks
+    geldig altijd
+        De reeksen van alle Strandvondsten verenigd met de reeksen van alle Wrakvondsten moeten uniek zijn.

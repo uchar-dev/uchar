@@ -1,0 +1,89 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Strandvondst",
+        "animate": false,
+        "plural": "Strandvondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "reeks",
+            "datatype": {
+              "node": "Text"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Wrakvondst",
+        "animate": false,
+        "plural": "Wrakvondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "reeks",
+            "datatype": {
+              "node": "Text"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [
+      {
+        "node": "Uniqueness",
+        "name": "eenmalige reeks",
+        "versions": [
+          {
+            "sources": [
+              {
+                "node": "Source",
+                "objectType": "Strandvondst",
+                "keys": [
+                  "reeks"
+                ]
+              },
+              {
+                "node": "Source",
+                "objectType": "Wrakvondst",
+                "keys": [
+                  "reeks"
+                ]
+              }
+            ],
+            "validity": {
+              "node": "Validity"
+            },
+            "source": {
+              "snippet": "De reeksen van alle Strandvondsten verenigd met de reeksen van alle Wrakvondsten moeten uniek zijn"
+            }
+          }
+        ]
+      }
+    ],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
