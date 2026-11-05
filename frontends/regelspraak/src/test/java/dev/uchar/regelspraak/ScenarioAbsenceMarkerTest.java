@@ -210,6 +210,15 @@ class ScenarioAbsenceMarkerTest {
                         "drempel is onbekend"));
     }
 
+    /** Only the words of a marker read as one on the place of a value: any other word there stays the syntax error it
+     *  was, so no word of a document changes its reading. */
+    @Test void a_word_that_is_no_marker_stays_a_syntax_error() {
+        List<String> errors = errorsOn(SCENARIO.replace("- de keurwaarde is 7", "- de keurwaarde is onbekende"),
+                "keurwaarde is onbekende");
+        assertTrue(errors.stream().anyMatch(e -> e.startsWith("RGS-216 ")), () -> "" + errors);
+        assertTrue(errors.stream().noneMatch(e -> e.startsWith("RGS-377 ")), () -> "" + errors);
+    }
+
     /** The words of a marker are keywords of the value, as in a rule; no word stays outside a name. */
     @Test void the_words_of_a_marker_value_are_keywords() {
         List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("model.rgs", MODEL),
