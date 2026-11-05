@@ -379,15 +379,16 @@ public sealed interface Expr {
     /**
      * IR-SPEC ch. 4.7 / RUNTIME-SEMANTICS ch. 9.1: a constructor value of the sum type {@code type}, the constructor
      * {@code constructor} with, for a unary one, the payload {@code argument}; null for a nullary one. A leeg argument
-     * makes the whole node leeg. The resolver builds none: a backend's IR loader reads it off the wire, where the
-     * frontend writes one for a value or a marker of an attribute with absence markers (ch. 9.5).
+     * makes the whole node leeg. The resolver builds one for a value or a marker written into an attribute with absence
+     * markers and for a marker tested beside one (ch. 9.5); a backend's IR loader reads it off the wire.
      */
     record Construct(Datatype.SumType type, String constructor, Expr argument, Source source) implements Expr {}
 
     /**
      * IR-SPEC ch. 4.7 / RUNTIME-SEMANTICS ch. 9.5: the payload of {@code base}, a sum-typed value, where it carries the
      * unary constructor {@code constructor}; leeg where it carries another constructor or is leeg. {@code type} is the
-     * payload's datatype as the wire writes it. Built, like {@link Construct}, by a backend's IR loader only.
+     * payload's datatype as the wire writes it. The resolver builds one for every read of the value of an attribute
+     * with absence markers; a backend's IR loader reads it off the wire.
      */
     record PayloadAccess(Expr base, String constructor, Datatype type, Source source) implements Expr {}
 

@@ -39,8 +39,8 @@ public sealed interface Datatype
      *  require the SAME enumeration on both sides, not merely any enumeration) plus the declared value set. */
     record Enumeration(String domain, List<String> values) implements Datatype {}
     /** The sum type of IR-SPEC ch. 2.4 (RUNTIME-SEMANTICS ch. 9): the declaring domain's NAME, its identity (WF-061),
-     *  and its constructors in declared order. The resolver builds none: the IR loader of a backend reads it off the
-     *  wire, where the RegelSpraak frontend writes one for an attribute with absence markers (ch. 9.5). */
+     *  and its constructors in declared order. The resolver builds one for an attribute with absence markers
+     *  ({@link RegelSpraakModel.ObjectType#sumTypeOf}, ch. 9.5); the IR loader of a backend reads it off the wire. */
     record SumType(String domain, List<Constructor> constructors) implements Datatype {
         public SumType {
             constructors = List.copyOf(constructors);

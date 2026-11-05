@@ -495,8 +495,7 @@ public final class Typing {
             case Expr.InstanceSetUnion u -> null;
             case Expr.VariableRef v -> null;
             case Expr.Unresolved o -> null;
-            // the resolver builds neither (Expr.Construct, Expr.PayloadAccess): a constructor value is no number, and
-            // a payload is bounded as its declaration
+            // a constructor value is no number, and a payload is bounded as its declaration
             case Expr.Construct c -> null;
             case Expr.PayloadAccess p -> declaredBound(p.type());
         };

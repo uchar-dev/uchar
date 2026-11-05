@@ -401,9 +401,15 @@ final class ExpressionBuilder {
             case Expr.BinderRef x -> { return e; }
             case Expr.Constant x -> { return e; }
             case Expr.Unresolved x -> { return e; }
-            // the two nodes of the absence markers, which the resolver builds nowhere (IR-SPEC ch. 4.7)
-            case Expr.Construct c -> { why[0] = Msg.frontend("PART.subject-no-anchor", "expression", c.source()); return e; }
-            case Expr.PayloadAccess p -> { why[0] = Msg.frontend("PART.subject-no-anchor", "expression", p.source()); return e; }
+            // the anchor stands on the read whose value or marker the node is (IR-SPEC ch. 4.1a, 4.7)
+            case Expr.Construct c -> {
+                Expr moved = again.apply(c.argument());
+                return moved == c.argument() ? c : new Expr.Construct(c.type(), c.constructor(), moved, c.source());
+            }
+            case Expr.PayloadAccess p -> {
+                Expr moved = again.apply(p.base());
+                return moved == p.base() ? p : new Expr.PayloadAccess(moved, p.constructor(), p.type(), p.source());
+            }
         }
     }
 
@@ -809,7 +815,7 @@ final class ExpressionBuilder {
             case Expr.TextComposition ignored -> null;
             case Expr.InstanceSetUnion ignored -> null;
             case Expr.Unresolved ignored -> null;        // no claim: the marker carries its own diagnostic
-            // the resolver builds neither: a constructor value is no count, and a payload is as its declaration
+            // a constructor value is no count, and a payload is as its declaration
             case Expr.Construct ignored -> null;
             case Expr.PayloadAccess p -> typeRational(p);
         };
@@ -2715,9 +2721,8 @@ final class ExpressionBuilder {
 
     /** "de som van de taxatie van alle vondsten van de Jutter die een waarde hebben" (grammar/DIVERGENCES.md,
      *  "Afwezigheidsmarkeringen"): over an attribute with absence markers the subselectie "die een waarde hebben"
-     *  tests per element that the aggregated attribute holds a value, a test recorded in
-     *  {@link RegelSpraakModel#absenceMarkerSites} whose operand is a fresh read of the element's attribute, as
-     *  {@link #elementComparison} builds one. Null for any other predicaat or operand. */
+     *  tests per element that the aggregated attribute holds a value, a gevuld test of the PayloadAccess of a fresh read
+     *  of the element's attribute, as {@link #elementComparison} builds one. Null for any other predicaat or operand. */
     private Condition elementValueTest(PredicaatContext p, ObjectType elem, List<Expr> arguments) {
         if (arguments.size() != 1 || !(arguments.get(0) instanceof Expr.AttributeReference agg)
                 || agg.objectType() != elem || agg.navigationRole() != null || elem.markersOf(agg.attribute()) == null)
@@ -2737,12 +2742,9 @@ final class ExpressionBuilder {
         } else return null;
         if (!een || !has || name == null
                 || !src(name).trim().equalsIgnoreCase(RegelSpraakModel.VALUE_CONSTRUCTOR)) return null;
-        ObjectType declaring = elem.markerDeclaringType(agg.attribute());
-        Expr lhs = new Expr.AttributeReference(agg.attribute(), elem, "", null, agg.type(), source(p));
-        Condition.Predicate test = new Condition.Predicate(Condition.PredicateKind.GEVULD, lhs, null, source(p));
-        model.absenceMarkerSites.put(test, new RegelSpraakModel.AbsenceMarkerSite(declaring,
-                declaring.attributeName(agg.attribute()), RegelSpraakModel.VALUE_CONSTRUCTOR));
-        return test;
+        Expr.AttributeReference lhs = new Expr.AttributeReference(agg.attribute(), elem, "", null, agg.type(), source(p));
+        return new Condition.Predicate(Condition.PredicateKind.GEVULD,
+                AbsenceMarkers.valueOf(lhs, elem.sumTypeOf(agg.attribute())), null, source(p));
     }
 
     /** §4.12-4.15: type-check the operand list of a value/date aggregation. min/max demand all

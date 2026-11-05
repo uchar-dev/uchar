@@ -923,6 +923,7 @@ final class Dependencies {
                     return acc;
                 }
                 case "FieldAccess" -> { return readExpr(subject, at, acc, n.get("base")); }
+                case "PayloadAccess" -> { return readExpr(subject, at, acc, n.get("base")); }
                 case "Let" -> { return readExpr(subject, at, readExpr(subject, at, acc, n.get("value")), n.get("body")); }
                 case "ListLiteral" -> {
                     for (Object x : raw(n, "elements")) acc = readExpr(subject, at, acc, x);

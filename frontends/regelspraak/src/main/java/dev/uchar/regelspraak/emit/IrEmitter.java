@@ -236,7 +236,7 @@ public final class IrEmitter {
         w.key("domains").beginArray();
         for (var entry : m.domains.entrySet()) domain(entry.getKey(), entry.getValue());
         for (ObjectType ot : m.objectTypes.values())
-            for (String a : ot.attributeMarkers.keySet()) markerDomain(ot, a);
+            for (String a : ot.attributeMarkers.keySet()) markerDomain(ot.sumTypeOf(a));
         w.endArray();
 
         w.key("unitSystems").beginArray();
@@ -339,14 +339,10 @@ public final class IrEmitter {
 
     // --- §4 prioritized defaults (extension) -------------------------------
 
-    /** The attribute target of the defaults group being emitted, which its consequences write; null elsewhere. */
-    private String currentDefaultsAttribute;
-
     private void prioritizedDefaults(PrioritizedDefaults p) {
         // the path of a default's own-attribute/characteristic read resolves against the group subject
         ObjectType previousSubject = currentSubject;
         currentSubject = m == null ? null : m.objectTypes.get(p.subject());
-        currentDefaultsAttribute = p.attribute();
         w.beginObject();
         w.key("node").value("PrioritizedDefaults");
         w.key("name").value(p.name());
@@ -362,7 +358,6 @@ public final class IrEmitter {
         originAndDesignations(RegelSpraakModel.Designatable.form(p.name()));
         w.endObject();
         currentSubject = previousSubject;
-        currentDefaultsAttribute = null;
     }
 
     // `default` is a Java keyword, so the emit method for a Default node is spelled dflt.
@@ -376,7 +371,7 @@ public final class IrEmitter {
         // absent on the initialisation default and on a group default (IR-SPEC ch. 6.1)
         if (d.condition() != null) { w.key("justification"); condition(d.condition()); }
         if (d.consequence() != null) {   // attribute defaults only
-            w.key("consequence"); writtenValue(currentSubject, currentDefaultsAttribute, d.consequence());
+            w.key("consequence"); expr(d.consequence());
         }
         if (d.initialisation()) w.key("initialisation").value(true);
         if (d.exceptions() != null) {
@@ -426,8 +421,7 @@ public final class IrEmitter {
             w.key("node").value("Attribute");
             w.key("name").value(a);
             w.key("datatype");
-            if (ot.attributeMarkers.containsKey(a)) sumType(ot, a);
-            else datatype(entry.getValue(), true);
+            datatype(ot.attributeMarkers.containsKey(a) ? ot.sumTypeOf(a) : entry.getValue(), true);
             String plural = ot.attributePlural.get(a);
             if (plural != null) w.key("plural").value(plural);
             List<String> dimensions = ot.attributeDimensions.get(a);
@@ -718,67 +712,27 @@ public final class IrEmitter {
 
     // --- absence markers (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"; RUNTIME-SEMANTICS ch. 9.5) ------------
 
-    /** The domain an attribute with absence markers lowers to: one per attribute, so its markers never pass to
-     *  another attribute by the nominal identity of sum types (IR-SPEC WF-061). */
-    public static String markerDomainName(ObjectType declaring, String attribute) {
-        return attribute + " van een " + declaring.name;
-    }
-
-    /** The constructors of that domain: the value with the attribute's datatype as payload, then the markers. */
-    private void constructors(ObjectType declaring, String attribute) {
+    /** The constructors of a sum type in declared order, each payload in its declaration spelling. */
+    private void constructors(Datatype.SumType s) {
         w.key("constructors").beginArray();
-        w.beginObject();
-        w.key("name").value(RegelSpraakModel.VALUE_CONSTRUCTOR);
-        w.key("payload"); datatype(declaring.attributes.get(attribute), true);
-        w.endObject();
-        for (String marker : declaring.attributeMarkers.get(attribute)) {
+        for (Datatype.Constructor c : s.constructors()) {
             w.beginObject();
-            w.key("name").value(marker);
-            w.key("payload").valueNull();
+            w.key("name").value(c.name());
+            w.key("payload"); datatype(c.payload(), true);
             w.endObject();
         }
         w.endArray();
     }
 
-    /** The sum type at a use site: the attribute's datatype, a Construct's and a PayloadAccess's base. */
-    private void sumType(ObjectType declaring, String attribute) {
-        w.beginObject();
-        w.key("node").value("SumType");
-        w.key("domain").value(markerDomainName(declaring, attribute));
-        constructors(declaring, attribute);
-        w.endObject();
-    }
-
-    private void markerDomain(ObjectType declaring, String attribute) {
+    /** The domain declaration of the sum type of an attribute with absence markers; the domain names it. */
+    private void markerDomain(Datatype.SumType s) {
         w.beginObject();
         w.key("node").value("Domain");
-        w.key("name").value(markerDomainName(declaring, attribute));
+        w.key("name").value(s.domain());
         w.key("datatype").beginObject();
         w.key("node").value("SumType");
-        constructors(declaring, attribute);
+        constructors(s);
         w.endObject();
-        w.endObject();
-    }
-
-    /** The value of a write into {@code target}: where the target has absence markers, a marker is a Construct of it
-     *  and every other value a Construct of the value constructor, so a leeg value leaves the Construct leeg and
-     *  decides nothing (RUNTIME-SEMANTICS ch. 9.1, 9.5); elsewhere the value itself. */
-    private void writtenValue(ObjectType type, String attribute, Expr value) {
-        ObjectType declaring = type == null || attribute == null ? null : type.markerDeclaringType(attribute);
-        RegelSpraakModel.AbsenceMarkerSite site = m.absenceMarkerSites.get(value);
-        if (declaring == null) { expr(value); return; }
-        String name = declaring.attributeName(attribute);
-        w.beginObject();
-        w.key("node").value("Construct");
-        w.key("type"); sumType(declaring, name);
-        if (site != null && value instanceof Expr.Literal) {
-            w.key("constructor").value(site.constructor());
-            w.key("argument").valueNull();
-        } else {
-            w.key("constructor").value(RegelSpraakModel.VALUE_CONSTRUCTOR);
-            w.key("argument"); expr(value);
-        }
-        sourceReference(value.source().snippet());
         w.endObject();
     }
 
@@ -825,11 +779,12 @@ public final class IrEmitter {
                 w.key("domain").value(e.domain());
                 w.key("values"); stringList(e.values());
             }
-            // the resolver gives no attribute, parameter or expression a sum type: the sum type of an attribute with
-            // absence markers is written beside its numeric declaration (sumType), so this arm is unreachable and
-            // refuses rather than serialising a shape no gate reads
-            case Datatype.SumType s -> throw new UnsupportedOperationException("IrEmitter: de resolver typeert niets met"
-                    + " het somtype '" + s.domain() + "'; een attribuut met afwezigheidsmarkeringen schrijft sumType");
+            // the sum type of an attribute with absence markers, at its declaration and at a use site (a Construct)
+            case Datatype.SumType s -> {
+                w.key("node").value("SumType");
+                w.key("domain").value(s.domain());
+                constructors(s);
+            }
             // the resolver's "no claim" has no wire spelling: a derived position the frontend cannot type is
             // written null (derivedType) and a marker leaves its type out, so an unknown datatype reaching
             // this arm stands at a declaration, a payload or a literal, and a document there would be refused
@@ -908,9 +863,10 @@ public final class IrEmitter {
     }
 
     /** IR-SPEC ch. 4.1: the value variant of a literal, chosen by its type — a number (a percentage included), a
-     *  boolean, a text, a date of day and of millisecond precision, an enumeration label. The frontend has no sum
-     *  type, so it never writes the constructor variant. Without a type there is no variant to choose, and a boolean
-     *  whose lexeme is not waar or onwaar has no value; both are refused rather than guessed. */
+     *  boolean, a text, a date of day and of millisecond precision, an enumeration label. A constructor value is a
+     *  Construct, never a literal, so this never writes the constructor variant. Without a type there is no variant
+     *  to choose, and a boolean whose lexeme is not waar or onwaar has no value; both are refused rather than
+     *  guessed. */
     private static String variant(Expr.Literal l) {
         if (l.valueText() == null)
             throw new IllegalStateException("IrEmitter: de literal '" + l.source().snippet() + "' heeft geen waarde; de "
@@ -957,34 +913,6 @@ public final class IrEmitter {
 
     private void expr(Expr e) {
         if (e == null) { w.valueNull(); return; }
-        RegelSpraakModel.AbsenceMarkerSite site = m == null ? null : m.absenceMarkerSites.get(e);
-        if (site != null && e instanceof Expr.Literal l) {
-            // a marker tested beside its attribute (RUNTIME-SEMANTICS ch. 9.3, 9.5)
-            w.beginObject();
-            w.key("node").value("Construct");
-            w.key("type"); sumType(site.declaringType(), site.attribute());
-            w.key("constructor").value(site.constructor());
-            w.key("argument").valueNull();
-            sourceReference(l.source().snippet());
-            w.endObject();
-            return;
-        }
-        if (site != null && e instanceof Expr.AttributeReference r) {
-            // a read of the value of an attribute with absence markers (RUNTIME-SEMANTICS ch. 9.5, IR-SPEC WF-127)
-            w.beginObject();
-            w.key("node").value("PayloadAccess");
-            w.key("type"); datatype(site.declaringType().attributes.get(site.attribute()));
-            w.key("base"); bareExpr(r);
-            w.key("constructor").value(site.constructor());
-            sourceReference(r.source().snippet());
-            w.endObject();
-            return;
-        }
-        bareExpr(e);
-    }
-
-    /** {@link #expr} without the lowering of the absence markers. */
-    private void bareExpr(Expr e) {
         w.beginObject();
         switch (e) {
             // IR-SPEC ch. 4.1: the value is the variant its type names (the value union of uchar-case-v0); the
@@ -1112,13 +1040,22 @@ public final class IrEmitter {
             case Expr.IfThenElse ignored -> throw new UnsupportedOperationException(
                     "IfThenElse is never emitter-produced (IR-SPEC ch. 4.10): the resolver builds none, "
                             + "so this emitter has no verified wire shape for it");
-            // the two nodes of the absence markers that a backend's loader builds (IR-SPEC ch. 4.7): the resolver
-            // builds neither, and expr writes them from the absence-marker sites, so these arms refuse for the
-            // reason the IfThenElse arm does
-            case Expr.Construct ignored -> throw new UnsupportedOperationException(
-                    "IrEmitter: de resolver maakt geen Construct; expr schrijft hem uit de plaatsen van de markeringen");
-            case Expr.PayloadAccess ignored -> throw new UnsupportedOperationException(
-                    "IrEmitter: de resolver maakt geen PayloadAccess; expr schrijft hem uit de plaatsen van de markeringen");
+            // IR-SPEC ch. 4.7: a value or a marker of an attribute with absence markers, and a read of its value
+            // (RUNTIME-SEMANTICS ch. 9.5, WF-127)
+            case Expr.Construct c -> {
+                w.key("node").value("Construct");
+                w.key("type"); datatype(c.type());
+                w.key("constructor").value(c.constructor());
+                w.key("argument"); expr(c.argument());
+                sourceReference(c.source().snippet());
+            }
+            case Expr.PayloadAccess p -> {
+                w.key("node").value("PayloadAccess");
+                w.key("type"); datatype(p.type());
+                w.key("base"); expr(p.base());
+                w.key("constructor").value(p.constructor());
+                sourceReference(p.source().snippet());
+            }
             // the §5.7 concatenation as an instance set (IR-SPEC ch. 4.3, WF-110). No "type" key:
             // the node denotes INSTANCES and carries no datatype, which is why the verifier's type
             // prologue exempts it the way it exempts a Lambda. Each selection's filter is emitted
@@ -1601,7 +1538,7 @@ public final class IrEmitter {
         w.beginObject();
         w.key("validity"); validity(r.validity());
         w.key("target"); expr(r.target());
-        w.key("value"); writtenValue(d.objectType(), d.attribute(), r.value());
+        w.key("value"); expr(r.value());
         if (r.condition() != null) { w.key("condition"); condition(r.condition()); }
         w.key("initialisation").value(r.kind() == ResolvedRule.Kind.INITIALISATIE);
         if (r.kind() == ResolvedRule.Kind.GELIJKSTELLING || r.kind() == ResolvedRule.Kind.BEREKENING)
@@ -1923,10 +1860,12 @@ public final class IrEmitter {
     }
 
     /** The attribute reference the single argument {@code e} of an instance fold reads through the fold's range: the
-     *  argument itself, or the reference under a cell of each member (ALEF's fold of one cell over a role, IR-SPEC
-     *  ch. 4.3); null for any other node. */
+     *  argument itself, the reference under a cell of each member (ALEF's fold of one cell over a role, IR-SPEC
+     *  ch. 4.3), or the reference whose value each member gives (a PayloadAccess, RUNTIME-SEMANTICS ch. 9.5); null for
+     *  any other node. */
     public static Expr.AttributeReference foldSourceReference(Expr e) {
         if (e instanceof Expr.AttributeReference a) return a;
+        if (e instanceof Expr.PayloadAccess p) return foldSourceReference(p.base());
         return e instanceof Expr.DimensionCellRead c ? c.attribute() : null;
     }
 

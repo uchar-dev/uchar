@@ -1,6 +1,10 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.IrEmitter;
+import dev.uchar.regelspraak.ir.Condition;
+import dev.uchar.regelspraak.ir.Expr;
+import dev.uchar.regelspraak.ir.ResolvedRule;
+import dev.uchar.regelspraak.model.Datatype;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
@@ -37,6 +41,62 @@ class AbsenceMarkerTest {
         SemanticTokens.Document d = Resolver.tokens(files);
         assertTrue(d.files().get(0).spans().stream().anyMatch(s -> s.text().equals("(of onbekend of niet van toepassing)")
                 && s.kind() == SemanticTokens.Kind.KEYWORD), "de markering is een sleutelwoord");
+    }
+
+    private static ResolvedRule rule(RegelSpraakModel m, String name) {
+        return m.resolvedRules.stream().filter(r -> r.name().equals(name)).findFirst()
+                .orElseThrow(() -> new AssertionError("geen regel '" + name + "'"));
+    }
+
+    private static Expr.PayloadAccess firstRead(Expr e) {
+        List<Expr.PayloadAccess> found = new java.util.ArrayList<>();
+        Expr.contains(e, x -> x instanceof Expr.PayloadAccess p && found.add(p));
+        assertFalse(found.isEmpty(), () -> "geen PayloadAccess in " + e);
+        return found.get(0);
+    }
+
+    /** The model holds the nodes the emitter writes: a value written is a Construct of the value constructor, a marker
+     *  written or tested a Construct of the marker, and a read of the value a PayloadAccess typed with the declared
+     *  datatype over a reference typed with the sum type of the attribute, in a computation, a value test and a fold. */
+    @Test void the_model_carries_the_nodes_of_the_sum_type() throws Exception {
+        RegelSpraakModel m = Resolver.resolve(Files.readString(GOLDEN, StandardCharsets.UTF_8));
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        RegelSpraakModel.ObjectType vondst = m.objectTypes.get("Vondst");
+        Datatype payload = vondst.attribute("taxatie");
+
+        Expr.Construct written = assertInstanceOf(Expr.Construct.class, rule(m, "taxatie uit schatting").value());
+        assertEquals("waarde", written.constructor());
+        assertEquals("taxatie van een Vondst", written.type().domain());
+        assertEquals(List.of("waarde", "onbekend", "niet van toepassing"),
+                written.type().constructors().stream().map(Datatype.Constructor::name).toList());
+        assertEquals(payload, written.type().constructors().get(0).payload());
+        assertEquals("schatting", assertInstanceOf(Expr.AttributeReference.class, written.argument()).attribute());
+
+        Expr.Construct marker = assertInstanceOf(Expr.Construct.class, rule(m, "taxatie onbekend").value());
+        assertEquals("onbekend", marker.constructor());
+        assertNull(marker.argument());
+        assertEquals(written.type(), marker.type());
+
+        ResolvedRule fee = rule(m, "vindloon naar taxatie");
+        Expr.PayloadAccess read = firstRead(fee.value());
+        assertEquals("waarde", read.constructor());
+        assertEquals(payload, read.type());
+        Expr.AttributeReference base = assertInstanceOf(Expr.AttributeReference.class, read.base());
+        assertEquals(written.type(), base.type());
+        Condition.Predicate test = assertInstanceOf(Condition.Predicate.class, fee.condition());
+        assertEquals(Condition.PredicateKind.GEVULD, test.kind());
+        assertEquals(written.type(), assertInstanceOf(Expr.PayloadAccess.class, test.operand()).base().type());
+
+        Condition.Comparison tested = assertInstanceOf(Condition.Comparison.class, rule(m, "forfaitair vindloon").condition());
+        assertEquals(written.type(), assertInstanceOf(Expr.AttributeReference.class, tested.left()).type());
+        assertEquals("onbekend", assertInstanceOf(Expr.Construct.class, tested.right()).constructor());
+
+        Expr.FunctionCall sum = assertInstanceOf(Expr.FunctionCall.class, rule(m, "getaxeerd totaal").value());
+        assertInstanceOf(Expr.PayloadAccess.class, sum.arguments().get(0));
+        assertInstanceOf(Expr.PayloadAccess.class, assertInstanceOf(Condition.Predicate.class, sum.filter()).operand());
+
+        Expr.AttributeReference target = assertInstanceOf(Expr.AttributeReference.class, rule(m, "opslag onbekend in de winter").target());
+        assertEquals("opslagkosten van een Vondst", assertInstanceOf(Datatype.SumType.class, target.type()).domain());
     }
 
     private static final String VONDST = """
@@ -83,6 +143,29 @@ class AbsenceMarkerTest {
         assertEquals("Vondst", d.args().get("objectType"));
         assertEquals("zijn taxatie", String.valueOf(d.args().get("expression")));
         assertEquals(8, d.line());
+    }
+
+    /** A read of a cell of a dimensioned attribute with markers is a read of its value, a PayloadAccess over the cell;
+     *  no test of a cell's value is lowered, so the read is refused. */
+    @Test void a_read_of_a_cell_is_refused() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+                1. voorjaar
+                2. najaar
+
+            Objecttype de Vondst (mv: Vondsten)
+                het gewicht Numeriek (getal met 2 decimalen) gedimensioneerd met seizoen (of onbekend);
+                het vindloon Numeriek (getal met 2 decimalen);
+
+            Regel vindloon
+                geldig altijd
+                    Het vindloon van een Vondst moet berekend worden als zijn gewicht in najaar plus 1.
+            """);
+        Diagnostic d = only(m, "RGS-376");
+        assertEquals("gewicht", d.args().get("attribute"));
+        assertEquals("zijn gewicht in najaar", String.valueOf(d.args().get("expression")));
+        Expr.PayloadAccess read = firstRead(rule(m, "vindloon").value());
+        assertInstanceOf(Expr.DimensionCellRead.class, read.base());
     }
 
     /** A comparison before the test in an `alle` is read before the test (RUNTIME-SEMANTICS ch. 5.10), so it is refused;
@@ -133,7 +216,7 @@ class AbsenceMarkerTest {
         assertFalse(IrEmitter.emit(m).contains("PayloadAccess"));
     }
 
-    /** A marker the attribute does not declare stays the unresolved name it is without markers. */
+    /** A marker the attribute does not declare stays the unresolved name it is without markers, written as a value. */
     @Test void a_marker_the_attribute_does_not_declare_stays_unresolved() {
         RegelSpraakModel m = Resolver.resolve(VONDST + """
 
@@ -143,7 +226,9 @@ class AbsenceMarkerTest {
                     indien hij drijfhout is.
             """);
         assertEquals("RGS-092", m.diagnostics.get(0).code(), () -> "" + m.diagnostics);
-        assertTrue(m.absenceMarkerSites.isEmpty());
+        Expr.Construct written = assertInstanceOf(Expr.Construct.class, rule(m, "onbekende taxatie").value());
+        assertEquals("waarde", written.constructor());
+        assertInstanceOf(Expr.Unresolved.class, written.argument());
     }
 
     /** The markers stand on an attribute, in the place of the opgave marker and not beside it. */

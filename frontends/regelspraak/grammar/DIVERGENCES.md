@@ -2705,24 +2705,29 @@ an attribute named waarde stays that attribute (witness: `AbsenceMarkerTest.with
 | a read of the value of X in arithmetic, a comparison or an aggregation | `PayloadAccess(X, waarde)` |
 | "die een waarde hebben" on an aggregation over X | the filter `Predicate filled` of `PayloadAccess` of the element's X |
 
-The resolver records each node it reads as a marker, a test or a read of the value in a side table of the model
-(`absenceMarkerSites`), and the emitter writes the nodes of the table in the forms above. The model keeps X's declared
-datatype, so typing reads a read of the value as before.
+The model holds these nodes, and the emitter writes what it holds. Where the resolver reads a rule it builds a marker
+written or tested as a `Construct` and "een waarde heeft" as the gevuld test of a `PayloadAccess`; a last pass over the
+finished model (`resolver/AbsenceMarkers`) builds every other read of the value as a `PayloadAccess` typed with X's
+declared datatype, every other value written into X as the `Construct` of `waarde`, and types every reference to X
+with its sum type (`ObjectType.sumTypeOf`). The checks of the rule pipeline run before that pass and read a reference
+to X with its declared datatype, so the typing of a computation reads the value as it reads any attribute.
 
 ### Fail-fast refusals (resolver, loud diagnostics)
 
 One code, RGS-376: a read of the value of an attribute with markers without a test before it, the frontend's half of
-WF-127. The test before it is a value test that holds as a conjunct before the read: of the condition of the rule for
-its value, earlier in the same `alle` for a read in a condition, of the subselection of the aggregation for its
-operand. The ERROR names the attribute, its type and the read (witnesses: `AbsenceMarkerTest`, a computation, a
-comparison before the test, a sum without the subselection).
+WF-127, judged on the `PayloadAccess` nodes of the last pass. The test before it is a value test that holds as a
+conjunct before the read: of the condition of the rule for its value, earlier in the same `alle` for a read in a
+condition, of the subselection of the aggregation for its operand. The ERROR names the attribute, its type and the
+read (witnesses: `AbsenceMarkerTest`, a computation, a comparison before the test, a sum without the subselection, a
+read of a cell). A read of a cell of a dimensioned attribute with markers is a `PayloadAccess` over the cell, and no
+test of the value of a cell is lowered, so every such read is refused.
 
 A marker the attribute does not declare stays the unresolved name or check it is without the markers, with its
 WARNING (RGS-092); so does a test of a value under the whole-period qualifier.
 
 ### Emission
 
-The domains, the sum-typed attributes and the nodes of the table go out through the writers every other form uses. A
+The domains, the sum-typed attributes and the nodes of the model go out through the writers every other form uses. A
 document without markers emits what it emits without the extension.
 
 ### Scope / limitations of this card
