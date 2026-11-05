@@ -1564,7 +1564,12 @@ EXPECTED_CHANNEL=(
 # justification read per period over the asOfDate-bucket scalar that is not evaluated, so it raises no fault, whose
 # reading carries the fault (RUNTIME-SEMANTICS ch. 5.12, 7.11), with PLAYED 1, and the golden jutterswet-uniciteit-reeks,
 # a uniqueness over a union with a text key, with PLAYED 2.
-EXPECTED_PLAYED=341
+# 344 since the card absence-markers-residue (step B, 2026-11-05): the golden jutterswet-afwezigheidsmarkers-cel, a
+# marker written into a cell of a dimensioned attribute, the tests of a cell and a read under the test (PLAYED 4); the
+# golden jutterswet-afwezigheidsmarkers-creatie, a marker and a number in an object creation and a number written into
+# an attribute with markers (PLAYED 4); and the golden jutterswet-afwezigheidsmarkers-kopie, the copy of a timeline of
+# a sum type, which both branches write since that card (RUNTIME-SEMANTICS ch. 9.4; PLAYED 3).
+EXPECTED_PLAYED=344
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
