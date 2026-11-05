@@ -313,20 +313,37 @@ spec bug.
   value of a creation is the input of the object it makes: where a
   writer, a defaults group or an initialisation writes the member, the
   creation derives `inputval/3` (and `inputfilled/2`) on its term in
-  place of `val/3`. An initialisation, an allocation and a creation's
-  member value on a timeline target are refused in ref's words.
+  place of `val/3`. On a time-dependent member the member value is the
+  input of the made object per day: period arithmetic read on the subject
+  (`translate_period_arithmetic` with the made object's type as the
+  target's), a scalar on every day, whose periods enter as `inputtl/5` on
+  the term where a writer, an initialisation or a defaults group writes
+  the member, and as `tl/5` otherwise. An allocation that names a
+  time-dependent attribute is not well-formed (IR-SPEC WF-128); the
+  backend re-runs that check at the allocation and refuses the document
+  in the verifier's sentence.
 - A writer of a timeline target, also its only one, decides the days of
   the segments it writes (RUNTIME-SEMANTICS ch. 3.11, 5.7 per day). Each
   writer writes its segments as `tl/5` and also as `wtl/6`, under its
-  index in the document. The case input timeline of a target that a
-  computing rule writes enters as `inputtl/5`; each input segment is cut
+  index in the document. The input timeline of a target that a computing
+  rule or an initialisation writes, the case's or a making's, enters as
+  `inputtl/5`; each input segment is cut
   at the bounds of the writers' segments inside it (`incut/5`,
   `inpiece/6`), and a piece that no writer's segment covers
   (`indecided/4`) is a `tl/5` segment of the target. A writer writes no
   leeg segment, so a day its timeline reads leeg is no day it decides,
   and an empty result leaves the input standing whole. Two writers that
   decide one day with different values are a named `viol/2` witness
-  (EF-016); with one value, see [V7].
+  (EF-016); with one value, see [V7]. An initialisation outside the ch. 7.7
+  desugaring is the lowest layer of the stack per day (RS ch. 7.8): its
+  value, cut to the periods of its condition, is `itl/5`, each of its
+  segments is cut at the bounds of the writers' and the input's segments
+  inside it (`initcut/5`, `initpiece/6`), and a piece that neither covers
+  (`initdecided/4`) is a `tl/5` segment. A sum-typed timeline takes a
+  constructor of a literal or a copy of an own timeline of a sum type from
+  each of these producers, a rule, an initialisation and a member value
+  alike; another producer of a constructor value per period is refused with
+  CLINGO-036.
 - A defaults group on a timeline attribute target decides per day
   (RUNTIME-SEMANTICS ch. 7.11): the chain and group predicates of the
   scalar lowering carry a period of the group's cut set, `grpG_d_per/3`,
@@ -344,22 +361,25 @@ spec bug.
   justified on some period (`ndN_jrK/1`), a justification and the input
   the initialisation default reads where its default is reached on some
   period (`ndN_rchK/1`), and a fail-fast in them fires only there
-  (`corpus/golden/jutterswet-gevolg-buiten-de-beurt`). Refused by name:
-  a consequence that is not period arithmetic (the time-proportional
-  part, the day count), and the ch. 7.7 desugaring of an initialisation
-  on a timeline target.
+  (`corpus/golden/jutterswet-gevolg-buiten-de-beurt`). The ch. 7.7
+  desugaring of an initialisation beside at most one computation on a
+  timeline target is such a group, and decides as ref's stack does per
+  day. Refused by name: a consequence that is not period arithmetic (the
+  time-proportional part, the day count).
 - A fail-fast or a §9.5 deposit fires only where ref evaluates its place at
   the fixpoint (RUNTIME-SEMANTICS ch. 5.7): under a default that is reached,
   under the guard of an initialisation, and a deposit of a declared default
   only under its decision (ch. 7.1). A default the ch. 7.7 desugaring made
-  from a v0 form deposits where it is evaluated, under its rule's name.
+  from a v0 form deposits where it is evaluated, under its rule's name, and
+  an initialisation on a timeline target, natively or desugared, where it
+  decides some day.
 - A form that reads the timeline of an attribute whole and finds the
   asOfDate-bucket scalar faults with EF-037 (RUNTIME-SEMANTICS ch. 8.4):
   the period arithmetic, a condition per period, the base of a pro-rata
   part, the value and the compared timeline of a gedurende clip, a
   member of a per-element total, a point read, the whole-period
   qualifier, also at the end of a path, and the input of an
-  initialisation default per day. Each instance that gives the scalar
+  initialisation default and of an initialisation on a timeline target. Each instance that gives the scalar
   gets a `viol/2` witness in ref's sentence, with the instance as its
   subject, whose body is the reach of the read: the condition that gates
   the rule, the reach of a default's consequence or justification
@@ -425,7 +445,9 @@ spec bug.
   a rule too and an allocation of the target — the head also needs `not
   wdecides(S,a)`: a writer's value wins. Where a rule fires and
   evaluates leeg it decides nothing (RS ch. 3.11), so the initialisation
-  writes. Two initialisations that write one concrete type as rules
+  writes. On a timeline target it is read per day, by the item on the
+  writers of a timeline target above. Two initialisations that write one
+  concrete type as rules
   (WF-079 refuses them first), a defaults group of its own level
   (WF-050's) beside it, and a target that is no number or date are
   refused by name. A defaults group on another level of the chain is no

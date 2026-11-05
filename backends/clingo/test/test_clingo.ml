@@ -17549,13 +17549,74 @@ let () =
       "two writers of one target disagree: rule \"vast bergingsaandeel\" and allocation \"verdeel de opbrengst \
        van een berging\" write different values"
     ();
+  (* on a timeline target the stack is read per day (ref's WV-7.8-stapel-per-dag):
+     the initialisation decides the days no writer decides and the input leaves
+     empty, natively or through the ch. 7.7 desugaring, and the member value of a
+     creation is the input of the made object per day *)
   List.iter
-    (fun (f, attribute) ->
-      faults_with ~name:("the stack of a target: on a timeline target, " ^ f) ~ir:(read (dir ^ f ^ "/ir.json"))
-        ~case_text:(read (dir ^ f ^ "/case.json"))
-        ~needle:(Printf.sprintf "temporal attribute %S as a target: temporal writes are not implemented" attribute))
-    [ ("timeline-initialisation", "strandloon"); ("timeline-allocation", "bergingsaandeel");
-      ("timeline-creation", "waarde") ];
+    (fun (g, c) ->
+      both_answer
+        ~name:(Printf.sprintf "the stack of a timeline target: %s, %s" g c)
+        ~ir:(read ("corpus/golden/" ^ g ^ "/ir.json"))
+        ~case_text:(read ("corpus/golden/" ^ g ^ "/" ^ c)))
+    [ ("jutterswet-initialisatie-per-dag", "case1-zonder-invoer.json");
+      ("jutterswet-initialisatie-per-dag", "case2-invoer.json");
+      ("jutterswet-initialisatie-per-dag", "case3-zonder-stormwacht.json");
+      ("jutterswet-creatie-per-dag", "case1-strandloon-tot-juli.json");
+      ("jutterswet-creatie-per-dag", "case2-zonder-strandloon.json") ];
+  List.iter
+    (fun (f, c) ->
+      both_answer
+        ~name:(Printf.sprintf "the stack of a timeline target: %s, %s" f c)
+        ~ir:(read (dir ^ f ^ "/ir.json")) ~case_text:(read (dir ^ f ^ "/" ^ c)))
+    [ ("timeline-initialisation", "case.json"); ("timeline-initialisation-deposit", "case.json");
+      ("timeline-initialisation-deposit", "case-decides.json"); ("timeline-creation", "case.json") ];
+  faults_at_solving
+    ~code:("EF-037", [ ("attribute", "strandloon"); ("label", "J1") ])
+    ~name:"the stack of a timeline target: an initialisation over an asOfDate-bucket scalar"
+    ~ir:(read (dir ^ "timeline-initialisation/ir.json"))
+    ~case_text:(read (dir ^ "timeline-initialisation/case-bucket-scalar.json"))
+    ~needle:"the initialisation of the timeline target \"strandloon\" reads the input per day" ();
+  (* the made Vondst holds the marker onbekend on every day the rule of 10 in
+     spring leaves, as ref holds it (WV-7.8-stapel-per-dag-creatie-marker) *)
+  (let name = "the stack of a timeline target: a creation gives a sum-typed timeline a marker" in
+   let doc, case =
+     load_pair ~ir:(read (dir ^ "timeline-creation-marker/ir.json"))
+       ~case_text:(read (dir ^ "timeline-creation-marker/case.json"))
+   in
+   let rec term = function
+     | Model.T_int i -> string_of_int i
+     | Model.T_str s -> s
+     | Model.T_func (f, []) -> f
+     | Model.T_func (f, ts) -> f ^ "(" ^ String.concat "," (List.map term ts) ^ ")"
+   in
+   let arg = function Model.A_str s -> s | Model.A_int i -> string_of_int i | Model.A_term t -> term t in
+   match Solve.run_clingo (translate doc case) with
+   | out, Unix.WEXITED (10 | 30) ->
+       let segs =
+         List.sort compare
+           (List.filter_map
+              (fun (a : Model.atom) ->
+                match a with
+                | { name = "tl"; args = [ Model.A_term (T_func ("oc0", [ T_str "J1" ])); A_str "bergkosten"; f; t; v ] } ->
+                    Some (String.concat " " [ arg f; arg t; arg v ])
+                | _ -> None)
+              (Model.model_of_outf2 (Yojson.Safe.from_string out)))
+       in
+       let day iso = match Uchar_ref.Value.date_of_iso iso with Uchar_ref.Value.Date d -> string_of_int d | _ -> assert false in
+       let spring = day "2025-03-01" and summer = day "2025-06-01" in
+       check
+         (name ^ " (" ^ String.concat "; " segs ^ ")")
+         (segs
+         = List.sort compare
+             [ String.concat " " [ "#inf"; spring; "onbekend" ]; String.concat " " [ spring; summer; "waarde(10)" ];
+               String.concat " " [ summer; "#sup"; "onbekend" ] ])
+   | _, _ -> check (name ^ ": clingo gave no model") false);
+  faults_with ~name:"the stack of a timeline target: an allocation over a share for every month"
+    ~ir:(read (dir ^ "timeline-allocation/ir.json")) ~case_text:(read (dir ^ "timeline-allocation/case.json"))
+    ~needle:
+      "WF-128 at /rules/allocations/0/versions/0/targetAttribute: the field targetAttribute of the allocation names \
+       the time-dependent attribute 'bergingsaandeel' of 'Berger'";
   (* the input of a computed target of every scalar datatype enters the stack:
      a sum (the anchor jutterswet-beschikkingsom: "de herbeschikking moet berekend
      worden als toegekend zijn borg"), a struct (jutterswet-vangstwaardering: the

@@ -922,6 +922,8 @@ let viol_code witness =
   else if holds "\" whole; the case supplies only the asOfDate-bucket scalar, which carries no period\"," then
     (* [read_whole_sentence]: the attribute is the first name it quotes *)
     Some ("EF-037", found "attribute" (between ~from:6 "\"" "\" of \"") @ label)
+  else if opens "the initialisation of the timeline target \"" && holds "\" reads the input per day, and the case supplies for \"" then
+    Some ("EF-037", found "attribute" (between "the initialisation of the timeline target \"" "\" reads the input") @ label)
   else if opens "the whole-period qualifier over \"" && holds "\" supplies only the asOfDate-bucket scalar (ch. 3.9" then
     Some ("EF-037", found "attribute" (between "the whole-period qualifier over \"" "\" needs the full timeline") @ label)
   else if opens "the gedurende clip of \"" && holds "\" compares \"" && holds "\" supplies only the asOfDate-bucket scalar"
@@ -11553,14 +11555,19 @@ let translate_day_count ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~k ~day
    is leeg, or its fallback, where every member is (ch. 3.5). The written
    segments are the maximal runs of equal values; a period whose value is leeg
    writes nothing, the gap of ch. 3.1. *)
-let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ctx ~subject ~ot ~a (value : expr) =
+let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(into = "tl") ?target_ot ctx ~subject ~ot
+    ~a (value : expr) =
+  (* [ot] is the type the value is read on, [target_ot] the type that declares
+     the target [a]: the same, but for the member value of a creation, read on
+     its subject and written on the object it makes *)
+  let target_ot = Option.value target_ot ~default:ot in
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
-  let target = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx ot) a in
+  let target = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx target_ot) a in
   (* a sum-typed timeline target takes a constructor of a literal, which holds
      on every day (ch. 9.5): a marker written in a window; or an own timeline of
      a sum type, copied whole (WF-023 holds it to the target's domain); its
      value is a ground term with no scale *)
-  let sum_target = attr_sum_typed ctx ~otype:ot ~attr:a in
+  let sum_target = attr_sum_typed ctx ~otype:target_ot ~attr:a in
   (if sum_target then
      match value with
      | Construct { argument = None | Some (Literal _); _ } -> ()
@@ -11569,12 +11576,12 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ct
        when attr_temporal ctx ~otype:otn ~attr:b && attr_sum_typed ctx ~otype:otn ~attr:b ->
          ()
      | _ ->
-         fault
+         faultc ~params:[ ("attribute", a) ] "CLINGO-036"
            "the sum-typed timeline %S is written with a constructor of a literal or a copy of an own timeline of \
             a sum type; another producer of a constructor value per period is not translated (no corpus case)"
            a);
-  let target_scale = if sum_target then 0 else pow10 (attr_decimals ctx ~otype:ot ~attr:a) in
-  let target_unit = attr_unit ctx ~otype:ot ~attr:a in
+  let target_scale = if sum_target then 0 else pow10 (attr_decimals ctx ~otype:target_ot ~attr:a) in
+  let target_unit = attr_unit ctx ~otype:target_ot ~attr:a in
   let what = Printf.sprintf "the period arithmetic of %S" a in
   (* the unit of an operand by its declarations, a sum over a set a sum per period *)
   let period_unit e = eff_unit ~per_period:true ctx e in
@@ -11651,7 +11658,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ct
                form held as a whole number names its own limit *)
             let reason =
               if e != value then nested_non_exact_division
-              else if unbounded_datatype (attr_datatype ctx ~otype:ot ~attr:a) then
+              else if unbounded_datatype (attr_datatype ctx ~otype:target_ot ~attr:a) then
                 unbounded_non_whole_division
               else non_exact_division_bounded
             in
@@ -11888,7 +11895,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ct
   in
   List.iter
     (fun (l, h, b) ->
-      head_body ctx (Printf.sprintf "tl(%s,%s,%s,%s,V)" subject (str a) l h) b;
+      head_body ctx (Printf.sprintf "%s(%s,%s,%s,%s,V)" into subject (str a) l h) b;
       Option.iter (fun i -> head_body ctx (Printf.sprintf "wtl(%s,%s,%s,%s,V,%d)" subject (str a) l h i) b) writer)
     heads
   end;
@@ -12017,14 +12024,15 @@ let writer_timeline_conflicts ctx (r : resolved_rule) ~ot ~a =
    target. A piece lies inside a writer's segment or outside all of them, since
    every bound of a writer's segment inside the input segment is a cut. A
    writer writes no leeg segment, so a day on which its timeline reads leeg is
-   no day it decides. Emitted where some computing rule or a defaults group
-   writes a timeline target; a program without one has no inputtl/5 *)
+   no day it decides. Emitted where some computing rule, initialisation or
+   defaults group writes a timeline target; a program without one has no
+   inputtl/5 *)
 let timeline_input ctx =
   if
     List.exists
       (fun (r : resolved_rule) ->
         match (r.rr_presentation, Ir_v0.Desugar.target_of r) with
-        | Some (Calculation | Equation), Some (ot, a) -> attr_temporal ctx ~otype:ot ~attr:a
+        | Some (Calculation | Equation | Initialisation), Some (ot, a) -> attr_temporal ctx ~otype:ot ~attr:a
         | _ -> false)
       ctx.doc.resolved_rules
     || List.exists
@@ -12043,14 +12051,15 @@ let timeline_input ctx =
     emit ctx "tl(S,A,X,Y,V) :- inpiece(S,A,F,T,X,Y), inputtl(S,A,F,T,V), not indecided(S,A,X,Y)."
   end
 
-(* Whether the case input of the time-dependent attribute [a] on an instance of
-   the concrete type [ot] enters beside its writers ([timeline_input]): a
-   computing rule that applies on the case's date writes it there, or a
-   defaults group of [ot]'s chain does (ch. 7.11) *)
+(* Whether the input of the time-dependent attribute [a] on an instance of the
+   concrete type [ot], the case's or a making's, enters beside its writers
+   ([timeline_input]): a computing rule or an initialisation that applies on
+   the case's date writes it there, or a defaults group of [ot]'s chain does
+   (ch. 7.8, 7.11) *)
 let written_timeline ctx ~ot ~a =
   attr_temporal ctx ~otype:ot ~attr:a
-  && ((let _, comps, _ = init_writers ctx ~ot ~a in
-       comps <> [])
+  && ((let inits, comps, _ = init_writers ctx ~ot ~a in
+       comps <> [] || inits <> [])
      || List.exists
           (fun (l : prioritized_defaults) ->
             (match l.pd_attribute with Some la -> norm la = norm a | None -> false)
@@ -12190,6 +12199,56 @@ let translate_characteristic_timeline ctx (r : resolved_rule) ~ot ~k =
         k (str ot) open_side)
     [ Printf.sprintf "%s(S,#inf,_)" q; Printf.sprintf "%s(S,_,#sup)" q ]
 
+(* An initialisation of the timeline target (ot, a) outside the ch. 7.7
+   desugaring (a conditional one, a windowed one, or one beside two or more
+   computing rules): the lowest of the target's stack, read per day
+   (RUNTIME-SEMANTICS ch. 7.8). Its value is period arithmetic over all time, a
+   scalar on every day, cut to the periods of its condition: itl/5. Each of its
+   segments is cut at the bounds of the writers' segments (wtl/6) and of the
+   input's (inputtl/5) that lie inside it, as [timeline_input] cuts the input,
+   and a piece that neither covers is a segment of the target. Its deposits
+   stand where it decides some day, as ref keeps them; the asOfDate-bucket
+   scalar of the target carries no day, so it cannot say which days the input
+   leaves empty (EF-037, ref's sentence). *)
+let translate_timeline_initialisation ctx (r : resolved_rule) ~subject ~ot ~a ~cond ~periods =
+  let value = Ir_v0.Checks.let_bound_value (req "RuleVersion.value" r.value_node) in
+  if not (Eval.is_period_arithmetic value) then
+    fault
+      "the value of the initialisation of the timeline target %S is not period arithmetic of ch. 3.4/3.5 (an \
+       operator of ch. 1.2 other than the power, the sum over a set, an own attribute, a parameter, a literal, or a \
+       rounding of one); the time-proportional part and the day count are not translated in an initialisation (no \
+       corpus case)"
+      a;
+  let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
+  bucket_scalar_guard ctx ~holder:subject ~reach:(fun () -> base :: cond) ~otype:ot ~attr:a ~sentence:(fun label ->
+      Printf.sprintf
+        "the initialisation of the timeline target %S reads the input per day, and the case supplies for %S \
+         only the asOfDate-bucket scalar, which carries no period"
+        a label);
+  let decides = fresh ctx "tinit" ^ "_any" in
+  emit ctx "#defined %s/1." decides;
+  let saved = ctx.deposit_guard in
+  ctx.deposit_guard <- [ Printf.sprintf "%s(%s)" decides subject ];
+  ignore (translate_period_arithmetic ?periods ~into:"itl" ~cond ctx ~subject ~ot ~a value);
+  ctx.deposit_guard <- saved;
+  let a = str a in
+  emit ctx "#defined wtl/6.";
+  emit ctx "#defined inputtl/5.";
+  emit ctx "initcut(S,%s,F,T,F) :- itl(S,%s,F,T,_)." a a;
+  emit ctx "initcut(S,%s,F,T,T) :- itl(S,%s,F,T,_)." a a;
+  List.iter
+    (fun (other, x, y) ->
+      emit ctx "initcut(S,%s,F,T,X) :- itl(S,%s,F,T,_), %s(S,%s,X,%s), F < X, X < T." a a other a x;
+      emit ctx "initcut(S,%s,F,T,Y) :- itl(S,%s,F,T,_), %s(S,%s,_,Y%s), F < Y, Y < T." a a other a y)
+    [ ("wtl", "_,_,_", ",_,_"); ("inputtl", "_,_", ",_") ];
+  emit ctx
+    "initpiece(S,%s,F,T,X,Y) :- initcut(S,%s,F,T,X), initcut(S,%s,F,T,Y), X < Y, #count { Z : initcut(S,%s,F,T,Z), X < Z, Z < Y } = 0."
+    a a a a;
+  emit ctx "initdecided(S,%s,X,Y) :- initpiece(S,%s,_,_,X,Y), wtl(S,%s,F,T,_,_), F <= X, Y <= T." a a a;
+  emit ctx "initdecided(S,%s,X,Y) :- initpiece(S,%s,_,_,X,Y), inputtl(S,%s,F,T,_), F <= X, Y <= T." a a a;
+  emit ctx "tl(S,%s,X,Y,V) :- initpiece(S,%s,F,T,X,Y), itl(S,%s,F,T,V), not initdecided(S,%s,X,Y)." a a a a;
+  emit ctx "%s(S) :- initpiece(S,%s,_,_,X,Y), not initdecided(S,%s,X,Y)." decides a a
+
 let translate_rule ctx (r : resolved_rule) =
   (* the ch. 8.2 validity gate: an excluded rule does not apply — nothing
      is emitted, so its target's case input stands untouched as the plain
@@ -12263,6 +12322,9 @@ let translate_rule ctx (r : resolved_rule) =
           in
           let init_guard =
             match r.rr_presentation with
+            (* on a timeline target the guard is read per day
+               ([translate_timeline_initialisation]) *)
+            | Some Initialisation when target_timeline -> []
             | Some Initialisation ->
                 Printf.sprintf "not inputfilled(%s,%s)" subject (str a)
                 :: (if beside_writers then [ Printf.sprintf "not wdecides(%s,%s)" subject (str a) ] else [])
@@ -12473,8 +12535,15 @@ let translate_rule ctx (r : resolved_rule) =
                   "the initialisation of %S shares its target with a defaults group of its own \
                    level: WF-050 admits no writer beside a defaults group"
                   a;
-              if attr_temporal ctx ~otype:ot ~attr:a then
-                fault "temporal attribute %S as a target: temporal writes are not implemented" a;
+              if target_timeline then begin
+                let periods =
+                  match r.rr_condition with
+                  | Some c when per_period || clip <> None -> Some (period_condition ctx ~ot ~a c)
+                  | _ -> None
+                in
+                translate_timeline_initialisation ctx r ~subject ~ot ~a ~cond ~periods
+              end
+              else begin
               (match find_decl ctx ~otype:ot ~attr:a with
               | Some (Some (Number _ | Percentage _ | Date_in_days)) -> ()
               | _ ->
@@ -12510,6 +12579,7 @@ let translate_rule ctx (r : resolved_rule) =
                     (Printf.sprintf "val(%s,%s,%s)" subject (str a) term)
                     (body @ fit_guards))
                 branches
+              end
           | _ -> faultc "CLINGO-025" "rule kind not translated");
           (* a computing rule on a scalar target is a writer of its stack
              (ch. 7.8): it decides where its value is filled, the wval/4 the
@@ -12679,9 +12749,26 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
     (fun (t : assignment) ->
       (* the member, or the cell it names on the made object (ch. 5.8c, 2) *)
       let m = Eval.init_member (doc_env ctx) ~created t in
-      if (not t.to_characteristic) && attr_temporal ctx ~otype:created ~attr:m then
-        fault "temporal attribute %S as a target: temporal writes are not implemented" m;
-      if t.to_characteristic then (
+      let declared = req "MemberInit.member" t.to_attribute in
+      if (not t.to_characteristic) && m <> declared && attr_temporal ctx ~otype:created ~attr:declared then
+        fault "object creation %S sets a cell of the time-dependent attribute %S: not translated (no corpus case)"
+          ctx.rule_name declared;
+      if (not t.to_characteristic) && attr_temporal ctx ~otype:created ~attr:m then begin
+        (* on a time-dependent member the value is the input of the made object
+           per day (ch. 7.8): period arithmetic read on the subject, a scalar on
+           every day, whose periods are the made object's input segments. Where
+           a writer, an initialisation or a defaults group writes the member it
+           enters as inputtl/5 and stands on the days none of them decides
+           ([timeline_input]) *)
+        let p =
+          translate_period_arithmetic ~cond:(cond @ guard @ depth_guard) ~write:false ~target_ot:created ctx ~subject
+            ~ot:subject_ot ~a:m (req "MemberInit.value" t.to_value)
+        in
+        let pred = if written_timeline ctx ~ot:created ~a:m then "inputtl" else "tl" in
+        head_body ctx (Printf.sprintf "%s(%s,%s,X,Y,V)" pred term (str m))
+          (body @ [ Printf.sprintf "%s_val(%s,X,Y,V)" p subject ])
+      end
+      else if t.to_characteristic then (
         match t.to_value with
         | Some (Literal { variant = Lv_boolean true; _ }) ->
             head_body ctx (Printf.sprintf "has(%s,%s)" term (str m)) body
@@ -13122,8 +13209,13 @@ let rec translate_chain_days ctx ~g ~cuts ~subject ~origins ~base ~path ~a ~targ
     let saved_r = ctx.param_reach and saved_g = ctx.rule_guard and saved_n = ctx.let_needs in
     let saved_b = ctx.binders and saved_v = ctx.value_of in
     let saved_name = ctx.rule_name and saved_d = ctx.deposit_guard in
-    ctx.rule_name <- target_form;
-    ctx.deposit_guard <- [ Printf.sprintf "%s(%s)" decany subject ];
+    (* as on a scalar target, a v0 form the desugaring moved here keys its
+       deposits by its own rule's name, and a computing rule is no speculative
+       context (ch. 7.8); an initialisation's deposits stand where it decides
+       some day, as ref keeps them *)
+    ctx.rule_name <- (if ctx.desugared_group then Option.value r.default_source ~default:target_form else target_form);
+    ctx.deposit_guard <-
+      (if ctx.desugared_group && not r.default_initialisation then [] else [ Printf.sprintf "%s(%s)" decany subject ]);
     ctx.let_needs <- [];
     ctx.binders <- [];
     ctx.value_of <- None;
@@ -13373,15 +13465,12 @@ let translate_defaults_group ctx gidx ~owner
       ~default:l0.pd_subject
     ^ "." ^ target_name
   in
-  if (not is_char) && attr_temporal ctx ~otype:owner ~attr:target_name then begin
-    (* ch. 7.7 desugars an initialisation beside a computation into a group; ref
-       replays those v0 forms natively, and on a timeline target no golden
-       carries them *)
-    if ctx.desugared_group then
-      fault "the ch. 7.7 desugaring of an initialisation on the timeline target %S is not translated (no corpus case)"
-        target_name;
+  if (not is_char) && attr_temporal ctx ~otype:owner ~attr:target_name then
+    (* ch. 7.7 desugars an initialisation beside at most one computation into a
+       group, which decides per day (ch. 7.11) as ref's native stack of ch. 7.8
+       does: the computation where it reads a value, the input, then the
+       initialisation *)
     translate_defaults_timeline ctx gidx ~base ~target_form ~a:target_name members
-  end
   else
   (* the attribute arm's input scaffolding: the target scale, and the input
      predicate the initialisation default and the defeasible-input rule read *)
@@ -13487,13 +13576,13 @@ let translate_allocation ctx i (v : resolved_allocation) =
   let method_name = req "AllocationVersion.method" v.vd_method in
   let bt = req "AllocationVersion.sourceType" v.source_type and dt = req "AllocationVersion.targetType" v.objective_type_name in
   let ba = req "AllocationVersion.sourceAttribute" v.source_attribute and da = req "AllocationVersion.targetAttribute" v.target_attribute in
-  (* the allocation writes a scalar share target and rest: a timeline
-     target has no meaning here, in ref's words *)
-  List.iter
-    (fun (t, a) ->
-      if attr_temporal ctx ~otype:t ~attr:a then
-        fault "temporal attribute %S as a target: temporal writes are not implemented" a)
-    ((dt, da) :: Option.fold ~none:[] ~some:(fun ra -> [ (bt, ra) ]) v.remainder_attribute);
+  (* an allocation reads and writes scalars (ch. 4): one that names a
+     time-dependent attribute is not well-formed, and this backend re-runs that
+     check rather than translating a timeline as one value *)
+  (match Ir_v0.Checks.wf128_allocation (Ir_v0.Checks.ctx_of ctx.doc) v with
+  | [] -> ()
+  | { Ir_v0.Checks.wf; at; reason; _ } :: _ ->
+      fault "%s at %s: %s — the document is not well-formed; the ASP backend refuses to translate it" wf at reason);
   (* WF-025 field-validity backstops, rejected before translation on
      verifier-clean input *)
   (match (method_name, v.ratio_attribute, v.maximum_attribute) with
