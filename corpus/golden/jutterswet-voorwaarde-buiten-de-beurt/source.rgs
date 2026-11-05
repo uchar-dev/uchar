@@ -1,0 +1,20 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is vrijgesteld kenmerk (bijvoeglijk);
+    het strandloon Numeriek (geheel getal) voor elke maand;
+    het kustloon Numeriek (geheel getal) voor elke maand;
+
+Regel strandloon
+    geldig altijd
+        Het strandloon van een Jutter moet gesteld worden op 5.
+
+Uitzondering op strandloon: strandloon bij een hoog kustloon
+    geldig altijd
+        Het strandloon van een Jutter moet gesteld worden op 7
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn kustloon is groter dan 30
+        - zijn kustloon is kleiner dan 100.
+
+Uitzondering op strandloon: strandloon bij vrijstelling
+    geldig altijd
+        Het strandloon van een Jutter moet gesteld worden op 60
+        indien hij vrijgesteld is.

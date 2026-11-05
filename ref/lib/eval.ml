@@ -3280,10 +3280,18 @@ let refuse_finer ~what ~(operand : Timeline.grid) ~(target : Timeline.grid) ~att
      evaluated once.
    Each node records the part of all time in which it holds (ch. 5.12), a
    comparison its compared timeline's segments there with their values and the
-   gaps where a leeg side satisfies it. Any other condition that reads a
+   gaps where a leeg side satisfies it; a node that faults, or passes a fault
+   on, records it, as in a scalar condition. Any other condition that reads a
    timeline is refused by name. *)
 let rec cond_periods env w (self : World.instance) ~err ~(target : Timeline.grid) ~attr (c : condition_expr) :
     (int * int) list =
+  (* the nodes of a condition read per period do not pass through [eval_cond],
+     whose observer records a fault where the scalar evaluation passes one on:
+     here a fault of the node or below it is recorded at the node itself *)
+  (match !observer with
+  | None -> fun f -> f ()
+  | Some o -> fun f -> ( try f () with Value.Fault _ as ex -> ignore (o.cond c (fun () -> raise ex)); raise ex))
+  @@ fun () ->
   let ot_decl = object_type env self.otype in
   let record periods =
     held_over c (as_periods periods);
@@ -3349,11 +3357,16 @@ let rec cond_periods env w (self : World.instance) ~err ~(target : Timeline.grid
         let tested_e, bound_e, op = if tested_left then (le, re, op) else (re, le, reversed op) in
         let read_tested () =
           let tl = World.timeline self tested_attr in
-          if tl = None && World.attr self tested_attr <> Value.Empty then
-            bucket_scalar ~attr:tested_attr self
-              "a condition per period reads the time-dependent attribute %S of %S whole; the case supplies only \
-               the asOfDate-bucket scalar, which carries no period"
-              tested_attr self.label;
+          if tl = None && World.attr self tested_attr <> Value.Empty then begin
+            let fault () =
+              bucket_scalar ~attr:tested_attr self
+                "a condition per period reads the time-dependent attribute %S of %S whole; the case supplies only \
+                 the asOfDate-bucket scalar, which carries no period"
+                tested_attr self.label
+            in
+            (* the read raises the fault, and its node records it (ch. 5.12) *)
+            match !observer with Some o -> ignore (o.expr tested_e fault) | None -> fault ()
+          end;
           read_whole tested_e tl;
           Option.value tl ~default:[]
         in

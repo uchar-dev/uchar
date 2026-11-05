@@ -13047,6 +13047,20 @@ let () =
        ("0/defaults/1", "3 Literal unreached"); ("0/defaults/1", "HOLDS"); ("0/defaults/2", always);
        ("0/defaults/2", "1 Literal [[- - 5]]"); ("0/defaults/2", "HOLDS") ];
    Sys.remove f);
+  (* the kustloon default of the vrijgesteld J1 is at its turn on no day: its
+     justification, read per period, faults on the asOfDate-bucket scalar at
+     the read, and the comparison and the composite pass the fault on, as in a
+     scalar condition; nothing after the fault is reached *)
+  let condition_golden = "corpus/golden/jutterswet-voorwaarde-buiten-de-beurt/" in
+  rows ~of_label:true "WV-5.12-default-per-dag-voorwaarde-faalt" (condition_golden ^ "ir.json")
+    (condition_golden ^ "case1-buiten-de-beurt.json") "J1"
+    [ ("0/defaults/0", "0 CharacteristicCheck [[- - empty]]"); ("0/defaults/0", "1 Literal [[- - 60]]");
+      ("0/defaults/0", "HOLDS"); ("0/defaults/1", "0 Compound fault EF-037");
+      ("0/defaults/1", "1 Comparison fault EF-037"); ("0/defaults/1", "2 AttributeReference fault EF-037");
+      ("0/defaults/1", "3 Literal unreached"); ("0/defaults/1", "4 Comparison unreached");
+      ("0/defaults/1", "5 AttributeReference unreached"); ("0/defaults/1", "6 Literal unreached");
+      ("0/defaults/1", "7 Literal unreached"); ("0/defaults/1", "DISPLACED"); ("0/defaults/2", always);
+      ("0/defaults/2", "1 Literal [[- - 5]]"); ("0/defaults/2", "DISPLACED") ];
   let member m cell = ("0/defaults/1/exceptions/members/" ^ string_of_int m ^ "/defaults/0", cell) in
   rows "WV-5.12-default-per-dag-uitzonderingsgroepen" (fixtures ^ "verdrongen-conflict/ir.json")
     (fixtures ^ "verdrongen-conflict/case.json") "J1"

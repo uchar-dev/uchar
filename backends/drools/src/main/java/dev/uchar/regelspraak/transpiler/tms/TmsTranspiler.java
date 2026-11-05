@@ -2510,7 +2510,8 @@ public final class TmsTranspiler {
             return t;
         }
         requireFits(v, member.time(), member.declarant().fixedStartPointOf(member.name()), target);
-        noteDerived(v, List.of(whole, inner), x -> PeriodCondition.comparisonReading(x.get(0), x.get(1)));
+        // the fault of the timeline or of the bound is one the comparison passes on, as in a scalar condition
+        noteDerived(v, List.of(whole, inner), x -> PeriodCondition.comparisonReading(x.get(0), x.get(1)), true);
         return inner;
     }
 
@@ -5201,7 +5202,8 @@ public final class TmsTranspiler {
      * terms the rule evaluates, by {@code compute}: the part of a timeline in which a gedurende clause of a temporal
      * total holds (RUNTIME-SEMANTICS ch. 3.6, 5.12), where the clip computes only the timeline it leaves. The node is
      * reached where every input is reached without a fault; it evaluates nothing of the session again. Where
-     * {@code raises}, the inputs are the node's own read, and a fault of one is the fault the node raised.
+     * {@code raises}, the inputs are the node's own evaluation, and a fault of one is the fault the node raised or
+     * passed on.
      */
     private record Derived(List<Term> inputs, Function<List<Object>, Object> compute, boolean raises) {}
 
@@ -5587,15 +5589,19 @@ public final class TmsTranspiler {
 
     /** The reading of the node of {@code s}, whose reading follows from the outcomes of its inputs in the evaluation
      *  {@code rec} ({@link Derived}), on the object {@code o}: reached where every input was reached without a fault;
-     *  where the inputs are the node's own read, reached with the fault of an input that faulted, which the node
-     *  raised (RUNTIME-SEMANTICS ch. 5.12). */
+     *  where the inputs are the node's own evaluation, reached with the fault of an input that faulted, which the node
+     *  raised or passed on, also where an input before it was not reached (RUNTIME-SEMANTICS ch. 5.12). */
     private static ConditionReading.NodeReading derivedReading(Site s, RecordingRendering rec, Object o) {
+        if (s.derived().raises())
+            for (Term t : s.derived().inputs()) {
+                RecordingRendering.Outcome oc = rec.outcome(t);
+                if (oc != null && oc.fault() != null)
+                    return new ConditionReading.NodeReading(s.node(), s.kind(), true, null, s.unit(), oc.fault(), null,
+                            List.of());
+            }
         List<Object> values = new ArrayList<>();
         for (Term t : s.derived().inputs()) {
             RecordingRendering.Outcome oc = rec.outcome(t);
-            if (oc != null && oc.fault() != null && s.derived().raises())
-                return new ConditionReading.NodeReading(s.node(), s.kind(), true, null, s.unit(), oc.fault(), null,
-                        List.of());
             if (oc == null || oc.fault() != null)
                 return new ConditionReading.NodeReading(s.node(), s.kind(), false, null, s.unit(), null, null, List.of());
             values.add(oc.value());

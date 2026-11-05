@@ -1,0 +1,86 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2025-07-01",
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "kustloon": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "vrijgesteld"
+        ],
+        "characteristicTimelines": {}
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "kustloon": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "number": "40"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {}
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "strandloon",
+      "timeline": [
+        {
+          "value": {
+            "number": "60"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "strandloon",
+      "timeline": [
+        {
+          "to": "2025-01-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-01-01",
+          "to": "2026-01-01",
+          "value": {
+            "number": "7"
+          }
+        },
+        {
+          "from": "2026-01-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
