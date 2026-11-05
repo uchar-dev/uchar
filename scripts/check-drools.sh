@@ -1560,7 +1560,11 @@ EXPECTED_CHANNEL=(
 # 339 since the card absence-markers (step B, 2026-11-04): the golden jutterswet-afwezigheidsmarkers, an attribute with
 # absence markers, a sum type written, tested and read with PayloadAccess, scalar and per period (RUNTIME-SEMANTICS
 # ch. 9.5), which both branches carry since that step. It plays on both with PLAYED 10.
-EXPECTED_PLAYED=339
+# 341 since the card reading-and-uniqueness-residue (2026-11-05): the golden jutterswet-voorwaarde-buiten-de-beurt, a
+# justification read per period over the asOfDate-bucket scalar that is not evaluated, so it raises no fault, whose
+# reading carries the fault (RUNTIME-SEMANTICS ch. 5.12, 7.11), with PLAYED 1, and the golden jutterswet-uniciteit-reeks,
+# a uniqueness over a union with a text key, with PLAYED 2.
+EXPECTED_PLAYED=341
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
