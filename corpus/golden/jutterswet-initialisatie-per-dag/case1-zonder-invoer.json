@@ -1,0 +1,211 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "basisloon": {
+            "timeline": [
+              {
+                "from": "2025-03-01",
+                "to": "2025-06-01",
+                "value": {
+                  "number": "20"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "stormwacht": [
+            {
+              "from": "2025-01-01",
+              "to": "2026-01-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "strandloon",
+      "timeline": [
+        {
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "voorjaarsloon",
+      "timeline": [
+        {
+          "to": "2025-03-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "zomerloon",
+      "timeline": [
+        {
+          "to": "2025-03-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "wachtloon",
+      "timeline": [
+        {
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "kustloon",
+      "timeline": [
+        {
+          "to": "2025-03-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "havenloon",
+      "timeline": [
+        {
+          "to": "2025-03-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "stormloon",
+      "timeline": [
+        {
+          "from": "2025-01-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "to": "2025-09-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-09-01",
+          "to": "2025-11-01",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2025-11-01",
+          "to": "2026-01-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

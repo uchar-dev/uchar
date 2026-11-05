@@ -1,0 +1,754 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "strandloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldwaardetotaal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldloontotaal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "seizoenswaardetotaal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "seizoensloontotaal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aanvulloontotaal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Melding",
+        "animate": false,
+        "plural": "Meldingen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "meldwaarde",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "meldloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "seizoenswaarde",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "seizoensloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aanvulloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "jutmelding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "melder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "melding",
+            "objectType": "Melding",
+            "plural": "meldingen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "seizoenswaarde",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "seizoenswaarde",
+              "subjectType": "Melding",
+              "source": {
+                "snippet": "De seizoenswaarde van een Melding"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "20"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "20"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-03-2025"
+                }
+              },
+              "to": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-09-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-09-2025"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "van dd. 01-03-2025 tot dd. 01-09-2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "seizoensloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "seizoensloon",
+              "subjectType": "Melding",
+              "source": {
+                "snippet": "Het seizoensloon van een Melding"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "20"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "20"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-03-2025"
+                }
+              },
+              "to": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-09-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-09-2025"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "van dd. 01-03-2025 tot dd. 01-09-2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "standaardaanvulloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aanvulloon",
+              "subjectType": "Melding",
+              "source": {
+                "snippet": "Het aanvulloon van een Melding"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "5"
+              }
+            },
+            "initialisation": true
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "meldwaardetotaal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldwaardetotaal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het meldwaardetotaal van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "meldwaarde",
+                  "subjectType": "Melding",
+                  "source": {
+                    "snippet": "de meldwaarde van alle meldingen van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Melding",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "jutmelding",
+                "role": "melding"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van de meldwaarde van alle meldingen van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "meldloontotaal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "meldloontotaal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het meldloontotaal van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "meldloon",
+                  "subjectType": "Melding",
+                  "source": {
+                    "snippet": "het meldloon van alle meldingen van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Melding",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "jutmelding",
+                "role": "melding"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het meldloon van alle meldingen van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "seizoenswaardetotaal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "seizoenswaardetotaal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het seizoenswaardetotaal van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "seizoenswaarde",
+                  "subjectType": "Melding",
+                  "source": {
+                    "snippet": "de seizoenswaarde van alle meldingen van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Melding",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "jutmelding",
+                "role": "melding"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van de seizoenswaarde van alle meldingen van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "seizoensloontotaal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "seizoensloontotaal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het seizoensloontotaal van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "seizoensloon",
+                  "subjectType": "Melding",
+                  "source": {
+                    "snippet": "het seizoensloon van alle meldingen van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Melding",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "jutmelding",
+                "role": "melding"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het seizoensloon van alle meldingen van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aanvulloontotaal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aanvulloontotaal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aanvulloontotaal van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "aanvulloon",
+                  "subjectType": "Melding",
+                  "source": {
+                    "snippet": "het aanvulloon van alle meldingen van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Melding",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "jutmelding",
+                "role": "melding"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het aanvulloon van alle meldingen van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "meld de jutter",
+        "versions": [
+          {
+            "createdType": "Melding",
+            "subject": "Jutter",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "meldwaarde",
+                "value": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "7"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "7"
+                  }
+                },
+                "characteristic": false
+              },
+              {
+                "node": "MemberInit",
+                "member": "meldloon",
+                "value": {
+                  "node": "AttributeReference",
+                  "attribute": "strandloon",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn strandloon"
+                  }
+                },
+                "characteristic": false
+              },
+              {
+                "node": "MemberInit",
+                "member": "seizoenswaarde",
+                "value": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "7"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "7"
+                  }
+                },
+                "characteristic": false
+              },
+              {
+                "node": "MemberInit",
+                "member": "seizoensloon",
+                "value": {
+                  "node": "AttributeReference",
+                  "attribute": "strandloon",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn strandloon"
+                  }
+                },
+                "characteristic": false
+              },
+              {
+                "node": "MemberInit",
+                "member": "aanvulloon",
+                "value": {
+                  "node": "AttributeReference",
+                  "attribute": "strandloon",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn strandloon"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "jutmelding",
+              "role": "melding"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -1,0 +1,96 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "keurkosten": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2026-01-01",
+                "value": {
+                  "constructor": "waarde",
+                  "payload": {
+                    "number": "4"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "ongekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "V3",
+      "attribute": "opslagkosten",
+      "timeline": [
+        {
+          "to": "2025-03-01",
+          "value": {
+            "constructor": "onbekend"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "constructor": "waarde",
+            "payload": {
+              "number": "10"
+            }
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "value": {
+            "constructor": "onbekend"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "V3",
+      "attribute": "keurkosten",
+      "timeline": [
+        {
+          "to": "2025-01-01",
+          "value": {
+            "constructor": "onbekend"
+          }
+        },
+        {
+          "from": "2025-01-01",
+          "to": "2026-01-01",
+          "value": {
+            "constructor": "waarde",
+            "payload": {
+              "number": "4"
+            }
+          }
+        },
+        {
+          "from": "2026-01-01",
+          "value": {
+            "constructor": "onbekend"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

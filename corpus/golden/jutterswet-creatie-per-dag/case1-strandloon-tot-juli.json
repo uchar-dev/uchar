@@ -1,0 +1,132 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "strandloon": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2025-07-01",
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "meldwaardetotaal",
+      "timeline": [
+        {
+          "value": {
+            "number": "7"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "meldloontotaal",
+      "timeline": [
+        {
+          "from": "2025-01-01",
+          "to": "2025-07-01",
+          "value": {
+            "number": "10"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "seizoenswaardetotaal",
+      "timeline": [
+        {
+          "to": "2025-03-01",
+          "value": {
+            "number": "7"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-09-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-09-01",
+          "value": {
+            "number": "7"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "seizoensloontotaal",
+      "timeline": [
+        {
+          "from": "2025-01-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-09-01",
+          "value": {
+            "number": "20"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "aanvulloontotaal",
+      "timeline": [
+        {
+          "to": "2025-01-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-01-01",
+          "to": "2025-07-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-07-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

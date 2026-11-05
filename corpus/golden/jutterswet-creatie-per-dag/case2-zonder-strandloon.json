@@ -1,0 +1,91 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "meldwaardetotaal",
+      "timeline": [
+        {
+          "value": {
+            "number": "7"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "meldloontotaal",
+      "timeline": []
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "seizoenswaardetotaal",
+      "timeline": [
+        {
+          "to": "2025-03-01",
+          "value": {
+            "number": "7"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-09-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-09-01",
+          "value": {
+            "number": "7"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "seizoensloontotaal",
+      "timeline": [
+        {
+          "from": "2025-03-01",
+          "to": "2025-09-01",
+          "value": {
+            "number": "20"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "aanvulloontotaal",
+      "timeline": [
+        {
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

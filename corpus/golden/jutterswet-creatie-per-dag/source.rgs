@@ -1,0 +1,55 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het strandloon Numeriek (geheel getal) voor elke maand;
+    het meldwaardetotaal Numeriek (geheel getal) voor elke maand;
+    het meldloontotaal Numeriek (geheel getal) voor elke maand;
+    het seizoenswaardetotaal Numeriek (geheel getal) voor elke maand;
+    het seizoensloontotaal Numeriek (geheel getal) voor elke maand;
+    het aanvulloontotaal Numeriek (geheel getal) voor elke maand;
+
+Objecttype de Melding (mv: Meldingen)
+    de meldwaarde Numeriek (geheel getal) voor elke maand;
+    het meldloon Numeriek (geheel getal) voor elke maand;
+    de seizoenswaarde Numeriek (geheel getal) voor elke maand;
+    het seizoensloon Numeriek (geheel getal) voor elke maand;
+    het aanvulloon Numeriek (geheel getal) voor elke maand;
+
+Feittype jutmelding
+    de melder Jutter
+    de melding (mv: meldingen) Melding
+Eén melder heeft meerdere meldingen
+
+Regel meld de jutter
+    geldig altijd
+        Een Jutter heeft een melding met meldwaarde gelijk aan 7 en meldloon gelijk aan zijn strandloon en seizoenswaarde gelijk aan 7 en seizoensloon gelijk aan zijn strandloon en aanvulloon gelijk aan zijn strandloon.
+
+Regel seizoenswaarde
+    geldig altijd
+        De seizoenswaarde van een Melding moet gesteld worden op 20 van dd. 01-03-2025 tot dd. 01-09-2025.
+
+Regel seizoensloon
+    geldig altijd
+        Het seizoensloon van een Melding moet gesteld worden op 20 van dd. 01-03-2025 tot dd. 01-09-2025.
+
+Regel standaardaanvulloon
+    geldig altijd
+        Het aanvulloon van een Melding moet geïnitialiseerd worden op 5.
+
+Regel meldwaardetotaal
+    geldig altijd
+        Het meldwaardetotaal van een Jutter moet berekend worden als de som van de meldwaarde van alle meldingen van de Jutter.
+
+Regel meldloontotaal
+    geldig altijd
+        Het meldloontotaal van een Jutter moet berekend worden als de som van het meldloon van alle meldingen van de Jutter.
+
+Regel seizoenswaardetotaal
+    geldig altijd
+        Het seizoenswaardetotaal van een Jutter moet berekend worden als de som van de seizoenswaarde van alle meldingen van de Jutter.
+
+Regel seizoensloontotaal
+    geldig altijd
+        Het seizoensloontotaal van een Jutter moet berekend worden als de som van het seizoensloon van alle meldingen van de Jutter.
+
+Regel aanvulloontotaal
+    geldig altijd
+        Het aanvulloontotaal van een Jutter moet berekend worden als de som van het aanvulloon van alle meldingen van de Jutter.

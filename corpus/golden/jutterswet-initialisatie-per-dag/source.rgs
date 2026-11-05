@@ -1,0 +1,62 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het basisloon Numeriek (geheel getal) voor elke maand;
+    het strandloon Numeriek (geheel getal) voor elke maand;
+    het voorjaarsloon Numeriek (geheel getal) voor elke maand;
+    het zomerloon Numeriek (geheel getal) voor elke maand;
+    het wachtloon Numeriek (geheel getal) voor elke maand;
+    het kustloon Numeriek (geheel getal) voor elke maand;
+    het havenloon Numeriek (geheel getal) voor elke maand;
+    het stormloon Numeriek (geheel getal) voor elke maand;
+    is stormwacht kenmerk (bijvoeglijk) voor elke maand;
+
+Regel standaardstrandloon
+    geldig altijd
+        Het strandloon van een Jutter moet geïnitialiseerd worden op 5.
+
+Regel voorjaarsloon
+    geldig altijd
+        Het voorjaarsloon van een Jutter moet gesteld worden op 20 van dd. 01-03-2025 tot dd. 01-06-2025.
+
+Regel standaardvoorjaarsloon
+    geldig altijd
+        Het voorjaarsloon van een Jutter moet geïnitialiseerd worden op 5.
+
+Regel standaardzomerloon
+    geldig altijd
+        Het zomerloon van een Jutter moet geïnitialiseerd worden op 5.
+
+Regel zomerloon
+    geldig altijd
+        Het zomerloon van een Jutter moet gesteld worden op 20 van dd. 01-03-2025 tot dd. 01-06-2025.
+
+Regel standaardwachtloon
+    geldig altijd
+        Het wachtloon van een Jutter moet geïnitialiseerd worden op 5.
+
+Regel kustloon
+    geldig altijd
+        Het kustloon van een Jutter moet berekend worden als zijn basisloon van dd. 01-03-2025 tot dd. 01-09-2025.
+
+Regel standaardkustloon
+    geldig altijd
+        Het kustloon van een Jutter moet geïnitialiseerd worden op 5.
+
+Regel standaardhavenloon
+    geldig altijd
+        Het havenloon van een Jutter moet geïnitialiseerd worden op 5.
+
+Regel havenloon
+    geldig altijd
+        Het havenloon van een Jutter moet berekend worden als zijn basisloon van dd. 01-03-2025 tot dd. 01-09-2025.
+
+Regel stormloon
+    geldig altijd
+        Het stormloon van een Jutter moet gesteld worden op 20 van dd. 01-03-2025 tot dd. 01-06-2025.
+
+Regel stormloon in de herfst
+    geldig altijd
+        Het stormloon van een Jutter moet gesteld worden op 30 van dd. 01-09-2025 tot dd. 01-11-2025.
+
+Regel standaardstormloon
+    geldig altijd
+        Het stormloon van een Jutter moet geïnitialiseerd worden op 5 gedurende de tijd dat hij stormwacht is.

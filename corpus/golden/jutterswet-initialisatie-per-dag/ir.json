@@ -1,0 +1,820 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "basisloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "strandloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "voorjaarsloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zomerloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "wachtloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kustloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "havenloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "stormloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "stormwacht",
+            "kind": "adjectival",
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "standaardstrandloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "strandloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het strandloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "5"
+              }
+            },
+            "initialisation": true
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "voorjaarsloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "voorjaarsloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het voorjaarsloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "20"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "20"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-03-2025"
+                }
+              },
+              "to": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-06-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-06-2025"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "van dd. 01-03-2025 tot dd. 01-06-2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "standaardvoorjaarsloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "voorjaarsloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het voorjaarsloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "5"
+              }
+            },
+            "initialisation": true
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "standaardzomerloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zomerloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het zomerloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "5"
+              }
+            },
+            "initialisation": true
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zomerloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zomerloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het zomerloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "20"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "20"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-03-2025"
+                }
+              },
+              "to": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-06-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-06-2025"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "van dd. 01-03-2025 tot dd. 01-06-2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "standaardwachtloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "wachtloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het wachtloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "5"
+              }
+            },
+            "initialisation": true
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kustloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kustloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het kustloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "basisloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "zijn basisloon"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-03-2025"
+                }
+              },
+              "to": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-09-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-09-2025"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "van dd. 01-03-2025 tot dd. 01-09-2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "standaardkustloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kustloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het kustloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "5"
+              }
+            },
+            "initialisation": true
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "standaardhavenloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "havenloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het havenloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "5"
+              }
+            },
+            "initialisation": true
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "havenloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "havenloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het havenloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "basisloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "zijn basisloon"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-03-2025"
+                }
+              },
+              "to": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-09-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-09-2025"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "van dd. 01-03-2025 tot dd. 01-09-2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "stormloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "stormloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het stormloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "20"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "20"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-03-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-03-2025"
+                }
+              },
+              "to": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-06-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-06-2025"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "van dd. 01-03-2025 tot dd. 01-06-2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "stormloon in de herfst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "stormloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het stormloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "30"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "30"
+              }
+            },
+            "condition": {
+              "node": "TimeWindow",
+              "from": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-09-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-09-2025"
+                }
+              },
+              "to": {
+                "node": "Literal",
+                "value": {
+                  "date": "2025-11-01"
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "dd. 01-11-2025"
+                }
+              },
+              "toInclusive": false,
+              "source": {
+                "snippet": "van dd. 01-09-2025 tot dd. 01-11-2025"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "standaardstormloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "stormloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het stormloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "5"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "stormwacht",
+              "negated": false,
+              "source": {
+                "snippet": "hij stormwacht is"
+              }
+            },
+            "initialisation": true
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

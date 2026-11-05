@@ -1,0 +1,233 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "voorjaarsloon": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2025-04-01",
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          },
+          "wachtloon": {
+            "timeline": [
+              {
+                "from": "2025-03-01",
+                "to": "2025-06-01",
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          },
+          "stormloon": {
+            "timeline": [
+              {
+                "from": "2024-01-01",
+                "to": "2025-02-01",
+                "value": {
+                  "number": "7"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "stormwacht": [
+            {
+              "from": "2025-01-01",
+              "to": "2026-01-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "strandloon",
+      "timeline": [
+        {
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "voorjaarsloon",
+      "timeline": [
+        {
+          "to": "2025-01-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-01-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "zomerloon",
+      "timeline": [
+        {
+          "to": "2025-03-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "wachtloon",
+      "timeline": [
+        {
+          "to": "2025-03-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "kustloon",
+      "timeline": [
+        {
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "havenloon",
+      "timeline": [
+        {
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J2",
+      "attribute": "stormloon",
+      "timeline": [
+        {
+          "from": "2024-01-01",
+          "to": "2025-02-01",
+          "value": {
+            "number": "7"
+          }
+        },
+        {
+          "from": "2025-02-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "to": "2025-09-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-09-01",
+          "to": "2025-11-01",
+          "value": {
+            "number": "30"
+          }
+        },
+        {
+          "from": "2025-11-01",
+          "to": "2026-01-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

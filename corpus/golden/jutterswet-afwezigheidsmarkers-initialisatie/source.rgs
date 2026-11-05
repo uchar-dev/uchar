@@ -1,0 +1,16 @@
+Objecttype de Vondst (mv: Vondsten)
+    de opslagkosten Numeriek (geheel getal) voor elke maand (of onbekend of niet van toepassing);
+    de keurkosten Numeriek (geheel getal) voor elke maand (of onbekend);
+    is ongekeurd kenmerk (bijvoeglijk);
+
+Regel opslag in het voorjaar
+    geldig altijd
+        De opslagkosten van een Vondst moet gesteld worden op 10 van dd. 01-03-2025 tot dd. 01-06-2025.
+
+Regel opslag onbekend
+    geldig altijd
+        De opslagkosten van een Vondst moet geïnitialiseerd worden op onbekend.
+
+Regel keuring onbekend
+    geldig altijd
+        De keurkosten van een Vondst moet geïnitialiseerd worden op onbekend indien hij ongekeurd is.
