@@ -2704,7 +2704,7 @@ an attribute named waarde stays that attribute (witness: `AbsenceMarkerTest.with
 |---|---|
 | the attribute X of T with markers M | an attribute whose datatype is a `SumType` over the domain `X van een T`, with the constructors `waarde` (payload: X's declared datatype) and the markers of M, `onbekend` before `niet van toepassing`; the domain is declared in `domains` after the declared domains. One domain per attribute, so a marker never passes from one attribute to another (WF-061) |
 | a marker written into X | `Construct` of the marker |
-| any other value v written into X, by a rule or a default's consequence | `Construct waarde(v)`; a leeg v leaves it leeg, which decides nothing |
+| any other value v written into X, by a rule, a default's consequence or an object creation | `Construct waarde(v)`; a leeg v leaves it leeg, which decides nothing |
 | "zijn X onbekend is" | `Comparison equal` of X and the `Construct onbekend` |
 | "zijn X een waarde heeft" | `Predicate filled` of `PayloadAccess(X, waarde)` |
 | a read of the value of X in arithmetic, a comparison or an aggregation | `PayloadAccess(X, waarde)` |

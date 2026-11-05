@@ -99,6 +99,18 @@ class AbsenceMarkerTest {
         assertEquals("opslagkosten van een Vondst", assertInstanceOf(Datatype.SumType.class, target.type()).domain());
     }
 
+    /** A fold over the values of the members reads each value through the fold's range: the Aggregation carries the
+     *  relation, and the reference under the PayloadAccess carries no path of its own (IR-SPEC ch. 4.3). */
+    @Test void a_fold_over_the_values_reads_through_its_range() throws Exception {
+        String ir = IrEmitter.emit(Resolver.resolve(Files.readString(GOLDEN, StandardCharsets.UTF_8))).replaceAll("\\s+", "");
+        int at = ir.indexOf("\"kind\":\"sum\"");
+        assertTrue(at >= 0, ir);
+        String fold = ir.substring(at, ir.indexOf("\"presentation\"", at));
+        assertTrue(fold.contains("\"arguments\":[{\"node\":\"PayloadAccess\""), fold);
+        assertTrue(fold.contains("\"sourceRole\":{\"node\":\"RoleBinding\",\"factType\":\"vangst\",\"role\":\"vondst\"}"), fold);
+        assertFalse(fold.contains("\"path\""), fold);
+    }
+
     private static final String VONDST = """
         Objecttype de Vondst (mv: Vondsten)
             de taxatie Numeriek (getal met 2 decimalen) (of niet van toepassing);
@@ -166,6 +178,33 @@ class AbsenceMarkerTest {
         assertEquals("zijn gewicht in najaar", String.valueOf(d.args().get("expression")));
         Expr.PayloadAccess read = firstRead(rule(m, "vindloon").value());
         assertInstanceOf(Expr.DimensionCellRead.class, read.base());
+    }
+
+    /** An object creation writes a value into an attribute with markers as a rule does: the payload of a Construct of
+     *  the value constructor (the verifier refuses a number in a sum-typed member, WF-023). */
+    @Test void a_creation_writes_a_value_as_a_construct() {
+        RegelSpraakModel m = Resolver.resolve("""
+            Objecttype de Jutter (mv: Jutters)
+                is actief kenmerk (bijvoeglijk);
+
+            Objecttype de Vondst (mv: Vondsten)
+                de taxatie Numeriek (getal met 2 decimalen) (of onbekend);
+
+            Feittype vangst
+                de jutter Jutter
+                de vondst Vondst
+                één jutter heeft meerdere vondsten
+
+            Regel nieuwe vondst
+                geldig altijd
+                    Een Jutter heeft een vondst met taxatie gelijk aan 5,00
+                    indien hij actief is.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        Expr.Construct written = assertInstanceOf(Expr.Construct.class,
+                m.objectCreations.get(0).initialisations().get(0).value());
+        assertEquals("waarde", written.constructor());
+        assertEquals("5,00", assertInstanceOf(Expr.Literal.class, written.argument()).source().snippet());
     }
 
     /** A comparison before the test in an `alle` is read before the test (RUNTIME-SEMANTICS ch. 5.10), so it is refused;

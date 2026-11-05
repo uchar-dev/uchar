@@ -35,10 +35,10 @@ import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
  * waarde heeft" a gevuld test of a PayloadAccess; this pass builds the rest. Every other read of the value — in
  * arithmetic, a comparison, an aggregation, a value written into another attribute — becomes a PayloadAccess of the
  * value constructor, typed with the declared datatype; every reference to such an attribute is typed with its sum type
- * ({@link ObjectType#sumTypeOf}); and every value a rule or a default writes into it that is no marker becomes a
- * Construct of the value constructor, so a leeg value leaves the Construct leeg and decides nothing (ch. 9.1). A
- * reference reads no value as the target, as the operand of a leeg or gevuld test of the attribute itself, and beside
- * a Construct in a comparison. The checks of {@link RuleChecker} run before this pass and read a reference with the
+ * ({@link ObjectType#sumTypeOf}); and every value a rule, a default or an object creation writes into it that is no
+ * marker becomes a Construct of the value constructor, so a leeg value leaves the Construct leeg and decides nothing
+ * (ch. 9.1). A reference reads no value as the target, as the operand of a leeg or gevuld test of the attribute
+ * itself, and beside a Construct in a comparison. The checks of {@link RuleChecker} run before this pass and read a reference with the
  * declared datatype, so the typing of a computation reads the value as it reads every other attribute.
  *
  * <p>Then every PayloadAccess must stand after a test that the attribute holds a value — a conjunct of the condition
@@ -108,11 +108,14 @@ final class AbsenceMarkers {
                 : new ResolvedRule(r.name(), r.kind(), target, value, condition, r.validity(), r.statuteAnnotations());
     }
 
+    /** An object creation: a member it initialises with markers is written as a rule writes it. */
     private ResolvedObjectCreation objectCreation(ResolvedObjectCreation oc) {
         List<ResolvedObjectCreation.MemberInit> inits = new ArrayList<>();
         boolean same = true;
         for (var t : oc.initialisations()) {
-            Expr v = read(t.value());
+            Datatype.SumType sum = oc.createdType() == null || t.characteristic() ? null
+                    : oc.createdType().sumTypeOf(t.attribute());
+            Expr v = written(sum, read(t.value()));
             same &= v == t.value();
             inits.add(v == t.value() ? t : new ResolvedObjectCreation.MemberInit(t.attribute(), v, t.characteristic(), t.labels()));
         }
