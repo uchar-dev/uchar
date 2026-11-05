@@ -28,6 +28,10 @@ ALEF gemeten in alef-bridge (`aa032b5`, kaart `backlog/done/20261105-timeline-wr
   maken is per dag de invoer van het gemaakte object (rang 2 van de stapel); een scalaire waarde geldt op elke dag, een waarde per maand
   per periode; een regel die op een dag beslist, gaat ervoor, de initialisatie vult de rest.
 
+Ook mee te nemen (waarneming uit `absence-markers-residue`, stap B): in clingo geeft een andere producent van een tijdlijn van een sum
+type dan de constructor van een literal, de invoer en een kopie een vertaalfout zonder registercode; een initialisatie of een waarde bij
+het maken op een tijdlijndoel met markers is zo'n producent. Dragen, of weigeren met een code van het soort `refusal`.
+
 ## Goal
 
 Bouwen wat hierboven besloten is: de initialisatie en de waarde bij het maken op een tijdlijndoel per dag in de stapel van ch. 7.8, in

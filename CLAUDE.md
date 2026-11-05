@@ -232,7 +232,11 @@ missing line makes `make gates` exit non-zero. Current gates:
    document (`Loader.default_annotations`), and each of the three WF-082 keys
    carries the parameter `kind` (`rule` or `default`). Since the card `absence-markers` (2026-11-04) WF-127 holds a
    `PayloadAccess` under a test of its constructor (IR-SPEC ch. 4.7),
-   with one negative per arm.
+   with one negative per arm. Since the card `absence-markers-residue`
+   (2026-11-05) WF-062 reads the argument of a `Construct` as a write into
+   its payload (WF-023's assignment typing, and at WF-023's write positions
+   its precision gate), and WF-127 guards the read of a cell by a test of
+   the same cell.
 4. `scripts/check-case-schema.sh` — the case schema
    (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
    `corpus/golden/**/case*.json` and `corpus/red/**/case*.json`
@@ -481,8 +485,10 @@ missing line makes `make gates` exit non-zero. Current gates:
     value is a `ConstructorValue` on a bean, in a fact and in a segment, built
     by `Construct`, compared by equality and read by `PayloadAccess`, also as
     the source of a fold over members; on a timeline target of a sum type a
-    rule writes a constructor of a literal in the periods of its condition,
-    and a comparison with a constructor value is read per period. A `Match`
+    rule writes a constructor of a literal, or a copy of an own timeline of
+    that sum type, in the periods of its condition, and a comparison with a
+    constructor value is read per period; a cell carries a constructor value
+    as an attribute does. A `Match`
     stays refused (DROOLS-021), and the payload of a timeline is refused by
     name (DROOLS-314). A golden whose forms the loader+transpiler carry
     MUST replay with EXACTLY the pinned expectations gates 5 (ref) and 6
