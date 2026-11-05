@@ -236,7 +236,9 @@ missing line makes `make gates` exit non-zero. Current gates:
    (2026-11-05) WF-062 reads the argument of a `Construct` as a write into
    its payload (WF-023's assignment typing, and at WF-023's write positions
    its precision gate), and WF-127 guards the read of a cell by a test of
-   the same cell.
+   the same cell. Since the card `timeline-initialisation-allocation-creation`
+   (2026-11-05) WF-128 refuses an allocation that names a time-dependent
+   attribute (IR-SPEC ch. 3.2), with one negative per field.
 4. `scripts/check-case-schema.sh` — the case schema
    (`spec/schema/uchar-case-v0.schema.json`) is metaschema-valid; every
    `corpus/golden/**/case*.json` and `corpus/red/**/case*.json`
