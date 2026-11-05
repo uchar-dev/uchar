@@ -3212,9 +3212,11 @@ public final class TmsTranspiler {
                 : fitted(restated(value(r.value(), reads), eff.unitOf(r.value()), member.datatype().unitOf(),
                         "een §4 schrijfgrens naar het doel"), member, null);
         if (member.time() != null) {
+            // a Let whose body reads its binder and nothing else stands for its bound value, which it evaluates once,
+            // at that read (RUNTIME-SEMANTICS ch. 10.6): the Let and the read have what the producer has (ch. 5.12)
             for (Expr e = r.value(); e != produced; e = ((Expr.Let) e).value()) {
-                noteUnreached(e);
-                noteUnreached(((Expr.Let) e).body());
+                note(e, value);
+                note(((Expr.Let) e).body(), value);
             }
             note(produced, value);
         }

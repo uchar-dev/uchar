@@ -13094,6 +13094,30 @@ let () =
   check "WV-5.12-rekenen-per-dag-eenheid" (got = expected);
   if got <> expected then List.iter (Printf.printf "  got: %s\n") got
 
+(* WV-5.12-let-op-tijdlijndoel: a rule on a timeline target reads its producer
+   through a Let whose body reads its binder and nothing else, "de getelde
+   dagen" of rule 2 of the golden jutterswet-verzuimrente-30-360-afgerond. The
+   Let stands for its bound value, which it evaluates once, at that read
+   (ch. 10.6): the Let (node 1), the day count it binds (node 2) and the read of
+   its binder (node 7) each have the timeline the rule writes, its day counts
+   within the periods of the condition (ch. 5.12); case 1, by hand from its
+   NOTE (rentedragend on [2025-11-16, 2026-03-13)) *)
+let () =
+  let golden = "corpus/golden/jutterswet-verzuimrente-30-360-afgerond/" in
+  let got = readings_of (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ "case1-voorbeeld.json")) in
+  let p = "/rules/rules/2/versions/0 \"A1\" " in
+  let got = List.filter (fun l -> String.length l > String.length p && String.sub l 0 (String.length p) = p) got in
+  let written = "[[- 2025-11-01 0], [2025-11-01 2025-12-01 15], [2026-03-01 2026-04-01 12], [2026-04-01 - 0]]" in
+  let expected =
+    List.map (( ^ ) p)
+      [ "0 CharacteristicCheck [[- 2025-12-01 empty], [2026-03-01 - empty]]"; "1 Let " ^ written;
+        "2 BuiltinCall " ^ written; "3 Compound [[2025-11-16 2026-03-13 empty]]";
+        "4 CharacteristicCheck [[2025-11-16 2026-03-13 empty]]"; "5 Predicate [[2025-11-16 2026-03-13 empty]]";
+        "6 BoundDay unreached"; "7 BinderRef " ^ written; "HOLDS" ]
+  in
+  check "WV-5.12-let-op-tijdlijndoel" (got = expected);
+  if got <> expected then List.iter (Printf.printf "  got: %s\n") got
+
 (* --- the canonical form of a timeline (RUNTIME-SEMANTICS ch. 3.1) and the
    comparison of an expected timeline in it, on the documents of three
    goldens with the cases of ref/test/fixtures/canonical-timeline, which the

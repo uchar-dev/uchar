@@ -373,6 +373,26 @@ let read_periods ~form ~numbered env world (self : World.instance) ~condition ~t
 
 let without ~form status (self : World.instance) = { form; subject = self.label; status; nodes = [] }
 
+(* A rule on a timeline target reads its producer through every Let whose body
+   reads its binder and nothing else ([Checks.let_bound_value]). Such a Let
+   stands for its bound value, which it evaluates once, at that read (ch. 10.6),
+   so the Let and the read of its binder have what the producer has: the
+   timeline the rule writes, its fault, or nothing where it is not reached. *)
+let through_lets value (r : reading) =
+  let rec chain = function
+    | Let { binder; value; body = Binder_ref { ident; _ } as body; _ } as e when norm ident = norm binder ->
+        let sites, producer = chain value in
+        (S_expr e :: S_expr body :: sites, producer)
+    | e -> ([], e)
+  in
+  let sites, producer = chain value in
+  if sites <> [] then begin
+    match List.find_opt (fun n -> same n.site (S_expr producer)) r.nodes with
+    | Some p -> List.iter (fun n -> if List.exists (same n.site) sites then n.outcome <- p.outcome) r.nodes
+    | None -> failwith (Printf.sprintf "ref/lib/reading.ml: the form %s has no node for the value its Let binds" r.form)
+  end;
+  r
+
 (* whether a validity window admits the session: Some false outside it; a
    dated window in a session without an evaluation date is a fault (ch. 8.1) *)
 let admitted env g =
@@ -437,7 +457,8 @@ let rules json env ~world =
                 | _ -> [ without ~form Faults self ]
               else if not temporal then [ read_on ~form ~numbered env world self ~condition ~value ]
               else
-                let v = Ir_v0.Checks.let_bound_value (Eval.req "RuleVersion.value" r.value_node) in
+                let value = Eval.req "RuleVersion.value" r.value_node in
+                let v = Ir_v0.Checks.let_bound_value value in
                 (* the value is the timeline its producer writes, with or
                    without a condition, so its nodes read what the session's
                    producer reads and computes *)
@@ -449,9 +470,12 @@ let rules json env ~world =
                 match condition with
                 | Some c when Eval.read_per_period env.doc ~ot c ->
                     let target = Timeline.attr_grid env.doc (Eval.object_type env ot) attr in
-                    [ read_periods ~form ~numbered env world self ~condition:c ~target ~attr
-                        ~compute:(fun periods -> write ~periods ()) ]
-                | _ -> [ read_on ~compute:write ~form ~numbered env world self ~condition ~value ])
+                    [ through_lets value
+                        (read_periods ~form ~numbered env world self ~condition:c ~target ~attr
+                           ~compute:(fun periods -> write ~periods ())) ]
+                | _ ->
+                    [ through_lets value
+                        (read_on ~compute:write ~form ~numbered env world self ~condition ~value:(Some value)) ])
       | _ -> [])
     env.Eval.doc.resolved_rules
 
