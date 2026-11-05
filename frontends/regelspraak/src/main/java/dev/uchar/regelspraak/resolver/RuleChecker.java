@@ -4227,16 +4227,15 @@ final class RuleChecker {
         // an allocation distributes one amount at one moment (RUNTIME-SEMANTICS ch. 4), and no reading of it per day
         // is defined: an allocation that names a time-dependent attribute is not well-formed (IR-SPEC WF-128), a share
         // for every month over a scalar amount as well
-        java.util.List<java.util.Map.Entry<ObjectType, String>> named = new java.util.ArrayList<>();
-        named.add(java.util.Map.entry(b.objectType(), b.attribute()));
-        named.add(java.util.Map.entry(d.objectType(), d.attribute()));
-        if (restAttr != null) named.add(java.util.Map.entry(b.objectType(), restAttr));
-        for (String a : java.util.Arrays.asList(ratio, maxAttr, groupAttr))
-            if (a != null && d.objectType() != null) named.add(java.util.Map.entry(d.objectType(), a));
-        for (java.util.Map.Entry<ObjectType, String> e : named)
-            if (e.getKey() != null && e.getValue() != null && e.getKey().granularityOf(e.getValue()) != null)
+        // a type or a name that did not resolve, in a document under construction as well, is refused on its own
+        record Named(ObjectType type, String attribute) {}
+        java.util.List<Named> named = java.util.List.of(new Named(b.objectType(), b.attribute()),
+                new Named(d.objectType(), d.attribute()), new Named(b.objectType(), restAttr),
+                new Named(d.objectType(), ratio), new Named(d.objectType(), maxAttr), new Named(d.objectType(), groupAttr));
+        for (Named n : named)
+            if (n.type() != null && n.attribute() != null && n.type().granularityOf(n.attribute()) != null)
                 model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-378",
-                        params("name", name, "attribute", e.getValue(), "objectType", e.getKey().name), v.getStart().getLine()));
+                        params("name", name, "attribute", n.attribute(), "objectType", n.type().name), v.getStart().getLine()));
         RegelSpraakModel.RoleBindingRef join = allocationJoin(name, b, d, v.getStart().getLine());
         boolean joinResolves = join != null;
         if (method != ResolvedAllocation.Method.COMPLEX && joinResolves) {
