@@ -4224,6 +4224,19 @@ final class RuleChecker {
         // not getalachtig is lowered to an honest no-op, and EVERY method markers when the join is unresolvable
         // (the transpiler gates all three on join != null), so flagging the precision of a share that is never
         // computed would be a false positive. (No-op for all-integer verdelingen.)
+        // an allocation distributes one amount at one moment (RUNTIME-SEMANTICS ch. 4), and no reading of it per day
+        // is defined: an allocation that names a time-dependent attribute is not well-formed (IR-SPEC WF-128), a share
+        // for every month over a scalar amount as well
+        java.util.List<java.util.Map.Entry<ObjectType, String>> named = new java.util.ArrayList<>();
+        named.add(java.util.Map.entry(b.objectType(), b.attribute()));
+        named.add(java.util.Map.entry(d.objectType(), d.attribute()));
+        if (restAttr != null) named.add(java.util.Map.entry(b.objectType(), restAttr));
+        for (String a : java.util.Arrays.asList(ratio, maxAttr, groupAttr))
+            if (a != null && d.objectType() != null) named.add(java.util.Map.entry(d.objectType(), a));
+        for (java.util.Map.Entry<ObjectType, String> e : named)
+            if (e.getKey() != null && e.getValue() != null && e.getKey().granularityOf(e.getValue()) != null)
+                model.diagnostics.add(new Diagnostic(Severity.ERROR, "RGS-378",
+                        params("name", name, "attribute", e.getValue(), "objectType", e.getKey().name), v.getStart().getLine()));
         RegelSpraakModel.RoleBindingRef join = allocationJoin(name, b, d, v.getStart().getLine());
         boolean joinResolves = join != null;
         if (method != ResolvedAllocation.Method.COMPLEX && joinResolves) {

@@ -365,3 +365,4 @@ RGS-374	timeline-grid-finer	ERROR	operand,operandGrid,target,targetGrid
 RGS-375	marking-deviation-on-timeline-read	ERROR	characteristic,head
 RGS-376	absence-marker-read-untested	ERROR	attribute,expression,objectType
 RGS-377	scenario-absence-marker-not-admitted	ERROR	admitted,marker,what
+RGS-378	allocation-time-dependent-attribute	ERROR	attribute,name,objectType
