@@ -11559,6 +11559,26 @@ let translate_day_count ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~k ~day
    is leeg, or its fallback, where every member is (ch. 3.5). The written
    segments are the maximal runs of equal values; a period whose value is leeg
    writes nothing, the gap of ch. 3.1. *)
+(* A sum-typed timeline target takes a constructor of a literal, which holds on
+   every day (ch. 9.5): a marker written in a window; or an own timeline of a sum
+   type, copied whole (WF-023 holds it to the target's domain); its value is a
+   ground term with no scale. Another producer of a constructor value per period,
+   as the value of a rule, a default, an initialisation or a member of a creation,
+   is a refusal of this encoding, which ref need not share *)
+let sum_timeline_producer ctx ~otype ~a (value : expr) =
+  if attr_sum_typed ctx ~otype ~attr:a then
+    match value with
+    | Construct { argument = None | Some (Literal _); _ } -> ()
+    | Attribute_reference
+        { attribute_ref = Some b; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
+      when attr_temporal ctx ~otype:otn ~attr:b && attr_sum_typed ctx ~otype:otn ~attr:b ->
+        ()
+    | _ ->
+        faultc ~params:[ ("attribute", a) ] "CLINGO-036"
+          "the sum-typed timeline %S is written with a constructor of a literal or a copy of an own timeline of a \
+           sum type; another producer of a constructor value per period is not translated (no corpus case)"
+          a
+
 let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(into = "tl") ?target_ot ctx ~subject ~ot
     ~a (value : expr) =
   (* [ot] is the type the value is read on, [target_ot] the type that declares
@@ -11567,23 +11587,8 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
   let target_ot = Option.value target_ot ~default:ot in
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   let target = Uchar_ref.Timeline.attr_grid ctx.doc (object_type ctx target_ot) a in
-  (* a sum-typed timeline target takes a constructor of a literal, which holds
-     on every day (ch. 9.5): a marker written in a window; or an own timeline of
-     a sum type, copied whole (WF-023 holds it to the target's domain); its
-     value is a ground term with no scale *)
+  sum_timeline_producer ctx ~otype:target_ot ~a value;
   let sum_target = attr_sum_typed ctx ~otype:target_ot ~attr:a in
-  (if sum_target then
-     match value with
-     | Construct { argument = None | Some (Literal _); _ } -> ()
-     | Attribute_reference
-         { attribute_ref = Some b; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
-       when attr_temporal ctx ~otype:otn ~attr:b && attr_sum_typed ctx ~otype:otn ~attr:b ->
-         ()
-     | _ ->
-         faultc ~params:[ ("attribute", a) ] "CLINGO-036"
-           "the sum-typed timeline %S is written with a constructor of a literal or a copy of an own timeline of \
-            a sum type; another producer of a constructor value per period is not translated (no corpus case)"
-           a);
   let target_scale = if sum_target then 0 else pow10 (attr_decimals ctx ~otype:target_ot ~attr:a) in
   let target_unit = attr_unit ctx ~otype:target_ot ~attr:a in
   let what = Printf.sprintf "the period arithmetic of %S" a in
@@ -12216,6 +12221,7 @@ let translate_characteristic_timeline ctx (r : resolved_rule) ~ot ~k =
    leaves empty (EF-037, ref's sentence). *)
 let translate_timeline_initialisation ctx (r : resolved_rule) ~subject ~ot ~a ~cond ~periods =
   let value = Ir_v0.Checks.let_bound_value (req "RuleVersion.value" r.value_node) in
+  sum_timeline_producer ctx ~otype:ot ~a value;
   if not (Eval.is_period_arithmetic value) then
     fault
       "the value of the initialisation of the timeline target %S is not period arithmetic of ch. 3.4/3.5 (an \
@@ -13242,6 +13248,7 @@ let rec translate_chain_days ctx ~g ~cuts ~subject ~origins ~base ~path ~a ~targ
     let jr = Printf.sprintf "%s_jr%d" tag n in
     head_body ctx (Printf.sprintf "%s(%s)" jr subject) (reached @ justified);
     let c = req "default consequence" r.default_consequence in
+    sum_timeline_producer ctx ~otype:(ot_at n) ~a c;
     if not (Eval.is_period_arithmetic c) then
       fault
         "the consequence of a default on the timeline target %S is not period arithmetic of ch. 3.4/3.5 (an operator \

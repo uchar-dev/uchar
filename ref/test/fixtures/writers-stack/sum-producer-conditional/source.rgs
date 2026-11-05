@@ -1,0 +1,8 @@
+Objecttype de Vondst (mv: Vondsten)
+    de opslagkosten Numeriek (geheel getal) voor elke maand (of onbekend);
+    de schatting Numeriek (geheel getal) voor elke maand;
+    is ongekeurd kenmerk (bijvoeglijk);
+
+Regel opslag uit schatting
+    geldig altijd
+        De opslagkosten van een Vondst moet geïnitialiseerd worden op zijn schatting indien hij ongekeurd is.

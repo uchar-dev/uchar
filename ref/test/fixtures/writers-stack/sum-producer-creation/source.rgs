@@ -1,0 +1,14 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de schatting Numeriek (geheel getal) voor elke maand;
+
+Objecttype de Vondst (mv: Vondsten)
+    de opslagkosten Numeriek (geheel getal) voor elke maand (of onbekend);
+
+Feittype vangst
+    de jutter Jutter
+    de vondst (mv: vondsten) Vondst
+    één jutter heeft meerdere vondsten
+
+Regel geschatte vondst
+    geldig altijd
+        Een Jutter heeft een vondst met opslagkosten gelijk aan zijn schatting.

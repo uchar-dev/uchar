@@ -34,4 +34,4 @@ CLINGO-032	limit	calendar-total-outside-rounding	attribute	expr_term
 CLINGO-033	limit	unbounded-form-held-whole		viol_code
 CLINGO-034	limit	machine-integer-range		viol_code
 CLINGO-035	refusal	creation-order-not-normed		viol_code
-CLINGO-036	refusal	sum-timeline-producer	attribute	translate_period_arithmetic
+CLINGO-036	refusal	sum-timeline-producer	attribute	sum_timeline_producer

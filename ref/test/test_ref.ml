@@ -12863,6 +12863,21 @@ let () =
          (shown
          = Printf.sprintf "[%d,%d)=onbekend [%d,%d)=waarde(10) [%d,%d)=onbekend" Timeline.open_from (day "2025-03-01")
              (day "2025-03-01") (day "2025-06-01") (day "2025-06-01") Timeline.open_to)));
+  (* a constructor whose argument is no literal is no producer of a sum-typed
+     timeline that ref reads per period, as the value of an initialisation or
+     of a member alike *)
+  List.iter
+    (fun (d, needle) ->
+      let ir, case_data = fixture d "case.json" in
+      with_files ~ir ~case_data (fun _ _ evaluate ->
+          check ("WV-7.8-stapel-per-dag-somproducent-" ^ d)
+            (match evaluate () with
+            | exception Value.Fault { code = None; text; _ } -> Case.contains ~needle text
+            | exception Value.Fault _ -> false
+            | _ -> false)))
+    [ ("sum-producer-initialisation", "the value of the initialisation of the timeline target \"opslagkosten\" is not period arithmetic");
+      ("sum-producer-conditional", "the value of the initialisation of the timeline target \"opslagkosten\" is not period arithmetic");
+      ("sum-producer-creation", "this operand of the period arithmetic of ch. 3.4/3.5 is not executed") ];
   (let dep c = corpus_file (dir ^ "timeline-initialisation-deposit/" ^ c) in
    let ir = dep "ir.json" in
    check "WV-7.8-stapel-per-dag-lezing-verdrongen"

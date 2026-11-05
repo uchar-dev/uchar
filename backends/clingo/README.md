@@ -341,9 +341,9 @@ spec bug.
   inside it (`initcut/5`, `initpiece/6`), and a piece that neither covers
   (`initdecided/4`) is a `tl/5` segment. A sum-typed timeline takes a
   constructor of a literal or a copy of an own timeline of a sum type from
-  each of these producers, a rule, an initialisation and a member value
-  alike; another producer of a constructor value per period is refused with
-  CLINGO-036.
+  each of these producers, a rule, a default, an initialisation and a
+  member value alike; another producer of a constructor value per period is
+  refused with CLINGO-036 at the head of the fault.
 - A defaults group on a timeline attribute target decides per day
   (RUNTIME-SEMANTICS ch. 7.11): the chain and group predicates of the
   scalar lowering carry a period of the group's cut set, `grpG_d_per/3`,

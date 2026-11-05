@@ -17625,6 +17625,20 @@ let () =
              [ String.concat " " [ "#inf"; spring; "onbekend" ]; String.concat " " [ spring; summer; "waarde(10)" ];
                String.concat " " [ summer; "#sup"; "onbekend" ] ])
    | _, _ -> check (name ^ ": clingo gave no model") false);
+  (* another producer of a sum-typed timeline than a constructor of a literal
+     or a copy is a refusal of this encoding, with its register code at the head,
+     as the value of an initialisation, natively or desugared, and of a member *)
+  List.iter
+    (fun d ->
+      let doc, case = load_pair ~ir:(read (dir ^ d ^ "/ir.json")) ~case_text:(read (dir ^ d ^ "/case.json")) in
+      let name = "the stack of a timeline target: another producer of a sum-typed timeline, " ^ d in
+      match translate doc case with
+      | exception Uchar_ref.Value.Fault { code = Some "CLINGO-036"; params; _ } ->
+          check name (params = [ ("attribute", "opslagkosten") ])
+      | exception Uchar_ref.Value.Fault { code; text; _ } ->
+          check (Printf.sprintf "%s (%s: %s)" name (Option.value code ~default:"no code") text) false
+      | _ -> check (name ^ ": expected CLINGO-036, got a program") false)
+    [ "sum-producer-initialisation"; "sum-producer-conditional"; "sum-producer-creation" ];
   faults_with ~name:"the stack of a timeline target: an allocation over a share for every month"
     ~ir:(read (dir ^ "timeline-allocation/ir.json")) ~case_text:(read (dir ^ "timeline-allocation/case.json"))
     ~needle:
