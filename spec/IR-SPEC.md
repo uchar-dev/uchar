@@ -296,7 +296,7 @@ explicit (WF-001…WF-003).
 Declared names are carried verbatim (whitespace-collapsed, case
 preserved). Name *matching* is case-insensitive: the source language
 declares names not to be case-distinguishing (§13.2.30). The same match
-holds where a rule compares two datatypes whole (WF-049, WF-061, WF-062,
+holds where a rule compares two datatypes whole (WF-049, WF-061,
 WF-064, WF-066 to WF-070, WF-072 to WF-074, WF-076): every name the
 datatype carries — its domain, an enumeration value, a constructor, a
 field — is matched case-insensitively, and a unit is compared byte for
@@ -8734,9 +8734,26 @@ nothing, so neither node has an enumeration reading.
 
 - **WF-062** A `Construct` MUST name a declared constructor of its
   `SumType`; the `argument` MUST be present iff the constructor is
-  unary, and its static type MUST match the declared payload datatype.
-  A `Construct` whose `type` is an `Enumeration` is ill-formed —
-  building an enumeration value is a `Literal`.
+  unary, and the argument is a write into the declared payload
+  datatype: its static type MUST be assignable to the payload as WF-023
+  reads a write (the same family, compatible units, no contradictory
+  sign restriction, the same keuzetype and struct domain; a numeric
+  literal within the payload's sign restriction, WF-039 — the arm
+  `argument-type-mismatch`), and where the `Construct` is the value
+  written at a write position of WF-023 (a rule version's value, an
+  object-creation member, a defaults consequence), the argument's
+  precision bound (`RUNTIME-SEMANTICS.md` ch. 2.3), restated into the
+  payload's unit, MUST fit the payload's declared decimals as WF-023's
+  precision gate fits a value to its target (the arms
+  `argument-precision-exceeds` and `argument-precision-unbounded`, cited
+  at the argument). So the literal `5,00`, which its value types as a
+  whole number, is an argument of a payload of 2 decimals, as it is a
+  value of an attribute of 2 decimals. A `Construct` whose `type` is an
+  `Enumeration` is ill-formed — building an enumeration value is a
+  `Literal`. Witnesses: the golden `jutterswet-afwezigheidsmarkers-creatie`
+  (a literal of fewer decimals as the argument, in a rule and in an
+  object creation) and the negatives `wf062-*`. **Delta (extension)**,
+  card `absence-markers-residue`: the argument read as a write.
 - **WF-063** A `Match` scrutinee MUST be **keuzetype-typed** — sum-typed
   or enumeration-typed (ch. 2.4) — naming a domain declared in that same
   variant, and the arms MUST cover exactly the declared alternatives of
@@ -8772,7 +8789,9 @@ nothing, so neither node has an enumeration reading.
   `then` branch. A per-member position and a closed body start without
   the tests outside them. Two bases are the same when they are an
   `AttributeReference` to one attribute on one type over one path with
-  one anchor; a `PayloadAccess` over any other base has no guard. As the
+  one anchor, or a `DimensionCellRead` of the same labels over two such
+  references, the same cell; a `PayloadAccess` over any other base has
+  no guard. As the
   argument of a fold over members, a `PayloadAccess` over the
   `AttributeReference` of the element is the fold's set source (WF-037),
   judged with the fold-source rules on its base. *Motivation:* a failed
@@ -8780,8 +8799,11 @@ nothing, so neither node has an enumeration reading.
   (`RUNTIME-SEMANTICS.md` ch. 1.2): without the test an unknown amount
   computes on as nothing, and `≠` holds against it. Witnesses: the golden
   `jutterswet-afwezigheidsmarkers` (a value read, a comparison after the
-  test, a sum with the test in its filter) and one negative per arm
-  (`wf127-*`). **Delta (extension)**, card `absence-markers`.
+  test, a sum with the test in its filter), the golden
+  `jutterswet-afwezigheidsmarkers-cel` (a read of a cell after the test
+  of that cell) and one negative per arm (`wf127-*`; the cell:
+  `wf127-cell-guarded-by-another-cell`). **Delta (extension)**, cards
+  `absence-markers` and `absence-markers-residue`.
 - **WF-064** Every `BinderRef` MUST resolve to an enclosing binder of
   its name, and all arm bodies of a `Match` MUST agree on one result
   datatype — the `Match`'s own `type`. (This rule governs the new
@@ -10223,7 +10245,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-059 | every declared attribute carries a datatype — the attribute pendant of WF-018's datatype clause; a null datatype splits the executors on otherwise clean input (ch. 2.2). Arms (2) and (3) — every `kenmerkGranulariteit` / `attribuutGranulariteit` entry carries a granularity (maintainer decisions 2026-09-09 and 2026-09-10) — were removed at M1 (2026-09-23): the side tables left the wire and `TimelineFacet.granularity` is a required, non-null enum, so a timeline without a grid cannot be written; their measurements are in `backlog/done/20260906-gedurende-kwalificatie-stiltes.md` and `backlog/done/20260909-attribuutgranulariteit-null.md` | gate 3 | every golden (a universal declaration property; gate 3 witnesses none over-rejects) | `wf059-attribute-without-datatype` (rewritten by hand in the M1 shape at M1: an Attribute node with `"datatype": null`, which the schema admits, still rejected on WF-059 and not by a load error); arms (2) and (3) lost `wf059-kenmerk-zonder-granulariteit` and `wf059-attribuut-zonder-granulariteit` with them (stamp verwijderd-met-reden, `corpus/negative/README.md`) |
 | WF-060 | SumType declaration: ≥ 1 constructor, unique names (ci), admissible payload datatypes (a scalar datatype or a declared SumType; no list or struct), acyclic payload graph (ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` (executed by gates 5–6), `jutterswet-afwezigheidsmarkers` | `wf060-duplicate-constructor` + `wf060-list-payload` + `wf060-recursive-sumtype` |
 | WF-061 | **Since 2026-09-25:** the datatypes this rule compares are compared as ch. 2.1 matches names — a domain, value, constructor or field name case-insensitively, a unit byte for byte; no golden carries the drift at this rule, which compares through the one function WF-064, WF-069 and WF-070 are witnessed at. SumType use site agrees with its declaring domain; two sum-typed comparison operands name the same domain (the nominal rule, ch. 2.4) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf061-use-site-drift` + `wf061-cross-sumtype-equality` + `wf061-undeclared-domain` |
-| WF-062 | **Since 2026-09-25:** the datatypes this rule compares are compared as ch. 2.1 matches names — a domain, value, constructor or field name case-insensitively, a unit byte for byte; no golden carries the drift at this rule, which compares through the one function WF-064, WF-069 and WF-070 are witnessed at. Construct: sum-typed node; declared constructor; argument present iff unary; argument type matches the declared payload (ch. 4.7) | gate 3 | `anchor/jutterswet-beschikkingsom` | `wf062-nullary-with-argument` + `wf062-payload-type-mismatch` + `wf062-construct-on-enum` (the asymmetry the 2026-09-01 widening left standing: `Match` widened to enumeration scrutinees, `Construct` deliberately did not — an enumeration value is a `Literal`) |
+| WF-062 | Construct: sum-typed node; declared constructor; argument present iff unary; the argument a write into the declared payload — assignable as WF-023 reads a write, whose keuzetype and struct domains match as ch. 2.1 matches names, and at a write position of WF-023 within its precision gate (ch. 4.7; the write since card `absence-markers-residue`, 2026-11-05) | gate 3 | `anchor/jutterswet-beschikkingsom` + `jutterswet-afwezigheidsmarkers-creatie` (a literal of fewer decimals than its payload) | `wf062-nullary-with-argument` + `wf062-payload-type-mismatch` + `wf062-argument-incompatible-units` + `wf062-argument-precision-exceeds` + `wf062-argument-precision-unbounded` + `wf062-construct-on-enum` (the asymmetry the 2026-09-01 widening left standing: `Match` widened to enumeration scrutinees, `Construct` deliberately did not — an enumeration value is a `Literal`) |
 | WF-063 | Match totality over BOTH keuzetype variants (ch. 2.4/4.7): keuzetype-typed scrutinee (sum type or enumeration) naming a domain declared in that variant; arms cover the declared alternatives exactly, each once, none alien; on a sum scrutinee binder iff unary, on an enumeration scrutinee binder always null | gate 3 | `anchor/jutterswet-beschikkingsom` (the sum arm) + `jutterswet-vaarwatertoeslag-catala` (the enumeration arm: an all-nullary keuzetype normalised to its `Enumeration` domain, WF-087, matched arm by arm — replayed by gates 5–6) | `wf063-missing-arm` + `wf063-alien-constructor` + `wf063-binder-on-nullary` + `wf063-duplicate-arm` (sum) + `wf063-enum-missing-value` + `wf063-enum-binder-on-arm` + `wf063-enum-alien-value` (enumeration) |
 | WF-064 | **Since 2026-09-25:** the datatypes this rule compares are compared as ch. 2.1 matches names — a domain, value, constructor or field name case-insensitively, a unit byte for byte; `jutterswet-meldtermijnen` carries the case-only drift at this rule. every BinderRef resolves to an enclosing binder (a match arm's binder, a lambda/function parameter, or — the 5c widening — a `Let` binder scoped to its body); the closure clause: inside a closed lambda/function body the set is closed at the boundary, so a BinderRef reaching an enclosing rule's Let binder or an outer fold's parameter is ill-formed (an inside-body Let stays in scope); match arm bodies agree on one result datatype (ch. 4.7/4.8/4.10; `VariableReference` stays outside — row 24) | gate 3 | `anchor/jutterswet-beschikkingsom` + `anchor/jutterswet-tariefstelling` (Let binders) + `jutterswet-meldtermijnen` (a domain name in another case at this rule, since 2026-09-25) | `wf064-unbound-binderref` + `wf064-mixed-arm-types` + `wf064-enclosing-binder-in-closed-body` (the closure clause) |
 | WF-065 | ListType: first-order non-list element (Number, day-precision Date, declared SumType, or — the 5c widening — declared StructType); no granularity on a list-typed attribute (ch. 2.4). Since WF-087 (2026-09-01) an all-nullary keuzetype normalises to `Enumeration`, so it is no longer an admissible element type: the list carrier demands the payload form (`frontends/catala/test/refuse_list_nullary_enum.catala_en`) | gate 3 | `anchor/jutterswet-staffelvergoeding` (executed by gates 5–6) + `anchor/jutterswet-vondstdossier` (the list-of-struct widening) | `wf065-list-of-list` + `wf065-temporal-list-attribute` |
@@ -10288,7 +10310,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-124 | one unit, one list (ch. 2.5, point 5): (a) at least one factor, (b) an `exponent` is never 0 and never 1, (c) one factor per `abbreviation` and `system`, (d) the factors in the canonical order, (e) a declaration carries no `exponent`. Check: gate 3, in the walk of WF-092. Golden: `jutterswet-vondsttempo`. Negative: `wf124-empty-unit` (a), `wf124-exponent-zero` (b), `wf124-exponent-one-written` (b), `wf124-duplicate-factor` (c), `wf124-factors-unsorted` (d), `wf124-declared-exponent` (e). |
 | WF-125 | a dimensioned attribute has a value per cell and none of its own (ch. 2.7; card `dimensions-executed`, 2026-11-02): (a) a reference to it stands only as the attribute of a cell read or as the argument of a dimension fold, (b) a write position names one cell — a rule target, an object creation's member, (c) no form that names a member whole names it — an allocation, a uniqueness key, a defaults group, a start-point determination, (d) no timeline beside its dimensions | gate 3 | `jutterswet-seizoenvondst`, `jutterswet-seizoenvouw` (reads through a cell and a fold), `jutterswet-seizoenkopie` (writes through a cell) | `wf125-bare-read` (a), `wf125-whole-target` (b, a rule target), `wf125-member-without-labels` (b, a member), `wf125-defaults-target` (c), `wf125-dimension-and-timeline` (d) |
 | WF-126 | the grid of a timeline read per period fits the grid of the rule's timeline target (ch. 3.1; card `conditions-per-period`, 2026-11-03): (a) a timeline the value reads — an own time-dependent attribute, the member attribute of a sum over a set, a time-dependent parameter; (b) one the condition reads — a check of an own time-dependent characteristic, a compared own time-dependent attribute, a whole-period qualifier on the grid it names; (c) and (d) the same in the consequence and the justification of a default of a defaults group on a timeline attribute target (RUNTIME-SEMANTICS ch. 7.11); the time-proportional part, the day count and the operand of a qualifier exempt | gate 3 | `jutterswet-loon-per-periode`, `jutterswet-wachtmaanden` (a month and a year qualifier on monthly targets), `jutterswet-rekenen-per-dag` and `anchor/jutterswet-verzuimrente-dagen` (operands on a day target), `jutterswet-opgave-per-periode` (defaults on monthly targets) | `wf126-value-grid` (a), `wf126-condition-grid` (b, a characteristic), `wf126-whole-period-grid` (b, a qualifier), `wf126-defaults-value-grid` (c), `wf126-defaults-condition-grid` (d) |
-| WF-127 | a `PayloadAccess` reads a sum type — a sum-typed base naming a declared domain, a declared unary constructor, the declared payload as its type — and stands under a gevuld test of the same access before it, or is the operand of a leeg or gevuld test (ch. 4.7; card `absence-markers`, 2026-11-04) | gate 3 | `jutterswet-afwezigheidsmarkers` (executed by gates 5–6) | `wf127-unguarded` + `wf127-guard-after-read` + `wf127-fold-unguarded` + `wf127-base-not-sum` + `wf127-base-untyped` + `wf127-domain-undeclared` + `wf127-constructor-undeclared` + `wf127-constructor-nullary` + `wf127-type-differs` + `wf127-access-untyped` |
+| WF-127 | a `PayloadAccess` reads a sum type — a sum-typed base naming a declared domain, a declared unary constructor, the declared payload as its type — and stands under a gevuld test of the same access before it, the same attribute read or the same cell of it, or is the operand of a leeg or gevuld test (ch. 4.7; card `absence-markers`, 2026-11-04; the cell since card `absence-markers-residue`, 2026-11-05) | gate 3 | `jutterswet-afwezigheidsmarkers` + `jutterswet-afwezigheidsmarkers-cel` (executed by gates 5–6) | `wf127-unguarded` + `wf127-guard-after-read` + `wf127-fold-unguarded` + `wf127-cell-guarded-by-another-cell` + `wf127-base-not-sum` + `wf127-base-untyped` + `wf127-domain-undeclared` + `wf127-constructor-undeclared` + `wf127-constructor-nullary` + `wf127-type-differs` + `wf127-access-untyped` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

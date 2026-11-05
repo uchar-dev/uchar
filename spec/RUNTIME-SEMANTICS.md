@@ -9197,13 +9197,16 @@ Worked (the anchor's condition rules — `bevoorschot` iff `beschikking`
 - **Timelines.** A sum-typed temporal attribute holds a constructor
   value per segment, in the case format as in the end state. A
   constructor of a literal is a scalar operand of ch. 3.11, which holds
-  on every day, so a rule writes it in the periods of its condition;
-  input, writers and EF-016 are read per day as for every timeline target
-  (ch. 3.11, 5.7, 7.8), and a comparison of such a timeline with a
-  constructor is a condition per period (ch. 3.10). Timeline *arithmetic*
-  and temporal totals stay numeric-only (ch. 3.4–3.6), as for text and
-  enumeration members. Corpus witness: the golden
-  `jutterswet-afwezigheidsmarkers` (ch. 9.5).
+  on every day, so a rule writes it in the periods of its condition; an
+  own timeline of the same sum type is an operand read whole (ch. 3.4),
+  so a rule that writes it copies it segment by segment in the periods
+  of its condition; input, writers and EF-016 are read per day as for
+  every timeline target (ch. 3.11, 5.7, 7.8), and a comparison of such a
+  timeline with a constructor is a condition per period (ch. 3.10).
+  Timeline *arithmetic* and temporal totals stay numeric-only
+  (ch. 3.4–3.6), as for text and enumeration members. Corpus witnesses:
+  the goldens `jutterswet-afwezigheidsmarkers` (ch. 9.5) and
+  `jutterswet-afwezigheidsmarkers-kopie` (the copy).
 
 ### 9.5 Absence markers and the payload access
 
@@ -9243,12 +9246,17 @@ The RegelSpraak dialect writes them on the declaration
   per day.
 - **Testing for a value.** A gevuld test of `PayloadAccess(X, waarde)`
   holds where X carries a value; leeg and the markers fail it.
+- **A cell.** On a dimensioned attribute with markers each cell is such
+  a value (ch. 5.8c): a marker is written into a cell, a cell is tested
+  for a marker and for a value, and its value is read as the
+  `PayloadAccess` over the `DimensionCellRead` of the cell.
 
 **The reading rule.** A failed access is leeg, and plus, min and maal
 count leeg as 0 (ch. 1.2): an unknown amount would count on as nothing.
 So every `PayloadAccess` stands under a test of its own constructor —
 `IR-SPEC.md` WF-127: as the operand of a leeg or gevuld test, or after a
-gevuld test of the same access that holds as a conjunct before it (in the
+gevuld test of the same access, the same attribute or the same cell of
+it, that holds as a conjunct before it (in the
 condition of its form for the form's value; earlier in the same `all` for
 a condition, whose members are read in order, ch. 5.10; in the filter of
 a fold over members for the fold's per-member positions; in the condition
@@ -9266,11 +9274,13 @@ in the source; this chapter takes the filter, the reading of the decision
 
 **Executed.** In ref, the ASP backend and both branches of the Drools
 backend: writing, testing, reading the value in arithmetic, comparisons and
-a fold over members, scalar and the write and the test per period, with the
-readings of ch. 5.12. Not executed, refused by name in all three: a
-`PayloadAccess` of a timeline, whose test per period is a gevuld test per
-period without a reading (ch. 3.12 row 5). The ASP backend and the Drools
-backend write a sum-typed timeline from a constructor of a literal only.
+a fold over members, scalar, per cell and in an object creation, the write
+and the test per period and the copy of a timeline, with the readings of
+ch. 5.12. Not executed, refused by name in all three: a `PayloadAccess` of a
+timeline, whose test per period is a gevuld test per period without a
+reading (ch. 3.12 row 5). The ASP backend and the Drools backend write a
+sum-typed timeline from a constructor of a literal and from a copy of an
+own timeline of the same sum type, and from nothing else.
 
 Worked examples (absolute; `ref/test/` verbatim, the golden
 `jutterswet-afwezigheidsmarkers` and its red twin
@@ -9321,6 +9331,49 @@ opslagkosten onbekend zijn".
   slot, and a sum over the payloads of their timelines, are refused by
   name; `WV-9.5-kopie-van-een-tijdlijn`: a timeline of the same sum type
   copied whole reads **onbekend**, **waarde(10)** as its source.
+
+On a cell (the golden `jutterswet-afwezigheidsmarkers-cel`): a Vondst whose
+`gewicht` (2 decimals) is dimensioned by `seizoen` (voorjaar, najaar) and
+carries the marker onbekend, with the rules "gewicht in najaar := zijn
+schatting", "gewicht in voorjaar := onbekend indien hij onleesbaar is",
+"najaarsloon := zijn gewicht in najaar maal 2 indien zijn gewicht in najaar
+een waarde heeft", "voorjaarstoeslag := 7,00 indien zijn gewicht in voorjaar
+onbekend is" and "zwaar indien zijn gewicht in najaar een waarde heeft en
+zijn gewicht in najaar groter is dan 100,00".
+
+- `WV-9.5-cel-schatting`: schatting 60,00 → gewicht in najaar
+  **waarde(60.00)**, in voorjaar **leeg**, najaarsloon **120,00**, not zwaar.
+- `WV-9.5-cel-onbekend-verdringt-invoer`: onleesbaar, input gewicht in
+  voorjaar waarde(10.00) → **onbekend**, voorjaarstoeslag **7,00**.
+- `WV-9.5-cel-zwaar`: schatting 150,00 → najaarsloon **300,00**, **zwaar**.
+- `WV-9.5-cel-onbekend-in-de-invoer`: input onbekend in both cells → gewicht
+  in najaar **onbekend**, najaarsloon **leeg**, voorjaarstoeslag **7,00**.
+
+In an object creation (the golden `jutterswet-afwezigheidsmarkers-creatie`):
+a Jutter that is actief makes a vondst with the taxatie onbekend, one that is
+ervaren a vondst with the taxatie 12,50, a drijfhout vondst has the taxatie
+5,00; the Jutter counts its vondsten whose taxatie is onbekend and sums the
+taxatie of those that hold a value.
+
+- `WV-9.5-creatie-actief`: **1** onbekend, the sum **leeg**;
+  `-ervaren`: **0**, **12,50**; `-beide-met-drijfhout`: actief, ervaren and a
+  drijfhout vondst → taxatie **waarde(5.00)**, **1**, **17,50**;
+  `-drijfhout-verdringt-onbekend`: two vondsten with the input onbekend, one
+  drijfhout → **waarde(5.00)** and **onbekend**, **1**, **5,00**.
+
+The copy (the golden `jutterswet-afwezigheidsmarkers-kopie`): "opslagkopie :=
+zijn opslagkosten" and "verkoopkopie := zijn opslagkosten gedurende de tijd
+dat hij verkocht is", beside the writers of the opslagkosten above.
+
+- `WV-9.5-kopie`: opslagkosten waarde(10) on 2025 → opslagkopie
+  **onbekend** on [2025-01-01, 2025-03-01), **waarde(10)** on [2025-03-01,
+  2026-01-01); `-na-verkoop`: verkocht from 2025-06-01 → opslagkopie as the
+  opslagkosten, verkoopkopie **niet van toepassing** on [2025-06-01,
+  2026-01-01); `-invoer-naast-de-kopie`: opslagkosten waarde(10) on
+  [2025-04-01, 2025-08-01) and the input opslagkopie waarde(4) on 2025 →
+  opslagkopie **onbekend**, **waarde(4)** on [2025-03-01, 2025-04-01),
+  **waarde(10)** on [2025-04-01, 2025-08-01), **waarde(4)** on [2025-08-01,
+  2026-01-01).
 
 ## 10. Folds and function values
 

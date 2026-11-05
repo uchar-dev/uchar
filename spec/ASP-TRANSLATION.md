@@ -1995,15 +1995,21 @@ and a `PayloadAccess` over an attribute read is the read of that member
 (`payload_member`, `find_decl` gives it the payload's declaration): in
 an operator, a comparison, a gevuld test and as the set source of a fold
 over members (`cell_source_fold`, the cell's sibling), at the payload's
-scale. Where the attribute holds another constructor or is leeg, no atom
+scale. A dimensioned sum-typed attribute carries the rule per cell,
+`val(O,"gewicht[najaar]#waarde",P) :- val(O,"gewicht[najaar]",waarde(P))`,
+and a `PayloadAccess` over a `DimensionCellRead` reads the member of its
+cell; the cell itself is a sum operand of a comparison as the attribute
+is (`sum_term`), and the model check reads a `cellValue` expectation of a
+constructor value through `ctor_value_term`. Where the attribute holds another constructor or is leeg, no atom
 binds — the failed access is leeg for free, and WF-127 keeps it under
 the test that makes that unreachable in a value position. The name
 carries a `#`, which no declared name does.
 
 **A sum-typed timeline.** A rule writes it from a constructor of a
 literal, which holds on every day (`translate_period_arithmetic`, a node
-whose value is the ground term at scale 0), cut to the periods of its
-condition; writers and the input are read per day as for every timeline
+whose value is the ground term at scale 0), or copies an own timeline of
+the same sum type whole (its `tl` segments read per period, at scale 0),
+cut to the periods of its condition; writers and the input are read per day as for every timeline
 target (S9, S10), EF-016 per day included. A comparison of such a
 timeline with a `Construct` in a condition per period compares the
 segment term with the ground term (`period_condition`); an ordering
@@ -3117,13 +3123,14 @@ reference graph is about.
 *Sum types (S14) — carriage and shapes without a corpus case:*
 **temporal sum carriage** is carried for the case input, a write of a
 constructor of a literal and a comparison with a `Construct` per period
-(the golden `jutterswet-afwezigheidsmarkers`); a sum scrutinee or a sum
-operand over an own temporal attribute in a scalar position still
-faults with the literal reason `temporal sum carriage is a recorded
-flank; no corpus case`, and a sum-typed timeline written by any other
-producer (a copy of another sum-typed timeline, which ref reads whole)
-faults with `the sum-typed timeline … is written with a constructor of a
-literal; another producer of a constructor value per period is not
+and a copy of an own sum-typed timeline (the goldens
+`jutterswet-afwezigheidsmarkers` and `jutterswet-afwezigheidsmarkers-kopie`);
+a sum scrutinee or a sum operand over an own temporal attribute in a
+scalar position still faults with the literal reason `temporal sum
+carriage is a recorded flank; no corpus case`, and a sum-typed timeline
+written by any other producer faults with `the sum-typed timeline … is
+written with a constructor of a literal or a copy of an own timeline of
+a sum type; another producer of a constructor value per period is not
 translated (no corpus case)`. A **payload access to a time-dependent
 attribute** has a reading per day (RUNTIME-SEMANTICS ch. 9.5) that is not
 encoded: in a scalar position it is refused as every temporal attribute
