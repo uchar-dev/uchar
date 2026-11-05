@@ -790,6 +790,13 @@ missing line makes `make gates` exit non-zero. Current gates:
     Since the card `absence-markers` (2026-11-04) a constructor value is
     written as its tag quoted and, for a unary constructor, its payload in
     parentheses (ch. 5.12).
+    Since the card `reading-and-uniqueness-residue` (2026-11-05) a node of a
+    condition read per period carries the fault it raises or passes on, as
+    in a scalar condition, and a `Let` through which a rule on a timeline
+    target reads its producer has, with the read of its binder, the
+    producer's timeline (ch. 5.12); the golden
+    `jutterswet-voorwaarde-buiten-de-beurt` reads such a fault in a default
+    at its turn on no day.
     The jar is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`). The
     traces run on one process per core, the readings and the plain
     replays on one per two cores with the replay flags of
