@@ -482,7 +482,18 @@ missing line makes `make gates` exit non-zero. Current gates:
     and `periodDecisionsOf` gives per object and timeline target who
     decided per period, a stack's default, its conflict, the rules or the
     input (`PeriodDecisions`; card `decisions-per-period`, 2026-11-04,
-    witness `PeriodDecisionsWitnessTest`). Since the card `absence-markers`
+    witness `PeriodDecisionsWitnessTest`). Since the card
+    `timeline-initialisation-allocation-creation` (step B, 2026-11-05) an
+    initialisation on a timeline target is the lowest layer of its stack per
+    day on both branches (RUNTIME-SEMANTICS ch. 7.8;
+    `TmsTranspiler.timelineInitialisationRule`,
+    `PeriodDefaults.initialisationDays`): it reads the `Value`s of the other
+    writers and the input on the bean, never its own write, and decides,
+    within the periods of its condition, the days they leave on which its
+    value reads one; the member value of an object creation on a
+    time-dependent attribute is the input of the made object per day
+    (`ComputeHelpers.setTimeline`); and an allocation that names a
+    time-dependent attribute is refused as WF-128 (DROOLS-315). Since the card `absence-markers`
     (2026-11-04) both branches carry a sum type (RUNTIME-SEMANTICS ch. 9): its
     value is a `ConstructorValue` on a bean, in a fact and in a segment, built
     by `Construct`, compared by equality and read by `PayloadAccess`, also as
@@ -528,6 +539,7 @@ missing line makes `make gates` exit non-zero. Current gates:
     DROOLS-304 and DROOLS-307, since the card `conditions-per-period`
     (2026-11-03) DROOLS-302, DROOLS-104 and DROOLS-311, since the card
     `writers-as-one-defaults-stack` (2026-11-04) DROOLS-142, since the card
+    `timeline-initialisation-allocation-creation` (2026-11-05) DROOLS-118, since the card
     `absence-markers` (2026-11-04) DROOLS-010, DROOLS-012 and DROOLS-313; every raised code
     registered, numbers without gap, keys unique, every `ef` a row of
     RUNTIME-SEMANTICS ch. 5.7b) and carries
@@ -805,6 +817,12 @@ missing line makes `make gates` exit non-zero. Current gates:
     producer's timeline (ch. 5.12); the golden
     `jutterswet-voorwaarde-buiten-de-beurt` reads such a fault in a default
     at its turn on no day.
+    Since the card `timeline-initialisation-allocation-creation` (step B,
+    2026-11-05) an initialisation on a timeline target is read on both
+    sides as ch. 5.12 reads it: `DISPLACED` without nodes where the writers
+    and the input leave it no day, and else its condition and its value,
+    the root the filled segments of its value within the periods of its
+    condition.
     The jar is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`). The
     traces run on one process per core, the readings and the plain
     replays on one per two cores with the replay flags of
