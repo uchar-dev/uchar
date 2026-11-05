@@ -1,0 +1,4 @@
+WF-128.time-dependent-attribute
+field=orderingAttribute
+attribute=strandrang
+objectType=Berger

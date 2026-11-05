@@ -1,0 +1,4 @@
+WF-128.time-dependent-attribute
+field=ratioAttribute
+attribute=geborgen gewicht
+objectType=Berger

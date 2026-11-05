@@ -1,0 +1,4 @@
+WF-128.time-dependent-attribute
+field=sourceAttribute
+attribute=opbrengst
+objectType=Berging

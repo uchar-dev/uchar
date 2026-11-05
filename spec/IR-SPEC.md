@@ -2984,6 +2984,23 @@ method value.
   exec backend refuses them as a principled skip; that skip, ported to the
   Drools backend, keys on the declared type and does not see the chain
   pair. **Delta (promotion, row 17).**
+- **WF-128** An allocation MUST NOT name a time-dependent attribute: not
+  as its `sourceAttribute`, `targetAttribute` or `remainderAttribute`, and
+  not as its `ratioAttribute`, `maximumAttribute` or `orderingAttribute`.
+  An allocation distributes one amount over its recipients at one moment
+  (`RUNTIME-SEMANTICS.md` ch. 4), and no reading of it per day is defined: of
+  an amount per month, of a share per month over a scalar amount, or of a
+  weight, a cap or an ordering key that changes in time. One arm per field,
+  `WF-128.time-dependent-attribute` with the parameters `field`, `attribute`
+  and `objectType`, cited at the field of the version. The reading follows
+  ALEF, whose typesystem refuses an allocation in combination with a
+  time-dependent attribute, also where only the share is one. Witnesses
+  `corpus/negative/wf128-source-attribute`, `-target-attribute`,
+  `-remainder-attribute`, `-ratio-attribute`, `-maximum-attribute` and
+  `-ordering-attribute`; every golden allocation passes it. The RegelSpraak
+  frontend refuses the source with RGS-378, and ref and the ASP backend
+  re-run the check at an allocation rather than read a timeline as one
+  value.
 - A declared `roundingDecimals` or `maximumAttribute` without a
   `remainderAttribute` silently discards the rest; producers SHOULD
   declare the remainder target (v0 warns — kept advisory, the legal
@@ -10311,6 +10328,7 @@ rule and gate 3 requires the verifier to reject the case citing that rule
 | WF-125 | a dimensioned attribute has a value per cell and none of its own (ch. 2.7; card `dimensions-executed`, 2026-11-02): (a) a reference to it stands only as the attribute of a cell read or as the argument of a dimension fold, (b) a write position names one cell — a rule target, an object creation's member, (c) no form that names a member whole names it — an allocation, a uniqueness key, a defaults group, a start-point determination, (d) no timeline beside its dimensions | gate 3 | `jutterswet-seizoenvondst`, `jutterswet-seizoenvouw` (reads through a cell and a fold), `jutterswet-seizoenkopie` (writes through a cell) | `wf125-bare-read` (a), `wf125-whole-target` (b, a rule target), `wf125-member-without-labels` (b, a member), `wf125-defaults-target` (c), `wf125-dimension-and-timeline` (d) |
 | WF-126 | the grid of a timeline read per period fits the grid of the rule's timeline target (ch. 3.1; card `conditions-per-period`, 2026-11-03): (a) a timeline the value reads — an own time-dependent attribute, the member attribute of a sum over a set, a time-dependent parameter; (b) one the condition reads — a check of an own time-dependent characteristic, a compared own time-dependent attribute, a whole-period qualifier on the grid it names; (c) and (d) the same in the consequence and the justification of a default of a defaults group on a timeline attribute target (RUNTIME-SEMANTICS ch. 7.11); the time-proportional part, the day count and the operand of a qualifier exempt | gate 3 | `jutterswet-loon-per-periode`, `jutterswet-wachtmaanden` (a month and a year qualifier on monthly targets), `jutterswet-rekenen-per-dag` and `anchor/jutterswet-verzuimrente-dagen` (operands on a day target), `jutterswet-opgave-per-periode` (defaults on monthly targets) | `wf126-value-grid` (a), `wf126-condition-grid` (b, a characteristic), `wf126-whole-period-grid` (b, a qualifier), `wf126-defaults-value-grid` (c), `wf126-defaults-condition-grid` (d) |
 | WF-127 | a `PayloadAccess` reads a sum type — a sum-typed base naming a declared domain, a declared unary constructor, the declared payload as its type — and stands under a gevuld test of the same access before it, the same attribute read or the same cell of it, or is the operand of a leeg or gevuld test (ch. 4.7; card `absence-markers`, 2026-11-04; the cell since card `absence-markers-residue`, 2026-11-05) | gate 3 | `jutterswet-afwezigheidsmarkers` + `jutterswet-afwezigheidsmarkers-cel` (executed by gates 5–6) | `wf127-unguarded` + `wf127-guard-after-read` + `wf127-fold-unguarded` + `wf127-cell-guarded-by-another-cell` + `wf127-base-not-sum` + `wf127-base-untyped` + `wf127-domain-undeclared` + `wf127-constructor-undeclared` + `wf127-constructor-nullary` + `wf127-type-differs` + `wf127-access-untyped` |
+| WF-128 | an allocation names no time-dependent attribute: not as its amount, share or rest, and not as its weight, cap or ordering key (ch. 3.2; card `timeline-initialisation-allocation-creation`, 2026-11-05) | gate 3 | every golden allocation, among them `jutterswet-berging` + `jutterswet-rangaflopend` (executed by gates 5–6) | `wf128-source-attribute` + `wf128-target-attribute` + `wf128-remainder-attribute` + `wf128-ratio-attribute` + `wf128-maximum-attribute` + `wf128-ordering-attribute` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

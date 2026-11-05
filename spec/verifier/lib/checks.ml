@@ -2316,6 +2316,36 @@ let wf026 ctx =
   in
   dedup_reports (pairs named @ chain)
 
+(* WF-128 (IR-SPEC ch. 3.2): an allocation names no time-dependent attribute.
+   It distributes one amount over its recipients at one moment (RUNTIME-SEMANTICS
+   ch. 4), and a reading per day of the amount, the shares, the rest, the weight,
+   the cap or the ordering key has no source. A share for every month over a
+   scalar amount is refused as well. One arm per field, so a report names the
+   place of the field; an attribute the type does not declare is WF-034's. *)
+let wf128_allocation ctx (r : resolved_allocation) =
+  let on_type ty a ~field =
+    match (ty, a) with
+    | Some t, Some a -> (
+        match object_type ctx t with
+        | Some ot when attr_temporal ot a ->
+            [ v ~params:[ ("field", field); ("attribute", a); ("objectType", t) ] "WF-128.time-dependent-attribute"
+                (r.vd_pointer ^ "/" ^ field)
+                (Printf.sprintf
+                   "the field %s of the allocation names the time-dependent attribute '%s' of '%s': an \
+                    allocation distributes one amount at one moment, and no reading of it per day is defined"
+                   field a t) ]
+        | _ -> [])
+    | _ -> []
+  in
+  on_type r.source_type r.source_attribute ~field:"sourceAttribute"
+  @ on_type r.objective_type_name r.target_attribute ~field:"targetAttribute"
+  @ on_type r.source_type r.remainder_attribute ~field:"remainderAttribute"
+  @ on_type r.objective_type_name r.ratio_attribute ~field:"ratioAttribute"
+  @ on_type r.objective_type_name r.maximum_attribute ~field:"maximumAttribute"
+  @ on_type r.objective_type_name r.ordering_attribute ~field:"orderingAttribute"
+
+let wf128 ctx = List.concat_map (wf128_allocation ctx) ctx.doc.allocations
+
 (* WF-034 on the allocation's two ENDPOINT attributes (maintainer decision
    2026-09-04, third wave). An allocation is not an expression, so the
    expression walk never reaches it; its source and target attributes are
@@ -12897,7 +12927,7 @@ let all (doc : document) : violation list =
       wf007_model ctx; wf007_presentation ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx;
       wf013 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf115 ctx; wf017 ctx; wf018 ctx; wf107 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
-      wf022 ctx; wf023 ctx; wf023_precision ctx; wf025 ctx; wf026 ctx; wf027 ctx; wf028 ctx;
+      wf022 ctx; wf023 ctx; wf023_precision ctx; wf025 ctx; wf026 ctx; wf128 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;
       wf034_allocations ctx; wf034_allocation_names ctx; wf034_allocation_types ctx;
       wf034_allocation_name_resolution ctx; wf034_object_creation_subject ctx;
