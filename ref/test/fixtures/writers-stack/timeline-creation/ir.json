@@ -17,6 +17,21 @@
               "decimals": 0,
               "sign": "unspecified"
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "terug",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "timeline": {
+              "node": "TimelineFacet",
+              "granularity": "month",
+              "count": 1
+            }
           }
         ],
         "characteristics": []
@@ -76,7 +91,58 @@
     "dayKinds": []
   },
   "rules": {
-    "rules": [],
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "terug van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "terug",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De terug van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "waarde",
+                  "subjectType": "Melding",
+                  "source": {
+                    "snippet": "de waarde van alle meldingen van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Melding",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "jutmelding",
+                "role": "melding"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van de waarde van alle meldingen van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
     "dayKindDefinitions": [],
     "objectCreations": [
       {

@@ -163,10 +163,15 @@ faults with file/position context — never a silent fallback.
   `asOfDate` bucket's value the case carries (ch. 3.6, 0 for an absent
   timeline), and counts a part of a unit of the grid by its days. A temporal attribute, temporal characteristic or
   granular parameter in any other scalar position is refused (ch. 3.3 —
-  the §8.2 marker family). A temporal write target is refused too
-  (ch. 3.11) except in the two shapes that produce buckets: the ch. 3.7
-  pro-rata target and the ch. 3.8 day-count target. Never a silent
-  coercion.
+  the §8.2 marker family). A temporal write target takes a producer of
+  ch. 3.11 — the ch. 3.7 pro-rata part, the ch. 3.8 day count, the period
+  arithmetic of ch. 3.4 and 3.5 — and its stack is read per day (ch. 7.8):
+  each writer decides the days its timeline reads a value, the input
+  stands on the other days, and an initialisation decides the days that
+  leaves leeg; the member value of a creation on a temporal attribute is
+  the input of the object it makes per day. An allocation that names a
+  temporal attribute is not well-formed (WF-128), and ref re-runs that
+  check. Never a silent coercion.
 - **Cells of a dimensioned attribute** (ch. 5.8c): a cell is a member of
   its own in the fact base, the attribute's name with its labels in
   declared order (`World.cell`, `vondstgewicht[voorjaar]`), so it is read,

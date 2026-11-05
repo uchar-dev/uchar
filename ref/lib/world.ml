@@ -65,6 +65,17 @@ type held = Held_value of Value.t
    that decides there wrote it, whichever states the session passed. *)
 type owner = { owner_form : string; initialisation : bool; base : held }
 
+(* The stack of a timeline target per day (RUNTIME-SEMANTICS ch. 7.8): what it
+   held before any form wrote it, its input; per writer, as (rank, form,
+   segments), the segments it decides, [rank] its place in the document; and the
+   initialisation's timeline, which decides the days that no writer decides and
+   on which the input reads no value *)
+type stack = {
+  before : Timeline.t option;
+  writers : (int * string * Timeline.t) list;
+  init : (string * Timeline.t) option;
+}
+
 type t = {
   instances : instance SMap.t; (* by label *)
   order : string list; (* case declaration order, for determinism *)
@@ -90,11 +101,12 @@ type t = {
   char_writes : string Key.t;
       (* by (label, norm characteristic), for a time-dependent characteristic:
          the form whose write its true periods are *)
-  parts : (Timeline.t option * (int * string * Timeline.t) list) Key.t;
-      (* by (label, norm attribute), for a timeline target that rules write:
-         what it held before any of them wrote, and per writer the segments it
-         decides. Its timeline is their union, and on a day no writer decides,
-         what it held before (RUNTIME-SEMANTICS ch. 3.11, 5.7 per day) *)
+  parts : stack Key.t;
+      (* by (label, norm attribute), for a timeline target that rules or an
+         initialisation write. Its timeline is the union of its writers'
+         segments; on a day no writer decides, what it held before; and on a day
+         on which that is leeg too, the initialisation's value (RUNTIME-SEMANTICS
+         ch. 3.11, 5.7 and 7.8 per day) *)
 }
 
 let empty =
@@ -282,32 +294,46 @@ let release w ~form ~label ~attr:name =
    (rank, form, segments): [rank] is the writer's place in the document *)
 let timeline_parts_but w ~form ~label ~attr:name =
   match Key.find_opt (label, norm name) w.parts with
-  | Some (_, parts) -> List.filter (fun (_, f, _) -> not (String.equal f form)) parts
+  | Some st -> List.filter (fun (_, f, _) -> not (String.equal f form)) st.writers
   | None -> []
 
-(* The timeline of the target from its parts: every writer's segments as it
+let spans tl = List.map (fun (s : Timeline.segment) -> (s.s_from, s.s_to)) tl
+
+(* the stack of (label, attribute), or the empty one over what it holds now *)
+let stack_of w ~label ~attr:name =
+  match Key.find_opt (label, norm name) w.parts with
+  | Some st -> st
+  | None -> { before = timeline (get w label) name; writers = []; init = None }
+
+(* The days on which the stack [st] leaves its target to the initialisation: no
+   writer decides them and the input reads no value on them (ch. 7.8 per day) *)
+let init_days (st : stack) =
+  let input = List.filter (fun (s : Timeline.segment) -> s.s_value <> Value.Empty) (Option.value st.before ~default:[]) in
+  Timeline.complement_all (List.concat_map (fun (_, _, tl) -> spans tl) st.writers @ spans input)
+
+(* The timeline of the target from its stack: every writer's segments as it
    wrote them, in the order of the document, a day that an earlier writer
-   decides left out of a later one's; and on the days none of them covers, what
-   the target held before any of them wrote. The caller has checked that no
-   two parts decide a day with different values, so the order of the document
-   only says whose segment a shared day lies in. Without parts the target gets
-   back what it held before. *)
-let store_parts w ~label ~attr:name ~before parts =
+   decides left out of a later one's; on the days none of them covers, what the
+   target held before any of them wrote; and on the days that leaves leeg, the
+   initialisation's segments. The caller has checked that no two writers decide
+   a day with different values, so the order of the document only says whose
+   segment a shared day lies in. An empty stack gives the target back what it
+   held before. *)
+let store_stack w ~label ~attr:name (st : stack) =
   let key = (label, norm name) in
-  let parts = List.sort (fun (a, _, _) (b, _, _) -> compare a b) parts in
-  let spans tl = List.map (fun (s : Timeline.segment) -> (s.s_from, s.s_to)) tl in
+  let writers = List.sort (fun (a, _, _) (b, _, _) -> compare a b) st.writers in
   let _, own =
     List.fold_left
       (fun (covered, acc) (_, _, tl) ->
         let free = Timeline.complement_all covered in
         (covered @ spans tl, acc @ Timeline.clip tl free))
-      ([], []) parts
+      ([], []) writers
   in
-  let covered = List.concat_map (fun (_, _, tl) -> spans tl) parts in
-  match parts with
-  | [] -> (
+  let covered = List.concat_map (fun (_, _, tl) -> spans tl) writers in
+  match (writers, st.init) with
+  | [], None -> (
       let w = { w with parts = Key.remove key w.parts } in
-      match before with
+      match st.before with
       | Some tl -> write_timeline w ~label ~attr:name tl
       | None ->
           let i = get w label in
@@ -315,30 +341,48 @@ let store_parts w ~label ~attr:name ~before parts =
           else (update w { i with tls = SMap.remove (norm name) i.tls }, true))
   | _ ->
       let gaps = Timeline.complement_all covered in
-      let kept = Timeline.clip (Option.value before ~default:[]) gaps in
+      let kept = Timeline.clip (Option.value st.before ~default:[]) gaps in
+      let filled = match st.init with Some (_, tl) -> Timeline.clip tl (init_days st) | None -> [] in
       let tl =
-        List.sort (fun (a : Timeline.segment) (b : Timeline.segment) -> compare a.s_from b.s_from) (own @ kept)
+        List.sort (fun (a : Timeline.segment) (b : Timeline.segment) -> compare a.s_from b.s_from) (own @ kept @ filled)
       in
-      write_timeline { w with parts = Key.add key (before, parts) w.parts } ~label ~attr:name tl
+      write_timeline { w with parts = Key.add key { st with writers } w.parts } ~label ~attr:name tl
+
+(* the write boundary per segment (ch. 2.4, 3.11): a segment whose value does
+   not fit the declared decimals faults as a scalar write does, before anything
+   is stored *)
+let fits ~label ~attr:name ~decl (tl : Timeline.t) =
+  List.iter (fun (sg : Timeline.segment) -> ignore (collapse ~at:(label ^ "." ^ name) decl sg.s_value)) tl
 
 (* [form], the writer at [rank] in the document, decides the segments [tl] of
-   the target (none: it decides no day); the write boundary holds per segment
-   (ch. 2.4, 3.11) — a segment whose value does not fit the declared decimals
-   faults as a scalar write does, before anything is stored *)
+   the target (none: it decides no day) *)
 let write_timeline_part w ~form ~rank ~label ~attr:name ~decl (tl : Timeline.t) =
-  List.iter (fun (sg : Timeline.segment) -> ignore (collapse ~at:(label ^ "." ^ name) decl sg.s_value)) tl;
-  let key = (label, norm name) in
-  let before =
-    match Key.find_opt key w.parts with Some (b, _) -> b | None -> timeline (get w label) name
-  in
+  fits ~label ~attr:name ~decl tl;
+  let st = stack_of w ~label ~attr:name in
   let others = timeline_parts_but w ~form ~label ~attr:name in
-  store_parts w ~label ~attr:name ~before (if tl = [] then others else (rank, form, tl) :: others)
+  store_stack w ~label ~attr:name { st with writers = (if tl = [] then others else (rank, form, tl) :: others) }
 
 (* [form] does not decide on [label]: its segments leave the target *)
 let release_timeline_part w ~form ~label ~attr:name =
   match Key.find_opt (label, norm name) w.parts with
-  | Some (before, parts) when List.exists (fun (_, f, _) -> String.equal f form) parts ->
-      store_parts w ~label ~attr:name ~before (List.filter (fun (_, f, _) -> not (String.equal f form)) parts)
+  | Some st when List.exists (fun (_, f, _) -> String.equal f form) st.writers ->
+      store_stack w ~label ~attr:name
+        { st with writers = List.filter (fun (_, f, _) -> not (String.equal f form)) st.writers }
+  | _ -> (w, false)
+
+(* The initialisation [form] of the target: [tl] is its value on the days of
+   its condition, and it decides those of them that the stack leaves to it
+   ([init_days]). It reads the input and the writers, never its own write, so
+   its value is an equation like any other (ch. 5.4). The caller holds the
+   segments it decides to the write boundary ([fits]). *)
+let write_timeline_init w ~form ~label ~attr:name (tl : Timeline.t) =
+  let st = stack_of w ~label ~attr:name in
+  store_stack w ~label ~attr:name { st with init = (if tl = [] then None else Some (form, tl)) }
+
+(* the initialisation [form] does not decide on [label] *)
+let release_timeline_init w ~form ~label ~attr:name =
+  match Key.find_opt (label, norm name) w.parts with
+  | Some ({ init = Some (f, _); _ } as st) when String.equal f form -> store_stack w ~label ~attr:name { st with init = None }
   | _ -> (w, false)
 
 (* the characteristic set, held by no attribution: the case input's or a

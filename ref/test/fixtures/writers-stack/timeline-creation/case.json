@@ -19,6 +19,18 @@
   },
   "expected": [
     {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "terug",
+      "timeline": [
+        {
+          "value": {
+            "number": "7"
+          }
+        }
+      ]
+    },
+    {
       "kind": "consistent"
     }
   ]

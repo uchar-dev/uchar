@@ -29,6 +29,46 @@
   },
   "expected": [
     {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "strandloon",
+      "timeline": [
+        {
+          "to": "2025-01-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-01-01",
+          "to": "2025-02-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-02-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "5"
+          }
+        },
+        {
+          "from": "2025-03-01",
+          "to": "2025-06-01",
+          "value": {
+            "number": "20"
+          }
+        },
+        {
+          "from": "2025-06-01",
+          "value": {
+            "number": "5"
+          }
+        }
+      ]
+    },
+    {
       "kind": "consistent"
     }
   ]

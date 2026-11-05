@@ -12743,8 +12743,8 @@ let () =
    the initialisation "op 5 indien zijn toeslag groter is dan 0" beside a
    making that gives the toeslag; the rule "op
    zijn vaste aandeel indien hij vast is" writing 30 where the allocation writes
-   50 is EF-016. An initialisation, an allocation and the member value of a
-   creation on a timeline target have no meaning and are refused by name *)
+   50 is EF-016. On a timeline target the stack is read per day: below its own
+   tests (WV-7.8-stapel-per-dag) *)
 let () =
   let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
   let golden = "corpus/golden/jutterswet-invoer-naast-initialisatie/" in
@@ -12767,21 +12767,101 @@ let () =
             List.assoc_opt "rules" params = Some "vast bergingsaandeel, verdeel de opbrengst van een berging"
             && List.assoc_opt "values" params = Some "30, 50" && List.assoc_opt "label" params = Some "B1"
             && Case.contains ~needle:"allocation \"verdeel de opbrengst van een berging\" writes 50" text
-        | _ -> false));
+        | _ -> false))
+
+(* WV-7.8-stapel-per-dag: on a timeline target the stack of RUNTIME-SEMANTICS
+   ch. 7.8 is read per day. The initialisation is its lowest layer: it decides
+   every day on which no writer decides and the input reads no value, over all
+   time, its condition read as the condition of a rule on a timeline target
+   (ch. 3.10). The member value of a creation is the input of the made object
+   per day: a scalar on every day, a timeline per period. On the golden
+   jutterswet-initialisatie-per-dag, each a whole number for every month: the
+   initialisation "op 5" alone gives 5 on every day; beside "op 20 van dd.
+   01-03-2025 tot dd. 01-06-2025", in either order, 20 in spring and 5 on every
+   other day; beside the input 10 in spring, 10 there and 5 elsewhere; beside
+   "als zijn basisloon van dd. 01-03-2025 tot dd. 01-09-2025" with the basisloon
+   20 in spring, 20 in spring and 5 elsewhere, also from June to August, where
+   the rule reads leeg; and "op 5 gedurende de tijd dat hij stormwacht is"
+   beside 20 in spring and 30 in September and October, stormwacht in 2025:
+   5, 20, 5, 30, 5 within 2025 and leeg outside it. Beside a rule and the input
+   10 from January to March 2025 the input stands on the days the rule leaves
+   (case 2). On the golden jutterswet-creatie-per-dag a creation makes a
+   Melding with five values for every month, and a sum over the meldingen of a
+   Jutter reads each: the scalar 7 on every day; the strandloon, 10 from
+   January to June 2025, per period; 7 beside "op 20 van dd. 01-03-2025 tot
+   dd. 01-09-2025": 20 there and 7 elsewhere; the strandloon beside the same
+   rule: 10, 20 and leeg; the strandloon beside "geïnitialiseerd worden op 5":
+   5, 10, 5. On the documents of ref/test/fixtures/writers-stack: the
+   initialisation "op 5 indien hij kustwacht is" beside 20 in spring and the
+   input 10 in January gives 5, 10, 5, 20, 5; over an asOfDate-bucket scalar of
+   its target it faults with EF-037; an initialisation whose writers and input
+   leave it no day is not evaluated, and one that decides some day keeps the
+   EF-005 its value deposits on a day it does not decide; the creation of a
+   melding with the waarde of the scalar vangst 7 gives a terug of 7 on every
+   day; a creation that gives a sum-typed timeline the marker onbekend beside 10
+   in spring gives the made object onbekend, waarde(10), onbekend; an
+   allocation over a share for every month is not well-formed (WF-128), and ref
+   refuses to evaluate it *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  let golden g c = (read ("corpus/golden/" ^ g ^ "/ir.json"), read ("corpus/golden/" ^ g ^ "/" ^ c)) in
   List.iter
-    (fun (d, attribute) ->
-      let ident = "WV-7.8-stapel-tijdlijn-" ^ d in
-      with_files ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json"))
-        (fun findings _ evaluate ->
-          check (ident ^ ": verifier-clean") (findings = []);
-          check ident
-            (match evaluate () with
-            | exception Value.Fault { text; _ } ->
-                text
-                = Printf.sprintf "temporal attribute %S as a target: temporal writes are not implemented" attribute
-            | _ -> false)))
-    [ ("timeline-initialisation", "strandloon"); ("timeline-allocation", "bergingsaandeel");
-      ("timeline-creation", "waarde") ]
+    (fun (ident, (ir, case_data)) -> plays ~ident ~ir ~case_data (fun _ -> ()))
+    [ ("WV-7.8-stapel-per-dag-initialisatie", golden "jutterswet-initialisatie-per-dag" "case1-zonder-invoer.json");
+      ("WV-7.8-stapel-per-dag-initialisatie-invoer", golden "jutterswet-initialisatie-per-dag" "case2-invoer.json");
+      ( "WV-7.8-stapel-per-dag-initialisatie-zonder-stormwacht",
+        golden "jutterswet-initialisatie-per-dag" "case3-zonder-stormwacht.json" );
+      ("WV-7.8-stapel-per-dag-creatie", golden "jutterswet-creatie-per-dag" "case1-strandloon-tot-juli.json");
+      ("WV-7.8-stapel-per-dag-creatie-zonder-strandloon", golden "jutterswet-creatie-per-dag" "case2-zonder-strandloon.json") ];
+  let dir = "ref/test/fixtures/writers-stack/" in
+  let fixture d c = (read (dir ^ d ^ "/ir.json"), read (dir ^ d ^ "/" ^ c)) in
+  List.iter
+    (fun (ident, (ir, case_data)) -> plays ~ident ~ir ~case_data (fun _ -> ()))
+    [ ("WV-7.8-stapel-per-dag-voorwaarde", fixture "timeline-initialisation" "case.json");
+      ("WV-7.8-stapel-per-dag-niet-geevalueerd", fixture "timeline-initialisation-deposit" "case.json");
+      ("WV-7.8-stapel-per-dag-deponering", fixture "timeline-initialisation-deposit" "case-decides.json");
+      ("WV-7.8-stapel-per-dag-creatie-scalair", fixture "timeline-creation" "case.json") ];
+  (let ir, case_data = fixture "timeline-initialisation" "case-bucket-scalar.json" in
+   with_files ~ir ~case_data (fun _ _ evaluate ->
+       check "WV-7.8-stapel-per-dag-emmerscalair"
+         (match evaluate () with
+         | exception Value.Fault { code = Some "EF-037"; params; _ } ->
+             params = [ ("attribute", "strandloon"); ("label", "J1") ]
+         | _ -> false)));
+  (let ir, case_data = fixture "timeline-creation-marker" "case.json" in
+   plays ~ident:"WV-7.8-stapel-per-dag-creatie-marker" ~ir ~case_data (fun final ->
+       let made = World.SMap.find_opt "oc0::J1" final.World.instances in
+       let shown =
+         match Option.bind made (fun i -> World.timeline i "bergkosten") with
+         | Some tl ->
+             String.concat " "
+               (List.map
+                  (fun (s : Timeline.segment) ->
+                    Printf.sprintf "[%d,%d)=%s" s.s_from s.s_to (Value.to_string s.s_value))
+                  (Timeline.canonical tl))
+         | None -> "(no timeline)"
+       in
+       let day iso = match Value.date_of_iso iso with Value.Date d -> d | _ -> assert false in
+       check
+         ("WV-7.8-stapel-per-dag-creatie-marker: the made Vondst holds " ^ shown)
+         (shown
+         = Printf.sprintf "[%d,%d)=onbekend [%d,%d)=waarde(10) [%d,%d)=onbekend" Timeline.open_from (day "2025-03-01")
+             (day "2025-03-01") (day "2025-06-01") (day "2025-06-01") Timeline.open_to)));
+  let ir, case_data = fixture "timeline-allocation" "case.json" in
+  with_files ~ir ~case_data (fun findings _ evaluate ->
+      check "WV-7.8-stapel-per-dag-verdeling: WF-128"
+        (List.exists
+           (fun (f : Ir_v0.Checks.violation) ->
+             f.key = "WF-128.time-dependent-attribute"
+             && List.assoc_opt "field" f.params = Some "targetAttribute"
+             && List.assoc_opt "attribute" f.params = Some "bergingsaandeel")
+           findings);
+      check "WV-7.8-stapel-per-dag-verdeling"
+        (match evaluate () with
+        | exception Value.Fault { text; _ } ->
+            Case.contains ~needle:"WF-128 at /rules/allocations/0/versions/0/targetAttribute" text
+            && Case.contains ~needle:"the document is not well-formed; ref/ refuses to evaluate" text
+        | _ -> false))
 
 (* WV-7.11-opgave-per-dag: a defaults group on a timeline target decides per
    day: on every day the highest default that decides that day wins

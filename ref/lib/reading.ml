@@ -445,10 +445,14 @@ let rules json env ~world =
           let temporal_characteristic =
             (not computes) && Eval.characteristic_temporal (Eval.object_type env ot) attr
           in
+          let initialisation = r.rr_presentation = Some Initialisation in
           in_window env r.rr_validity ~form (of_type env world ~except ot) (fun self ->
-              if r.rr_presentation = Some Initialisation
-                 && not (World.init_may_write world ~label:self.label ~attr:member)
+              if initialisation && (not temporal) && not (World.init_may_write world ~label:self.label ~attr:member)
               then [ without ~form Displaced self ]
+              (* on a timeline target an initialisation that the writers and the
+                 input leave no day is displaced (ch. 7.8 per day) *)
+              else if initialisation && temporal && Eval.initialisation_days world self ~attr = [] then
+                [ without ~form Displaced self ]
               else if temporal_characteristic then
                 match (condition, Ir_v0.Checks.find_ci (Eval.object_type env ot).characteristic_granularity attr) with
                 | Some c, Some (Some g) ->
@@ -463,7 +467,9 @@ let rules json env ~world =
                    without a condition, so its nodes read what the session's
                    producer reads and computes *)
                 let write ?periods () =
-                  if Eval.is_period_arithmetic v then
+                  if initialisation then
+                    ignore (Eval.run_timeline_initialisation ?periods env world self ~err:drop ~form ~ot ~attr v)
+                  else if Eval.is_period_arithmetic v then
                     ignore (Eval.run_period_arithmetic ?periods env world self ~err:drop ~form ~ot ~attr v)
                   else ignore (Eval.run_pro_rata ?periods env world self ~err:drop ~form ~ot ~attr v)
                 in

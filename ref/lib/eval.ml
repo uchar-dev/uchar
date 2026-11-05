@@ -3656,6 +3656,58 @@ let run_period_arithmetic ?periods env w (self : World.instance) ~err ~form ~ot 
   read_whole value_node (Some result);
   write_produced env w self ~form ~ot ~attr result
 
+(* The days an initialisation of the timeline target [attr] of [self] decides
+   (RUNTIME-SEMANTICS ch. 7.8 per day): of the periods of its condition, those on
+   which no writer decides and the input reads no value. The asOfDate-bucket
+   scalar carries no day, so it cannot say on which days the input leaves the
+   target empty (EF-037, as for the initialisation default of ch. 7.11). *)
+let initialisation_days ?periods w (self : World.instance) ~attr =
+  if World.attr self attr <> Value.Empty then
+    bucket_scalar ~attr self
+      "the initialisation of the timeline target %S reads the input per day, and the case supplies for %S \
+       only the asOfDate-bucket scalar, which carries no period"
+      attr self.label;
+  let free = World.init_days (World.stack_of w ~label:self.label ~attr) in
+  Timeline.merge_periods (match periods with None -> free | Some ps -> Timeline.intersect_periods free ps)
+
+(* An initialisation on a timeline target: the lowest of the target's stack
+   (ch. 7.8), read per day. Its value is a producer of ch. 3.11 over all time, a
+   scalar on every day, cut to the periods of its condition, and it decides the
+   days [initialisation_days] gives. Where it decides no day its value is not
+   evaluated, as the value of a scalar initialisation whose guard blocks it is
+   not (ch. 5.4). It reads the input and the writers of the target, never its
+   own write, so it writes over all time, open segments included (ch. 3.1). *)
+let run_timeline_initialisation ?periods env w (self : World.instance) ~err ~form ~ot ~attr value_node =
+  match initialisation_days ?periods w self ~attr with
+  | [] -> World.release_timeline_init w ~form ~label:self.label ~attr
+  | days ->
+      if not (is_period_arithmetic value_node) then
+        Value.fault
+          "the value of the initialisation of the timeline target %S is not period arithmetic of ch. 3.4/3.5 (an \
+           operator of ch. 1.2 other than the power, the sum over a set, an own attribute, a parameter, a literal, \
+           or a rounding of one); the time-proportional part and the day count are not executed in an \
+           initialisation (no corpus case)"
+          attr;
+      let decl = attr_decl env ~otype:ot ~attr in
+      let target = Timeline.attr_grid env.doc (object_type env ot) attr in
+      (* what its value deposits on the §9.5 channel stands where it decides some
+         day, as a default's does (ch. 7.11) *)
+      let deposits = ref [] in
+      let result =
+        clip_periods periods
+          (List.filter
+             (fun (s : Timeline.segment) -> s.s_value <> Value.Empty)
+             (period_timeline env w self
+                ~err:(fun d -> deposits := d :: !deposits)
+                ~target ~attr ~target_unit:(unit_of_datatype decl) ~root:true value_node))
+      in
+      read_whole value_node (Some result);
+      let decided = Timeline.clip result days in
+      if decided <> [] then List.iter err (List.rev !deposits);
+      (* the write boundary holds on the segments it decides (ch. 3.11) *)
+      World.fits ~label:self.label ~attr ~decl decided;
+      World.write_timeline_init w ~form ~label:self.label ~attr result
+
 (* The true periods of the condition of a day count (WF-058, ch. 3.8): its own
    time-dependent characteristic, and of its days those on which each day-kind
    test of the counted day holds (IMPLICIT-TIME 7b); over more than one
@@ -3954,10 +4006,9 @@ let run_rule ?only env world (r : resolved_rule) =
         | Some Characteristic_attribution ->
             characteristic_value_constant_true r ~ot ~attr;
             if temporal_characteristic then characteristic_window_refusals env r ~ot ~attr
-        (* an initialisation is the lowest default of a scalar target (ch. 5.4,
-           7.8); on a timeline target only a defaults group carries it (ch. 7.11) *)
-        | Some Initialisation when temporal_target ->
-            Value.fault "temporal attribute %S as a target: temporal writes are not implemented" attr
+        (* the lowest of the stack of its target, on a timeline target per day
+           ([run_timeline_initialisation]) *)
+        | Some Initialisation -> ()
         | _ ->
             if temporal_target then
               match Option.map Ir_v0.Checks.let_bound_value r.value_node with
@@ -3997,12 +4048,15 @@ let run_rule ?only env world (r : resolved_rule) =
               | Some Characteristic_attribution -> World.release_char w ~form ~label:self.label ~char:attr
               | Some (Equation | Calculation) when temporal_target ->
                   World.release_timeline_part w ~form ~label:self.label ~attr
+              | Some Initialisation when temporal_target -> World.release_timeline_init w ~form ~label:self.label ~attr
               | _ -> World.release w ~form ~label:self.label ~attr:member
             in
             (* an initialisation whose guard blocks it does not decide, so neither
-               its condition nor its value is evaluated (ch. 5.4, 7.1, 7.3) *)
+               its condition nor its value is evaluated (ch. 5.4, 7.1, 7.3); on a
+               timeline target the guard is read per day *)
             let blocked =
               r.rr_presentation = Some Initialisation
+              && (not temporal_target)
               && not (World.init_may_write w ~label:self.label ~attr:member)
             in
             let fire =
@@ -4046,6 +4100,16 @@ let run_rule ?only env world (r : resolved_rule) =
                   let value = Ir_v0.Checks.let_bound_value (req "RuleVersion.value" r.value_node) in
                   if is_period_arithmetic value then run_period_arithmetic ?periods env w self ~err ~form ~ot ~attr value
                   else run_pro_rata ?periods env w self ~err ~form ~ot ~attr value
+              | Some Initialisation when temporal_target ->
+                  let periods =
+                    match r.rr_condition with
+                    | Some c when per_period ->
+                        let target = Timeline.attr_grid env.doc (object_type env ot) attr in
+                        Some (cond_periods env w self ~err ~target ~attr c)
+                    | _ -> None
+                  in
+                  run_timeline_initialisation ?periods env w self ~err ~form ~ot ~attr
+                    (Ir_v0.Checks.let_bound_value (req "RuleVersion.value" r.value_node))
               | Some (Equation | Calculation) ->
                   let v = eval_expr env w self ~err (req "RuleVersion.value" r.value_node) in
                   (* a leeg evaluation decides nothing (ch. 3.11, 7.8): the rule
@@ -4082,13 +4146,13 @@ let run_allocation env world (v : resolved_allocation) =
     let source_attr = req "AllocationVersion.sourceAttribute" v.source_attribute in
     let target_attr = req "AllocationVersion.targetAttribute" v.target_attribute in
     let method_name = req "AllocationVersion.method" v.vd_method in
-    (* the shares and the rest are scalar writes (ch. 4) *)
-    List.iter
-      (fun (t, a) ->
-        if Ir_v0.Checks.attr_temporal (object_type env t) a then
-          Value.fault "temporal attribute %S as a target: temporal writes are not implemented" a)
-      ((objective_type_name, target_attr)
-      :: Option.fold ~none:[] ~some:(fun ra -> [ (source_type, ra) ]) v.remainder_attribute);
+    (* an allocation reads and writes scalars (ch. 4): one that names a
+       time-dependent attribute is not well-formed, and ref/ re-runs that check
+       rather than reading a timeline at one moment *)
+    (match Ir_v0.Checks.wf128_allocation (Ir_v0.Checks.ctx_of env.doc) v with
+    | [] -> ()
+    | { Ir_v0.Checks.wf; at; reason; _ } :: _ ->
+        Value.fault "%s at %s: %s — the document is not well-formed; ref/ refuses to evaluate" wf at reason);
     over_subjects env world ~form:v.vd_pointer ~otype:source_type ~rule:name (fun w src cond_err ->
         (* what the allocation writes from [src] is held under this name, so
            where it does not decide on [src] it gives back (ch. 6.1) *)
@@ -4314,12 +4378,14 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
     let subject = req "ObjectCreationVersion.subject" oc.oc_subject in
     let env = { env with subj = Some subject } in
     let pair = creation_pair env oc in
-    (* a member value is a scalar write, the input of the object it makes (ch. 5.5, 7.8) *)
+    (* a member value is the input of the object it makes (ch. 5.5, 7.8); on a
+       cell of a time-dependent attribute nothing reads it per day *)
     List.iter
       (fun (t : assignment) ->
-        let m = init_member env ~created t in
-        if (not t.to_characteristic) && Ir_v0.Checks.attr_temporal (object_type env created) m then
-          Value.fault "temporal attribute %S as a target: temporal writes are not implemented" m)
+        let m = req "MemberInit.member" t.to_attribute in
+        if (not t.to_characteristic) && init_member env ~created t <> m
+           && Ir_v0.Checks.attr_temporal (object_type env created) m
+        then Value.fault "object creation %S sets a cell of the time-dependent attribute %S: not executed (no corpus case)" name m)
       oc.assignments;
     over_subjects ~read env world ~form:oc.oc_pointer ~otype:subject ~rule:name (fun w self err ->
         (* A subject that a higher stratum minted cannot occur: a creation
@@ -4400,6 +4466,21 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                     | None ->
                         Value.fault
                           "characteristic initialisation of %S without a value" m)
+                  else if Ir_v0.Checks.attr_temporal (object_type env created) m then begin
+                    (* on a time-dependent attribute the value is the input of
+                       the made object per day (ch. 7.8): a producer of ch. 3.11
+                       read on the subject, a scalar on every day *)
+                    let decl = attr_decl env ~otype:created ~attr:m in
+                    let target = Timeline.attr_grid env.doc (object_type env created) m in
+                    let tl =
+                      List.filter
+                        (fun (s : Timeline.segment) -> s.s_value <> Value.Empty)
+                        (period_timeline env read self ~err ~target ~attr:m ~target_unit:(unit_of_datatype decl)
+                           ~root:true (req "MemberInit.value" t.to_value))
+                    in
+                    World.fits ~label ~attr:m ~decl tl;
+                    if tl = [] then w else fst (World.write_timeline w ~label ~attr:m tl)
+                  end
                   else
                     let v = eval_expr env read self ~err (req "MemberInit.value" t.to_value) in
                     fst

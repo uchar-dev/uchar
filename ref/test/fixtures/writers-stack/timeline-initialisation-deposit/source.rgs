@@ -1,0 +1,13 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het strandloon Numeriek (geheel getal) voor elke maand;
+    het kustloon Numeriek (geheel getal) voor elke maand;
+    de deler Numeriek (geheel getal) voor elke maand;
+    is actief kenmerk (bijvoeglijk);
+
+Regel standaardstrandloon
+    geldig altijd
+        Het strandloon van een Jutter moet geïnitialiseerd worden op (100 gedeeld door zijn deler) naar beneden afgerond op 0 decimalen.
+
+Regel standaardkustloon
+    geldig altijd
+        Het kustloon van een Jutter moet geïnitialiseerd worden op (100 gedeeld door zijn deler) naar beneden afgerond op 0 decimalen indien hij actief is.

@@ -1,0 +1,19 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is actief kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    de bergkosten Numeriek (geheel getal) voor elke maand (of onbekend);
+
+Feittype vangst
+    de jutter Jutter
+    de vondst (mv: vondsten) Vondst
+    één jutter heeft meerdere vondsten
+
+Regel onbekende berging
+    geldig altijd
+        Een Jutter heeft een vondst met bergkosten gelijk aan onbekend
+        indien hij actief is.
+
+Regel bergkosten in het voorjaar
+    geldig altijd
+        De bergkosten van een Vondst moet gesteld worden op 10 van dd. 01-03-2025 tot dd. 01-06-2025.
