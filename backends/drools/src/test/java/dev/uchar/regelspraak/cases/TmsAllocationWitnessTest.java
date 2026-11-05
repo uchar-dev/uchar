@@ -732,7 +732,7 @@ class TmsAllocationWitnessTest {
         outcomes.put("twee verdelingen", play(document(List.of(), List.of(D_PROPORTIONAL, D_EQUAL), List.of()), caseDocument));
         Map<String, String> expected = new LinkedHashMap<>();
         expected.put("regel", "WritersConflict: geen fixpunt: twee schrijvers van één doel geven verschillende waarden"
-                + " — de regel \"bergingsaandeel van een berger\" schrijft 5 en de regel \"verdeel de opbrengst naar"
+                + " — de regel \"bergingsaandeel van een berger\" schrijft 5 en de verdeling \"verdeel de opbrengst naar"
                 + " rato\" schrijft 100 in het attribuut bergingsaandeel van J1, een Berger; divergentie is een fout"
                 + " (RUNTIME-SEMANTICS ch. 5.7)");
         expected.put("initialisatie", "gespeeld");

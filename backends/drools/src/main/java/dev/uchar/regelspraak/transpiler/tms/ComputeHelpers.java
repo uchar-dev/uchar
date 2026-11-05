@@ -1232,7 +1232,8 @@ public final class ComputeHelpers {
                                           List<?> typeClasses, List<?> types) {
         List<Value> list = new ArrayList<>();
         for (Object w : (List<?>) values) list.add((Value) w);
-        WritersConflict c = WritersConflict.of(subject, attribute, list, documentOrder, typeClasses, types);
+        // the difference rule of two or more computing rules raises it: every writer is a rule
+        WritersConflict c = WritersConflict.of(subject, attribute, list, documentOrder, typeClasses, types, List.of());
         return new Fault(subject, c.writers().get(0).writer(), c);
     }
 

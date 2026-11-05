@@ -5619,11 +5619,14 @@ let evaluate env world =
      different values in both passes is named with its writers and their
      values, in the order the pass runs them. The writes are read off the
      world (World.changed_attrs), so the replay is the pass itself. *)
-  (* a writer is named `rule "<name>"` in the sentence; the parameter is the declared name alone *)
+  (* a writer is named `<kind> "<name>"` in the sentence, `rule "…"` or
+     `allocation "…"` ([named]), and its kind holds no quote; the parameter is
+     the declared name alone (ch. 5.7b) *)
   let rule_name_of who =
-    let prefix = "rule \"" in
-    let n = String.length who and k = String.length prefix in
-    if n > k && String.sub who 0 k = prefix && who.[n - 1] = '"' then String.sub who k (n - k - 1) else who
+    let n = String.length who in
+    match String.index_opt who '"' with
+    | Some i when n > i + 1 && who.[n - 1] = '"' -> String.sub who (i + 1) (n - i - 2)
+    | _ -> failwith (Printf.sprintf "ref/lib/eval.ml: the writer %S is not named as <kind> \"<name>\"" who)
   in
   let disagreement steps world =
     let writes w =

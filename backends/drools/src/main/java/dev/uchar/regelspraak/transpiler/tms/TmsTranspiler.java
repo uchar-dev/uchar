@@ -1901,10 +1901,12 @@ public final class TmsTranspiler {
 
     /** The fault of RUNTIME-SEMANTICS ch. 5.7 for the {@code waarden} that writers put on attribute {@code key} of
      *  {@code subjectType}: the writers as {@link WritersConflict#inDocumentOrder} ranks them over the document's
-     *  rules {@link #documentOrder}, the attribute as declared, and the object's own type. */
+     *  rules {@link #documentOrder}, an allocation by its name, the attribute as declared, and the object's own type. */
     private WritersConflict conflict(Object subjectType, ElementKey key, List<Value> values) {
+        Set<String> allocations = new HashSet<>();
+        for (ResolvedAllocation v : model.allocations) if (v.name() != null) allocations.add(v.name());
         return WritersConflict.of(subjectType, memberOf(subjectType, key).spelled(), values, documentOrder, typeClasses,
-                types);
+                types, allocations);
     }
 
     /** Value equality at the write boundary: numbers by value, so that 5.0 and 5.00 are one value; leeg is null. */

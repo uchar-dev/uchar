@@ -935,13 +935,18 @@ let viol_code witness =
   else if opens "the per-element temporal fold of \"" && holds "\": the case supplies an asOfDate-bucket scalar" then
     Some ("EF-037", found "attribute" (between "the per-element temporal fold of \"" "\" over \"") @ label)
   else if opens "two writers of one target disagree: " then
-    (* the rule names are quoted and joined by " and ": rules "A" and "B" write … *)
+    (* the writers' names are quoted, each after its kind: rules "A" and "B"
+       write …, rule "A" and allocation "B" write …; a name holds no quote *)
+    let rec quoted s i acc =
+      match String.index_from_opt s i '"' with
+      | None -> List.rev acc
+      | Some a -> (
+          match String.index_from_opt s (a + 1) '"' with
+          | None -> List.rev acc
+          | Some b -> quoted s (b + 1) (String.sub s (a + 1) (b - a - 1) :: acc))
+    in
     let rules =
-      Option.map
-        (fun r ->
-          let inner = String.sub r 1 (String.length r - 2) in
-          String.concat ", " (split_on_string "\" and \"" inner))
-        (between "rules " " write different values")
+      Option.map (fun r -> String.concat ", " (quoted r 0 [])) (between "disagree: " " write different values")
     in
     let attribute_of =
       match between "to the attribute " " — no fixpoint" with
@@ -14213,8 +14218,8 @@ let writer_conflicts ctx =
               emit ctx "viol(%s,S) :- wval(S,%s,X,%d), wval(S,%s,Y,vd%d), X != Y."
                 (quote
                    (Printf.sprintf
-                      "two writers of one target disagree: rules \"%s\" and \"%s\" write different values to \
-                       the attribute %s of a %s — no fixpoint, divergence is a fault (ch. 5.7)"
+                      "two writers of one target disagree: rule \"%s\" and allocation \"%s\" write different \
+                       values to the attribute %s of a %s — no fixpoint, divergence is a fault (ch. 5.7)"
                       (Option.value ri.rr_name ~default:"<naamloos>")
                       (Option.value v.vd_name ~default:"<naamloos>")
                       a oti))

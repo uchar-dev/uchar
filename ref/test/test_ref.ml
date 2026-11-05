@@ -12761,8 +12761,12 @@ let () =
       check "WV-7.8-stapel-verdeling-botsing: verifier-clean" (findings = []);
       check "WV-7.8-stapel-verdeling-botsing"
         (match evaluate () with
-        | exception Value.Fault { code = Some "EF-016"; params; _ } ->
-            List.assoc_opt "values" params = Some "30, 50" && List.assoc_opt "label" params = Some "B1"
+        | exception Value.Fault { code = Some "EF-016"; params; text } ->
+            (* the parameter names each writer by its declared name, the
+               sentence the allocation as an allocation *)
+            List.assoc_opt "rules" params = Some "vast bergingsaandeel, verdeel de opbrengst van een berging"
+            && List.assoc_opt "values" params = Some "30, 50" && List.assoc_opt "label" params = Some "B1"
+            && Case.contains ~needle:"allocation \"verdeel de opbrengst van een berging\" writes 50" text
         | _ -> false));
   List.iter
     (fun (d, attribute) ->

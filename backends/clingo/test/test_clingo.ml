@@ -17545,7 +17545,10 @@ let () =
           ("label", "B1"); ("objectType", "Berger") ] )
     ~name:"the stack of a target: a computing rule and an allocation with different values"
     ~ir:(read (dir ^ "allocation-conflict/ir.json")) ~case_text:(read (dir ^ "allocation-conflict/case.json"))
-    ~needle:"two writers of one target disagree" ();
+    ~needle:
+      "two writers of one target disagree: rule \"vast bergingsaandeel\" and allocation \"verdeel de opbrengst \
+       van een berging\" write different values"
+    ();
   List.iter
     (fun (f, attribute) ->
       faults_with ~name:("the stack of a target: on a timeline target, " ^ f) ~ir:(read (dir ^ f ^ "/ir.json"))
