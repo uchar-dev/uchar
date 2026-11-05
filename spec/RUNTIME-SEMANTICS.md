@@ -3615,7 +3615,11 @@ producers:
   complement is seeded;
 - a **defaults group** on a timeline attribute target, which decides per day
   (ch. 7.11); beside it no rule of the target's level writes (`IR-SPEC.md`
-  WF-050).
+  WF-050);
+- an **initialisation**, the lowest layer of its target's stack, which
+  decides the days on which no writer decides and the input reads no value,
+  over all time (ch. 7.8). Its value is period arithmetic, a scalar on every
+  day, cut to the periods of its condition.
 
 A **time-dependent value in a scalar slot** is refused except through the
 collapses (ch. 3.3); that boundary is never crossed by silent coercion.
@@ -3655,8 +3659,9 @@ an equation with a leeg value a leeg result, §9.1, and says nothing of the
 input of a target, §9.3; the reading follows the default evaluation of ALEF).
 On a **timeline** target a writer, also its only one, decides only the days on
 which its timeline reads a value; on a day no writer decides, the target holds
-what it held before any of them wrote, its input or leeg (ch. 5.7, "Two
-writers per day"; `spec/proposals/IMPLICIT-TIME.md` point 5). An empty result
+what it held before any of them wrote, its input, where that is leeg the value
+of its initialisation, or leeg (ch. 5.7, "Two writers per day"; ch. 7.8;
+`spec/proposals/IMPLICIT-TIME.md` point 5). An empty result
 decides no day, so the input stands whole; a result with a value on some days
 leaves the input standing on the others, so input and computed segments
 interleave per day. A scalar is the timeline (−∞, +∞) (ch. 3.1), so on a
@@ -3795,7 +3800,7 @@ and in the READMEs of the backends.
 | 7 | **A time-dependent characteristic outside a window** | ch. 3.3, 3.10, 3.11 | The write of a characteristic is defined within a window. No meaning: periods with an open bound (EF-023), so an unconditional characteristic and a negated check outside a window. Not defined: a write without a window, two rules on one characteristic, a case-supplied timeline of a characteristic a rule writes, a navigated characteristic in the condition of the write, and a time-dependent characteristic as the operand of the point read (the case format). A defaults group on a time-dependent characteristic is ill-formed (`IR-SPEC.md` WF-086). Open: each of these. |
 | 8 | **The period window and the axis of versions** | ch. 3.10 | (a) A rule version's validity window on a temporal write mixes the selection of versions with the timeline axis; it belongs to the single-axis decision of ch. 8 (PLAN §9, decision 2), and no golden carries a validity window on a temporal rule; a defaults group's validity on a timeline target gates by the evaluation date in the same way (ch. 7.11, `WV-7.11-versie`). (b) A window in the `filter` of an `all` quantifier fold in a session without an evaluation date never matches, so the member is filtered out and the fold is vacuously waar; WF-112 is not widened to it (`corpus/golden/jutterswet-wachtvenster`, `bevoegd` in `case3-tijdvrij`). (c) A clip that cuts a bucket has no corpus carrier, because the case format pins every expected timeline to the declared grid; the alternative, a WF rule that demands bounds on the grid for a clip, is not taken. Open: (a), the reading of (b), and a case format that releases expected timelines from the grid. |
 | 9 | **The subject's own total of a case-supplied timeline** | ch. 3.6, 8.4 | It reads the asOfDate bucket, one period of the grid that holds the evaluation date, while a timeline a rule writes is totalled whole, so the meaning of "het totaal van zijn X" depends on who wrote X. Open: whether the own total of a case timeline reads the whole timeline, as every other timeline is read over all time, which changes the case convention of ch. 8.4. |
-| 10 | **The stack of a timeline target beyond its computing rules** | ch. 3.11, 7.8 | An initialisation outside a defaults group, an allocation and the member value of a creation write a scalar target; on a timeline target each is refused by name in every executor, in the reference interpreter and the ASP backend in the words "temporal attribute … as a target: temporal writes are not implemented". The initialisation default of a defaults group is read per day (ch. 7.11). Open: their reading per day in the stack of ch. 7.8. |
+| 10 | **The producers of an initialisation and of a member value on a timeline target** | ch. 3.11, 7.8 | An initialisation and the member value of a creation on a timeline target are read per day in the stack of ch. 7.8, their value period arithmetic over all time; an allocation that names a time-dependent attribute is not well-formed (`IR-SPEC.md` WF-128). The time-proportional part and the day count as the value of an initialisation or of a member value are refused by name. Open: their reading there. |
 
 ---
 
@@ -3934,7 +3939,10 @@ WF-024 (no `COMPLEX` — the v0 placeholder for unrecognised forms is not
 admissible IR), WF-025 (field validity per method: ratio iff weighted
 split; cap only with a ratio — v0 demotes a capped equal-shares to
 COMPLEX, strict reading of §9.7.3; ordering key orderable), WF-026 (at
-most one allocation per written target). *v0 mirror note on WF-026:* the
+most one allocation per written target), WF-128 (no time-dependent attribute
+among the amount, the share, the rest, the weight, the cap and the ordering
+key: the equations below hold at one moment, and no reading of them per day
+is defined). *v0 mirror note on WF-026:* the
 two backends genuinely **diverge** on a duplicate-target model — one
 lowers both allocations (last agenda order wins), the other refuses the
 pair — which is precisely why v1 promotes the case to ill-formed rather
@@ -4151,6 +4159,9 @@ after both. `gewicht` 12,00 gives **bergloon 26,00 and vindloon 18,00** in
 either document order; `gewicht` 8,00 gives bergloon **leeg** and vindloon
 **14,00**; a case input for either target stands.
 
+On a timeline target the guard is read per day: the initialisation decides
+the days on which the input reads no value and no writer decides (ch. 7.8).
+
 Two initialisations on one target are ill-formed (`IR-SPEC.md` WF-079, its
 initialisation arm), conditional or not: where both apply nothing ranks
 them, and the fixpoint does not define which value the target takes — the
@@ -4168,7 +4179,7 @@ rule per subject** unless the fact base itself changed the question.
 Executed: for each subject whose condition holds, a
 deterministic instance of the created type is minted, the member
 initialisations apply (values evaluated on the subject, the input of the
-object made: a writer of the member displaces such a value where it
+object made, on a time-dependent attribute per day (ch. 7.8): a writer of the member displaces such a value where it
 decides, and an initialisation of the member finds it filled, the stack of
 ch. 7.8, `corpus/golden/jutterswet-invoer-naast-objectcreatie`; a characteristic
 initialisation's boolean-typed value sets the mark when it evaluates
@@ -6322,7 +6333,8 @@ below), and every other one has none. An initialisation without a
 condition — a rule's, a folded one's in a stack, or the initialisation
 default (ch. 7.3) — is not
 at its turn where its target holds a value of the input or of another
-writer (ch. 5.4, 7.3). An attribute default without a justification, and an
+writer (ch. 5.4, 7.3), on a timeline target where they leave it no day
+(ch. 7.8). An attribute default without a justification, and an
 ordinary rule without a condition that ch. 7.10 folds into a stack, is not
 at its turn where a default above it decided or an exception group of it
 settled (ch. 7.1, 7.9). Elsewhere the form is at its turn; a computation or
@@ -8328,10 +8340,94 @@ its own (ch. 7.1), whose virtual input default is rank 2 of this one; beside it
 no writer of its level stands (`IR-SPEC.md` WF-050). On a timeline target the
 stack is read per day (ch. 3.3): a writer decides the days on which its timeline
 reads a value, the input stands on every other day, and two writers that decide
-one day with different values are EF-016 (ch. 3.11, 5.7). An initialisation, an
-allocation and the member value of a creation write a scalar target; on a
-timeline target each is refused by name (ch. 3.12 row 10), and the
-initialisation default of a defaults group is read per day (ch. 7.11).
+one day with different values are EF-016 (ch. 3.11, 5.7). The input of an object
+a creation made is the value of its making per day: a scalar on every day, a
+timeline on its periods, the member value read on the subject as period
+arithmetic (ch. 3.4, 3.5). The initialisation decides every day on which no
+writer decides and the input reads no value, over all time, open segments
+included (ch. 3.1); its value is period arithmetic, a scalar on every day, and
+its condition is read as the condition of a rule on a timeline target (ch. 3.10).
+It reads the input and the writers, never its own write, so the order of the
+forms in the document does not move it (ch. 5.4). Where it decides no day its
+value is not evaluated, and what that value deposits on the §9.5 channel stands
+where it decides some day, as a default's does (ch. 7.11). The asOfDate-bucket
+scalar of its target carries no day, so the initialisation cannot read which
+days the input leaves empty: **EF-037**, attribute and label. A total of a
+timeline an initialisation writes meets its open segments, and one that carries
+a value other than 0 faults with EF-036 (ch. 3.6). An allocation that names a
+time-dependent attribute is not well-formed (`IR-SPEC.md` WF-128): it
+distributes one amount at one moment (ch. 4). The initialisation default of a
+defaults group is read per day as well (ch. 7.11).
+
+The reading follows ALEF, measured: ALEF's lazy routes, generated and
+interpreted, and its generated eager route fill every day that no rule decides
+and the input leaves empty with the initialisation's value, over open bounds,
+also the days on which a rule reads leeg. ALEF's eager interpreter gives leeg
+in spring where an initialisation stands before the rule in an imperative rule
+group, an artefact of the order of its writers that this stack, which orders no
+writers, does not have. ALEF admits the member value of a creation on a
+time-dependent attribute and does not execute it; the reading per day above is
+uchar's own (decided by the owner 2026-11-05). ALEF refuses an allocation with
+a time-dependent attribute statically, as WF-128 does.
+
+Worked example `WV-7.8-stapel-per-dag-initialisatie` (absolute; `ref/test/`
+verbatim, the golden `jutterswet-initialisatie-per-dag`, each target a whole
+number for every month): the initialisation "Het strandloon van een Jutter moet
+geïnitialiseerd worden op 5" alone gives **5** on (−∞, +∞). Beside "Het
+voorjaarsloon van een Jutter moet gesteld worden op 20 van dd. 01-03-2025 tot
+dd. 01-06-2025", in either order of the two in the document, the voorjaarsloon
+is **5** on (−∞, 2025-03-01), **20** on [2025-03-01, 2025-06-01) and **5** on
+[2025-06-01, +∞). Beside "Het kustloon van een Jutter moet berekend worden als
+zijn basisloon van dd. 01-03-2025 tot dd. 01-09-2025" with the basisloon 20 on
+[2025-03-01, 2025-06-01), the kustloon is the same, also on
+[2025-06-01, 2025-09-01), where the rule reads leeg. Beside "… op 20 van dd.
+01-03-2025 tot dd. 01-06-2025" and "… op 30 van dd. 01-09-2025 tot dd.
+01-11-2025", the initialisation "… op 5 gedurende de tijd dat hij stormwacht is"
+with stormwacht on 2025 gives the stormloon **5**, **20**, **5**, **30** and
+**5** within 2025 and leeg outside it; without stormwacht 20 and 30 alone
+(`-zonder-stormwacht`). With the input 10 on [2025-03-01, 2025-06-01) the
+initialisation "… op 5" alone gives **5**, **10**, **5**; with the input 10 on
+[2025-01-01, 2025-04-01) beside the rule of 20 in spring the voorjaarsloon is
+**5** on (−∞, 2025-01-01), **10** on [2025-01-01, 2025-03-01), **20** on
+[2025-03-01, 2025-06-01) and **5** on [2025-06-01, +∞) (`-initialisatie-invoer`).
+
+Worked example `WV-7.8-stapel-per-dag-creatie` (the golden
+`jutterswet-creatie-per-dag`): "Een Jutter heeft een melding met meldwaarde
+gelijk aan 7 en meldloon gelijk aan zijn strandloon en …", every member a whole
+number for every month, read by a sum of each member over the meldingen of the
+Jutter. With the strandloon 10 on [2025-01-01, 2025-07-01): the meldwaarde is
+**7** on (−∞, +∞) and the meldloon **10** on [2025-01-01, 2025-07-01); beside
+"… moet gesteld worden op 20 van dd. 01-03-2025 tot dd. 01-09-2025" the value 7
+gives **7**, **20** on [2025-03-01, 2025-09-01), **7**, and the strandloon gives
+**10** on [2025-01-01, 2025-03-01) and **20** on [2025-03-01, 2025-09-01); beside
+"… moet geïnitialiseerd worden op 5" the strandloon gives **5**, **10**, **5**.
+Without the strandloon (`-zonder-strandloon`) the meldloon is leeg on every day
+and the initialised member **5** on (−∞, +∞).
+
+Worked examples on the documents of `ref/test/fixtures/writers-stack`, which
+the suite of the ASP backend plays as well: "Het strandloon van een Jutter moet
+geïnitialiseerd worden op 5 indien hij kustwacht is" beside the rule of 20 in
+spring and the input 10 in January 2025 gives **5**, **10**, **5**, **20**,
+**5** (`WV-7.8-stapel-per-dag-voorwaarde`), and over the asOfDate-bucket scalar
+10 of the strandloon **EF-037**, attribute `strandloon`, label `J1`
+(`-emmerscalair`). The initialisation "… op (100 gedeeld door zijn deler) naar
+beneden afgerond op 0 decimalen", the deler 0 on [2025-01-01, 2025-07-01) and 2
+elsewhere: over the input 10 on (−∞, +∞) it decides no day, the strandloon is
+**10** and the channel empty (`-niet-geevalueerd`); over the input 10 on
+[2025-01-01, 2025-07-01) it is **50**, **10**, **50**, and the channel carries
+the EF-005 of the initialisation (`-deponering`). Beside "Het jaarloon van een
+Jutter moet berekend worden als het totaal van zijn strandloon", the
+initialisation "… op 5" leaves the total an open segment of 5: **EF-036**,
+attribute `strandloon`, label `J1` (`-totaal`); "… op 5 van dd. 01-01-2025 tot
+dd. 01-01-2026" beside the rule of 20 in spring gives **5**, **20**, **5** on
+2025, leeg elsewhere, and the jaarloon **105** (`-venster`). The creation of a melding with
+the waarde of the scalar vangst 7 gives a terug of **7** on (−∞, +∞)
+(`-creatie-scalair`); a creation that gives a sum-typed timeline the marker
+`onbekend`, beside 10 in spring, gives the object it makes `onbekend`,
+`waarde(10)` on [2025-03-01, 2025-06-01) and `onbekend` (`-creatie-marker`,
+the golden `jutterswet-afwezigheidsmarkers-initialisatie` for an
+initialisation on such a timeline); an allocation over a share for every month
+is WF-128 (`-verdeling`).
 
 Worked example `WV-7.8-stapel` (absolute; `ref/test/` verbatim, the golden
 `jutterswet-invoer-naast-initialisatie` and the documents of

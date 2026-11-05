@@ -1528,10 +1528,21 @@ fences the weight |W|, the day count fences the target's decimal
 scale (a compile-time fault).
 
 Both producers write their segments also as the writer's `wtl/6`,
-beside which the case input timeline (`inputtl/5`) stands on the days
-no writer decides: each input segment is cut at the writers' bounds
-inside it (`incut/5`), and a piece (`inpiece/6`) no writer covers
-(`indecided/4`) is a `tl/5` segment (RS ch. 3.11).
+beside which the input timeline (`inputtl/5`), the case's or a making's,
+stands on the days no writer decides: each input segment is cut at the
+writers' bounds inside it (`incut/5`), and a piece (`inpiece/6`) no writer
+covers (`indecided/4`) is a `tl/5` segment (RS ch. 3.11). The member value
+of a creation on a temporal attribute is the period arithmetic below, read
+on the subject; its periods are the made object's `inputtl/5` where a
+writer, an initialisation or a defaults group writes the member, and its
+`tl/5` otherwise (RS ch. 7.8). An initialisation on a temporal target is
+the lowest layer per day (RS ch. 7.8): inside the ch. 7.7 desugaring it is
+the initialisation default of a group per day (ch. 7.11 below), and outside
+it its value, cut to the periods of its condition, is `itl/5`, each segment
+cut at the bounds of the writers' and the input's segments inside it
+(`initcut/5`, `initpiece/6`), and a piece neither covers (`initdecided/4`)
+is a `tl/5` segment; its deposits carry `tinitN_any(S)`, the existence of
+such a piece, as ref keeps them where it decides some day.
 
 **Period arithmetic** (an operator of ch. 1.2 other than the power, read
 per day, and the sum per period, ch. 3.4/3.5, as the value of a rule on a
@@ -1886,8 +1897,9 @@ object the EF-016 witness, and an initialisation writes below both. The
 negation is stratified as a computing rule's is: the allocation never reads
 its own target, and a read of the target that feeds its pot, weights,
 criteria or condition is a dependency cycle WF-045 refuses. A share target
-or rest on a timeline is refused in ref's words (`temporal attribute "a" as
-a target: temporal writes are not implemented`). Witnesses
+An allocation that names a time-dependent attribute is not well-formed
+(`IR-SPEC.md` WF-128); the backend re-runs that check at the allocation
+and refuses the document in the verifier's sentence. Witnesses
 `jutterswet-veilinginvoer` and `jutterswet-invoer-naast-verdeling` (a rule
 beside the allocation, the input on the target and on the rest).
 
@@ -3473,9 +3485,8 @@ initialisation's stack (S3, S10); a target that is
 **neither a number nor a date** (`the initialisation of "a" writes a
 target that is neither a number nor a date, and only those are
 translated here (no corpus case)`) — text, enumeration, boolean, sum,
-struct and date-time targets, which ref replays; and a **temporal
-target**, refused in ref's words (`temporal attribute "a" as a target:
-temporal writes are not implemented`).
+struct and date-time targets, which ref replays. On a **temporal
+target** the initialisation is read per day (RS ch. 7.8), below.
 
 *Environment and input fences:* a **control character < 0x20** in a
 name or label — the one character class the ASP string encoding cannot
