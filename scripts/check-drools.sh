@@ -306,13 +306,10 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-vondstdossier|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "closed-runtime-division-by-zero|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a red case until card zero-division-channel (2026-10-19), excluded in check-red.sh on the same refusal"
   "jutterswet-aanspraakherziening|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
-  "jutterswet-afwezigheidsmarkers-initialisatie|EXCLUDE DROOLS-103|transpiler SKIP: a rule and an initialisation write the sum-typed timeline 'opslagkosten', and this branch does not carry a second writer of a timeline target beside its computing rules. Stap B of card timeline-initialisation-allocation-creation: the initialisation on a timeline target per day (RUNTIME-SEMANTICS ch. 7.8), which ref and clingo play, so its pins are a ref = clingo pair"
-  "jutterswet-creatie-per-dag|EXCLUDE DROOLS-118|transpiler SKIP: an initialisation of the time-dependent member 'aanvulloon' of Melding, and behind it the member values of a creation on time-dependent attributes (DROOLS-271) and a sum over the created relation of a time-dependent member (DROOLS-212). Stap B of card timeline-initialisation-allocation-creation: the value of a making as the input of the made object per day (RUNTIME-SEMANTICS ch. 7.8), which ref and clingo play, so its pins are a ref = clingo pair"
   "jutterswet-dossierrecht-catala|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-dossierspelling|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-halfstokspelling|EXCLUDE DROOLS-054|bean name collision: the characteristic 'half stok' of Sein falls on the bean property Sein.halfStok of the attribute 'half-stok', has no field of its own, and a rule writes it. Measured 2026-09-28 before the refusal: both branches played the golden and answered two wrong values (a rouwmelding of 1 where ref and clingo keep it leeg, and the characteristic read from the registration), so its pins are a ref = clingo pair"
   "jutterswet-havenrooster|EXCLUDE DROOLS-179|transpiler SKIP: a duration in day kinds whose day kind 'havendag' reads the parameter 'openingsdatum' in its definition, which the branch does not read in a day-kind definition (WF-031 admits it). The destructive lowering refused the same rule until card tms-omschakeling (2026-10-10): its day-kind predicate compiler (kern.DayKinds) carries no PARAMETER operand. Measured 2026-09-19 with the day-kind card: ref and the ASP backend both answer this golden, which is why it is named here rather than left to the played default"
-  "jutterswet-initialisatie-per-dag|EXCLUDE DROOLS-118|transpiler SKIP: an initialisation of the time-dependent member 'strandloon' of Jutter, and beside computing rules a second writer of a timeline target (DROOLS-103). Stap B of card timeline-initialisation-allocation-creation: the initialisation on a timeline target per day (RUNTIME-SEMANTICS ch. 7.8), which ref and clingo play, so its pins are a ref = clingo pair"
   "jutterswet-kamerheffing-catala|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
   "jutterswet-kamerhuishouden-catala|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
   "jutterswet-ketenkwantor|EXCLUDE DROOLS-067|transpiler SKIP: sourcePath step 1 (Boot -> Vondst) has no bean field: the many-to-many 'berging' of anchor/jutterswet-bootberging and jutterswet-muntketen above. Measured 2026-10-20 (card frontend-kwantor-over-een-pad) in both branches, same sentence: since that card the loader carries a QuantifierFold's sourcePath and both branches plan it as a value fold's, so the refusal moved one layer deeper, as the pin of 2026-09-22 inferred; until then the loader refused the range itself (DROOLS-026, now retired). The quantifier over a path plays where the bean model carries the steps: jutterswet-dringende-melding. Its flat-count pins are a ref = clingo pair"
@@ -1572,7 +1569,12 @@ EXPECTED_CHANNEL=(
 # golden jutterswet-afwezigheidsmarkers-creatie, a marker and a number in an object creation and a number written into
 # an attribute with markers (PLAYED 4); and the golden jutterswet-afwezigheidsmarkers-kopie, the copy of a timeline of
 # a sum type, which both branches write since that card (RUNTIME-SEMANTICS ch. 9.4; PLAYED 3).
-EXPECTED_PLAYED=344
+# 347 since the card timeline-initialisation-allocation-creation (step B, 2026-11-05): the goldens
+# jutterswet-initialisatie-per-dag (PLAYED 3) and jutterswet-afwezigheidsmarkers-initialisatie (PLAYED 3), an
+# initialisation on a timeline target, the lowest layer of its stack per day, and jutterswet-creatie-per-dag (PLAYED 2),
+# the member value of a creation as the input of the made object per day (RUNTIME-SEMANTICS ch. 7.8), which both
+# branches carry since that step.
+EXPECTED_PLAYED=347
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
