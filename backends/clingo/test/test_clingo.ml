@@ -1644,6 +1644,7 @@ let ref_matches ~name ~ir ~case_text =
   match Uchar_ref.Case.check case (Uchar_ref.Eval.evaluate env case.world) with
   | [] -> check (name ^ ": ref pins the values") true
   | ms -> check (name ^ ": ref pins the values (" ^ String.concat "; " ms ^ ")") false
+  | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ ": ref pins the values (fault: " ^ m ^ ")") false
 
 (* THE SOLVER IN THE SUITE — the mirror of [ref_matches]. Translate the
    frame, run clingo through the very [Solve.run_clingo] the gate-6 runner
@@ -17570,7 +17571,8 @@ let () =
         ~name:(Printf.sprintf "the stack of a timeline target: %s, %s" f c)
         ~ir:(read (dir ^ f ^ "/ir.json")) ~case_text:(read (dir ^ f ^ "/" ^ c)))
     [ ("timeline-initialisation", "case.json"); ("timeline-initialisation-deposit", "case.json");
-      ("timeline-initialisation-deposit", "case-decides.json"); ("timeline-creation", "case.json");
+      ("timeline-initialisation-deposit", "case-decides.json"); ("timeline-initialisation-deposit", "case-leeg.json");
+      ("timeline-creation", "case.json");
       ("timeline-initialisation-window", "case.json") ];
   (* the total of a timeline an initialisation writes over all time meets its
      open segments; the question which rules write it is asked of the document
@@ -17602,6 +17604,7 @@ let () =
    in
    let arg = function Model.A_str s -> s | Model.A_int i -> string_of_int i | Model.A_term t -> term t in
    match Solve.run_clingo (translate doc case) with
+   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (fault: " ^ m ^ ")") false
    | out, Unix.WEXITED (10 | 30) ->
        let segs =
          List.sort compare

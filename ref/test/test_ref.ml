@@ -12796,7 +12796,9 @@ let () =
    input 10 in January gives 5, 10, 5, 20, 5; over an asOfDate-bucket scalar of
    its target it faults with EF-037; an initialisation whose writers and input
    leave it no day is not evaluated, and one that decides some day keeps the
-   EF-005 its value deposits on a day it does not decide; "op 5" written over
+   EF-005 its value deposits on a day it does not decide, and one whose value
+   is leeg on every day it could decide keeps nothing; at the fixpoint the
+   first reads DISPLACED, the others HOLDS (ch. 5.12); "op 5" written over
    all time has no total (EF-036), "op 5 van dd. 01-01-2025 tot dd.
    01-01-2026" beside 20 in spring gives 5, 20, 5 within 2025 and the total
    105; the creation of a
@@ -12823,6 +12825,7 @@ let () =
     [ ("WV-7.8-stapel-per-dag-voorwaarde", fixture "timeline-initialisation" "case.json");
       ("WV-7.8-stapel-per-dag-niet-geevalueerd", fixture "timeline-initialisation-deposit" "case.json");
       ("WV-7.8-stapel-per-dag-deponering", fixture "timeline-initialisation-deposit" "case-decides.json");
+      ("WV-7.8-stapel-per-dag-leeg", fixture "timeline-initialisation-deposit" "case-leeg.json");
       ("WV-7.8-stapel-per-dag-creatie-scalair", fixture "timeline-creation" "case.json");
       ("WV-7.8-stapel-per-dag-venster", fixture "timeline-initialisation-window" "case.json") ];
   (let ir, case_data = fixture "timeline-initialisation-total" "case.json" in
@@ -12831,6 +12834,7 @@ let () =
          (match evaluate () with
          | exception Value.Fault { code = Some "EF-036"; params; _ } ->
              List.assoc_opt "attribute" params = Some "strandloon" && List.assoc_opt "label" params = Some "J1"
+         | exception Value.Fault _ -> false
          | _ -> false)));
   (let ir, case_data = fixture "timeline-initialisation" "case-bucket-scalar.json" in
    with_files ~ir ~case_data (fun _ _ evaluate ->
@@ -12838,6 +12842,7 @@ let () =
          (match evaluate () with
          | exception Value.Fault { code = Some "EF-037"; params; _ } ->
              params = [ ("attribute", "strandloon"); ("label", "J1") ]
+         | exception Value.Fault _ -> false
          | _ -> false)));
   (let ir, case_data = fixture "timeline-creation-marker" "case.json" in
    plays ~ident:"WV-7.8-stapel-per-dag-creatie-marker" ~ir ~case_data (fun final ->
@@ -12858,6 +12863,16 @@ let () =
          (shown
          = Printf.sprintf "[%d,%d)=onbekend [%d,%d)=waarde(10) [%d,%d)=onbekend" Timeline.open_from (day "2025-03-01")
              (day "2025-03-01") (day "2025-06-01") (day "2025-06-01") Timeline.open_to)));
+  (let dep c = corpus_file (dir ^ "timeline-initialisation-deposit/" ^ c) in
+   let ir = dep "ir.json" in
+   check "WV-7.8-stapel-per-dag-lezing-verdrongen"
+     (readings_of ir (dep "case.json")
+     = [ "/rules/rules/0/versions/0 \"J1\" DISPLACED"; "/rules/rules/1/versions/0 \"J1\" DISPLACED" ]);
+   let holds = readings_of ir (dep "case-decides.json") in
+   check "WV-7.8-stapel-per-dag-lezing"
+     (List.mem "/rules/rules/0/versions/0 \"J1\" HOLDS" holds
+     && List.mem "/rules/rules/1/versions/0 \"J1\" HOLDS" holds
+     && List.mem "/rules/rules/0/versions/0 \"J1\" 0 Rounding [[- 2025-01-01 50], [2025-07-01 - 50]]" holds));
   let ir, case_data = fixture "timeline-allocation" "case.json" in
   with_files ~ir ~case_data (fun findings _ evaluate ->
       check "WV-7.8-stapel-per-dag-verdeling: WF-128"

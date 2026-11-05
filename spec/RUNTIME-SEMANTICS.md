@@ -8415,7 +8415,12 @@ beneden afgerond op 0 decimalen", the deler 0 on [2025-01-01, 2025-07-01) and 2
 elsewhere: over the input 10 on (−∞, +∞) it decides no day, the strandloon is
 **10** and the channel empty (`-niet-geevalueerd`); over the input 10 on
 [2025-01-01, 2025-07-01) it is **50**, **10**, **50**, and the channel carries
-the EF-005 of the initialisation (`-deponering`). Beside "Het jaarloon van een
+the EF-005 of the initialisation (`-deponering`); over the input 10 on
+(−∞, 2025-01-01) and [2025-07-01, +∞) it could decide only days on which its
+value is leeg, decides none, and the channel stays empty (`-leeg`). At the
+fixpoint the initialisation reads `DISPLACED` over the input on all time and
+`HOLDS` in the other two cases, its value the timeline it writes
+(ch. 5.12; `-lezing-verdrongen`, `-lezing`). Beside "Het jaarloon van een
 Jutter moet berekend worden als het totaal van zijn strandloon", the
 initialisation "… op 5" leaves the total an open segment of 5: **EF-036**,
 attribute `strandloon`, label `J1` (`-totaal`); "… op 5 van dd. 01-01-2025 tot

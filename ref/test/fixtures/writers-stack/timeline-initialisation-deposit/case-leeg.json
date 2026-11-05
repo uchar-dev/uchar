@@ -1,0 +1,117 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "deler": {
+            "timeline": [
+              {
+                "to": "2025-01-01",
+                "value": {
+                  "number": "2"
+                }
+              },
+              {
+                "from": "2025-01-01",
+                "to": "2025-07-01",
+                "value": {
+                  "number": "0"
+                }
+              },
+              {
+                "from": "2025-07-01",
+                "value": {
+                  "number": "2"
+                }
+              }
+            ]
+          },
+          "strandloon": {
+            "timeline": [
+              {
+                "to": "2025-01-01",
+                "value": {
+                  "number": "10"
+                }
+              },
+              {
+                "from": "2025-07-01",
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          },
+          "kustloon": {
+            "timeline": [
+              {
+                "to": "2025-01-01",
+                "value": {
+                  "number": "10"
+                }
+              },
+              {
+                "from": "2025-07-01",
+                "value": {
+                  "number": "10"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "actief"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "strandloon",
+      "timeline": [
+        {
+          "to": "2025-01-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-07-01",
+          "value": {
+            "number": "10"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "kustloon",
+      "timeline": [
+        {
+          "to": "2025-01-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-07-01",
+          "value": {
+            "number": "10"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
