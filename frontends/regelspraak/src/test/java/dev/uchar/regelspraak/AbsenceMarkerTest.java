@@ -158,7 +158,7 @@ class AbsenceMarkerTest {
     }
 
     /** A read of a cell of a dimensioned attribute with markers is a read of its value, a PayloadAccess over the cell;
-     *  no test of a cell's value is lowered, so the read is refused. */
+     *  without a test of that cell the read is refused. */
     @Test void a_read_of_a_cell_is_refused() {
         RegelSpraakModel m = Resolver.resolve("""
             Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
@@ -178,6 +178,100 @@ class AbsenceMarkerTest {
         assertEquals("zijn gewicht in najaar", String.valueOf(d.args().get("expression")));
         Expr.PayloadAccess read = firstRead(rule(m, "vindloon").value());
         assertInstanceOf(Expr.DimensionCellRead.class, read.base());
+    }
+
+    private static final String CELLS = """
+        Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+            1. voorjaar
+            2. najaar
+
+        Objecttype de Vondst (mv: Vondsten)
+            het gewicht Numeriek (getal met 2 decimalen) gedimensioneerd met seizoen (of onbekend);
+            het vindloon Numeriek (getal met 2 decimalen);
+            is onleesbaar kenmerk (bijvoeglijk);
+        """;
+
+    /** A marker written into a cell is the Construct of the marker on the cell target, and the tests of a cell are those
+     *  of the attribute over the cell: "een waarde heeft" a gevuld test of the PayloadAccess of the cell, "onbekend is"
+     *  an equality of the cell with the Construct of the marker; a read of the cell after the test of that cell stands
+     *  under it. */
+    @Test void a_marker_is_written_and_tested_on_a_cell() {
+        RegelSpraakModel m = Resolver.resolve(CELLS + """
+
+            Regel gewicht onbekend
+                geldig altijd
+                    Het gewicht in voorjaar van een Vondst moet gesteld worden op onbekend
+                    indien hij onleesbaar is.
+
+            Regel vindloon
+                geldig altijd
+                    Het vindloon van een Vondst moet berekend worden als zijn gewicht in najaar plus 1
+                    indien zijn gewicht in najaar een waarde heeft.
+
+            Regel vast vindloon
+                geldig altijd
+                    Het vindloon van een Vondst moet gesteld worden op 5,00
+                    indien zijn gewicht in voorjaar onbekend is.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        ResolvedRule marked = rule(m, "gewicht onbekend");
+        assertEquals(List.of("voorjaar"), assertInstanceOf(Expr.DimensionCellRead.class, marked.target()).labels());
+        Expr.Construct marker = assertInstanceOf(Expr.Construct.class, marked.value());
+        assertEquals("onbekend", marker.constructor());
+        assertEquals("gewicht van een Vondst", marker.type().domain());
+
+        Condition.Predicate test = assertInstanceOf(Condition.Predicate.class, rule(m, "vindloon").condition());
+        assertEquals(Condition.PredicateKind.GEVULD, test.kind());
+        Expr.PayloadAccess tested = assertInstanceOf(Expr.PayloadAccess.class, test.operand());
+        assertEquals(List.of("najaar"), assertInstanceOf(Expr.DimensionCellRead.class, tested.base()).labels());
+        assertInstanceOf(Expr.DimensionCellRead.class, firstRead(rule(m, "vindloon").value()).base());
+
+        Condition.Comparison equal = assertInstanceOf(Condition.Comparison.class, rule(m, "vast vindloon").condition());
+        assertEquals(List.of("voorjaar"), assertInstanceOf(Expr.DimensionCellRead.class, equal.left()).labels());
+        assertEquals("onbekend", assertInstanceOf(Expr.Construct.class, equal.right()).constructor());
+    }
+
+    /** The test of one cell guards the read of that cell and of no other: a read of the cell in najaar after the test of
+     *  the cell in voorjaar is refused. */
+    @Test void a_read_of_a_cell_after_the_test_of_another_cell_is_refused() {
+        RegelSpraakModel m = Resolver.resolve(CELLS + """
+
+            Regel vindloon
+                geldig altijd
+                    Het vindloon van een Vondst moet berekend worden als zijn gewicht in najaar plus 1
+                    indien zijn gewicht in voorjaar een waarde heeft.
+            """);
+        assertEquals("zijn gewicht in najaar", String.valueOf(only(m, "RGS-376").args().get("expression")));
+    }
+
+    /** An object creation writes a marker into a member with markers as a rule writes it, the Construct of the marker,
+     *  into an attribute and into a cell; the typing of a member's value has nothing to judge in a marker. */
+    @Test void a_creation_writes_a_marker_as_a_construct() {
+        RegelSpraakModel m = Resolver.resolve(CELLS + """
+                de taxatie Numeriek (getal met 2 decimalen) (of onbekend);
+
+            Objecttype de Jutter (mv: Jutters)
+                is actief kenmerk (bijvoeglijk);
+
+            Feittype vangst
+                de jutter Jutter
+                de vondst Vondst
+                één jutter heeft meerdere vondsten
+
+            Regel nieuwe vondst
+                geldig altijd
+                    Een Jutter heeft een vondst met taxatie gelijk aan onbekend, gewicht in najaar gelijk aan onbekend
+                    indien hij actief is.
+            """);
+        assertTrue(m.diagnostics.isEmpty(), () -> "onverwachte diagnostiek: " + m.diagnostics);
+        var inits = m.objectCreations.get(0).initialisations();
+        Expr.Construct attribute = assertInstanceOf(Expr.Construct.class, inits.get(0).value());
+        assertEquals("onbekend", attribute.constructor());
+        assertEquals("taxatie van een Vondst", attribute.type().domain());
+        Expr.Construct cell = assertInstanceOf(Expr.Construct.class, inits.get(1).value());
+        assertEquals("onbekend", cell.constructor());
+        assertEquals("gewicht van een Vondst", cell.type().domain());
+        assertEquals(List.of("najaar"), inits.get(1).labels());
     }
 
     /** An object creation writes a value into an attribute with markers as a rule does: the payload of a Construct of

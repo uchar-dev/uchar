@@ -42,8 +42,9 @@ import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
  * declared datatype, so the typing of a computation reads the value as it reads every other attribute.
  *
  * <p>Then every PayloadAccess must stand after a test that the attribute holds a value — a conjunct of the condition
- * of its form before it, or of the filter of the fold it stands in. One without that test is refused with RGS-376, the
- * frontend's half of WF-127: a marker would otherwise compute on as leeg, which plus, min and maal count as 0.
+ * of its form before it, or of the filter of the fold it stands in; a read of a cell after a test of the same cell. One
+ * without that test is refused with RGS-376, the frontend's half of WF-127: a marker would otherwise compute on as
+ * leeg, which plus, min and maal count as 0.
  */
 final class AbsenceMarkers {
 
@@ -384,16 +385,23 @@ final class AbsenceMarkers {
         for (Expr value : values) judge(value, tests);
     }
 
-    /** The identity of a read: the attribute on its declaring type and the walk to it, the source aside. */
+    /** The identity of a read: the attribute on its declaring type and the walk to it, and for a cell its labels, the
+     *  source aside. */
     private record Key(ObjectType declaring, String attribute, String navigationRole, List<String> navigationPath,
-                       boolean anchored) {}
+                       boolean anchored, List<String> labels) {}
 
-    /** The key of the value {@code p} reads; null for a value no test can guard, the value of a cell. */
+    /** The key of the value {@code p} reads, of an attribute or of a cell of one; null for a value no test can guard. */
     private static Key key(Expr.PayloadAccess p) {
-        if (!(p.base() instanceof Expr.AttributeReference a) || !RegelSpraakModel.VALUE_CONSTRUCTOR.equals(p.constructor()))
-            return null;
+        if (!RegelSpraakModel.VALUE_CONSTRUCTOR.equals(p.constructor())) return null;
+        List<String> labels = null;
+        Expr base = p.base();
+        if (base instanceof Expr.DimensionCellRead c) {
+            labels = c.labels().stream().map(l -> l == null ? null : l.toLowerCase(Locale.ROOT)).toList();
+            base = c.attribute();
+        }
+        if (!(base instanceof Expr.AttributeReference a)) return null;
         return new Key(a.objectType().markerDeclaringType(a.attribute()), a.attribute().toLowerCase(Locale.ROOT),
-                a.navigationRole(), a.navigationPath(), a.anchored());
+                a.navigationRole(), a.navigationPath(), a.anchored(), labels);
     }
 
     /** The value tests among the conjuncts of {@code c}: a test is a guard only where it holds whenever {@code c}

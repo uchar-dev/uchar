@@ -2679,12 +2679,15 @@ characteristic, whose production does not take it. The tokens reserve no word: `
 `toepassing` lex as before everywhere else.
 
 A rule writes a marker as the whole value of a gelijkstelling, "… moet gesteld worden op onbekend", "… op niet van
-toepassing". A condition tests one in both registers, "zijn taxatie onbekend is" / "zijn taxatie is niet van
+toepassing", and an object creation as the whole value of a member, "Een Jutter heeft een vondst met taxatie gelijk
+aan onbekend". A condition tests one in both registers, "zijn taxatie onbekend is" / "zijn taxatie is niet van
 toepassing", and tests for a value, "zijn taxatie een waarde heeft" / "zijn taxatie heeft een waarde"; the grammar
 reads each as the characteristic check of an expression it already parses, and the resolver reads it as a test of the
-markers where the expression is an attribute with markers. An aggregation over members selects the members that hold
-a value with the subselection "die een waarde hebben": "de som van de taxatie van alle vondsten van de Jutter die een
-waarde hebben".
+markers where the expression is an attribute with markers or a cell of one. On a dimensioned attribute with markers
+the same sentences name a cell: "Het gewicht in voorjaar van een Vondst moet gesteld worden op onbekend", "zijn
+gewicht in najaar een waarde heeft", "zijn gewicht in voorjaar onbekend is". An aggregation over members selects the
+members that hold a value with the subselection "die een waarde hebben": "de som van de taxatie van alle vondsten van
+de Jutter die een waarde hebben".
 
 A scenario document ("Scenariotoetsen") writes a marker as the value of an attribute that declares it, in a situation
 and in an expectation, as a rule writes it: "- de taxatie is onbekend", "- de opslagkosten van V1 is niet van
@@ -2703,11 +2706,12 @@ an attribute named waarde stays that attribute (witness: `AbsenceMarkerTest.with
 | Piece | Lowered to |
 |---|---|
 | the attribute X of T with markers M | an attribute whose datatype is a `SumType` over the domain `X van een T`, with the constructors `waarde` (payload: X's declared datatype) and the markers of M, `onbekend` before `niet van toepassing`; the domain is declared in `domains` after the declared domains. One domain per attribute, so a marker never passes from one attribute to another (WF-061) |
-| a marker written into X | `Construct` of the marker |
+| a marker written into X, by a rule or an object creation | `Construct` of the marker |
 | any other value v written into X, by a rule, a default's consequence or an object creation | `Construct waarde(v)`; a leeg v leaves it leeg, which decides nothing |
 | "zijn X onbekend is" | `Comparison equal` of X and the `Construct onbekend` |
 | "zijn X een waarde heeft" | `Predicate filled` of `PayloadAccess(X, waarde)` |
 | a read of the value of X in arithmetic, a comparison or an aggregation | `PayloadAccess(X, waarde)` |
+| each of these on a cell of a dimensioned X ("zijn X in najaar") | the same node over the `DimensionCellRead` of the cell |
 | "die een waarde hebben" on an aggregation over X | the filter `Predicate filled` of `PayloadAccess` of the element's X |
 
 The model holds these nodes, and the emitter writes what it holds. Where the resolver reads a rule it builds a marker
@@ -2724,8 +2728,8 @@ WF-127, judged on the `PayloadAccess` nodes of the last pass. The test before it
 conjunct before the read: of the condition of the rule for its value, earlier in the same `alle` for a read in a
 condition, of the subselection of the aggregation for its operand. The ERROR names the attribute, its type and the
 read (witnesses: `AbsenceMarkerTest`, a computation, a comparison before the test, a sum without the subselection, a
-read of a cell). A read of a cell of a dimensioned attribute with markers is a `PayloadAccess` over the cell, and no
-test of the value of a cell is lowered, so every such read is refused.
+read of a cell without a test, a read of a cell after the test of another cell). The test of a cell guards the read of
+that cell, the same attribute with the same labels, and no other.
 
 A marker the attribute does not declare stays the unresolved name or check it is without the markers, with its
 WARNING (RGS-092); so does a test of a value under the whole-period qualifier.
@@ -2743,20 +2747,16 @@ document without markers emits what it emits without the extension.
   the verifier admits it, and ref, the ASP backend and the Drools backend refuse it by name (measured 2026-11-04). A
   marker written per period, the input per day and a test of a marker per period are lowered and executed.
 - No negation of a test ("geen waarde heeft") and no marker in a decision table cell is lowered.
-- On a dimensioned attribute (measured 2026-11-05): a value written into a cell is the `Construct` of `waarde`, which
-  the verifier and ref admit and the ASP backend refuses at the expectation of the cell, without a register code; a
-  marker written into a cell ("Het gewicht in voorjaar van een Vondst moet gesteld worden op onbekend") and a test of
-  a cell ("… in najaar een waarde heeft", "… in voorjaar onbekend is") are no marker to the resolver and stay
-  unresolved, each with the WARNING RGS-092; a read of the value of a cell is refused with RGS-376.
 - The ASP backend scales a number and a day-precision date into a constructor term; markers on an attribute of
   another datatype play in ref and are refused by name in the ASP backend (`spec/ASP-TRANSLATION.md` S19).
 - The semantic tokens read the words of the markers as keywords in a document that declares markers.
 
-Golden: `jutterswet-afwezigheidsmarkers` (scalar and per month; ten cases), with the red twin
-`jutterswet-afwezigheidsmarkers-botsing` (EF-016, scalar and per day); its source is the golden's `source.rgs`, and
-its `scenario.rgs` lowers to its ten case files (gate 16).
-Measured 2026-11-04: ref, clingo and both branches of the Drools backend replay every case exactly, and the red twin
-faults with EF-016 in each.
+Goldens: `jutterswet-afwezigheidsmarkers` (scalar and per month; ten cases), with the red twin
+`jutterswet-afwezigheidsmarkers-botsing` (EF-016, scalar and per day); `jutterswet-afwezigheidsmarkers-cel` (a marker
+written into a cell, the tests of a cell and a read under the test; four cases); `jutterswet-afwezigheidsmarkers-creatie`
+(a marker and a number in an object creation, a number written into an attribute with markers; four cases). Each has
+its source as `source.rgs` and a `scenario.rgs` that lowers to its case files (gate 16). Ref, clingo and both branches
+of the Drools backend replay every case exactly, and the red twin faults with EF-016 in each.
 
 ## Vocabulaires en benamingen — named vocabularies and designations
 
