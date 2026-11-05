@@ -364,3 +364,4 @@ RGS-373	calendar-family-factor	ERROR	canonical,canonicalFamily,unit,unitFamily,u
 RGS-374	timeline-grid-finer	ERROR	operand,operandGrid,target,targetGrid
 RGS-375	marking-deviation-on-timeline-read	ERROR	characteristic,head
 RGS-376	absence-marker-read-untested	ERROR	attribute,expression,objectType
+RGS-377	scenario-absence-marker-not-admitted	ERROR	admitted,marker,what

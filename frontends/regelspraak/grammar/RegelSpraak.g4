@@ -240,6 +240,13 @@ situatieWaarde
     | booleanWaarde     # booleanSituatieWaarde
     | ENUM_LITERAL      # enumSituatieWaarde
     | tekstWaarde       # tekstSituatieWaarde
+    | afwezigheidsWaarde # afwezigheidSituatieWaarde
+    ;
+// An absence marker as a value, in the words a rule writes it (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"):
+// 'onbekend' and 'toepassing' are matched on their text, on this one position, so no word becomes a keyword.
+afwezigheidsWaarde
+    : { isWord("onbekend") }? LOWER_ID
+    | NIET VAN { isWord("toepassing") }? LOWER_ID
     ;
 
 // ---- Verwachtingregels (bullets) ----

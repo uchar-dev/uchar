@@ -1,0 +1,109 @@
+Scenario schatting
+Gegeven is de volgende situatie:
+een Vondst V1
+- de schatting is 300,00
+Met als verwacht resultaat:
+- de taxatie van V1 is 300,00
+- het vindloon van V1 is 30,00
+- V1 is niet kostbaar
+- de gegevens zijn consistent
+
+Scenario onbekend verdringt invoer
+Gegeven is de volgende situatie:
+een Vondst V1
+- de taxatie is 40,00
+- is onleesbaar
+Met als verwacht resultaat:
+- de taxatie van V1 is onbekend
+- het vindloon van V1 is 25,00
+- V1 is niet kostbaar
+- de gegevens zijn consistent
+
+Scenario niet van toepassing
+Gegeven is de volgende situatie:
+een Vondst V1
+- is drijfhout
+Met als verwacht resultaat:
+- de taxatie van V1 is niet van toepassing
+- het vindloon van V1 is 0,00
+- de gegevens zijn consistent
+
+Scenario niets
+Gegeven is de volgende situatie:
+een Vondst V1
+een Vondst V2
+- de schatting is 100,00
+Met als verwacht resultaat:
+- de taxatie van V1 is leeg
+- het vindloon van V1 is leeg
+- V1 is niet kostbaar
+- de taxatie van V2 is 100,00
+- het vindloon van V2 is 10,00
+- de gegevens zijn consistent
+
+Scenario onbekend in de invoer
+Gegeven is de volgende situatie:
+een Vondst V1
+- de taxatie is onbekend
+Met als verwacht resultaat:
+- de taxatie van V1 is onbekend
+- het vindloon van V1 is 25,00
+- de gegevens zijn consistent
+
+Scenario kostbaar
+Gegeven is de volgende situatie:
+een Vondst V1
+- de schatting is 2000,00
+Met als verwacht resultaat:
+- de taxatie van V1 is 2000,00
+- het vindloon van V1 is 200,00
+- V1 is kostbaar
+- de gegevens zijn consistent
+
+Scenario som van de waarden
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondst zijn V1, V2 en V3
+een Vondst V1
+- de schatting is 300,00
+een Vondst V2
+- is onleesbaar
+een Vondst V3
+- de schatting is 100,00
+Met als verwacht resultaat:
+- het getaxeerd totaal van J1 is 400,00
+- de taxatie van V2 is onbekend
+- de gegevens zijn consistent
+
+Scenario geen waarde in de som
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondst zijn V2
+een Vondst V2
+- is onleesbaar
+Met als verwacht resultaat:
+- het getaxeerd totaal van J1 is leeg
+- de taxatie van V2 is onbekend
+- de gegevens zijn consistent
+
+Scenario onbekend per maand
+Gegeven is de volgende situatie:
+een Vondst V1
+- de opslagkosten is 10 van 01-01-2025 tot 01-01-2026
+Met als verwacht resultaat:
+- de opslagkosten van V1 is onbekend van 01-01-2025 tot 01-03-2025
+- de opslagkosten van V1 is 10 van 01-03-2025 tot 01-01-2026
+- de opslagtoeslag van V1 is 7 van 01-01-2025 tot 01-03-2025
+- de gegevens zijn consistent
+
+Scenario niet van toepassing na verkoop
+Gegeven is de volgende situatie:
+een Vondst V1
+- de opslagkosten is 10 van 01-01-2025 tot 01-01-2026
+- is verkocht van 01-06-2025 tot 01-01-2026
+Met als verwacht resultaat:
+- de opslagkosten van V1 is onbekend van 01-01-2025 tot 01-03-2025
+- de opslagkosten van V1 is 10 van 01-03-2025 tot 01-06-2025
+- de opslagkosten van V1 is niet van toepassing van 01-06-2025 tot 01-01-2026
+- de opslagtoeslag van V1 is 7 van 01-01-2025 tot 01-03-2025
+- de gegevens zijn consistent

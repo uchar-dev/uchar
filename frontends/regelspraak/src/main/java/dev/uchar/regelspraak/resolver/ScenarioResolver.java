@@ -682,7 +682,8 @@ public final class ScenarioResolver {
                 error(line, "RGS-369", params("written", written, "attribute", attr));
                 return;
             }
-            ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, Msg.frontend("PART.what.attribute", "name", attr));
+            ScenarioValue w = readAndType(a.situatieWaarde(), dt, ot.markersOf(attr), line,
+                    Msg.frontend("PART.what.attribute", "name", attr));
             if (w == null) return;
             List<Cell> list = cells.get(norm(attr));
             if (list == null) {
@@ -693,7 +694,8 @@ public final class ScenarioResolver {
             putCell(list, new Cell(named.labels(), w));
             return;
         }
-        ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, Msg.frontend("PART.what.attribute", "name", attr));
+        ScenarioValue w = readAndType(a.situatieWaarde(), dt, ot.markersOf(attr), line,
+                Msg.frontend("PART.what.attribute", "name", attr));
         if (a.periode() == null) {
             if (timelines.containsKey(norm(attr))) {
                 error(line,
@@ -904,7 +906,8 @@ public final class ScenarioResolver {
             error(line, "RGS-250", params("parameter", written));
             return null;
         }
-        ScenarioValue w = readAndType(pw.situatieWaarde(), p.datatype(), line, Msg.frontend("PART.what.declared-parameter", "name", p.name()));
+        ScenarioValue w = readAndType(pw.situatieWaarde(), p.datatype(), null, line,
+                Msg.frontend("PART.what.declared-parameter", "name", p.name()));
         if (pw.periode() == null) {
             if (timelines.containsKey(norm(p.name()))) {
                 error(line,
@@ -989,7 +992,7 @@ public final class ScenarioResolver {
     private boolean setLine(String setName, ParameterWaardeContext pw, Parameter p, Map<String, SetParameter> parameters) {
         int line = pw.getStart().getLine();
         Object what = Msg.frontend("PART.what.declared-parameter", "name", p.name());
-        ScenarioValue w = readAndType(pw.situatieWaarde(), p.datatype(), line, what);
+        ScenarioValue w = readAndType(pw.situatieWaarde(), p.datatype(), null, line, what);
         TimeWindow per = pw.periode() == null ? null : readPeriod(pw.periode());
         if (pw.periode() != null && per == null) return false;
         boolean segment = p.granularity() != null && per != null;
@@ -1298,7 +1301,8 @@ public final class ScenarioResolver {
                     continue;
                 }
                 Datatype dt = situation.instance(label).objectType().attribute(attr);
-                ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, Msg.frontend("PART.what.expectation", "name", attr));
+                ScenarioValue w = readAndType(a.situatieWaarde(), dt, situation.instance(label).objectType().markersOf(attr), line,
+                        Msg.frontend("PART.what.expectation", "name", attr));
                 if (named.labels() != null) {
                     if (w != null)
                         result.add(new Expectation(ExpectationKind.CELL_VALUE, label, attr, named.labels(), null, w, null, null, line));
@@ -1342,7 +1346,8 @@ public final class ScenarioResolver {
                 }
                 if (!temporalAttribute(label, attr, situation, line)) continue;
                 Datatype dt = situation.instance(label).objectType().attribute(attr);
-                ScenarioValue w = readAndType(a.situatieWaarde(), dt, line, Msg.frontend("PART.what.expectation", "name", attr));
+                ScenarioValue w = readAndType(a.situatieWaarde(), dt, situation.instance(label).objectType().markersOf(attr), line,
+                        Msg.frontend("PART.what.expectation", "name", attr));
                 if (w == null) continue;
                 String key = label + "|" + norm(attr);
                 if (Boolean.TRUE.equals(alwaysEmpty.get(key))) {
@@ -1455,8 +1460,28 @@ public final class ScenarioResolver {
 
     // ---------------- values ----------------
 
-    /** Read {@code ctx}, type it against {@code target} and normalise it to its case form; null after an ERROR. */
-    private ScenarioValue readAndType(SituatieWaardeContext ctx, Datatype target, int line, Object what) {
+    /** Read {@code ctx}, type it against {@code target} and normalise it to its case form; null after an ERROR.
+     *  {@code markers} are the absence markers the target declares, null for a target without them: such a target
+     *  takes a marker it declares as a constructor value of its own, and every other value as the payload of the
+     *  value constructor (RUNTIME-SEMANTICS ch. 9.5). A marker it does not declare has no case form. */
+    private ScenarioValue readAndType(SituatieWaardeContext ctx, Datatype target, List<String> markers, int line,
+                                      Object what) {
+        if (ctx instanceof AfwezigheidSituatieWaardeContext m) {
+            String marker = String.join(" ", src(m).trim().split("\\s+"));
+            if (markers != null && markers.contains(marker)) return ScenarioValue.fromConstructor(marker, null);
+            // the dialect has two markers, so a target that declares both takes every marker written
+            if (markers != null && markers.size() != 1)
+                throw new IllegalStateException("ScenarioResolver: '" + marker + "' is geen van de markeringen " + markers);
+            error(line, "RGS-377", params("what", what, "marker", marker, "admitted", markers == null
+                    ? Msg.frontend("PART.absence-markers.none")
+                    : Msg.frontend("PART.absence-markers.only", "marker", markers.get(0))));
+            return null;
+        }
+        ScenarioValue v = readValue(ctx, target, line, what);
+        return v == null || markers == null ? v : ScenarioValue.fromConstructor(RegelSpraakModel.VALUE_CONSTRUCTOR, v);
+    }
+
+    private ScenarioValue readValue(SituatieWaardeContext ctx, Datatype target, int line, Object what) {
         if (ctx instanceof GetalSituatieWaardeContext g) return number(g.getalWaarde(), target, line, what);
         if (ctx instanceof DatumSituatieWaardeContext d) {
             String text = src(d.datumWaarde());

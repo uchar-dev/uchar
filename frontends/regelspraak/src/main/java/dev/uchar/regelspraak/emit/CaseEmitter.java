@@ -240,7 +240,11 @@ public final class CaseEmitter {
      *  which is how the IR writes a date-time literal too. */
     private static void value(IrEmitter.Json w, ScenarioValue v) {
         w.beginObject();
-        if (v.number() != null) w.key("number").value(v.number());
+        if (v.constructor() != null) {
+            w.key("constructor").value(v.constructor());
+            if (v.payload() != null) { w.key("payload"); value(w, v.payload()); }
+        }
+        else if (v.number() != null) w.key("number").value(v.number());
         else if (v.date() != null) w.key("date").value(v.date().toString());
         else if (v.dateTime() != null)
             w.key("dateTime").value(v.dateTime().format(java.time.format.DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS")));

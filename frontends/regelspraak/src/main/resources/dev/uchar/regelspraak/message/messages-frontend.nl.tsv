@@ -133,6 +133,8 @@ PART.what.attribute	het attribuut '{name}'
 PART.what.declared-parameter	de parameter '{name}'
 PART.what.expectation	de verwachting voor '{name}'
 PART.what.inconsistency-rule	de regel van de inconsistentie
+PART.absence-markers.none	de declaratie laat geen afwezigheidsmarkering toe
+PART.absence-markers.only	de declaratie laat alleen '{marker}' toe
 PART.where-situation	in de situatie van het scenario '{scenario}'
 PART.where-situation-and-set	in de situatie van het scenario '{scenario}' en in de parameterset '{set}'
 PART.combination-fixed-periods	zowel een vaste waarde als perioden
@@ -691,3 +693,4 @@ RGS-373.month-family	de maandfamilie (maand, kwartaal, jaar)
 RGS-374	de tijdlijn van {operand} ligt op het raster per {operandGrid}, dat niet past in het raster per {targetGrid} van het doel {target}: het doel kan haar knips niet dragen (WF-126)
 RGS-375	{head}: '(mag opgegeven worden)' maakt op een tijdsafhankelijk attribuut geen kenmerk '{characteristic}', maar het model leest het — de voorwaarde van dat kenmerk vergelijkt twee tijdlijnen en toetst een tijdlijn op gevuld, wat geen lezing per periode heeft (RUNTIME-SEMANTICS ch. 3.12 rij 5) (dialect §7)
 RGS-376	'{expression}' leest de waarde van '{attribute}' van {objectType}, dat onbekend of niet van toepassing kan zijn, zonder eerst te toetsen dat het een waarde heeft; zet 'zijn {attribute} een waarde heeft' ervoor in de voorwaarde, of in een aggregatie 'die een waarde hebben' (RUNTIME-SEMANTICS ch. 9.5, IR-SPEC WF-127)
+RGS-377	{what}: '{marker}' past hier niet als afwezigheidsmarkering: {admitted} (RUNTIME-SEMANTICS ch. 9.5)

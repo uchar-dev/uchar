@@ -110,15 +110,22 @@ public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Sit
         INCONSISTENT         // de gegevens zijn inconsistent [volgens "<regel>" [voor <LABEL>]]
     }
 
-    /** A normalised value — exactly one field is non-null. {@code number} is the exact case lexeme (a decimal with a
-     *  dot, or a reduced fraction {@code p/q}) in the declared unit of its target. */
+    /** A normalised value — exactly one field is non-null, except that a {@code constructor} value of a unary
+     *  constructor carries its {@code payload} beside it. {@code number} is the exact case lexeme (a decimal with a
+     *  dot, or a reduced fraction {@code p/q}) in the declared unit of its target. A value of an attribute with
+     *  absence markers is a constructor value (RUNTIME-SEMANTICS ch. 9.5): a marker without a payload, any other value
+     *  as the payload of the constructor {@code waarde}. */
     public record ScenarioValue(String number, LocalDate date, LocalDateTime dateTime, Boolean bool, String text,
-                         String enumValue) {
-        public static ScenarioValue fromNumber(String lexemeText) { return new ScenarioValue(lexemeText, null, null, null, null, null); }
-        public static ScenarioValue fromDate(LocalDate d) { return new ScenarioValue(null, d, null, null, null, null); }
-        public static ScenarioValue fromDateTime(LocalDateTime d) { return new ScenarioValue(null, null, d, null, null, null); }
-        public static ScenarioValue fromBoolean(boolean b) { return new ScenarioValue(null, null, null, b, null, null); }
-        public static ScenarioValue fromText(String t) { return new ScenarioValue(null, null, null, null, t, null); }
-        public static ScenarioValue fromEnum(String e) { return new ScenarioValue(null, null, null, null, null, e); }
+                         String enumValue, String constructor, ScenarioValue payload) {
+        public static ScenarioValue fromNumber(String lexemeText) { return new ScenarioValue(lexemeText, null, null, null, null, null, null, null); }
+        public static ScenarioValue fromDate(LocalDate d) { return new ScenarioValue(null, d, null, null, null, null, null, null); }
+        public static ScenarioValue fromDateTime(LocalDateTime d) { return new ScenarioValue(null, null, d, null, null, null, null, null); }
+        public static ScenarioValue fromBoolean(boolean b) { return new ScenarioValue(null, null, null, b, null, null, null, null); }
+        public static ScenarioValue fromText(String t) { return new ScenarioValue(null, null, null, null, t, null, null, null); }
+        public static ScenarioValue fromEnum(String e) { return new ScenarioValue(null, null, null, null, null, e, null, null); }
+        /** A constructor value; {@code payload} is null for a nullary constructor. */
+        public static ScenarioValue fromConstructor(String constructor, ScenarioValue payload) {
+            return new ScenarioValue(null, null, null, null, null, null, constructor, payload);
+        }
     }
 }

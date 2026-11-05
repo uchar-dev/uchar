@@ -1267,7 +1267,10 @@ public final class SemanticTokens {
         }
         ObjectType ot = objectTypeOf(inst);
         for (ToewijzingContext t : inst.toewijzing()) {
-            if (t instanceof AttribuutToewijzingContext a) member(range(a.toewijzingNaam()), Kind.ATTRIBUTE, ot);
+            if (t instanceof AttribuutToewijzingContext a) {
+                member(range(a.toewijzingNaam()), Kind.ATTRIBUTE, ot);
+                markerValue(a.situatieWaarde());
+            }
             else if (t instanceof RolToOneToewijzingContext r) {
                 role(range(r.toewijzingNaam()), ot);
                 instanceReference(r.UPPER_ID(), labels);
@@ -1285,6 +1288,13 @@ public final class SemanticTokens {
         RegelSpraakModel.Parameter p = ScenarioResolver.parameterByName(model, text(r[0], r[1]));
         claim(r, p == null ? Kind.UNRESOLVED : Kind.PARAMETER, false,
                 p == null ? null : lookup(Kind.PARAMETER, null, p.name()));
+        markerValue(row.situatieWaarde());
+    }
+
+    /** An absence marker written as a value ("onbekend", "niet van toepassing"): a keyword, as the marking of its
+     *  declaration is; the scenario route reads the words, which the lexer reads as names. */
+    private void markerValue(SituatieWaardeContext w) {
+        if (w instanceof AfwezigheidSituatieWaardeContext m) claim(m, Kind.KEYWORD, false, null);
     }
 
     private void scenario(ScenarioContext sc, Map<String, SituatieDefinitieContext> situations,
@@ -1312,9 +1322,13 @@ public final class SemanticTokens {
     private void expectation(VerwachtingContext v, Map<String, Opened> labels) {
         if (v instanceof VerwachtAttribuutLeegContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
         else if (v instanceof VerwachtTijdlijnLeegContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
-        else if (v instanceof VerwachtTijdlijnAltijdContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
-        else if (v instanceof VerwachtAttribuutWaardeContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
-        else if (v instanceof VerwachtKenmerkContext k) characteristicOf(k.UPPER_ID(), k.kaleNaam(), labels);
+        else if (v instanceof VerwachtTijdlijnAltijdContext a) {
+            attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
+            markerValue(a.situatieWaarde());
+        } else if (v instanceof VerwachtAttribuutWaardeContext a) {
+            attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
+            markerValue(a.situatieWaarde());
+        } else if (v instanceof VerwachtKenmerkContext k) characteristicOf(k.UPPER_ID(), k.kaleNaam(), labels);
         else if (v instanceof VerwachtKenmerkHeeftContext k) characteristicOf(k.UPPER_ID(), k.kaleNaam(), labels);
         else if (v instanceof VerwachtInconsistentContext c && c.inconsistentieSleutel() != null) {
             InconsistentieSleutelContext key = c.inconsistentieSleutel();

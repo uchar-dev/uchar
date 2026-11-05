@@ -14,7 +14,9 @@ the declared datatype), `onbekend` and `niet van toepassing`. A marker written i
 number written a `Construct waarde(...)`; a marker tested is an equality with the `Construct`; "een waarde heeft" is a
 gevuld test of a `PayloadAccess`, and every read of the value is a `PayloadAccess` under that test (WF-127).
 
-The cases, with ref, clingo and both branches of the Drools backend:
+The case files are the lowering of `scenario.rgs` (gate 16), one scenario each, which writes a marker as the rules do
+("- de taxatie is onbekend", "- de opslagkosten van V1 is niet van toepassing van 01-06-2025 tot 01-01-2026"). The
+cases, with ref, clingo and both branches of the Drools backend:
 
 | case | input | taxatie | vindloon | other |
 |---|---|---|---|---|

@@ -2686,6 +2686,11 @@ markers where the expression is an attribute with markers. An aggregation over m
 a value with the subselection "die een waarde hebben": "de som van de taxatie van alle vondsten van de Jutter die een
 waarde hebben".
 
+A scenario document ("Scenariotoetsen") writes a marker as the value of an attribute that declares it, in a situation
+and in an expectation, as a rule writes it: "- de taxatie is onbekend", "- de opslagkosten van V1 is niet van
+toepassing van 01-06-2025 tot 01-01-2026". The grammar reads the words on that one position by their text
+(`afwezigheidsWaarde`), so no word becomes a keyword.
+
 ### Inertness — measured, not assumed
 
 None of the 292 RegelSpraak sources of the corpus and the parity zone writes `(of ` (counted 2026-11-04), and gates 10
@@ -2737,14 +2742,19 @@ document without markers emits what it emits without the extension.
   opslagkosten plus 1 gedurende de tijd dat zijn opslagkosten een waarde hebben" as a `PayloadAccess` under that test,
   the verifier admits it, and ref, the ASP backend and the Drools backend refuse it by name (measured 2026-11-04). A
   marker written per period, the input per day and a test of a marker per period are lowered and executed.
-- No negation of a test ("geen waarde heeft") and no marker in a decision table cell is lowered; a marker on a
-  dimensioned attribute is not measured.
+- No negation of a test ("geen waarde heeft") and no marker in a decision table cell is lowered.
+- On a dimensioned attribute (measured 2026-11-05): a value written into a cell is the `Construct` of `waarde`, which
+  the verifier and ref admit and the ASP backend refuses at the expectation of the cell, without a register code; a
+  marker written into a cell ("Het gewicht in voorjaar van een Vondst moet gesteld worden op onbekend") and a test of
+  a cell ("… in najaar een waarde heeft", "… in voorjaar onbekend is") are no marker to the resolver and stay
+  unresolved, each with the WARNING RGS-092; a read of the value of a cell is refused with RGS-376.
 - The ASP backend scales a number and a day-precision date into a constructor term; markers on an attribute of
   another datatype play in ref and are refused by name in the ASP backend (`spec/ASP-TRANSLATION.md` S19).
 - The semantic tokens read the words of the markers as keywords in a document that declares markers.
 
 Golden: `jutterswet-afwezigheidsmarkers` (scalar and per month; ten cases), with the red twin
-`jutterswet-afwezigheidsmarkers-botsing` (EF-016, scalar and per day); its source is the golden's `source.rgs`.
+`jutterswet-afwezigheidsmarkers-botsing` (EF-016, scalar and per day); its source is the golden's `source.rgs`, and
+its `scenario.rgs` lowers to its ten case files (gate 16).
 Measured 2026-11-04: ref, clingo and both branches of the Drools backend replay every case exactly, and the red twin
 faults with EF-016 in each.
 
@@ -3357,7 +3367,8 @@ The segment bullets of one label and attribute are one `attributeTimeline`,
 at the place of the first. The values are the literal forms of the language:
 a number with the unit its declaration demands (`1,5 t`, `25 %`, `3/4
 vadem`), a date `dd-mm-jjjj`, a date-time `dd-mm-jjjj hh:mm:ss.mmm`,
-`waar`/`onwaar`, an enumeration value `'strandgoed'`, a text `"Aukje"`.
+`waar`/`onwaar`, an enumeration value `'strandgoed'`, a text `"Aukje"`, and for an attribute
+that declares it an absence marker, `onbekend` or `niet van toepassing` ("Afwezigheidsmarkeringen").
 
 **Two new tokens, for the parameter set only.** The other forms this
 repository added to the scenario layer reuse the lexer as it stands,
@@ -3491,6 +3502,10 @@ serialiser, so a case file and an IR document share one shape.
 - The cells of one attribute are its `cells`, in first-seen order, each with
   its labels and its value; an expected cell is a `cellValue` or a `cellEmpty`
   with its labels (RUNTIME-SEMANTICS ch. 5.8c).
+- Every value of an attribute with absence markers, given or expected, also a
+  segment of its timeline or a cell, is a constructor value of the case format
+  (RUNTIME-SEMANTICS ch. 9.5): a marker is `{"constructor": "onbekend"}`, any
+  other value the payload of `{"constructor": "waarde", "payload": …}`.
 - The parameters are those the chosen set gives on the peildatum, in the
   order of each parameter's first row in the set, then the situation's own.
   The resolver has chosen the jaargangen, so the case file carries one value
@@ -3684,7 +3699,11 @@ prefix `scenario: `, placeholders in angle brackets:
   enumeratiewaarde ('<w>') past niet op een <type>`, `'<w>' is geen waarde van
   de enumeratie <domein> (<waarden>)`, `de waarde '<bron>' is niet gelezen`
   and `er staat geen waarde` (beside a syntax error), `de tekstwaarde draagt
-  een «expressie», en een waarde in een scenario is letterlijk`. A number the
+  een «expressie», en een waarde in een scenario is letterlijk`, and (RGS-377)
+  `'<markering>' past hier niet als afwezigheidsmarkering: <de declaratie laat
+  geen afwezigheidsmarkering toe | de declaratie laat alleen '<markering>'
+  toe>` for a marker the attribute does not declare, a marker on an attribute
+  without markers and a marker for a parameter. A number the
   parse cannot read and a restatement without an exact factor are no refusal:
   the parse enters a number on a number token only, and the typing admits two
   units with one canonical only, each with the exact factor its system
@@ -3705,12 +3724,16 @@ them), `ScenarioLoweringTest` (a case file written by hand from the
 schema, the file name, the scope and its IR document, the CLI) and
 `ScenarioParameterSetTest` (the two tokens, a case file with a jaargang and
 a whole timeline written by hand, the exclusive end, and each refusal of
-the parameter set on its line) and `ScenarioCellTest` (each form of a cell as
+the parameter set on its line), `ScenarioCellTest` (each form of a cell as
 an input and as an expectation, the merge per cell, a case file with cells
-written by hand, each refusal of a cell, and the semantic tokens of a cell).
-The corpus: eleven goldens carry a `scenario.rgs` beside their `source.rgs` whose lowering
-reproduces their pinned case files, and whose scenario route reproduces their
-`ir.json`, byte for byte — the handwritten expectations are the anchor —:
+written by hand, each refusal of a cell, and the semantic tokens of a cell)
+and `ScenarioAbsenceMarkerTest` (a marker and a value of an attribute with
+markers as input and as expectation, scalar and per segment, in a case file
+written by hand, each refusal of RGS-377 on its line, and the semantic tokens
+of a marker). The corpus: 41 goldens carry a `scenario.rgs` beside their
+`source.rgs` (counted 2026-11-05) whose lowering reproduces their pinned case
+files, and whose scenario route reproduces their `ir.json`, byte for byte —
+the handwritten expectations are the anchor —, among them
 `ww-herleving-inkomen-rgs`, `jutterswet-uitsluiting-rgs`,
 `jutterswet-nestkenmerk-rgs`, `jutterswet-dagentelling-rgs` (the timelines),
 `jutterswet-rubriektabel-rgs` (a scope over a decision table and a rule, which
@@ -3726,8 +3749,10 @@ type named with a preposition, a fact type named with a verb) and
 volgens` expectation), `jutterswet-seizoenboeking` (the cells of one dimension
 as input, `cellValue` and `cellEmpty`) and `jutterswet-strandseizoen` (the
 cells of two attributes of two dimensions each, the labels side by side, in
-either order, joined by "en" and by ",", and after `uit`). Together they carry
-every expectation kind of the case format.
+either order, joined by "en" and by ",", and after `uit`) and
+`jutterswet-afwezigheidsmarkers` (markers and values of two attributes with
+markers in the input and the expectations, scalar and per month). Together
+they carry every expectation kind of the case format.
 
 ---
 
