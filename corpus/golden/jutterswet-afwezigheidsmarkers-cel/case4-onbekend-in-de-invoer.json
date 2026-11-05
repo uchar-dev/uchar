@@ -1,0 +1,71 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "cells": [
+              {
+                "labels": [
+                  "najaar"
+                ],
+                "value": {
+                  "constructor": "onbekend"
+                }
+              },
+              {
+                "labels": [
+                  "voorjaar"
+                ],
+                "value": {
+                  "constructor": "onbekend"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "cellValue",
+      "label": "V1",
+      "attribute": "gewicht",
+      "labels": [
+        "najaar"
+      ],
+      "value": {
+        "constructor": "onbekend"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "najaarsloon"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "zwaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "voorjaarstoeslag",
+      "value": {
+        "number": "7.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

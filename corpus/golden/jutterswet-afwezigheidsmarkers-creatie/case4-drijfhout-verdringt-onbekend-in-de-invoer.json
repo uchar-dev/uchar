@@ -1,0 +1,98 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "constructor": "onbekend"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J1"
+          ]
+        },
+        "characteristics": [
+          "drijfhout"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "constructor": "onbekend"
+          }
+        },
+        "roles": {
+          "jutter": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "taxatie",
+      "value": {
+        "constructor": "waarde",
+        "payload": {
+          "number": "5.00"
+        }
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "ongetaxeerd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "taxatie",
+      "value": {
+        "constructor": "onbekend"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "ongetaxeerd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal ongetaxeerde vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "getaxeerd totaal",
+      "value": {
+        "number": "5.00"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

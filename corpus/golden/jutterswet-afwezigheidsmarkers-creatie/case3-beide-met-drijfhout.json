@@ -1,0 +1,64 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "actief",
+          "ervaren"
+        ]
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "jutter": [
+            "J1"
+          ]
+        },
+        "characteristics": [
+          "drijfhout"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "taxatie",
+      "value": {
+        "constructor": "waarde",
+        "payload": {
+          "number": "5.00"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal ongetaxeerde vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "getaxeerd totaal",
+      "value": {
+        "number": "17.50"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

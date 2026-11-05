@@ -95,6 +95,9 @@
   ; the worked examples of the absence markers, RUNTIME-SEMANTICS ch. 9.5
   (glob_files ../../corpus/golden/jutterswet-afwezigheidsmarkers/*.json)
   (glob_files ../../corpus/red/jutterswet-afwezigheidsmarkers-botsing/*.json)
+  (glob_files ../../corpus/golden/jutterswet-afwezigheidsmarkers-cel/*.json)
+  (glob_files ../../corpus/golden/jutterswet-afwezigheidsmarkers-creatie/*.json)
+  (glob_files ../../corpus/golden/jutterswet-afwezigheidsmarkers-kopie/*.json)
   (glob_files fixtures/absence-markers/payload-of-a-timeline/*.json)
   (glob_files fixtures/absence-markers/sum-of-a-timeline/*.json)
   (glob_files fixtures/absence-markers/constructors-in-one-symbol/*.json)

@@ -1,0 +1,43 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het getaxeerd totaal Numeriek (getal met 2 decimalen);
+    het aantal ongetaxeerde vondsten Numeriek (geheel getal);
+    is actief kenmerk (bijvoeglijk);
+    is ervaren kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (getal met 2 decimalen) (of onbekend);
+    is drijfhout kenmerk (bijvoeglijk);
+    is ongetaxeerd kenmerk (bijvoeglijk);
+
+Feittype vangst
+    de jutter Jutter
+    de vondst (mv: vondsten) Vondst
+    één jutter heeft meerdere vondsten
+
+Regel vaste taxatie
+    geldig altijd
+        De taxatie van een Vondst moet gesteld worden op 5,00
+        indien hij drijfhout is.
+
+Regel ongetaxeerde vondst
+    geldig altijd
+        Een Vondst is ongetaxeerd
+        indien zijn taxatie onbekend is.
+
+Regel onbekende vondst
+    geldig altijd
+        Een Jutter heeft een vondst met taxatie gelijk aan onbekend
+        indien hij actief is.
+
+Regel getaxeerde vondst
+    geldig altijd
+        Een Jutter heeft een vondst met taxatie gelijk aan 12,50
+        indien hij ervaren is.
+
+Regel getaxeerd totaal
+    geldig altijd
+        Het getaxeerd totaal van een Jutter moet berekend worden als de som van de taxatie van alle vondsten van de Jutter die een waarde hebben.
+
+Regel aantal ongetaxeerde vondsten
+    geldig altijd
+        Het aantal ongetaxeerde vondsten van een Jutter moet berekend worden als het aantal vondsten van de Jutter die ongetaxeerd zijn.

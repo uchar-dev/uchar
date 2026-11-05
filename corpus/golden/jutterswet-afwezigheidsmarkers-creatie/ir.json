@@ -1,0 +1,584 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "getaxeerd totaal",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal ongetaxeerde vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "actief",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "ervaren",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "taxatie",
+            "datatype": {
+              "node": "SumType",
+              "domain": "taxatie van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "drijfhout",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "ongetaxeerd",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vangst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "taxatie van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vaste taxatie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "taxatie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De taxatie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "taxatie van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "Literal",
+                "value": {
+                  "number": "5.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5,00"
+                }
+              },
+              "source": {
+                "snippet": "5,00"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "drijfhout",
+              "negated": false,
+              "source": {
+                "snippet": "hij drijfhout is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "ongetaxeerde vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "ongetaxeerd",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is ongetaxeerd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "taxatie",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn taxatie"
+                }
+              },
+              "right": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "taxatie van een Vondst",
+                  "constructors": [
+                    {
+                      "name": "waarde",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
+                      }
+                    },
+                    {
+                      "name": "onbekend",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "onbekend",
+                "argument": null,
+                "source": {
+                  "snippet": "onbekend"
+                }
+              },
+              "source": {
+                "snippet": "zijn taxatie onbekend is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "getaxeerd totaal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "getaxeerd totaal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het getaxeerd totaal van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "PayloadAccess",
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "base": {
+                    "node": "AttributeReference",
+                    "attribute": "taxatie",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "de taxatie van alle vondsten van de Jutter die een waarde hebben"
+                    }
+                  },
+                  "constructor": "waarde",
+                  "source": {
+                    "snippet": "de taxatie van alle vondsten van de Jutter die een waarde hebben"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Predicate",
+                "kind": "filled",
+                "operand": {
+                  "node": "PayloadAccess",
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "base": {
+                    "node": "AttributeReference",
+                    "attribute": "taxatie",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "een waarde hebben"
+                    }
+                  },
+                  "constructor": "waarde",
+                  "source": {
+                    "snippet": "een waarde hebben"
+                  }
+                },
+                "negated": false,
+                "digits": 0,
+                "source": {
+                  "snippet": "een waarde hebben"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vangst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van de taxatie van alle vondsten van de Jutter die een waarde hebben"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal ongetaxeerde vondsten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal ongetaxeerde vondsten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal ongetaxeerde vondsten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "vondsten van de Jutter die ongetaxeerd zijn"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "CharacteristicCheck",
+                "characteristic": "ongetaxeerd",
+                "negated": false,
+                "source": {
+                  "snippet": "ongetaxeerd zijn"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vangst",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die ongetaxeerd zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "onbekende vondst",
+        "versions": [
+          {
+            "createdType": "Vondst",
+            "subject": "Jutter",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "taxatie",
+                "value": {
+                  "node": "Construct",
+                  "type": {
+                    "node": "SumType",
+                    "domain": "taxatie van een Vondst",
+                    "constructors": [
+                      {
+                        "name": "waarde",
+                        "payload": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "unspecified"
+                        }
+                      },
+                      {
+                        "name": "onbekend",
+                        "payload": null
+                      }
+                    ]
+                  },
+                  "constructor": "onbekend",
+                  "argument": null,
+                  "source": {
+                    "snippet": "onbekend"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "actief",
+              "negated": false,
+              "source": {
+                "snippet": "hij actief is"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "vangst",
+              "role": "vondst"
+            }
+          }
+        ]
+      },
+      {
+        "node": "ObjectCreation",
+        "name": "getaxeerde vondst",
+        "versions": [
+          {
+            "createdType": "Vondst",
+            "subject": "Jutter",
+            "initialisations": [
+              {
+                "node": "MemberInit",
+                "member": "taxatie",
+                "value": {
+                  "node": "Construct",
+                  "type": {
+                    "node": "SumType",
+                    "domain": "taxatie van een Vondst",
+                    "constructors": [
+                      {
+                        "name": "waarde",
+                        "payload": {
+                          "node": "Number",
+                          "whole": false,
+                          "decimals": 2,
+                          "sign": "unspecified"
+                        }
+                      },
+                      {
+                        "name": "onbekend",
+                        "payload": null
+                      }
+                    ]
+                  },
+                  "constructor": "waarde",
+                  "argument": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "12.50"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 1,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "12,50"
+                    }
+                  },
+                  "source": {
+                    "snippet": "12,50"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "ervaren",
+              "negated": false,
+              "source": {
+                "snippet": "hij ervaren is"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "vangst",
+              "role": "vondst"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

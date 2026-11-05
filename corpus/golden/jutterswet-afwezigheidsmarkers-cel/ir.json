@@ -1,0 +1,604 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "SumType",
+              "domain": "gewicht van een Vondst",
+              "constructors": [
+                {
+                  "name": "waarde",
+                  "payload": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  }
+                },
+                {
+                  "name": "onbekend",
+                  "payload": null
+                }
+              ]
+            },
+            "dimensions": [
+              "seizoen"
+            ]
+          },
+          {
+            "node": "Attribute",
+            "name": "schatting",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "najaarsloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "voorjaarstoeslag",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "onleesbaar",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "zwaar",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [
+      {
+        "node": "Domain",
+        "name": "gewicht van een Vondst",
+        "datatype": {
+          "node": "SumType",
+          "constructors": [
+            {
+              "name": "waarde",
+              "payload": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              }
+            },
+            {
+              "name": "onbekend",
+              "payload": null
+            }
+          ]
+        }
+      }
+    ],
+    "unitSystems": [],
+    "dimensions": [
+      {
+        "node": "Dimension",
+        "name": "seizoen",
+        "plural": "seizoenen",
+        "preposition": "in",
+        "labels": [
+          "voorjaar",
+          "najaar"
+        ]
+      }
+    ],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "najaarsgewicht uit schatting",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "Het gewicht in najaar van een Vondst"
+                }
+              },
+              "labels": [
+                "najaar"
+              ],
+              "source": {
+                "snippet": "Het gewicht in najaar van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "gewicht van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "waarde",
+              "argument": {
+                "node": "AttributeReference",
+                "attribute": "schatting",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn schatting"
+                }
+              },
+              "source": {
+                "snippet": "zijn schatting"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "voorjaarsgewicht onbekend",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "DimensionCellRead",
+              "attribute": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "Het gewicht in voorjaar van een Vondst"
+                }
+              },
+              "labels": [
+                "voorjaar"
+              ],
+              "source": {
+                "snippet": "Het gewicht in voorjaar van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Construct",
+              "type": {
+                "node": "SumType",
+                "domain": "gewicht van een Vondst",
+                "constructors": [
+                  {
+                    "name": "waarde",
+                    "payload": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    }
+                  },
+                  {
+                    "name": "onbekend",
+                    "payload": null
+                  }
+                ]
+              },
+              "constructor": "onbekend",
+              "argument": null,
+              "source": {
+                "snippet": "onbekend"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "onleesbaar",
+              "negated": false,
+              "source": {
+                "snippet": "hij onleesbaar is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "najaarsloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "najaarsloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het najaarsloon van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "PayloadAccess",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "base": {
+                  "node": "DimensionCellRead",
+                  "attribute": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn gewicht in najaar"
+                    }
+                  },
+                  "labels": [
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "zijn gewicht in najaar"
+                  }
+                },
+                "constructor": "waarde",
+                "source": {
+                  "snippet": "zijn gewicht in najaar"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn gewicht in najaar maal 2"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "PayloadAccess",
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "base": {
+                  "node": "DimensionCellRead",
+                  "attribute": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn gewicht in najaar"
+                    }
+                  },
+                  "labels": [
+                    "najaar"
+                  ],
+                  "source": {
+                    "snippet": "zijn gewicht in najaar"
+                  }
+                },
+                "constructor": "waarde",
+                "source": {
+                  "snippet": "zijn gewicht in najaar"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn gewicht in najaar een waarde heeft"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "voorjaarstoeslag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "voorjaarstoeslag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De voorjaarstoeslag van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "7.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "7,00"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "equal",
+              "left": {
+                "node": "DimensionCellRead",
+                "attribute": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn gewicht in voorjaar"
+                  }
+                },
+                "labels": [
+                  "voorjaar"
+                ],
+                "source": {
+                  "snippet": "zijn gewicht in voorjaar"
+                }
+              },
+              "right": {
+                "node": "Construct",
+                "type": {
+                  "node": "SumType",
+                  "domain": "gewicht van een Vondst",
+                  "constructors": [
+                    {
+                      "name": "waarde",
+                      "payload": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 2,
+                        "sign": "unspecified"
+                      }
+                    },
+                    {
+                      "name": "onbekend",
+                      "payload": null
+                    }
+                  ]
+                },
+                "constructor": "onbekend",
+                "argument": null,
+                "source": {
+                  "snippet": "onbekend"
+                }
+              },
+              "source": {
+                "snippet": "zijn gewicht in voorjaar onbekend is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zware vondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zwaar",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is zwaar"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "PayloadAccess",
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    },
+                    "base": {
+                      "node": "DimensionCellRead",
+                      "attribute": {
+                        "node": "AttributeReference",
+                        "attribute": "gewicht",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn gewicht in najaar"
+                        }
+                      },
+                      "labels": [
+                        "najaar"
+                      ],
+                      "source": {
+                        "snippet": "zijn gewicht in najaar"
+                      }
+                    },
+                    "constructor": "waarde",
+                    "source": {
+                      "snippet": "zijn gewicht in najaar"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn gewicht in najaar heeft een waarde"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "PayloadAccess",
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 2,
+                      "sign": "unspecified"
+                    },
+                    "base": {
+                      "node": "DimensionCellRead",
+                      "attribute": {
+                        "node": "AttributeReference",
+                        "attribute": "gewicht",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn gewicht in najaar"
+                        }
+                      },
+                      "labels": [
+                        "najaar"
+                      ],
+                      "source": {
+                        "snippet": "zijn gewicht in najaar"
+                      }
+                    },
+                    "constructor": "waarde",
+                    "source": {
+                      "snippet": "zijn gewicht in najaar"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "100.00"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "100,00"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn gewicht in najaar is groter dan 100,00"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - zijn gewicht in najaar heeft een waarde - zijn gewicht in najaar is groter dan 100,00"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

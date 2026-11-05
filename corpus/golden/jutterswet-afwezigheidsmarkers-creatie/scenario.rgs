@@ -1,0 +1,50 @@
+Scenario actief
+Gegeven is de volgende situatie:
+een Jutter J1
+- is actief
+Met als verwacht resultaat:
+- het aantal ongetaxeerde vondsten van J1 is 1
+- het getaxeerd totaal van J1 is leeg
+- de gegevens zijn consistent
+
+Scenario ervaren
+Gegeven is de volgende situatie:
+een Jutter J1
+- is ervaren
+Met als verwacht resultaat:
+- het aantal ongetaxeerde vondsten van J1 is 0
+- het getaxeerd totaal van J1 is 12,50
+- de gegevens zijn consistent
+
+Scenario beide met drijfhout
+Gegeven is de volgende situatie:
+een Jutter J1
+- is actief
+- is ervaren
+een Vondst V1
+- is drijfhout
+- de jutter is J1
+Met als verwacht resultaat:
+- de taxatie van V1 is 5,00
+- het aantal ongetaxeerde vondsten van J1 is 1
+- het getaxeerd totaal van J1 is 17,50
+- de gegevens zijn consistent
+
+Scenario drijfhout verdringt onbekend in de invoer
+Gegeven is de volgende situatie:
+een Jutter J1
+een Vondst V1
+- de taxatie is onbekend
+- is drijfhout
+- de jutter is J1
+een Vondst V2
+- de taxatie is onbekend
+- de jutter is J1
+Met als verwacht resultaat:
+- de taxatie van V1 is 5,00
+- V1 is niet ongetaxeerd
+- de taxatie van V2 is onbekend
+- V2 is ongetaxeerd
+- het aantal ongetaxeerde vondsten van J1 is 1
+- het getaxeerd totaal van J1 is 5,00
+- de gegevens zijn consistent

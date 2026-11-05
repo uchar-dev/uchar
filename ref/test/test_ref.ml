@@ -13224,6 +13224,36 @@ let () =
       ("WV-9.5-markeringen-per-maand", "case9-onbekend-per-maand");
       ("WV-9.5-markeringen-na-verkoop", "case10-niet-van-toepassing-na-verkoop") ]
 
+(* WV-9.5-cel, -creatie, -kopie: the absence markers on a cell, in an object
+   creation and in the copy of a timeline (RUNTIME-SEMANTICS ch. 9.4, 9.5), on
+   the goldens jutterswet-afwezigheidsmarkers-cel, -creatie and -kopie. The
+   gewicht in najaar of a Vondst is waarde(60.00) from a schatting of 60,00 and
+   its najaarsloon 120,00; an onleesbare has the gewicht in voorjaar onbekend over
+   its input waarde(10.00) and the voorjaarstoeslag 7,00; a schatting of 150,00
+   makes it zwaar; an input onbekend in najaar stands, the najaarsloon leeg. A
+   Jutter that is actief makes a vondst with the taxatie onbekend, one that is
+   ervaren one of waarde(12.50); a drijfhout vondst has the taxatie waarde(5.00),
+   also over an input onbekend. A timeline of the opslagkosten copied whole reads
+   as its source, cut to the months a condition holds in, and an input of the
+   copy stands on the days its source is leeg *)
+let () =
+  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
+  List.iter
+    (fun (ident, g, c) ->
+      let g = "corpus/golden/jutterswet-afwezigheidsmarkers-" ^ g ^ "/" in
+      plays ~ident ~ir:(read (g ^ "ir.json")) ~case_data:(read (g ^ c ^ ".json")) (fun _ -> ()))
+    [ ("WV-9.5-cel-schatting", "cel", "case1-schatting");
+      ("WV-9.5-cel-onbekend-verdringt-invoer", "cel", "case2-onbekend-verdringt-invoer");
+      ("WV-9.5-cel-zwaar", "cel", "case3-zwaar");
+      ("WV-9.5-cel-onbekend-in-de-invoer", "cel", "case4-onbekend-in-de-invoer");
+      ("WV-9.5-creatie-actief", "creatie", "case1-actief");
+      ("WV-9.5-creatie-ervaren", "creatie", "case2-ervaren");
+      ("WV-9.5-creatie-beide-met-drijfhout", "creatie", "case3-beide-met-drijfhout");
+      ("WV-9.5-creatie-drijfhout-verdringt-onbekend", "creatie", "case4-drijfhout-verdringt-onbekend-in-de-invoer");
+      ("WV-9.5-kopie", "kopie", "case1-kopie");
+      ("WV-9.5-kopie-na-verkoop", "kopie", "case2-kopie-na-verkoop");
+      ("WV-9.5-kopie-invoer-naast-de-kopie", "kopie", "case3-invoer-naast-de-kopie") ]
+
 (* WV-9.5-botsing: a marker decided against another value is the fault of two
    writers (EF-016), on a scalar target and per day, on the red twin
    jutterswet-afwezigheidsmarkers-botsing: the taxatie onbekend beside

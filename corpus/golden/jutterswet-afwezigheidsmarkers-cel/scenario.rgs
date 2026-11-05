@@ -1,0 +1,48 @@
+Scenario schatting
+Gegeven is de volgende situatie:
+een Vondst V1
+- de schatting is 60,00
+Met als verwacht resultaat:
+- het gewicht in najaar van V1 is 60,00
+- het gewicht in voorjaar van V1 is leeg
+- het najaarsloon van V1 is 120,00
+- de voorjaarstoeslag van V1 is leeg
+- V1 is niet zwaar
+- de gegevens zijn consistent
+
+Scenario onbekend verdringt invoer
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht in voorjaar is 10,00
+- is onleesbaar
+Met als verwacht resultaat:
+- het gewicht in voorjaar van V1 is onbekend
+- de voorjaarstoeslag van V1 is 7,00
+- het najaarsloon van V1 is leeg
+- de gegevens zijn consistent
+
+Scenario zwaar
+Gegeven is de volgende situatie:
+een Vondst V1
+- de schatting is 150,00
+een Vondst V2
+Met als verwacht resultaat:
+- het gewicht in najaar van V1 is 150,00
+- het najaarsloon van V1 is 300,00
+- V1 is zwaar
+- het gewicht in najaar van V2 is leeg
+- het najaarsloon van V2 is leeg
+- V2 is niet zwaar
+- de gegevens zijn consistent
+
+Scenario onbekend in de invoer
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht in najaar is onbekend
+- het gewicht in voorjaar is onbekend
+Met als verwacht resultaat:
+- het gewicht in najaar van V1 is onbekend
+- het najaarsloon van V1 is leeg
+- V1 is niet zwaar
+- de voorjaarstoeslag van V1 is 7,00
+- de gegevens zijn consistent

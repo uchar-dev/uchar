@@ -1,0 +1,37 @@
+Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+    1. voorjaar
+    2. najaar
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (getal met 2 decimalen) gedimensioneerd met seizoen (of onbekend);
+    de schatting Numeriek (getal met 2 decimalen);
+    het najaarsloon Numeriek (getal met 2 decimalen);
+    de voorjaarstoeslag Numeriek (getal met 2 decimalen);
+    is onleesbaar kenmerk (bijvoeglijk);
+    is zwaar kenmerk (bijvoeglijk);
+
+Regel najaarsgewicht uit schatting
+    geldig altijd
+        Het gewicht in najaar van een Vondst moet gesteld worden op zijn schatting.
+
+Regel voorjaarsgewicht onbekend
+    geldig altijd
+        Het gewicht in voorjaar van een Vondst moet gesteld worden op onbekend
+        indien hij onleesbaar is.
+
+Regel najaarsloon
+    geldig altijd
+        Het najaarsloon van een Vondst moet berekend worden als zijn gewicht in najaar maal 2
+        indien zijn gewicht in najaar een waarde heeft.
+
+Regel voorjaarstoeslag
+    geldig altijd
+        De voorjaarstoeslag van een Vondst moet gesteld worden op 7,00
+        indien zijn gewicht in voorjaar onbekend is.
+
+Regel zware vondst
+    geldig altijd
+        Een Vondst is zwaar
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn gewicht in najaar heeft een waarde
+        - zijn gewicht in najaar is groter dan 100,00.

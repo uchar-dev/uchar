@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "actief"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal ongetaxeerde vondsten",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "getaxeerd totaal"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
