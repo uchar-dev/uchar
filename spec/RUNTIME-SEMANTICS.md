@@ -88,12 +88,21 @@ recorded as such.
   amount and a number with a unit included — is written in exactly the
   decimals of the type of its part, with a decimal comma, no grouping, no
   unit and no percent sign: 5,50 in a type of 2 decimals is `5,50`, 5 is
-  `5,00`, and 5 in a whole type is `5`. The type of a part is its precision
-  bound (ch. 2.3) in the unit its value is in: for a read of an attribute,
-  a parameter or a cell its declaration, for a binder the bound of the value
-  it holds, for a numeric literal the decimals of its exact value, and for
-  a composite part the bound its shape gives — `zijn basis maal 1,1` over a
-  basis of 2 decimals writes 3. A part without a finite bound (the unbounded
+  `5,00`, and 5 in a whole type is `5`. The type of a part is the declared
+  type of what it reads, and of any other part its precision bound (ch. 2.3)
+  in the unit its value is in: for a read of an attribute, a parameter or a
+  cell its declaration; for a parameter of a function or a lambda its
+  declared type, whatever the argument it holds (a parameter of 2 decimals
+  holding the whole number 5 writes `5,00`); for a match arm's binder the
+  payload its constructor declares; for the binder of a `Let` the bound of
+  the value it holds; for a numeric literal the decimals it is written with,
+  the digits after the point of its lexeme (`«5,50»` writes `5,50`,
+  `«-0,500»` writes `-0,500`), and for a literal written as a rational `a/b`
+  its exact form; and for a composite part the bound its shape gives —
+  `zijn basis maal 1,1` over a basis of 2 decimals writes 3. The literal and
+  the parameter are rules of this coercion alone: the bound of ch. 2.3 that
+  the precision gate reads (ch. 2.4) keeps the decimals of a literal's value
+  and the bound of a parameter's argument. A part without a finite bound (the unbounded
   form, a quotient by an attribute or by 3), or whose bound nothing declares
   (ch. 2.4, point 4), writes the exact decimal without trailing zeros, and a
   number that does not terminate as its numerator and denominator in lowest
@@ -124,15 +133,16 @@ recorded as such.
   number writes the decimals of its type. The RegelSpraak specification §5.4
   admits every datatype in a "reeks van teksten en waarden" and fixes no
   spelling; the spelling of the other types is ALEF's runtime coercion
-  (`TekstUtil.toAlefText`, measured on ALEF 872b859). Four deviations from
-  ALEF: a number of a finite bound writes the decimals of its type where
-  ALEF, whose rationals carry no scale, writes the exact decimal without
-  trailing zeros; a literal part writes the decimals of its value where ALEF
-  writes the lexeme of the source; a non-terminating number is `t/n` where
-  ALEF writes a mixed number above 1; a date-time carries three fraction
-  digits where ALEF's value form carries nine. The unit after the number,
-  where a part asks for it, is a decision of the maintainer of the same day;
-  it is the unit's abbreviation, the one spelling every occurrence of a unit
+  (`TekstUtil.toAlefText`, measured on ALEF 872b859), which writes a literal
+  part as the lexeme of the source, as this coercion does. Three deviations
+  from ALEF: a number of a finite bound writes the decimals of its type
+  where ALEF, whose rationals carry no scale, writes the exact decimal
+  without trailing zeros; a non-terminating number is `t/n` where ALEF
+  writes a mixed number above 1; a date-time carries three fraction digits
+  where ALEF's value form carries nine. The literal written as its lexeme
+  and the parameter in its declared type are decisions of the maintainer of
+  the same day, as is the unit after the number,
+  where a part asks for it; that unit is its abbreviation, the one spelling every occurrence of a unit
   carries on the wire (IR-SPEC ch. 2.5), since the further spellings of its
   declaration carry no role that marks one of them as its symbol.*
 
@@ -146,7 +156,8 @@ recorded as such.
   | 12,50 % (percentage, 2 decimals) | `12,50` |
   | zijn basis maal 1,1, basis 5,50 in 2 decimals (bound 3) | `6,050` |
   | zijn basis gedeeld door 4, basis 5,50 in 2 decimals (bound 4) | `1,3750` |
-  | the literal `5,50` (bound 1) | `5,5` |
+  | the literal `5,50` / `-0,500` / `1/4` (as written) | `5,50` / `-0,500` / `0,25` |
+  | a parameter of 2 decimals holding 1250 / 1,5 | `1250,00` / `1,50` |
   | 0,125 / 2 in the unbounded form | `0,125` / `2` |
   | 4 gedeeld door 3 / −1 gedeeld door 3 (no finite bound) | `4/3` / `-1/3` |
   | 2026-06-21 / 0999-12-31 / +12026-03-01 | `21-06-2026` / `31-12-0999` / `01-03-+12026` |
@@ -163,8 +174,10 @@ recorded as such.
   2026-06-21 reads `Bedrag: 5,50 voor wrakhout, gemeld waar op 21-06-2026`;
   with basis leeg it reads `Bedrag:  voor wrakhout, gemeld waar op
   21-06-2026`. The reference interpreter's suite holds every row
-  (`WV-1.2c-text-*`), the composite, binder and constructor rows through its
-  evaluation. The golden `jutterswet-tekst-van-een-waarde` carries, through
+  (`WV-1.2c-text-*`), the composite, literal, binder, parameter and
+  constructor rows through its evaluation; a function and a lambda are
+  wire-first forms the Drools backend does not load, so the parameter rows
+  are ref's alone. The golden `jutterswet-tekst-van-een-waarde` carries, through
   the RegelSpraak frontend, the rows of leeg, a text, an enumeration value,
   a boolean, a number in 2 decimals and in a whole number, a percentage, the
   product by 1,1, the literal, the unbounded form, a quotient by 3, a date

@@ -206,7 +206,7 @@ end
 // "Vast: «5,50»"
 function Object waarde_vasteTekst() {
     try {
-        return ComputeHelpers.textComposition(java.util.Arrays.asList("Vast: ", RegelSpraakRuntime.rsTekst(new java.math.BigDecimal("5.5"), Integer.valueOf(1), null)));
+        return ComputeHelpers.textComposition(java.util.Arrays.asList("Vast: ", RegelSpraakRuntime.rsTekst(new java.math.BigDecimal("5.5"), Integer.valueOf(2), null)));
     } catch (RuntimeException e) {
         return ComputeHelpers.caught(e);
     }

@@ -1252,18 +1252,27 @@ let rec declared_form (dt : datatype option) : Arith.text_form =
       }
   | _ -> Arith.exact_form
 
+(* The decimals a numeric literal is written with, the digits after its
+   point; a literal written as a rational a/b has none and writes its exact
+   form *)
+let lexeme_decimals s =
+  if String.contains s '/' then None
+  else match String.index_opt s '.' with Some i -> Some (String.length s - i - 1) | None -> Some 0
+
 (* The form the value [v] of the inserted part [e] is written in (ch. 1.2): a
-   number in the decimals of the type of its part, its precision bound
-   (ch. 2.3) restated into the unit the value is in, and in its exact form
-   where the part has no finite bound or makes no claim; a constructor value
-   with its payload in the declared type. *)
+   number in the decimals of the type of its part — a literal's as it is
+   written, any other part's its precision bound (ch. 2.3) restated into the
+   unit the value is in — and in its exact form where the part has no finite
+   bound or makes no claim; a constructor value with its payload in the
+   declared type. *)
 let text_form env (e : expr) (v : Value.t) : Arith.text_form =
-  match v with
-  | Value.Num (_, u) -> (
+  match (v, e) with
+  | Value.Num _, Literal { variant = Lv_number s; _ } -> { Arith.exact_form with decimals = lexeme_decimals s }
+  | Value.Num (_, u), _ -> (
       match Option.bind (bound_of env e) (fun b -> Ir_v0.Checks.in_unit b (Arith.unit_option u)) with
       | Some (Ir_v0.Checks.Finite d) -> { Arith.exact_form with decimals = Some d }
       | _ -> Arith.exact_form)
-  | Value.Ctor _ -> declared_form (static_type env e)
+  | Value.Ctor _, _ -> declared_form (static_type env e)
   | _ -> Arith.exact_form
 
 (* the unit of [op] over operands of units [ul] and [ur], as Arith gives it to
@@ -1922,10 +1931,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
           (List.length arguments) (List.length fd.fd_parameters);
       let args = map_in_order (eval_expr env world self ~err) arguments in
       if List.exists (fun v -> v = Value.Empty) args then Value.Empty
-      else
-        (* a parameter holds its argument, of the argument's bound (ch. 2.3) *)
-        eval_closed_body env world self ~err fd.fd_parameters fd.fd_body
-          (List.combine args (List.map (bound_of env) arguments)))
+      else eval_closed_body env world self ~err fd.fd_parameters fd.fd_body args)
   | Fold { list; function_name; init; _ } -> (
       (* ch. 10.2: a left fold, order normative. A leeg list operand and a
          leeg init both propagate; fold(f, init, []) = init *)
@@ -1934,13 +1940,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       | Value.List_value xs -> (
           match eval_expr env world self ~err init with
           | Value.Empty -> Value.Empty
-          | acc0 ->
-              (* the accumulator holds a value of the fold's own bound, the
-                 element one of the list's elements (ch. 2.3) *)
-              let acc_bound = bound_of env e and element = element_bound env list in
-              List.fold_left
-                (fun acc x -> apply_fold_fn env world self ~err function_name [ (acc, acc_bound); (x, element) ])
-                acc0 xs)
+          | acc0 -> List.fold_left (fun acc x -> apply_fold_fn env world self ~err function_name [ acc; x ]) acc0 xs)
       | v -> Value.fault "fold list operand is %s, not a list value" (Value.to_string v))
   | Map_list { list; function_name; _ } -> (
       (* ch. 10.2: elementwise, order-preserving; a leeg source propagates,
@@ -1948,8 +1948,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       match eval_expr env world self ~err list with
       | Value.Empty -> Value.Empty
       | Value.List_value xs ->
-          let element = element_bound env list in
-          let ys = map_in_order (fun x -> apply_fold_fn env world self ~err function_name [ (x, element) ]) xs in
+          let ys = map_in_order (fun x -> apply_fold_fn env world self ~err function_name [ x ]) xs in
           if List.exists (fun v -> v = Value.Empty) ys then Value.Empty else Value.List_value ys
       | v -> Value.fault "map-list operand is %s, not a list value" (Value.to_string v))
   | Filter_list { list; binder; condition; _ } -> (
@@ -1990,7 +1989,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
    closed (WF-069/067), so a fresh locals holds exactly the parameters; a
    fold body never sees leeg (ch. 10.1), so no leeg-argument short-circuit is
    needed here (the Invoke arm carries the strict one). *)
-and apply_fold_fn env world self ~err (fn : fold_fn) (args : (Value.t * Ir_v0.Checks.bounded option) list) : Value.t =
+and apply_fold_fn env world self ~err (fn : fold_fn) (args : Value.t list) : Value.t =
   match fn with
   | Fn_lambda { parameters; body; _ } -> eval_closed_body env world self ~err parameters body args
   | Fn_name name ->
@@ -2001,19 +2000,21 @@ and apply_fold_fn env world self ~err (fn : fold_fn) (args : (Value.t * Ir_v0.Ch
    own parameters, WF-067) and evaluate [body]; arity is a WF-068/069/070
    invariant, refused fail-fast here rather than raising Invalid_argument *)
 and eval_closed_body env world self ~err (parameters : (string * datatype) list) body
-    (args : (Value.t * Ir_v0.Checks.bounded option) list) : Value.t =
+    (args : Value.t list) : Value.t =
   if List.length parameters <> List.length args then
     Value.fault "closed body applied to %d arguments, expected %d"
       (List.length args) (List.length parameters);
   let locals =
     List.fold_left2
-      (fun acc (pname, _) (v, _) -> SMap.add (norm pname) (Now v) acc)
+      (fun acc (pname, _) v -> SMap.add (norm pname) (Now v) acc)
       SMap.empty parameters args
   in
+  (* a parameter reads as its declared type, whatever the bound of the
+     argument it holds (ch. 1.2) *)
   let btypes =
-    List.fold_left2
-      (fun acc (pname, dt) (_, bound) -> SMap.add (norm pname) (bound, Some dt) acc)
-      SMap.empty parameters args
+    List.fold_left
+      (fun acc (pname, dt) -> SMap.add (norm pname) (declared_bound (Some dt), Some dt) acc)
+      SMap.empty parameters
   in
   eval_expr { env with locals; btypes; form = None } world self ~err body
 

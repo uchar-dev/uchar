@@ -293,7 +293,8 @@ ch. 1.2, `corpus/negative/` en de golden.*
 
 - **CONSTRUCTS, rij 31** (voorstel, vervangt de zin van het voorlopige besluit): "Tekst van een waarde
   (TextComposition, concatenation): een getal in de decimalen van het type van zijn deel (de precisiegrens van
-  RUNTIME-SEMANTICS ch. 2.3), zonder eindige grens exact en `t/n`; `waar`/`onwaar`, `dd-MM-jjjj`, `dd-MM-jjjj
+  RUNTIME-SEMANTICS ch. 2.3; een literal zoals hij geschreven staat, een parameter in zijn gedeclareerde type),
+  zonder eindige grens exact en `t/n`; `waar`/`onwaar`, `dd-MM-jjjj`, `dd-MM-jjjj
   uu:mm:ss.mmm`, een opsomming haar label, een constructor `tag(payload)` met de payload in zijn gedeclareerde type;
   lijst/record een fout. Op verzoek de eenheid erachter, `EmbeddedExpression.unit` (v1-extensie, WF-129; bron
   `«X (eenheid)»`), gespeld met de afkorting. Besluit van de eigenaar 2026-11-06. ref en beide Drools-takken (DROOLS-368
@@ -306,16 +307,32 @@ ch. 1.2, `corpus/negative/` en de golden.*
   and its unit, and DROOLS-368 refuses a part that asks for a unit it does not have." Geen vloer bewoog: alle
   tellingen groeiden.
 
-### Open punten (normvragen)
+### Stap 3: besluiten over de open punten (hoofdsessie, 2026-11-06)
 
-1. Een literal-deel `«5,50»` schrijft `5,5`: het type van een literal is volgens ch. 2.3 de decimalen van zijn exacte
-   waarde (de frontend annoteert de literal ook met 1 decimaal). ALEF schrijft het lexeem van de bron, `5,50`.
-2. De eenheid wordt met haar afkorting geschreven (`5,50 (EUR)` bij de declaratie `EUR €`), waar het voorbeeld van de
-   eigenaar `(€)` schrijft. De draad kent geen rol "symbool" voor een spelling van een eenheid; een symbool schrijven
-   vraagt een veld op de eenheidsdeclaratie (IR-SPEC ch. 2.5).
-3. Een binder van een gesloten body (een functieparameter, alleen wire-first) draagt de grens van zijn argument
-   (ch. 2.3), niet het gedeclareerde type van de parameter: een parameter van 2 decimalen met een geheel argument
-   schrijft `5`, niet `5,00`.
+- **(1) Een literal-deel schrijft de decimalen van zijn lexeem**: `«5,50»` geeft `5,50`, `«-0,500»` `-0,500`; een
+  literal geschreven als breuk `a/b` schrijft zijn exacte vorm. Een regel van de tekstomzetting alleen: de grens van
+  ch. 2.3 die de precisiepoort (WF-023) leest, verandert niet. Ref (`lexeme_decimals` in `text_form`) en de Drools-
+  analyse (`lexemeDecimals` in `textForm`, beide takken). Golden: `vaste tekst` `Vast: 5,5` → `Vast: 5,50` (zes
+  verwachtingen, V1–V6). Ref-suite `WV-1.2c-text-literal-1` t/m `-4`; Drools
+  `TmsBuiltinWitnessTest.a_literal_part_reads_the_decimals_it_is_written_with` (`Vast: 5,50 en -0,500`).
+- **(3) Een parameter van een functie of een lambda schrijft zijn gedeclareerde type**, niet de grens van zijn
+  argument. Ref: `eval_closed_body` geeft elke parameter de grens van zijn declaratie; het doorgeven van de grenzen van
+  argument, element en accumulator uit stap 1 is weer weg. De bron kan geen functie schrijven en de Drools-backend laadt
+  geen functie of lambda (wire-first vormen), dus de gevallen staan in de ref-suite: `WV-1.2c-text-parameter-1`
+  (parameter van 2 decimalen, argument het gehele aantal 1250: `1250,00`), `-parameter-2` (`1,5` → `1,50`) en
+  `WV-1.2c-text-lambda` (een lambda van 2 decimalen over `[5, 7]`: `5,00`, `7,00`).
+- **Rood eerst.** De golden op `b68e74965`: ref zes mismatches `Vast: 5,5` (`logs/red3-ref.log`), beide Drools-takken
+  `FAIL` (`logs/red3-drools.log`); de ref-suite vijf failures (`logs/red3-ref-suite.log`); de Drools-test rood
+  (`logs/red3-drools-test.log`). Daarna ref `PASS (57)` en `(29)`, suite 2613 voorbeelden, beide takken `PLAYED 2`.
+- **Gerichte gates** na stap 3, alle rc=0: 2, 3, 5, 6, 10, 12 (JUnit 1895), 17 (`logs/s3-summary.log`).
+- **Spec.** RUNTIME-SEMANTICS ch. 1.2 zegt beide regels met voorbeelden en tabelrijen; de noot telt nu drie afwijkingen
+  van ALEF (ALEF schrijft een literal ook als zijn lexeem). DRL-pin: de `vaste tekst` schrijft `Integer.valueOf(2)`.
+
+### Vraag voor de eigenaar
+
+- (2) De eenheid wordt met haar afkorting geschreven (`5,50 (EUR)` bij `EUR €`), omdat IR-SPEC ch. 2.5 `abbreviation`
+  de primaire spelling noemt en de draad geen symbool aanwijst. Het symbool schrijven (`5,50 (€)`) vraagt een
+  draadveld op de eenheidsdeclaratie (`DeclaredUnit`) dat een spelling als symbool aanwijst.
 
 ### Eindrun
 

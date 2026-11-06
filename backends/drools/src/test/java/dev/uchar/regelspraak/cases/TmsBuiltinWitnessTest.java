@@ -270,6 +270,18 @@ class TmsBuiltinWitnessTest {
         assertEveryOrder(TEXT_MODEL, List.of(description), caseDocument);
     }
 
+    /** A literal part writes the decimals of its lexeme, as it is written (RUNTIME-SEMANTICS ch. 1.2), whatever the
+     *  decimals of its value: «5,50» reads "5,50", where its precision bound (ch. 2.3) is 1. */
+    @Test void a_literal_part_reads_the_decimals_it_is_written_with() throws Exception {
+        String fixed = computingRule("omschrijving van een vondst", "BEREKENING", "Vondst", "omschrijving",
+                textComposition(List.of(textPart("Vast: "), textExpression(TmsDocuments.literal("5.50",
+                        numberType(false, 1, null))), textPart(" en "), textExpression(TmsDocuments.literal("-0.500",
+                        numberType(false, 1, null))))), "null");
+        JsonNode caseDocument = TmsDocuments.caseOn(null, List.of(instanceWith("V1", "Vondst", Map.of(), List.of())),
+                List.of(valueJson("V1", "omschrijving", textValue("Vast: 5,50 en -0,500")), consistent()));
+        assertEveryOrder(TEXT_MODEL, List.of(fixed), caseDocument);
+    }
+
     /** A part that writes the unit of its number on a number without a unit breaks WF-129 (IR-SPEC ch. 4.2), which
      *  the verifier refuses; this branch, which does not run the verifier, refuses it by name (DROOLS-368). */
     @Test void a_part_with_the_unit_of_a_number_without_one_is_refused_by_name() throws Exception {

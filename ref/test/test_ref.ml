@@ -1438,14 +1438,53 @@ let () =
   one "V1" (binary Divided_by (aref "basis" "Vondst") (litv "4" num0)) "1,3750" "WV-1.2c-text-samengesteld-2";
   one "V1" (binary Divided_by (aref "basis" "Vondst") (litv "3" num0)) "11/6" "WV-1.2c-text-samengesteld-3";
   one "V2" (binary Divided_by (aref "basis" "Vondst") (litv "4" num0)) "1,2500" "WV-1.2c-text-samengesteld-4";
-  (* a literal part: the decimals of its exact value (ch. 2.3) *)
-  one "V1" (litv "5.50" (num_dec false 1)) "5,5" "WV-1.2c-text-literal";
+  (* a literal part: the decimals of its lexeme, as it is written, whatever
+     the decimals of its value (ch. 2.3); a literal written as a rational
+     writes its exact form *)
+  one "V1" (litv "5.50" (num_dec false 1)) "5,50" "WV-1.2c-text-literal-1";
+  one "V1" (litv "5" num0) "5" "WV-1.2c-text-literal-2";
+  one "V1" (litv "-0.500" (num_dec false 1)) "-0,500" "WV-1.2c-text-literal-3";
+  one "V1" (litv "1/4" (num_dec false 2)) "0,25" "WV-1.2c-text-literal-4";
   (* a binder holds the bound of its value *)
   one "V1"
     (Let
        { typ = Some num2; binder = "x"; value = binary Times (aref "basis" "Vondst") (litv "1.1" (num_dec false 1));
          body = Binder_ref { ident = "x"; source_name = None }; source_name = None })
     "6,050" "WV-1.2c-text-binder";
+  (* a parameter of a function and of a lambda: its declared type, not the
+     bound of its argument *)
+  let fenv =
+    env_of
+      { doc with
+        function_defs =
+          [ { fd_name = "tekst"; fd_parameters = [ ("p", num2) ]; fd_result = Text_type;
+              fd_body = composition [ part (Binder_ref { ident = "p"; source_name = None }) ]; fd_source = None } ] }
+  in
+  let text_in env name label e want =
+    match Eval.eval_expr env w (World.get w label) ~err:no_err e with
+    | Value.Text got -> check (Printf.sprintf "%s (got %S)" name got) (got = want)
+    | v -> check (Printf.sprintf "%s (got %s)" name (Value.to_string v)) false
+  in
+  text_in fenv "WV-1.2c-text-parameter-1" "V1"
+    (Invoke { typ = Some Text_type; function_name = "tekst"; arguments = [ aref "aantal" "Vondst" ]; source_name = None })
+    "1250,00";
+  text_in fenv "WV-1.2c-text-parameter-2" "V1"
+    (Invoke { typ = Some Text_type; function_name = "tekst"; arguments = [ litv "1.5" (num_dec false 1) ]; source_name = None })
+    "1,50";
+  (match
+     Eval.eval_expr env w (World.get w "V1") ~err:no_err
+       (Map_list
+          { typ = Some (List_type { element = Text_type });
+            list = List_literal { typ = Some (List_type { element = num0 }); elements = [ litv "5" num0; litv "7" num0 ]; source_name = None };
+            function_name =
+              Fn_lambda
+                { parameters = [ ("x", num2) ]; body = composition [ part (Binder_ref { ident = "x"; source_name = None }) ];
+                  source_name = None };
+            source_name = None })
+   with
+  | Value.List_value [ Value.Text a; Value.Text b ] ->
+      check (Printf.sprintf "WV-1.2c-text-lambda (got %S, %S)" a b) (a = "5,00" && b = "7,00")
+  | v -> check (Printf.sprintf "WV-1.2c-text-lambda (got %s)" (Value.to_string v)) false);
   (* a constructor value: its payload in the type its constructor declares *)
   one "V1" (aref "besluit" "Vondst") "Toegekend(1250,50)" "WV-1.2c-text-constructor-gedeclareerd";
   (* a concatenation writes its arguments as a composition its parts *)

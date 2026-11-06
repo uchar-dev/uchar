@@ -6371,17 +6371,27 @@ public final class TmsTranspiler {
     }
 
     /** The type of the part {@code e} as {@code rsTekst} reads it (RUNTIME-SEMANTICS ch. 1.2): for a number the
-     *  decimals of its precision bound (ch. 2.3) in the unit its value is in ({@link EffectiveUnit}), null where the
-     *  part has no finite bound or makes no claim; for a value of a sum type the declared form of each payload
-     *  ({@link #payloadForms}); null for every other type. */
+     *  decimals of a literal as it is written ({@link #lexemeDecimals}), and of any other part its precision bound
+     *  (ch. 2.3) in the unit its value is in ({@link EffectiveUnit}), null where the part has no finite bound or makes
+     *  no claim; for a value of a sum type the declared form of each payload ({@link #payloadForms}); null for every
+     *  other type. */
     private Object textForm(Expr e, Reads reads) {
         Datatype t = eff.of(e);
         if (t instanceof Datatype.SumType s) return payloadForms(s);
         if (t == null || !t.isNumberLike()) return null;
+        if (e instanceof Expr.Literal l) return lexemeDecimals(l.valueText());
         PrecisionBound.Bounded b = precisionBound().of(e, reads.binderBounds);
         if (b == null) return null;
         PrecisionBound.Precision p = b.in(eff.unitOf(e));
         return p.bounded() ? p.decimals() : null;
+    }
+
+    /** The decimals a numeric literal is written with, the digits after its point; null for a literal written as a
+     *  rational a/b, which writes its exact form. */
+    private static Integer lexemeDecimals(String lexeme) {
+        if (lexeme.contains("/")) return null;
+        int point = lexeme.indexOf('.');
+        return point < 0 ? 0 : lexeme.length() - point - 1;
     }
 
     /** The form of a value of the declared type {@code t} in a text: a number in its declared decimals. */
