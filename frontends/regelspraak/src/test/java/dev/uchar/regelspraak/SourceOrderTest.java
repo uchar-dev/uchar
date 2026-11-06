@@ -209,6 +209,48 @@ class SourceOrderTest {
         }
     }
 
+    /** A rule whose subject is a Jutter and whose variable is "het bedrag", for the consistency rules below. */
+    private static final String CONSISTENCY_MODEL = """
+        Objecttype de Jutter (mv: Jutters) (bezield)
+            het loon Numeriek (geheel getal);
+            het gewicht Numeriek (geheel getal);
+        Objecttype de Vondst (mv: Vondsten)
+            het gewicht Numeriek (geheel getal);
+        """;
+    private static final String RULE_WITH_VARIABLE = """
+        Regel loon
+            geldig altijd
+                Het loon van een Jutter moet berekend worden als het bedrag.
+                Daarbij geldt:
+                    het bedrag is 5.
+        """;
+
+    /** Point (d) of card bronvolgorde-restpunten: {@code RuleChecker} names the subject of a single consistency rule by
+     *  building its expression ({@code ruleSubjectOf}) before {@code setVariables} clears the variables of the rule
+     *  before it and before the new subject is set, so that build sees the subject and the variables of that rule.
+     *  Measured 2026-11-06: a consistency rule that reads a variable of the rule before it, one that reads "zijn …"
+     *  and one that names its own subject give, after a rule of another subject with a variable and before it, the
+     *  same diagnostics and the same document (the line of a form aside): the expression is built again with the
+     *  rule's own subject and variables, and the first build adds nothing to the model. */
+    @Test void a_single_consistency_rule_reads_nothing_of_the_rule_before_it() {
+        for (String consistency : List.of(
+                "Regel controle bedrag\n    geldig altijd\n        Het bedrag moet kleiner zijn dan 10.\n",
+                "Regel controle gewicht\n    geldig altijd\n        Zijn gewicht moet kleiner zijn dan 10.\n",
+                "Regel controle vondst\n    geldig altijd\n        Het gewicht van een Vondst moet kleiner zijn dan 10.\n")) {
+            RegelSpraakModel after = Resolver.resolve(CONSISTENCY_MODEL + RULE_WITH_VARIABLE + consistency);
+            RegelSpraakModel before = Resolver.resolve(CONSISTENCY_MODEL + consistency + RULE_WITH_VARIABLE);
+            assertEquals(after.diagnostics.stream().map(d -> d.severity() + " " + d.message()).toList(),
+                    before.diagnostics.stream().map(d -> d.severity() + " " + d.message()).toList(), consistency);
+            assertEquals(withoutLines(withoutRules(IrEmitter.emit(after))), withoutLines(withoutRules(IrEmitter.emit(before))),
+                    consistency);
+        }
+    }
+
+    /** The document without the source line of a form, which the two orders write apart. */
+    private static String withoutLines(String ir) {
+        return ir.replaceAll("\"line\": \\d+", "");
+    }
+
     /** The document without its list of rules, the one list the two orders above write in another order. */
     private static String withoutRules(String ir) {
         int van = ir.indexOf("\"rules\": [");

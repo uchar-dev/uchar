@@ -135,3 +135,24 @@ Niet in deze kaart: de volgorde binnen een lijst; (c).
 Bij (e): het commentaar op r. 548 van `ExecModelTranspiler.java` is met dat bestand weg (`20261008-tms-omschakeling`,
 2026-10-10); de exec-model-tak weigert een kring die WF-045/046 verbieden bij de bouw, en de twee meldingen in de
 toolchain verdwijnen met haar kaart voor de omschakeling.
+
+## Result
+
+Gebouwd op branch `card/drools-frontend-cleanup` (opruimronde 2026-11-06). Volgens de triage van 2026-11-06 stond
+alleen (d) nog open: (a)–(c) zijn aanvaard in DIVERGENCES ("Bronvolgorde", `9f9f3fd67`), (e) is weg (toolchain
+`c952a7bf8`; het commentaar in `ExecModelTranspiler` verdween met dat bestand).
+
+- **(d) gemeten, geen verschil, geen reparatie.** `RuleChecker` zet nog steeds eerst het onderwerp
+  (`ruleSubjectOf`, dat voor een enkelvoudige consistentieregel haar uitdrukking bouwt) en daarna de variabelen
+  (r. 3455–3456), dus de eerste bouw ziet het onderwerp en de variabelen van de regel ervoor. Gemeten
+  (`probe/k5/`, `make ir`), telkens na en vóór een regel over een Jutter met de variabele "het bedrag":
+  (1) `build` op die plek voegt niets aan het model toe: de diagnostiek is in beide volgordes gelijk (één WARNING
+  RGS-180 waar de regel geen onderwerp heeft, geen waar wel); `consistency` bouwt de uitdrukking daarna opnieuw met
+  het eigen onderwerp en de eigen variabelen, en alleen die bouw gaat naar het document. (2) "Het bedrag moet kleiner
+  zijn dan 10" (een variabele van de regel ervoor) en "Zijn gewicht moet kleiner zijn dan 10" geven in beide
+  volgordes RGS-180 en geen consistentie; "Het gewicht van een Vondst moet kleiner zijn dan 10" geeft in beide
+  volgordes dezelfde consistentie op Vondst. (3) Het onderwerp verschilt dus niet: de documenten zijn gelijk op de
+  regelnummers van de bron na. De getuige `SourceOrderTest.a_single_consistency_rule_reads_nothing_of_the_rule_before_it`
+  legt deze meting vast (groen, `k5-witness.log`); een frontend die de oude context zou laten doorlekken, faalt erop.
+- Gate 10 (`check-regelspraak.sh`) groen, zie het Result van `20261020-nominal-negation-in-question-order`
+  (zelfde run, `k6-gate10.log`).
