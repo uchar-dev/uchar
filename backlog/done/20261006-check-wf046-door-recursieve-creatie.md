@@ -224,3 +224,7 @@ blok "Landed (2026-10-02, ronde klein 2)":
 > 1128 documents of the corpus zones and the parity zone its WF-046 lines equal the verifier's.
 
 Open punten: geen.
+
+### Landing (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op `c81f22f84` (17 van 17 groen, 441 s); CONSTRUCTS rij 6 in de landingscommit.

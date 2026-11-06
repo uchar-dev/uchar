@@ -389,7 +389,16 @@ missing line makes `make gates` exit non-zero. Current gates:
     entry carries no Dutch function word except a reason-carrying (entry,
     word) pair that fails when stale, and a site passes code and parameters
     and no text (the argument count of every call form); floor
-    `EXPECTED_MIN_RGS_MESSAGES=363` (measured 2026-10-19). The frontend
+    `EXPECTED_MIN_RGS_MESSAGES=363` (measured 2026-10-19). Since the card
+    `message-language` (2026-11-06) the same script holds the Dutch
+    catalogue Dutch: a Dutch entry equal to its English sister fails unless
+    it has no word outside its places and quotations or `SAME_IN_BOTH` lists
+    it with the reason (floor `EXPECTED_MIN_RGS_SAME_IN_BOTH=4`), and a
+    Dutch entry that carries an English function word fails unless
+    `ENGLISH_EXCEPTIONS` lists entry and word; both lists fail when stale. A
+    site may pass its code as `new Msg(Component.FRONTEND, code,
+    params(...))`, the form of an exception text a user sees
+    (RGS-380..387). The frontend
     renders Dutch by default; the frontend Makefile copies
     `src/main/resources` to `out/`.
 
@@ -554,7 +563,13 @@ missing line makes `make gates` exit non-zero. Current gates:
     the same way, with for a fault kind of ch. 5.7b the places `EF_PLACES`
     names; a site that names a code names it as
     `DroolsCode.X.reason(name, value, ...)` or `.part(...)` with parameter
-    names of the register; floor `EXPECTED_MIN_DROOLS_MESSAGES=325`. The
+    names of the register; floor `EXPECTED_MIN_DROOLS_MESSAGES=325`. Since the card `message-language`
+    (2026-11-06) a Dutch entry equal to its English sister fails unless it
+    has no word outside its places and quotations or `SAME_IN_BOTH` lists it
+    with the reason: the sentences of the fault kinds that the runtime writes
+    and `ComputeFault` reads back (EF-003, EF-007..012, EF-019, EF-032), the
+    29 sentences left English at the card `message-catalogues` and the names
+    of the backend's parts (floor `EXPECTED_MIN_DROOLS_SAME_IN_BOTH=49`). The
     Drools backend renders English by default; its own suite runs under
     `uchar.messages.locale=nl` (`backends/drools/pom.xml`). Since 2026-09-06 an expected-channel floor IN THE SCRIPT pins
     the played channel itself: every NON-played golden is listed by name

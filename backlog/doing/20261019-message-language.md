@@ -141,3 +141,11 @@ gate 12 draaide de Drools-suite op een jar met de nieuwe `Unit` en `ParameterSet
 `spec/proposals/MESSAGE-CODES.md` §6 kreeg de twee besluiten in hun huidige stand.
 
 Open punten: geen normvraag. Open werk: de Drools-kant van besluit 1 (zie boven).
+
+### Landing van de frontendkant (hoofdsessie, 2026-11-06)
+
+De frontendkant is geland na `make gates` op `c81f22f84` (17 van 17 groen, 441 s), met de twee zinnen voor gate 10 en
+12 in `CLAUDE.md`. De kaart blijft in `doing/` voor de Drools-kant van besluit 1 (269 exceptieteksten met Nederlandse
+woorden, waarvan 30 in `DroolsBackend.java`); die gaat naar een volgende bouwer. `ReaderSentenceBoundaryTest` is door
+de hoofdsessie nagelezen: hij leest de verifierzinnen nu in de Engelse catalogus en eist per code van zijn lijst een
+fragment; niet ruimer, alleen verplaatst met de catalogus.
