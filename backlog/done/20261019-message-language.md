@@ -232,3 +232,11 @@ eist van die zin alleen de rolnaam en "WF-013". `CLAUDE.md` gate 12 kreeg één 
 zien dan tekst en de frontend is niet geraakt, dus geen nieuwe `make gates`.
 
 Open punten: geen normvraag.
+
+### Landing van de Drools-kant (hoofdsessie, 2026-11-06)
+
+Geland op main na `make gates` op `0c86327de` (17 van 17 groen, 454 s, gerebased op `1fd926908`) en, na de laatste
+ronde (drie gemengde entries Nederlands, de toets op Engelse functiewoorden in `check-drools-codes.sh`), gate 12 groen.
+De kaart is daarmee af. Bewust buiten de kaart: de Nederlandse interne exceptieteksten van de productieruntime
+(besluit 1 noemt `backends/drools/src/main` zonder de runtime; haar meldingen aan een gebruiker zijn EF-entries). De
+distributie volgt bij de pin-bump van 2026-11-06.
