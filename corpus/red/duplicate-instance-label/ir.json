@@ -1,0 +1,137 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Haven",
+        "animate": false,
+        "plural": "Havens",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "liggertal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Schuit",
+        "animate": false,
+        "plural": "Schuiten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "romplengte",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "ligplaats",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "haven",
+            "objectType": "Haven",
+            "plural": "havens",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "ligger",
+            "objectType": "Schuit",
+            "plural": "liggers",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "liggertal van een haven",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "liggertal",
+              "subjectType": "Haven",
+              "source": {
+                "snippet": "Het liggertal van een Haven"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "ligger",
+                  "subjectType": "Haven",
+                  "source": {
+                    "snippet": "ligger van de Haven"
+                  }
+                }
+              ],
+              "elementType": "Schuit",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "ligplaats",
+                "role": "ligger"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal ligger van de Haven"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

@@ -603,6 +603,7 @@ public final class CaseRunner {
             else if (c instanceof SecondFillingFault s) kind = new FaultKind(s.code(), s.params());
             else if (c instanceof CaseInput.LinkCycleFault l) kind = new FaultKind(l.code(), l.params());
             else if (c instanceof CaseInput.CellFault f) kind = new FaultKind(f.code(), f.params());
+            else if (c instanceof CaseInput.NameFault f) kind = new FaultKind(f.code(), f.params());
             if (kind != null) {
                 String code = kind.code();
                 if (kinds.stream().noneMatch(k -> k.code().equals(code))) kinds.add(kind);
@@ -740,7 +741,7 @@ public final class CaseRunner {
      *  declared attribute is a defect of the case, which the reference interpreter refuses at load, and never the
      *  member whose Java name its spelling happens to derive, as "premie-som" derives that of "premie som". */
     static String attributeName(ObjectType ot, String name) {
-        String declared = declared(ot.attributeMembers().keySet(), name);
+        String declared = declaredAttribute(ot, name);
         if (declared == null)
             throw new IllegalArgumentException("attribute \"" + name + "\" is not declared on \"" + ot.name + "\"");
         return declared;
@@ -748,19 +749,30 @@ public final class CaseRunner {
 
     /** {@link #attributeName} for a characteristic. */
     static String characteristicName(ObjectType ot, String name) {
-        List<String> chain = new ArrayList<>();
-        for (ObjectType t : ot.chain()) chain.addAll(t.characteristics);
-        String declared = declared(chain, name);
+        String declared = declaredCharacteristic(ot, name);
         if (declared == null)
             throw new IllegalArgumentException("characteristic \"" + name + "\" is not declared on \"" + ot.name + "\"");
         return declared;
     }
 
-    /** {@link #attributeName} for the object type of an instance. */
-    static ObjectType objectType(RegelSpraakModel model, String name) {
+    /** The declared name of the attribute {@code name} names on {@code ot} or one of its ancestors, or null; the case
+     *  input refuses a null as EF-040 ({@code CaseInput.NameFault}), an expectation in the sentence of
+     *  {@link #attributeName}. */
+    static String declaredAttribute(ObjectType ot, String name) {
+        return declared(ot.attributeMembers().keySet(), name);
+    }
+
+    /** {@link #declaredAttribute} for a characteristic. */
+    static String declaredCharacteristic(ObjectType ot, String name) {
+        List<String> chain = new ArrayList<>();
+        for (ObjectType t : ot.chain()) chain.addAll(t.characteristics);
+        return declared(chain, name);
+    }
+
+    /** {@link #declaredAttribute} for the object type of an instance: the declared type, or null. */
+    static ObjectType declaredObjectType(RegelSpraakModel model, String name) {
         String declared = declared(model.objectTypes.keySet(), name);
-        if (declared == null) throw new IllegalArgumentException("instance objectType \"" + name + "\" is not declared");
-        return model.objectTypes.get(declared);
+        return declared == null ? null : model.objectTypes.get(declared);
     }
 
     /** The member of {@code declared} that is {@code name} under {@link Namen#norm}, or null. */

@@ -242,9 +242,9 @@ public final class CaseInput {
     private void beanFor(JsonNode i) {
         String label = i.get("label").asText();
         // one instance per label (the case schema): a second instance under a label would land on the bean of the first
-        if (labelToBean.containsKey(label))
-            throw new IllegalArgumentException("duplicate instance label \"" + label + "\"");
-        ObjectType ot = CaseRunner.objectType(model, i.get("objectType").asText());
+        if (labelToBean.containsKey(label)) throw NameFault.duplicateLabel(label);
+        ObjectType ot = CaseRunner.declaredObjectType(model, i.get("objectType").asText());
+        if (ot == null) throw NameFault.undeclared("object-type", label, i.get("objectType").asText(), null);
         Object bean;
         try {
             bean = Class.forName(FactModelGenerator.PACKAGE + "." + Namen.ident(ot.name, true), true, cl)
@@ -261,7 +261,8 @@ public final class CaseInput {
         ObjectType ot = labelType.get(i.get("label").asText());
         JsonNode attrs = i.get("attributes");
         if (attrs != null) for (Map.Entry<String, JsonNode> e : attrs.properties()) {
-            String name = CaseRunner.attributeName(ot, e.getKey());
+            String name = CaseRunner.declaredAttribute(ot, e.getKey());
+            if (name == null) throw NameFault.undeclared("attribute", i.get("label").asText(), e.getKey(), ot.name);
             Datatype dt = ot.attribute(name);
             reader.ownField(ot, name, false, "sets");
             String site = i.get("label").asText() + "." + e.getKey();
@@ -289,7 +290,8 @@ public final class CaseInput {
         }
         JsonNode characteristics = i.get("characteristics");
         if (characteristics != null) for (JsonNode written : characteristics) {
-            String k = CaseRunner.characteristicName(ot, written.asText());
+            String k = CaseRunner.declaredCharacteristic(ot, written.asText());
+            if (k == null) throw NameFault.undeclared("characteristic", i.get("label").asText(), written.asText(), ot.name);
             // A CASE defect, not an uncarried form (maintainer decision 2026-09-09), as the sister arm below says
             // of the mirror-image mistake; this arm is the same seam from the other side. A TEMPORAL kenmerk's bean
             // member is a List<Segment>, so a scalar-true assertion reaches no reader here; in the interpreter and
@@ -308,7 +310,8 @@ public final class CaseInput {
         }
         JsonNode ctls = i.get("characteristicTimelines");
         if (ctls != null) for (Map.Entry<String, JsonNode> e : ctls.properties()) {
-            String k = CaseRunner.characteristicName(ot, e.getKey());
+            String k = CaseRunner.declaredCharacteristic(ot, e.getKey());
+            if (k == null) throw NameFault.undeclared("characteristic", i.get("label").asText(), e.getKey(), ot.name);
             // a CASE defect, not an uncarried form — ref refuses this shape at load (case.ml: "a
             // characteristic timeline on a non-temporal characteristic"), so it is hard here too; an
             // Excluded would file a broken corpus case under "not carried", silently green.
@@ -366,6 +369,52 @@ public final class CaseInput {
         return out;
     }
 
+    /** An instance label the case input carries twice (EF-039), or a name the input writes that the document does not
+     *  declare, the object type of an instance, an attribute, a characteristic or a role key (EF-040), RUNTIME-SEMANTICS
+     *  ch. 5.7b: a fault kind of the case input, with the label of the instance and, for EF-040, the name as the case
+     *  writes it. Public, as {@link CellFault} is, so that a caller that hands this reader a case can name the fault kind
+     *  by its type. */
+    public static final class NameFault extends IllegalArgumentException {
+        private static final long serialVersionUID = 1L;
+
+        private final String code;
+        private final String label;
+        private final String name;
+
+        private NameFault(String code, String label, String name, dev.uchar.regelspraak.message.Msg message) {
+            super(message.text());
+            this.code = code;
+            this.label = label;
+            this.name = name;
+        }
+
+        static NameFault duplicateLabel(String label) {
+            return new NameFault("EF-039", label, null, dev.uchar.regelspraak.message.Msg.drools("EF-039", "label", label));
+        }
+
+        /** {@code what} is the part of the sentence: {@code object-type}, {@code attribute}, {@code characteristic} or
+         *  {@code role}; {@code objectType} the type of the instance, which the sentence of an attribute and of a
+         *  characteristic names. */
+        static NameFault undeclared(String what, String label, String name, String objectType) {
+            return new NameFault("EF-040", label, name, objectType == null
+                    ? dev.uchar.regelspraak.message.Msg.drools("EF-040." + what, "label", label, "name", name)
+                    : dev.uchar.regelspraak.message.Msg.drools("EF-040." + what, "label", label, "name", name,
+                            "objectType", objectType));
+        }
+
+        public String code() {
+            return code;
+        }
+
+        /** The parameters of the kind (ch. 5.7b): the label of the instance, and for EF-040 the name. */
+        public Map<String, String> params() {
+            Map<String, String> out = new LinkedHashMap<>();
+            out.put("label", label);
+            if (name != null) out.put("name", name);
+            return out;
+        }
+    }
+
     /** A cell of the case input whose labels name no cell of its attribute (EF-034) or that the input names twice
      *  (EF-035), RUNTIME-SEMANTICS ch. 5.8c: a fault kind of the case input, with the label of the instance, the
      *  attribute and the labels of the cell as the case writes them. Public, as {@link CaseRunner.InputPrecisionFault}
@@ -408,7 +457,8 @@ public final class CaseInput {
         if (roles == null) return;
         for (Map.Entry<String, JsonNode> written : roles.properties()) {
             // the key in its declared spelling, which the model's role searches compare; the link keeps the written one
-            Map.Entry<String, JsonNode> e = Map.entry(declaredRoleKey(written.getKey()), written.getValue());
+            Map.Entry<String, JsonNode> e = Map.entry(declaredRoleKey(i.get("label").asText(), written.getKey()),
+                    written.getValue());
             for (JsonNode labelNode : e.getValue()) {
                 RoleLink link = new RoleLink(i.get("label").asText(), written.getKey(), labelNode.asText());
                 Object target = labelToBean.get(labelNode.asText());
@@ -724,15 +774,15 @@ public final class CaseInput {
         }
     }
 
-    /** The declared name or plural of a role that the role key {@code key} is under {@link Namen#norm}, the name equality
-     *  of the reference interpreter's case reader. A key that names no declared role is a defect of the case, which that
-     *  reader refuses at load. */
-    private String declaredRoleKey(String key) {
+    /** The declared name or plural of a role that the role key {@code key} of instance {@code label} is under
+     *  {@link Namen#norm}, the name equality of the reference interpreter's case reader. A key that names no declared
+     *  role is a defect of the case, EF-040, which that reader refuses at load. */
+    private String declaredRoleKey(String label, String key) {
         for (RegelSpraakModel.FactType ft : model.factTypes.values())
             for (RegelSpraakModel.Role r : ft.roles)
                 for (String declared : Arrays.asList(r.name(), r.plural()))
                     if (declared != null && Namen.norm(declared).equals(Namen.norm(key))) return declared;
-        throw new IllegalArgumentException("role key \"" + key + "\" names no declared role");
+        throw NameFault.undeclared("role", label, key, null);
     }
 
     /** The keys a case may write a role under: its name and its plural, normalised. */

@@ -431,6 +431,17 @@ let resolve_role_ft (doc : document) ~otype ~key =
       failc ~params:[ ("roleKey", key); ("objectType", otype) ] "EF-001"
         "role key %S is ambiguous from %S" key otype
 
+(* whether [key] names a role of some fact type, by its name or its plural *)
+let role_declared (doc : document) key =
+  List.exists
+    (fun (_, (ft : fact_type_name)) ->
+      List.exists
+        (fun (r : role_ref) ->
+          (match r.role_identifier with Some n -> norm n = norm key | None -> false)
+          || match r.role_plural with Some m -> norm m = norm key | None -> false)
+        ft.role_names)
+    doc.fact_types
+
 let resolve_role doc ~otype ~key =
   let _, far, _ = resolve_role_ft doc ~otype ~key in
   far
@@ -502,7 +513,15 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
   if contains ~needle:"::" label then
     fail "label %S: \"::\" is reserved for created instances" label;
   let otype_name = str_field ~at:label kvs "objectType" in
-  let ot = find_object_type doc otype_name in
+  (* a name the input writes that the document does not declare is EF-040
+     (RUNTIME-SEMANTICS ch. 5.7b), with the instance's label and the name as
+     written *)
+  let undeclared name fmt = failc ~params:[ ("label", label); ("name", name) ] "EF-040" fmt in
+  let ot =
+    match Ir_v0.Checks.effective_ot doc otype_name with
+    | Some ot -> ot
+    | None -> undeclared otype_name "instance objectType %S is not declared" otype_name
+  in
   let attrs, tls =
     List.fold_left
       (fun (attrs, tls) (name, vj) ->
@@ -545,7 +564,7 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
                        at)
               | None -> fail "%s: a timeline value on a non-temporal attribute" at)
             | None -> (SMap.add (norm name) (value_of_json ~at decl vj) attrs, tls))
-        | None -> fail "attribute %S is not declared on %S" name otype_name)
+        | None -> undeclared name "attribute %S is not declared on %S" name otype_name)
       (SMap.empty, SMap.empty)
       (obj_field ~at:label kvs "attributes")
   in
@@ -554,7 +573,7 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
       (fun i cj ->
         let c = str ~at:(Printf.sprintf "%s.characteristics[%d]" label i) cj in
         if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.characteristics) c) then
-          fail "characteristic %S is not declared on %S" c otype_name;
+          undeclared c "characteristic %S is not declared on %S" c otype_name;
         (* The two deliveries are NOT interchangeable. A characteristic
            the document declares TIME-DEPENDENT has a timeline, and every
            temporal reader looks for one: the gedurende clip, the pro-rata fold
@@ -585,6 +604,7 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
   let left_side =
     List.fold_left
       (fun (acc, seen) (key, vj) ->
+        if not (role_declared doc key) then undeclared key "role key %S names no declared role" key;
         let role = resolve_role doc ~otype:otype_name ~key in
         (* one role, one key: a split delivery (the same role under its
            name AND its plural) would make the first-non-empty-key
@@ -612,7 +632,7 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance =
         List.fold_left
           (fun acc (cname, pj) ->
             if not (Ir_v0.Checks.mem_ci (Ir_v0.Checks.some_names ot.characteristics) cname) then
-              fail "characteristic %S is not declared on %S" cname otype_name;
+              undeclared cname "characteristic %S is not declared on %S" cname otype_name;
             let gran =
               match
                 List.find_opt (fun (k, _) -> norm k = norm cname) ot.characteristic_granularity
@@ -1099,7 +1119,8 @@ let load_file (doc : document) path : t =
         (* label uniqueness is this loader's cross-check (see the header);
            left to the world's own guard it surfaced as an evaluation
            fault, exit 1, from a case that never got to evaluation *)
-        if SMap.mem i.label w.instances then fail "duplicate instance label %S" i.label;
+        if SMap.mem i.label w.instances then
+          failc ~params:[ ("label", i.label) ] "EF-039" "duplicate instance label %S" i.label;
         World.add_instance w i)
       World.empty
       (List.mapi (fun n ij -> (n, ij)) (list_field ~at:"input" input "instances"))

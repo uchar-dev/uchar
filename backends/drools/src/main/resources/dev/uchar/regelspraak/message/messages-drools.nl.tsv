@@ -390,6 +390,11 @@ EF-033	de schakels van het feittype "{factType}" vormen een kring door {cycle}: 
 EF-034	{label}.{attribute}: de labels [{labels}] noemen geen cel van het attribuut, dat de dimensies {dimensions} heeft: een cel noemt één label van elke dimensie, in gedeclareerde volgorde (RUNTIME-SEMANTICS ch. 5.8c)
 EF-035	{label}.{attribute}: de cel [{labels}] staat twee keer in de invoer (RUNTIME-SEMANTICS ch. 5.8c)
 EF-036	het temporele totaal van "{attribute}" op "{label}" raakt een segment met een open grens dat {value} draagt: een andere waarde dan 0 over onbegrensd veel eenheden heeft geen totaal (ch. 3.6)
+EF-039	het instantielabel "{label}" komt twee keer voor: een rolkoppeling en een verwachting noemen een instantie bij haar label, dus een label noemt één instantie (RUNTIME-SEMANTICS ch. 5.7)
+EF-040.attribute	instantie "{label}": het attribuut "{name}" is niet gedeclareerd op "{objectType}"
+EF-040.characteristic	instantie "{label}": het kenmerk "{name}" is niet gedeclareerd op "{objectType}"
+EF-040.object-type	instantie "{label}": het objecttype "{name}" is niet gedeclareerd
+EF-040.role	instantie "{label}": de rolsleutel "{name}" noemt geen gedeclareerde rol
 FRAME.case-reads	{sentence}; de case leest het
 FRAME.case-sets	{sentence}; de case zet het
 FRAME.contract	contract: {sentence}

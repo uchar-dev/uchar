@@ -390,6 +390,11 @@ EF-033	the links of the fact type "{factType}" form a cycle through {cycle}: the
 EF-034	{label}.{attribute}: the labels [{labels}] name no cell of the attribute, whose dimensions are {dimensions}: a cell names one label of each dimension, in declared order (RUNTIME-SEMANTICS ch. 5.8c)
 EF-035	{label}.{attribute}: the cell [{labels}] is supplied twice (RUNTIME-SEMANTICS ch. 5.8c)
 EF-036	the temporal total of "{attribute}" on "{label}" meets a segment with an open bound carrying {value}: a value other than 0 over unboundedly many units has no total (ch. 3.6)
+EF-039	duplicate instance label "{label}": a role link and an expectation name an instance by its label, so a label names one instance (RUNTIME-SEMANTICS ch. 5.7)
+EF-040.attribute	instance "{label}": the attribute "{name}" is not declared on "{objectType}"
+EF-040.characteristic	instance "{label}": the characteristic "{name}" is not declared on "{objectType}"
+EF-040.object-type	instance "{label}": the object type "{name}" is not declared
+EF-040.role	instance "{label}": the role key "{name}" names no declared role
 FRAME.case-reads	{sentence}; the case reads it
 FRAME.case-sets	{sentence}; the case sets it
 FRAME.contract	contract: {sentence}

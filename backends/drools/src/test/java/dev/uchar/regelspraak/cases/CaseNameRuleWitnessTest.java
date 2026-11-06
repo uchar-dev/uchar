@@ -11,9 +11,11 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,7 +26,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * space, A–Z as a–z, every other character as written). A name that is no declaration, and a label that two instances
  * carry, is a defect of the case, which that reader refuses at load and the Drools backend refuses as an
  * {@link IllegalArgumentException}: never a form it does not carry, and never a member found through the Java name its
- * spelling derives ("geschatte-waarde" and "geschatte waarde" derive one getter).
+ * spelling derives ("geschatte-waarde" and "geschatte waarde" derive one getter). In the input both are fault kinds of
+ * the case input (RUNTIME-SEMANTICS ch. 5.7b), {@link CaseInput.NameFault}: a label two instances carry is EF-039 with
+ * the label, a name that is no declaration EF-040 with the label of the instance and the name as written, the same code
+ * and parameters as the reference interpreter's and the ASP backend's case reader; a name in an expectation keeps its
+ * sentence without a code.
  *
  * <p>The documents are {@code anchor/jutterswet-waardestelling} (the attribute "geschatte waarde" and the characteristic
  * "gemeld" of a Vondst), that document with the attribute renamed to "geschatte İş", and {@code jutterswet-ketenband}
@@ -61,19 +67,23 @@ class CaseNameRuleWitnessTest {
 
     @Test void a_name_that_is_no_declaration_is_a_defect_of_the_case() throws Exception {
         Path ir = WAARDESTELLING.resolve("ir.json");
-        defect(ir, waarde(c -> renameKey(input(c).with("attributes"), "geschatte waarde", "geschatte-waarde")),
-                "attribute \"geschatte-waarde\" is not declared on \"Vondst\"");
+        nameFault(ir, waarde(c -> renameKey(input(c).with("attributes"), "geschatte waarde", "geschatte-waarde")),
+                "EF-040", Map.of("label", "v1", "name", "geschatte-waarde"),
+                "instantie \"v1\": het attribuut \"geschatte-waarde\" is niet gedeclareerd op \"Vondst\"");
         defect(ir, waarde(c -> ((ObjectNode) c.get("expected").get(0)).put("attribute", "geschatte-waarde")),
                 "attribute \"geschatte-waarde\" is not declared on \"Vondst\"");
-        defect(ir, waarde(c -> input(c).set("characteristics", JSON.createArrayNode().add("ge-meld"))),
-                "characteristic \"ge-meld\" is not declared on \"Vondst\"");
+        nameFault(ir, waarde(c -> input(c).set("characteristics", JSON.createArrayNode().add("ge-meld"))),
+                "EF-040", Map.of("label", "v1", "name", "ge-meld"),
+                "instantie \"v1\": het kenmerk \"ge-meld\" is niet gedeclareerd op \"Vondst\"");
         defect(ir, waarde(c -> ((ArrayNode) c.get("expected")).insert(0, JSON.createObjectNode()
                 .put("kind", "characteristicPresent").put("label", "v1").put("characteristic", "ge meld"))),
                 "characteristic \"ge meld\" is not declared on \"Vondst\"");
-        defect(ir, waarde(c -> input(c).put("objectType", "Vondsten")),
-                "objectType \"Vondsten\" is not declared");
-        defect(KETENBAND.resolve("ir.json"), keten(c -> renameKey(input(c).with("roles"), "opvolgers", "op-volgers")),
-                "role key \"op-volgers\" names no declared role");
+        nameFault(ir, waarde(c -> input(c).put("objectType", "Vondsten")),
+                "EF-040", Map.of("label", "v1", "name", "Vondsten"),
+                "instantie \"v1\": het objecttype \"Vondsten\" is niet gedeclareerd");
+        nameFault(KETENBAND.resolve("ir.json"), keten(c -> renameKey(input(c).with("roles"), "opvolgers", "op-volgers")),
+                "EF-040", Map.of("label", "W1", "name", "op-volgers"),
+                "instantie \"W1\": de rolsleutel \"op-volgers\" noemt geen gedeclareerde rol");
     }
 
     @Test void a_capital_outside_a_to_z_makes_another_name(@TempDir Path dir) throws Exception {
@@ -82,8 +92,9 @@ class CaseNameRuleWitnessTest {
         Files.writeString(ir, Files.readString(WAARDESTELLING.resolve("ir.json"), StandardCharsets.UTF_8)
                 .replace("geschatte waarde", "geschatte İş"), StandardCharsets.UTF_8);
         BothBranches.green(ir, turkish(c -> {}), "the case as declared");
-        defect(ir, turkish(c -> renameKey(input(c).with("attributes"), "geschatte İş", "geschatte İŞ")),
-                "attribute \"geschatte İŞ\" is not declared on \"Vondst\"");
+        nameFault(ir, turkish(c -> renameKey(input(c).with("attributes"), "geschatte İş", "geschatte İŞ")),
+                "EF-040", Map.of("label", "v1", "name", "geschatte İŞ"),
+                "instantie \"v1\": het attribuut \"geschatte İŞ\" is niet gedeclareerd op \"Vondst\"");
         defect(ir, turkish(c -> ((ObjectNode) c.get("expected").get(0)).put("attribute", "geschatte İŞ")),
                 "attribute \"geschatte İŞ\" is not declared on \"Vondst\"");
     }
@@ -96,7 +107,8 @@ class CaseNameRuleWitnessTest {
                     JSON.createObjectNode().put("number", "50.00")));
             ((ArrayNode) k.get("input").get("instances")).add(second);
         });
-        defect(WAARDESTELLING.resolve("ir.json"), c, "duplicate instance label \"v1\"");
+        nameFault(WAARDESTELLING.resolve("ir.json"), c, "EF-039", Map.of("label", "v1"),
+                "het instantielabel \"v1\" komt twee keer voor");
     }
 
     // ---------------- helpers ----------------
@@ -114,6 +126,18 @@ class CaseNameRuleWitnessTest {
             assertTrue(e.getMessage().contains(fragment), branch + " names '" + fragment + "': " + e.getMessage());
             if (exec == null) exec = e.getMessage();
             else assertEquals(exec, e.getMessage(), "drl-text refuses in the sentence of exec-model");
+        }
+    }
+
+    /** {@link #defect}, where the defect is in the input: both branches refuse with a {@link CaseInput.NameFault} of
+     *  the kind {@code code} with the parameters {@code params}. */
+    private static void nameFault(Path ir, JsonNode c, String code, Map<String, String> params, String fragment) {
+        defect(ir, c, fragment);
+        for (boolean viaDrl : new boolean[] { false, true }) {
+            RuntimeException e = assertThrows(RuntimeException.class, () -> CaseRunner.playCase(ir, c, viaDrl));
+            CaseInput.NameFault f = assertInstanceOf(CaseInput.NameFault.class, e, e.getMessage());
+            assertEquals(code, f.code(), e.getMessage());
+            assertEquals(params, f.params(), e.getMessage());
         }
     }
 

@@ -173,11 +173,13 @@ class CaseInputWitnessTest {
     }
 
     @Test void a_key_that_names_no_declared_role_is_a_defect_of_the_case() throws Exception {
-        // the reference interpreter's case reader refuses it at load ("role key … does not resolve to a declared role")
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> CaseInput.of(build(KETENBAND),
+        // the reference interpreter's case reader refuses it at load, as the fault kind EF-040 of the case input
+        CaseInput.NameFault e = assertThrows(CaseInput.NameFault.class, () -> CaseInput.of(build(KETENBAND),
                 chain("Wachter", "rangnummer", List.of("W1", "W2"), Map.of("W1", Map.of("buur", List.of("W2"))))));
-        assertEquals("role key \"buur\" names no declared role", e.getMessage());
-        assertTrue(!(e instanceof CaseInput.RoleCollision), "no link of the bean model, a name of the case");
+        assertEquals("instantie \"W1\": de rolsleutel \"buur\" noemt geen gedeclareerde rol", e.getMessage());
+        assertEquals("EF-040", e.code());
+        assertEquals(Map.of("label", "W1", "name", "buur"), e.params());
+        assertTrue(!CaseInput.RoleCollision.class.isInstance(e), "no link of the bean model, a name of the case");
     }
 
     @Test void a_displaced_reference_field_is_refused_with_the_link() throws Exception {

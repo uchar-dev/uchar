@@ -1,0 +1,41 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "H1",
+        "objectType": "Haven",
+        "attributes": {},
+        "roles": {
+          "liggers": [
+            "S1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "romplengte": {
+            "number": "12"
+          },
+          "rompbreedte": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-040",
+    "params": {
+      "label": "S1",
+      "name": "rompbreedte"
+    }
+  }
+}

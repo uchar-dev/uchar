@@ -4702,8 +4702,13 @@ implements:
 
 **Refusals of the case input (step 3).** The executors read the case
 before any rule fires and refuse it there, by name and never by a guess,
-in three ways beside the input-precision fence of ch. 2.4 and ch. 11.3
-(fault kind EF-004, ch. 5.7b). A role key that resolves to two roles of
+beside the input-precision fence of ch. 2.4 and ch. 11.3 (fault kind
+EF-004, ch. 5.7b). An instance label that occurs twice is refused, since a
+role link and an expectation name an instance by its label (EF-039). A
+name the input writes that the document does not declare — the object type
+of an instance, an attribute, a characteristic or a role key — is refused
+under the name equality of IR-SPEC ch. 2.1, and never read as another
+declaration whose name it resembles (EF-040). A role key that resolves to two roles of
 the instance's object type is refused, since a link cannot be filed under
 two relations (EF-001; IR-SPEC ch. 2.6). A role link that names a label
 the case does not declare is refused, since it names no instance
@@ -5024,7 +5029,8 @@ parameters, the clause that defines it and its witnesses.
   and the ASP backend), `factType` and `cycle` (EF-033), and `attribute`
   and `label` (EF-036, and EF-037, where it names `label`
   only for the object whose input it is: an attribute read over a path names
-  `attribute` alone), and no other.
+  `attribute` alone), `label` (EF-039) and `label` and `name` (EF-040, since
+  2026-11-06, as ref and the ASP backend), and no other.
   Gate 8 holds each executor's emitted keys to this column: a key outside the
   column of its code fails with the code, the executor and the key.
 - **Witnesses.** A code enters the table together with its witness: a red
@@ -5089,6 +5095,8 @@ parameters, the clause that defines it and its witnesses.
 | EF-036 | a temporal total meets a segment with an open bound whose value is not 0 | fault | `attribute`, `label` | ch. 3.6 | `corpus/red/jutterswet-totaal-open-segment` |
 | EF-037 | a form that reads the full timeline of a time-dependent attribute finds the asOfDate-bucket scalar | fault | `attribute`, `label` | ch. 8.4; ch. 3.3; ch. 3.4; ch. 3.5; ch. 3.6; ch. 3.7; ch. 3.9; ch. 3.10 | `corpus/red/jutterswet-emmerscalair-per-periode`, `corpus/red/jutterswet-emmerscalair-knip`, `corpus/red/jutterswet-emmerscalair-gehele-jaar`, `corpus/red/jutterswet-emmerscalair-gevolg` |
 | EF-038 | a recipient of a proportional allocation has a negative weight | §9.5 | `rule`, `label` | ch. 4.2; ch. 4.4 | `corpus/golden/jutterswet-lege-pot-en-negatief-gewicht` |
+| EF-039 | an instance label occurs twice in the case input | case input | `label` | ch. 5.7 step 3 | `corpus/red/duplicate-instance-label` |
+| EF-040 | the case input names an object type, an attribute, a characteristic or a role the document does not declare | case input | `label`, `name` | ch. 5.7 step 3; IR-SPEC ch. 2.1 | `corpus/red/undeclared-input-name` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified
